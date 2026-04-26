@@ -1,9 +1,0 @@
-com/autonoma/erp/repository/UserRepository.class
-com/autonoma/erp/controller/MenuController.class
-com/autonoma/erp/AutonomaBackendApplication.class
-com/autonoma/erp/controller/UserController.class
-com/autonoma/erp/config/SecurityConfig.class
-com/autonoma/erp/controller/LoginRequest.class
-com/autonoma/erp/service/JwtService.class
-com/autonoma/erp/controller/AuthController.class
-com/autonoma/erp/model/UserCredential.class
