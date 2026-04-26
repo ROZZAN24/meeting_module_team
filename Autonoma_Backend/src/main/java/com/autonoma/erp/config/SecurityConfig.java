@@ -28,7 +28,6 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .headers(headers -> headers.frameOptions(frame -> frame.disable())) // Required for H2 Console
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/account/login").permitAll()
@@ -36,9 +35,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/account/bootstrap").permitAll()
                 .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/menu/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll() // Allow developers to check the DB
+                .requestMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()
-            );
+            )
+            .headers(headers -> headers.frameOptions(frame -> frame.disable()));
         
         return http.build();
     }
@@ -46,20 +46,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow common local development origins
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000", 
-            "http://127.0.0.1:3000",
-            "http://localhost:5173", 
-            "http://127.0.0.1:5173",
-            "http://localhost:3010"
-        ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
-        configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:5173", "http://localhost:3010"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L); // Cache preflight for 1 hour
-        
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
