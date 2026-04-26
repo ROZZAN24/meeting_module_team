@@ -1,0 +1,4 @@
+-- Automatically seed the admin user for all developers
+INSERT INTO USER_CREDENTIALS (USER_ID, EMP_ID, PASSWORD, CREATED_BY, STATUS)
+SELECT 'admin', 1, 'admin123', 'SYSTEM', 1
+WHERE NOT EXISTS (SELECT 1 FROM USER_CREDENTIALS WHERE USER_ID = 'admin');
