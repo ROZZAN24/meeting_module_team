@@ -28,6 +28,7 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .headers(headers -> headers.frameOptions(frame -> frame.disable())) // Required for H2 Console
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/account/login").permitAll()
@@ -35,6 +36,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/account/bootstrap").permitAll()
                 .requestMatchers("/api/users/**").permitAll()
                 .requestMatchers("/api/menu/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll() // Allow developers to check the DB
                 .anyRequest().authenticated()
             );
         
