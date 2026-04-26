@@ -12,7 +12,21 @@ Before starting, ensure you have the following installed:
 
 ---
 
-## 🚀 Quick Start (Development)
+## 🐳 Running with Docker (Recommended for Teams)
+
+If you have Docker installed, you can start the entire stack (Frontend, Backend, and SQL Server) with a single command:
+
+```bash
+docker-compose up --build
+```
+
+*   **Frontend**: http://localhost:3000
+*   **Backend**: http://localhost:8080
+*   **Database**: SQL Server runs on port 1433
+
+---
+
+## 🚀 Quick Start (Manual Development)
 
 No database installation is required for local development. We use an in-memory **H2 Database** that resets every time you restart the server.
 
