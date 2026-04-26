@@ -60,7 +60,7 @@ No database installation is required for local development. We use an in-memory 
 
 ## 🔐 Default Credentials
 *   **Username**: `admin`
-*   **Password**: `admin123`
+*   **Password**: `admin`
 
 ---
 
