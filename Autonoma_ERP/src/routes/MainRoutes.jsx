@@ -183,6 +183,13 @@ const SamplePage = Loadable(lazy(() => import('views/sample-page')));
 // admin routing
 const AdminUserOverview = Loadable(lazy(() => import('views/admin/UserOverview')));
 
+// qms checklist routing
+const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
+const QmsCheckListVerify = Loadable(lazy(() => import('views/qms/checklist/CheckListVerify')));
+const QmsCloseCheckListRenewal = Loadable(lazy(() => import('views/qms/checklist/CloseCheckListRenewal')));
+const QmsCheckListRenewalVerify = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalVerify')));
+const QmsCheckListRenewalReport = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalReport')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -736,6 +743,26 @@ const MainRoutes = {
     {
       path: '/dashboard/blog',
       element: <AppBlogDashboard />
+    },
+    {
+      path: '/qms/checklist/master',
+      element: <QmsMasterCheckList />
+    },
+    {
+      path: '/qms/checklist/verify',
+      element: <QmsCheckListVerify />
+    },
+    {
+      path: '/qms/checklist/close-renewal',
+      element: <QmsCloseCheckListRenewal />
+    },
+    {
+      path: '/qms/checklist/renewal-verify',
+      element: <QmsCheckListRenewalVerify />
+    },
+    {
+      path: '/qms/checklist/renewal-report',
+      element: <QmsCheckListRenewalReport />
     }
   ]
 };

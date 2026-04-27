@@ -198,5 +198,12 @@
   "more-items": "More Items",
   "admin": "Admin",
   "user-overview": "User Overview",
-  "user-creation": "User Creation"
+  "user-creation": "User Creation",
+  "QMS": "QMS",
+  "Check List": "Check List",
+  "Master Check List - 282": "Master Check List - 282",
+  "Check List Verify - 5118": "Check List Verify - 5118",
+  "Close Check List / Renewal - 5523": "Close Check List / Renewal - 5523",
+  "Check List / Renewal Verify - 5525": "Check List / Renewal Verify - 5525",
+  "Check List / Renewal Report - 5524": "Check List / Renewal Report - 5524"
 }
