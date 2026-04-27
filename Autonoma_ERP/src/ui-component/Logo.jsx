@@ -4,14 +4,17 @@ import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
 
 // project imports
-import logo from 'assets/images/logo.png';
+import logo from 'assets/images/logo.jpeg';
 
 // ==============================|| LOGO SVG ||============================== //
 
-export default function Logo() {
+export default function Logo({ height = 60 }) {
   const theme = useTheme();
 
-  return <img src={logo} alt="AUTONOMA" height="60" />;
+  return <img src={logo} alt="AUTONOMA" height={height} />;
 }
 
-Logo.propTypes = { dark: PropTypes.bool };
+Logo.propTypes = {
+  dark: PropTypes.bool,
+  height: PropTypes.number
+};
