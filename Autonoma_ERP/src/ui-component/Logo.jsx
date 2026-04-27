@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
 
 // project imports
-import logo from 'assets/images/logo.jpeg';
+import logo from 'assets/images/logo1.jpeg';
 
 // ==============================|| LOGO SVG ||============================== //
 
