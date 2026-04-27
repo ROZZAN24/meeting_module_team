@@ -73,8 +73,7 @@ export default function Header() {
         </Activity>
       </Box>
 
-      {/* header search */}
-      <SearchSection />
+      {/* header search removed */}
       <Box sx={{ flexGrow: 1 }} />
       <Box sx={{ flexGrow: 1 }} />
 

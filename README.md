@@ -1,47 +1,43 @@
 # Autonoma ERP System
 
-A professional ERP solution built with **React (Frontend)** and **Java Spring Boot (Backend)**. This project is configured for **Zero-Config Development**, allowing your team to start coding immediately.
+A professional ERP solution built with **React (Frontend)** and **Java Spring Boot (Backend)**, utilizing **Microsoft SQL Server** for data persistence.
 
 ---
 
 ## 🛠 Prerequisites
 
-Before starting, ensure you have the following installed:
-*   **Java JDK 21 (LTS)**: [Download here](https://adoptium.net/temurin/releases/?version=21)
+Before starting, ensure you have the following installed on your machine:
+
+### 1. Global Requirements
+*   **Java JDK 21 (LTS)**: [Download here](https://adoptium.net/temurin/releases/?version=21) (Crucial for Lombok compatibility)
 *   **Node.js (v18 or v20)**: [Download here](https://nodejs.org/)
+*   **Microsoft SQL Server**: 
+    *   **Windows**: [SQL Server Express](https://www.microsoft.com/en-us/sql-server/sql-server-downloads) + [SSMS](https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms)
+    *   **Mac**: Run via Docker: `docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourPassword123" -p 1433:1433 --name sql_server -d mcr.microsoft.com/mssql/server:2022-latest`
 
 ---
 
-## 🐳 Running with Docker (Recommended for Teams)
+## 🚀 Getting Started
 
-If you have Docker installed, you can start the entire stack (Frontend, Backend, and SQL Server) with a single command:
+### Step 1: Database Setup
+1. Open your SQL tool (SSMS, Azure Data Studio, or DBeaver).
+2. Run the following command to create the database:
+   ```sql
+   CREATE DATABASE AUTONOMA;
+   ```
+3. Run the schema script located at `/Autonoma_Backend/sql/schema.sql`.
 
-```bash
-docker-compose up --build
-```
-
-*   **Frontend**: http://localhost:3000
-*   **Backend**: http://localhost:8080
-*   **Database**: SQL Server runs on port 1433
-
----
-
-## 🚀 Quick Start (Manual Development)
-
-No database installation is required for local development. We use an in-memory **H2 Database** that resets every time you restart the server.
-
-### 1. Backend Setup (Java)
+### Step 2: Backend Setup (Java)
 1. Navigate to the backend folder:
    ```bash
    cd Autonoma_Backend
    ```
-2. Run the application:
-   ```bash
-   mvn spring-boot:run
-   ```
-   *The backend will automatically create the tables and seed an admin user.*
+2. Update `src/main/resources/application.properties` with your local SQL Server credentials if they differ from the default.
+3. Run the application:
+   *   **Mac/Linux**: `mvn spring-boot:run` (Ensure `JAVA_HOME` points to Java 21)
+   *   **Windows**: `mvn spring-boot:run`
 
-### 2. Frontend Setup (React)
+### Step 3: Frontend Setup (React)
 1. Navigate to the frontend folder:
    ```bash
    cd Autonoma_ERP
@@ -58,17 +54,19 @@ No database installation is required for local development. We use an in-memory 
 
 ---
 
-## 🔐 Default Credentials
-*   **Username**: `admin`
-*   **Password**: `admin`
+## 💻 OS Specific Instructions
 
----
+### MacOS
+If you have multiple Java versions, force Java 21 for this project:
+```bash
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)
+mvn spring-boot:run
+```
 
-## 🛠 Developer Tools
-*   **H2 Console**: To view the database tables, visit [http://localhost:8080/h2-console](http://localhost:8080/h2-console)
-    *   **JDBC URL**: `jdbc:h2:mem:AUTONOMA`
-    *   **Username**: `sa`
-    *   **Password**: (Leave blank)
+### Windows
+Ensure your Environment Variables include:
+*   `JAVA_HOME`: Path to your JDK 21 folder.
+*   `Path`: Include the `bin` folder of your JDK and Maven.
 
 ---
 
@@ -77,12 +75,12 @@ No database installation is required for local development. We use an in-memory 
 With 9 developers, we follow these strict rules:
 1.  **Never push to `main`**: Always work on a feature branch (`feature/your-task`).
 2.  **Pull Requests**: Every change must be reviewed via a PR on GitHub.
-3.  **Sync Daily**: Pull the latest changes from `main` every morning (`git pull origin main`).
+3.  **Sync Daily**: Pull the latest changes from `main` every morning before starting work.
 4.  **Commits**: Use professional commit messages (e.g., `feat: add login validation`, `fix: resolve api timeout`).
 
 ---
 
 ## 📂 Project Structure
-*   `Autonoma_Backend/`: Spring Boot 3.x, JPA, H2 (Dev), JWT Security.
+*   `Autonoma_Backend/`: Spring Boot 3.x, JPA, Hibernate, JWT Security.
 *   `Autonoma_ERP/`: React 18, Material UI, Vite.
-
+*   `Autonoma_Backend/sql/`: Database schema and migration scripts.
