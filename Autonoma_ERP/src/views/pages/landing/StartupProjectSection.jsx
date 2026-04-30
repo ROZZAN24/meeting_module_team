@@ -9,7 +9,7 @@ import Box from '@mui/material/Box';
 import Slider from 'react-slick';
 
 // assets
-import BackgroundImag from 'assets/images/landing/bg-heand.png';
+import BackgroundImag from 'assets/images/landing/bg-hero-block-light.png';
 
 // =============================|| LANDING - STARTUP PROJECT ||============================= //
 

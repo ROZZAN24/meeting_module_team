@@ -2,16 +2,27 @@ import PropTypes from 'prop-types';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 
 // project imports
-import logo from 'assets/images/logo1.jpeg';
+import autonomaLogo from 'assets/images/autonoma-logo.png';
 
-// ==============================|| LOGO SVG ||============================== //
+// ==============================|| LOGO IMAGE ||============================== //
 
-export default function Logo({ height = 60 }) {
-  const theme = useTheme();
-
-  return <img src={logo} alt="AUTONOMA" height={height} />;
+export default function Logo({ height = 45 }) {
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <img 
+        src={autonomaLogo} 
+        alt="Autonoma ERP" 
+        style={{ 
+          height: height, 
+          width: 'auto', 
+          objectFit: 'contain'
+        }} 
+      />
+    </Box>
+  );
 }
 
 Logo.propTypes = {

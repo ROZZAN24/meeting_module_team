@@ -175,7 +175,7 @@ export default function CheckListVerify() {
 
   return (
     <MainCard
-      title="Check List Verify - 5118"
+      title="Check List Verify"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
           <Button variant="contained" color="error" size="small" startIcon={<IconBan size={18}/>} onClick={() => handleVerify('Rejected')} disabled={!selectedRowId}>Reject</Button>

@@ -48,7 +48,7 @@ export default function Breadcrumbs({
   maxItems,
   rightAlign = true,
   separator = IconChevronRight,
-  title = true,
+  title = false,
   titleBottom,
   sx,
   ...others
@@ -56,7 +56,7 @@ export default function Breadcrumbs({
   const theme = useTheme();
   const location = useLocation();
   const {
-    state: { themeDirection }
+    state: { themeDirection, borderRadius }
   } = useConfig();
 
   const [main, setMain] = useState();
@@ -281,7 +281,9 @@ export default function Breadcrumbs({
               ? { mb: 3, bgcolor: 'transparent', ...sx }
               : {
                   mb: 3,
+                  mt: 2,
                   bgcolor: 'background.default',
+                  borderRadius: `${borderRadius}px`,
                   ...theme.applyStyles('dark', { bgcolor: 'dark.main' }),
                   ...sx
                 }
@@ -292,7 +294,7 @@ export default function Breadcrumbs({
             <Grid
               container
               direction={rightAlign ? 'row' : 'column'}
-              sx={{ justifyContent: rightAlign ? 'space-between' : 'flex-start', alignItems: rightAlign ? 'center' : 'flex-start' }}
+              sx={{ justifyContent: title && !titleBottom ? 'space-between' : (rightAlign ? 'flex-end' : 'flex-start'), alignItems: rightAlign ? 'center' : 'flex-start' }}
               spacing={1}
             >
               <Activity mode={title && !titleBottom ? 'visible' : 'hidden'}>
