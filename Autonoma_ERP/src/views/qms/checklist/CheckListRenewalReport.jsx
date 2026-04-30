@@ -123,7 +123,7 @@ export default function CheckListRenewalReport() {
  
   return (
     <MainCard
-      title="Check List / Renewal Report - 5524"
+      title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
           <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18}/>} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>

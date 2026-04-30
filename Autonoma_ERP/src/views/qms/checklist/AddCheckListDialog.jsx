@@ -21,7 +21,7 @@ import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import axios from 'utils/axios';
 
-import { IconCloudUpload, IconCheck, IconX, IconEraser, IconFileDescription } from '@tabler/icons-react';
+import { IconCloudUpload, IconCheck, IconX, IconEraser, IconFileDescription, IconCamera } from '@tabler/icons-react';
 
 const DEPARTMENTS = [
   'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT',
@@ -68,6 +68,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [itemCode, setItemCode] = useState('');
   const [qty, setQty] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [scannedFiles, setScannedFiles] = useState([]);
 
   useEffect(() => {
     if (open) {
@@ -88,6 +89,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setItemCode(initialData.itemCode || '');
         setQty(initialData.qty || '');
         setUploadedFiles(initialData.uploadedFiles || []);
+        setScannedFiles(initialData.scannedFiles || []);
       } else {
         setSeqNo('');
         setCategory('');
@@ -105,6 +107,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setItemCode('');
         setQty('');
         setUploadedFiles([]);
+        setScannedFiles([]);
 
         axios.get('/api/qms/checklist/next-sequence')
           .then(res => setSeqNo(String(res.data.nextSeqNo).padStart(3, '0')))
@@ -120,11 +123,18 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     }
   };
 
+  const handleScanUpload = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files).map((f) => f.name);
+      setScannedFiles((prev) => [...prev, ...newFiles]);
+    }
+  };
+
   const handleClear = () => {
     setSeqNo(''); setCategory(''); setExpiryDate(''); setReminderDays('');
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
     setDepartment([]); setStockLink(''); setPhotoRequired('');
-    setVerificationRequired(''); setUploadedFiles([]);
+    setVerificationRequired(''); setUploadedFiles([]); setScannedFiles([]);
   };
 
   const handleSave = () => {
@@ -151,7 +161,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       assignTo,
       itemCode,
       qty,
-      uploadedFiles
+      uploadedFiles,
+      scannedFiles
     };
     if (onSave) onSave(dataToSave);
     handleClose();
@@ -170,7 +181,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       <DialogContent sx={{ p: 4 }}>
         <Grid container spacing={4}>
           {/* ── Left Column ── */}
-          <Grid item xs={12} md={7}>
+          <Grid item xs={12} md={6}>
             <LabelInput label="Sequence No" required>
               <TextField fullWidth size="small" value={seqNo} InputProps={{ readOnly: true }} sx={{ ...inputSx, bgcolor: 'action.hover' }} />
             </LabelInput>
@@ -284,40 +295,78 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           </Grid>
 
           {/* ── Right Column ── */}
-          <Grid item xs={12} md={5}>
-            <Box sx={{ mb: 2 }}>
-              <Button component="label" variant="contained" color="secondary" startIcon={<IconCloudUpload size={20} />} fullWidth sx={{ py: 1.5 }}>
-                Upload File
-                <input type="file" multiple hidden onChange={handleFileUpload} />
-              </Button>
-            </Box>
-
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Uploaded Files</Typography>
-            <Box
-              sx={{
-                border: `1px solid ${theme.palette.divider}`,
-                borderRadius: 1,
-                minHeight: 380,
-                p: 2,
-                bgcolor: 'background.paper',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: uploadedFiles.length === 0 ? 'center' : 'flex-start',
-                justifyContent: uploadedFiles.length === 0 ? 'center' : 'flex-start'
-              }}
-            >
-              {uploadedFiles.length === 0 ? (
-                <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
-                  <IconFileDescription size={56} stroke={1} />
-                  <Typography variant="body2" sx={{ mt: 1 }}>No files uploaded yet.</Typography>
+          <Grid item xs={12} md={6}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ mb: 2 }}>
+                  <Button component="label" variant="contained" color="secondary" startIcon={<IconCloudUpload size={20} />} fullWidth sx={{ py: 1.5 }}>
+                    Upload File
+                    <input type="file" multiple hidden onChange={handleFileUpload} />
+                  </Button>
                 </Box>
-              ) : (
-                uploadedFiles.map((file, idx) => (
-                  <Typography key={idx} variant="body2" sx={{ py: 0.4 }}>✓ {file}</Typography>
-                ))
-              )}
-            </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Uploaded Files</Typography>
+                <Box
+                  sx={{
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 1,
+                    minHeight: 380,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: uploadedFiles.length === 0 ? 'center' : 'flex-start',
+                    justifyContent: uploadedFiles.length === 0 ? 'center' : 'flex-start'
+                  }}
+                >
+                  {uploadedFiles.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
+                      <IconFileDescription size={56} stroke={1} />
+                      <Typography variant="body2" sx={{ mt: 1 }}>No files uploaded yet.</Typography>
+                    </Box>
+                  ) : (
+                    uploadedFiles.map((file, idx) => (
+                      <Typography key={idx} variant="body2" sx={{ py: 0.4 }}>✓ {file}</Typography>
+                    ))
+                  )}
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <Box sx={{ mb: 2 }}>
+                  <Button component="label" variant="contained" color="primary" startIcon={<IconCamera size={20} />} fullWidth sx={{ py: 1.5 }}>
+                    Scan & Upload
+                    <input type="file" accept="image/*" capture="environment" hidden onChange={handleScanUpload} />
+                  </Button>
+                </Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>Scanned Files</Typography>
+                <Box
+                  sx={{
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 1,
+                    minHeight: 380,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                    overflowY: 'auto',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: scannedFiles.length === 0 ? 'center' : 'flex-start',
+                    justifyContent: scannedFiles.length === 0 ? 'center' : 'flex-start'
+                  }}
+                >
+                  {scannedFiles.length === 0 ? (
+                    <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
+                      <IconFileDescription size={56} stroke={1} />
+                      <Typography variant="body2" sx={{ mt: 1 }}>No files scanned yet.</Typography>
+                    </Box>
+                  ) : (
+                    scannedFiles.map((file, idx) => (
+                      <Typography key={idx} variant="body2" sx={{ py: 0.4 }}>✓ {file}</Typography>
+                    ))
+                  )}
+                </Box>
+              </Grid>
+            </Grid>
           </Grid>
         </Grid>
       </DialogContent>

@@ -88,7 +88,7 @@ export default function Login() {
 
           <Box sx={{ mb: 4, textAlign: 'center' }}>
             <Link to="#" aria-label="logo">
-              <Logo height={180} />
+              <Logo height={140} />
             </Link>
           </Box>
 
@@ -100,11 +100,6 @@ export default function Login() {
 
           <Divider sx={{ my: 3, width: '100%' }} />
 
-          <Box sx={{ width: '100%', textAlign: 'center' }}>
-            <Typography variant="caption" color="textSecondary">
-              nutechautonoma.com © 2026
-            </Typography>
-          </Box>
 
           <Box sx={{ mt: 3, width: '100%' }}>
             <AuthFooter />

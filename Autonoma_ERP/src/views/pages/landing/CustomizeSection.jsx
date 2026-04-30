@@ -12,8 +12,8 @@ import { IconCircleCheck } from '@tabler/icons-react';
 import DownloadIcon from '@mui/icons-material/Download';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart';
 
-import LayerLeft from 'assets/images/landing/customization-left.png';
-import LayerRight from 'assets/images/landing/customization-right.png';
+import LayerLeft from 'assets/images/landing/hero-dashboard.png';
+import LayerRight from 'assets/images/landing/hero-dashboard.png';
 
 // ==============================|| LANDING - CUSTOMIZE ||============================== //
 

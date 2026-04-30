@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 
 // assets
-import erpBg from 'assets/images/auth/premium_auth_bg.png';
+import erpBg from 'assets/images/auth/auth-pattern.svg';
 
 const AuthLoginBackground = () => {
   return (

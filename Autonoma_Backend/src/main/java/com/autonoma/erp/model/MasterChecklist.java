@@ -9,7 +9,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
-@Table(name = "qms_master_checklist")
+@Table(name = "QMS_MASTER_CHECKLIST")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
