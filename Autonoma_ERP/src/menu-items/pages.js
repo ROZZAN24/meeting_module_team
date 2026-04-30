@@ -190,31 +190,31 @@ const pages = {
           children: [
             {
               id: 'master-checklist',
-              title: 'Master Check List - 282',
+              title: 'Master Check List',
               type: 'item',
               url: '/qms/checklist/master'
             },
             {
               id: 'checklist-verify',
-              title: 'Check List Verify - 5118',
+              title: 'Check List Verify',
               type: 'item',
               url: '/qms/checklist/verify'
             },
             {
               id: 'close-renewal',
-              title: 'Close Check List / Renewal - 5523',
+              title: 'Close Check List / Renewal',
               type: 'item',
               url: '/qms/checklist/close-renewal'
             },
             {
               id: 'renewal-verify',
-              title: 'Check List / Renewal Verify - 5525',
+              title: 'Check List / Renewal Verify',
               type: 'item',
               url: '/qms/checklist/renewal-verify'
             },
             {
               id: 'renewal-report',
-              title: 'Check List / Renewal Report - 5524',
+              title: 'Check List / Renewal Report',
               type: 'item',
               url: '/qms/checklist/renewal-report'
             }

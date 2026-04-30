@@ -176,7 +176,7 @@ export default function MasterCheckList() {
 
   return (
     <MainCard
-      title="Master Check List - 282"
+      title="Master Check List"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconUserPlus size={18}/>}>Assign To</Button>

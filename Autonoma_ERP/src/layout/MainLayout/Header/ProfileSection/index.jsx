@@ -32,7 +32,7 @@ import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
 
 // assets
-import User1 from 'assets/images/users/user-round.svg';
+import User1 from 'assets/images/users/avatar-1.png';
 import { IconLogout, IconSearch, IconSettings, IconUser } from '@tabler/icons-react';
 import useConfig from 'hooks/useConfig';
 

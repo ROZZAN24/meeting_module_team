@@ -15,6 +15,7 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Tooltip from '@mui/material/Tooltip';
 
 // third party
 import { FormattedMessage } from 'react-intl';
@@ -209,108 +210,114 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
         </>
       ) : (
         <List>
-          <ListItemButton
-            selected={isSelected}
-            sx={{
-              borderRadius: `${borderRadius}px`,
-              p: 1,
-              my: 0.5,
-              mr: 1,
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: 'inherit'
-            }}
-            onMouseEnter={handleClick}
-            onClick={handleClick}
-            onMouseLeave={handleClose}
-            aria-describedby={popperId}
-            className={anchorEl ? 'Mui-selected' : ''}
+          <Tooltip 
+            title={currentItem.caption ? <FormattedMessage id={currentItem.caption} defaultMessage={currentItem.caption} /> : ''} 
+            placement="top"
+            arrow
           >
-            <Activity mode={itemIcon ? 'visible' : 'hidden'}>
-              <ListItemIcon sx={{ minWidth: 36 }}>
-                {currentItem.id === lastItemId ? <IconMinusVertical stroke={1.5} size="20px" /> : itemIcon}
-              </ListItemIcon>
-            </Activity>
-            <ListItemText
-              sx={{ mr: 1, mb: 0.25 }}
-              primary={
-                <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                  {currentItem.id === lastItemId ? <FormattedMessage id="more-items" /> : <FormattedMessage id={currentItem.title} />}
-                </Typography>
-              }
-            />
-            {openMini ? <IconChevronDown stroke={1.5} size="16px" /> : <IconChevronRight stroke={1.5} size="16px" />}
+            <ListItemButton
+              selected={isSelected}
+              sx={{
+                borderRadius: `${borderRadius}px`,
+                p: 1,
+                my: 0.5,
+                mr: 1,
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: 'inherit'
+              }}
+              onMouseEnter={handleClick}
+              onClick={handleClick}
+              onMouseLeave={handleClose}
+              aria-describedby={popperId}
+              className={anchorEl ? 'Mui-selected' : ''}
+            >
+              <Activity mode={itemIcon ? 'visible' : 'hidden'}>
+                <ListItemIcon sx={{ minWidth: 36 }}>
+                  {currentItem.id === lastItemId ? <IconMinusVertical stroke={1.5} size="20px" /> : itemIcon}
+                </ListItemIcon>
+              </Activity>
+              <ListItemText
+                sx={{ mr: 1, mb: 0.25 }}
+                primary={
+                  <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
+                    {currentItem.id === lastItemId ? <FormattedMessage id="more-items" /> : <FormattedMessage id={currentItem.title} />}
+                  </Typography>
+                }
+              />
+              {openMini ? <IconChevronDown stroke={1.5} size="16px" /> : <IconChevronRight stroke={1.5} size="16px" />}
 
-            <Activity mode={anchorEl ? 'visible' : 'hidden'}>
-              <Popper
-                id={popperId}
-                open={openMini}
-                anchorEl={anchorEl}
-                placement="bottom-start"
-                sx={{
-                  overflow: 'visible',
-                  zIndex: 2001,
-                  minWidth: 180,
-                  '&:before': {
-                    content: '""',
-                    display: 'block',
-                    position: 'absolute',
-                    top: 5,
-                    left: 32,
-                    width: 12,
-                    height: 12,
-                    transform: 'translateY(-50%) rotate(45deg)',
-                    zIndex: 120,
-                    borderWidth: '6px',
-                    borderStyle: 'solid',
-                    borderTopColor: 'background.paper',
-                    borderLeftColor: 'background.paper',
-                    borderRightColor: 'transparent',
-                    borderBottomColor: 'transparent'
-                  }
-                }}
-              >
-                {({ TransitionProps }) => (
-                  <Transitions in={openMini} {...TransitionProps}>
-                    <Paper
-                      sx={{
-                        mt: 0.5,
-                        py: 1.25,
-                        boxShadow: theme.shadows[8],
-                        backgroundImage: 'none'
-                      }}
-                    >
-                      <ClickAwayListener onClickAway={handleClose}>
-                        <Box
-                          sx={{
-                            minWidth: 200,
-                            maxHeight: 'calc(100vh - 170px)',
-                            overflowY: 'auto',
-                            '&::-webkit-scrollbar': {
-                              opacity: 0,
-                              width: 4,
-                              '&:hover': {
-                                opacity: 0.7
+              <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+                <Popper
+                  id={popperId}
+                  open={openMini}
+                  anchorEl={anchorEl}
+                  placement="bottom-start"
+                  sx={{
+                    overflow: 'visible',
+                    zIndex: 2001,
+                    minWidth: 180,
+                    '&:before': {
+                      content: '""',
+                      display: 'block',
+                      position: 'absolute',
+                      top: 5,
+                      left: 32,
+                      width: 12,
+                      height: 12,
+                      transform: 'translateY(-50%) rotate(45deg)',
+                      zIndex: 120,
+                      borderWidth: '6px',
+                      borderStyle: 'solid',
+                      borderTopColor: 'background.paper',
+                      borderLeftColor: 'background.paper',
+                      borderRightColor: 'transparent',
+                      borderBottomColor: 'transparent'
+                    }
+                  }}
+                >
+                  {({ TransitionProps }) => (
+                    <Transitions in={openMini} {...TransitionProps}>
+                      <Paper
+                        sx={{
+                          mt: 0.5,
+                          py: 1.25,
+                          boxShadow: theme.shadows[8],
+                          backgroundImage: 'none'
+                        }}
+                      >
+                        <ClickAwayListener onClickAway={handleClose}>
+                          <Box
+                            sx={{
+                              minWidth: 200,
+                              maxHeight: 'calc(100vh - 170px)',
+                              overflowY: 'auto',
+                              '&::-webkit-scrollbar': {
+                                opacity: 0,
+                                width: 4,
+                                '&:hover': {
+                                  opacity: 0.7
+                                }
+                              },
+                              '&::-webkit-scrollbar-track': {
+                                bgcolor: 'transparent'
+                              },
+                              '&::-webkit-scrollbar-thumb': {
+                                bgcolor: 'divider',
+                                borderRadius: 4
                               }
-                            },
-                            '&::-webkit-scrollbar-track': {
-                              bgcolor: 'transparent'
-                            },
-                            '&::-webkit-scrollbar-thumb': {
-                              bgcolor: 'divider',
-                              borderRadius: 4
-                            }
-                          }}
-                        >
-                          {currentItem.id !== lastItemId ? items : moreItems}
-                        </Box>
-                      </ClickAwayListener>
-                    </Paper>
-                  </Transitions>
-                )}
-              </Popper>
-            </Activity>
-          </ListItemButton>
+                            }}
+                          >
+                            {currentItem.id !== lastItemId ? items : moreItems}
+                          </Box>
+                        </ClickAwayListener>
+                      </Paper>
+                    </Transitions>
+                  )}
+                </Popper>
+              </Activity>
+            </ListItemButton>
+          </Tooltip>
         </List>
       )}
     </>

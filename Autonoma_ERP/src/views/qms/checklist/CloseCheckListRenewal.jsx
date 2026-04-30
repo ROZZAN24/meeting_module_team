@@ -175,7 +175,7 @@ export default function CloseCheckListRenewal() {
 
   return (
     <MainCard
-      title="Close Check List / Renewal - 5523"
+      title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
           <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18}/>} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>

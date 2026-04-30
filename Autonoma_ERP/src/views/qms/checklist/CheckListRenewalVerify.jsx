@@ -171,7 +171,7 @@ export default function CheckListRenewalVerify() {
   const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0);
 
   return (
-    <MainCard title="Check List / Renewal Verify - 5525"
+    <MainCard title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
           <Button variant="contained" color="error" size="small" startIcon={<IconBan size={18}/>} onClick={() => handleVerify('Rejected')} disabled={!selectedRowId}>Reject</Button>

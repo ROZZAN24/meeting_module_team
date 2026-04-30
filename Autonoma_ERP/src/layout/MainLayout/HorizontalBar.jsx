@@ -58,7 +58,14 @@ export default function HorizontalBar() {
         })}
       >
         <Container maxWidth={container ? 'lg' : false}>
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            overflowX: 'auto', 
+            '&::-webkit-scrollbar': { height: 0 }, // Hide scrollbar for Chrome/Safari
+            msOverflowStyle: 'none', // Hide for IE/Edge
+            scrollbarWidth: 'none', // Hide for Firefox
+          }}>
             <MenuList />
           </Box>
         </Container>

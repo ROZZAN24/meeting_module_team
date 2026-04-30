@@ -1,18 +1,11 @@
 import admin from './admin';
 import dashboard from './dashboard';
-import application from './application';
-import forms from './forms';
-import elements from './elements';
-import samplePage from './sample-page';
-import pages from './pages';
-import utilities from './utilities';
-import support from './support';
-import other from './other';
+import { masters, hra, sm, pp, production, quality, sl, fa, dd, ms, qms, reports, erpSupport } from './erp';
 
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [admin, dashboard, application, forms, elements, samplePage, pages, utilities, support, other]
+  items: [admin, dashboard, masters, hra, sm, pp, production, quality, sl, fa, dd, ms, qms, reports, erpSupport]
 };
 
 export default menuItems;

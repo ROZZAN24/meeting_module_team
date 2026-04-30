@@ -31,16 +31,16 @@ import SliderLight5 from 'assets/images/landing/pre-apps/slider-light-5.png';
 import SliderDark5 from 'assets/images/landing/pre-apps/slider-dark-5.png';
 import SliderLight6 from 'assets/images/landing/pre-apps/slider-light-6.png';
 import SliderDark6 from 'assets/images/landing/pre-apps/slider-dark-6.png';
-import SliderLight7 from 'assets/images/landing/pre-apps/slider-light-7.png';
-import SliderDark7 from 'assets/images/landing/pre-apps/slider-dark-7.png';
+import SliderLight7 from 'assets/images/landing/pre-apps/slider-light-1.png';
+import SliderDark7 from 'assets/images/landing/pre-apps/slider-dark-1.png';
 import SliderLight8 from 'assets/images/landing/pre-apps/slider-light-8.png';
 import SliderDark8 from 'assets/images/landing/pre-apps/slider-dark-8.png';
-import SliderLight9 from 'assets/images/landing/pre-apps/slider-light-9.png';
-import SliderDark9 from 'assets/images/landing/pre-apps/slider-dark-9.png';
-import SliderLight10 from 'assets/images/landing/pre-apps/slider-light-10.png';
-import SliderDark10 from 'assets/images/landing/pre-apps/slider-dark-10.png';
-import SliderLight11 from 'assets/images/landing/pre-apps/slider-light-11.png';
-import SliderDark11 from 'assets/images/landing/pre-apps/slider-dark-11.png';
+import SliderLight9 from 'assets/images/landing/pre-apps/slider-light-1.png';
+import SliderDark9 from 'assets/images/landing/pre-apps/slider-dark-1.png';
+import SliderLight10 from 'assets/images/landing/pre-apps/slider-light-2.png';
+import SliderDark10 from 'assets/images/landing/pre-apps/slider-dark-2.png';
+import SliderLight11 from 'assets/images/landing/pre-apps/slider-light-3.png';
+import SliderDark11 from 'assets/images/landing/pre-apps/slider-dark-3.png';
 
 // styles
 const Images = styled('img')({
