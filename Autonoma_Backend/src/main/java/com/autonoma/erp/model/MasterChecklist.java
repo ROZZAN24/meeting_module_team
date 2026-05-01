@@ -117,13 +117,14 @@ public class MasterChecklist {
 
     @Column(name = "QTY")
     private String qty;
-
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistDepartment> departments;
 
     // Getters and Setters (manually added for compatibility if Lombok has issues)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public String getSeqNo() { return seqNo; }
     public void setSeqNo(String seqNo) { this.seqNo = seqNo; }
     public String getCheckingPoint() { return checkingPoint; }
@@ -160,8 +161,6 @@ public class MasterChecklist {
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
     public Date getUpdatedDate() { return updatedDate; }
     public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
     public String getTaskStatus() { return taskStatus; }
     public void setTaskStatus(String taskStatus) { this.taskStatus = taskStatus; }
     public String getVerifyStatus() { return verifyStatus; }

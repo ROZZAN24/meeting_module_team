@@ -25,3 +25,7 @@ Autonoma_ERP/yarn-error.log*
 .DS_Store
 node_modules/
 target/
+Autonoma_Backend/maven.zip
+Autonoma_Backend/maven_new.zip
+Autonoma_Backend/apache-maven-3.9.6/
+tools/
