@@ -25,10 +25,11 @@ import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
 import MainCard from 'ui-component/cards/MainCard';
-import { useSelector } from 'react-redux';
-
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilters, resetFilters } from 'store/slices/search';
+import useSearchFilter from 'hooks/useSearchFilter';
 
 const columns = [
   '#', 'Task Type', 'Seq No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
@@ -81,10 +82,82 @@ export default function CheckListRenewalVerify() {
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
 
-  const [selectedRowId, setSelectedRowId] = useState(null);
+  const dispatch = useDispatch();
   const searchQuery = useSelector((state) => state.search.query);
+  const filters = useSelector((state) => state.search.filters);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [selectedRowId, setSelectedRowId] = useState(null);
+
+  // Register filters for the top search bar
+  useSearchFilter([
+    {
+      id: 'taskType',
+      label: 'Task Type',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Mine', value: 'Mine' },
+        { label: 'Team', value: 'Team' },
+        { label: 'Company', value: 'Company' }
+      ]
+    },
+    {
+      id: 'fromDate',
+      label: 'From Date',
+      type: 'date'
+    },
+    {
+      id: 'toDate',
+      label: 'To Date',
+      type: 'date'
+    },
+    {
+      id: 'considerDate',
+      label: 'Consider Date',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Yes', value: 'Yes' },
+        { label: 'No', value: 'No' }
+      ]
+    },
+    {
+      id: 'statuses',
+      label: 'Statuses',
+      type: 'select',
+      multiple: true,
+      options: STATUS_OPTIONS.map(s => ({ label: s, value: s }))
+    },
+    {
+      id: 'assignTo',
+      label: 'Assign To',
+      type: 'text',
+      placeholder: 'Search employee...'
+    },
+    {
+      id: 'category',
+      label: 'Category',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Renewal', value: 'RENEWAL' },
+        { label: 'Check List', value: 'CHECK LIST' }
+      ]
+    },
+    {
+      id: 'searchBy',
+      label: 'Search By',
+      type: 'select',
+      options: SEARCH_BY_OPTIONS.map(o => ({ label: o.label, value: o.key }))
+    },
+    {
+      id: 'searchByValue',
+      label: 'Search Value',
+      type: 'text',
+      placeholder: 'Search value...'
+    }
+  ]);
+
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
@@ -94,7 +167,7 @@ export default function CheckListRenewalVerify() {
       const params = {
         page,
         size,
-        status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
+        status: (filters.statuses || []).length > 0 ? filters.statuses[0] : undefined,
         fromDate: filters.fromDate || undefined,
         toDate: filters.toDate || undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
@@ -117,20 +190,19 @@ export default function CheckListRenewalVerify() {
   }, [fetchAssignments]);
 
   const setFilter = (key, val) => {
-    setFilters((p) => ({ ...p, [key]: val }));
+    dispatch(setFilters({ [key]: val }));
     setPage(0);
   };
   
   const toggleStatus = (status) => {
-    setFilters((p) => {
-      const arr = p.statuses || [];
-      return { ...p, statuses: arr.includes(status) ? arr.filter((s) => s !== status) : [...arr, status] };
-    });
+    const arr = filters.statuses || [];
+    const newStatuses = arr.includes(status) ? arr.filter((s) => s !== status) : [...arr, status];
+    dispatch(setFilters({ statuses: newStatuses }));
     setPage(0);
   };
 
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
+  const handleResetFilters = () => {
+    dispatch(resetFilters());
     setPage(0);
   };
 
@@ -168,7 +240,15 @@ export default function CheckListRenewalVerify() {
     exportToExcel(exportData, 'Checklist_Renewal_Verify');
   };
 
-  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0);
+  const activeCount = (filters.taskType && filters.taskType !== 'All' ? 1 : 0) + 
+                    (filters.fromDate ? 1 : 0) + 
+                    (filters.toDate ? 1 : 0) + 
+                    (filters.considerDate && filters.considerDate !== 'No' ? 1 : 0) + 
+                    (filters.statuses?.length || 0) + 
+                    (filters.assignTo ? 1 : 0) + 
+                    (filters.category && filters.category !== 'All' ? 1 : 0) +
+                    (filters.searchBy && filters.searchBy !== 'All' ? 1 : 0) +
+                    (filters.searchByValue ? 1 : 0);
 
   return (
     <MainCard title="Check List / Renewal Verify"
@@ -189,14 +269,16 @@ export default function CheckListRenewalVerify() {
       {activeCount > 0 && (
         <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
           <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.taskType !== 'All' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType','All')}/>}
+          {filters.taskType && filters.taskType !== 'All' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType','All')}/>}
           {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate','')}/>}
           {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate','')}/>}
-          {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','All')}/>}
-          {filters.statuses.map((s) => <Chip key={s} label={s} size="small" color="warning" onDelete={() => toggleStatus(s)}/>)}
+          {filters.considerDate && filters.considerDate !== 'No' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','No')}/>}
+          {filters.statuses?.map((s) => <Chip key={s} label={s} size="small" color="warning" onDelete={() => toggleStatus(s)}/>)}
           {filters.assignTo && <Chip label={`Assign To: ${filters.assignTo}`} size="small" color="info" onDelete={() => setFilter('assignTo','')}/>}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+          {filters.category && filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
+          {filters.searchBy && filters.searchBy !== 'All' && <Chip label={`Search By: ${filters.searchBy}`} size="small" color="info" onDelete={() => setFilter('searchBy','All')}/>}
+          {filters.searchByValue && <Chip label={`Value: ${filters.searchByValue}`} size="small" color="info" onDelete={() => setFilter('searchByValue','')}/>}
+          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
         </Box>
       )}
 
@@ -276,12 +358,13 @@ export default function CheckListRenewalVerify() {
           <Divider/>
           <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
             <Box>
-              {STATUS_OPTIONS.map((s) => <FormControlLabel key={s} sx={{ display:'flex',ml:0,mr:0,py:0.2 }} control={<Checkbox size="small" checked={filters.statuses.includes(s)} onChange={() => toggleStatus(s)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{s}</Typography>}/>)}
+              {STATUS_OPTIONS.map((s) => <FormControlLabel key={s} sx={{ display:'flex',ml:0,mr:0,py:0.2 }} control={<Checkbox size="small" checked={(filters.statuses || []).includes(s)} onChange={() => toggleStatus(s)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{s}</Typography>}/>)}
             </Box>
           </FilterSection>
+
           <Divider/>
           <FilterSection title="Assign To" open={openSections.assignTo} onToggle={() => toggleSection('assignTo')}>
-            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.assignTo} onChange={(e) => setFilter('assignTo', e.target.value)}/>
+            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.assignTo || ''} onChange={(e) => setFilter('assignTo', e.target.value)}/>
           </FilterSection>
           <Divider/>
           <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
@@ -291,14 +374,14 @@ export default function CheckListRenewalVerify() {
           </FilterSection>
           <Divider/>
           <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
-            <FormControl fullWidth><RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
+            <FormControl fullWidth><RadioGroup value={filters.searchBy || 'All'} onChange={(e) => setFilter('searchBy', e.target.value)}>
               {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small"/>} label={<Typography variant="body2">{opt.label}</Typography>}/>)}
             </RadioGroup></FormControl>
-            {filters.searchBy && <TextField size="small" fullWidth placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o)=>o.key===filters.searchBy)?.label}...`} value={filters.searchByValue} onChange={(e) => setFilter('searchByValue', e.target.value)} sx={{ mt:1 }}/>}
+            {filters.searchBy && <TextField size="small" fullWidth placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o)=>o.key===filters.searchBy)?.label}...`} value={filters.searchByValue || ''} onChange={(e) => setFilter('searchByValue', e.target.value)} sx={{ mt:1 }}/>}
           </FilterSection>
         </Box>
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
+          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
           <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
         </Box>
       </Drawer>

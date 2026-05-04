@@ -24,10 +24,11 @@ import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
 import MainCard from 'ui-component/cards/MainCard';
-import { useSelector } from 'react-redux';
-
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilters, resetFilters } from 'store/slices/search';
+import useSearchFilter from 'hooks/useSearchFilter';
 
 const columns = ['#','Category','Check Point','Dept','Level','Frequency','Stock Link','Comments','Verification Required','Assigned To','Assigned By','Status'];
 
@@ -58,10 +59,47 @@ export default function CheckListRenewalReport() {
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
 
-  const [selectedRowId, setSelectedRowId] = useState(null);
+  const dispatch = useDispatch();
   const searchQuery = useSelector((state) => state.search.query);
+  const filters = useSelector((state) => state.search.filters);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [selectedRowId, setSelectedRowId] = useState(null);
+
+  // Register filters for the top search bar
+  useSearchFilter([
+    {
+      id: 'fromDate',
+      label: 'From Date',
+      type: 'date'
+    },
+    {
+      id: 'toDate',
+      label: 'To Date',
+      type: 'date'
+    },
+    {
+      id: 'considerDate',
+      label: 'Consider Date',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Yes', value: 'Yes' },
+        { label: 'No', value: 'No' }
+      ]
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { label: 'All Status', value: 'All' },
+        { label: 'Open', value: 'Open' },
+        { label: 'Pending for Verified', value: 'Pending for Verified' },
+        { label: 'Verified', value: 'Verified' }
+      ]
+    }
+  ]);
+
   const [openSections, setOpenSections] = useState({ dateRange:true, considerDate:false, status:true });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
 
@@ -92,12 +130,12 @@ export default function CheckListRenewalReport() {
   }, [fetchReportData]);
 
   const setFilter = (key, val) => {
-    setFilters((p) => ({ ...p, [key]:val }));
+    dispatch(setFilters({ [key]: val }));
     setPage(0);
   };
   
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
+  const handleResetFilters = () => {
+    dispatch(resetFilters());
     setPage(0);
   };
 
@@ -119,7 +157,10 @@ export default function CheckListRenewalReport() {
     exportToExcel(exportData, 'Checklist_Report');
   };
 
-  const activeCount = (filters.fromDate ? 1:0) + (filters.toDate ? 1:0) + (filters.considerDate !== 'All' ? 1:0) + (filters.status !== 'All' ? 1:0);
+  const activeCount = (filters.fromDate ? 1 : 0) + 
+                    (filters.toDate ? 1 : 0) + 
+                    (filters.considerDate && filters.considerDate !== 'All' ? 1 : 0) + 
+                    (filters.status && filters.status !== 'All' ? 1 : 0);
  
   return (
     <MainCard
@@ -140,9 +181,9 @@ export default function CheckListRenewalReport() {
           <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
           {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate','')}/>}
           {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate','')}/>}
-          {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','All')}/>}
-          {filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="warning" onDelete={() => setFilter('status','All')}/>}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+          {filters.considerDate && filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','All')}/>}
+          {filters.status && filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="warning" onDelete={() => setFilter('status','All')}/>}
+          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
         </Box>
       )}
 
@@ -219,7 +260,7 @@ export default function CheckListRenewalReport() {
           </FilterSection>
         </Box>
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
+          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
           <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
         </Box>
       </Drawer>

@@ -22,11 +22,11 @@ import PopupState, { bindPopper, bindToggle } from 'material-ui-popup-state';
 // project imports
 import Transitions from 'ui-component/extended/Transitions';
 import { useDispatch, useSelector } from 'react-redux';
-import { setQuery, setFilters } from 'store/slices/search';
+import { setQuery, setFilters, resetFilters } from 'store/slices/search';
 
 // assets
 import { IconSearch, IconX, IconApps, IconFileText, IconAdjustmentsHorizontal, IconCalendar, IconFilter } from '@tabler/icons-react';
-import { Divider, MenuItem, Select, Button, Stack, ClickAwayListener } from '@mui/material';
+import { Divider, MenuItem, Select, Button, Stack, Popover } from '@mui/material';
 
 const SUGGESTIONS = [
   { label: 'Master Check List', path: '/qms/checklist/master', type: 'Module' },
@@ -124,6 +124,7 @@ export default function SearchSection() {
   const location = useLocation();
   const value = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
+  const searchConfig = useSelector((state) => state.search.config);
 
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -135,10 +136,7 @@ export default function SearchSection() {
     setAdvancedAnchorEl(advancedAnchorEl ? null : anchorRef.current);
   };
 
-  const handleAdvancedClose = (event) => {
-    if (anchorRef.current && anchorRef.current.contains(event.target)) {
-      return;
-    }
+  const handleAdvancedClose = () => {
     setAdvancedAnchorEl(null);
   };
 
@@ -150,17 +148,17 @@ export default function SearchSection() {
   };
 
   // --- Context Awareness Logic ---
-  const isQmsChecklist = location.pathname.startsWith('/qms/checklist');
   const isDashboard = location.pathname.startsWith('/dashboard') || location.pathname === '/';
+
 
   // Dynamic Placeholder
   let searchPlaceholder = "Search across Autonoma...";
-  if (isQmsChecklist) searchPlaceholder = "Search in Checklists...";
+  if (searchConfig && searchConfig.length > 0) searchPlaceholder = "Search with filters...";
   else if (isDashboard) searchPlaceholder = "Search Dashboard...";
+
 
   // Dynamic Suggestions - Only show on Dashboard
   const currentSuggestions = isDashboard ? SUGGESTIONS : [];
-  const showSuggestions = isDashboard;
 
   return (    <>
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
@@ -207,7 +205,7 @@ export default function SearchSection() {
           width: '100%', 
           maxWidth: isFocused ? 750 : 500,
           transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-          ml: isFocused ? -15 : 0 // Subtle shift to center if needed, or just grow
+          ml: isFocused ? -15 : 0 
         }}
       >
         <Autocomplete
@@ -215,9 +213,6 @@ export default function SearchSection() {
           options={currentSuggestions}
           noOptionsText={isDashboard ? undefined : null}
           open={isFocused && !isAdvancedOpen && (value.length > 0 || isDashboard)}
-          onOpen={() => {
-            if (isAdvancedOpen) return;
-          }}
           openOnFocus={false}
           getOptionLabel={(option) => typeof option === 'string' ? option : option.label}
           inputValue={value}
@@ -300,94 +295,143 @@ export default function SearchSection() {
                       >
                         <IconAdjustmentsHorizontal stroke={1.5} size="20px" />
                       </IconButton>
-                      <Popper
+                      <Popover
                         open={isAdvancedOpen}
                         anchorEl={advancedAnchorEl}
-                        transition
-                        placement="bottom-end"
-                        sx={{ zIndex: 1200, mt: 1.5 }}
+                        onClose={handleAdvancedClose}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'right',
+                        }}
+                        slotProps={{
+                          paper: {
+                            sx: {
+                              mt: 1.5,
+                              p: 2,
+                              width: 320,
+                              overflow: 'visible',
+                              boxShadow: theme => theme.customShadows?.z1 || theme.shadows[8],
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              '&:before': {
+                                content: '""',
+                                display: 'block',
+                                position: 'absolute',
+                                top: 0,
+                                right: 14,
+                                width: 10,
+                                height: 10,
+                                bgcolor: 'background.paper',
+                                transform: 'translateY(-50%) rotate(45deg)',
+                                zIndex: 0,
+                                borderLeft: '1px solid',
+                                borderTop: '1px solid',
+                                borderColor: 'divider'
+                              }
+                            }
+                          }
+                        }}
                       >
-                        {({ TransitionProps }) => (
-                          <ClickAwayListener onClickAway={handleAdvancedClose}>
-                            <Box>
-                              <Transitions type="fade" {...TransitionProps}>
-                                <Card sx={{ 
-                                  p: 2, 
-                                  width: 320, 
-                                  boxShadow: theme => theme.customShadows?.z1 || theme.shadows[8],
-                                  border: '1px solid',
-                                  borderColor: 'divider'
-                                }}>
-                                  <Stack spacing={2}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Advanced Filters</Typography>
-                                
-                                {isQmsChecklist ? (
-                                  <>
-                                    <Box>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>Category</Typography>
-                                      <Select fullWidth size="small" value={filters.category || 'All'} onChange={(e) => handleFilterChange('category', e.target.value)}>
-                                        <MenuItem value="All">All Categories</MenuItem>
-                                        <MenuItem value="RENEWAL">Renewal</MenuItem>
-                                        <MenuItem value="CHECK LIST">Check List</MenuItem>
+                        <Stack spacing={2}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Advanced Filters</Typography>
+                          <Box sx={{ 
+                            maxHeight: '60vh', 
+                            overflowY: 'auto',
+                            px: 0.5,
+                            '&::-webkit-scrollbar': { width: 6 },
+                            '&::-webkit-scrollbar-track': { background: 'transparent' },
+                            '&::-webkit-scrollbar-thumb': { 
+                              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                              borderRadius: 10 
+                            }
+                          }}>
+                            <Stack spacing={2} sx={{ py: 1 }}>
+                              {searchConfig && searchConfig.length > 0 ? (
+                                searchConfig.map((field) => (
+                                  <Box key={field.id}>
+                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>{field.label}</Typography>
+                                    {field.type === 'select' ? (
+                                      <Select 
+                                        fullWidth 
+                                        size="small" 
+                                        multiple={field.multiple}
+                                        value={filters[field.id] || field.defaultValue || (field.multiple ? [] : 'All')} 
+                                        onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                      >
+                                        {field.options.map((opt) => (
+                                          <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                        ))}
                                       </Select>
-                                    </Box>
-                                    <Box>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>Status</Typography>
-                                      <Select fullWidth size="small" value={filters.status || 'All'} onChange={(e) => handleFilterChange('status', e.target.value)}>
-                                        <MenuItem value="All">All Status</MenuItem>
-                                        <MenuItem value="Pending for Verify">Pending for Verify</MenuItem>
-                                        <MenuItem value="Verified">Verified</MenuItem>
-                                        <MenuItem value="Rejected">Rejected</MenuItem>
-                                      </Select>
-                                    </Box>
-                                    <Box>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>Record Status</Typography>
-                                      <Select fullWidth size="small" value={filters.recordStatus || 'All'} onChange={(e) => handleFilterChange('recordStatus', e.target.value)}>
-                                        <MenuItem value="All">All Records</MenuItem>
-                                        <MenuItem value="Active">Active</MenuItem>
-                                        <MenuItem value="In Active">In Active</MenuItem>
-                                      </Select>
-                                    </Box>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Box>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>Search in Type</Typography>
-                                      <Select fullWidth size="small" value={filters.type || 'All'} onChange={(e) => handleFilterChange('type', e.target.value)}>
-                                        <MenuItem value="All">All Types</MenuItem>
-                                        <MenuItem value="Module">Modules</MenuItem>
-                                        <MenuItem value="Page">Pages</MenuItem>
-                                        <MenuItem value="Document">Documents</MenuItem>
-                                      </Select>
-                                    </Box>
-                                    <Box>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>Date Modified</Typography>
-                                      <TextField fullWidth size="small" type="date" value={filters.date || ''} onChange={(e) => handleFilterChange('date', e.target.value)} InputLabelProps={{ shrink: true }} />
-                                    </Box>
-                                    <Box>
-                                      <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block' }}>Status</Typography>
-                                      <Select fullWidth size="small" value={filters.status || 'All'} onChange={(e) => handleFilterChange('status', e.target.value)}>
-                                        <MenuItem value="All">All Status</MenuItem>
-                                        <MenuItem value="Active">Active</MenuItem>
-                                        <MenuItem value="Pending">Pending</MenuItem>
-                                      </Select>
-                                    </Box>
-                                  </>
-                                )}
+                                    ) : field.type === 'date' ? (
+                                      <TextField 
+                                        fullWidth 
+                                        size="small" 
+                                        type="date" 
+                                        value={filters[field.id] || ''} 
+                                        onChange={(e) => handleFilterChange(field.id, e.target.value)} 
+                                        InputLabelProps={{ shrink: true }} 
+                                      />
+                                    ) : (
+                                      <TextField 
+                                        fullWidth 
+                                        size="small" 
+                                        value={filters[field.id] || ''} 
+                                        onChange={(e) => handleFilterChange(field.id, e.target.value)} 
+                                        placeholder={field.placeholder}
+                                      />
+                                    )}
+                                  </Box>
+                                ))
+                              ) : (
+                                <>
+                                  <Box>
+                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>Search in Type</Typography>
+                                    <Select 
+                                      fullWidth 
+                                      size="small" 
+                                      value={filters.type || 'All'} 
+                                      onChange={(e) => handleFilterChange('type', e.target.value)}
+                                    >
+                                      <MenuItem value="All">All Types</MenuItem>
+                                      <MenuItem value="Module">Modules</MenuItem>
+                                      <MenuItem value="Page">Pages</MenuItem>
+                                      <MenuItem value="Document">Documents</MenuItem>
+                                    </Select>
+                                  </Box>
+                                  <Box>
+                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>Date Modified</Typography>
+                                    <TextField fullWidth size="small" type="date" value={filters.date || ''} onChange={(e) => handleFilterChange('date', e.target.value)} InputLabelProps={{ shrink: true }} />
+                                  </Box>
+                                  <Box>
+                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>Status</Typography>
+                                    <Select 
+                                      fullWidth 
+                                      size="small" 
+                                      value={filters.status || 'All'} 
+                                      onChange={(e) => handleFilterChange('status', e.target.value)}
+                                    >
+                                      <MenuItem value="All">All Status</MenuItem>
+                                      <MenuItem value="Active">Active</MenuItem>
+                                      <MenuItem value="Pending">Pending</MenuItem>
+                                    </Select>
+                                  </Box>
+                                </>
+                              )}
+                            </Stack>
+                          </Box>
 
-                                <Divider />
-                                
-                                <Stack direction="row" spacing={1} justifyContent="flex-end">
-                                  <Button size="small" color="error" onClick={() => dispatch(setFilters({ type: 'All', date: '', status: 'All' }))}>Reset</Button>
-                                  <Button size="small" variant="contained" onClick={handleAdvancedClose}>Done</Button>
-                                </Stack>
-                              </Stack>
-                            </Card>
-                          </Transitions>
-                        </Box>
-                      </ClickAwayListener>
-                        )}
-                      </Popper>
+                          <Divider />
+                          
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Button size="small" color="error" onClick={() => dispatch(resetFilters())}>Reset</Button>
+                            <Button size="small" variant="contained" onClick={handleAdvancedClose}>Done</Button>
+                          </Stack>
+                        </Stack>
+                      </Popover>
                     </Stack>
                   </InputAdornment>
                 )

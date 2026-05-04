@@ -26,7 +26,9 @@ import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilters, resetFilters } from 'store/slices/search';
+import useSearchFilter from 'hooks/useSearchFilter';
 
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
@@ -80,35 +82,79 @@ export default function MasterCheckList() {
   const [loading, setLoading] = useState(false);
   
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const dispatch = useDispatch();
   const searchQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters) || {};
+  const filters = useSelector((state) => state.search.filters);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
 
-  // Sync global search filters with local filters
-  useEffect(() => {
-    if (Object.keys(globalFilters).length > 0) {
-      setFilters((prev) => {
-        const newFilters = { ...prev };
-        let hasChanges = false;
-        
-        if (globalFilters.category && globalFilters.category !== prev.category) {
-          newFilters.category = globalFilters.category;
-          hasChanges = true;
-        }
-        if (globalFilters.status && globalFilters.status !== prev.status) {
-          newFilters.status = globalFilters.status;
-          hasChanges = true;
-        }
-        if (globalFilters.recordStatus && globalFilters.recordStatus !== prev.recordStatus) {
-          newFilters.recordStatus = globalFilters.recordStatus;
-          hasChanges = true;
-        }
-        
-        return hasChanges ? newFilters : prev;
-      });
+  // Register filters for the top search bar
+  useSearchFilter([
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { label: 'All Status', value: 'All' },
+        { label: 'Pending for Verify', value: 'Pending for Verify' },
+        { label: 'Verified', value: 'Verified' },
+        { label: 'Rejected', value: 'Rejected' }
+      ]
+    },
+    {
+      id: 'taskStatus',
+      label: 'Task Status',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Not Assigned', value: 'Not Assigned' },
+        { label: 'Assigned', value: 'Assigned' }
+      ]
+    },
+    {
+      id: 'recordStatus',
+      label: 'Record Status',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Active', value: 'Active' },
+        { label: 'In Active', value: 'In Active' }
+      ]
+    },
+    {
+      id: 'category',
+      label: 'Category',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Renewal', value: 'RENEWAL' },
+        { label: 'Check List', value: 'CHECK LIST' }
+      ]
+    },
+    {
+      id: 'departments',
+      label: 'Departments',
+      type: 'select',
+      multiple: true,
+      options: DEPARTMENTS.map(d => ({ label: d, value: d }))
+    },
+    {
+      id: 'employeeName',
+      label: 'Employee Name',
+      type: 'text',
+      placeholder: 'Search employee...'
+    },
+    {
+      id: 'leftCompany',
+      label: 'Left Company',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'No', value: 'No' },
+        { label: 'Yes', value: 'Yes' }
+      ]
     }
-  }, [globalFilters]);
+  ]);
+
 
   // Section toggles
   const [openSections, setOpenSections] = useState({ status:true, taskStatus:true, recordStatus:true, category:true, department:false, employee:false, leftCompany:false });
@@ -121,7 +167,7 @@ export default function MasterCheckList() {
         page,
         size,
         category: filters.category !== 'All' ? filters.category : undefined,
-        department: filters.departments.length > 0 ? filters.departments[0] : undefined, // Simplification for now
+        department: (filters.departments || []).length > 0 ? filters.departments[0] : undefined, // Simplification for now
         searchValue: searchQuery || undefined,
         searchBy: undefined
       };
@@ -140,24 +186,29 @@ export default function MasterCheckList() {
   }, [fetchChecklists]);
 
   const setFilter = (key, val) => {
-    setFilters((p) => ({ ...p, [key]: val }));
+    dispatch(setFilters({ [key]: val }));
     setPage(0);
   };
   
   const toggleDept = (dept) => {
-    setFilters((p) => {
-      const arr = p.departments;
-      return { ...p, departments: arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept] };
-    });
+    const arr = filters.departments || [];
+    const newDepts = arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept];
+    dispatch(setFilters({ departments: newDepts }));
     setPage(0);
   };
 
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
+  const handleResetFilters = () => {
+    dispatch(resetFilters());
     setPage(0);
   };
 
-  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.taskStatus !== 'All' ? 1 : 0) + (filters.recordStatus !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.employeeName ? 1 : 0) + (filters.leftCompany !== 'All' ? 1 : 0);
+  const activeCount = (filters.status && filters.status !== 'All' ? 1 : 0) + 
+                    (filters.taskStatus && filters.taskStatus !== 'All' ? 1 : 0) + 
+                    (filters.recordStatus && filters.recordStatus !== 'All' ? 1 : 0) + 
+                    (filters.category && filters.category !== 'All' ? 1 : 0) + 
+                    (filters.departments?.length || 0) + 
+                    (filters.employeeName ? 1 : 0) + 
+                    (filters.leftCompany && filters.leftCompany !== 'All' ? 1 : 0);
 
   const handleSaveData = async (data) => {
     try {
@@ -195,14 +246,14 @@ export default function MasterCheckList() {
       {activeCount > 0 && (
         <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
           <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
-          {filters.taskStatus !== 'All' && <Chip label={`Task: ${filters.taskStatus}`} size="small" color="primary" onDelete={() => setFilter('taskStatus','All')}/>}
-          {filters.recordStatus !== 'All' && <Chip label={`Record: ${filters.recordStatus}`} size="small" color="primary" onDelete={() => setFilter('recordStatus','All')}/>}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
-          {filters.departments.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
+          {filters.status && filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
+          {filters.taskStatus && filters.taskStatus !== 'All' && <Chip label={`Task: ${filters.taskStatus}`} size="small" color="primary" onDelete={() => setFilter('taskStatus','All')}/>}
+          {filters.recordStatus && filters.recordStatus !== 'All' && <Chip label={`Record: ${filters.recordStatus}`} size="small" color="primary" onDelete={() => setFilter('recordStatus','All')}/>}
+          {filters.category && filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
+          {filters.departments?.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
           {filters.employeeName && <Chip label={`Employee: ${filters.employeeName}`} size="small" color="warning" onDelete={() => setFilter('employeeName','')}/>}
-          {filters.leftCompany !== 'All' && <Chip label={`Left: ${filters.leftCompany}`} size="small" color="error" onDelete={() => setFilter('leftCompany','All')}/>}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+          {filters.leftCompany && filters.leftCompany !== 'All' && <Chip label={`Left: ${filters.leftCompany}`} size="small" color="error" onDelete={() => setFilter('leftCompany','All')}/>}
+          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
         </Box>
       )}
 
@@ -273,14 +324,14 @@ export default function MasterCheckList() {
 
         <Box sx={{ overflowY:'auto', flex:1 }}>
           <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+            <FormControl><RadioGroup value={filters.status || 'All'} onChange={(e) => setFilter('status', e.target.value)}>
               {['All','Pending for Verify','Verified','Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
 
           <FilterSection title="Task Status" open={openSections.taskStatus} onToggle={() => toggleSection('taskStatus')}>
-            <FormControl><RadioGroup value={filters.taskStatus} onChange={(e) => setFilter('taskStatus', e.target.value)}>
+            <FormControl><RadioGroup value={filters.taskStatus || 'All'} onChange={(e) => setFilter('taskStatus', e.target.value)}>
               {['All','Not Assigned','Assigned'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
@@ -302,25 +353,25 @@ export default function MasterCheckList() {
 
           <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
             <Box sx={{ maxHeight:250, overflowY:'auto' }}>
-              {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
+              {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={(filters.departments || []).includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
             </Box>
           </FilterSection>
           <Divider/>
 
           <FilterSection title="Employee Name" open={openSections.employee} onToggle={() => toggleSection('employee')}>
-            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.employeeName} onChange={(e) => setFilter('employeeName', e.target.value)}/>
+            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.employeeName || ''} onChange={(e) => setFilter('employeeName', e.target.value)}/>
           </FilterSection>
           <Divider/>
 
           <FilterSection title="Left Company" open={openSections.leftCompany} onToggle={() => toggleSection('leftCompany')}>
-            <FormControl><RadioGroup value={filters.leftCompany} onChange={(e) => setFilter('leftCompany', e.target.value)}>
+            <FormControl><RadioGroup value={filters.leftCompany || 'All'} onChange={(e) => setFilter('leftCompany', e.target.value)}>
               {['All','No','Yes'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
         </Box>
 
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
+          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
           <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
         </Box>
       </Drawer>

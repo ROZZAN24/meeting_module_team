@@ -25,10 +25,11 @@ import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
 import MainCard from 'ui-component/cards/MainCard';
-import { useSelector } from 'react-redux';
-
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilters, resetFilters } from 'store/slices/search';
+import useSearchFilter from 'hooks/useSearchFilter';
 
 const columns = [
   '#', 'Seq No', 'Checking Point', 'Category', 'Frequency', 'Department',
@@ -82,9 +83,55 @@ export default function CheckListVerify() {
   const [loading, setLoading] = useState(false);
 
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const dispatch = useDispatch();
   const searchQuery = useSelector((state) => state.search.query);
+  const filters = useSelector((state) => state.search.filters);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+
+  // Register filters for the top search bar
+  useSearchFilter([
+    {
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { label: 'All Status', value: 'All' },
+        { label: 'Pending for Verify', value: 'Pending for Verify' },
+        { label: 'Verified', value: 'Verified' },
+        { label: 'Rejected', value: 'Rejected' }
+      ]
+    },
+    {
+      id: 'category',
+      label: 'Category',
+      type: 'select',
+      options: [
+        { label: 'All Categories', value: 'All' },
+        { label: 'Renewal', value: 'RENEWAL' },
+        { label: 'Check List', value: 'CHECK LIST' }
+      ]
+    },
+    {
+      id: 'departments',
+      label: 'Departments',
+      type: 'select',
+      multiple: true,
+      options: DEPARTMENTS.map(d => ({ label: d, value: d }))
+    },
+    {
+      id: 'searchBy',
+      label: 'Search By',
+      type: 'select',
+      options: SEARCH_BY_OPTIONS.map(o => ({ label: o.label, value: o.key }))
+    },
+    {
+      id: 'searchByValue',
+      label: 'Search Value',
+      type: 'text',
+      placeholder: 'Search value...'
+    }
+  ]);
+
   const [openSections, setOpenSections] = useState({ status:true, category:true, department:false, searchBy:false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
 
@@ -96,7 +143,7 @@ export default function CheckListVerify() {
         size,
         status: filters.status !== 'All' ? filters.status : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
-        department: filters.departments.length > 0 ? filters.departments[0] : undefined,
+        department: (filters.departments || []).length > 0 ? filters.departments[0] : undefined,
         searchValue: filters.searchByValue || searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined
       };
@@ -115,20 +162,19 @@ export default function CheckListVerify() {
   }, [fetchChecklists]);
 
   const setFilter = (key, val) => {
-    setFilters((p) => ({ ...p, [key]:val }));
+    dispatch(setFilters({ [key]: val }));
     setPage(0);
   };
   
   const toggleDept = (dept) => {
-    setFilters((p) => {
-      const arr = p.departments;
-      return { ...p, departments: arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept] };
-    });
+    const arr = filters.departments || [];
+    const newDepts = arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept];
+    dispatch(setFilters({ departments: newDepts }));
     setPage(0);
   };
 
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
+  const handleResetFilters = () => {
+    dispatch(resetFilters());
     setPage(0);
   };
 
@@ -171,7 +217,10 @@ export default function CheckListVerify() {
     exportToExcel(exportData, 'Checklist_Verify');
   };
 
-  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.searchBy && filters.searchByValue ? 1 : 0);
+  const activeCount = (filters.status && filters.status !== 'All' ? 1 : 0) + 
+                    (filters.category && filters.category !== 'All' ? 1 : 0) + 
+                    (filters.departments?.length || 0) + 
+                    (filters.searchByValue ? 1 : 0);
 
   return (
     <MainCard
@@ -192,11 +241,11 @@ export default function CheckListVerify() {
       {activeCount > 0 && (
         <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
           <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
-          {filters.departments.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
-          {filters.searchBy && filters.searchByValue && <Chip label={`${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}: ${filters.searchByValue}`} size="small" color="warning" onDelete={() => { setFilter('searchBy',''); setFilter('searchByValue',''); }}/>}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+          {filters.status && filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
+          {filters.category && filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
+          {filters.departments?.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
+          {filters.searchByValue && <Chip label={`${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label || 'Search'}: ${filters.searchByValue}`} size="small" color="warning" onDelete={() => { setFilter('searchBy','All'); setFilter('searchByValue',''); }}/>}
+          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
         </Box>
       )}
 
@@ -254,36 +303,36 @@ export default function CheckListVerify() {
         </Box>
         <Box sx={{ overflowY:'auto', flex:1 }}>
           <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+            <FormControl><RadioGroup value={filters.status || 'All'} onChange={(e) => setFilter('status', e.target.value)}>
               {['All','Pending for Verify','Verified','Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
           <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
-            <FormControl><RadioGroup value={filters.category} onChange={(e) => setFilter('category', e.target.value)}>
+            <FormControl><RadioGroup value={filters.category || 'All'} onChange={(e) => setFilter('category', e.target.value)}>
               {['All','RENEWAL','CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
           <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
             <Box sx={{ maxHeight:250, overflowY:'auto' }}>
-              {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
+              {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={(filters.departments || []).includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
             </Box>
           </FilterSection>
           <Divider/>
           <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
             <FormControl fullWidth>
-              <RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
+              <RadioGroup value={filters.searchBy || 'All'} onChange={(e) => setFilter('searchBy', e.target.value)}>
                 {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small"/>} label={<Typography variant="body2">{opt.label}</Typography>}/>)}
               </RadioGroup>
             </FormControl>
             {filters.searchBy && (
-              <TextField size="small" fullWidth placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}...`} value={filters.searchByValue} onChange={(e) => setFilter('searchByValue', e.target.value)} sx={{ mt:1 }}/>
+              <TextField size="small" fullWidth placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}...`} value={filters.searchByValue || ''} onChange={(e) => setFilter('searchByValue', e.target.value)} sx={{ mt:1 }}/>
             )}
           </FilterSection>
         </Box>
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
+          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
           <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
         </Box>
       </Drawer>
