@@ -197,6 +197,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   const [seqNo, setSeqNo] = useState('');
   const [category, setCategory] = useState('');
+  const [effectiveFrom, setEffectiveFrom] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [reminderDays, setReminderDays] = useState('');
   const [reminderDate, setReminderDate] = useState('');
@@ -208,8 +209,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [scannedFiles, setScannedFiles] = useState([]);
   const [stockLink, setStockLink] = useState('');
   const [photoRequired, setPhotoRequired] = useState('');
-  const [dualCheck, setDualCheck] = useState('');
-  const [carryForward, setCarryForward] = useState('');
+  const [itemCode, setItemCode] = useState('');
+  const [qty, setQty] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const speechRef = useRef(null);
@@ -276,27 +277,29 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       if (initialData) {
         setSeqNo(initialData.seqNo || '');
         setCategory(initialData.category || '');
-        setExpiryDate(initialData.expiryDate || '');
+        setEffectiveFrom(initialData.effectiveFrom ? initialData.effectiveFrom.split('T')[0] : '');
+        setExpiryDate(initialData.expiryDate ? initialData.expiryDate.split('T')[0] : '');
         setReminderDays(initialData.reminderDays || '');
-        setReminderDate(initialData.reminderDate || '');
+        setReminderDate(initialData.reminderDate ? initialData.reminderDate.split('T')[0] : '');
         setRenewalPoint(initialData.checkingPoint || '');
         setFrequency(initialData.frequency || '');
         setDescription(initialData.description || '');
         setDepartment((initialData.departments || []).map(d => d.departmentName));
         setStockLink(initialData.stockLink || '');
         setPhotoRequired(initialData.photoRequired || '');
-        setDualCheck(initialData.dualCheck || '');
-        setCarryForward(initialData.carryForward || '');
+        setItemCode(initialData.itemCode || '');
+        setQty(initialData.qty || '');
         setUploadedFiles([]);
         setScannedFiles([]);
       } else {
-        setSeqNo(''); setCategory(''); setExpiryDate(''); setReminderDays('');
+        setSeqNo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
         setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
         setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-        setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
+        setStockLink(''); setPhotoRequired(''); setItemCode(''); setQty('');
+        // Fetch next sequence from backend, fallback to timestamp-based
         axios.get('/api/qms/checklist/next-sequence')
           .then(res => setSeqNo(String(res.data.nextSeqNo).padStart(3, '0')))
-          .catch(() => {});
+          .catch(() => setSeqNo(String(Date.now()).slice(-4)));
       }
     }
   }, [open, initialData]);
@@ -308,19 +311,19 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     if (e.target.files?.length) setScannedFiles(prev => [...prev, ...Array.from(e.target.files)]);
   };
   const handleClear = () => {
-    setSeqNo(''); setCategory(''); setExpiryDate(''); setReminderDays('');
+    setSeqNo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
     setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-    setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
+    setStockLink(''); setPhotoRequired(''); setItemCode(''); setQty('');
   };
   const handleSave = () => {
-    if (!category || !frequency || !renewalPoint || !description || department.length === 0) {
-      alert('Please fill in all required fields'); return;
+    if (!category || !frequency || !renewalPoint || !description) {
+      alert('Please fill in all required fields: Category, Frequency, Renewal Point, Description'); return;
     }
     if (onSave) onSave({
-      seqNo, category, expiryDate, reminderDays, reminderDate,
+      seqNo, category, effectiveFrom, expiryDate, reminderDays, reminderDate,
       checkingPoint: renewalPoint, frequency, description, department,
-      stockLink, photoRequired, dualCheck, carryForward,
+      stockLink, photoRequired, itemCode, qty,
       uploadedFiles: uploadedFiles.map(f => f.name),
       scannedFiles: scannedFiles.map(f => f.name)
     });
@@ -448,7 +451,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Box sx={{ pr: 1 }}>
                 <LabelInput label="Sequence No" required>
-                  <TextField fullWidth size="small" value={seqNo} InputProps={{ readOnly: true }} sx={darkStyles.input} />
+                  <TextField fullWidth size="small" value={seqNo || 'Loading...'} InputProps={{ readOnly: true }}
+                    sx={{ ...darkStyles.input, '& .MuiOutlinedInput-root': { ...darkStyles.input['& .MuiOutlinedInput-root'], bgcolor: isDark ? '#1c2128' : '#f0f4f8' } }} />
                 </LabelInput>
                 <LabelInput label="Category" required>
                   <Select fullWidth size="small" value={category} onChange={e => setCategory(e.target.value)} displayEmpty sx={darkStyles.input}>
@@ -465,6 +469,21 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     ))}
                   </Select>
                 </LabelInput>
+                <LabelInput label="Department">
+                  <Select
+                    multiple fullWidth size="small" value={department}
+                    onChange={e => setDepartment(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                    renderValue={sel => sel.length === 0 ? <em>-Select departments-</em> : sel.join(', ')}
+                    displayEmpty sx={darkStyles.input}
+                  >
+                    {DEPARTMENTS.map(dept => (
+                      <MenuItem key={dept} value={dept}><Checkbox checked={department.includes(dept)} size="small" /><ListItemText primary={dept} /></MenuItem>
+                    ))}
+                  </Select>
+                </LabelInput>
+                <LabelInput label="Effective From">
+                  <TextField fullWidth size="small" type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} sx={darkStyles.input} />
+                </LabelInput>
                 <LabelInput label="Expiry Date">
                   <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} sx={darkStyles.input} />
                 </LabelInput>
@@ -477,10 +496,30 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 <LabelInput label="Renewal Point" required>
                   <TextField fullWidth size="small" value={renewalPoint} onChange={e => setRenewalPoint(e.target.value)} sx={darkStyles.input} />
                 </LabelInput>
+                <LabelInput label="Photo Required">
+                  <Select fullWidth size="small" value={photoRequired} onChange={e => setPhotoRequired(e.target.value)} displayEmpty sx={darkStyles.input}>
+                    <MenuItem value=""><em>-Select-</em></MenuItem>
+                    <MenuItem value="YES">YES</MenuItem>
+                    <MenuItem value="NO">NO</MenuItem>
+                  </Select>
+                </LabelInput>
+                <LabelInput label="Stock Link">
+                  <Select fullWidth size="small" value={stockLink} onChange={e => setStockLink(e.target.value)} displayEmpty sx={darkStyles.input}>
+                    <MenuItem value=""><em>-Select-</em></MenuItem>
+                    <MenuItem value="YES">YES</MenuItem>
+                    <MenuItem value="NO">NO</MenuItem>
+                  </Select>
+                </LabelInput>
+                <LabelInput label="Item Code">
+                  <TextField fullWidth size="small" value={itemCode} onChange={e => setItemCode(e.target.value)} sx={darkStyles.input} />
+                </LabelInput>
+                <LabelInput label="Qty">
+                  <TextField fullWidth size="small" value={qty} onChange={e => setQty(e.target.value)} sx={darkStyles.input} />
+                </LabelInput>
                 <LabelInput label="Descriptions/SOP" required>
                   <Box sx={{ position: 'relative' }}>
                     <TextField
-                      fullWidth size="small" multiline minRows={6}
+                      fullWidth size="small" multiline minRows={5}
                       value={isListening && interimText ? description + ' ' + interimText : description}
                       onChange={e => setDescription(e.target.value)}
                       placeholder="Standard Operating Procedure... (or use mic 🎤)"
@@ -499,21 +538,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     </IconButton>
                   </Box>
                 </LabelInput>
-
-                <Box sx={{ display: 'none' }}>
-                  <LabelInput label="Department" required>
-                    <Select
-                      multiple fullWidth size="small" value={department}
-                      onChange={e => setDepartment(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                      renderValue={sel => sel.length === 0 ? <em>-Select-</em> : sel.join(', ')}
-                      sx={darkStyles.input}
-                    >
-                      {DEPARTMENTS.map(dept => (
-                        <MenuItem key={dept} value={dept}><Checkbox checked={department.includes(dept)} size="small" /><ListItemText primary={dept} /></MenuItem>
-                      ))}
-                    </Select>
-                  </LabelInput>
-                </Box>
               </Box>
             </Box>
 

@@ -212,13 +212,33 @@ export default function MasterCheckList() {
 
   const handleSaveData = async (data) => {
     try {
-      await axios.post('/api/qms/checklist', data, {
-        params: { departments: (data.department || []).join(',') }
-      });
+      // Build the payload matching the backend MasterChecklist model fields exactly
+      const payload = {
+        seqNo: data.seqNo,
+        checkingPoint: data.checkingPoint,
+        description: data.description,
+        category: data.category,
+        frequency: data.frequency,
+        effectiveFrom: data.effectiveFrom || null,
+        expiryDate: data.expiryDate || null,
+        reminderDays: data.reminderDays ? parseInt(data.reminderDays) : null,
+        reminderDate: data.reminderDate || null,
+        stockLink: data.stockLink || null,
+        photoRequired: data.photoRequired || null,
+        itemCode: data.itemCode || null,
+        qty: data.qty || null,
+      };
+
+      // Build URLSearchParams so departments are sent as repeated params: ?departments=A&departments=B
+      const params = new URLSearchParams();
+      (data.department || []).forEach(d => params.append('departments', d));
+
+      await axios.post(`/api/qms/checklist?${params.toString()}`, payload);
       fetchChecklists();
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to save checklist:', error);
+      alert('Failed to save. Please check all fields and try again.');
     }
   };
   const handleEditClick = () => { if (!selectedRowId) { alert('Please select a row first!'); return; } setDialogOpen(true); };
