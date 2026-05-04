@@ -25,7 +25,9 @@ import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
 import MainCard from 'ui-component/cards/MainCard';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilters, resetFilters } from 'store/slices/search';
+import useSearchFilter from 'hooks/useSearchFilter';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
@@ -80,13 +82,61 @@ export default function CloseCheckListRenewal() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
-
-  const [selectedRowId, setSelectedRowId] = useState(null);
+  const dispatch = useDispatch();
   const searchQuery = useSelector((state) => state.search.query);
+  const filters = useSelector((state) => state.search.filters);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [selectedRowId, setSelectedRowId] = useState(null);
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
+
+  // Register filters for the top search bar
+  useSearchFilter([
+    {
+      id: 'taskType',
+      label: 'Task Type',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Mine', value: 'Mine' },
+        { label: 'Team', value: 'Team' },
+        { label: 'Company', value: 'Company' }
+      ]
+    },
+    {
+      id: 'fromDate',
+      label: 'From Date',
+      type: 'date'
+    },
+    {
+      id: 'toDate',
+      label: 'To Date',
+      type: 'date'
+    },
+    {
+      id: 'considerDate',
+      label: 'Consider Date',
+      type: 'select',
+      options: [
+        { label: 'All', value: 'All' },
+        { label: 'Yes', value: 'Yes' },
+        { label: 'No', value: 'No' }
+      ]
+    },
+    {
+      id: 'statuses',
+      label: 'Statuses',
+      type: 'select',
+      multiple: true,
+      options: STATUS_OPTIONS.map(s => ({ label: s, value: s }))
+    },
+    {
+      id: 'searchBy',
+      label: 'Search By',
+      type: 'select',
+      options: SEARCH_BY_OPTIONS.map(o => ({ label: o.label, value: o.key }))
+    }
+  ]);
 
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
@@ -94,7 +144,7 @@ export default function CloseCheckListRenewal() {
       const params = {
         page,
         size,
-        status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
+        status: (filters.statuses || []).length > 0 ? filters.statuses[0] : undefined,
         fromDate: filters.fromDate || undefined,
         toDate: filters.toDate || undefined,
         searchValue: searchQuery || undefined,
@@ -115,20 +165,19 @@ export default function CloseCheckListRenewal() {
   }, [fetchAssignments]);
 
   const setFilter = (key, val) => {
-    setFilters((p) => ({ ...p, [key]: val }));
+    dispatch(setFilters({ [key]: val }));
     setPage(0);
   };
   
   const toggleStatus = (status) => {
-    setFilters((p) => {
-      const arr = p.statuses || [];
-      return { ...p, statuses: arr.includes(status) ? arr.filter((s) => s !== status) : [...arr, status] };
-    });
+    const arr = filters.statuses || [];
+    const newStatuses = arr.includes(status) ? arr.filter((s) => s !== status) : [...arr, status];
+    dispatch(setFilters({ statuses: newStatuses }));
     setPage(0);
   };
 
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
+  const handleResetFilters = () => {
+    dispatch(resetFilters());
     setPage(0);
   };
 
@@ -171,7 +220,12 @@ export default function CloseCheckListRenewal() {
     exportToExcel(exportData, 'Close_Checklist');
   };
 
-  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
+  const activeCount = (filters.taskType && filters.taskType !== 'All' ? 1 : 0) + 
+                    (filters.fromDate ? 1 : 0) + 
+                    (filters.toDate ? 1 : 0) + 
+                    (filters.considerDate && filters.considerDate !== 'No' ? 1 : 0) + 
+                    (filters.statuses?.length || 0) +
+                    (filters.searchBy && filters.searchBy !== 'All' ? 1 : 0);
 
   return (
     <MainCard
@@ -191,12 +245,13 @@ export default function CloseCheckListRenewal() {
       {activeCount > 0 && (
         <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
           <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.taskType !== 'All' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType','All')}/>}
+          {filters.taskType && filters.taskType !== 'All' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType','All')}/>}
           {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate','')}/>}
           {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate','')}/>}
-          {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','All')}/>}
-          {filters.statuses.map((s) => <Chip key={s} label={`Status: ${s}`} size="small" color="warning" onDelete={() => toggleStatus(s)}/>)}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+          {filters.considerDate && filters.considerDate !== 'No' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','No')}/>}
+          {filters.statuses?.map((s) => <Chip key={s} label={`Status: ${s}`} size="small" color="warning" onDelete={() => toggleStatus(s)}/>)}
+          {filters.searchBy && filters.searchBy !== 'All' && <Chip label={`Search By: ${filters.searchBy}`} size="small" color="info" onDelete={() => setFilter('searchBy','All')}/>}
+          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
         </Box>
       )}
 
@@ -266,23 +321,23 @@ export default function CloseCheckListRenewal() {
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
             <Box sx={{ mb:1.5 }}>
               <Typography variant="caption" sx={{ fontWeight:600, mb:0.5, display:'block' }}>From</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink:true }}/>
+              <TextField size="small" type="date" fullWidth value={filters.fromDate || ''} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink:true }}/>
             </Box>
             <Box>
               <Typography variant="caption" sx={{ fontWeight:600, mb:0.5, display:'block' }}>To</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink:true }}/>
+              <TextField size="small" type="date" fullWidth value={filters.toDate || ''} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink:true }}/>
             </Box>
           </FilterSection>
           <Divider/>
           <FilterSection title="Consider Date?" open={openSections.considerDate} onToggle={() => toggleSection('considerDate')}>
-            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => setFilter('considerDate', e.target.value)}>
+            <FormControl><RadioGroup value={filters.considerDate || 'All'} onChange={(e) => setFilter('considerDate', e.target.value)}>
               {['All','Yes','No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
           <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
             <Box>
-              {STATUS_OPTIONS.map((s) => <FormControlLabel key={s} sx={{ display:'flex',ml:0,mr:0,py:0.2 }} control={<Checkbox size="small" checked={filters.statuses.includes(s)} onChange={() => toggleStatus(s)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{s}</Typography>}/>)}
+              {(STATUS_OPTIONS || []).map((s) => <FormControlLabel key={s} sx={{ display:'flex',ml:0,mr:0,py:0.2 }} control={<Checkbox size="small" checked={(filters.statuses || []).includes(s)} onChange={() => toggleStatus(s)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{s}</Typography>}/>)}
             </Box>
           </FilterSection>
           <Divider/>
@@ -293,7 +348,7 @@ export default function CloseCheckListRenewal() {
           </FilterSection>
         </Box>
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
+          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
           <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
         </Box>
       </Drawer>
