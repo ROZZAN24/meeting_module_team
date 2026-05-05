@@ -56,12 +56,26 @@ const UserOverview = () => {
   const [showPassword, setShowPassword] = useState(false);
   const query = useSelector((state) => state.search.query);
 
+  const getErrorMessage = (err) => {
+    if (typeof err === 'string') return err;
+    return err?.message || err?.error || err?.detail || JSON.stringify(err) || 'An unexpected error occurred';
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await axios.get('/api/users/all');
       setUsers(response.data);
     } catch (err) {
       console.error('Failed to fetch users:', err);
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: getErrorMessage(err) || 'Failed to fetch users',
+          variant: 'alert',
+          severity: 'error',
+          close: false
+        })
+      );
     }
   };
 
@@ -91,13 +105,22 @@ const UserOverview = () => {
             open: true,
             message: 'User deleted successfully',
             variant: 'alert',
-            alert: { color: 'success' },
+            severity: 'success',
             close: false
           })
         );
         fetchUsers();
       } catch (err) {
         console.error('Delete failed:', err);
+        dispatch(
+          openSnackbar({
+            open: true,
+            message: getErrorMessage(err) || 'Delete failed',
+            variant: 'alert',
+            severity: 'error',
+            close: false
+          })
+        );
       }
     }
   };
@@ -201,16 +224,26 @@ const UserOverview = () => {
                   open: true,
                   message: 'User created successfully',
                   variant: 'alert',
-                  alert: { color: 'success' },
+                  severity: 'success',
                   close: false
                 })
               );
               handleClose();
               fetchUsers();
             } catch (err) {
-              console.error(err);
+              console.error('Create user failed:', err);
               setStatus({ success: false });
-              setErrors({ submit: err.response?.data || err.message || 'Creation failed' });
+              const errorMessage = getErrorMessage(err) || 'Failed to create user';
+              setErrors({ submit: errorMessage });
+              dispatch(
+                openSnackbar({
+                  open: true,
+                  message: errorMessage,
+                  variant: 'alert',
+                  severity: 'error',
+                  close: false
+                })
+              );
               setSubmitting(false);
             }
           }}

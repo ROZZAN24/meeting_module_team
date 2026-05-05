@@ -30,6 +30,9 @@ import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
+import { IconDeviceFloppy, IconEdit, IconX } from '@tabler/icons-react';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 
 // ==============================|| PREFERENCE MASTER ||============================== //
 
@@ -37,6 +40,13 @@ const PreferenceMaster = () => {
   const dispatch = useDispatch();
 
   const [preferences, setPreferences] = useState([]);
+  const [editRow, setEditRow] = useState(null);
+
+  const getErrorMessage = (err) => {
+    // axios interceptor rejects with error.response.data directly
+    if (typeof err === 'string') return err;
+    return err?.message || err?.error || err?.detail || JSON.stringify(err) || 'An unexpected error occurred';
+  };
 
   const fetchPreferences = async () => {
     try {
@@ -44,6 +54,15 @@ const PreferenceMaster = () => {
       setPreferences(response.data);
     } catch (err) {
       console.error('Failed to fetch preferences:', err);
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: getErrorMessage(err) || 'Failed to fetch preferences',
+          variant: 'alert',
+          severity: 'error',
+          close: false
+        })
+      );
     }
   };
 
@@ -56,46 +75,68 @@ const PreferenceMaster = () => {
       {/* Top Form Section */}
       <Box sx={{ mb: 4 }}>
         <Formik
+          enableReinitialize
           initialValues={{
-            name: '',
-            value: '',
-            comments: '',
-            type: '',
+            name: editRow ? editRow.prefName : '',
+            value: editRow ? editRow.prefValue : '',
+            comments: editRow?.comments || '',
+            type: editRow ? editRow.prefType : '',
             submit: null
           }}
           validationSchema={Yup.object().shape({
-            name: Yup.string().max(255).required('Name is required'),
-            value: Yup.string().max(255).required('Value is required'),
-            comments: Yup.string().max(500),
-            type: Yup.string().max(100).required('Type is required')
+            name: Yup.string().max(100, 'Must be 100 characters or less').required('Name is required'),
+            value: Yup.string().max(100, 'Must be 100 characters or less').required('Value is required'),
+            comments: Yup.string().max(500, 'Must be 500 characters or less'),
+            type: Yup.string().max(100, 'Must be 100 characters or less').required('Type is required')
           })}
           onSubmit={async (values, { setErrors, setStatus, setSubmitting, resetForm }) => {
             try {
-              await axios.post('/api/preferences/create', {
-                prefName: values.name,
-                prefValue: values.value,
-                comments: values.comments,
-                prefType: values.type,
-                createdBy: 'System' // Mocked user
-              });
+              if (editRow) {
+                await axios.put(`/api/preferences/update/${editRow.rowId}`, {
+                  prefName: values.name,
+                  prefValue: values.value,
+                  comments: values.comments,
+                  prefType: values.type,
+                  updatedBy: 'System'
+                });
+              } else {
+                await axios.post('/api/preferences/create', {
+                  prefName: values.name,
+                  prefValue: values.value,
+                  comments: values.comments,
+                  prefType: values.type,
+                  createdBy: 'System'
+                });
+              }
 
               dispatch(
                 openSnackbar({
                   open: true,
-                  message: 'Preference saved successfully',
+                  message: editRow ? 'Preference updated successfully' : 'Preference saved successfully',
                   variant: 'alert',
-                  alert: { color: 'success' },
+                  severity: 'success',
                   close: false
                 })
               );
 
+              setEditRow(null);
               resetForm();
               setStatus({ success: true });
               fetchPreferences();
             } catch (err) {
-              console.error(err);
+              console.error('Save preference error:', err);
               setStatus({ success: false });
-              setErrors({ submit: err.response?.data?.message || err.message || 'Save failed' });
+              const errorMessage = getErrorMessage(err) || 'Failed to save preference';
+              setErrors({ submit: errorMessage });
+              dispatch(
+                openSnackbar({
+                  open: true,
+                  message: errorMessage,
+                  variant: 'alert',
+                  severity: 'error',
+                  close: false
+                })
+              );
             } finally {
               setSubmitting(false);
             }
@@ -116,6 +157,7 @@ const PreferenceMaster = () => {
                       onBlur={handleBlur}
                       onChange={handleChange}
                       label="NAME"
+                      inputProps={{ maxLength: 100 }}
                     />
                     {touched.name && errors.name && (
                       <FormHelperText error id="helper-text-pref-name">
@@ -137,6 +179,7 @@ const PreferenceMaster = () => {
                       onBlur={handleBlur}
                       onChange={handleChange}
                       label="Value"
+                      inputProps={{ maxLength: 100 }}
                     />
                     {touched.value && errors.value && (
                       <FormHelperText error id="helper-text-pref-value">
@@ -158,6 +201,7 @@ const PreferenceMaster = () => {
                       onBlur={handleBlur}
                       onChange={handleChange}
                       label="Comments"
+                      inputProps={{ maxLength: 500 }}
                     />
                     {touched.comments && errors.comments && (
                       <FormHelperText error id="helper-text-pref-comments">
@@ -179,6 +223,7 @@ const PreferenceMaster = () => {
                       onBlur={handleBlur}
                       onChange={handleChange}
                       label="Type"
+                      inputProps={{ maxLength: 100 }}
                     />
                     {touched.type && errors.type && (
                       <FormHelperText error id="helper-text-pref-type">
@@ -189,7 +234,7 @@ const PreferenceMaster = () => {
                 </Grid>
 
                 {/* SAVE Button */}
-                <Grid item xs={12} sm={12} md={2} sx={{ mt: { md: 1 } }}>
+                <Grid item xs={12} sm={12} md={2} sx={{ mt: { md: 1 }, display: 'flex', gap: 1 }}>
                   <AnimateButton>
                     <Button
                       disableElevation
@@ -197,11 +242,27 @@ const PreferenceMaster = () => {
                       type="submit"
                       variant="contained"
                       color="primary"
+                      startIcon={<IconDeviceFloppy size="20px" />}
                       fullWidth
                     >
-                      SAVE
+                      {editRow ? 'UPDATE' : 'SAVE'}
                     </Button>
                   </AnimateButton>
+                  {editRow && (
+                    <AnimateButton>
+                      <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={() => {
+                          setEditRow(null);
+                          resetForm();
+                        }}
+                        sx={{ minWidth: '40px', px: 1, height: '100%' }}
+                      >
+                        <IconX size="20px" />
+                      </Button>
+                    </AnimateButton>
+                  )}
                 </Grid>
                 {errors.submit && (
                   <Grid item xs={12}>
@@ -217,9 +278,9 @@ const PreferenceMaster = () => {
       <Divider sx={{ mb: 3 }} />
 
       {/* Bottom Table Section */}
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-        <Table sx={{ minWidth: 650 }} aria-label="preference table">
-          <TableHead sx={{ bgcolor: 'primary.light' }}>
+      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider', maxHeight: 'calc(100vh - 420px)' }}>
+        <Table stickyHeader sx={{ minWidth: 650 }} aria-label="preference table">
+          <TableHead sx={{ '& th': { bgcolor: 'primary.light' } }}>
             <TableRow>
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>#</TableCell>
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Name</TableCell>
@@ -228,6 +289,7 @@ const PreferenceMaster = () => {
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Type</TableCell>
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Updated By</TableCell>
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Updated Date</TableCell>
+              <TableCell align="center" sx={{ color: 'primary.main', fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -241,11 +303,22 @@ const PreferenceMaster = () => {
                   <TableCell>{row.prefType}</TableCell>
                   <TableCell>{row.updatedBy || row.createdBy}</TableCell>
                   <TableCell>{row.updatedDate || row.createdDate ? new Date(row.updatedDate || row.createdDate).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Edit" placement="top">
+                      <IconButton
+                        color="primary"
+                        onClick={() => setEditRow(row)}
+                        size="small"
+                      >
+                        <IconEdit stroke={1.5} size="1.3rem" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography variant="subtitle1" sx={{ py: 3 }}>
                     No preferences found
                   </Typography>

@@ -29,6 +29,7 @@ import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, I
 import { exportToExcel } from 'utils/excelExport';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilters, resetFilters } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
 import useSearchFilter from 'hooks/useSearchFilter';
 
 const columns = [
@@ -152,6 +153,15 @@ export default function CheckListVerify() {
       setTotalElements(response.data.totalElements);
     } catch (error) {
       console.error('Failed to fetch checklists for verification:', error);
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Failed to fetch checklists for verification',
+          variant: 'alert',
+          severity: 'error',
+          close: false
+        })
+      );
     } finally {
       setLoading(false);
     }
@@ -190,9 +200,27 @@ export default function CheckListVerify() {
         verifiedBy: 'Current User',
         remarks: status === 'Rejected' ? 'Rejected by verifier' : 'Verified'
       });
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: `Checklist ${status.toLowerCase()} successfully`,
+          variant: 'alert',
+          severity: 'success',
+          close: false
+        })
+      );
       fetchChecklists();
     } catch (error) {
       console.error('Verification failed:', error);
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: error.response?.data?.message || error.message || 'Verification failed',
+          variant: 'alert',
+          severity: 'error',
+          close: false
+        })
+      );
     }
   };
 

@@ -7,55 +7,13 @@ import Typography from '@mui/material/Typography';
 
 export default function Footer() {
   return (
-    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', pt: 3, mt: 'auto' }}>
-      <Typography variant="caption">
+    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center', pt: 3, mt: 'auto' }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
         &copy; All rights reserved{' '}
-        <Typography component={Link} href="https://codedthemes.com" underline="hover" target="_blank" sx={{ color: 'secondary.main' }}>
-          CodedThemes
+        <Typography component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>
+          Nutech-Autonoma
         </Typography>
       </Typography>
-      <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link
-          component={RouterLink}
-          to="https://mui.com/store/license/"
-          underline="hover"
-          target="_blank"
-          variant="caption"
-          color="text.primary"
-        >
-          License
-        </Link>
-        <Link
-          component={RouterLink}
-          to="https://codedthemes.com/hire-us/"
-          underline="hover"
-          target="_blank"
-          variant="caption"
-          color="text.primary"
-        >
-          Hire us
-        </Link>
-        <Link
-          component={RouterLink}
-          to="https://mui.com/store/terms/"
-          underline="hover"
-          target="_blank"
-          variant="caption"
-          color="text.primary"
-        >
-          Terms
-        </Link>
-        <Link
-          component={RouterLink}
-          to="https://links.codedthemes.com/dAAOP"
-          underline="hover"
-          target="_blank"
-          variant="caption"
-          color="text.primary"
-        >
-          Figma Design System
-        </Link>
-      </Stack>
     </Stack>
   );
 }
