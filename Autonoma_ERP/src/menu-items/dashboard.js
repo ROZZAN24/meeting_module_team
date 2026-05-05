@@ -13,7 +13,7 @@ const icons = {
 
 const dashboard = {
   id: 'dashboard',
-  title: 'dashboard',
+  title: 'Dashboard',
   icon: icons.IconDashboard,
   type: 'group',
   children: [

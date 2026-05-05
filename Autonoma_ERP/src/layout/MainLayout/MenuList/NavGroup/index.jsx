@@ -209,10 +209,10 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
           </Activity>
         </>
       ) : (
-        <List>
-          <Tooltip 
-            title={currentItem.caption ? <FormattedMessage id={currentItem.caption} defaultMessage={currentItem.caption} /> : ''} 
-            placement="top"
+        <List sx={{ display: 'flex', alignItems: 'center' }}>
+          <Tooltip
+            title={<FormattedMessage id={currentItem.title} defaultMessage={currentItem.title} />}
+            placement="bottom"
             arrow
           >
             <ListItemButton
@@ -221,9 +221,11 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                 borderRadius: `${borderRadius}px`,
                 p: 1,
                 my: 0.5,
-                mr: 1,
+                mr: 0.5,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: 0,
                 backgroundColor: 'inherit'
               }}
               onMouseEnter={handleClick}
@@ -232,22 +234,27 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
               aria-describedby={popperId}
               className={anchorEl ? 'Mui-selected' : ''}
             >
-              <Activity mode={itemIcon ? 'visible' : 'hidden'}>
-                <ListItemIcon sx={{ minWidth: 36 }}>
-                  {currentItem.id === lastItemId ? <IconMinusVertical stroke={1.5} size="20px" /> : itemIcon}
-                </ListItemIcon>
-              </Activity>
-              <ListItemText
-                sx={{ mr: 1, mb: 0.25 }}
-                primary={
-                  <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                    {currentItem.id === lastItemId ? <FormattedMessage id="more-items" /> : <FormattedMessage id={currentItem.title} />}
-                  </Typography>
-                }
-              />
-              {openMini ? <IconChevronDown stroke={1.5} size="16px" /> : <IconChevronRight stroke={1.5} size="16px" />}
+              {/* Icon and Sub-icons container */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Activity mode={itemIcon ? 'visible' : 'hidden'}>
+                  <ListItemIcon sx={{ minWidth: 0, color: isSelected ? 'primary.main' : 'inherit' }}>
+                    {currentItem.id === lastItemId ? <IconMinusVertical stroke={1.5} size="20px" /> : itemIcon}
+                  </ListItemIcon>
+                </Activity>
 
-              <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+                {/* Sub-menu icons (max 5) */}
+                {currentItem.children && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, opacity: 0.6 }}>
+                    {currentItem.children
+                      .filter(child => child.icon)
+                      .slice(0, 5)
+                      .map((child) => {
+                        const ChildIcon = child.icon;
+                        return <ChildIcon key={child.id} stroke={1.5} size="14px" />;
+                      })}
+                  </Box>
+                )}
+              </Box>              <Activity mode={anchorEl ? 'visible' : 'hidden'}>
                 <Popper
                   id={popperId}
                   open={openMini}
@@ -256,13 +263,13 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                   sx={{
                     overflow: 'visible',
                     zIndex: 2001,
-                    minWidth: 180,
+                    minWidth: 220,
                     '&:before': {
                       content: '""',
                       display: 'block',
                       position: 'absolute',
                       top: 5,
-                      left: 32,
+                      left: 20,
                       width: 12,
                       height: 12,
                       transform: 'translateY(-50%) rotate(45deg)',
@@ -281,33 +288,46 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                       <Paper
                         sx={{
                           mt: 0.5,
-                          py: 1.25,
+                          py: 1,
                           boxShadow: theme.shadows[8],
-                          backgroundImage: 'none'
+                          backgroundImage: 'none',
+                          minWidth: 220
                         }}
                       >
                         <ClickAwayListener onClickAway={handleClose}>
                           <Box
                             sx={{
-                              minWidth: 200,
                               maxHeight: 'calc(100vh - 170px)',
                               overflowY: 'auto',
                               '&::-webkit-scrollbar': {
                                 opacity: 0,
                                 width: 4,
-                                '&:hover': {
-                                  opacity: 0.7
-                                }
+                                '&:hover': { opacity: 0.7 }
                               },
-                              '&::-webkit-scrollbar-track': {
-                                bgcolor: 'transparent'
-                              },
-                              '&::-webkit-scrollbar-thumb': {
-                                bgcolor: 'divider',
-                                borderRadius: 4
-                              }
+                              '&::-webkit-scrollbar-track': { bgcolor: 'transparent' },
+                              '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 4 }
                             }}
                           >
+                            {/* Group title header in dropdown */}
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                display: 'block',
+                                px: 2,
+                                pt: 0.5,
+                                pb: 1,
+                                fontWeight: 600,
+                                color: 'text.secondary',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                fontSize: '0.65rem',
+                                borderBottom: '1px solid',
+                                borderColor: 'divider',
+                                mb: 0.5
+                              }}
+                            >
+                              <FormattedMessage id={currentItem.title} defaultMessage={currentItem.title} />
+                            </Typography>
                             {currentItem.id !== lastItemId ? items : moreItems}
                           </Box>
                         </ClickAwayListener>
@@ -318,6 +338,9 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
               </Activity>
             </ListItemButton>
           </Tooltip>
+          {currentItem.id !== lastItemId && (
+            <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', mx: 0.5, borderColor: 'divider' }} />
+          )}
         </List>
       )}
     </>

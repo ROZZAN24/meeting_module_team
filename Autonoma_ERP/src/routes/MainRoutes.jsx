@@ -205,6 +205,10 @@ const MainRoutes = {
       element: <AdminUserOverview />
     },
     {
+      path: '/admin/user-credentials',
+      element: <AdminUserOverview />
+    },
+    {
       path: '/widget/statistics',
       element: <WidgetStatistics />
     },

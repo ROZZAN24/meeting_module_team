@@ -1,7 +1,8 @@
-import { IconDashboard, IconUsers, IconBriefcase, IconBuildingFactory, IconAward, IconTruckDelivery, IconReceiptTax, IconTool, IconServerCog, IconListCheck, IconReport, IconHelp } from '@tabler/icons-react';
+import { IconDashboard, IconUsers, IconBriefcase, IconBuildingFactory, IconAward, IconTruckDelivery, IconReceiptTax, IconTool, IconServerCog, IconListCheck, IconReport, IconHelp, IconChecks } from '@tabler/icons-react';
 
 const icons = {
   IconDashboard, IconUsers, IconBriefcase, IconBuildingFactory, IconAward, IconTruckDelivery, IconReceiptTax, IconTool, IconServerCog, IconListCheck, IconReport, IconHelp
+  , IconChecks
 };
 
 export const masters = {
@@ -24,7 +25,7 @@ export const hra = {
 
 export const sm = {
   id: 'sm',
-  title: 'S&M',
+  title: 'Sales & Marketing',
   caption: 'Sales & Marketing SM0000',
   type: 'group',
   icon: icons.IconBriefcase,
@@ -33,7 +34,7 @@ export const sm = {
 
 export const pp = {
   id: 'pp',
-  title: 'P&P',
+  title: 'Planning & Purchase',
   caption: 'Planning & Purchase PP0000',
   type: 'group',
   icon: icons.IconBriefcase,
@@ -60,7 +61,7 @@ export const quality = {
 
 export const sl = {
   id: 'sl',
-  title: 'S&L',
+  title: 'Stores & Logistics',
   caption: 'Stores & Logistics SL0000',
   type: 'group',
   icon: icons.IconTruckDelivery,
@@ -69,7 +70,7 @@ export const sl = {
 
 export const fa = {
   id: 'fa',
-  title: 'F&A',
+  title: 'Finance & Accounts',
   caption: 'Finance & Accounts FA0000',
   type: 'group',
   icon: icons.IconReceiptTax,
@@ -78,7 +79,7 @@ export const fa = {
 
 export const dd = {
   id: 'dd',
-  title: 'D&D',
+  title: 'Design & Development',
   caption: 'Design & Development DD0000',
   type: 'group',
   icon: icons.IconTool,
@@ -87,7 +88,7 @@ export const dd = {
 
 export const ms = {
   id: 'ms',
-  title: 'M&S',
+  title: 'Maintenance & Services',
   caption: 'Maintenance & Services MS0000',
   type: 'group',
   icon: icons.IconServerCog,
@@ -96,7 +97,7 @@ export const ms = {
 
 export const qms = {
   id: 'qms',
-  title: 'QMS',
+  title: 'Quality Management Systems',
   caption: 'Quality Management Systems QM0000',
   type: 'group',
   icon: icons.IconListCheck,
@@ -105,6 +106,7 @@ export const qms = {
       id: 'qms-checklist',
       title: 'Check List',
       type: 'collapse',
+      icon: icons.IconChecks,
       children: [
         {
           id: 'master-checklist',

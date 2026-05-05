@@ -13,7 +13,6 @@ import { MenuOrientation } from 'config';
 import menuItem from 'menu-items';
 import useConfig from 'hooks/useConfig';
 
-import { Menu } from 'menu-items/widget';
 import { HORIZONTAL_MAX_ITEM } from 'config';
 import { useGetMenu, useGetMenuMaster } from 'api/menu';
 
@@ -33,23 +32,9 @@ function MenuList() {
   const [selectedID, setSelectedID] = useState('');
   const [menuItems, setMenuItems] = useState({ items: [] });
 
-  let widgetMenu = Menu();
-
   useLayoutEffect(() => {
     // Create a fresh list from the static menu items to avoid mutations
     let currentItems = [...menuItem.items];
-
-    if (menuLoading) {
-      // Insert loading widget at index 1
-      currentItems.splice(1, 0, widgetMenu);
-    } else if (widgetMenu?.id !== undefined) {
-      // Insert loaded widget at index 1
-      // Check if it's already there (to avoid double insertion if static list already has it - though it shouldn't)
-      const hasWidget = currentItems.some((item) => item.id === 'group-widget');
-      if (!hasWidget) {
-        currentItems.splice(1, 0, widgetMenu);
-      }
-    }
 
     setMenuItems({ items: currentItems });
     // eslint-disable-next-line react-hooks/exhaustive-deps

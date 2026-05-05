@@ -12,15 +12,15 @@ const icons = {
 
 const admin = {
   id: 'admin',
-  title: 'admin',
+  title: 'Admin',
   type: 'group',
   icon: icons.IconShieldLock,
   children: [
     {
-      id: 'user-overview',
-      title: 'user-overview',
+      id: 'user-credentials',
+      title: 'user-credentials',
       type: 'item',
-      url: '/admin/user-overview',
+      url: '/admin/user-credentials',
       icon: icons.IconUsers,
       breadcrumbs: true
     }

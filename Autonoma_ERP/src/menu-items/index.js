@@ -5,7 +5,7 @@ import { masters, hra, sm, pp, production, quality, sl, fa, dd, ms, qms, reports
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [admin, dashboard, masters, hra, sm, pp, production, quality, sl, fa, dd, ms, qms, reports, erpSupport]
+  items: [masters, hra, dd, sl, pp, production, quality, sm, fa, ms, qms, reports, admin, dashboard, erpSupport]
 };
 
 export default menuItems;

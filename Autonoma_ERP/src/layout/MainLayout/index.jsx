@@ -17,15 +17,16 @@ import HorizontalBar from './HorizontalBar';
 import MainContentStyled from './MainContentStyled';
 import Customization from '../Customization';
 import Loader from 'ui-component/Loader';
-import Breadcrumbs from 'ui-component/extended/Breadcrumbs';
 
 import { MenuOrientation } from 'config';
 import useConfig from 'hooks/useConfig';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
+import { RibbonProvider, useRibbon } from 'contexts/RibbonContext';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
-export default function MainLayout() {
+// Inner layout — can safely use useRibbon (inside provider)
+function MainLayoutInner() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -34,6 +35,7 @@ export default function MainLayout() {
   } = useConfig();
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened;
+  const { ribbonOpen } = useRibbon();
 
   useEffect(() => {
     handlerDrawerOpen(!miniDrawer);
@@ -63,7 +65,7 @@ export default function MainLayout() {
       {menu}
 
       {/* main content */}
-      <MainContentStyled {...{ borderRadius, menuOrientation, open: drawerOpen }}>
+      <MainContentStyled {...{ borderRadius, menuOrientation, open: drawerOpen, ribbonOpen }}>
         <Container
           maxWidth={false}
           sx={{ px: 0, minHeight: 'calc(100vh - 128px)', display: 'flex', flexDirection: 'column', maxWidth: 'none' }}
@@ -76,5 +78,14 @@ export default function MainLayout() {
       </MainContentStyled>
       <Customization />
     </Box>
+  );
+}
+
+// Outer wrapper provides the ribbon context
+export default function MainLayout() {
+  return (
+    <RibbonProvider>
+      <MainLayoutInner />
+    </RibbonProvider>
   );
 }

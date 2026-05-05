@@ -23,7 +23,7 @@ public class MenuController {
         menu.put("icon", "widget");
 
         List<Map<String, Object>> children = new ArrayList<>();
-        
+
         Map<String, Object> statistics = new HashMap<>();
         statistics.put("id", "statistics");
         statistics.put("title", "statistics");
