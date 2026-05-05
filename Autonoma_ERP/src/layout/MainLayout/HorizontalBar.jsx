@@ -85,7 +85,7 @@ function RibbonChildItem({ item, onClose, isGroup }) {
         }}
       >
         <Box sx={{ mb: !isGroup ? 0.5 : 0, lineHeight: 0 }}>
-          {Icon && <Icon stroke={isGroup ? 1.5 : 1.5} size={isGroup ? "32px" : "20px"} />}
+          {Icon && <Icon stroke={isGroup ? 1.5 : 1.5} size={isGroup ? "38px" : "20px"} />}
         </Box>
         {!isGroup && (
           <Typography sx={{
@@ -172,7 +172,7 @@ function RibbonGroupSection({ group, onClose }) {
           <>
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1, opacity: 0.5 }} />
             {children.map(child => (
-               <RibbonChildItem key={child.id} item={child} onClose={onClose} />
+               <RibbonChildItem key={child.id} item={child} onClose={onClose} isGroup={false} />
             ))}
           </>
         )}

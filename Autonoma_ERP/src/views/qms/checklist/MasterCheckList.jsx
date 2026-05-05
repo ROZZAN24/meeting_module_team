@@ -28,6 +28,7 @@ import axios from 'utils/axios';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilters, resetFilters } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
 import useSearchFilter from 'hooks/useSearchFilter';
 
 import MainCard from 'ui-component/cards/MainCard';
@@ -176,6 +177,15 @@ export default function MasterCheckList() {
       setTotalElements(response.data.totalElements);
     } catch (error) {
       console.error('Failed to fetch checklists:', error);
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Failed to fetch checklists',
+          variant: 'alert',
+          severity: 'error',
+          close: false
+        })
+      );
     } finally {
       setLoading(false);
     }
@@ -234,14 +244,45 @@ export default function MasterCheckList() {
       (data.department || []).forEach(d => params.append('departments', d));
 
       await axios.post(`/api/qms/checklist?${params.toString()}`, payload);
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: data.id ? 'Checklist updated successfully' : 'Checklist created successfully',
+          variant: 'alert',
+          severity: 'success',
+          close: false
+        })
+      );
       fetchChecklists();
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to save checklist:', error);
-      alert('Failed to save. Please check all fields and try again.');
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: error.response?.data?.message || error.message || 'Failed to save checklist',
+          variant: 'alert',
+          severity: 'error',
+          close: false
+        })
+      );
     }
   };
-  const handleEditClick = () => { if (!selectedRowId) { alert('Please select a row first!'); return; } setDialogOpen(true); };
+  const handleEditClick = () => {
+    if (!selectedRowId) {
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Please select a row first!',
+          variant: 'alert',
+          severity: 'warning',
+          close: false
+        })
+      );
+      return;
+    }
+    setDialogOpen(true);
+  };
 
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
 
