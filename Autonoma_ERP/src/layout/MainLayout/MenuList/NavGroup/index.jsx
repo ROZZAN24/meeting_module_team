@@ -184,6 +184,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                   {currentItem.caption && (
                     <Typography
                       gutterBottom
+                      component="span"
                       sx={{
                         display: 'block',
                         fontSize: '0.6875rem',
@@ -210,11 +211,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
         </>
       ) : (
         <List sx={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip
-            title={<FormattedMessage id={currentItem.title} defaultMessage={currentItem.title} />}
-            placement="bottom"
-            arrow
-          >
+          <Tooltip title={<FormattedMessage id={currentItem.title} defaultMessage={currentItem.title} />} placement="bottom" arrow>
             <ListItemButton
               selected={isSelected}
               sx={{
@@ -246,7 +243,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                 {currentItem.children && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, opacity: 0.6 }}>
                     {currentItem.children
-                      .filter(child => child.icon)
+                      .filter((child) => child.icon)
                       .slice(0, 5)
                       .map((child) => {
                         const ChildIcon = child.icon;
@@ -254,7 +251,8 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                       })}
                   </Box>
                 )}
-              </Box>              <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+              </Box>{' '}
+              <Activity mode={anchorEl ? 'visible' : 'hidden'}>
                 <Popper
                   id={popperId}
                   open={openMini}

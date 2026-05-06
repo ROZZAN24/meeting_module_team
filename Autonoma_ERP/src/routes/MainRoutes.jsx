@@ -87,6 +87,9 @@ const AppBlogEdit = Loadable(lazy(() => import('views/application/blog/EditBlog'
 const AppBlogList = Loadable(lazy(() => import('views/application/blog/List')));
 const AppBlogDetails = Loadable(lazy(() => import('views/application/blog/Details')));
 
+// master - hrm routing
+const MasterDeptDetails = Loadable(lazy(() => import('views/master/hr/DepartmentDetails')));
+
 // forms component routing
 const FrmComponentsTextfield = Loadable(lazy(() => import('views/forms/components/TextField')));
 const FrmComponentsButton = Loadable(lazy(() => import('views/forms/components/Button')));
@@ -190,6 +193,13 @@ const QmsCheckListVerify = Loadable(lazy(() => import('views/qms/checklist/Check
 const QmsCloseCheckListRenewal = Loadable(lazy(() => import('views/qms/checklist/CloseCheckListRenewal')));
 const QmsCheckListRenewalVerify = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalVerify')));
 const QmsCheckListRenewalReport = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalReport')));
+const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/DepartmentDetails')));
+const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
+const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
+const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
+
+const QmsAuditScheduleList = Loadable(lazy(() => import('views/qms/AuditSchedule/AuditScheduleList')));
+const QmsAddAuditSchedule = Loadable(lazy(() => import('views/qms/AuditSchedule/AddAuditSchedule')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -754,7 +764,7 @@ const MainRoutes = {
       element: <AppBlogDashboard />
     },
     {
-      path: '/qms/checklist/master',
+      path: '/master/qms/checklist/master',
       element: <QmsMasterCheckList />
     },
     {
@@ -772,8 +782,41 @@ const MainRoutes = {
     {
       path: '/qms/checklist/renewal-report',
       element: <QmsCheckListRenewalReport />
+    },
+    {
+      path: '/master/hr/department',
+      element: <MasterHrDepartment />
+    },
+    {
+      path: '/master/qms/audit/type',
+      element: <QmsAuditTypeMaster />
+    },
+    {
+      path: '/master/qms/audit/area',
+      element: <QmsAuditAreaMaster />
+    },
+    {
+      path: '/master/qms/audit/criteria',
+      element: <QmsAuditCriteriaMaster />
+    },
+    {
+      path: '/qms/audit/schedule',
+      element: <QmsAuditScheduleList />
+    },
+    {
+      path: '/qms/audit/schedule/add',
+      element: <QmsAddAuditSchedule />
+    },
+    {
+      path: '/qms/audit/schedule/edit/:id',
+      element: <QmsAddAuditSchedule />
+    },
+    {
+      path: '*',
+      element: <ErrorBoundary />
     }
-  ]
+  ],
+  errorElement: <ErrorBoundary />
 };
 
 export default MainRoutes;

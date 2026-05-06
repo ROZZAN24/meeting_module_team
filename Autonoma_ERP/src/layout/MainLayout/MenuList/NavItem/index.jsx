@@ -162,6 +162,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                   item.caption && (
                     <Typography
                       variant="caption"
+                      component="span"
                       gutterBottom
                       sx={{
                         display: 'block',
@@ -232,6 +233,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
               <Activity mode={item.caption ? 'visible' : 'hidden'}>
                 <Typography
                   gutterBottom
+                  component="span"
                   sx={{
                     display: 'block',
                     fontSize: '0.6875rem',

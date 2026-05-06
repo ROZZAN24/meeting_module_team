@@ -266,6 +266,7 @@ export default function NavCollapse({ menu, level, parentId }) {
                     menu.caption && (
                       <Typography
                         gutterBottom
+                        component="span"
                         sx={{
                           display: 'block',
                           fontSize: '0.6875rem',
