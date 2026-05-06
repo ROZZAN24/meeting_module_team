@@ -12,14 +12,14 @@ import autonomaLogo from 'assets/images/autonoma-logo.png';
 export default function Logo({ height = 45 }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <img 
-        src={autonomaLogo} 
-        alt="Autonoma ERP" 
-        style={{ 
-          height: height, 
-          width: 'auto', 
+      <img
+        src={autonomaLogo}
+        alt="Autonoma ERP"
+        style={{
+          height: height,
+          width: 'auto',
           objectFit: 'contain'
-        }} 
+        }}
       />
     </Box>
   );

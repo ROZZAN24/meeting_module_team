@@ -40,6 +40,14 @@ public class ChecklistController {
         return ResponseEntity.ok(checklistService.saveMasterChecklist(checklist, departments));
     }
 
+    @DeleteMapping("/{id}")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<Void> deleteMasterChecklist(@PathVariable Long id) {
+        System.out.println("Deleting checklist with ID: " + id);
+        checklistService.deleteMasterChecklist(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/next-sequence")
     public ResponseEntity<Map<String, Integer>> getNextSequence() {
         return ResponseEntity.ok(Map.of("nextSeqNo", checklistService.getNextSequenceNumber()));

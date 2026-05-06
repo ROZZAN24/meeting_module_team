@@ -24,7 +24,7 @@ import { APP_AUTH } from 'config';
 // A mapping of auth types to dynamic imports
 const authCodeVerificationImports = {
   jwt: () => import('./jwt/AuthCodeVerification'),
-  auth0: () => import('./auth0/AuthCodeVerification'),
+  auth0: () => import('./auth0/AuthCodeVerification')
 };
 
 // ===========================|| AUTH3 - CODE VERIFICATION ||=========================== //

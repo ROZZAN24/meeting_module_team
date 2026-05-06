@@ -78,29 +78,32 @@ function RibbonChildItem({ item, onClose, isGroup }) {
           maxWidth: 80,
           height: '100%',
           borderRadius: 1,
-          color: open ? 'primary.main' : (isGroup ? 'primary.dark' : 'text.primary'),
-          bgcolor: open ? 'primary.lighter' : (isGroup ? 'grey.100' : 'transparent'),
+          color: open ? 'primary.main' : isGroup ? 'primary.dark' : 'text.primary',
+          bgcolor: open ? 'primary.lighter' : isGroup ? 'grey.100' : 'transparent',
           transition: 'all 0.15s',
           '&:hover': { bgcolor: isGroup ? 'grey.200' : 'action.hover', color: 'primary.main' }
         }}
       >
         <Box sx={{ mb: !isGroup ? 0.5 : 0, lineHeight: 0 }}>
-          {Icon && <Icon stroke={isGroup ? 1.5 : 1.5} size={isGroup ? "38px" : "20px"} />}
+          {Icon && <Icon stroke={isGroup ? 1.5 : 1.5} size={isGroup ? '38px' : '20px'} />}
         </Box>
         {!isGroup && (
-          <Typography sx={{
-            fontSize: '0.6rem',
-            lineHeight: 1.1,
-            textAlign: 'center',
-            maxWidth: 70,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'normal',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            color: 'inherit'
-          }} title={item.title}>
+          <Typography
+            sx={{
+              fontSize: '0.6rem',
+              lineHeight: 1.1,
+              textAlign: 'center',
+              maxWidth: 70,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'normal',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              color: 'inherit'
+            }}
+            title={item.title}
+          >
             {item.title}
           </Typography>
         )}
@@ -152,27 +155,29 @@ function RibbonGroupSection({ group, onClose }) {
   const GroupIcon = group.icon;
 
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: '100%', 
-      px: 0.5,
-      pt: 0.5,
-      pb: 0.25,
-      justifyContent: 'space-between',
-      minWidth: children.length === 0 ? 80 : 'auto'
-    }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        px: 0.5,
+        pt: 0.5,
+        pb: 0.25,
+        justifyContent: 'space-between',
+        minWidth: children.length === 0 ? 80 : 'auto'
+      }}
+    >
       {/* Top part: Main module icon + Children icons */}
       <Box sx={{ display: 'flex', flex: 1, alignItems: 'stretch', gap: 0.25 }}>
         {/* Always show the main module icon as a functional button */}
         <RibbonChildItem item={group} onClose={onClose} isGroup={true} />
-        
+
         {/* Show children if any */}
         {children.length > 0 && (
           <>
             <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1, opacity: 0.5 }} />
-            {children.map(child => (
-               <RibbonChildItem key={child.id} item={child} onClose={onClose} isGroup={false} />
+            {children.map((child) => (
+              <RibbonChildItem key={child.id} item={child} onClose={onClose} isGroup={false} />
             ))}
           </>
         )}
@@ -180,11 +185,11 @@ function RibbonGroupSection({ group, onClose }) {
       {/* Bottom part: Group Title with Icon */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 0.5, gap: 0.5 }}>
         {GroupIcon && <GroupIcon stroke={1.5} size="12px" style={{ opacity: 0.7 }} />}
-        <Typography 
-          variant="caption" 
-          sx={{ 
-            textAlign: 'center', 
-            color: 'text.secondary', 
+        <Typography
+          variant="caption"
+          sx={{
+            textAlign: 'center',
+            color: 'text.secondary',
             fontSize: '0.65rem',
             fontWeight: 500,
             opacity: 0.8,
@@ -211,7 +216,9 @@ function ElevationScroll({ children, window }) {
 // ==============================|| HORIZONTAL BAR ||============================== //
 
 export default function HorizontalBar() {
-  const { state: { container } } = useConfig();
+  const {
+    state: { container }
+  } = useConfig();
   const { pathname } = useLocation();
   const { ribbonOpen, setRibbonOpen } = useRibbon();
 
@@ -260,26 +267,37 @@ export default function HorizontalBar() {
         {!ribbonOpen && (
           <Box sx={{ width: '100%', px: 2, display: 'flex', flex: 'none', position: 'relative' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <IconButton onClick={() => handleScroll(compactScrollRef, -300)} size="small" sx={{ mr: 1, '&:hover': { bgcolor: 'action.hover' } }}>
+              <IconButton
+                onClick={() => handleScroll(compactScrollRef, -300)}
+                size="small"
+                sx={{ mr: 1, '&:hover': { bgcolor: 'action.hover' } }}
+              >
                 <IconChevronLeft size="16px" />
               </IconButton>
-              
-              <Box ref={compactScrollRef} sx={{
-                display: 'flex',
-                alignItems: 'center',
-                height: COMPACT_H,
-                overflowX: 'auto',
-                flex: 1,
-                '&::-webkit-scrollbar': { display: 'none' },
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none'
-              }}>
+
+              <Box
+                ref={compactScrollRef}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  height: COMPACT_H,
+                  overflowX: 'auto',
+                  flex: 1,
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none'
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <MenuList />
                 </Box>
               </Box>
 
-              <IconButton onClick={() => handleScroll(compactScrollRef, 300)} size="small" sx={{ mx: 1, '&:hover': { bgcolor: 'action.hover' } }}>
+              <IconButton
+                onClick={() => handleScroll(compactScrollRef, 300)}
+                size="small"
+                sx={{ mx: 1, '&:hover': { bgcolor: 'action.hover' } }}
+              >
                 <IconChevronRight size="16px" />
               </IconButton>
 
@@ -289,8 +307,12 @@ export default function HorizontalBar() {
                   onClick={() => setRibbonOpen(true)}
                   size="small"
                   sx={{
-                    flexShrink: 0, width: 28, height: 28,
-                    border: '1px solid', borderColor: 'divider', borderRadius: 1,
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: 1,
                     color: 'text.secondary',
                     '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: 'primary.lighter' }
                   }}
@@ -306,22 +328,29 @@ export default function HorizontalBar() {
         {ribbonOpen && (
           <Box sx={{ width: '100%', px: 2, display: 'flex', flex: 1, position: 'relative' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', height: RIBBON_H, width: '100%' }}>
-              <IconButton onClick={() => handleScroll(ribbonScrollRef, -400)} size="small" sx={{ mr: 1, height: 32, '&:hover': { bgcolor: 'action.hover' } }}>
+              <IconButton
+                onClick={() => handleScroll(ribbonScrollRef, -400)}
+                size="small"
+                sx={{ mr: 1, height: 32, '&:hover': { bgcolor: 'action.hover' } }}
+              >
                 <IconChevronLeft size="18px" />
               </IconButton>
 
-              <Box ref={ribbonScrollRef} sx={{
-                display: 'flex',
-                alignItems: 'center',
-                height: '100%',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                flex: 1,
-                scrollBehavior: 'smooth',
-                '&::-webkit-scrollbar': { display: 'none' },
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none'
-              }}>
+              <Box
+                ref={ribbonScrollRef}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  height: '100%',
+                  overflowX: 'auto',
+                  overflowY: 'hidden',
+                  flex: 1,
+                  scrollBehavior: 'smooth',
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none'
+                }}
+              >
                 {/* All groups as sections */}
                 <Box sx={{ display: 'flex', alignItems: 'stretch', height: '100%' }}>
                   {groups.map((group, idx) => (
@@ -335,7 +364,11 @@ export default function HorizontalBar() {
                 </Box>
               </Box>
 
-              <IconButton onClick={() => handleScroll(ribbonScrollRef, 400)} size="small" sx={{ mx: 1, height: 32, '&:hover': { bgcolor: 'action.hover' } }}>
+              <IconButton
+                onClick={() => handleScroll(ribbonScrollRef, 400)}
+                size="small"
+                sx={{ mx: 1, height: 32, '&:hover': { bgcolor: 'action.hover' } }}
+              >
                 <IconChevronRight size="18px" />
               </IconButton>
 
@@ -345,9 +378,14 @@ export default function HorizontalBar() {
                   onClick={() => setRibbonOpen(false)}
                   size="small"
                   sx={{
-                    flexShrink: 0, width: 28, height: 28,
-                    border: '1px solid', borderColor: 'primary.main', borderRadius: 1,
-                    color: 'primary.main', bgcolor: 'primary.lighter',
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 1,
+                    color: 'primary.main',
+                    bgcolor: 'primary.lighter',
                     '&:hover': { bgcolor: 'primary.light' }
                   }}
                 >

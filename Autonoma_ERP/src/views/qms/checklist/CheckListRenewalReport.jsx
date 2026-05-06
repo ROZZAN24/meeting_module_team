@@ -21,7 +21,10 @@ import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
 import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
+import Tooltip from '@mui/material/Tooltip';
 import axios from 'utils/axios';
+
+import AddCheckListDialog from './AddCheckListDialog';
 
 import MainCard from 'ui-component/cards/MainCard';
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
@@ -30,26 +33,55 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilters, resetFilters } from 'store/slices/search';
 import useSearchFilter from 'hooks/useSearchFilter';
 
-const columns = ['#','Category','Check Point','Dept','Level','Frequency','Stock Link','Comments','Verification Required','Assigned To','Assigned By','Status'];
+const columns = [
+  '#',
+  'Category',
+  'Check Point',
+  'Dept',
+  'Level',
+  'Frequency',
+  'Stock Link',
+  'Comments',
+  'Verification Required',
+  'Assigned To',
+  'Assigned By',
+  'Status'
+];
 
-const DEFAULT_FILTERS = { fromDate:'', toDate:'', considerDate:'All', status:'All' };
+const DEFAULT_FILTERS = { fromDate: '', toDate: '', considerDate: 'All', status: 'All' };
 
 function FilterSection({ title, open, onToggle, children }) {
   return (
-    <Box sx={{ mb:0.5 }}>
-      <Box onClick={onToggle} sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer', py:1, px:2, '&:hover':{ bgcolor:'action.hover' }, borderRadius:1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight:700 }}>{title}</Typography>
-        {open ? <IconChevronUp size={16}/> : <IconChevronDown size={16}/>}
+    <Box sx={{ mb: 0.5 }}>
+      <Box
+        onClick={onToggle}
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          py: 1,
+          px: 2,
+          '&:hover': { bgcolor: 'action.hover' },
+          borderRadius: 1
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+          {title}
+        </Typography>
+        {open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
       </Box>
-      <Collapse in={open}><Box sx={{ px:2, pb:1 }}>{children}</Box></Collapse>
+      <Collapse in={open}>
+        <Box sx={{ px: 2, pb: 1 }}>{children}</Box>
+      </Collapse>
     </Box>
   );
 }
 
 function StatusChip({ status }) {
-  const colorMap = { 'Open':'info', 'Pending for Verified':'warning', 'Verified':'success' };
+  const colorMap = { Open: 'info', 'Pending for Verified': 'warning', Verified: 'success' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Open'} size="small" color={colorMap[label] || 'default'} variant="outlined"/>;
+  return <Chip label={label || 'Open'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
 }
 
 export default function CheckListRenewalReport() {
@@ -64,6 +96,7 @@ export default function CheckListRenewalReport() {
   const filters = useSelector((state) => state.search.filters);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Register filters for the top search bar
   useSearchFilter([
@@ -100,8 +133,8 @@ export default function CheckListRenewalReport() {
     }
   ]);
 
-  const [openSections, setOpenSections] = useState({ dateRange:true, considerDate:false, status:true });
-  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
+  const [openSections, setOpenSections] = useState({ dateRange: true, considerDate: false, status: true });
+  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   const fetchReportData = useCallback(async () => {
     setLoading(true);
@@ -133,84 +166,200 @@ export default function CheckListRenewalReport() {
     dispatch(setFilters({ [key]: val }));
     setPage(0);
   };
-  
+
   const handleResetFilters = () => {
     dispatch(resetFilters());
     setPage(0);
   };
 
+  const handleRowClick = (row) => {
+    setSelectedRowId(row.id);
+  };
+
+  const handleRowOpen = (row) => {
+    setSelectedRowId(row.id);
+    setDialogOpen(true);
+  };
+
+  const activeAssignment = rows.find((r) => r.id === selectedRowId) || null;
+
   const handleExport = () => {
     const exportData = rows.map((r, i) => ({
       '#': i + 1,
-      'Category': r.checklist?.category,
+      Category: r.checklist?.category,
       'Check Point': r.checklist?.checkingPoint,
-      'Dept': (r.checklist?.departments || []).map(d => d.departmentName).join(', '),
-      'Level': '',
-      'Frequency': r.checklist?.frequency,
+      Dept: (r.checklist?.departments || []).map((d) => d.departmentName).join(', '),
+      Level: '',
+      Frequency: r.checklist?.frequency,
       'Stock Link': r.checklist?.stockLink,
-      'Comments': r.remarks,
+      Comments: r.remarks,
       'Verification Required': r.checklist?.verificationRequired,
       'Assigned To': r.assignedTo,
       'Assigned By': r.assignedBy,
-      'Status': typeof r.status === 'object' ? r.status?.name : r.status
+      Status: typeof r.status === 'object' ? r.status?.name : r.status
     }));
     exportToExcel(exportData, 'Checklist_Report');
   };
 
-  const activeCount = (filters.fromDate ? 1 : 0) + 
-                    (filters.toDate ? 1 : 0) + 
-                    (filters.considerDate && filters.considerDate !== 'All' ? 1 : 0) + 
-                    (filters.status && filters.status !== 'All' ? 1 : 0);
- 
+  const activeCount =
+    (filters.fromDate ? 1 : 0) +
+    (filters.toDate ? 1 : 0) +
+    (filters.considerDate && filters.considerDate !== 'All' ? 1 : 0) +
+    (filters.status && filters.status !== 'All' ? 1 : 0);
+
   return (
     <MainCard
       title="Check List / Renewal Report"
       secondary={
-        <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
-          <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18}/>} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
-            <IconAdjustmentsHorizontal size={20}/>
-            {activeCount > 0 && <Box sx={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', bgcolor:'error.main', color:'#fff', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>{activeCount}</Box>}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            size="small"
+            startIcon={<IconFileDownload size={18} />}
+            onClick={handleExport}
+            sx={{ borderRadius: 1.5 }}
+          >
+            Export Excel
+          </Button>
+          <IconButton
+            size="small"
+            onClick={() => setDrawerOpen(true)}
+            sx={{
+              border: '1px solid',
+              borderColor: activeCount > 0 ? 'primary.main' : 'divider',
+              bgcolor: activeCount > 0 ? 'primary.light' : 'transparent',
+              borderRadius: 1.5,
+              p: 0.8,
+              position: 'relative'
+            }}
+          >
+            <IconAdjustmentsHorizontal size={20} />
+            {activeCount > 0 && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  width: 18,
+                  height: 18,
+                  borderRadius: '50%',
+                  bgcolor: 'error.main',
+                  color: '#fff',
+                  fontSize: 11,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 700
+                }}
+              >
+                {activeCount}
+              </Box>
+            )}
           </IconButton>
         </Box>
       }
     >
       {activeCount > 0 && (
-        <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
-          <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate','')}/>}
-          {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate','')}/>}
-          {filters.considerDate && filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate','All')}/>}
-          {filters.status && filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="warning" onDelete={() => setFilter('status','All')}/>}
-          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
+        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>
+            Filters:
+          </Typography>
+          {filters.fromDate && (
+            <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate', '')} />
+          )}
+          {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate', '')} />}
+          {filters.considerDate && filters.considerDate !== 'All' && (
+            <Chip
+              label={`Consider Date: ${filters.considerDate}`}
+              size="small"
+              color="secondary"
+              onDelete={() => setFilter('considerDate', 'All')}
+            />
+          )}
+          {filters.status && filters.status !== 'All' && (
+            <Chip label={`Status: ${filters.status}`} size="small" color="warning" onDelete={() => setFilter('status', 'All')} />
+          )}
+          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml: 1 }}>
+            Clear All
+          </Button>
         </Box>
       )}
 
-      <TableContainer component={Paper} sx={{ maxHeight:'calc(100vh - 380px)', border:'1px solid', borderColor:'divider', '&::-webkit-scrollbar':{width:10,height:10}, '&::-webkit-scrollbar-track':{backgroundColor:'background.paper'}, '&::-webkit-scrollbar-thumb':{backgroundColor:'grey.400',borderRadius:2} }}>
-        <Table stickyHeader sx={{ minWidth:1600 }} aria-label="renewal report table">
-          <TableHead><TableRow>{columns.map((col,i) => <TableCell key={i} sx={{ bgcolor:'primary.dark', color:'white', fontWeight:'bold', whiteSpace:'nowrap', borderRight:'1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
+      <TableContainer
+        component={Paper}
+        sx={{
+          height: 'calc(100vh - 210px)',
+          border: '1px solid',
+          borderColor: 'divider',
+          '&::-webkit-scrollbar': { width: 10, height: 10 },
+          '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 }
+        }}
+      >
+        <Table stickyHeader sx={{ minWidth: 1600 }} aria-label="renewal report table">
+          <TableHead>
+            <TableRow>
+              {columns.map((col, i) => (
+                <TableCell
+                  key={i}
+                  sx={{
+                    bgcolor: 'primary.dark',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    whiteSpace: 'nowrap',
+                    borderRight: '1px solid rgba(255,255,255,0.2)'
+                  }}
+                >
+                  {col}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-            ) : rows.map((row, idx) => (
-              <TableRow key={row.id} hover onClick={() => setSelectedRowId(row.id)} sx={{ cursor:'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}>
-                <TableCell>{page * size + idx + 1}</TableCell>
-                <TableCell>{row.checklist?.category}</TableCell>
-                <TableCell>{row.checklist?.checkingPoint}</TableCell>
-                <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell></TableCell>
-                <TableCell>{row.checklist?.frequency}</TableCell>
-                <TableCell>{row.checklist?.stockLink}</TableCell>
-                <TableCell>{row.remarks}</TableCell>
-                <TableCell>{row.checklist?.verificationRequired}</TableCell>
-                <TableCell>{row.assignedTo}</TableCell>
-                <TableCell>{row.assignedBy}</TableCell>
-                <TableCell><StatusChip status={row.status}/></TableCell>
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body1" color="textSecondary">
+                    Loading...
+                  </Typography>
+                </TableCell>
               </TableRow>
-            ))}
+            ) : rows.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body1" color="textSecondary">
+                    {searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              rows.map((row, idx) => (
+                <Tooltip key={row.id} title="Double tap to view details" placement="top" followCursor arrow>
+                  <TableRow
+                    hover
+                    onClick={() => handleRowClick(row)}
+                    onDoubleClick={() => handleRowOpen(row)}
+                    sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                  >
+                    <TableCell>{page * size + idx + 1}</TableCell>
+                    <TableCell>{row.checklist?.category}</TableCell>
+                    <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                    <TableCell>{(row.checklist?.departments || []).map((d) => d.departmentName).join(', ')}</TableCell>
+                    <TableCell></TableCell>
+                    <TableCell>{row.checklist?.frequency}</TableCell>
+                    <TableCell>{row.checklist?.stockLink}</TableCell>
+                    <TableCell>{row.remarks}</TableCell>
+                    <TableCell>{row.checklist?.verificationRequired}</TableCell>
+                    <TableCell>{row.assignedTo}</TableCell>
+                    <TableCell>{row.assignedBy}</TableCell>
+                    <TableCell>
+                      <StatusChip status={row.status} />
+                    </TableCell>
+                  </TableRow>
+                </Tooltip>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -221,7 +370,10 @@ export default function CheckListRenewalReport() {
         page={page}
         onPageChange={(e, p) => setPage(p)}
         rowsPerPage={size}
-        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
+        onRowsPerPageChange={(e) => {
+          setSize(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
         rowsPerPageOptions={[5, 10, 25, 50]}
         sx={{
           '& .MuiTablePagination-toolbar': { justifyContent: 'center' },
@@ -230,40 +382,108 @@ export default function CheckListRenewalReport() {
       />
 
       {/* FILTER DRAWER */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx:{ width:320 } }}>
-        <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', p:2, borderBottom:'1px solid', borderColor:'divider' }}>
-          <Typography variant="h5" sx={{ fontWeight:700 }}>Filters</Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20}/></IconButton>
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 320 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            Filters
+          </Typography>
+          <IconButton size="small" onClick={() => setDrawerOpen(false)}>
+            <IconX size={20} />
+          </IconButton>
         </Box>
-        <Box sx={{ overflowY:'auto', flex:1 }}>
+        <Box sx={{ overflowY: 'auto', flex: 1 }}>
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
-            <Box sx={{ mb:1.5 }}>
-              <Typography variant="caption" sx={{ fontWeight:600, mb:0.5, display:'block' }}>From Date</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink:true }}/>
+            <Box sx={{ mb: 1.5 }}>
+              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>
+                From Date
+              </Typography>
+              <TextField
+                size="small"
+                type="date"
+                fullWidth
+                value={filters.fromDate}
+                onChange={(e) => setFilter('fromDate', e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
             </Box>
             <Box>
-              <Typography variant="caption" sx={{ fontWeight:600, mb:0.5, display:'block' }}>To Date</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink:true }}/>
+              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>
+                To Date
+              </Typography>
+              <TextField
+                size="small"
+                type="date"
+                fullWidth
+                value={filters.toDate}
+                onChange={(e) => setFilter('toDate', e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
             </Box>
           </FilterSection>
-          <Divider/>
+          <Divider />
           <FilterSection title="Consider Date?" open={openSections.considerDate} onToggle={() => toggleSection('considerDate')}>
-            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => setFilter('considerDate', e.target.value)}>
-              {['All','Yes','No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
+            <FormControl>
+              <RadioGroup value={filters.considerDate} onChange={(e) => setFilter('considerDate', e.target.value)}>
+                {['All', 'Yes', 'No'].map((v) => (
+                  <FormControlLabel
+                    key={v}
+                    value={v}
+                    control={<Radio size="small" />}
+                    label={<Typography variant="body2">{v}</Typography>}
+                  />
+                ))}
+              </RadioGroup>
+            </FormControl>
           </FilterSection>
-          <Divider/>
+          <Divider />
           <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              {['All','Open','Pending for Verified','Verified'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
+            <FormControl>
+              <RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+                {['All', 'Open', 'Pending for Verified', 'Verified'].map((v) => (
+                  <FormControlLabel
+                    key={v}
+                    value={v}
+                    control={<Radio size="small" />}
+                    label={<Typography variant="body2">{v}</Typography>}
+                  />
+                ))}
+              </RadioGroup>
+            </FormControl>
           </FilterSection>
         </Box>
-        <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
+        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="error"
+            onClick={() => {
+              handleResetFilters();
+              setDrawerOpen(false);
+            }}
+          >
+            Reset All
+          </Button>
+          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>
+            Apply
+          </Button>
         </Box>
       </Drawer>
+
+      <AddCheckListDialog
+        open={dialogOpen}
+        handleClose={() => setDialogOpen(false)}
+        initialData={activeAssignment?.checklist}
+        readOnly={true}
+      />
     </MainCard>
   );
 }

@@ -2,6 +2,7 @@ import { lazy } from 'react';
 
 // project imports
 import Loadable from 'ui-component/Loadable';
+import ErrorBoundary from './ErrorBoundary';
 import MinimalLayout from 'layout/MinimalLayout';
 
 // login option 1 routing
@@ -43,6 +44,7 @@ const PagesLanding = Loadable(lazy(() => import('views/pages/landing')));
 const AuthenticationRoutes = {
   path: '/',
   element: <MinimalLayout />,
+  errorElement: <ErrorBoundary />,
   children: [
     {
       path: '/pages/login/login1',

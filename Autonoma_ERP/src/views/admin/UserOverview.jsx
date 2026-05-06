@@ -137,7 +137,7 @@ const UserOverview = () => {
       secondary={
         <AnimateButton>
           <Button variant="contained" color="secondary" startIcon={<AddIcon />} onClick={handleClickOpen}>
-            Add User
+            New User
           </Button>
         </AnimateButton>
       }
@@ -304,12 +304,7 @@ const UserOverview = () => {
                         onChange={handleChange}
                         endAdornment={
                           <InputAdornment position="end">
-                            <IconButton
-                              aria-label="toggle password visibility"
-                              onClick={handleClickShowPassword}
-                              edge="end"
-                              size="large"
-                            >
+                            <IconButton aria-label="toggle password visibility" onClick={handleClickShowPassword} edge="end" size="large">
                               {showPassword ? <Visibility /> : <VisibilityOff />}
                             </IconButton>
                           </InputAdornment>
@@ -356,13 +351,7 @@ const UserOverview = () => {
                   Cancel
                 </Button>
                 <AnimateButton>
-                  <Button
-                    disableElevation
-                    disabled={isSubmitting}
-                    type="submit"
-                    variant="contained"
-                    color="secondary"
-                  >
+                  <Button disableElevation disabled={isSubmitting} type="submit" variant="contained" color="secondary">
                     Create User
                   </Button>
                 </AnimateButton>

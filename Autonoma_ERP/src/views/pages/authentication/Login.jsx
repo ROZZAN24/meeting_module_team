@@ -92,14 +92,9 @@ export default function Login() {
             </Link>
           </Box>
 
-
-
-          <Box sx={{ width: '100%' }}>
-            {AuthLoginComponent && <AuthLoginComponent />}
-          </Box>
+          <Box sx={{ width: '100%' }}>{AuthLoginComponent && <AuthLoginComponent />}</Box>
 
           <Divider sx={{ my: 3, width: '100%' }} />
-
 
           <Box sx={{ mt: 3, width: '100%' }}>
             <AuthFooter />

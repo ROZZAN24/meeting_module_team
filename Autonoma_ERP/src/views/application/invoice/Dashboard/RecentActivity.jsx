@@ -48,7 +48,7 @@ export default function RecentActivity({ isLoading }) {
           }}
           startIcon={<IconPlus size={14} />}
         >
-          Add new
+          New
         </Button>
       }
       content={false}
