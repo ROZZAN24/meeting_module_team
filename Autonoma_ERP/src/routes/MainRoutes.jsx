@@ -88,7 +88,6 @@ const AppBlogList = Loadable(lazy(() => import('views/application/blog/List')));
 const AppBlogDetails = Loadable(lazy(() => import('views/application/blog/Details')));
 
 // master - hrm routing
-const MasterDeptDetails = Loadable(lazy(() => import('views/master/hr/DepartmentDetails')));
 
 // forms component routing
 const FrmComponentsTextfield = Loadable(lazy(() => import('views/forms/components/TextField')));
@@ -194,6 +193,8 @@ const QmsCloseCheckListRenewal = Loadable(lazy(() => import('views/qms/checklist
 const QmsCheckListRenewalVerify = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalVerify')));
 const QmsCheckListRenewalReport = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalReport')));
 const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/DepartmentDetails')));
+const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
+const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -786,6 +787,14 @@ const MainRoutes = {
     {
       path: '/master/hr/department',
       element: <MasterHrDepartment />
+    },
+    {
+      path: '/master/hr/employee',
+      element: <MasterHrEmployeeList />
+    },
+    {
+      path: '/master/hr/employee/create',
+      element: <MasterHrEmployee />
     },
     {
       path: '/master/qms/audit/type',
