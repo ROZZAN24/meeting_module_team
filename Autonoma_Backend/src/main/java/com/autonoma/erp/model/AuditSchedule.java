@@ -14,27 +14,48 @@ public class AuditSchedule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String scheduleNo;
     
     @Temporal(TemporalType.DATE)
     private Date scheduleDate;
     
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String status;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditType;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String itemCode;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditArea;
+
     private boolean isDeleted = false;
     
     @Temporal(TemporalType.DATE)
     private Date auditDate;
     
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String auditMonth;
+
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String startTime;
+
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String endTime;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String department;
     
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditee;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditor;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedBy;
 
     private String createdBy;

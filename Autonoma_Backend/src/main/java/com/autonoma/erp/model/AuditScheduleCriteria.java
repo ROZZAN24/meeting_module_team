@@ -18,9 +18,17 @@ public class AuditScheduleCriteria {
     private AuditSchedule auditSchedule;
 
     private Integer seqNo;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String clause;
+
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String criteriaDetails;
+
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String attachmentReq;
+
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     public Long getId() { return id; }
