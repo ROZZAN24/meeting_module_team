@@ -20,7 +20,7 @@ const columns = [
   { id: 'departmentNo', label: 'Department Number', minWidth: 150, bold: true },
   { id: 'departmentName', label: 'Department Name', minWidth: 180 },
   { id: 'ndaCertificate', label: 'NDA', minWidth: 80 },
-  { id: 'sequenceNo', label: 'Seq.No', minWidth: 80 },
+  { id: 'sequenceNo', label: 'Organization Sequence Number', minWidth: 200 },
   { id: 'createdBy', label: 'Created User', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
@@ -108,7 +108,7 @@ export default function DepartmentDetails() {
       'Department Number': r.departmentNo,
       'Department Name': r.departmentName,
       'NDA Certificate': r.ndaCertificate,
-      'Seq.No': r.sequenceNo,
+      'Organization Sequence Number': r.sequenceNo,
       'Created User': r.createdBy,
       'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
       'Updated User': r.updatedBy,
@@ -151,14 +151,14 @@ export default function DepartmentDetails() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
+          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
+            Export Excel
+          </Button>
           <Tooltip title={shortcutTooltip('Create New Department', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export Excel
-          </Button>
         </Stack>
       }
     >

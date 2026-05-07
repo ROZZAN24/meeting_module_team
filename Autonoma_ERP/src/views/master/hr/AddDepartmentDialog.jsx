@@ -51,8 +51,21 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
     } else {
       setFormData(INITIAL_STATE);
       setIsEditing(!readOnly);
+      if (!readOnly) fetchNextValues();
     }
   }, [initialData, open, readOnly, clearErrors]);
+
+  const fetchNextValues = async () => {
+    try {
+      const [codeRes, seqRes] = await Promise.all([
+        axios.get('/api/hrm/departments/next-code'),
+        axios.get('/api/hrm/departments/next-seq')
+      ]);
+      setFormData(prev => ({ ...prev, departmentNo: codeRes.data, sequenceNo: seqRes.data }));
+    } catch (e) {
+      console.error('Failed to fetch next values');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -146,7 +159,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
           </BOSTextField>
           <BOSTextField
             name="sequenceNo"
-            label="Seq. No"
+            label="Organization Sequence Number"
             type="number"
             value={formData.sequenceNo}
             onChange={handleChange}
