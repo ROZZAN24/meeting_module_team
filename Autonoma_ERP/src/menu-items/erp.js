@@ -76,39 +76,31 @@ export const masters = {
         {
           id: 'master-qms-checklist',
           title: 'Check List',
+          type: 'item',
+          url: '/master/qms/checklist/master'
+        },
+        {
+          id: 'master-qms-audit',
+          title: 'Audit',
           type: 'collapse',
-          icon: icons.IconListCheck,
           children: [
             {
-              id: 'master-qms-checklist-master',
-              title: 'Check List Master',
+              id: 'master-qms-audit-type',
+              title: 'Audit Type',
               type: 'item',
-              url: '/master/qms/checklist/master'
+              url: '/master/qms/audit/type'
             },
             {
-              id: 'master-qms-audit',
-              title: 'Audit',
-              type: 'collapse',
-              children: [
-                {
-                  id: 'master-qms-audit-type',
-                  title: 'Audit Type',
-                  type: 'item',
-                  url: '/master/qms/audit/type'
-                },
-                {
-                  id: 'master-qms-audit-area',
-                  title: 'Audit Area / Zone',
-                  type: 'item',
-                  url: '/master/qms/audit/area'
-                },
-                {
-                  id: 'master-qms-audit-criteria',
-                  title: 'Audit Criteria',
-                  type: 'item',
-                  url: '/master/qms/audit/criteria'
-                }
-              ]
+              id: 'master-qms-audit-area',
+              title: 'Audit Area / Zone',
+              type: 'item',
+              url: '/master/qms/audit/area'
+            },
+            {
+              id: 'master-qms-audit-criteria',
+              title: 'Audit Criteria',
+              type: 'item',
+              url: '/master/qms/audit/criteria'
             }
           ]
         }
