@@ -58,6 +58,12 @@ export const masters = {
           title: 'Department Details',
           type: 'item',
           url: '/master/hr/department'
+        },
+        {
+          id: 'master-hr-employee',
+          title: 'Employee Master',
+          type: 'item',
+          url: '/master/hr/employee'
         }
       ]
     },
