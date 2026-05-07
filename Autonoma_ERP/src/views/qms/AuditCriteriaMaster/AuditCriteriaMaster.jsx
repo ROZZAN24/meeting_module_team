@@ -1,37 +1,25 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Typography,
-  Box,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Tooltip,
-  TablePagination,
-  Stack,
-  useTheme,
-  Chip,
-  Link
-} from '@mui/material';
-import { IconPlus, IconEdit, IconTrash, IconFileDownload, IconChecks } from '@tabler/icons-react';
+import { Typography, Button, Stack, Tooltip, Link } from '@mui/material';
+import { IconFileDownload, IconChecks } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import AddAuditCriteriaDialog from './AddAuditCriteriaDialog';
 import { exportToExcel } from 'utils/excelExport';
-import AnimateButton from 'ui-component/extended/AnimateButton';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { Chip } from '@mui/material';
+
+// ==============================|| AUDIT CRITERIA MASTER (BOS SOP COMPLIANT) ||============================== //
 
 const columns = [
   { id: 'seqNo', label: 'Seq No', minWidth: 80 },
   { id: 'clause', label: 'Clause', minWidth: 100 },
-  { id: 'auditType', label: 'Type', minWidth: 120 },
+  { id: 'auditType', label: 'Type', minWidth: 120, bold: true },
   { id: 'criteriaText', label: 'Criteria', minWidth: 250 },
   { id: 'department', label: 'Department', minWidth: 120 },
   { id: 'createdBy', label: 'Created User', minWidth: 120 },
@@ -43,10 +31,7 @@ const columns = [
 ];
 
 export default function AuditCriteriaMaster() {
-  const theme = useTheme();
   const dispatch = useDispatch();
-
-  // Global Search State
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
 
@@ -58,14 +43,14 @@ export default function AuditCriteriaMaster() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [nextSeq, setNextSeq] = useState('1');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Set Global Search Config on Mount
   useEffect(() => {
     const config = [
       {
-        id: 'status',
-        label: 'Status',
-        type: 'select',
+        id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
@@ -73,28 +58,11 @@ export default function AuditCriteriaMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      {
-        id: 'auditType',
-        label: 'Audit Type',
-        type: 'text',
-        placeholder: 'Search by Type...'
-      },
-      {
-        id: 'clause',
-        label: 'Clause',
-        type: 'text',
-        placeholder: 'Search by Clause...'
-      },
-      {
-        id: 'department',
-        label: 'Department',
-        type: 'text',
-        placeholder: 'Search by Department...'
-      }
+      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Search by Type...' },
+      { id: 'clause', label: 'Clause', type: 'text', placeholder: 'Search by Clause...' },
+      { id: 'department', label: 'Department', type: 'text', placeholder: 'Search by Department...' }
     ];
     dispatch(setFilterConfig(config));
-
-    // Cleanup on unmount
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -105,16 +73,13 @@ export default function AuditCriteriaMaster() {
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch audit criteria:', error);
-      // Mock data matching screenshot
       setRows([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchAuditCriteria();
-  }, [fetchAuditCriteria]);
+  useEffect(() => { fetchAuditCriteria(); }, [fetchAuditCriteria]);
 
   const handleOpenAdd = async () => {
     setSelectedRow(null);
@@ -128,35 +93,31 @@ export default function AuditCriteriaMaster() {
     setDialogOpen(true);
   };
 
-  const handleOpenEdit = (row) => {
-    setSelectedRow(row);
-    setIsReadOnly(false);
-    setDialogOpen(true);
+  const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };
+  const handleCloseDialog = (refresh) => { setDialogOpen(false); if (refresh === true) fetchAuditCriteria(); };
+
+  const handleDeleteClick = (row) => {
+    setDeleteTargetId(row.id);
+    setDeleteTargetName(row.criteriaText || `Criteria #${row.seqNo}`);
+    setDeleteDialogOpen(true);
   };
 
-  const handleOpenView = (row) => {
-    setSelectedRow(row);
-    setIsReadOnly(true);
-    setDialogOpen(true);
-  };
-
-  const handleCloseDialog = (refresh) => {
-    setDialogOpen(false);
-    if (refresh === true) {
+  const handleDeleteConfirm = async () => {
+    setDeleteDialogOpen(false);
+    try {
+      await axios.delete(`/api/master/qms/audit-criteria/${deleteTargetId}`);
+      dispatch(openSnackbar({ open: true, message: 'Audit Criteria deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchAuditCriteria();
+    } catch (error) {
+      console.error('Failed to delete audit criteria:', error);
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this audit criteria?')) {
-      try {
-        await axios.delete(`/api/master/qms/audit-criteria/${id}`);
-        fetchAuditCriteria();
-      } catch (error) {
-        console.error('Failed to delete audit criteria:', error);
-      }
-    }
-  };
+  useKeyboardShortcuts({
+    'ctrl+n': handleOpenAdd,
+    'escape': () => { if (dialogOpen) handleCloseDialog(); }
+  });
 
   const handleExport = () => {
     const exportData = filteredRows.map((r, i) => ({
@@ -176,29 +137,46 @@ export default function AuditCriteriaMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      // Apply Global Filter Bar logic
       const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-
       const auditTypeFilter = globalFilters.auditType || '';
       const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
-
       const clauseFilter = globalFilters.clause || '';
       const matchesClause = !clauseFilter || (row.clause && row.clause.toLowerCase().includes(clauseFilter.toLowerCase()));
-
       const departmentFilter = globalFilters.department || '';
-      const matchesDepartment =
-        !departmentFilter || (row.department && row.department.toLowerCase().includes(departmentFilter.toLowerCase()));
-
-      // Apply Global Search Query logic
-      const matchesSearch =
-        !globalQuery ||
+      const matchesDepartment = !departmentFilter || (row.department && row.department.toLowerCase().includes(departmentFilter.toLowerCase()));
+      const matchesSearch = !globalQuery ||
         (row.criteriaText && row.criteriaText.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase()));
-
       return matchesStatus && matchesAuditType && matchesClause && matchesDepartment && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
+
+  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
+
+  // Custom cell renderer for criteria text link
+  const renderCell = (col, row, idx) => {
+    const val = row[col.id];
+    if (col.id === 'seqNo') return row.seqNo || page * size + idx + 1;
+    if (col.id === 'criteriaText') {
+      return (
+        <Link
+          component="button"
+          variant="body2"
+          onClick={() => handleOpenEdit(row)}
+          sx={{ textAlign: 'left', textDecoration: 'none', color: 'secondary.main', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
+        >
+          {val}
+        </Link>
+      );
+    }
+    if (col.id === 'status') return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
+    if (col.id.toLowerCase().includes('date')) {
+      if (!val) return '-';
+      try { return format(new Date(val), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }
+    }
+    return val ?? '-';
+  };
 
   return (
     <MainCard
@@ -210,226 +188,31 @@ export default function AuditCriteriaMaster() {
       }
       secondary={
         <Stack direction="row" spacing={1.5}>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="medium"
-            startIcon={<IconFileDownload size={18} />}
-            onClick={handleExport}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              borderWidth: '2px',
-              '&:hover': { borderWidth: '2px', bgcolor: 'primary.50' }
-            }}
-          >
+          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
             Export Excel
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            size="medium"
-            onClick={handleOpenAdd}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: 2,
-              transition: 'all 0.2s',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
-            }}
-          >
-            + New
-          </Button>
+          <Tooltip title={shortcutTooltip('Create New Criteria', 'Ctrl + N')}>
+            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
+              + New
+            </Button>
+          </Tooltip>
         </Stack>
       }
     >
-      <TableContainer
-        component={Paper}
-        sx={{
-          height: 'calc(100vh - 240px)',
-          border: '1px solid',
-          borderColor: 'divider',
-          boxShadow: 3,
-          borderRadius: '16px',
-          overflow: 'auto',
-          '&::-webkit-scrollbar': { width: 8, height: 8 },
-          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 4, '&:hover': { backgroundColor: 'grey.500' } }
-        }}
-      >
-        <Table stickyHeader aria-label="audit criteria table" size="small">
-          <TableHead>
-            <TableRow>
-              {columns.map((col) => (
-                <TableCell
-                  key={col.id}
-                  sx={{
-                    bgcolor: 'primary.dark',
-                    color: 'primary.light',
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    py: 2,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: 'none',
-                    whiteSpace: 'nowrap',
-                    '&:first-of-type': { borderTopLeftRadius: '16px' }
-                  }}
-                >
-                  {col.label}
-                </TableCell>
-              ))}
-              <TableCell
-                sx={{
-                  bgcolor: 'primary.dark',
-                  color: 'primary.light',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  py: 2,
-                  textAlign: 'center',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  borderBottom: 'none',
-                  whiteSpace: 'nowrap',
-                  borderTopRightRadius: '16px'
-                }}
-              >
-                Actions
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 3 }}>
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : filteredRows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length + 1} align="center" sx={{ py: 3 }}>
-                  No records found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredRows.slice(page * size, page * size + size).map((row, idx) => (
-                <Tooltip key={row.id} title="Double tap to edit" placement="top" followCursor arrow>
-                  <TableRow
-                    hover
-                    onDoubleClick={() => handleOpenEdit(row)}
-                    sx={{
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                      '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 },
-                      '&:nth-of-type(even)': { bgcolor: theme.palette.mode === 'dark' ? '#161b22' : '#fafafa' },
-                      '&:hover': {
-                        bgcolor: theme.palette.mode === 'dark' ? '#30363d !important' : 'grey.50 !important',
-                        transform: 'translateY(-1px)',
-                        boxShadow: 1
-                      }
-                    }}
-                  >
-                    <TableCell sx={{ color: 'primary.main', fontWeight: 600 }}>
-                      {row.seqNo || page * size + idx + 1}
-                    </TableCell>
-                    <TableCell>{row.clause || '-'}</TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#37474f' }}>{row.auditType}</TableCell>
-                    <TableCell>
-                      <Link
-                        component="button"
-                        variant="body2"
-                        onClick={() => handleOpenEdit(row)}
-                        sx={{
-                          textAlign: 'left',
-                          textDecoration: 'none',
-                          color: 'secondary.main',
-                          fontWeight: 500,
-                          '&:hover': { textDecoration: 'underline' }
-                        }}
-                      >
-                        {row.criteriaText}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{row.department}</TableCell>
-                    <TableCell>{row.createdBy || '-'}</TableCell>
-                    <TableCell>
-                      {row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-'}
-                    </TableCell>
-                    <TableCell>{row.updatedBy || '-'}</TableCell>
-                    <TableCell>
-                      {row.updatedDate ? format(new Date(row.updatedDate), 'dd-MM-yyyy HH:mm') : '-'}
-                    </TableCell>
-                    <TableCell>{row.attachmentRequired || '-'}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.status}
-                        size="small"
-                        sx={{
-                          bgcolor: row.status === 'ACTIVE' ? '#e8f5e9' : '#ffebee',
-                          color: row.status === 'ACTIVE' ? '#2e7d32' : '#c62828',
-                          fontWeight: 700
-                        }}
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <Stack direction="row" justifyContent="center" spacing={1}>
-                        <Tooltip title="Edit">
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleOpenEdit(row);
-                            }}
-                            size="small"
-                            sx={{
-                              color: 'primary.main',
-                              bgcolor: '#e3f2fd',
-                              '&:hover': { bgcolor: 'primary.main', color: '#fff' }
-                            }}
-                          >
-                            <IconEdit size={16} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDelete(row.id);
-                            }}
-                            size="small"
-                            sx={{
-                              color: 'error.main',
-                              bgcolor: '#ffebee',
-                              '&:hover': { bgcolor: 'error.main', color: '#fff' }
-                            }}
-                          >
-                            <IconTrash size={16} />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                </Tooltip>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider' }}>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={filteredRows.length}
-          rowsPerPage={size}
-          page={page}
-          onPageChange={(e, p) => setPage(p)}
-          onRowsPerPageChange={(e) => {
-            setSize(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-        />
-      </Box>
+      <BOSDataTable
+        columns={columns}
+        rows={paginatedRows}
+        page={page}
+        size={size}
+        totalCount={filteredRows.length}
+        loading={loading}
+        onPageChange={(p) => setPage(p)}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onDoubleClickRow={handleOpenEdit}
+        onEditRow={handleOpenEdit}
+        onDeleteRow={handleDeleteClick}
+        renderCell={renderCell}
+      />
 
       <AddAuditCriteriaDialog
         open={dialogOpen}
@@ -437,6 +220,14 @@ export default function AuditCriteriaMaster() {
         initialData={selectedRow}
         readOnly={isReadOnly}
         nextSeq={nextSeq}
+      />
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Audit Criteria"
+        message="Are you sure you want to delete this audit criteria? This action cannot be undone."
+        itemName={deleteTargetName}
       />
     </MainCard>
   );

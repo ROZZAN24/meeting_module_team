@@ -10,18 +10,28 @@ public class AuditCriteria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String seqNo;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditType;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String clause;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String criteriaText;
     
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String department;
+
+    @Column(columnDefinition = "NVARCHAR(20)")
     private String attachmentRequired; // YES/NO
+
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String attachmentInfo; // JSON string of file metadata
 
     private String createdBy;

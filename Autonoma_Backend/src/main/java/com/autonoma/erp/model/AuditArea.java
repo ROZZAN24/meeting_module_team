@@ -10,11 +10,13 @@ public class AuditArea {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String type; // AREA or ZONE
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String status;
 
     private String createdBy;

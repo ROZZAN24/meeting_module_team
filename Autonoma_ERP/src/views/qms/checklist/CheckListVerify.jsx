@@ -1,220 +1,99 @@
-import { useState, useEffect, useCallback } from 'react';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
-import Drawer from '@mui/material/Drawer';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Divider from '@mui/material/Divider';
-import Chip from '@mui/material/Chip';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControl from '@mui/material/FormControl';
-import Collapse from '@mui/material/Collapse';
-import TablePagination from '@mui/material/TablePagination';
-import Tooltip from '@mui/material/Tooltip';
-import axios from 'utils/axios';
-
-import AddCheckListDialog from './AddCheckListDialog';
-
-import MainCard from 'ui-component/cards/MainCard';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  IconAdjustmentsHorizontal,
-  IconChevronDown,
-  IconChevronUp,
-  IconCheck,
-  IconBan,
+  Typography,
+  Box,
+  Button,
+  Stack,
+  IconButton,
+  Tooltip,
+  Chip,
+  Divider,
+  Paper
+} from '@mui/material';
+import {
+  IconPlus,
   IconFileDownload,
+  IconChecks,
+  IconBan,
+  IconCheck,
+  IconCircleCheck,
   IconX
 } from '@tabler/icons-react';
-import { exportToExcel } from 'utils/excelExport';
+import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilters, resetFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import useSearchFilter from 'hooks/useSearchFilter';
+import { setFilterConfig } from 'store/slices/search';
+import MainCard from 'ui-component/cards/MainCard';
+import { exportToExcel } from 'utils/excelExport';
+import {
+  BOSDataTable,
+  btnExport,
+  btnNew,
+  getStatusChipSx
+} from 'ui-component/bos';
+import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import AddCheckListDialog from './AddCheckListDialog';
 
 const columns = [
-  '#',
-  'Seq No',
-  'Checking Point',
-  'Category',
-  'Frequency',
-  'Department',
-  'Effective From',
-  'Days',
-  'Expire Date',
-  'Stock Link',
-  'Created Date',
-  'Created By',
-  'Verify Status',
-  'Verified By',
-  'Verified Date'
+  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'seqNo', label: 'Seq No', minWidth: 80 },
+  { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
+  { id: 'category', label: 'Category', minWidth: 120 },
+  { id: 'frequency', label: 'Frequency', minWidth: 120 },
+  { id: 'department', label: 'Department', minWidth: 150 },
+  { id: 'effectiveFrom', label: 'Effective From', minWidth: 120 },
+  { id: 'reminderDays', label: 'Days', minWidth: 80 },
+  { id: 'expiryDate', label: 'Expire Date', minWidth: 120 },
+  { id: 'stockLink', label: 'Stock Link', minWidth: 100 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'status', label: 'Verify Status', minWidth: 150 },
+  { id: 'verifiedBy', label: 'Verified By', minWidth: 120 },
+  { id: 'verifiedDate', label: 'Verified Date', minWidth: 120 }
 ];
-
-const DEPARTMENTS = [
-  'ACCOUNTS',
-  'ADMIN',
-  'ASSEMBLY',
-  'BUSINESS DEVELOPMENT',
-  'DESIGN & DEVELOPMENT',
-  'HRA',
-  'LOGISTICS',
-  'MAINTENANCE',
-  'MANAGEMENT',
-  'MANAGEMENT REPRESENTATIVE',
-  'OPERATIONS',
-  'PLANNING',
-  'PRODUCT DEVELOPMENT',
-  'PRODUCTION',
-  'PURCHASE',
-  'QMS',
-  'QUALITY',
-  'SALES & MARKETING',
-  'STORES',
-  'STRATEGIC PROCUREMENT',
-  'TOP MANAGEMENT'
-];
-
-const DEFAULT_FILTERS = { status: 'All', category: 'All', departments: [], searchBy: 'All', searchByValue: '' };
-
-const SEARCH_BY_OPTIONS = [
-  { key: 'All', label: 'Global Search' },
-  { key: 'checkingPoint', label: 'Checking Point' },
-  { key: 'description', label: 'Descriptions' },
-  { key: 'seqNo', label: 'Seq.No' }
-];
-
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <Box sx={{ mb: 0.5 }}>
-      <Box
-        onClick={onToggle}
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          cursor: 'pointer',
-          py: 1,
-          px: 2,
-          '&:hover': { bgcolor: 'action.hover' },
-          borderRadius: 1
-        }}
-      >
-        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-          {title}
-        </Typography>
-        {open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-      </Box>
-      <Collapse in={open}>
-        <Box sx={{ px: 2, pb: 1 }}>{children}</Box>
-      </Collapse>
-    </Box>
-  );
-}
-
-function StatusChip({ status }) {
-  const map = {
-    Verified: { color: 'success', icon: <IconCheck size={14} />, bg: 'success.light', text: 'success.dark', border: 'success.main' },
-    Rejected: { color: 'error', icon: <IconBan size={14} />, bg: 'error.light', text: 'error.dark', border: 'error.main' },
-    'Pending for Verify': { color: 'warning', icon: null, bg: 'warning.light', text: 'warning.dark', border: 'warning.main' }
-  };
-  const cfg = map[status] || { color: 'default', icon: null, bg: 'grey.100', text: 'grey.700', border: 'grey.300' };
-  
-  return (
-    <Box
-      sx={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 0.5,
-        px: 1.5,
-        py: 0.5,
-        borderRadius: '12px',
-        bgcolor: cfg.bg,
-        color: cfg.text,
-        border: `1px solid ${cfg.border}`,
-        fontSize: '0.75rem',
-        fontWeight: 700,
-        letterSpacing: '0.5px',
-        textTransform: 'uppercase'
-      }}
-    >
-      {cfg.icon}
-      {status}
-    </Box>
-  );
-}
 
 export default function CheckListVerify() {
+  const dispatch = useDispatch();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
-
-  const [selectedRowId, setSelectedRowId] = useState(null);
+  const [selectedRow, setSelectedRow] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isView, setIsView] = useState(true);
-  const dispatch = useDispatch();
+
   const searchQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Register filters for the top search bar
-  useSearchFilter([
-    {
-      id: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { label: 'All Status', value: 'All' },
-        { label: 'Pending for Verify', value: 'Pending for Verify' },
-        { label: 'Verified', value: 'Verified' },
-        { label: 'Rejected', value: 'Rejected' }
-      ]
-    },
-    {
-      id: 'category',
-      label: 'Category',
-      type: 'select',
-      options: [
-        { label: 'All Categories', value: 'All' },
-        { label: 'Renewal', value: 'RENEWAL' },
-        { label: 'Check List', value: 'CHECK LIST' }
-      ]
-    },
-    {
-      id: 'departments',
-      label: 'Departments',
-      type: 'select',
-      multiple: true,
-      options: DEPARTMENTS.map((d) => ({ label: d, value: d }))
-    },
-    {
-      id: 'searchBy',
-      label: 'Search By',
-      type: 'select',
-      options: SEARCH_BY_OPTIONS.map((o) => ({ label: o.label, value: o.key }))
-    },
-    {
-      id: 'searchByValue',
-      label: 'Search Value',
-      type: 'text',
-      placeholder: 'Search value...'
-    }
-  ]);
-
-  const [openSections, setOpenSections] = useState({ status: true, category: true, department: false, searchBy: false });
-  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
+  useEffect(() => {
+    dispatch(setFilterConfig([
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { label: 'All Status', value: 'All' },
+          { label: 'Pending for Verify', value: 'Pending for Verify' },
+          { label: 'Verified', value: 'Verified' },
+          { label: 'Rejected', value: 'Rejected' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'category',
+        label: 'Category',
+        type: 'select',
+        options: [
+          { label: 'All Categories', value: 'All' },
+          { label: 'Renewal', value: 'RENEWAL' },
+          { label: 'Check List', value: 'CHECK LIST' }
+        ],
+        defaultValue: 'All'
+      }
+    ]));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
@@ -224,24 +103,13 @@ export default function CheckListVerify() {
         size,
         status: filters.status !== 'All' ? filters.status : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
-        department: (filters.departments || []).length > 0 ? filters.departments[0] : undefined,
-        searchValue: filters.searchByValue || searchQuery || undefined,
-        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined
+        searchValue: searchQuery || undefined
       };
       const response = await axios.get('/api/qms/checklist', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      setRows(response.data.content || []);
+      setTotalElements(response.data.totalElements || 0);
     } catch (error) {
-      console.error('Failed to fetch checklists for verification:', error);
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: 'Failed to fetch checklists for verification',
-          variant: 'alert',
-          severity: 'error',
-          close: false
-        })
-      );
+      console.error('Failed to fetch checklists:', error);
     } finally {
       setLoading(false);
     }
@@ -251,68 +119,27 @@ export default function CheckListVerify() {
     fetchChecklists();
   }, [fetchChecklists]);
 
-  const setFilter = (key, val) => {
-    dispatch(setFilters({ [key]: val }));
-    setPage(0);
-  };
-
-  const toggleDept = (dept) => {
-    const arr = filters.departments || [];
-    const newDepts = arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept];
-    dispatch(setFilters({ departments: newDepts }));
-    setPage(0);
-  };
-
-  const handleResetFilters = () => {
-    dispatch(resetFilters());
-    setPage(0);
-  };
-
-  const handleRowClick = (row) => {
-    setSelectedRowId(row.id);
-  };
-
-  const handleRowOpen = (row) => {
-    setSelectedRowId(row.id);
-    setIsView(false);
+  const handleRowClick = (row) => setSelectedRow(row);
+  const handleRowDoubleClick = (row) => {
+    setSelectedRow(row);
+    setIsView(true);
     setDialogOpen(true);
   };
 
-  const activeRow = rows.find((r) => r.id === selectedRowId) || null;
-
   const handleVerify = async (status) => {
-    if (!selectedRowId) return;
+    if (!selectedRow) return;
     try {
-      // In a real scenario, we might need a specific verification ID if it was an assignment,
-      // but here we are verifying the master record's creation/amendment.
-      // We'll use a generic verification endpoint or update the master.
       await axios.post('/api/qms/checklist/verify-master', {
-        checklistId: selectedRowId,
+        checklistId: selectedRow.id,
         status: status,
         verifiedBy: 'Current User',
         remarks: status === 'Rejected' ? 'Rejected by verifier' : 'Verified'
       });
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: `Checklist ${status.toLowerCase()} successfully`,
-          variant: 'alert',
-          severity: 'success',
-          close: false
-        })
-      );
+      dispatch(openSnackbar({ open: true, message: `Checklist ${status.toLowerCase()} successfully`, severity: 'success', variant: 'alert' }));
       fetchChecklists();
+      setSelectedRow(null);
     } catch (error) {
-      console.error('Verification failed:', error);
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: error.response?.data?.message || error.message || 'Verification failed',
-          variant: 'alert',
-          severity: 'error',
-          close: false
-        })
-      );
+      dispatch(openSnackbar({ open: true, message: 'Verification failed', severity: 'error', variant: 'alert' }));
     }
   };
 
@@ -325,44 +152,49 @@ export default function CheckListVerify() {
       Frequency: r.frequency,
       Department: (r.departments || []).map((d) => d.departmentName).join(', '),
       'Effective From': r.effectiveFrom,
-      Days: r.reminderDays,
       'Expire Date': r.expiryDate,
-      'Stock Link': r.stockLink,
-      'Created Date': r.createdDate,
-      'Created By': r.createdBy,
-      'Verify Status': r.status,
-      'Verified By': r.verifiedBy,
-      'Verified Date': r.verifiedDate
+      'Status': r.status
     }));
     exportToExcel(exportData, 'Checklist_Verify');
   };
 
-  const activeCount =
-    (filters.status && filters.status !== 'All' ? 1 : 0) +
-    (filters.category && filters.category !== 'All' ? 1 : 0) +
-    (filters.departments?.length || 0) +
-    (filters.searchByValue ? 1 : 0);
+  useKeyboardShortcuts({
+    'ctrl+n': () => setDialogOpen(true),
+    'escape': () => setSelectedRow(null)
+  });
+
+  const renderCell = (col, row, idx) => {
+    if (col.id === 'index') return idx + 1 + page * size;
+    if (col.id === 'status') {
+      const status = row.verifyStatus || row.status;
+      let chipStatus = 'INACTIVE';
+      if (status === 'Verified') chipStatus = 'ACTIVE';
+      if (status === 'Pending for Verify') chipStatus = 'PENDING';
+      return <Chip label={status} size="small" sx={getStatusChipSx(chipStatus)} />;
+    }
+    if (col.id === 'department') return (row.departments || []).map((d) => d.departmentName).join(', ');
+    if (col.id === 'createdDate') return row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '-';
+    return row[col.id] || '-';
+  };
 
   return (
     <MainCard
-      title="Check List Verify"
+      title={
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <IconChecks size={24} />
+          <Typography variant="h3">Check List Verify</Typography>
+        </Stack>
+      }
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Stack direction="row" spacing={1.5}>
           <Button
             variant="contained"
             color="error"
             size="medium"
             startIcon={<IconBan size={18} />}
             onClick={() => handleVerify('Rejected')}
-            disabled={!selectedRowId}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: selectedRowId ? 4 : 'none',
-              transition: 'all 0.2s',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 }
-            }}
+            disabled={!selectedRow}
+            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
           >
             Reject
           </Button>
@@ -372,387 +204,62 @@ export default function CheckListVerify() {
             size="medium"
             startIcon={<IconCheck size={18} />}
             onClick={() => handleVerify('Verified')}
-            disabled={!selectedRowId}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: selectedRowId ? 4 : 'none',
-              transition: 'all 0.2s',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 }
-            }}
+            disabled={!selectedRow}
+            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
           >
             Verify
           </Button>
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 24, alignSelf: 'center' }} />
-          <Button
-            variant="outlined"
-            color="primary"
-            size="medium"
-            startIcon={<IconFileDownload size={18} />}
-            onClick={handleExport}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              borderWidth: '2px',
-              '&:hover': { borderWidth: '2px', bgcolor: 'primary.50' }
-            }}
-          >
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
             Export Excel
           </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            size="medium"
-            onClick={() => {
-              setSelectedRowId(null);
-              setIsView(false);
-              setDialogOpen(true);
-            }}
-            sx={{
-              borderRadius: '8px',
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: 2,
-              transition: 'all 0.2s',
-              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
-            }}
-          >
-            + New
-          </Button>
-          <IconButton
-            size="medium"
-            onClick={() => setDrawerOpen(true)}
-            sx={{
-              border: '2px solid',
-              borderColor: activeCount > 0 ? 'primary.main' : 'divider',
-              bgcolor: activeCount > 0 ? 'primary.light' : 'background.paper',
-              borderRadius: '8px',
-              p: 1,
-              transition: 'all 0.2s',
-              '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' },
-              position: 'relative'
-            }}
-          >
-            <IconAdjustmentsHorizontal size={20} />
-            {activeCount > 0 && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  width: 18,
-                  height: 18,
-                  borderRadius: '50%',
-                  bgcolor: 'error.main',
-                  color: '#fff',
-                  fontSize: 11,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 700
-                }}
-              >
-                {activeCount}
-              </Box>
-            )}
-          </IconButton>
-        </Box>
+          <Tooltip title={shortcutTooltip('Create New Check List', 'Ctrl + N')}>
+            <Button variant="contained" color="primary" size="medium" onClick={() => { setSelectedRow(null); setIsView(false); setDialogOpen(true); }} sx={btnNew}>
+              + New
+            </Button>
+          </Tooltip>
+        </Stack>
       }
     >
-      {activeCount > 0 && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>
-            Filters:
-          </Typography>
-          {filters.status && filters.status !== 'All' && (
-            <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status', 'All')} />
-          )}
-          {filters.category && filters.category !== 'All' && (
-            <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category', 'All')} />
-          )}
-          {filters.departments?.map((d) => (
-            <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)} />
-          ))}
-          {filters.searchByValue && (
-            <Chip
-              label={`${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label || 'Search'}: ${filters.searchByValue}`}
-              size="small"
-              color="warning"
-              onDelete={() => {
-                setFilter('searchBy', 'All');
-                setFilter('searchByValue', '');
-              }}
-            />
-          )}
-          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml: 1 }}>
-            Clear All
-          </Button>
-        </Box>
-      )}
+      <Box sx={{ mb: 2 }}>
+        {selectedRow && (
+          <Paper sx={{ p: 1.5, mb: 2, bgcolor: 'primary.light', border: '1px solid', borderColor: 'primary.main', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="body2" fontWeight={600}>Selected Row: {selectedRow.seqNo} - {selectedRow.checkingPoint}</Typography>
+            <IconButton size="small" onClick={() => setSelectedRow(null)}><IconX size={16} /></IconButton>
+          </Paper>
+        )}
+      </Box>
 
-      <TableContainer
-        component={Paper}
-        elevation={0}
-        sx={{
-          height: 'calc(100vh - 210px)',
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: '16px',
-          overflow: 'auto',
-          boxShadow: 3,
-          '&::-webkit-scrollbar': { width: 8, height: 8 },
-          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 4, '&:hover': { backgroundColor: 'grey.500' } }
-        }}
-      >
-        <Table stickyHeader sx={{ minWidth: 1800 }} aria-label="checklist verify table">
-          <TableHead>
-            <TableRow>
-              {columns.map((col, i) => (
-                <TableCell
-                  key={i}
-                  sx={{
-                    bgcolor: 'primary.dark',
-                    color: 'primary.light',
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                    borderBottom: 'none',
-                    py: 2,
-                    '&:first-of-type': { borderTopLeftRadius: '16px' },
-                    '&:last-of-type': { borderTopRightRadius: '16px' }
-                  }}
-                >
-                  {col}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
-                  <Typography variant="body1" color="textSecondary">
-                    Loading...
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}>
-                  <Typography variant="body1" color="textSecondary">
-                    {searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              rows.map((row, idx) => (
-                <Tooltip key={row.id} title="Double tap to edit" placement="top" followCursor arrow>
-                  <TableRow
-                    hover
-                    onClick={() => handleRowClick(row)}
-                    onDoubleClick={() => handleRowOpen(row)}
-                    sx={{
-                      cursor: 'pointer',
-                      bgcolor: selectedRowId === row.id ? 'primary.light' : 'background.paper',
-                      transition: 'all 0.2s',
-                      '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5, color: 'text.primary' },
-                      '&:hover': {
-                        bgcolor: 'grey.50',
-                        transform: 'translateY(-1px)',
-                        boxShadow: 1
-                      },
-                      ...(selectedRowId === row.id && {
-                        position: 'relative',
-                        zIndex: 1,
-                        boxShadow: 3,
-                        transform: 'scale(1.001)',
-                        '& td': { borderBottom: 'none', color: 'primary.dark' },
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: '4px',
-                          bgcolor: 'primary.main',
-                          borderTopRightRadius: '4px',
-                          borderBottomRightRadius: '4px'
-                        }
-                      })
-                    }}
-                  >
-                    <TableCell>{page * size + idx + 1}</TableCell>
-                    <TableCell>{row.seqNo}</TableCell>
-                    <TableCell>{row.checkingPoint}</TableCell>
-                    <TableCell>{row.category}</TableCell>
-                    <TableCell>{row.frequency}</TableCell>
-                    <TableCell>{(row.departments || []).map((d) => d.departmentName).join(', ')}</TableCell>
-                    <TableCell>{row.effectiveFrom}</TableCell>
-                    <TableCell>{row.reminderDays}</TableCell>
-                    <TableCell>{row.expiryDate}</TableCell>
-                    <TableCell>{row.stockLink}</TableCell>
-                    <TableCell>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                    <TableCell>{row.createdBy}</TableCell>
-                    <TableCell>
-                      <StatusChip status={row.verifyStatus} />
-                    </TableCell>
-                    <TableCell>{row.verifiedBy}</TableCell>
-                    <TableCell>{row.verifiedDate}</TableCell>
-                  </TableRow>
-                </Tooltip>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <TablePagination
-        component="div"
-        count={totalElements}
+      <BOSDataTable
+        columns={columns}
+        rows={rows}
         page={page}
-        onPageChange={(e, p) => setPage(p)}
-        rowsPerPage={size}
-        onRowsPerPageChange={(e) => {
-          setSize(parseInt(e.target.value, 10));
-          setPage(0);
-        }}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        sx={{
-          '& .MuiTablePagination-toolbar': { justifyContent: 'center' },
-          '& .MuiTablePagination-spacer': { display: 'none' }
-        }}
+        size={size}
+        totalCount={totalElements}
+        loading={loading}
+        onPageChange={setPage}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onDoubleClickRow={handleRowDoubleClick}
+        onClickRow={handleRowClick}
+        selectedRowId={selectedRow?.id}
+        onEditRow={(row) => { setSelectedRow(row); setIsView(false); setDialogOpen(true); }}
+        renderCell={renderCell}
+        showActions={true}
+        id="checklist-verify-table"
       />
-
-      {/* FILTER DRAWER */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 320 } }}>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider'
-          }}
-        >
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            Filters
-          </Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}>
-            <IconX size={20} />
-          </IconButton>
-        </Box>
-        <Box sx={{ overflowY: 'auto', flex: 1 }}>
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl>
-              <RadioGroup value={filters.status || 'All'} onChange={(e) => setFilter('status', e.target.value)}>
-                {['All', 'Pending for Verify', 'Verified', 'Rejected'].map((v) => (
-                  <FormControlLabel
-                    key={v}
-                    value={v}
-                    control={<Radio size="small" />}
-                    label={<Typography variant="body2">{v}</Typography>}
-                  />
-                ))}
-              </RadioGroup>
-            </FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
-            <FormControl>
-              <RadioGroup value={filters.category || 'All'} onChange={(e) => setFilter('category', e.target.value)}>
-                {['All', 'RENEWAL', 'CHECK LIST'].map((v) => (
-                  <FormControlLabel
-                    key={v}
-                    value={v}
-                    control={<Radio size="small" />}
-                    label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>}
-                  />
-                ))}
-              </RadioGroup>
-            </FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
-            <Box sx={{ maxHeight: 250, overflowY: 'auto' }}>
-              {DEPARTMENTS.map((d) => (
-                <FormControlLabel
-                  key={d}
-                  sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }}
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={(filters.departments || []).includes(d)}
-                      onChange={() => toggleDept(d)}
-                      sx={{ p: 0.5 }}
-                    />
-                  }
-                  label={<Typography variant="body2">{d}</Typography>}
-                />
-              ))}
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
-            <FormControl fullWidth>
-              <RadioGroup value={filters.searchBy || 'All'} onChange={(e) => setFilter('searchBy', e.target.value)}>
-                {SEARCH_BY_OPTIONS.map((opt) => (
-                  <FormControlLabel
-                    key={opt.key}
-                    value={opt.key}
-                    control={<Radio size="small" />}
-                    label={<Typography variant="body2">{opt.label}</Typography>}
-                  />
-                ))}
-              </RadioGroup>
-            </FormControl>
-            {filters.searchBy && (
-              <TextField
-                size="small"
-                fullWidth
-                placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}...`}
-                value={filters.searchByValue || ''}
-                onChange={(e) => setFilter('searchByValue', e.target.value)}
-                sx={{ mt: 1 }}
-              />
-            )}
-          </FilterSection>
-        </Box>
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
-          <Button
-            fullWidth
-            variant="outlined"
-            color="error"
-            onClick={() => {
-              handleResetFilters();
-              setDrawerOpen(false);
-            }}
-          >
-            Reset All
-          </Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>
-            Apply
-          </Button>
-        </Box>
-      </Drawer>
 
       <AddCheckListDialog 
         open={dialogOpen} 
         handleClose={() => setDialogOpen(false)} 
-        initialData={activeRow} 
+        initialData={selectedRow} 
         readOnly={isView}
         onSave={async (data) => {
           try {
             await axios.post('/api/qms/checklist', data);
-            dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', variant: 'alert', severity: 'success', close: false }));
+            dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
             fetchChecklists();
           } catch (err) {
-            dispatch(openSnackbar({ open: true, message: err.response?.data?.message || 'Failed to save', variant: 'alert', severity: 'error', close: false }));
+            dispatch(openSnackbar({ open: true, message: 'Failed to save', severity: 'error', variant: 'alert' }));
           }
         }}
       />

@@ -11,16 +11,27 @@ public class AuditType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditType;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String standard;
     
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
     private Integer criteriaMinCount;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String customerAuditArea;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditArea;
+
+    @Column(columnDefinition = "NVARCHAR(100)")
     private String criteriaType;
+
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String status;
 
     private String createdBy;
