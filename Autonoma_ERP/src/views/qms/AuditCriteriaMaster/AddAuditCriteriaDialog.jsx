@@ -11,7 +11,6 @@ import {
   IconButton,
   Box,
   Slide,
-  Divider,
   MenuItem,
   useTheme,
   Table,
@@ -27,24 +26,32 @@ import {
   Autocomplete,
   Checkbox
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import {
   IconX,
-  IconDeviceFloppy,
   IconEraser,
   IconTrash,
   IconEdit,
   IconCloudUpload,
   IconPlus,
   IconPaperclip,
-  IconEye
+  IconEye,
+  IconSettings,
+  IconCheck
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
-import AnimateButton from 'ui-component/extended/AnimateButton';
-import FormRow from 'ui-component/FormRow';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
+const Transition = forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
 const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = false, nextSeq = '' }) => {
+  const theme = useTheme();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  
   const fileInputRef = React.useRef(null);
   const [formData, setFormData] = useState({
     seqNo: '',
@@ -67,6 +74,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         setAuditTypes(typesRes.data);
         setDepartments(deptsRes.data);
       } catch (error) {
+        console.error('Failed to fetch data:', error);
         setAuditTypes([
           { id: 1, auditType: 'Internal Audit' },
           { id: 2, auditType: 'External Audit' }
@@ -99,6 +107,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
           const parsed = JSON.parse(initialData.attachmentInfo);
           setAttachments(parsed.map((att) => ({ ...att, isLoaded: true })));
         } catch (error) {
+          console.error('Failed to parse attachments:', error);
           setAttachments([]);
         }
       } else {
@@ -116,20 +125,18 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         status: 'ACTIVE'
       });
       setAttachments([]);
-      setIsEditing(false);
+      setIsEditing(!readOnly);
     }
-  }, [initialData, open, nextSeq]);
+  }, [initialData, open, nextSeq, readOnly]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Handle multiple select
     if (name === 'auditType') {
       const selectedNames = typeof value === 'string' ? value.split(',') : value;
 
       setFormData((prev) => {
         const newState = { ...prev, [name]: selectedNames };
 
-        // Automation: If criteriaText is empty, fill it with descriptions from selected types
         if (!prev.criteriaText || prev.criteriaText.trim() === '') {
           const autoFilledText = auditTypes
             .filter((type) => selectedNames.includes(type.auditType))
@@ -141,7 +148,6 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
             newState.criteriaText = autoFilledText;
           }
         }
-
         return newState;
       });
     } else {
@@ -152,10 +158,10 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   const handleClear = () => {
     setFormData({
       seqNo: '',
-      auditType: '',
+      auditType: [],
       clause: '',
       criteriaText: '',
-      department: '',
+      department: [],
       attachmentRequired: 'NO',
       status: 'ACTIVE'
     });
@@ -175,7 +181,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
-  const [previewContent, setPreviewContent] = useState(''); // Store HTML or Text
+  const [previewContent, setPreviewContent] = useState('');
 
   const handleOpenPreview = async (file) => {
     setPreviewFile(file);
@@ -212,7 +218,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         const text = new TextDecoder().decode(arrayBuffer);
         setPreviewContent(`<pre style="white-space: pre-wrap; font-family: inherit;">${text}</pre>`);
       } else {
-        setPreviewContent(''); // Default to iframe/img logic
+        setPreviewContent('');
       }
     } catch (error) {
       console.error('Preview error:', error);
@@ -227,10 +233,22 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   };
 
   const handleSave = async () => {
+    if (!formData.auditType || formData.auditType.length === 0) {
+      alert('Audit Type is required');
+      return;
+    }
+    if (!formData.criteriaText?.trim()) {
+      alert('Criteria Text is required');
+      return;
+    }
+    if (!formData.department || formData.department.length === 0) {
+      alert('Department is required');
+      return;
+    }
+
     try {
       const updatedAttachments = [...attachments];
 
-      // Upload new files to server first
       for (let i = 0; i < updatedAttachments.length; i++) {
         const att = updatedAttachments[i];
         if (!att.isLoaded && att.file) {
@@ -247,7 +265,6 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         }
       }
 
-      // Serialize attachment metadata (including server-side filenames)
       const attachmentInfo = JSON.stringify(
         updatedAttachments.map((att) => ({
           id: att.id,
@@ -291,7 +308,6 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       file: file
     }));
     setAttachments([...attachments, ...newAttachments]);
-    // Reset input
     e.target.value = null;
   };
 
@@ -301,437 +317,401 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
 
   const isViewOnly = readOnly && !isEditing;
 
+  const darkStyles = {
+    dialog: {
+      bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
+      color: isDark ? '#c9d1d9' : theme.palette.text.primary
+    },
+    input: {
+      width: '100% !important',
+      '& .MuiOutlinedInput-root': {
+        width: '100%',
+        bgcolor: isDark ? 'background.default' : 'grey.50',
+        color: 'text.primary',
+        '& fieldset': { borderColor: 'divider' },
+        '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
+        '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
+        '& input': { py: 1.2, fontSize: '0.9rem' },
+        '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px' }
+      },
+      '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
+      '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary }
+    },
+    btnSave: {
+      bgcolor: 'success.main',
+      color: '#fff',
+      '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
+      textTransform: 'none',
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s',
+      boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
+    },
+    btnClear: {
+      bgcolor: 'secondary.main',
+      color: '#fff',
+      '&:hover': { bgcolor: 'secondary.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
+      textTransform: 'none',
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s'
+    },
+    btnInactive: {
+      bgcolor: 'error.main',
+      color: '#fff',
+      '&:hover': { bgcolor: 'error.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
+      textTransform: 'none',
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s',
+      boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
+    },
+    btnUpload: {
+      bgcolor: isDark ? '#7c4dff' : theme.palette.primary.main,
+      color: '#fff',
+      '&:hover': { bgcolor: isDark ? '#651fff' : theme.palette.primary.dark },
+      borderRadius: '8px',
+      textTransform: 'none',
+      fontSize: '0.85rem'
+    }
+  };
+
   return (
     <>
       <Dialog
         open={open}
+        TransitionComponent={Transition}
+        keepMounted
         onClose={() => handleClose()}
         maxWidth="lg"
         fullWidth
-        TransitionComponent={Slide}
-        TransitionProps={{ direction: 'up' }}
+        slotProps={{
+          backdrop: {
+            sx: { backgroundColor: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)' }
+          }
+        }}
         PaperProps={{
           sx: {
-            borderRadius: 3,
-            boxShadow: '0 12px 48px rgba(0,0,0,0.15)',
-            overflow: 'hidden'
+            height: 'auto',
+            maxHeight: '95vh',
+            bgcolor: darkStyles.dialog.bgcolor,
+            backgroundImage: 'none',
+            borderRadius: '24px',
+            border: isDark ? '1px solid #30363d' : 'none',
+            boxShadow: isDark ? '0 24px 48px rgba(0,0,0,0.5)' : '0 24px 48px rgba(0,0,0,0.1)'
           }
         }}
       >
         <DialogTitle
           sx={{
-            m: 0,
-            p: 2.5,
-            bgcolor: '#546e7a',
-            color: '#fff',
             display: 'flex',
-            alignItems: 'center',
             justifyContent: 'space-between',
-            gap: 1.5
+            alignItems: 'center',
+            bgcolor: isDark ? 'background.default' : 'primary.light',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            py: 2.5,
+            px: 4
           }}
-          component="div"
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <IconEdit size={24} />
-            <Typography variant="h4" sx={{ color: '#fff', fontWeight: 600 }}>
-              {initialData ? (isViewOnly ? 'View Audit Criteria' : 'Edit Audit Criteria') : 'Add Audit Criteria'}
-            </Typography>
-          </Box>
-          <IconButton onClick={() => handleClose()} size="small" sx={{ color: 'inherit' }}>
+          <Typography variant="h5" component="span" sx={{ fontWeight: 600, color: isDark ? '#58a6ff' : theme.palette.primary.main, fontSize: '1.25rem' }}>
+            {initialData ? 'Edit Audit Criteria' : 'New Audit Criteria'}
+          </Typography>
+          <IconButton onClick={() => handleClose()} size="small" sx={{ color: isDark ? '#8b949e' : theme.palette.text.secondary }}>
             <IconX size={24} />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 4, overflowY: 'auto', maxHeight: '80vh' }}>
-          <Box sx={{ display: 'flex', gap: 4 }}>
-            {/* Main Form Section */}
-            <Box sx={{ flex: 1, border: '1px solid #cfd8dc', p: 3, borderRadius: 2, bgcolor: '#ffffff' }}>
-              <FormRow label="Seq No">
-                <TextField name="seqNo" fullWidth size="small" value={formData.seqNo} disabled={true} placeholder="Auto-generated" />
-              </FormRow>
-
-              <FormRow label="Audit Type" required>
-                <Autocomplete
-                  multiple
-                  disableCloseOnSelect
-                  id="audit-type-select"
-                  options={auditTypes}
-                  getOptionLabel={(option) => option.auditType || ''}
-                  value={auditTypes.filter((t) => (formData.auditType || []).includes(t.auditType))}
-                  onChange={(event, newValue) => {
-                    setFormData({
-                      ...formData,
-                      auditType: newValue.map((v) => v.auditType)
-                    });
-                  }}
-                  disabled={isViewOnly}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      size="small"
-                      placeholder="Search Audit Types"
-                      sx={{ bgcolor: isViewOnly ? '#f5f5f5' : '#fff' }}
+        <DialogContent sx={{ p: 4, pt: 5, bgcolor: darkStyles.dialog.bgcolor, width: '100%', overflowX: 'hidden' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 4, width: '100%', alignItems: 'start' }}>
+            
+            {/* ── LEFT COLUMN: Form Sections ── */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <IconSettings size={20} color={theme.palette.primary.main} />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Criteria Details</Typography>
+                </Box>
+                <Box sx={{ p: 3 }}>
+                  <Stack spacing={2.5} sx={{ width: '100%' }}>
+                    <TextField 
+                      name="seqNo" 
+                      label="Seq No"
+                      fullWidth 
+                      size="small" 
+                      value={formData.seqNo} 
+                      disabled={true} 
+                      sx={{ ...darkStyles.input, width: '100% !important' }} 
                     />
-                  )}
-                  renderOption={(props, option, { selected }) => (
-                    <li {...props}>
-                      <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
-                      {option.auditType}
-                    </li>
-                  )}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      p: 0.5,
-                      '& .MuiAutocomplete-tag': {
-                        bgcolor: 'primary.light',
-                        color: 'primary.main',
-                        fontWeight: 600,
-                        height: 24
-                      }
-                    }
-                  }}
-                />
-              </FormRow>
 
-              <FormRow label="Clause">
-                <TextField
-                  name="clause"
-                  fullWidth
-                  size="small"
-                  value={formData.clause}
-                  onChange={handleChange}
-                  disabled={isViewOnly}
-                  placeholder="Enter Clause"
-                />
-              </FormRow>
-
-              <FormRow label="Audit Criteria" required>
-                <TextField
-                  name="criteriaText"
-                  fullWidth
-                  multiline
-                  rows={4}
-                  size="small"
-                  value={formData.criteriaText}
-                  onChange={handleChange}
-                  disabled={isViewOnly}
-                  placeholder="Enter Detailed Criteria"
-                />
-              </FormRow>
-
-              <FormRow label="Department" required>
-                <Autocomplete
-                  multiple
-                  disableCloseOnSelect
-                  id="department-select"
-                  options={departments}
-                  getOptionLabel={(option) => option.departmentName || ''}
-                  value={departments.filter((d) => (formData.department || []).includes(d.departmentName))}
-                  onChange={(event, newValue) => {
-                    setFormData({
-                      ...formData,
-                      department: newValue.map((v) => v.departmentName)
-                    });
-                  }}
-                  disabled={isViewOnly}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      size="small"
-                      placeholder="Search Departments"
-                      sx={{ bgcolor: isViewOnly ? '#f5f5f5' : '#fff' }}
+                    <Autocomplete
+                      multiple
+                      disableCloseOnSelect
+                      options={auditTypes}
+                      getOptionLabel={(option) => option.auditType || ''}
+                      value={auditTypes.filter((t) => (formData.auditType || []).includes(t.auditType))}
+                      onChange={(event, newValue) => {
+                        handleChange({ target: { name: 'auditType', value: newValue.map((v) => v.auditType) } });
+                      }}
+                      disabled={isViewOnly}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Audit Type" size="small" sx={{ ...darkStyles.input, width: '100% !important' }} required />
+                      )}
+                      renderOption={(props, option, { selected }) => (
+                        <li {...props}>
+                          <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                          {option.auditType}
+                        </li>
+                      )}
+                      sx={{ '& .MuiOutlinedInput-root': { p: 0.5 }, '& .MuiAutocomplete-tag': { bgcolor: isDark ? 'rgba(88, 166, 255, 0.2)' : 'primary.light', color: isDark ? '#58a6ff' : 'primary.main', fontWeight: 600, height: 24 } }}
                     />
-                  )}
-                  renderOption={(props, option, { selected }) => (
-                    <li {...props}>
-                      <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
-                      {option.departmentName}
-                    </li>
-                  )}
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      p: 0.5,
-                      '& .MuiAutocomplete-tag': {
-                        bgcolor: 'secondary.light',
-                        color: 'secondary.main',
-                        fontWeight: 600,
-                        height: 24
-                      }
-                    }
-                  }}
-                />
-              </FormRow>
 
-              <FormRow label="Attachment required">
-                <TextField
-                  select
-                  name="attachmentRequired"
-                  fullWidth
-                  size="small"
-                  value={formData.attachmentRequired}
-                  onChange={handleChange}
-                  disabled={isViewOnly}
-                >
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </TextField>
-              </FormRow>
+                    <TextField
+                      name="clause"
+                      label="Clause"
+                      fullWidth
+                      size="small"
+                      value={formData.clause}
+                      onChange={handleChange}
+                      disabled={isViewOnly}
+                      sx={{ ...darkStyles.input, width: '100% !important' }}
+                    />
 
-              <FormRow label="Status">
-                <TextField
-                  select
-                  name="status"
-                  fullWidth
-                  size="small"
-                  value={formData.status}
-                  onChange={handleChange}
-                  disabled={isViewOnly}
-                >
-                  <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-                  <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-                </TextField>
-              </FormRow>
-            </Box>
+                    <TextField
+                      name="criteriaText"
+                      label="Audit Criteria"
+                      fullWidth
+                      multiline
+                      rows={4}
+                      size="small"
+                      value={formData.criteriaText}
+                      onChange={handleChange}
+                      disabled={isViewOnly}
+                      required
+                      sx={{ ...darkStyles.input, width: '100% !important' }}
+                    />
 
-            {/* Attachment Section */}
-            <Box sx={{ width: '400px', border: '1px solid #cfd8dc', p: 3, borderRadius: 2, bgcolor: '#f8f9fa' }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <IconPaperclip size={20} /> Attachments
-                </Typography>
-                <Button
-                  startIcon={<IconPlus size={18} />}
-                  size="small"
-                  variant="outlined"
-                  onClick={handleAddAttachment}
-                  disabled={isViewOnly}
-                >
-                  Choose
-                </Button>
-              </Stack>
+                    <Autocomplete
+                      multiple
+                      disableCloseOnSelect
+                      options={departments}
+                      getOptionLabel={(option) => option.departmentName || ''}
+                      value={departments.filter((d) => (formData.department || []).includes(d.departmentName))}
+                      onChange={(event, newValue) => {
+                        setFormData({ ...formData, department: newValue.map((v) => v.departmentName) });
+                      }}
+                      disabled={isViewOnly}
+                      renderInput={(params) => (
+                        <TextField {...params} label="Department" size="small" sx={{ ...darkStyles.input, width: '100% !important' }} required />
+                      )}
+                      renderOption={(props, option, { selected }) => (
+                        <li {...props}>
+                          <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                          {option.departmentName}
+                        </li>
+                      )}
+                      sx={{ '& .MuiOutlinedInput-root': { p: 0.5 }, '& .MuiAutocomplete-tag': { bgcolor: isDark ? 'rgba(88, 166, 255, 0.2)' : 'secondary.light', color: isDark ? '#58a6ff' : 'secondary.main', fontWeight: 600, height: 24 } }}
+                    />
 
-              <Box sx={{ border: '2px dashed #cfd8dc', p: 3, textAlign: 'center', borderRadius: 2, mb: 3, bgcolor: '#fff' }}>
-                <IconCloudUpload size={48} color="#90a4ae" />
-                <Typography variant="body2" sx={{ mt: 1, color: '#607d8b' }}>
-                  Click Choose or drag files here
-                </Typography>
+                    <TextField
+                      select
+                      name="attachmentRequired"
+                      label="Attachment required"
+                      fullWidth
+                      size="small"
+                      value={formData.attachmentRequired}
+                      onChange={handleChange}
+                      disabled={isViewOnly}
+                      sx={{ ...darkStyles.input, width: '100% !important' }}
+                    >
+                      <MenuItem value="YES">YES</MenuItem>
+                      <MenuItem value="NO">NO</MenuItem>
+                    </TextField>
+
+                    <TextField
+                      select
+                      name="status"
+                      label="Status"
+                      fullWidth
+                      size="small"
+                      value={formData.status}
+                      onChange={handleChange}
+                      disabled={isViewOnly}
+                      sx={{ ...darkStyles.input, width: '100% !important' }}
+                    >
+                      <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                      <MenuItem value="INACTIVE">INACTIVE</MenuItem>
+                    </TextField>
+                  </Stack>
+                </Box>
               </Box>
-
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>
-                Doc Details*
-              </Typography>
-              <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #eee' }}>
-                <Table size="small">
-                  <TableHead sx={{ bgcolor: '#eee' }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>SI.</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>File Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }} align="center">
-                        Action
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {attachments.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={4} align="center" sx={{ py: 2, color: '#999' }}>
-                          No records found.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      attachments.map((file, idx) => (
-                        <TableRow key={file.id}>
-                          <TableCell>{idx + 1}</TableCell>
-                          <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <Tooltip
-                              title={
-                                <Box sx={{ p: 0.5 }}>
-                                  {file.file && file.file.type.startsWith('image/') ? (
-                                    <img
-                                      src={URL.createObjectURL(file.file)}
-                                      alt="preview"
-                                      style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
-                                    />
-                                  ) : file.serverFileName &&
-                                    (file.fileType === 'PNG' || file.fileType === 'JPG' || file.fileType === 'JPEG') ? (
-                                    <img
-                                      src={`${axios.defaults.baseURL}api/files/download/${file.serverFileName}`}
-                                      alt="preview"
-                                      style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }}
-                                    />
-                                  ) : (
-                                    <Typography variant="caption">
-                                      {file.serverFileName ? 'View/Download: ' : 'Local file: '}
-                                      {file.fileName}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              }
-                              placement="top"
-                              arrow
-                            >
-                              <Link
-                                href="#"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  handleOpenPreview(file);
-                                }}
-                                sx={{
-                                  cursor: 'pointer',
-                                  textDecoration: 'none',
-                                  color: 'primary.main',
-                                  fontWeight: 500,
-                                  '&:hover': { textDecoration: 'underline' }
-                                }}
-                              >
-                                {file.fileName}
-                              </Link>
-                            </Tooltip>
-                          </TableCell>
-                          <TableCell sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{file.fileType}</TableCell>
-                          <TableCell align="center">
-                            <Stack direction="row" spacing={0.5} justifyContent="center">
-                              <Tooltip title={file.serverFileName ? 'Preview / Download' : 'Preview Local'}>
-                                <IconButton
-                                  size="small"
-                                  sx={{
-                                    color: 'primary.main',
-                                    bgcolor: '#e3f2fd',
-                                    '&:hover': { bgcolor: 'primary.main', color: '#fff' }
-                                  }}
-                                  onClick={() => handleOpenPreview(file)}
-                                >
-                                  <IconEye size={14} />
-                                </IconButton>
-                              </Tooltip>
-                              <IconButton size="small" color="error" onClick={() => handleRemoveAttachment(file.id)} disabled={isViewOnly}>
-                                <IconTrash size={14} />
-                              </IconButton>
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-
-              <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileChange} />
-
-              <Button
-                fullWidth
-                variant="contained"
-                sx={{ mt: 2, bgcolor: '#546e7a', '&:hover': { bgcolor: '#455a64' } }}
-                startIcon={<IconPlus size={18} />}
-                onClick={handleAddAttachment}
-                disabled={isViewOnly}
-              >
-                Add
-              </Button>
             </Box>
+
+            {/* ── RIGHT COLUMN: Attachments ── */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
+              <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconPaperclip size={20} color={theme.palette.secondary.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Attachments</Typography>
+                  </Box>
+                  <Button
+                    startIcon={<IconPlus size={18} />}
+                    size="small"
+                    variant="contained"
+                    sx={darkStyles.btnUpload}
+                    onClick={handleAddAttachment}
+                    disabled={isViewOnly}
+                  >
+                    Add
+                  </Button>
+                </Box>
+                <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', flex: 1, bgcolor: isDark ? 'transparent' : 'grey.50' }}>
+                  
+                  <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileChange} />
+
+                  <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider', borderRadius: 2, bgcolor: isDark ? 'background.paper' : '#fff' }}>
+                    <Table size="small">
+                      <TableHead sx={{ bgcolor: isDark ? '#1c2128' : 'grey.50' }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>SI.</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>File Name</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.primary' }}>Type</TableCell>
+                          <TableCell sx={{ fontWeight: 700, color: 'text.primary' }} align="center">Action</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {attachments.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={4} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                              <IconCloudUpload size={48} opacity={0.5} style={{ marginBottom: 8 }} />
+                              <Typography variant="body2">No records found. Click Add to upload.</Typography>
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          attachments.map((file, idx) => (
+                            <TableRow key={file.id}>
+                              <TableCell sx={{ color: 'text.primary' }}>{idx + 1}</TableCell>
+                              <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'text.primary' }}>
+                                <Tooltip
+                                  title={
+                                    <Box sx={{ p: 0.5 }}>
+                                      {file.file && file.file.type.startsWith('image/') ? (
+                                        <img src={URL.createObjectURL(file.file)} alt="preview" style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }} />
+                                      ) : file.serverFileName && (file.fileType === 'PNG' || file.fileType === 'JPG' || file.fileType === 'JPEG') ? (
+                                        <img src={`${axios.defaults.baseURL}api/files/download/${file.serverFileName}`} alt="preview" style={{ maxWidth: '200px', maxHeight: '200px', borderRadius: '4px' }} />
+                                      ) : (
+                                        <Typography variant="caption">
+                                          {file.serverFileName ? 'View/Download: ' : 'Local file: '}
+                                          {file.fileName}
+                                        </Typography>
+                                      )}
+                                    </Box>
+                                  }
+                                  placement="top"
+                                  arrow
+                                >
+                                  <Link
+                                    href="#"
+                                    onClick={(e) => { e.preventDefault(); handleOpenPreview(file); }}
+                                    sx={{ cursor: 'pointer', textDecoration: 'none', color: isDark ? '#58a6ff' : 'primary.main', fontWeight: 500, '&:hover': { textDecoration: 'underline' } }}
+                                  >
+                                    {file.fileName}
+                                  </Link>
+                                </Tooltip>
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{file.fileType}</TableCell>
+                              <TableCell align="center">
+                                <Stack direction="row" spacing={0.5} justifyContent="center">
+                                  <Tooltip title={file.serverFileName ? 'Preview / Download' : 'Preview Local'}>
+                                    <IconButton size="small" sx={{ color: 'primary.main', bgcolor: isDark ? 'rgba(88, 166, 255, 0.1)' : '#e3f2fd', '&:hover': { bgcolor: 'primary.main', color: '#fff' } }} onClick={() => handleOpenPreview(file)}>
+                                      <IconEye size={14} />
+                                    </IconButton>
+                                  </Tooltip>
+                                  <IconButton size="small" color="error" onClick={() => handleRemoveAttachment(file.id)} disabled={isViewOnly}>
+                                    <IconTrash size={14} />
+                                  </IconButton>
+                                </Stack>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              </Box>
+            </Box>
+
           </Box>
         </DialogContent>
 
-        <Divider />
-
-        <DialogActions sx={{ p: 3, px: 4, justifyContent: 'space-between', bgcolor: '#f8f9fa' }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <AnimateButton>
-              <Button
-                variant="contained"
-                sx={{ bgcolor: '#546e7a', '&:hover': { bgcolor: '#455a64' }, minWidth: 120 }}
-                onClick={handleClear}
-                startIcon={<IconEraser size={20} />}
-              >
-                Clear
+        <Box sx={{ p: 3, borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: darkStyles.dialog.bgcolor }}>
+          {isViewOnly ? (
+            <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
+              <Button onClick={() => setIsEditing(true)} variant="contained" sx={{...darkStyles.btnSave, bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' }}} startIcon={<IconEdit size={20} />}>
+                Edit
               </Button>
-            </AnimateButton>
-
-            {!isViewOnly && formData.id && (
-              <AnimateButton>
-                <Button
-                  variant="outlined"
-                  color="error"
-                  sx={{ minWidth: 120, borderWidth: 2, '&:hover': { borderWidth: 2 } }}
-                  onClick={handleDelete}
-                  startIcon={<IconTrash size={20} />}
-                >
-                  Delete
+              <Button onClick={() => handleClose()} variant="outlined" sx={{ ...darkStyles.btnInactive, color: isDark ? '#fff' : 'inherit' }} startIcon={<IconX size={20} />}>
+                Close
+              </Button>
+            </Box>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                {formData.id && (
+                  <Button onClick={handleDelete} variant="contained" sx={darkStyles.btnInactive} startIcon={<IconTrash size={20} />}>
+                    Delete
+                  </Button>
+                )}
+                <Button onClick={handleClear} variant="contained" sx={darkStyles.btnClear} startIcon={<IconEraser size={20} />}>
+                  Clear
                 </Button>
-              </AnimateButton>
-            )}
-          </Box>
-
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            {isViewOnly ? (
-              <AnimateButton>
-                <Button
-                  variant="contained"
-                  sx={{ bgcolor: '#546e7a', '&:hover': { bgcolor: '#455a64' }, px: 4, borderRadius: 1.5 }}
-                  onClick={() => setIsEditing(true)}
-                  startIcon={<IconEdit size={20} />}
-                >
-                  Edit
-                </Button>
-              </AnimateButton>
-            ) : (
-              <AnimateButton>
-                <Button
-                  variant="contained"
-                  sx={{ bgcolor: '#546e7a', '&:hover': { bgcolor: '#455a64' }, px: 4, borderRadius: 1.5 }}
-                  onClick={handleSave}
-                  startIcon={<IconDeviceFloppy size={20} />}
-                >
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button onClick={handleSave} variant="contained" sx={darkStyles.btnSave} startIcon={<IconCheck size={20} />}>
                   Save
                 </Button>
-              </AnimateButton>
-            )}
-          </Box>
-        </DialogActions>
+              </Box>
+            </>
+          )}
+        </Box>
       </Dialog>
 
       {/* Pop-up Preview Dialog */}
-      <Dialog
-        open={previewOpen}
-        onClose={handleClosePreview}
-        maxWidth="md"
-        fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2, height: '80vh' }
-        }}
-      >
-        <DialogTitle sx={{ bgcolor: '#eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} component="div">
-          <Typography variant="h4" component="span">
-            {previewFile?.fileName}
-          </Typography>
-          <IconButton onClick={handleClosePreview}>
-            <IconX size={20} />
-          </IconButton>
+      <Dialog open={previewOpen} onClose={handleClosePreview} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2, height: '80vh', bgcolor: darkStyles.dialog.bgcolor } }}>
+        <DialogTitle sx={{ bgcolor: isDark ? '#1c2128' : '#eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }} component="div">
+          <Typography variant="h4" component="span" sx={{ color: darkStyles.dialog.color }}>{previewFile?.fileName}</Typography>
+          <IconButton onClick={handleClosePreview} sx={{ color: darkStyles.dialog.color }}><IconX size={20} /></IconButton>
         </DialogTitle>
-        <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', bgcolor: '#fafafa', overflow: 'auto' }}>
+        <DialogContent sx={{ p: 0, display: 'flex', flexDirection: 'column', bgcolor: isDark ? 'background.default' : '#fafafa', overflow: 'auto' }}>
           {previewFile && (
             <Box sx={{ p: previewContent ? 3 : 0, width: '100%', height: '100%' }}>
               {previewContent && previewContent !== 'Loading...' ? (
                 <Box
                   className="document-preview-container"
                   sx={{
-                    bgcolor: '#fff',
+                    bgcolor: isDark ? 'background.paper' : '#fff',
                     p: 4,
                     boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
                     borderRadius: 1,
                     minHeight: '100%',
+                    color: 'text.primary',
                     '& table': { borderCollapse: 'collapse', width: '100%', mb: 2 },
-                    '& th, & td': { border: '1px solid #ddd', p: 1, textAlign: 'left' },
+                    '& th, & td': { border: `1px solid ${theme.palette.divider}`, p: 1, textAlign: 'left' },
                     '& img': { maxWidth: '100%' }
                   }}
                   dangerouslySetInnerHTML={{ __html: previewContent }}
                 />
               ) : previewContent === 'Loading...' ? (
                 <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', p: 5 }}>
-                  <Typography variant="h4" color="textSecondary">
-                    Loading preview...
-                  </Typography>
+                  <Typography variant="h4" color="text.secondary">Loading preview...</Typography>
                 </Box>
               ) : (
                 <>
@@ -741,41 +721,15 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
                     const isPdf = previewFile.file?.type === 'application/pdf' || ext === 'PDF';
 
                     if (isImage) {
-                      return (
-                        <img
-                          src={
-                            previewFile.file
-                              ? URL.createObjectURL(previewFile.file)
-                              : `${axios.defaults.baseURL}api/files/download/${previewFile.serverFileName}`
-                          }
-                          alt="Preview"
-                          style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: 'auto' }}
-                        />
-                      );
+                      return <img src={previewFile.file ? URL.createObjectURL(previewFile.file) : `${axios.defaults.baseURL}api/files/download/${previewFile.serverFileName}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', display: 'block', margin: 'auto' }} />;
                     } else if (isPdf) {
-                      return (
-                        <iframe
-                          title="Document Preview"
-                          src={
-                            previewFile.file
-                              ? URL.createObjectURL(previewFile.file)
-                              : `${axios.defaults.baseURL}api/files/download/${previewFile.serverFileName}`
-                          }
-                          style={{ width: '100%', height: '100%', border: 'none' }}
-                        />
-                      );
+                      return <iframe title="Document Preview" src={previewFile.file ? URL.createObjectURL(previewFile.file) : `${axios.defaults.baseURL}api/files/download/${previewFile.serverFileName}`} style={{ width: '100%', height: '100%', border: 'none' }} />;
                     } else {
                       return (
                         <Box sx={{ textAlign: 'center', p: 4, color: 'text.secondary', mt: 10 }}>
                           <IconPaperclip size={64} opacity={0.2} style={{ marginBottom: 16 }} />
-                          <Typography variant="h5" gutterBottom>
-                            Preview not available
-                          </Typography>
-                          <Typography variant="body2">
-                            This file format ({ext}) cannot be rendered directly in the browser.
-                            <br />
-                            Please use the button below to download or open it.
-                          </Typography>
+                          <Typography variant="h5" gutterBottom>Preview not available</Typography>
+                          <Typography variant="body2">This file format ({ext}) cannot be rendered directly in the browser.<br />Please use the button below to download or open it.</Typography>
                         </Box>
                       );
                     }
@@ -785,14 +739,13 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClosePreview}>Close</Button>
+        <DialogActions sx={{ bgcolor: isDark ? '#1c2128' : 'background.paper', borderTop: '1px solid', borderColor: 'divider' }}>
+          <Button onClick={handleClosePreview} sx={{ color: 'text.primary' }}>Close</Button>
           <Button
             variant="contained"
+            sx={darkStyles.btnUpload}
             onClick={() => {
-              const url = previewFile.file
-                ? URL.createObjectURL(previewFile.file)
-                : `${axios.defaults.baseURL}api/files/download/${previewFile.serverFileName}`;
+              const url = previewFile.file ? URL.createObjectURL(previewFile.file) : `${axios.defaults.baseURL}api/files/download/${previewFile.serverFileName}`;
               window.open(url, '_blank');
             }}
           >
@@ -808,7 +761,8 @@ AddAuditCriteriaDialog.propTypes = {
   open: PropTypes.bool,
   handleClose: PropTypes.func,
   initialData: PropTypes.object,
-  readOnly: PropTypes.bool
+  readOnly: PropTypes.bool,
+  nextSeq: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
 };
 
 export default AddAuditCriteriaDialog;

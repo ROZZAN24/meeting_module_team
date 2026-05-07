@@ -124,12 +124,34 @@ function FilterSection({ title, open, onToggle, children }) {
 
 function StatusChip({ status }) {
   const map = {
-    Verified: { color: 'success', icon: <IconCheck size={14} /> },
-    Rejected: { color: 'error', icon: <IconBan size={14} /> },
-    'Pending for Verify': { color: 'warning', icon: null }
+    Verified: { color: 'success', icon: <IconCheck size={14} />, bg: 'success.light', text: 'success.dark', border: 'success.main' },
+    Rejected: { color: 'error', icon: <IconBan size={14} />, bg: 'error.light', text: 'error.dark', border: 'error.main' },
+    'Pending for Verify': { color: 'warning', icon: null, bg: 'warning.light', text: 'warning.dark', border: 'warning.main' }
   };
-  const cfg = map[status] || { color: 'default', icon: null };
-  return <Chip label={status} size="small" color={cfg.color} icon={cfg.icon} variant="outlined" />;
+  const cfg = map[status] || { color: 'default', icon: null, bg: 'grey.100', text: 'grey.700', border: 'grey.300' };
+  
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        px: 1.5,
+        py: 0.5,
+        borderRadius: '12px',
+        bgcolor: cfg.bg,
+        color: cfg.text,
+        border: `1px solid ${cfg.border}`,
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        letterSpacing: '0.5px',
+        textTransform: 'uppercase'
+      }}
+    >
+      {cfg.icon}
+      {status}
+    </Box>
+  );
 }
 
 export default function CheckListVerify() {
@@ -141,6 +163,7 @@ export default function CheckListVerify() {
 
   const [selectedRowId, setSelectedRowId] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isView, setIsView] = useState(true);
   const dispatch = useDispatch();
   const searchQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
@@ -251,6 +274,7 @@ export default function CheckListVerify() {
 
   const handleRowOpen = (row) => {
     setSelectedRowId(row.id);
+    setIsView(false);
     setDialogOpen(true);
   };
 
@@ -323,46 +347,91 @@ export default function CheckListVerify() {
     <MainCard
       title="Check List Verify"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Button
             variant="contained"
             color="error"
-            size="small"
+            size="medium"
             startIcon={<IconBan size={18} />}
             onClick={() => handleVerify('Rejected')}
             disabled={!selectedRowId}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: selectedRowId ? 4 : 'none',
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 }
+            }}
           >
             Reject
           </Button>
           <Button
             variant="contained"
-            color="primary"
-            size="small"
+            color="success"
+            size="medium"
             startIcon={<IconCheck size={18} />}
             onClick={() => handleVerify('Verified')}
             disabled={!selectedRowId}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: selectedRowId ? 4 : 'none',
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 }
+            }}
           >
             Verify
           </Button>
+          <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 24, alignSelf: 'center' }} />
           <Button
             variant="outlined"
             color="primary"
-            size="small"
+            size="medium"
             startIcon={<IconFileDownload size={18} />}
             onClick={handleExport}
-            sx={{ borderRadius: 1.5 }}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              borderWidth: '2px',
+              '&:hover': { borderWidth: '2px', bgcolor: 'primary.50' }
+            }}
           >
             Export Excel
           </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            size="medium"
+            onClick={() => {
+              setSelectedRowId(null);
+              setIsView(false);
+              setDialogOpen(true);
+            }}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: 2,
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
+            }}
+          >
+            + New
+          </Button>
           <IconButton
-            size="small"
+            size="medium"
             onClick={() => setDrawerOpen(true)}
             sx={{
-              border: '1px solid',
+              border: '2px solid',
               borderColor: activeCount > 0 ? 'primary.main' : 'divider',
-              bgcolor: activeCount > 0 ? 'primary.light' : 'transparent',
-              borderRadius: 1.5,
-              p: 0.8,
+              bgcolor: activeCount > 0 ? 'primary.light' : 'background.paper',
+              borderRadius: '8px',
+              p: 1,
+              transition: 'all 0.2s',
+              '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' },
               position: 'relative'
             }}
           >
@@ -425,13 +494,17 @@ export default function CheckListVerify() {
 
       <TableContainer
         component={Paper}
+        elevation={0}
         sx={{
           height: 'calc(100vh - 210px)',
           border: '1px solid',
           borderColor: 'divider',
-          '&::-webkit-scrollbar': { width: 10, height: 10 },
-          '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 }
+          borderRadius: '16px',
+          overflow: 'auto',
+          boxShadow: 3,
+          '&::-webkit-scrollbar': { width: 8, height: 8 },
+          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 4, '&:hover': { backgroundColor: 'grey.500' } }
         }}
       >
         <Table stickyHeader sx={{ minWidth: 1800 }} aria-label="checklist verify table">
@@ -442,10 +515,16 @@ export default function CheckListVerify() {
                   key={i}
                   sx={{
                     bgcolor: 'primary.dark',
-                    color: 'white',
-                    fontWeight: 'bold',
+                    color: 'primary.light',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
                     whiteSpace: 'nowrap',
-                    borderRight: '1px solid rgba(255,255,255,0.2)'
+                    borderBottom: 'none',
+                    py: 2,
+                    '&:first-of-type': { borderTopLeftRadius: '16px' },
+                    '&:last-of-type': { borderTopRightRadius: '16px' }
                   }}
                 >
                   {col}
@@ -472,12 +551,40 @@ export default function CheckListVerify() {
               </TableRow>
             ) : (
               rows.map((row, idx) => (
-                <Tooltip key={row.id} title="Double tap to view details" placement="top" followCursor arrow>
+                <Tooltip key={row.id} title="Double tap to edit" placement="top" followCursor arrow>
                   <TableRow
                     hover
                     onClick={() => handleRowClick(row)}
                     onDoubleClick={() => handleRowOpen(row)}
-                    sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                    sx={{
+                      cursor: 'pointer',
+                      bgcolor: selectedRowId === row.id ? 'primary.light' : 'background.paper',
+                      transition: 'all 0.2s',
+                      '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5, color: 'text.primary' },
+                      '&:hover': {
+                        bgcolor: 'grey.50',
+                        transform: 'translateY(-1px)',
+                        boxShadow: 1
+                      },
+                      ...(selectedRowId === row.id && {
+                        position: 'relative',
+                        zIndex: 1,
+                        boxShadow: 3,
+                        transform: 'scale(1.001)',
+                        '& td': { borderBottom: 'none', color: 'primary.dark' },
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 0,
+                          top: 0,
+                          bottom: 0,
+                          width: '4px',
+                          bgcolor: 'primary.main',
+                          borderTopRightRadius: '4px',
+                          borderBottomRightRadius: '4px'
+                        }
+                      })
+                    }}
                   >
                     <TableCell>{page * size + idx + 1}</TableCell>
                     <TableCell>{row.seqNo}</TableCell>
@@ -634,7 +741,21 @@ export default function CheckListVerify() {
         </Box>
       </Drawer>
 
-      <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} initialData={activeRow} readOnly={true} />
+      <AddCheckListDialog 
+        open={dialogOpen} 
+        handleClose={() => setDialogOpen(false)} 
+        initialData={activeRow} 
+        readOnly={isView}
+        onSave={async (data) => {
+          try {
+            await axios.post('/api/qms/checklist', data);
+            dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', variant: 'alert', severity: 'success', close: false }));
+            fetchChecklists();
+          } catch (err) {
+            dispatch(openSnackbar({ open: true, message: err.response?.data?.message || 'Failed to save', variant: 'alert', severity: 'error', close: false }));
+          }
+        }}
+      />
     </MainCard>
   );
 }

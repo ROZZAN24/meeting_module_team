@@ -26,8 +26,7 @@ const FormRow = ({ label, children, required = false, labelWidth = 220 }) => (
         <Box component="span" sx={{ color: 'error.main' }}>
           *
         </Box>
-      )}{' '}
-      :
+      )}
     </Typography>
     <Box sx={{ width: '100%' }}>{children}</Box>
   </Box>

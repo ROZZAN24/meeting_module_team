@@ -87,7 +87,7 @@ export default function InvoiceFilter({ rows, setRows }) {
         </Tooltip>
 
         {/* list add & dialog */}
-        <Tooltip title="Add Invoice">
+        <Tooltip title="+ New">
           <Link to="/apps/invoice/create-invoice">
             <Fab color="primary" size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
               <AddIcon fontSize="small" />

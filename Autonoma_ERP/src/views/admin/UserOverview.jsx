@@ -136,8 +136,8 @@ const UserOverview = () => {
       title="User Overview"
       secondary={
         <AnimateButton>
-          <Button variant="contained" color="secondary" startIcon={<AddIcon />} onClick={handleClickOpen}>
-            New User
+          <Button variant="contained" color="secondary" onClick={handleClickOpen}>
+            + New
           </Button>
         </AnimateButton>
       }

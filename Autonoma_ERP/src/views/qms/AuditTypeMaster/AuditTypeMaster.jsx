@@ -165,7 +165,7 @@ export default function AuditTypeMaster() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this audit type?')) {
       try {
-        await axios.delete(`/api/qms/audit-types/${id}`);
+        await axios.delete(`/api/master/qms/audit-type/${id}`);
         fetchAuditTypes();
       } catch (error) {
         console.error('Failed to delete audit type:', error);
@@ -220,17 +220,35 @@ export default function AuditTypeMaster() {
           <Button
             variant="outlined"
             color="primary"
+            size="medium"
             startIcon={<IconFileDownload size={18} />}
             onClick={handleExport}
-            sx={{ borderRadius: 2 }}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              borderWidth: '2px',
+              '&:hover': { borderWidth: '2px', bgcolor: 'primary.50' }
+            }}
           >
-            Excel
+            Export Excel
           </Button>
-          <AnimateButton>
-            <Button variant="contained" color="primary" startIcon={<IconPlus size={18} />} onClick={handleOpenAdd} sx={{ borderRadius: 2 }}>
-              Add Audit Type
-            </Button>
-          </AnimateButton>
+          <Button
+            variant="contained"
+            color="primary"
+            size="medium"
+            onClick={handleOpenAdd}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: 2,
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
+            }}
+          >
+            + New
+          </Button>
         </Stack>
       }
     >
@@ -240,8 +258,12 @@ export default function AuditTypeMaster() {
           height: 'calc(100vh - 240px)',
           border: '1px solid',
           borderColor: 'divider',
-          boxShadow: 'none',
-          borderRadius: 2
+          boxShadow: 3,
+          borderRadius: '16px',
+          overflow: 'auto',
+          '&::-webkit-scrollbar': { width: 8, height: 8 },
+          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 4, '&:hover': { backgroundColor: 'grey.500' } }
         }}
       >
         <Table stickyHeader aria-label="audit types table" size="small">
@@ -250,11 +272,10 @@ export default function AuditTypeMaster() {
               <TableCell
                 padding="checkbox"
                 sx={{
-                  bgcolor: '#f5f7fa',
-                  borderBottom: '2px solid',
-                  borderColor: 'primary.main',
-                  borderRight: '1px solid',
-                  borderColor: 'divider'
+                  bgcolor: 'primary.dark',
+                  color: 'primary.light',
+                  borderBottom: 'none',
+                  borderTopLeftRadius: '16px'
                 }}
               >
                 <Checkbox
@@ -274,17 +295,15 @@ export default function AuditTypeMaster() {
                 <TableCell
                   key={col.id}
                   sx={{
-                    bgcolor: '#f5f7fa',
-                    color: '#455a64',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    py: 1.5,
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.main',
+                    bgcolor: 'primary.dark',
+                    color: 'primary.light',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    py: 2,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05rem',
-                    borderRight: '1px solid',
-                    borderColor: 'divider'
+                    letterSpacing: '0.5px',
+                    borderBottom: 'none',
+                    whiteSpace: 'nowrap'
                   }}
                 >
                   {col.label}
@@ -292,18 +311,17 @@ export default function AuditTypeMaster() {
               ))}
               <TableCell
                 sx={{
-                  bgcolor: '#f5f7fa',
-                  color: '#455a64',
-                  fontWeight: 700,
-                  fontSize: '0.85rem',
-                  py: 1.5,
+                  bgcolor: 'primary.dark',
+                  color: 'primary.light',
+                  fontWeight: 600,
+                  fontSize: '0.8rem',
+                  py: 2,
                   textAlign: 'center',
-                  borderBottom: '2px solid',
-                  borderColor: 'primary.main',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.05rem',
-                  borderRight: '1px solid',
-                  borderColor: 'divider'
+                  letterSpacing: '0.5px',
+                  borderBottom: 'none',
+                  whiteSpace: 'nowrap',
+                  borderTopRightRadius: '16px'
                 }}
               >
                 Actions
@@ -325,17 +343,23 @@ export default function AuditTypeMaster() {
               </TableRow>
             ) : (
               rows.map((row, idx) => (
-                <Tooltip key={row.id} title="Double tap to view details" placement="top" followCursor arrow>
+                <Tooltip key={row.id} title="Double tap to edit" placement="top" followCursor arrow>
                   <TableRow
                     hover
-                    onDoubleClick={() => handleOpenView(row)}
+                    onDoubleClick={() => handleOpenEdit(row)}
                     sx={{
                       cursor: 'pointer',
-                      '&:nth-of-type(even)': { bgcolor: '#fafafa' },
-                      '&:hover': { bgcolor: '#f0f7ff !important' }
+                      transition: 'all 0.2s',
+                      '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 },
+                      '&:nth-of-type(even)': { bgcolor: theme.palette.mode === 'dark' ? '#161b22' : '#fafafa' },
+                      '&:hover': {
+                        bgcolor: theme.palette.mode === 'dark' ? '#30363d !important' : 'grey.50 !important',
+                        transform: 'translateY(-1px)',
+                        boxShadow: 1
+                      }
                     }}
                   >
-                    <TableCell padding="checkbox" sx={{ borderRight: '1px solid #eee' }}>
+                    <TableCell padding="checkbox">
                       <Checkbox
                         size="small"
                         checked={selectedIds.indexOf(row.id) > -1}
@@ -348,14 +372,13 @@ export default function AuditTypeMaster() {
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ color: 'primary.main', fontWeight: 600, borderRight: '1px solid #eee' }}>
+                    <TableCell sx={{ color: 'primary.main', fontWeight: 600 }}>
                       {page * size + idx + 1}
                     </TableCell>
-                    <TableCell sx={{ fontWeight: 600, color: '#37474f', borderRight: '1px solid #eee' }}>{row.auditType}</TableCell>
-                    <TableCell sx={{ fontWeight: 500, borderRight: '1px solid #eee' }}>{row.standard}</TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: '#37474f' }}>{row.auditType}</TableCell>
+                    <TableCell sx={{ fontWeight: 500 }}>{row.standard}</TableCell>
                     <TableCell
                       sx={{
-                        borderRight: '1px solid #eee',
                         maxWidth: 250,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -364,11 +387,11 @@ export default function AuditTypeMaster() {
                     >
                       {row.description}
                     </TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{row.criteriaMinCount}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{row.customerAuditArea}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{row.auditArea}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{row.criteriaType}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                    <TableCell>{row.criteriaMinCount}</TableCell>
+                    <TableCell>{row.customerAuditArea}</TableCell>
+                    <TableCell>{row.auditArea}</TableCell>
+                    <TableCell>{row.criteriaType}</TableCell>
+                    <TableCell>
                       <Chip
                         label={row.status}
                         size="small"
@@ -379,15 +402,15 @@ export default function AuditTypeMaster() {
                         }}
                       />
                     </TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{row.createdBy || '-'}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                    <TableCell>{row.createdBy || '-'}</TableCell>
+                    <TableCell>
                       {row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-'}
                     </TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>{row.updatedBy || '-'}</TableCell>
-                    <TableCell sx={{ borderRight: '1px solid #eee' }}>
+                    <TableCell>{row.updatedBy || '-'}</TableCell>
+                    <TableCell>
                       {row.updatedDate ? format(new Date(row.updatedDate), 'dd-MM-yyyy HH:mm') : '-'}
                     </TableCell>
-                    <TableCell align="center" sx={{ borderRight: '1px solid #eee' }}>
+                    <TableCell align="center">
                       <Stack direction="row" justifyContent="center" spacing={1}>
                         <Tooltip title="Edit">
                           <IconButton

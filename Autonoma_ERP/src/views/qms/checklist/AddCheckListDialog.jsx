@@ -18,7 +18,10 @@ import {
   ListItemText,
   Slide,
   useTheme,
-  CircularProgress
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Stack
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import {
@@ -30,7 +33,12 @@ import {
   IconFileDescription,
   IconMicrophone,
   IconMicrophoneOff,
-  IconEdit
+  IconEdit,
+  IconSettings,
+  IconCalendarEvent,
+  IconListDetails,
+  IconFileText,
+  IconTrash
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import * as XLSX from 'xlsx';
@@ -457,22 +465,25 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       color: isDark ? '#c9d1d9' : theme.palette.text.primary
     },
     input: {
+      width: '100%',
       '& .MuiOutlinedInput-root': {
-        bgcolor: isDark ? '#0d1117' : '#f8f9fa',
-        color: isDark ? '#f0f6fc' : theme.palette.text.primary,
-        '& fieldset': { borderColor: isDark ? '#30363d' : theme.palette.divider },
+        width: '100%',
+        bgcolor: isDark ? 'background.default' : 'grey.50',
+        color: 'text.primary',
+        '& fieldset': { borderColor: 'divider' },
         '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
         '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
         '& input': { py: 1.2, fontSize: '0.9rem' },
-        '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem' }
+        '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px' }
       },
       '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
       '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary }
     },
     box: {
-      border: isDark ? '1px dashed #30363d' : `1px dashed ${theme.palette.divider}`,
-      borderRadius: '8px',
-      bgcolor: isDark ? '#0d1117' : theme.palette.background.paper,
+      border: 'none',
+      borderRadius: '16px',
+      bgcolor: isDark ? 'background.default' : 'background.paper',
+      boxShadow: isDark ? '0 8px 32px rgba(0,0,0,0.4)' : 3,
       minHeight: 220,
       width: '100% !important',
       display: 'block !important',
@@ -481,31 +492,39 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       boxSizing: 'border-box'
     },
     btnSave: {
-      bgcolor: isDark ? '#238af2' : theme.palette.primary.main,
+      bgcolor: 'success.main',
       color: '#fff',
-      '&:hover': { bgcolor: isDark ? '#1a76d2' : theme.palette.primary.dark },
-      borderRadius: '8px',
+      '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
       textTransform: 'none',
-      px: 3,
-      fontWeight: 600
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s',
+      boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
     },
     btnClear: {
-      bgcolor: isDark ? '#7c4dff' : theme.palette.secondary.main,
+      bgcolor: 'secondary.main',
       color: '#fff',
-      '&:hover': { bgcolor: isDark ? '#651fff' : theme.palette.secondary.dark },
-      borderRadius: '8px',
+      '&:hover': { bgcolor: 'secondary.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
       textTransform: 'none',
-      px: 3,
-      fontWeight: 600
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s'
     },
     btnInactive: {
-      bgcolor: isDark ? '#f44336' : theme.palette.error.main,
+      bgcolor: 'error.main',
       color: '#fff',
-      '&:hover': { bgcolor: isDark ? '#d32f2f' : theme.palette.error.dark },
-      borderRadius: '8px',
+      '&:hover': { bgcolor: 'error.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
       textTransform: 'none',
-      px: 3,
-      fontWeight: 600
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s',
+      boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
     },
     btnUpload: {
       bgcolor: isDark ? '#7c4dff' : theme.palette.primary.main,
@@ -534,14 +553,23 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         onClose={handleClose}
         maxWidth="lg"
         fullWidth
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: 'rgba(15, 23, 42, 0.4)',
+              backdropFilter: 'blur(8px)'
+            }
+          }
+        }}
         PaperProps={{
           sx: {
             height: 'auto',
             maxHeight: '95vh',
             bgcolor: darkStyles.dialog.bgcolor,
             backgroundImage: 'none',
-            borderRadius: '12px',
-            border: isDark ? '1px solid #30363d' : 'none'
+            borderRadius: '24px',
+            border: isDark ? '1px solid #30363d' : 'none',
+            boxShadow: isDark ? '0 24px 48px rgba(0,0,0,0.5)' : '0 24px 48px rgba(0,0,0,0.1)'
           }
         }}
       >
@@ -550,10 +578,11 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            bgcolor: darkStyles.dialog.bgcolor,
-            borderBottom: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
-            py: 2,
-            px: 3
+            bgcolor: isDark ? 'background.default' : 'primary.light',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            py: 2.5,
+            px: 4
           }}
         >
           <Typography
@@ -572,306 +601,214 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 4, bgcolor: darkStyles.dialog.bgcolor }}>
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, width: '100%' }}>
-            {/* ── LEFT COLUMN: Form ── */}
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Box sx={{ pr: 1 }}>
-                <LabelInput label="Sequence No" required>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    value={seqNo || 'Loading...'}
-                    InputProps={{ readOnly: true }}
-                    sx={{
-                      ...darkStyles.input,
-                      '& .MuiOutlinedInput-root': {
-                        ...darkStyles.input['& .MuiOutlinedInput-root'],
-                        bgcolor: isDark ? '#1c2128' : '#f0f4f8'
-                      }
-                    }}
-                  />
-                </LabelInput>
-                <LabelInput label="Category" required>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    displayEmpty
-                    sx={darkStyles.input}
-                    disabled={!isEditing}
-                  >
-                    <MenuItem value="">
-                      <em>-Select-</em>
-                    </MenuItem>
-                    <MenuItem value="RENEWAL">RENEWAL</MenuItem>
-                    <MenuItem value="CHECK LIST">CHECK LIST</MenuItem>
-                  </Select>
-                </LabelInput>
-                <LabelInput label="Frequency" required>
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value)}
-                    displayEmpty
-                    sx={darkStyles.input}
-                    disabled={!isEditing}
-                  >
-                    <MenuItem value="">
-                      <em>-Select-</em>
-                    </MenuItem>
-                    {['DAILY', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF YEARLY', 'YEARLY'].map((f) => (
-                      <MenuItem key={f} value={f}>
-                        {f}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </LabelInput>
-                <LabelInput label="Department">
-                  <Select
-                    multiple
-                    fullWidth
-                    size="small"
-                    value={department}
-                    onChange={(e) => setDepartment(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                    renderValue={(sel) => (sel.length === 0 ? <em>-Select departments-</em> : sel.join(', '))}
-                    displayEmpty
-                    sx={darkStyles.input}
-                    disabled={!isEditing}
-                  >
-                    {DEPARTMENTS.map((dept) => (
-                      <MenuItem key={dept} value={dept}>
-                        <Checkbox checked={department.includes(dept)} size="small" />
-                        <ListItemText primary={dept} />
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </LabelInput>
-                <LabelInput label="Effective From">
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    value={effectiveFrom}
-                    onChange={(e) => setEffectiveFrom(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={darkStyles.input}
-                    InputProps={{ readOnly: !isEditing }}
-                  />
-                </LabelInput>
-                <LabelInput label="Expiry Date">
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={darkStyles.input}
-                    InputProps={{ readOnly: !isEditing }}
-                  />
-                </LabelInput>
-                <LabelInput label="Reminder Days">
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="number"
-                    value={reminderDays}
-                    onChange={(e) => setReminderDays(e.target.value)}
-                    sx={darkStyles.input}
-                    InputProps={{ readOnly: !isEditing }}
-                  />
-                </LabelInput>
-                <LabelInput label="Reminder Date">
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    value={reminderDate}
-                    onChange={(e) => setReminderDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    sx={darkStyles.input}
-                    InputProps={{ readOnly: !isEditing }}
-                  />
-                </LabelInput>
-                <LabelInput label="Checking Point" required>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    value={renewalPoint}
-                    onChange={(e) => setRenewalPoint(e.target.value)}
-                    sx={darkStyles.input}
-                    InputProps={{ readOnly: !isEditing }}
-                  />
-                </LabelInput>
-                <LabelInput label="Photo Required">
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={photoRequired}
-                    onChange={(e) => setPhotoRequired(e.target.value)}
-                    displayEmpty
-                    sx={darkStyles.input}
-                    disabled={!isEditing}
-                  >
-                    <MenuItem value="">
-                      <em>-Select-</em>
-                    </MenuItem>
-                    <MenuItem value="YES">YES</MenuItem>
-                    <MenuItem value="NO">NO</MenuItem>
-                  </Select>
-                </LabelInput>
-                <LabelInput label="Stock Link">
-                  <Select
-                    fullWidth
-                    size="small"
-                    value={stockLink}
-                    onChange={(e) => setStockLink(e.target.value)}
-                    displayEmpty
-                    sx={darkStyles.input}
-                  >
-                    <MenuItem value="">
-                      <em>-Select-</em>
-                    </MenuItem>
-                    <MenuItem value="YES">YES</MenuItem>
-                    <MenuItem value="NO">NO</MenuItem>
-                  </Select>
-                </LabelInput>
-                <LabelInput label="Item Code">
-                  <TextField fullWidth size="small" value={itemCode} onChange={(e) => setItemCode(e.target.value)} sx={darkStyles.input} />
-                </LabelInput>
-                <LabelInput label="Qty">
-                  <TextField fullWidth size="small" value={qty} onChange={(e) => setQty(e.target.value)} sx={darkStyles.input} />
-                </LabelInput>
-                <LabelInput label="Descriptions/SOP" required>
-                  <Box sx={{ position: 'relative' }}>
-                    <TextField
-                      fullWidth
-                      size="small"
-                      multiline
-                      minRows={5}
-                      value={isListening && interimText ? description + ' ' + interimText : description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Standard Operating Procedure... (or use mic 🎤)"
-                      sx={darkStyles.input}
-                      InputProps={{ sx: { pr: '44px' } }}
-                    />
-                    <IconButton
-                      onClick={toggleListening}
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        bottom: 12,
-                        right: 12,
-                        color: isListening
-                          ? isDark
-                            ? '#ff7b72'
-                            : theme.palette.error.main
-                          : isDark
-                            ? '#8b949e'
-                            : theme.palette.text.secondary
-                      }}
-                    >
-                      {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
-                    </IconButton>
+        <DialogContent sx={{ p: 4, pt: 5, bgcolor: darkStyles.dialog.bgcolor, width: '100%', overflowX: 'hidden' }}>
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, 
+            gap: 4, 
+            width: '100%',
+            alignItems: 'start'
+          }}>
+            {/* ── LEFT COLUMN: Form Sections ── */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                
+                {/* 1. Core Settings */}
+                <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                  <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconSettings size={20} color={theme.palette.primary.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Core Settings</Typography>
                   </Box>
-                </LabelInput>
-              </Box>
-            </Box>
+                  <Box sx={{ p: 3 }}>
+                    <Stack spacing={2.5} sx={{ width: '100%' }}>
+                      <TextField fullWidth size="small" label="Sequence No" value={seqNo || 'Loading...'} InputProps={{ readOnly: true }} required sx={{ ...darkStyles.input, width: '100% !important' }} />
+                      
+                      <TextField select fullWidth size="small" required sx={{ ...darkStyles.input, width: '100% !important' }} disabled={!isEditing} label="Category" value={category} onChange={(e) => setCategory(e.target.value)}>
+                        <MenuItem value="RENEWAL">RENEWAL</MenuItem>
+                        <MenuItem value="CHECK LIST">CHECK LIST</MenuItem>
+                      </TextField>
 
-            {/* ── RIGHT COLUMN: Stacked Files ── */}
-            <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
-              {/* Uploaded Files (Top) */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: isDark ? '#f0f6fc' : theme.palette.text.primary }}>
-                  Uploaded Files
-                </Typography>
-                <Box
-                  sx={{
-                    border: isDark ? '1px dashed #30363d' : `1px dashed ${theme.palette.divider}`,
-                    borderRadius: '8px',
-                    bgcolor: isDark ? '#0d1117' : '#f8f9fa',
-                    minHeight: 220,
-                    width: '100%',
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    p: 3,
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <Box sx={{ mb: 2 }}>
-                    <Button component="label" variant="contained" sx={darkStyles.btnUpload} startIcon={<IconCloudUpload size={20} />}>
-                      Upload File
-                      <input type="file" multiple hidden onChange={handleFileUpload} />
-                    </Button>
+                      <TextField select fullWidth size="small" required sx={{ ...darkStyles.input, width: '100% !important' }} disabled={!isEditing} label="Frequency" value={frequency} onChange={(e) => setFrequency(e.target.value)}>
+                        {['DAILY', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF YEARLY', 'YEARLY'].map((f) => (
+                          <MenuItem key={f} value={f}>{f}</MenuItem>
+                        ))}
+                      </TextField>
+
+                      <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        sx={{ ...darkStyles.input, width: '100% !important' }}
+                        disabled={!isEditing}
+                        label="Department"
+                        value={department}
+                        onChange={(e) => setDepartment(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
+                        SelectProps={{
+                          multiple: true,
+                          renderValue: (sel) => sel.join(', ')
+                        }}
+                      >
+                        {DEPARTMENTS.map((dept) => (
+                          <MenuItem key={dept} value={dept}>
+                            <Checkbox checked={department.includes(dept)} size="small" />
+                            <ListItemText primary={dept} />
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Stack>
                   </Box>
-                  {uploadedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', color: isDark ? '#8b949e' : theme.palette.text.disabled }}>
-                      <IconFileDescription size={52} stroke={1} />
-                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                        No file uploaded yet
-                      </Typography>
-                      <Typography variant="caption">Upload files using the button above</Typography>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                      {uploadedFiles.map((f, i) => (
-                        <FileItem key={i} file={f} onEnter={(e) => showPreview(f, e)} onMove={movePreview} onLeave={hidePreview} />
-                      ))}
-                    </Box>
-                  )}
                 </Box>
+
+                {/* 2. Timeline & Reminders */}
+                <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                  <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconCalendarEvent size={20} color={theme.palette.secondary.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Timeline & Reminders</Typography>
+                  </Box>
+                  <Box sx={{ p: 3 }}>
+                    <Stack spacing={2.5} sx={{ width: '100%' }}>
+                      <TextField fullWidth size="small" type="date" label="Effective From" value={effectiveFrom} onChange={(e) => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+                      <TextField fullWidth size="small" type="date" label="Expiry Date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+                      <TextField fullWidth size="small" type="number" label="Reminder Days" value={reminderDays} onChange={(e) => setReminderDays(e.target.value)} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+                      <TextField fullWidth size="small" type="date" label="Reminder Date" value={reminderDate} onChange={(e) => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+                    </Stack>
+                  </Box>
+                </Box>
+
+                {/* 3. Execution Details */}
+                <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                  <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconListDetails size={20} color={theme.palette.warning.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Execution Details</Typography>
+                  </Box>
+                  <Box sx={{ p: 3 }}>
+                    <Stack spacing={2.5} sx={{ width: '100%' }}>
+
+                        <TextField fullWidth size="small" label="Checking Point" required value={renewalPoint} onChange={(e) => setRenewalPoint(e.target.value)} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+
+
+                        <TextField select fullWidth size="small" sx={{ ...darkStyles.input, width: '100% !important' }} disabled={!isEditing} label="Photo Required" value={photoRequired} onChange={(e) => setPhotoRequired(e.target.value)}>
+                          <MenuItem value="YES">YES</MenuItem>
+                          <MenuItem value="NO">NO</MenuItem>
+                        </TextField>
+
+
+                        <TextField select fullWidth size="small" sx={{ ...darkStyles.input, width: '100% !important' }} disabled={!isEditing} label="Stock Link" value={stockLink} onChange={(e) => setStockLink(e.target.value)}>
+                          <MenuItem value="YES">YES</MenuItem>
+                          <MenuItem value="NO">NO</MenuItem>
+                        </TextField>
+
+
+                        <TextField fullWidth size="small" label="Item Code" value={itemCode} onChange={(e) => setItemCode(e.target.value)} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+
+
+                        <TextField fullWidth size="small" type="number" label="Qty" value={qty} onChange={(e) => setQty(e.target.value)} sx={{ ...darkStyles.input, width: '100% !important' }} InputProps={{ readOnly: !isEditing }} />
+
+                    </Stack>
+                  </Box>
+                </Box>
+
+                {/* 4. SOP / Instructions */}
+                <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)' }}>
+                  <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconFileText size={20} color={theme.palette.success.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Descriptions / SOP</Typography>
+                  </Box>
+                  <Box sx={{ p: 3 }}>
+                    <Box sx={{ position: 'relative' }}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        multiline
+                        minRows={4}
+                        label="Standard Operating Procedure"
+                        required
+                        value={isListening && interimText ? description + ' ' + interimText : description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Detail the procedure... (or use mic 🎤)"
+                        sx={{ ...darkStyles.input, width: '100% !important' }}
+                        InputProps={{ sx: { pr: '44px' }, readOnly: !isEditing }}
+                      />
+                      {isEditing && (
+                        <IconButton
+                          onClick={toggleListening}
+                          size="small"
+                          sx={{
+                            position: 'absolute',
+                            bottom: 12,
+                            right: 12,
+                            color: isListening ? 'error.main' : 'text.secondary'
+                          }}
+                        >
+                          {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
+                        </IconButton>
+                      )}
+                    </Box>
+                  </Box>
+                </Box>
+
               </Box>
 
-              {/* Scanned Files (Bottom) */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, width: '100%' }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: isDark ? '#f0f6fc' : theme.palette.text.primary }}>
-                  Scanned Files
-                </Typography>
-                <Box
-                  sx={{
-                    border: isDark ? '1px dashed #30363d' : `1px dashed ${theme.palette.divider}`,
-                    borderRadius: '8px',
-                    bgcolor: isDark ? '#0d1117' : '#f8f9fa',
-                    minHeight: 220,
-                    width: '100%',
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    p: 3,
-                    boxSizing: 'border-box'
-                  }}
-                >
-                  <Box sx={{ mb: 2 }}>
-                    <Button component="label" variant="contained" sx={darkStyles.btnScan} startIcon={<IconCamera size={20} />}>
-                      Scan & Upload
-                      <input type="file" accept="image/*" capture="environment" hidden onChange={handleScanUpload} />
-                    </Button>
+            {/* ── RIGHT COLUMN: Attachments & Scanning ── */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
+                
+                {/* Uploaded Files */}
+                <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconCloudUpload size={20} color={theme.palette.primary.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Attachments</Typography>
                   </Box>
-                  {scannedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', color: isDark ? '#8b949e' : theme.palette.text.disabled }}>
-                      <IconFileDescription size={52} stroke={1} />
-                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>
-                        No file scanned yet
-                      </Typography>
-                      <Typography variant="caption">Upload files using the button above</Typography>
+                  <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, bgcolor: isDark ? 'transparent' : 'grey.50' }}>
+                    <Box sx={{ mb: 2 }}>
+                      <Button component="label" variant="contained" sx={darkStyles.btnUpload} startIcon={<IconCloudUpload size={20} />}>
+                        Browse Files
+                        <input type="file" multiple hidden onChange={handleFileUpload} />
+                      </Button>
                     </Box>
-                  ) : (
-                    <Box sx={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
-                      {scannedFiles.map((f, i) => (
-                        <FileItem key={i} file={f} onEnter={(e) => showPreview(f, e)} onMove={movePreview} onLeave={hidePreview} />
-                      ))}
-                    </Box>
-                  )}
+                    {uploadedFiles.length === 0 ? (
+                      <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
+                        <IconFileDescription size={52} stroke={1} />
+                        <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>No file uploaded yet</Typography>
+                        <Typography variant="caption">Upload files using the button above</Typography>
+                      </Box>
+                    ) : (
+                      <Box sx={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+                        {uploadedFiles.map((f, i) => (
+                          <FileItem key={i} file={f} onEnter={(e) => showPreview(f, e)} onMove={movePreview} onLeave={hidePreview} />
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
-              </Box>
+
+                {/* Scanned Files */}
+                <Box sx={{ bgcolor: isDark ? 'background.default' : '#ffffff', borderRadius: '16px', border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.03)', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                  <Box sx={{ px: 3, py: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: isDark ? '#1c2128' : 'grey.50', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <IconCamera size={20} color={theme.palette.secondary.main} />
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Scan Documents</Typography>
+                  </Box>
+                  <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, bgcolor: isDark ? 'transparent' : 'grey.50' }}>
+                    <Box sx={{ mb: 2 }}>
+                      <Button component="label" variant="contained" sx={darkStyles.btnScan} startIcon={<IconCamera size={20} />}>
+                        Scan & Upload
+                        <input type="file" accept="image/*" capture="environment" hidden onChange={handleScanUpload} />
+                      </Button>
+                    </Box>
+                    {scannedFiles.length === 0 ? (
+                      <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
+                        <IconFileDescription size={52} stroke={1} />
+                        <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>No file scanned yet</Typography>
+                        <Typography variant="caption">Scan documents using the camera</Typography>
+                      </Box>
+                    ) : (
+                      <Box sx={{ width: '100%', display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+                        {scannedFiles.map((f, i) => (
+                          <FileItem key={i} file={f} onEnter={(e) => showPreview(f, e)} onMove={movePreview} onLeave={hidePreview} />
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+
             </Box>
           </Box>
         </DialogContent>
@@ -881,14 +818,14 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             p: 3,
             borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
             display: 'flex',
-            justifyContent: 'center',
-            gap: 3,
+            justifyContent: 'space-between',
+            alignItems: 'center',
             bgcolor: darkStyles.dialog.bgcolor
           }}
         >
           {!isEditing ? (
-            <>
-              <Button onClick={() => setIsEditing(true)} variant="contained" sx={darkStyles.btnSave} startIcon={<IconEdit size={20} />}>
+            <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
+              <Button onClick={() => setIsEditing(true)} variant="contained" sx={{...darkStyles.btnSave, bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' }}} startIcon={<IconEdit size={20} />}>
                 Edit
               </Button>
               <Button
@@ -899,18 +836,22 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               >
                 Close
               </Button>
-            </>
+            </Box>
           ) : (
             <>
-              <Button variant="contained" sx={darkStyles.btnInactive} startIcon={<IconX size={20} />}>
-                IN ACTIVE
-              </Button>
-              <Button onClick={handleClear} variant="contained" sx={darkStyles.btnClear} startIcon={<IconEraser size={20} />}>
-                Clear
-              </Button>
-              <Button onClick={handleSave} variant="contained" sx={darkStyles.btnSave} startIcon={<IconCheck size={20} />}>
-                Save
-              </Button>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <Button variant="contained" sx={darkStyles.btnInactive} startIcon={<IconTrash size={20} />}>
+                  Delete
+                </Button>
+                <Button onClick={handleClear} variant="contained" sx={darkStyles.btnClear} startIcon={<IconEraser size={20} />}>
+                  Clear
+                </Button>
+              </Box>
+              <Box>
+                <Button onClick={handleSave} variant="contained" sx={darkStyles.btnSave} startIcon={<IconCheck size={20} />}>
+                  Save
+                </Button>
+              </Box>
             </>
           )}
         </Box>

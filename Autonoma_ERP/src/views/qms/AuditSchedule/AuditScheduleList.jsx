@@ -177,17 +177,35 @@ export default function AuditScheduleList() {
           <Button
             variant="outlined"
             color="primary"
+            size="medium"
             startIcon={<IconFileDownload size={18} />}
             onClick={handleExport}
-            sx={{ borderRadius: 2 }}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              borderWidth: '2px',
+              '&:hover': { borderWidth: '2px', bgcolor: 'primary.50' }
+            }}
           >
-            Excel
+            Export Excel
           </Button>
-          <AnimateButton>
-            <Button variant="contained" color="primary" startIcon={<IconPlus size={18} />} onClick={handleOpenAdd} sx={{ borderRadius: 2 }}>
-              New Schedule
-            </Button>
-          </AnimateButton>
+          <Button
+            variant="contained"
+            color="primary"
+            size="medium"
+            onClick={handleOpenAdd}
+            sx={{
+              borderRadius: '8px',
+              textTransform: 'none',
+              fontWeight: 600,
+              boxShadow: 2,
+              transition: 'all 0.2s',
+              '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
+            }}
+          >
+            + New
+          </Button>
         </Stack>
       }
     >
@@ -197,8 +215,12 @@ export default function AuditScheduleList() {
           height: 'calc(100vh - 240px)',
           border: '1px solid',
           borderColor: 'divider',
-          boxShadow: 'none',
-          borderRadius: 2
+          boxShadow: 3,
+          borderRadius: '16px',
+          overflow: 'auto',
+          '&::-webkit-scrollbar': { width: 8, height: 8 },
+          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 4, '&:hover': { backgroundColor: 'grey.500' } }
         }}
       >
         <Table stickyHeader aria-label="audit schedule table" size="small">
@@ -208,17 +230,17 @@ export default function AuditScheduleList() {
                 <TableCell
                   key={col.id}
                   sx={{
-                    bgcolor: '#f5f7fa',
-                    color: '#455a64',
-                    fontWeight: 700,
-                    fontSize: '0.85rem',
-                    py: 1.5,
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.main',
+                    bgcolor: 'primary.dark',
+                    color: 'primary.light',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    py: 2,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.05rem',
-                    borderRight: '1px solid',
-                    borderColor: 'divider'
+                    letterSpacing: '0.5px',
+                    borderBottom: 'none',
+                    whiteSpace: 'nowrap',
+                    '&:first-of-type': { borderTopLeftRadius: '16px' },
+                    '&:last-of-type': { borderTopRightRadius: '16px' }
                   }}
                 >
                   {col.label}
@@ -241,16 +263,23 @@ export default function AuditScheduleList() {
               </TableRow>
             ) : (
               filteredRows.slice(page * size, page * size + size).map((row, index) => (
-                <TableRow
-                  key={row.id}
-                  hover
-                  onDoubleClick={() => handleOpenEdit(row.id)}
-                  sx={{
-                    cursor: 'pointer',
-                    '&:last-child td, &:last-child th': { border: 0 },
-                    '&:hover': { bgcolor: 'primary.light' }
-                  }}
-                >
+                <Tooltip key={row.id} title="Double tap to edit" placement="top" followCursor arrow>
+                  <TableRow
+                    key={row.id}
+                    hover
+                    onDoubleClick={() => handleOpenEdit(row.id)}
+                    sx={{
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                      '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 },
+                      '&:last-child td, &:last-child th': { border: 0 },
+                      '&:hover': {
+                        bgcolor: theme.palette.mode === 'dark' ? '#30363d !important' : 'grey.50 !important',
+                        transform: 'translateY(-1px)',
+                        boxShadow: 1
+                      }
+                    }}
+                  >
                   <TableCell>{index + 1 + page * size}</TableCell>
                   <TableCell sx={{ fontWeight: 600, color: 'primary.main' }}>{row.scheduleNo}</TableCell>
                   <TableCell>{row.auditType}</TableCell>
@@ -320,7 +349,8 @@ export default function AuditScheduleList() {
                       </Tooltip>
                     </Stack>
                   </TableCell>
-                </TableRow>
+                  </TableRow>
+                </Tooltip>
               ))
             )}
           </TableBody>

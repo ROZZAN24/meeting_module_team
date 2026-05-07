@@ -16,7 +16,6 @@ import {
   TableRow,
   Paper,
   IconButton,
-  Tooltip,
   Divider,
   Card,
   CardContent,
@@ -25,12 +24,12 @@ import {
   DialogContent,
   DialogActions,
   Checkbox,
-  Autocomplete,
-  ListItemText
+  Autocomplete
 } from '@mui/material';
-import { IconDeviceFloppy, IconArrowLeft, IconPlus, IconTrash, IconClearAll, IconX } from '@tabler/icons-react';
+import { useColorScheme, useTheme } from '@mui/material/styles';
+import { IconDeviceFloppy, IconPlus, IconTrash, IconX, IconEraser, IconCheck, IconFileDescription, IconCalendarEvent, IconUsers, IconListCheck } from '@tabler/icons-react';
 import axios from 'utils/axios';
-import AnimateButton from 'ui-component/extended/AnimateButton';
+import MainCard from 'ui-component/cards/MainCard';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -38,6 +37,55 @@ export default function AddAuditSchedule() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEditing = Boolean(id);
+  const theme = useTheme();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  const darkStyles = {
+    dialog: {
+      bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
+      color: isDark ? '#c9d1d9' : theme.palette.text.primary
+    },
+    input: {
+      width: '100% !important',
+      '& .MuiOutlinedInput-root': {
+        width: '100%',
+        bgcolor: isDark ? 'background.default' : 'grey.50',
+        color: 'text.primary',
+        '& fieldset': { borderColor: 'divider' },
+        '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
+        '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
+        '& input': { py: 1.2, fontSize: '0.9rem' },
+        '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px' }
+      },
+      '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
+      '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
+      '& .MuiFormLabel-asterisk': { color: '#ef4444' }
+    },
+    btnSave: {
+      bgcolor: 'success.main',
+      color: '#fff',
+      '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
+      textTransform: 'none',
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s',
+      boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
+    },
+    btnClear: {
+      bgcolor: 'secondary.main',
+      color: '#fff',
+      '&:hover': { bgcolor: 'secondary.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+      borderRadius: '24px',
+      textTransform: 'none',
+      px: 4,
+      py: 1,
+      fontWeight: 700,
+      transition: 'all 0.2s'
+    }
+  };
 
   const [formData, setFormData] = useState({
     scheduleNo: '',
@@ -56,21 +104,12 @@ export default function AddAuditSchedule() {
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [auditTypes, setAuditTypes] = useState([]);
-  const [auditAreas, setAuditAreas] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [masterCriteria, setMasterCriteria] = useState([]);
 
   // Criteria Dialog state
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
-  const [criteriaForm, setCriteriaForm] = useState({
-    seqNo: '',
-    clause: '',
-    criteriaDetails: '',
-    attachmentReq: 'NO',
-    remarks: ''
-  });
   const [selectedCriteriaIds, setSelectedCriteriaIds] = useState([]);
 
   useEffect(() => {
@@ -84,20 +123,17 @@ export default function AddAuditSchedule() {
 
   const fetchDropdowns = async () => {
     try {
-      const [typeRes, areaRes, deptRes, masterCritRes] = await Promise.all([
+      const [typeRes, deptRes, masterCritRes] = await Promise.all([
         axios.get('/api/master/qms/audit-type/active'),
-        axios.get('/api/master/qms/audit-area'),
         axios.get('/api/hrm/departments'),
         axios.get('/api/master/qms/audit-criteria')
       ]);
       setAuditTypes(typeRes.data);
-      setAuditAreas(areaRes.data);
       setDepartments(deptRes.data);
       setMasterCriteria(masterCritRes.data);
     } catch (error) {
       console.error('Failed to fetch dropdowns:', error);
       setAuditTypes([]);
-      setAuditAreas([]);
       setMasterCriteria([]);
     }
   };
@@ -113,7 +149,6 @@ export default function AddAuditSchedule() {
   };
 
   const fetchSchedule = async () => {
-    setLoading(true);
     try {
       const res = await axios.get(`/api/qms/audit-schedules/${id}`);
       const data = res.data;
@@ -135,8 +170,6 @@ export default function AddAuditSchedule() {
       setCriteriaList(data.criteriaList || []);
     } catch (error) {
       console.error('Failed to fetch schedule:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -213,12 +246,6 @@ export default function AddAuditSchedule() {
     }
   };
 
-  const handleAddCriteria = () => {
-    setCriteriaList((prev) => [...prev, { ...criteriaForm, seqNo: prev.length + 1 }]);
-    setCriteriaDialogOpen(false);
-    setCriteriaForm({ seqNo: '', clause: '', criteriaDetails: '', attachmentReq: 'NO', remarks: '' });
-  };
-
   const handleRemoveCriteria = (index) => {
     setCriteriaList((prev) => prev.filter((_, i) => i !== index));
   };
@@ -240,481 +267,422 @@ export default function AddAuditSchedule() {
   };
 
   return (
-    <Box sx={{ p: 2, bgcolor: 'white', minHeight: 'calc(100vh - 100px)' }}>
-      {/* Top Bar for Back/Save/Clear if needed, or put them at bottom. User image doesn't show them at top. */}
-      <Stack direction="row" justifyContent="space-between" mb={2}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton onClick={() => navigate('/qms/audit/schedule')} size="small" color="primary">
-            <IconArrowLeft />
-          </IconButton>
-          <Typography variant="h4" color="primary">
-            Audit Schedule Creation
-          </Typography>
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" size="small" onClick={handleClear}>
-            Clear
-          </Button>
-          <Button variant="contained" size="small" onClick={handleSave}>
-            Save
-          </Button>
-        </Stack>
-      </Stack>
-
-      <Grid container spacing={2}>
-        {/* LEFT SIDE FORM */}
-        <Grid item xs={12} md={6}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, fontSize: '0.85rem' }}>
-            {/* Row 1: Schedule No, Date, Status */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ width: 80, fontSize: '0.8rem' }}>
-                  Schedule No
-                </Typography>
-                <input
-                  readOnly
-                  value={formData.scheduleNo}
-                  style={{
-                    backgroundColor: '#a5d6a7',
-                    border: '1px solid #ccc',
-                    padding: '2px 6px',
-                    height: '24px',
-                    width: '130px',
-                    color: '#000'
-                  }}
-                />
-              </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ width: 40, fontSize: '0.8rem' }}>
-                  Date
-                </Typography>
-                <input
+    <>
+      <MainCard
+        title="Audit Schedule Creation"
+        secondary={
+          <Stack direction="row" spacing={2}>
+            <Button variant="outlined" color="secondary" onClick={handleClear} startIcon={<IconEraser size={20} />}>
+              Clear
+            </Button>
+            <Button variant="contained" color="primary" onClick={handleSave} startIcon={<IconCheck size={20} />}>
+              Save
+            </Button>
+          </Stack>
+        }
+      >
+        <Stack spacing={3}>
+          {/* Card 1: General Information */}
+          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', boxShadow: 2 }}>
+            <Box sx={{ bgcolor: isDark ? 'background.default' : 'grey.50', py: 1.5, px: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconFileDescription size={20} color={theme.palette.primary.main} />
+              <Typography variant="h6" color="text.primary" fontWeight={600}>General Information</Typography>
+            </Box>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, 
+                gap: 2.5 
+              }}>
+                <TextField label="Schedule No" value={formData.scheduleNo} InputProps={{ readOnly: true }} sx={darkStyles.input} />
+                <TextField
+                  required
+                  error={!formData.scheduleDate}
+                  helperText={!formData.scheduleDate ? 'Please fill this' : ''}
+                  label="Schedule Date"
                   type="date"
                   name="scheduleDate"
                   value={formData.scheduleDate}
                   onChange={handleChange}
-                  style={{
-                    backgroundColor: '#a5d6a7',
-                    border: '1px solid #ccc',
-                    padding: '2px 6px',
-                    height: '24px',
-                    width: '120px',
-                    color: '#000'
+                  sx={darkStyles.input}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField select label="Status" name="status" value={formData.status} onChange={handleChange} sx={darkStyles.input}>
+                  <MenuItem value="OPEN">OPEN</MenuItem>
+                  <MenuItem value="CLOSED">CLOSED</MenuItem>
+                  <MenuItem value="CANCELLED">CANCELLED</MenuItem>
+                </TextField>
+                <Autocomplete
+                  options={departments}
+                  getOptionLabel={(option) => option.departmentName || ''}
+                  value={departments.find((d) => d.departmentName === formData.department) || null}
+                  onChange={(event, newValue) => {
+                    setFormData({ ...formData, department: newValue ? newValue.departmentName : '' });
                   }}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      required 
+                      error={!formData.department}
+                      helperText={!formData.department ? 'Please fill this' : ''}
+                      label="Department" 
+                      sx={darkStyles.input} 
+                    />
+                  )}
                 />
               </Box>
-              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <Typography variant="body2" sx={{ width: 50, fontSize: '0.8rem' }}>
-                  Status
-                </Typography>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  style={{
-                    backgroundColor: '#a5d6a7',
-                    border: '1px solid #ccc',
-                    padding: '2px 6px',
-                    height: '24px',
-                    width: '100px',
-                    color: '#000'
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Audit Specifics */}
+          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', boxShadow: 2 }}>
+            <Box sx={{ bgcolor: isDark ? 'background.default' : 'grey.50', py: 1.5, px: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconCalendarEvent size={20} color={theme.palette.secondary.main} />
+              <Typography variant="h6" color="text.primary" fontWeight={600}>Audit Specifics</Typography>
+            </Box>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, 
+                gap: 2.5 
+              }}>
+                <Autocomplete
+                  multiple
+                  disableCloseOnSelect
+                  options={auditTypes}
+                  getOptionLabel={(option) => option.auditType || ''}
+                  value={auditTypes.filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
+                  onChange={(event, newValue) => {
+                    setFormData({ ...formData, auditType: newValue.map((v) => v.auditType).join(',') });
                   }}
-                >
-                  <option value="OPEN">OPEN</option>
-                  <option value="CLOSED">CLOSED</option>
-                  <option value="CANCELLED">CANCELLED</option>
-                </select>
-              </Box>
-            </Box>
-
-            {/* Audit Type (Searchable Multi-select) */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                Audit Type
-              </Typography>
-              <Autocomplete
-                multiple
-                disableCloseOnSelect
-                id="audit-type-schedule"
-                options={auditTypes}
-                getOptionLabel={(option) => option.auditType || ''}
-                value={auditTypes.filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    auditType: newValue.map((v) => v.auditType).join(',')
-                  });
-                }}
-                sx={{ flexGrow: 1 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    placeholder="Select Audit Types"
-                    sx={{
-                      '& .MuiInputBase-root': { py: 0.2, minHeight: '30px' },
-                      '& .MuiOutlinedInput-input': { p: '2px !important' }
-                    }}
-                  />
-                )}
-                renderOption={(props, option, { selected }) => (
-                  <li {...props} style={{ padding: '4px 8px' }}>
-                    <Checkbox size="small" style={{ marginRight: 4 }} checked={selected} />
-                    <Typography variant="body2">{option.auditType}</Typography>
-                  </li>
-                )}
-              />
-            </Box>
-
-            {/* Department (Searchable) */}
-
-            {/* Audit Area */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                Audit Area <span style={{ color: 'red' }}>*</span>
-              </Typography>
-              <input
-                type="text"
-                name="auditArea"
-                value={formData.auditArea}
-                onChange={handleChange}
-                style={{ flexGrow: 1, padding: '4px', border: '1px solid #ccc', height: '28px' }}
-              />
-            </Box>
-
-            {/* Audit Date */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                Audit Date
-              </Typography>
-              <input
-                type="date"
-                name="auditDate"
-                value={formData.auditDate}
-                onChange={handleChange}
-                style={{ flexGrow: 1, padding: '4px', border: '1px solid #ccc', height: '28px' }}
-              />
-            </Box>
-
-            {/* Audit Month */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                Audit Month
-              </Typography>
-              <select
-                name="auditMonth"
-                value={formData.auditMonth}
-                onChange={handleChange}
-                style={{ flexGrow: 1, padding: '4px', border: '1px solid #ccc', height: '28px' }}
-              >
-                {MONTHS.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </Box>
-
-            {/* Start Time */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                Start Time
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <select
-                  value={formData.startTime.split(':')[0]}
-                  onChange={(e) => setFormData({ ...formData, startTime: `${e.target.value}:${formData.startTime.split(':')[1]}` })}
-                  style={{ padding: '2px', border: '1px solid #ccc' }}
-                >
-                  {Array.from({ length: 24 }).map((_, i) => (
-                    <option key={i} value={i.toString().padStart(2, '0')}>
-                      {i.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-                <span>:</span>
-                <select
-                  value={formData.startTime.split(':')[1]}
-                  onChange={(e) => setFormData({ ...formData, startTime: `${formData.startTime.split(':')[0]}:${e.target.value}` })}
-                  style={{ padding: '2px', border: '1px solid #ccc' }}
-                >
-                  {Array.from({ length: 60 }).map((_, i) => (
-                    <option key={i} value={i.toString().padStart(2, '0')}>
-                      {i.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-              </Box>
-            </Box>
-
-            {/* End Time */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                End Time
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <select
-                  value={formData.endTime.split(':')[0]}
-                  onChange={(e) => setFormData({ ...formData, endTime: `${e.target.value}:${formData.endTime.split(':')[1]}` })}
-                  style={{ padding: '2px', border: '1px solid #ccc' }}
-                >
-                  {Array.from({ length: 24 }).map((_, i) => (
-                    <option key={i} value={i.toString().padStart(2, '0')}>
-                      {i.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-                <span>:</span>
-                <select
-                  value={formData.endTime.split(':')[1]}
-                  onChange={(e) => setFormData({ ...formData, endTime: `${formData.endTime.split(':')[0]}:${e.target.value}` })}
-                  style={{ padding: '2px', border: '1px solid #ccc' }}
-                >
-                  {Array.from({ length: 60 }).map((_, i) => (
-                    <option key={i} value={i.toString().padStart(2, '0')}>
-                      {i.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-              </Box>
-            </Box>
-
-            {/* Department selection */}
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Typography variant="body2" sx={{ width: 120, fontSize: '0.8rem', color: '#333' }}>
-                Department
-              </Typography>
-              <Autocomplete
-                id="department-schedule-main"
-                options={departments}
-                getOptionLabel={(option) => option.departmentName || ''}
-                value={departments.find((d) => d.departmentName === formData.department) || null}
-                onChange={(event, newValue) => {
-                  setFormData({
-                    ...formData,
-                    department: newValue ? newValue.departmentName : ''
-                  });
-                }}
-                sx={{ flexGrow: 1 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    size="small"
-                    placeholder="Search Department"
-                    sx={{
-                      '& .MuiInputBase-root': { py: 0.2, minHeight: '28px' },
-                      '& .MuiOutlinedInput-input': { p: '2px !important' }
-                    }}
-                  />
-                )}
-              />
-            </Box>
-
-            {/* Roles */}
-            {[
-              { label: 'Auditee', name: 'auditee', options: ['RAM GANESH - NT07L2-20059', 'OTHERS'] },
-              { label: 'Auditor', name: 'auditor', options: ['UMAPATHY - NT09L4-19036', 'OTHERS'], highlight: true },
-              { label: 'NCR Approved By', name: 'ncrApprovedBy', options: ['SIVARAMAN - NT10L5-16025', 'OTHERS'] }
-            ].map((field) => (
-              <Box key={field.name} sx={{ display: 'flex', alignItems: 'center', mb: 1.2 }}>
-                <Typography variant="body2" sx={{ width: 140, fontSize: '0.85rem', fontWeight: 600, color: '#333' }}>
-                  {field.label}
-                </Typography>
-                <select
-                  name={field.name}
-                  value={formData[field.name]}
+                  renderInput={(params) => (
+                    <TextField 
+                      {...params} 
+                      required
+                      error={!formData.auditType}
+                      helperText={!formData.auditType ? 'Please fill this' : ''}
+                      label="Audit Type" 
+                      sx={darkStyles.input} 
+                    />
+                  )}
+                />
+                <TextField
+                  required
+                  error={!formData.auditArea}
+                  helperText={!formData.auditArea ? 'Please fill this' : ''}
+                  label="Audit Area"
+                  name="auditArea"
+                  value={formData.auditArea}
                   onChange={handleChange}
-                  style={{
-                    flexGrow: 1,
-                    padding: '4px 8px',
-                    border: '1px solid #ccc',
-                    height: '30px',
-                    borderRadius: '4px',
-                    backgroundColor: field.highlight ? '#f1f8e9' : 'white'
-                  }}
+                  sx={darkStyles.input}
+                />
+                <TextField
+                  required
+                  error={!formData.auditDate}
+                  helperText={!formData.auditDate ? 'Please fill this' : ''}
+                  label="Audit Date"
+                  type="date"
+                  name="auditDate"
+                  value={formData.auditDate}
+                  onChange={handleChange}
+                  sx={darkStyles.input}
+                  InputLabelProps={{ shrink: true }}
+                />
+                <TextField
+                  select
+                  required
+                  error={!formData.auditMonth}
+                  helperText={!formData.auditMonth ? 'Please fill this' : ''}
+                  label="Audit Month"
+                  name="auditMonth"
+                  value={formData.auditMonth}
+                  onChange={handleChange}
+                  sx={darkStyles.input}
                 >
-                  <option value="">-Select-</option>
-                  {field.options.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
+                  {MONTHS.map((m) => (
+                    <MenuItem key={m} value={m}>
+                      {m}
+                    </MenuItem>
                   ))}
-                </select>
-              </Box>
-            ))}
-          </Box>
-        </Grid>
-
-        {/* RIGHT SIDE INFO PANELS */}
-        <Grid item xs={12} md={6}>
-          <Grid container spacing={1} sx={{ border: '1px solid #ccc', height: '100%' }}>
-            {['AUDITEE', 'AUDITOR', 'NCR APPROVED BY'].map((role, idx) => (
-              <Grid item xs={4} key={role} sx={{ borderRight: idx < 2 ? '1px solid #ccc' : 'none' }}>
-                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'white' }}>
-                  <Box sx={{ bgcolor: '#4e73df', color: 'white', py: 1, textAlign: 'center' }}>
-                    <Typography variant="h6" sx={{ fontSize: '0.9rem', fontWeight: 700 }}>
-                      {role}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', flexGrow: 1 }}>
-                    <Box
-                      sx={{
-                        width: 120,
-                        height: 140,
-                        bgcolor: '#e0e0e0',
-                        mb: 2,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        overflow: 'hidden',
-                        border: '1px solid #ddd'
-                      }}
-                    >
-                      {/* Placeholder for user image */}
-                      <svg width="80" height="80" viewBox="0 0 24 24" fill="#9e9e9e">
-                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                      </svg>
-                    </Box>
-                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1.2 }}>
-                      <Box sx={{ display: 'flex', fontSize: '0.85rem' }}>
-                        <Box sx={{ width: 110, color: '#000', fontWeight: 600 }}>Name</Box>
-                        <Box sx={{ width: 15 }}>:</Box>
-                        <Box sx={{ flexGrow: 1, color: '#e65100', fontWeight: 'bold' }}>
-                          {role === 'AUDITEE'
-                            ? formData.auditee
-                              ? formData.auditee.split(' - ')[0]
-                              : '-'
-                            : role === 'AUDITOR'
-                              ? formData.auditor
-                                ? formData.auditor.split(' - ')[0]
-                                : '-'
-                              : formData.ncrApprovedBy
-                                ? formData.ncrApprovedBy.split(' - ')[0]
-                                : '-'}
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', fontSize: '0.85rem' }}>
-                        <Box sx={{ width: 110, color: '#000', fontWeight: 600 }}>Code</Box>
-                        <Box sx={{ width: 15 }}>:</Box>
-                        <Box sx={{ flexGrow: 1, color: '#333' }}>
-                          {role === 'AUDITEE'
-                            ? formData.auditee
-                              ? formData.auditee.split(' - ')[1]
-                              : '-'
-                            : role === 'AUDITOR'
-                              ? formData.auditor
-                                ? formData.auditor.split(' - ')[1]
-                                : '-'
-                              : formData.ncrApprovedBy
-                                ? formData.ncrApprovedBy.split(' - ')[1]
-                                : '-'}
-                        </Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', fontSize: '0.85rem' }}>
-                        <Box sx={{ width: 110, color: '#000', fontWeight: 600 }}>Dept Name</Box>
-                        <Box sx={{ width: 15 }}>:</Box>
-                        <Box sx={{ flexGrow: 1, color: '#333' }}>{formData.department || '-'}</Box>
-                      </Box>
-                      <Box sx={{ display: 'flex', fontSize: '0.85rem' }}>
-                        <Box sx={{ width: 110, color: '#000', fontWeight: 600 }}>Level</Box>
-                        <Box sx={{ width: 15 }}>:</Box>
-                        <Box sx={{ flexGrow: 1, color: '#333' }}>-</Box>
-                      </Box>
-                    </Box>
-                  </Box>
+                </TextField>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Start Hour"
+                    value={formData.startTime.split(':')[0]}
+                    onChange={(e) => setFormData({ ...formData, startTime: `${e.target.value}:${formData.startTime.split(':')[1]}` })}
+                    sx={darkStyles.input}
+                  >
+                    {Array.from({ length: 24 }).map((_, i) => (
+                      <MenuItem key={i} value={i.toString().padStart(2, '0')}>
+                        {i.toString().padStart(2, '0')}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Start Min"
+                    value={formData.startTime.split(':')[1]}
+                    onChange={(e) => setFormData({ ...formData, startTime: `${formData.startTime.split(':')[0]}:${e.target.value}` })}
+                    sx={darkStyles.input}
+                  >
+                    {Array.from({ length: 60 }).map((_, i) => (
+                      <MenuItem key={i} value={i.toString().padStart(2, '0')}>
+                        {i.toString().padStart(2, '0')}
+                      </MenuItem>
+                    ))}
+                  </TextField>
                 </Box>
-              </Grid>
-            ))}
-          </Grid>
-        </Grid>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="End Hour"
+                    value={formData.endTime.split(':')[0]}
+                    onChange={(e) => setFormData({ ...formData, endTime: `${e.target.value}:${formData.endTime.split(':')[1]}` })}
+                    sx={darkStyles.input}
+                  >
+                    {Array.from({ length: 24 }).map((_, i) => (
+                      <MenuItem key={i} value={i.toString().padStart(2, '0')}>
+                        {i.toString().padStart(2, '0')}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    select
+                    fullWidth
+                    label="End Min"
+                    value={formData.endTime.split(':')[1]}
+                    onChange={(e) => setFormData({ ...formData, endTime: `${formData.endTime.split(':')[0]}:${e.target.value}` })}
+                    sx={darkStyles.input}
+                  >
+                    {Array.from({ length: 60 }).map((_, i) => (
+                      <MenuItem key={i} value={i.toString().padStart(2, '0')}>
+                        {i.toString().padStart(2, '0')}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
 
-        {/* BOTTOM TABLE */}
-        <Grid item xs={12}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, px: 1 }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#333' }}>
-              Audit Criteria Checklist
-            </Typography>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<IconPlus size={16} />}
-              onClick={() => setCriteriaDialogOpen(true)}
-              sx={{ bgcolor: '#4e73df', '&:hover': { bgcolor: '#2e59d9' }, textTransform: 'none', height: '28px' }}
-            >
-              Add Audit Criteria
-            </Button>
-          </Box>
-          <TableContainer sx={{ border: '1px solid #ccc', borderRadius: 0 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: '#607D8B' }}>
-                  <TableCell sx={{ color: 'white', p: 1, borderRight: '1px solid #90a4ae', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    #
-                  </TableCell>
-                  <TableCell sx={{ color: 'white', p: 1, borderRight: '1px solid #90a4ae', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    Seq No
-                  </TableCell>
-                  <TableCell sx={{ color: 'white', p: 1, borderRight: '1px solid #90a4ae', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    Clause
-                  </TableCell>
-                  <TableCell sx={{ color: 'white', p: 1, borderRight: '1px solid #90a4ae', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    Criteria Details
-                  </TableCell>
-                  <TableCell sx={{ color: 'white', p: 1, borderRight: '1px solid #90a4ae', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    Attachment Req
-                  </TableCell>
-                  <TableCell sx={{ color: 'white', p: 1, borderRight: '1px solid #90a4ae', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                    Remarks
-                  </TableCell>
-                  <TableCell sx={{ color: 'white', p: 1, fontSize: '0.75rem', fontWeight: 'bold', textAlign: 'center' }}>Action</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {criteriaList.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} sx={{ p: 1, color: '#2196f3', fontSize: '0.8rem', fontWeight: 500 }}>
-                      No records found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  criteriaList.map((criteria, index) => (
-                    <TableRow key={index} hover>
-                      <TableCell sx={{ p: 1, borderRight: '1px solid #e0e0e0', fontSize: '0.8rem' }}>{index + 1}</TableCell>
-                      <TableCell sx={{ p: 1, borderRight: '1px solid #e0e0e0', fontSize: '0.8rem' }}>{criteria.seqNo}</TableCell>
-                      <TableCell sx={{ p: 1, borderRight: '1px solid #e0e0e0', fontSize: '0.8rem' }}>{criteria.clause}</TableCell>
-                      <TableCell sx={{ p: 1, borderRight: '1px solid #e0e0e0', fontSize: '0.8rem' }}>{criteria.criteriaDetails}</TableCell>
-                      <TableCell sx={{ p: 1, borderRight: '1px solid #e0e0e0', fontSize: '0.8rem' }}>{criteria.attachmentReq}</TableCell>
-                      <TableCell sx={{ p: 1, borderRight: '1px solid #e0e0e0', fontSize: '0.8rem' }}>{criteria.remarks}</TableCell>
-                      <TableCell align="center" sx={{ p: 1 }}>
-                        <IconButton color="error" size="small" onClick={() => handleRemoveCriteria(index)}>
-                          <IconTrash size={16} />
-                        </IconButton>
-                      </TableCell>
+          {/* Card 3: Personnel Information */}
+          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', boxShadow: 2 }}>
+            <Box sx={{ bgcolor: isDark ? 'background.default' : 'grey.50', py: 1.5, px: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <IconUsers size={20} color={theme.palette.warning.main} />
+              <Typography variant="h6" color="text.primary" fontWeight={600}>Personnel Information</Typography>
+            </Box>
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ 
+                display: 'grid', 
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, 
+                gap: 3 
+              }}>
+                {[
+                  { role: 'AUDITEE', field: 'auditee', label: 'Auditee', options: ['RAM GANESH - NT07L2-20059', 'OTHERS'] },
+                  { role: 'AUDITOR', field: 'auditor', label: 'Auditor', options: ['UMAPATHY - NT09L4-19036', 'OTHERS'] },
+                  { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', label: 'NCR Approved By', options: ['SIVARAMAN - NT10L5-16025', 'OTHERS'] }
+                ].map((person) => {
+                  const value = formData[person.field];
+                  const name = value ? value.split(' - ')[0] : '-';
+                  const code = value ? value.split(' - ')[1] || '-' : '-';
+
+                  return (
+                    <Card key={person.role} sx={{ 
+                      border: '1px solid', 
+                      borderColor: 'divider', 
+                      borderRadius: '16px', 
+                      boxShadow: 2, 
+                      bgcolor: isDark ? 'background.default' : '#fff', 
+                      position: 'relative', 
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      height: '100%',
+                      minWidth: 0 // Prevent flex/grid overflow
+                    }}>
+                      {/* Banner Background */}
+                      <Box sx={{ height: 60, bgcolor: isDark ? 'primary.dark' : 'primary.light', width: '100%', position: 'absolute', top: 0, left: 0, opacity: isDark ? 0.3 : 0.6 }} />
+                      
+                      <CardContent sx={{ p: 3, pt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, flexGrow: 1 }}>
+                        {/* Avatar / Future Image Placeholder */}
+                        <Box sx={{ 
+                          width: 100, 
+                          height: 100, 
+                          borderRadius: '50%', 
+                          bgcolor: isDark ? '#1c2128' : '#fff', 
+                          border: '4px solid', 
+                          borderColor: isDark ? 'background.default' : '#fff', 
+                          display: 'flex', 
+                          justifyContent: 'center', 
+                          alignItems: 'center', 
+                          color: 'primary.main',
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                          mb: 2
+                        }}>
+                          <IconUsers size={48} />
+                        </Box>
+                        
+                        <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, letterSpacing: 1, mb: 0.5, fontSize: '0.8rem', lineHeight: 1 }}>
+                          {person.role}
+                        </Typography>
+                        
+                        <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ width: '100%', textAlign: 'center', mb: 1, minHeight: '28px' }}>
+                          {name !== '-' ? name : 'Not Selected'}
+                        </Typography>
+                        
+                        <Box sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.100', px: 2.5, py: 0.5, borderRadius: '16px', mb: 3 }}>
+                          <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap>
+                            {code !== '-' ? code : 'No Code'}
+                          </Typography>
+                        </Box>
+
+                        {/* Dropdown Selector */}
+                        <Box sx={{ width: '100%', mt: 'auto' }}>
+                          <TextField
+                            select
+                            fullWidth
+                            required
+                            error={!formData[person.field]}
+                            helperText={!formData[person.field] ? 'Please fill this' : ''}
+                            label={`Select ${person.label}`}
+                            name={person.field}
+                            value={formData[person.field]}
+                            onChange={handleChange}
+                            sx={darkStyles.input}
+                          >
+                            <MenuItem value="">-Select-</MenuItem>
+                            {person.options.map((opt) => (
+                              <MenuItem key={opt} value={opt}>
+                                {opt}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Card 4: Audit Criteria Checklist */}
+          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', boxShadow: 2 }}>
+            <Box sx={{ bgcolor: isDark ? 'background.default' : 'grey.50', py: 1.5, px: 3, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconListCheck size={20} color={theme.palette.success.main} />
+                <Typography variant="h6" color="text.primary" fontWeight={600}>Audit Criteria Checklist</Typography>
+              </Box>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => setCriteriaDialogOpen(true)}
+                startIcon={<IconPlus size={16} />}
+                sx={{ borderRadius: '8px' }}
+              >
+                Add Criteria
+              </Button>
+            </Box>
+            <CardContent sx={{ p: 3 }}>
+              <TableContainer
+                component={Paper}
+                sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', boxShadow: 'none' }}
+              >
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      {['#', 'Seq No', 'Clause', 'Criteria Details', 'Attachment Req', 'Remarks', 'Action'].map((head) => (
+                        <TableCell
+                          key={head}
+                          sx={{
+                            bgcolor: 'primary.dark',
+                            color: 'primary.light',
+                            fontWeight: 600,
+                            py: 1.5,
+                            borderBottom: 'none',
+                            whiteSpace: 'nowrap'
+                          }}
+                        >
+                          {head}
+                        </TableCell>
+                      ))}
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Grid>
-      </Grid>
+                  </TableHead>
+                  <TableBody>
+                    {criteriaList.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                          No criteria added.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      criteriaList.map((criteria, index) => (
+                        <TableRow key={index} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          <TableCell>{index + 1}</TableCell>
+                          <TableCell>{criteria.seqNo}</TableCell>
+                          <TableCell>{criteria.clause}</TableCell>
+                          <TableCell>{criteria.criteriaDetails}</TableCell>
+                          <TableCell>{criteria.attachmentReq}</TableCell>
+                          <TableCell>{criteria.remarks}</TableCell>
+                          <TableCell align="center">
+                            <IconButton color="error" size="small" onClick={() => handleRemoveCriteria(index)}>
+                              <IconTrash size={16} />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </CardContent>
+          </Card>
+        </Stack>
+      </MainCard>
 
       {/* Add Criteria Dialog */}
       <Dialog
         open={criteriaDialogOpen}
         onClose={() => setCriteriaDialogOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 2, height: '80vh' } }}
+        PaperProps={{
+          sx: {
+            height: 'auto',
+            maxHeight: '95vh',
+            bgcolor: darkStyles.dialog.bgcolor,
+            backgroundImage: 'none',
+            borderRadius: '24px',
+            border: isDark ? '1px solid #30363d' : 'none',
+            boxShadow: isDark ? '0 24px 48px rgba(0,0,0,0.5)' : '0 24px 48px rgba(0,0,0,0.1)'
+          }
+        }}
       >
         <DialogTitle
-          sx={{ bgcolor: '#546e7a', color: 'white', py: 1.2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+          sx={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            bgcolor: isDark ? 'background.default' : 'primary.light',
+            borderBottom: '1px solid',
+            borderColor: 'divider',
+            py: 2.5,
+            px: 4
+          }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 600, color: 'white', fontSize: '1rem' }}>
-            Audit
+          <Typography variant="h5" sx={{ fontWeight: 600, color: isDark ? '#58a6ff' : theme.palette.primary.main, fontSize: '1.25rem' }}>
+            Audit Criteria Checklist
           </Typography>
-          <IconButton onClick={() => setCriteriaDialogOpen(false)} size="small" sx={{ color: 'white' }}>
-            <IconX size={20} />
+          <IconButton
+            onClick={() => setCriteriaDialogOpen(false)}
+            size="small"
+            sx={{ color: isDark ? '#8b949e' : theme.palette.text.secondary }}
+          >
+            <IconX size={24} />
           </IconButton>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0, bgcolor: '#f1f4f6' }}>
@@ -897,18 +865,25 @@ export default function AddAuditSchedule() {
             </Box>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, bgcolor: '#f8f9fa', justifyContent: 'center' }}>
+        <DialogActions
+          sx={{
+            p: 3,
+            borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
+            justifyContent: 'flex-end',
+            bgcolor: darkStyles.dialog.bgcolor
+          }}
+        >
           <Button
             variant="contained"
             onClick={handleAddSelectedCriteria}
             disabled={selectedCriteriaIds.length === 0}
-            startIcon={<IconDeviceFloppy size={18} />}
-            sx={{ bgcolor: '#546e7a', '&:hover': { bgcolor: '#455a64' }, textTransform: 'none', px: 4 }}
+            startIcon={<IconDeviceFloppy size={20} />}
+            sx={darkStyles.btnSave}
           >
             Confirm
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+    </>
   );
 }
