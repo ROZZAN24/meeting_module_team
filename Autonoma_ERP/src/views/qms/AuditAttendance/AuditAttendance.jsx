@@ -160,6 +160,11 @@ export default function AuditAttendance() {
     return row[col.id] || '-';
   };
 
+  const handleClear = () => {
+    setFormData({ id: formData.id, auditScheduleNo: '', name: '', inTime: '', outTime: '', attendanceStatus: 'PRESENT' });
+    clearErrors();
+  };
+
   return (
     <MainCard
       title={
@@ -204,6 +209,7 @@ export default function AuditAttendance() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
+        onClear={handleClear}
         title={formData.id ? 'Edit Attendance' : 'Add Attendance'}
         maxWidth="sm"
       >

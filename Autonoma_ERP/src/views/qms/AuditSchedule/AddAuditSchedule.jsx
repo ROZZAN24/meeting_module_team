@@ -509,6 +509,7 @@ export default function AddAuditSchedule() {
         open={criteriaDialogOpen}
         onClose={() => setCriteriaDialogOpen(false)}
         onSave={handleAddSelectedCriteria}
+        onClear={() => setSelectedCriteriaIds([])}
         title="Select Audit Criteria"
         maxWidth="lg"
       >

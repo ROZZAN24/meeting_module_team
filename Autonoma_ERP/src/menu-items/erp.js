@@ -107,36 +107,6 @@ export const masters = {
               title: 'Audit Criteria',
               type: 'item',
               url: '/master/qms/audit/criteria'
-            },
-            {
-              id: 'master-qms-audit-attendance',
-              title: 'Audit User Attendance',
-              type: 'item',
-              url: '/qms/audit/attendance'
-            },
-            {
-              id: 'master-qms-audit-observation',
-              title: 'Audit Observation',
-              type: 'item',
-              url: '/qms/audit/observation'
-            },
-            {
-              id: 'master-qms-audit-ncr-close',
-              title: 'Close NCR / OFI',
-              type: 'item',
-              url: '/qms/audit/ncr/close'
-            },
-            {
-              id: 'master-qms-audit-ncr-approval',
-              title: 'Audit NCR / OFI approval',
-              type: 'item',
-              url: '/qms/audit/ncr/approval'
-            },
-            {
-              id: 'master-qms-audit-report',
-              title: 'Audit Report',
-              type: 'item',
-              url: '/qms/audit/report'
             }
           ]
         }

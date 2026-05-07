@@ -148,6 +148,11 @@ export default function AuditNcrClose() {
     return row[col.id] || '-';
   };
 
+  const handleClear = () => {
+    setFormData({ rootCause: '', correctiveAction: '', preventiveAction: '' });
+    clearErrors();
+  };
+
   return (
     <MainCard
       title={
@@ -198,6 +203,7 @@ export default function AuditNcrClose() {
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
         onSave={handleSaveClose}
+        onClear={handleClear}
         title="Submit NCR / OFI for Closure"
         maxWidth="md"
       >

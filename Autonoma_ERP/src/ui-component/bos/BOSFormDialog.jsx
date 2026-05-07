@@ -99,7 +99,7 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       <DialogContent sx={ds.content}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 4, width: '100%', alignItems: 'start' }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 5, width: '100%', alignItems: 'start', mt: 2 }}>
           {children}
         </Box>
       </DialogContent>
@@ -132,17 +132,17 @@ export default function BOSFormDialog({
         ) : (
           <>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              {hasId && onDelete && (
-                <Tooltip title={shortcutTooltip('Delete Record', 'Ctrl + D')}>
-                  <Button onClick={onDelete} variant="contained" sx={btnDelete} startIcon={<IconTrash size={20} />}>
-                    Delete
-                  </Button>
-                </Tooltip>
-              )}
               {onClear && (
                 <Tooltip title="Clear all fields">
                   <Button onClick={onClear} variant="contained" sx={btnClear} startIcon={<IconEraser size={20} />}>
                     Clear
+                  </Button>
+                </Tooltip>
+              )}
+              {hasId && onDelete && (
+                <Tooltip title={shortcutTooltip('Delete Record', 'Ctrl + D')}>
+                  <Button onClick={onDelete} variant="contained" sx={btnDelete} startIcon={<IconTrash size={20} />}>
+                    Delete
                   </Button>
                 </Tooltip>
               )}

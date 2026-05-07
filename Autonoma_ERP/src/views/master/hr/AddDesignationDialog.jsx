@@ -95,11 +95,28 @@ export default function AddDesignationDialog({ open, handleClose, initialData })
     }
   };
 
+  const handleClear = () => {
+    setFormData({
+      designationCode: formData.designationCode, // keep generated code
+      designationName: '',
+      experience: '',
+      appearInCompetency: 'YES',
+      displaySlNo: formData.displaySlNo, // keep generated sl no
+      qualification: '',
+      jobDescription: '',
+      subCategoryLevel: '',
+      budgetedPositions: '',
+      orgSeqNo: ''
+    });
+    clearErrors();
+  };
+
   return (
     <BOSFormDialog
       open={open}
       onClose={() => handleClose(false)}
       onSave={handleSave}
+      onClear={handleClear}
       title={isEditing ? 'Edit Designation' : 'Add New Designation'}
       maxWidth="md"
     >

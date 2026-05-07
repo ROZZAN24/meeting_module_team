@@ -180,12 +180,9 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       open={open}
       onClose={handleClose}
       onSave={handleSave}
+      onClear={resetForm}
       title="Check List Master Details"
       maxWidth="lg"
-      primaryActionText={initialData ? 'Update' : 'Save'}
-      showSecondaryAction={!readOnly}
-      secondaryActionText="Clear"
-      onSecondaryAction={resetForm}
     >
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
         {/* Left Column */}

@@ -129,7 +129,7 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 2.5,
+    py: 3.5,
     px: 4
   },
   titleText: {
@@ -142,7 +142,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 5,
+    pt: 10,
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
     overflowX: 'hidden'
@@ -165,7 +165,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   sectionHeader: {
     px: 3,
-    py: 2,
+    py: 3,
     borderBottom: '1px solid',
     borderColor: 'divider',
     bgcolor: isDark ? '#1c2128' : 'grey.50',

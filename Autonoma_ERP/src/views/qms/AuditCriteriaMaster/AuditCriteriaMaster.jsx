@@ -85,7 +85,7 @@ export default function AuditCriteriaMaster() {
     setSelectedRow(null);
     setIsReadOnly(false);
     try {
-      const res = await axios.get('/api/qms/audit-criteria/next-seq');
+      const res = await axios.get('/api/master/qms/audit-criteria/next-seq');
       setNextSeq(res.data);
     } catch (e) {
       setNextSeq('1');
