@@ -197,15 +197,16 @@ export const getInputStyles = (theme, isDark) => ({
 // ─── DATATABLE STYLE TOKENS (SOP #2, #15, #16) ─────────────
 
 export const tableContainerSx = {
-  height: 'calc(100vh - 240px)',
+  height: 'calc(100vh - 300px)',
   border: '1px solid',
   borderColor: 'divider',
-  boxShadow: 3,
-  borderRadius: '16px',
+  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+  borderRadius: '12px',
   overflow: 'auto',
-  '&::-webkit-scrollbar': { width: 8, height: 8 },
+  position: 'relative',
+  '&::-webkit-scrollbar': { width: 6, height: 6 },
   '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
-  '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 4, '&:hover': { backgroundColor: 'grey.500' } }
+  '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 10, '&:hover': { backgroundColor: 'grey.400' } }
 };
 
 export const tableHeadCellSx = {

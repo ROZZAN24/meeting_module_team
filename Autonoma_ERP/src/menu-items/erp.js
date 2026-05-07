@@ -60,7 +60,6 @@ export const masters = {
           url: '/master/hr/department'
         },
         {
-        {
           id: 'master-hr-employee',
           title: 'Employee Master',
           type: 'item',
@@ -71,7 +70,6 @@ export const masters = {
           title: 'Designation Details',
           type: 'item',
           url: '/master/hr/designation'
-        }
         }
       ]
     },
@@ -109,6 +107,36 @@ export const masters = {
               title: 'Audit Criteria',
               type: 'item',
               url: '/master/qms/audit/criteria'
+            },
+            {
+              id: 'master-qms-audit-attendance',
+              title: 'Audit User Attendance',
+              type: 'item',
+              url: '/qms/audit/attendance'
+            },
+            {
+              id: 'master-qms-audit-observation',
+              title: 'Audit Observation',
+              type: 'item',
+              url: '/qms/audit/observation'
+            },
+            {
+              id: 'master-qms-audit-ncr-close',
+              title: 'Close NCR / OFI',
+              type: 'item',
+              url: '/qms/audit/ncr/close'
+            },
+            {
+              id: 'master-qms-audit-ncr-approval',
+              title: 'Audit NCR / OFI approval',
+              type: 'item',
+              url: '/qms/audit/ncr/approval'
+            },
+            {
+              id: 'master-qms-audit-report',
+              title: 'Audit Report',
+              type: 'item',
+              url: '/qms/audit/report'
             }
           ]
         }
@@ -251,6 +279,36 @@ export const qms = {
           title: 'Audit Schedule',
           type: 'item',
           url: '/qms/audit/schedule'
+        },
+        {
+          id: 'qms-audit-attendance',
+          title: 'Audit User Attendance',
+          type: 'item',
+          url: '/qms/audit/attendance'
+        },
+        {
+          id: 'qms-audit-observation',
+          title: 'Audit Observation',
+          type: 'item',
+          url: '/qms/audit/observation'
+        },
+        {
+          id: 'qms-audit-ncr-close',
+          title: 'Close NCR / OFI',
+          type: 'item',
+          url: '/qms/audit/ncr/close'
+        },
+        {
+          id: 'qms-audit-ncr-approval',
+          title: 'Audit NCR / OFI approval',
+          type: 'item',
+          url: '/qms/audit/ncr/approval'
+        },
+        {
+          id: 'qms-audit-report',
+          title: 'Audit Report',
+          type: 'item',
+          url: '/qms/audit/report'
         }
       ]
     }

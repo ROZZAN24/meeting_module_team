@@ -32,6 +32,7 @@ export default function BOSDataTable({
   onDeleteRow,
   showActions = true,
   renderCell,
+  sx = {},
   id
 }) {
   const theme = useTheme();
@@ -56,7 +57,7 @@ export default function BOSDataTable({
 
   return (
     <>
-      <TableContainer component={Paper} sx={tableContainerSx} id={id}>
+      <TableContainer component={Paper} sx={{ ...tableContainerSx, ...sx }} id={id}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>

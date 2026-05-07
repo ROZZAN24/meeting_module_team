@@ -202,6 +202,12 @@ const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriter
 
 const QmsAuditScheduleList = Loadable(lazy(() => import('views/qms/AuditSchedule/AuditScheduleList')));
 const QmsAddAuditSchedule = Loadable(lazy(() => import('views/qms/AuditSchedule/AddAuditSchedule')));
+const QmsAuditAttendance = Loadable(lazy(() => import('views/qms/AuditAttendance/AuditAttendance')));
+const QmsAuditObservationList = Loadable(lazy(() => import('views/qms/AuditObservation/AuditObservationList')));
+const QmsAddAuditObservation = Loadable(lazy(() => import('views/qms/AuditObservation/AddAuditObservation')));
+const QmsAuditNcrClose = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrClose')));
+const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrApproval')));
+const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -790,7 +796,6 @@ const MainRoutes = {
       element: <MasterHrDepartment />
     },
     {
-    {
       path: '/master/hr/employee',
       element: <MasterHrEmployeeList />
     },
@@ -801,7 +806,6 @@ const MainRoutes = {
     {
       path: '/master/hr/designation',
       element: <MasterHrDesignation />
-    },
     },
     {
       path: '/master/qms/audit/type',
@@ -826,6 +830,34 @@ const MainRoutes = {
     {
       path: '/qms/audit/schedule/edit/:id',
       element: <QmsAddAuditSchedule />
+    },
+    {
+      path: '/qms/audit/attendance',
+      element: <QmsAuditAttendance />
+    },
+    {
+      path: '/qms/audit/observation',
+      element: <QmsAuditObservationList />
+    },
+    {
+      path: '/qms/audit/observation/add',
+      element: <QmsAddAuditObservation />
+    },
+    {
+      path: '/qms/audit/observation/edit/:id',
+      element: <QmsAddAuditObservation />
+    },
+    {
+      path: '/qms/audit/ncr/close',
+      element: <QmsAuditNcrClose />
+    },
+    {
+      path: '/qms/audit/ncr/approval',
+      element: <QmsAuditNcrApproval />
+    },
+    {
+      path: '/qms/audit/report',
+      element: <QmsAuditReport />
     },
     {
       path: '*',

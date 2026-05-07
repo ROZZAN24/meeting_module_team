@@ -273,5 +273,20 @@
   "Blog": "Blog",
   "Audit Schedule": "Audit Schedule",
   "Designation Details": "Designation Details",
-  "master-hr-designation-details": "Designation Details"
+  "master-hr-designation-details": "Designation Details",
+  "Audit User Attendance": "Audit User Attendance",
+  "qms-audit-attendance": "Audit User Attendance",
+  "master-qms-audit-attendance": "Audit User Attendance",
+  "Audit Observation": "Audit Observation",
+  "qms-audit-observation": "Audit Observation",
+  "master-qms-audit-observation": "Audit Observation",
+  "Close NCR / OFI": "Close NCR / OFI",
+  "qms-audit-ncr-close": "Close NCR / OFI",
+  "master-qms-audit-ncr-close": "Close NCR / OFI",
+  "Audit NCR / OFI approval": "Audit NCR / OFI approval",
+  "qms-audit-ncr-approval": "Audit NCR / OFI approval",
+  "master-qms-audit-ncr-approval": "Audit NCR / OFI approval",
+  "Audit Report": "Audit Report",
+  "qms-audit-report": "Audit Report",
+  "master-qms-audit-report": "Audit Report"
 }
