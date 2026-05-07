@@ -39,15 +39,27 @@ public class AuditCriteriaController {
     @GetMapping("/next-seq")
     public String getNextSeqNo() {
         return auditCriteriaRepository.findFirstByOrderBySeqNoDesc()
-                .map(latest -> {
-                    try {
-                        int num = Integer.parseInt(latest.getSeqNo());
-                        return String.valueOf(num + 1);
-                    } catch (Exception e) {
-                        return "1";
-                    }
-                })
-                .orElse("1");
+                .map(latest -> incrementSequence(latest.getSeqNo(), "AC-"))
+                .orElse("AC-001");
+    }
+
+    private String incrementSequence(String latest, String prefix) {
+        if (latest == null || latest.isEmpty()) return prefix + "001";
+        try {
+            // Find the last numeric part in the string
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
+            java.util.regex.Matcher matcher = pattern.matcher(latest);
+            if (matcher.find()) {
+                String numericPart = matcher.group();
+                int num = Integer.parseInt(numericPart);
+                int length = numericPart.length();
+                String nextNum = String.format("%0" + length + "d", num + 1);
+                return latest.substring(0, matcher.start()) + nextNum;
+            }
+            return prefix + "001";
+        } catch (Exception e) {
+            return prefix + "001";
+        }
     }
 
     @DeleteMapping("/{id}")

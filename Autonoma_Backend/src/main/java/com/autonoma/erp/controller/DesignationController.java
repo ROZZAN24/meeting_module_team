@@ -16,6 +16,25 @@ public class DesignationController {
     @Autowired
     private DesignationRepository designationRepository;
 
+    @GetMapping("/next-code")
+    public ResponseEntity<String> getNextCode() {
+        try {
+            Integer maxCode = designationRepository.findMaxDesignationCode().orElse(0);
+            return ResponseEntity.ok(String.valueOf(maxCode + 1));
+        } catch (Exception e) {
+            return ResponseEntity.ok("1");
+        }
+    }
+
+    @GetMapping("/next-sl-no")
+    public ResponseEntity<Integer> getNextSlNo() {
+        try {
+            return ResponseEntity.ok(designationRepository.findMaxDisplaySlNo().orElse(0) + 1);
+        } catch (Exception e) {
+            return ResponseEntity.ok(1);
+        }
+    }
+
     @GetMapping
     public List<Designation> getAll() {
         return designationRepository.findAll();
@@ -59,27 +78,5 @@ public class DesignationController {
                     designationRepository.delete(designation);
                     return ResponseEntity.ok().build();
                 }).orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/next-code")
-    public String getNextCode() {
-        try {
-            Integer maxCode = designationRepository.findMaxDesignationCode().orElse(0);
-            String nextCode = String.valueOf(maxCode + 1);
-            System.out.println("Generated Next Designation Code: " + nextCode);
-            return nextCode;
-        } catch (Exception e) {
-            System.err.println("Error generating next designation code: " + e.getMessage());
-            return "1";
-        }
-    }
-
-    @GetMapping("/next-sl-no")
-    public Integer getNextSlNo() {
-        try {
-            return designationRepository.findMaxDisplaySlNo().orElse(0) + 1;
-        } catch (Exception e) {
-            return 1;
-        }
     }
 }

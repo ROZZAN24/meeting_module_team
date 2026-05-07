@@ -86,11 +86,26 @@ public class AuditObservationController {
 
     @GetMapping("/next-no")
     public String getNextNo() {
+        return auditObservationRepository.findFirstByOrderByObservationNoDesc()
+                .map(latest -> incrementSequence(latest.getObservationNo(), "OB-"))
+                .orElse("OB-001");
+    }
+
+    private String incrementSequence(String latest, String prefix) {
+        if (latest == null || latest.isEmpty()) return prefix + "001";
         try {
-            Integer maxNo = auditObservationRepository.findMaxObservationNo().orElse(0);
-            return String.valueOf(maxNo + 1);
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
+            java.util.regex.Matcher matcher = pattern.matcher(latest.trim());
+            if (matcher.find()) {
+                String numericPart = matcher.group();
+                int num = Integer.parseInt(numericPart);
+                int length = Math.max(numericPart.length(), 3);
+                String nextNum = String.format("%0" + length + "d", num + 1);
+                return latest.substring(0, matcher.start()).trim() + nextNum;
+            }
+            return prefix + "001";
         } catch (Exception e) {
-            return "1";
+            return prefix + "001";
         }
     }
 }

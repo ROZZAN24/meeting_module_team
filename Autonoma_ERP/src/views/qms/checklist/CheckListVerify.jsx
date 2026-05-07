@@ -17,7 +17,8 @@ import {
   IconCheck,
   IconCircleCheck,
   IconX,
-  IconRefresh
+  IconRefresh,
+  IconBan
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';

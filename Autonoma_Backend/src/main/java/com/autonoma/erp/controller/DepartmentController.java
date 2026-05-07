@@ -19,6 +19,16 @@ public class DepartmentController {
     @Autowired
     private com.autonoma.erp.repository.DepartmentRepository departmentRepository;
 
+    @GetMapping("/next-code")
+    public ResponseEntity<Integer> getNextCode() {
+        return ResponseEntity.ok(departmentRepository.findMaxDepartmentNo().orElse(0) + 1);
+    }
+
+    @GetMapping("/next-seq")
+    public ResponseEntity<Integer> getNextSeq() {
+        return ResponseEntity.ok(departmentRepository.findMaxSequenceNo().orElse(0) + 1);
+    }
+
     @GetMapping
     public List<Department> getAllDepartments() {
         return departmentService.getAllDepartments();
@@ -47,15 +57,5 @@ public class DepartmentController {
     public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);
         return ResponseEntity.ok().build();
-    }
-
-    @GetMapping("/next-code")
-    public Integer getNextCode() {
-        return departmentRepository.findMaxDepartmentNo().orElse(0) + 1;
-    }
-
-    @GetMapping("/next-seq")
-    public Integer getNextSeq() {
-        return departmentRepository.findMaxSequenceNo().orElse(0) + 1;
     }
 }

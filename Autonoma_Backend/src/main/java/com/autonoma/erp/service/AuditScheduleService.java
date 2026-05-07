@@ -69,15 +69,25 @@ public class AuditScheduleService {
 
     public String getNextScheduleNo() {
         return repository.findFirstByOrderByScheduleNoDesc()
-                .map(latest -> {
-                    String lastNo = latest.getScheduleNo();
-                    try {
-                        int num = Integer.parseInt(lastNo.replace("SCH-", ""));
-                        return String.format("SCH-%04d", num + 1);
-                    } catch (Exception e) {
-                        return "SCH-0001";
-                    }
-                })
+                .map(latest -> incrementSequence(latest.getScheduleNo(), "SCH-"))
                 .orElse("SCH-0001");
+    }
+
+    private String incrementSequence(String latest, String prefix) {
+        if (latest == null || latest.isEmpty()) return prefix + "0001";
+        try {
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
+            java.util.regex.Matcher matcher = pattern.matcher(latest.trim());
+            if (matcher.find()) {
+                String numericPart = matcher.group();
+                int num = Integer.parseInt(numericPart);
+                int length = Math.max(numericPart.length(), 4);
+                String nextNum = String.format("%0" + length + "d", num + 1);
+                return latest.substring(0, matcher.start()).trim() + "-" + nextNum;
+            }
+            return prefix + "0001";
+        } catch (Exception e) {
+            return prefix + "0001";
+        }
     }
 }

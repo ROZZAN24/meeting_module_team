@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface AuditObservationRepository extends JpaRepository<AuditObservation, Long> {
     @Query("SELECT MAX(CAST(o.observationNo AS int)) FROM AuditObservation o WHERE o.observationNo LIKE '[0-9]%'")
     Optional<Integer> findMaxObservationNo();
+
+    java.util.Optional<AuditObservation> findFirstByOrderByObservationNoDesc();
 }
