@@ -21,7 +21,7 @@ import useAuth from 'hooks/useAuth';
 // A mapping of auth types to dynamic imports for reset password
 const authResetPasswordImports = {
   jwt: () => import('./jwt/AuthResetPassword'),
-  auth0: () => import('./auth0/AuthResetPassword'),
+  auth0: () => import('./auth0/AuthResetPassword')
 };
 
 export default function ResetPassword() {

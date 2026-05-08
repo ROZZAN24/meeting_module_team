@@ -5,6 +5,7 @@ import GuestGuard from 'utils/route-guard/GuestGuard';
 import MinimalLayout from 'layout/MinimalLayout';
 import NavMotion from 'layout/NavMotion';
 import Loadable from 'ui-component/Loadable';
+import ErrorBoundary from './ErrorBoundary';
 
 // login routing
 const AuthLogin = Loadable(lazy(() => import('views/pages/authentication/Login')));
@@ -25,6 +26,7 @@ const LoginRoutes = {
       </GuestGuard>
     </NavMotion>
   ),
+  errorElement: <ErrorBoundary />,
   children: [
     {
       path: '/login',

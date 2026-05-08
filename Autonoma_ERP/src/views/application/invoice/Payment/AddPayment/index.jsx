@@ -120,7 +120,7 @@ export default function AddPayment() {
 
   return (
     <MainCard
-      title="Add New Payment Received"
+      title="New Payment Received"
       sx={{
         '& .MuiOutlinedInput-input': { borderRadius: 1.5 },
         '& .MuiCardContent-root': { p: 0 },
@@ -239,7 +239,7 @@ export default function AddPayment() {
         <PaymentTable {...{ formik, row }} />
         <Divider />
         <Box sx={{ p: 2.5 }}>
-          <TextField fullWidth multiline rows={2} label="Add Note" />
+          <TextField fullWidth multiline rows={2} label="Note" />
         </Box>
         <Divider />
         <CardActions sx={{ justifyContent: 'flex-end' }}>

@@ -126,7 +126,7 @@ export default function SelectItem({ handleAddItem, setAddItemClicked }) {
             Cancel
           </Button>
           <Button disabled={!selectedItem?.id || !selectedQuantity} variant="contained" size="small" onClick={handleOnAddItem}>
-            Add
+            New
           </Button>
         </Stack>
       </Grid>

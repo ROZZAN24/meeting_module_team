@@ -37,7 +37,6 @@ function MenuList() {
     let currentItems = [...menuItem.items];
 
     setMenuItems({ items: currentItems });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [menuLoading, menu]);
 
   // last menu-item to show in horizontal menu bar

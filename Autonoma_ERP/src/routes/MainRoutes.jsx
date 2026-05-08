@@ -87,6 +87,8 @@ const AppBlogEdit = Loadable(lazy(() => import('views/application/blog/EditBlog'
 const AppBlogList = Loadable(lazy(() => import('views/application/blog/List')));
 const AppBlogDetails = Loadable(lazy(() => import('views/application/blog/Details')));
 
+// master - hrm routing
+
 // forms component routing
 const FrmComponentsTextfield = Loadable(lazy(() => import('views/forms/components/TextField')));
 const FrmComponentsButton = Loadable(lazy(() => import('views/forms/components/Button')));
@@ -191,6 +193,22 @@ const QmsCheckListVerify = Loadable(lazy(() => import('views/qms/checklist/Check
 const QmsCloseCheckListRenewal = Loadable(lazy(() => import('views/qms/checklist/CloseCheckListRenewal')));
 const QmsCheckListRenewalVerify = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalVerify')));
 const QmsCheckListRenewalReport = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalReport')));
+const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/DepartmentDetails')));
+const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
+const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
+const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/DesignationMaster')));
+const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
+const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
+const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
+
+const QmsAuditScheduleList = Loadable(lazy(() => import('views/qms/AuditSchedule/AuditScheduleList')));
+const QmsAddAuditSchedule = Loadable(lazy(() => import('views/qms/AuditSchedule/AddAuditSchedule')));
+const QmsAuditAttendance = Loadable(lazy(() => import('views/qms/AuditAttendance/AuditAttendance')));
+const QmsAuditObservationList = Loadable(lazy(() => import('views/qms/AuditObservation/AuditObservationList')));
+const QmsAddAuditObservation = Loadable(lazy(() => import('views/qms/AuditObservation/AddAuditObservation')));
+const QmsAuditNcrClose = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrClose')));
+const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrApproval')));
+const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -759,7 +777,7 @@ const MainRoutes = {
       element: <AppBlogDashboard />
     },
     {
-      path: '/qms/checklist/master',
+      path: '/master/qms/checklist/master',
       element: <QmsMasterCheckList />
     },
     {
@@ -777,8 +795,81 @@ const MainRoutes = {
     {
       path: '/qms/checklist/renewal-report',
       element: <QmsCheckListRenewalReport />
+    },
+    {
+      path: '/master/hr/department',
+      element: <MasterHrDepartment />
+    },
+    {
+      path: '/master/hr/employee',
+      element: <MasterHrEmployeeList />
+    },
+    {
+      path: '/master/hr/employee/create',
+      element: <MasterHrEmployee />
+    },
+    {
+      path: '/master/hr/designation',
+      element: <MasterHrDesignation />
+    },
+    {
+      path: '/master/qms/audit/type',
+      element: <QmsAuditTypeMaster />
+    },
+    {
+      path: '/master/qms/audit/area',
+      element: <QmsAuditAreaMaster />
+    },
+    {
+      path: '/master/qms/audit/criteria',
+      element: <QmsAuditCriteriaMaster />
+    },
+    {
+      path: '/qms/audit/schedule',
+      element: <QmsAuditScheduleList />
+    },
+    {
+      path: '/qms/audit/schedule/add',
+      element: <QmsAddAuditSchedule />
+    },
+    {
+      path: '/qms/audit/schedule/edit/:id',
+      element: <QmsAddAuditSchedule />
+    },
+    {
+      path: '/qms/audit/attendance',
+      element: <QmsAuditAttendance />
+    },
+    {
+      path: '/qms/audit/observation',
+      element: <QmsAuditObservationList />
+    },
+    {
+      path: '/qms/audit/observation/add',
+      element: <QmsAddAuditObservation />
+    },
+    {
+      path: '/qms/audit/observation/edit/:id',
+      element: <QmsAddAuditObservation />
+    },
+    {
+      path: '/qms/audit/ncr/close',
+      element: <QmsAuditNcrClose />
+    },
+    {
+      path: '/qms/audit/ncr/approval',
+      element: <QmsAuditNcrApproval />
+    },
+    {
+      path: '/qms/audit/report',
+      element: <QmsAuditReport />
+    },
+    {
+      path: '*',
+      element: <ErrorBoundary />
     }
-  ]
+  ],
+  errorElement: <ErrorBoundary />
 };
 
 export default MainRoutes;

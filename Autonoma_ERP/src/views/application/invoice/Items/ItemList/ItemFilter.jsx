@@ -86,7 +86,7 @@ export default function ItemFilter({ products, setRows }) {
         </Tooltip>
 
         {/* items add & dialog */}
-        <Tooltip title="Add Item">
+        <Tooltip title="+ New">
           <Link to="/apps/invoice/items/add-item">
             <Fab color="primary" size="small" sx={{ boxShadow: 'none', width: 32, height: 32, minHeight: 32 }}>
               <AddIcon fontSize="small" />

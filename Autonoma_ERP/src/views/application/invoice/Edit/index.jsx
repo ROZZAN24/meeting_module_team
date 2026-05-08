@@ -178,7 +178,7 @@ export default function EditInvoice() {
           ) : (
             <Grid size={12}>
               <Button variant="text" onClick={() => setAddItemClicked(true)}>
-                + Add Item
+                + New
               </Button>
             </Grid>
           )}

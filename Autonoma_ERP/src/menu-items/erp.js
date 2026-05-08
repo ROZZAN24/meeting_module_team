@@ -1,17 +1,41 @@
 import {
-  IconDashboard, IconUsers, IconBriefcase, IconBuildingFactory, IconAward, IconTruckDelivery, IconReceiptTax, IconTool, IconServerCog, IconListCheck, IconReport, IconHelp
-  , IconChecks, IconRocket
+  IconDashboard,
+  IconUsers,
+  IconBriefcase,
+  IconBuildingFactory,
+  IconAward,
+  IconTruckDelivery,
+  IconReceiptTax,
+  IconTool,
+  IconServerCog,
+  IconListCheck,
+  IconReport,
+  IconHelp,
+  IconChecks,
+  IconRocket
 } from '@tabler/icons-react';
 
 const icons = {
-  IconDashboard, IconUsers, IconBriefcase, IconBuildingFactory, IconAward, IconTruckDelivery, IconReceiptTax, IconTool, IconServerCog, IconListCheck, IconReport, IconHelp
-  , IconChecks, IconRocket
+  IconDashboard,
+  IconUsers,
+  IconBriefcase,
+  IconBuildingFactory,
+  IconAward,
+  IconTruckDelivery,
+  IconReceiptTax,
+  IconTool,
+  IconServerCog,
+  IconListCheck,
+  IconReport,
+  IconHelp,
+  IconChecks,
+  IconRocket
 };
 
 export const masters = {
   id: 'masters',
-  title: 'Masters',
-  caption: 'Masters M0000',
+  title: 'Master',
+  caption: 'Master Q0001',
   type: 'group',
   icon: icons.IconServerCog,
   children: [
@@ -22,6 +46,71 @@ export const masters = {
       url: '/admin/user-credentials',
       icon: icons.IconBox,
       breadcrumbs: true
+    },
+    {
+      id: 'master-hr',
+      title: 'HR',
+      type: 'collapse',
+      icon: icons.IconUsers,
+      children: [
+        {
+          id: 'master-hr-dept-details',
+          title: 'Department Details',
+          type: 'item',
+          url: '/master/hr/department'
+        },
+        {
+          id: 'master-hr-employee',
+          title: 'Employee Master',
+          type: 'item',
+          url: '/master/hr/employee'
+        },
+        {
+          id: 'master-hr-designation-details',
+          title: 'Designation Details',
+          type: 'item',
+          url: '/master/hr/designation'
+        }
+      ]
+    },
+    {
+      id: 'master-qms',
+      title: 'QMS',
+      type: 'collapse',
+      icon: icons.IconListCheck,
+      children: [
+        {
+          id: 'master-qms-checklist',
+          title: 'Check List',
+          type: 'item',
+          url: '/master/qms/checklist/master'
+        },
+        {
+          id: 'master-qms-audit',
+          title: 'Audit',
+          type: 'collapse',
+          children: [
+            {
+              id: 'master-qms-audit-type',
+              title: 'Audit Type',
+              type: 'item',
+              url: '/master/qms/audit/type'
+            },
+            {
+              id: 'master-qms-audit-area',
+              title: 'Audit Area / Zone',
+              type: 'item',
+              url: '/master/qms/audit/area'
+            },
+            {
+              id: 'master-qms-audit-criteria',
+              title: 'Audit Criteria',
+              type: 'item',
+              url: '/master/qms/audit/criteria'
+            }
+          ]
+        }
+      ]
     }
   ]
 };
@@ -121,13 +210,6 @@ export const qms = {
       icon: icons.IconChecks,
       children: [
         {
-          id: 'master-checklist',
-          title: 'Master Check List',
-          type: 'item',
-          url: '/qms/checklist/master',
-          icon: icons.IconRocket
-        },
-        {
           id: 'checklist-verify',
           title: 'Check List Verify',
           type: 'item',
@@ -153,7 +235,50 @@ export const qms = {
           title: 'Check List / Renewal Report',
           type: 'item',
           url: '/qms/checklist/renewal-report',
-          icon: icons.IconRocket,
+          icon: icons.IconRocket
+        }
+      ]
+    },
+    {
+      id: 'qms-audit',
+      title: 'Audit',
+      type: 'collapse',
+      children: [
+        {
+          id: 'qms-audit-schedule',
+          title: 'Audit Schedule',
+          type: 'item',
+          url: '/qms/audit/schedule'
+        },
+        {
+          id: 'qms-audit-attendance',
+          title: 'Audit User Attendance',
+          type: 'item',
+          url: '/qms/audit/attendance'
+        },
+        {
+          id: 'qms-audit-observation',
+          title: 'Audit Observation',
+          type: 'item',
+          url: '/qms/audit/observation'
+        },
+        {
+          id: 'qms-audit-ncr-close',
+          title: 'Close NCR / OFI',
+          type: 'item',
+          url: '/qms/audit/ncr/close'
+        },
+        {
+          id: 'qms-audit-ncr-approval',
+          title: 'Audit NCR / OFI approval',
+          type: 'item',
+          url: '/qms/audit/ncr/approval'
+        },
+        {
+          id: 'qms-audit-report',
+          title: 'Audit Report',
+          type: 'item',
+          url: '/qms/audit/report'
         }
       ]
     }

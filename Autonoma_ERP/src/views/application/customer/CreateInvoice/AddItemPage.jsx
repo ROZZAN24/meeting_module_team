@@ -172,7 +172,7 @@ export default function AddItemPage({ handleAddItem, setAddItemClicked }) {
               size="small"
               onClick={handleOk}
             >
-              Add
+              New
             </Button>
           </Stack>
         </Grid>

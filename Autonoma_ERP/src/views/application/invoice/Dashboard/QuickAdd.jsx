@@ -44,7 +44,7 @@ export default function QuickAdd() {
         <Grid size={12}>
           <Stack direction="row" sx={{ gap: 1, alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h3" sx={{ fontWeight: 500 }}>
-              Quick Add
+              + New
             </Typography>
             <MoreHorizOutlinedIcon
               fontSize="small"

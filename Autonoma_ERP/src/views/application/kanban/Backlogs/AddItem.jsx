@@ -107,7 +107,7 @@ export default function AddItem({ open, handleDrawerOpen, storyId }) {
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <Grid container spacing={3}>
                 <Grid size={12}>
-                  <Typography variant="h4">Add Task</Typography>
+                  <Typography variant="h4">New Task</Typography>
                 </Grid>
                 <Grid size={12}>
                   <TextField
