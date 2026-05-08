@@ -56,13 +56,12 @@ function a11yProps(index) {
 
 export default function Customization() {
   const theme = useTheme();
-  const { resetState } = useConfig();
+  const { resetState, customizationOpen, setCustomizationOpen } = useConfig();
   const { setMode } = useColorScheme();
 
   // drawer on/off
-  const [open, setOpen] = useState(false);
   const handleToggle = () => {
-    setOpen(!open);
+    setCustomizationOpen(!customizationOpen);
   };
 
   const [value, setValue] = useState(0);
@@ -79,7 +78,8 @@ export default function Customization() {
   return (
     <>
       {/* toggle button */}
-      <Tooltip title="Live Customize">
+      {/* toggle button - Moved to ProfileSection */}
+      {/* <Tooltip title="Live Customize">
         <Fab
           component={motion.div}
           drag
@@ -109,9 +109,9 @@ export default function Customization() {
             </IconButton>
           </AnimateButton>
         </Fab>
-      </Tooltip>
-      <Drawer anchor="right" onClose={handleToggle} open={open} slotProps={{ paper: { sx: { width: 375 } } }}>
-        <Activity mode={open ? 'visible' : 'hidden'}>
+      </Tooltip> */}
+      <Drawer anchor="right" onClose={handleToggle} open={customizationOpen} slotProps={{ paper: { sx: { width: 375 } } }}>
+        <Activity mode={customizationOpen ? 'visible' : 'hidden'}>
           <SimpleBar>
             <MainCard content={false} border={false}>
               <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', p: 2.5, gap: 1.5 }}>
