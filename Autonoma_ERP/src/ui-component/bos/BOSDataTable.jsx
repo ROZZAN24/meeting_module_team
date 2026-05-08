@@ -109,7 +109,11 @@ export default function BOSDataTable({
                     {columns.map((col) => (
                       <TableCell
                         key={col.id}
-                        onDoubleClick={(e) => { e.stopPropagation(); onDoubleClickRow?.(row); }}
+                        onDoubleClick={(e) => { 
+                          e.stopPropagation(); 
+                          if (onDoubleClickRow) onDoubleClickRow(row);
+                          else if (onEditRow) onEditRow(row);
+                        }}
                         sx={{
                           cursor: (onDoubleClickRow || onClickRow) ? 'pointer' : 'default',
                           ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
