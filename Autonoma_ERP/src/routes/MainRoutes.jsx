@@ -801,11 +801,11 @@ const MainRoutes = {
       element: <MasterHrDepartment />
     },
     {
-      path: '/master/hr/employee',
+      path: '/hra/hr/employee/master',
       element: <MasterHrEmployeeList />
     },
     {
-      path: '/master/hr/employee/create',
+      path: '/hra/hr/employee/master/create',
       element: <MasterHrEmployee />
     },
     {

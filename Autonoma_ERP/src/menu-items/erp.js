@@ -60,12 +60,6 @@ export const masters = {
           url: '/master/hr/department'
         },
         {
-          id: 'master-hr-employee',
-          title: 'Employee Master',
-          type: 'item',
-          url: '/master/hr/employee'
-        },
-        {
           id: 'master-hr-designation-details',
           title: 'Designation Details',
           type: 'item',
@@ -121,7 +115,28 @@ export const hra = {
   caption: 'HR & Admin HA0000',
   type: 'group',
   icon: icons.IconUsers,
-  children: []
+  children: [
+    {
+      id: 'hra-hr',
+      title: 'HR',
+      type: 'collapse',
+      children: [
+        {
+          id: 'hra-hr-employee',
+          title: 'Employee',
+          type: 'collapse',
+          children: [
+            {
+              id: 'hra-hr-employee-details',
+              title: 'Employee Master',
+              type: 'item',
+              url: '/hra/hr/employee/master'
+            }
+          ]
+        }
+      ]
+    }
+  ]
 };
 
 export const sm = {
