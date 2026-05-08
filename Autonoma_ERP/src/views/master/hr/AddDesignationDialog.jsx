@@ -64,8 +64,8 @@ export default function AddDesignationDialog({ open, handleClose, initialData })
     setFormData(prev => ({ ...prev, designationCode: 'Generating...', displaySlNo: '' }));
     try {
       const [codeRes, slRes] = await Promise.all([
-        axios.get('/api/master/hr/designation/next-code'),
-        axios.get('/api/master/hr/designation/next-sl-no')
+        axios.get('/api/hrm/designations/next-code'),
+        axios.get('/api/hrm/designations/next-sl-no')
       ]);
       setFormData(prev => ({ ...prev, designationCode: codeRes.data, displaySlNo: slRes.data }));
     } catch (e) {
@@ -84,9 +84,9 @@ export default function AddDesignationDialog({ open, handleClose, initialData })
 
     try {
       if (isEditing) {
-        await axios.put(`/api/master/hr/designation/${initialData.id}`, formData);
+        await axios.put(`/api/hrm/designations/${initialData.id}`, formData);
       } else {
-        await axios.post('/api/master/hr/designation', formData);
+        await axios.post('/api/hrm/designations', formData);
       }
       dispatch(openSnackbar({ open: true, message: `Designation ${isEditing ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
       handleClose(true);

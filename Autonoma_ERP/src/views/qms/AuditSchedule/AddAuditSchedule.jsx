@@ -40,6 +40,8 @@ import {
 } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import { useLookups } from 'hooks/useLookups';
+import { API_PATHS } from 'utils/api-constants';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -79,9 +81,12 @@ export default function AddAuditSchedule() {
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
-  const [auditTypes, setAuditTypes] = useState([]);
-  const [departments, setDepartments] = useState([]);
-  const [masterCriteria, setMasterCriteria] = useState([]);
+  const { 
+    auditType: auditTypes = [], 
+    departments = [], 
+    auditCriteria: masterCriteria = [], 
+    employees = [] 
+  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES']);
 
   // Criteria Dialog state
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
@@ -96,24 +101,11 @@ export default function AddAuditSchedule() {
     }
   }, [id, isEditing]);
 
-  const fetchDropdowns = async () => {
-    try {
-      const [typeRes, deptRes, masterCritRes] = await Promise.all([
-        axios.get('/api/master/qms/audit-type'),
-        axios.get('/api/hrm/departments'),
-        axios.get('/api/master/qms/audit-criteria')
-      ]);
-      setAuditTypes(typeRes.data?.content || typeRes.data || []);
-      setDepartments(deptRes.data || []);
-      setMasterCriteria(masterCritRes.data || []);
-    } catch (error) {
-      console.error('Failed to fetch dropdowns:', error);
-    }
-  };
+  // Remove manual fetch as useLookups handles it now
 
   const generateScheduleNo = async () => {
     try {
-      const res = await axios.get('/api/qms/audit-schedules/next-no');
+      const res = await axios.get(`${API_PATHS.QMS.AUDIT_SCHEDULE}/next-no`);
       setFormData((prev) => ({ ...prev, scheduleNo: res.data }));
     } catch (error) {
       setFormData((prev) => ({ ...prev, scheduleNo: `SCH-${Math.floor(1000 + Math.random() * 9000)}` }));
@@ -122,7 +114,7 @@ export default function AddAuditSchedule() {
 
   const fetchSchedule = async () => {
     try {
-      const res = await axios.get(`/api/qms/audit-schedules/${id}`);
+      const res = await axios.get(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`);
       const data = res.data;
       setFormData({
         scheduleNo: data.scheduleNo || '',
@@ -168,10 +160,10 @@ export default function AddAuditSchedule() {
     try {
       const payload = { ...formData, criteriaList };
       if (isEditing) {
-        await axios.put(`/api/qms/audit-schedules/${id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule updated successfully!', severity: 'success', variant: 'alert' }));
       } else {
-        await axios.post('/api/qms/audit-schedules', payload);
+        await axios.post(API_PATHS.QMS.AUDIT_SCHEDULE, payload);
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule created successfully!', severity: 'success', variant: 'alert' }));
       }
       navigate('/qms/audit/schedule');
@@ -412,13 +404,15 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.warning.main} />} title="Personnel Information">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
               {[
-                { role: 'AUDITEE', field: 'auditee', label: 'Auditee', options: ['RAM GANESH - NT07L2-20059', 'OTHERS'] },
-                { role: 'AUDITOR', field: 'auditor', label: 'Auditor', options: ['UMAPATHY - NT09L4-19036', 'OTHERS'] },
-                { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', label: 'NCR Approved By', options: ['SIVARAMAN - NT10L5-16025', 'OTHERS'] }
+                { role: 'AUDITEE', field: 'auditee', label: 'Auditee' },
+                { role: 'AUDITOR', field: 'auditor', label: 'Auditor' },
+                { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', label: 'NCR Approved By' }
               ].map((person) => {
                 const value = formData[person.field];
                 const name = value ? value.split(' - ')[0] : '-';
                 const code = value ? value.split(' - ')[1] || '-' : '-';
+
+                const employeeOptions = employees.map(emp => `${emp.employeeName} - ${emp.employeeCode}`);
 
                 return (
                   <Card key={person.role} sx={{
@@ -458,7 +452,7 @@ export default function AddAuditSchedule() {
                         helperText={errors[person.field]}
                       >
                         <MenuItem value="">-Select-</MenuItem>
-                        {person.options.map((opt) => (
+                        {employeeOptions.map((opt) => (
                           <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                         ))}
                       </BOSTextField>

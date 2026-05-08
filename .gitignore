@@ -29,3 +29,5 @@ Autonoma_Backend/maven.zip
 Autonoma_Backend/maven_new.zip
 Autonoma_Backend/apache-maven-3.9.6/
 tools/
+Autonoma_Backend/uploads/
+Autonoma_Backend/*.log
