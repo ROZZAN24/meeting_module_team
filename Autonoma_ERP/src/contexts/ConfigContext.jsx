@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { createContext, useMemo } from 'react';
+import { createContext, useMemo, useState } from 'react';
 
 // project imports
 import config from 'config';
@@ -13,8 +13,12 @@ export const ConfigContext = createContext(undefined);
 
 export function ConfigProvider({ children }) {
   const { state, setState, setField, resetState } = useLocalStorage('berry-config-vite-js', config);
+  const [customizationOpen, setCustomizationOpen] = useState(false);
 
-  const memoizedValue = useMemo(() => ({ state, setState, setField, resetState }), [state, setField, setState, resetState]);
+  const memoizedValue = useMemo(
+    () => ({ state, setState, setField, resetState, customizationOpen, setCustomizationOpen }),
+    [state, setField, setState, resetState, customizationOpen]
+  );
 
   return <ConfigContext.Provider value={memoizedValue}>{children}</ConfigContext.Provider>;
 }

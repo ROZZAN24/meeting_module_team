@@ -9,6 +9,7 @@ import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -41,7 +42,8 @@ import useConfig from 'hooks/useConfig';
 export default function ProfileSection() {
   const theme = useTheme();
   const {
-    state: { borderRadius }
+    state: { borderRadius },
+    setCustomizationOpen
   } = useConfig();
   const navigate = useNavigate();
 
@@ -96,28 +98,47 @@ export default function ProfileSection() {
 
   return (
     <>
-      <Chip
-        slotProps={{ label: { sx: { lineHeight: 0 } } }}
-        sx={{ ml: 2, height: '48px', alignItems: 'center', borderRadius: '27px' }}
-        icon={
-          <Avatar
-            src={User1}
-            alt="user-images"
-            sx={{ typography: 'mediumAvatar', margin: '8px 0 8px 8px !important', cursor: 'pointer' }}
-            ref={anchorRef}
-            aria-controls={open ? 'menu-list-grow' : undefined}
-            aria-haspopup="true"
-            color="inherit"
-          />
-        }
-        label={<IconSettings stroke={1.5} size="24px" />}
-        ref={anchorRef}
-        aria-controls={open ? 'menu-list-grow' : undefined}
-        aria-haspopup="true"
-        onClick={handleToggle}
-        color="primary"
-        aria-label="user-account"
-      />
+      <Stack
+        direction="row"
+        sx={{
+          ml: 2,
+          height: '48px',
+          alignItems: 'center',
+          borderRadius: '27px',
+          bgcolor: theme.palette.primary.main,
+          px: 1,
+          gap: 1
+        }}
+      >
+        <Avatar
+          src={User1}
+          alt="user-images"
+          sx={{
+            typography: 'mediumAvatar',
+            cursor: 'pointer',
+            width: 34,
+            height: 34,
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': { transform: 'scale(1.05)', boxShadow: '0 0 8px rgba(255,255,255,0.5)' }
+          }}
+          ref={anchorRef}
+          aria-controls={open ? 'menu-list-grow' : undefined}
+          aria-haspopup="true"
+          onClick={handleToggle}
+        />
+        <IconButton
+          color="inherit"
+          onClick={() => setCustomizationOpen(true)}
+          sx={{
+            p: 0.5,
+            color: '#fff',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+          }}
+          aria-label="live-customize"
+        >
+          <IconSettings stroke={1.5} size="24px" />
+        </IconButton>
+      </Stack>
       <Popper
         placement="bottom"
         open={open}
