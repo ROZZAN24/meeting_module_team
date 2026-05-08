@@ -12,6 +12,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| AUDIT AREA MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -70,7 +71,7 @@ export default function AuditAreaMaster() {
   const fetchAuditAreas = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/master/qms/audit-area');
+      const response = await axios.get(API_PATHS.QMS.AUDIT_AREA);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch audit areas:', error);
@@ -95,7 +96,7 @@ export default function AuditAreaMaster() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/master/qms/audit-area/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_AREA}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Audit Area deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchAuditAreas();
     } catch (error) {

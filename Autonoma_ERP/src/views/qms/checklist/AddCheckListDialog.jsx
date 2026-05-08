@@ -20,7 +20,9 @@ import {
   IconCamera,
   IconFileDescription,
   IconMicrophone,
-  IconMicrophoneOff
+  IconMicrophoneOff,
+  IconEye,
+  IconTrash
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import {
@@ -28,15 +30,13 @@ import {
   BOSFormSection,
   BOSTextField,
   btnClear,
-  btnSave
+  btnSave,
+  BOSFileGallery
 } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
+import useLookups from 'hooks/useLookups';
 
-const DEPARTMENTS = [
-  'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT', 
-  'HRA', 'LOGISTICS', 'MAINTENANCE', 'MANAGEMENT', 'MANAGEMENT REPRESENTATIVE', 
-  'OPERATIONS', 'PLANNING', 'PRODUCT DEVELOPMENT', 'PRODUCTION', 'PURCHASE', 
-  'QMS', 'QUALITY', 'SALES & MARKETING', 'STORES', 'STRATEGIC PROCUREMENT', 'TOP MANAGEMENT'
-];
+// Departments are now fetched dynamically from API
 
 const CATEGORIES = ['RENEWAL', 'CHECK LIST'];
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF YEARLY', 'YEARLY'];
@@ -48,7 +48,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [formData, setFormData] = useState({
     seqNo: '',
     category: '',
-    effectiveFrom: '',
+    effectiveFrom: new Date().toISOString().split('T')[0],
     expiryDate: '',
     reminderDays: '',
     reminderDate: '',
@@ -68,11 +68,15 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
+  const lookups = useLookups(['DEPARTMENTS']);
+  const departmentList = (lookups.departments || []).map(d => (d.departmentName || '').toUpperCase());
   const speechRef = useRef(null);
 
   useEffect(() => {
     setIsEditing(!readOnly);
   }, [readOnly, open]);
+
+
 
   useEffect(() => {
     if (open) {
@@ -87,7 +91,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           checkingPoint: initialData.checkingPoint || '',
           frequency: initialData.frequency || '',
           description: initialData.description || '',
-          department: (initialData.departments || []).map((d) => d.departmentName || d),
+          department: (initialData.departments || []).map((d) => (d.departmentName || d).toUpperCase()),
           stockLink: initialData.stockLink || 'NO',
           photoRequired: initialData.photoRequired || 'NO',
           itemCode: initialData.itemCode || '',
@@ -95,6 +99,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           dualCheck: initialData.dualCheck || 'NO',
           carryForward: initialData.carryForward || 'NO'
         });
+        
+        // Fix: Explicitly reset files before loading to avoid stale data from previous record
+        setUploadedFiles([]);
+        setScannedFiles([]);
+
+        if (initialData.uploadedFiles) {
+          setUploadedFiles(initialData.uploadedFiles.map(name => ({ name, isServer: true, type: name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg' })));
+        }
+        if (initialData.scannedFiles) {
+          setScannedFiles(initialData.scannedFiles.map(name => ({ name, isServer: true, type: 'image/jpeg' })));
+        }
       } else {
         resetForm();
         fetchNextSeq();
@@ -104,7 +119,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   const fetchNextSeq = async () => {
     try {
-      const res = await axios.get('/api/qms/checklist/next-sequence');
+      const res = await axios.get(`${API_PATHS.QMS.CHECKLIST}/next-sequence`);
       setFormData(prev => ({ ...prev, seqNo: String(res.data.nextSeqNo).padStart(3, '0') }));
     } catch (error) {
       setFormData(prev => ({ ...prev, seqNo: String(Date.now()).slice(-4) }));
@@ -115,7 +130,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setFormData({
       seqNo: '',
       category: '',
-      effectiveFrom: '',
+      effectiveFrom: new Date().toISOString().split('T')[0],
       expiryDate: '',
       reminderDays: '',
       reminderDate: '',
@@ -132,53 +147,84 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     });
     setUploadedFiles([]);
     setScannedFiles([]);
+    if (!initialData) {
+      fetchNextSeq();
+    }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Case 1: Change Expiry or Days -> Update Date
+      if (name === 'expiryDate' || name === 'reminderDays') {
+        const expiry = name === 'expiryDate' ? value : prev.expiryDate;
+        const days = name === 'reminderDays' ? value : prev.reminderDays;
+        
+        if (expiry && days) {
+          const date = new Date(expiry);
+          const dayCount = parseInt(days);
+          if (!isNaN(dayCount)) {
+            date.setDate(date.getDate() - dayCount);
+            newData.reminderDate = date.toISOString().split('T')[0];
+          }
+        }
+      }
+      
+      // Case 2: Change Reminder Date -> Update Days
+      if (name === 'reminderDate' && value && prev.expiryDate) {
+        const expiry = new Date(prev.expiryDate);
+        const reminder = new Date(value);
+        const diffTime = expiry - reminder;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (!isNaN(diffDays)) {
+          newData.reminderDays = diffDays >= 0 ? diffDays : 0;
+        }
+      }
+      
+      return newData;
+    });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.category || !formData.frequency || !formData.checkingPoint || !formData.description) {
       alert('Please fill required fields');
       return;
     }
-    onSave({
-      ...formData,
-      id: initialData?.id,
-      uploadedFiles: uploadedFiles.map(f => f.name),
-      scannedFiles: scannedFiles.map(f => f.name)
-    });
-    handleClose();
+
+    try {
+      const uploadFile = async (fileObj) => {
+        if (fileObj.isServer) return fileObj.name; // Already on server
+        
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', fileObj);
+        const res = await axios.post(`${API_PATHS.FILES}/upload`, formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return res.data; // Server filename
+      };
+
+      const finalUploaded = await Promise.all(uploadedFiles.map(uploadFile));
+      const finalScanned = await Promise.all(scannedFiles.map(uploadFile));
+
+      await onSave({
+        ...formData,
+        id: initialData?.id,
+        uploadedFiles: finalUploaded,
+        scannedFiles: finalScanned
+      });
+      
+      handleClose();
+    } catch (error) {
+      console.error('Save failed:', error);
+      alert('Failed to save record or upload files.');
+    }
   };
 
   // Speech Recognition Logic
-  const toggleListening = () => {
-    if (isListening) {
-      speechRef.current?.stop();
-      setIsListening(false);
-    } else {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return;
-      const rec = new SR();
-      rec.lang = 'en-US';
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.onresult = (e) => {
-        let interim = '';
-        let final = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) final += e.results[i][0].transcript;
-          else interim += e.results[i][0].transcript;
-        }
-        if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
-        setInterimText(interim);
-      };
-      rec.start();
-      speechRef.current = rec;
-      setIsListening(true);
-    }
+  const removeFile = (list, setList, index) => {
+    setList(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -207,21 +253,22 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               </Box>
 
               {/* Solves "long select" issue using Autocomplete with Chips */}
-              <Autocomplete
-                multiple
-                options={DEPARTMENTS}
-                value={formData.department}
-                disabled={!isEditing}
-                onChange={(e, val) => setFormData(p => ({ ...p, department: val }))}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip variant="outlined" label={option} size="small" {...getTagProps({ index })} />
-                  ))
-                }
-                renderInput={(params) => (
-                  <BOSTextField {...params} label="Departments" placeholder="Select Departments" />
-                )}
-              />
+                <Autocomplete
+                  multiple
+                  options={departmentList}
+                  value={formData.department}
+                  disabled={!isEditing}
+                  onChange={(e, val) => setFormData(p => ({ ...p, department: val }))}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <BOSTextField {...params} label="Departments" placeholder={departmentList.length > 0 ? "Select Departments" : "Loading departments..."} />
+                  )}
+                />
             </Stack>
           </BOSFormSection>
 
@@ -276,7 +323,36 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 disabled={!isEditing}
                 InputProps={{
                   endAdornment: isEditing && (
-                    <IconButton onClick={toggleListening} size="small" color={isListening ? 'error' : 'default'}>
+                    <IconButton 
+                      onClick={() => {
+                        if (isListening) {
+                          speechRef.current?.stop();
+                          setIsListening(false);
+                        } else {
+                          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                          if (!SR) return;
+                          const rec = new SR();
+                          rec.lang = 'en-US';
+                          rec.continuous = true;
+                          rec.interimResults = true;
+                          rec.onresult = (e) => {
+                            let interim = '';
+                            let final = '';
+                            for (let i = e.resultIndex; i < e.results.length; i++) {
+                              if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                              else interim += e.results[i][0].transcript;
+                            }
+                            if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
+                            setInterimText(interim);
+                          };
+                          rec.start();
+                          speechRef.current = rec;
+                          setIsListening(true);
+                        }
+                      }} 
+                      size="small" 
+                      color={isListening ? 'error' : 'default'}
+                    >
                       {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
                     </IconButton>
                   )
@@ -289,38 +365,22 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         {/* Right Column: Attachments */}
         <Stack spacing={3}>
           <BOSFormSection title="Attachments" icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />}>
-            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px' }}>
-              <Button component="label" variant="outlined" startIcon={<IconCloudUpload size={20} />} disabled={!isEditing}>
-                Upload Files
+            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px', bgcolor: 'grey.50' }}>
+              <Button component="label" variant="contained" startIcon={<IconCloudUpload size={20} />} disabled={!isEditing} sx={{ mb: 2 }}>
+                Select Files
                 <input type="file" multiple hidden onChange={(e) => setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)])} />
               </Button>
-              <Box sx={{ mt: 2 }}>
-                {uploadedFiles.length === 0 ? (
-                  <Typography variant="caption" color="text.disabled">No files uploaded</Typography>
-                ) : (
-                  uploadedFiles.map((f, i) => (
-                    <Typography key={i} variant="caption" display="block">{f.name}</Typography>
-                  ))
-                )}
-              </Box>
+              <BOSFileGallery files={uploadedFiles} onRemove={(idx) => removeFile(uploadedFiles, setUploadedFiles, idx)} isEditing={isEditing} />
             </Box>
           </BOSFormSection>
 
           <BOSFormSection title="Scan Documents" icon={<IconCamera size={20} color={theme.palette.secondary.main} />}>
-            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px' }}>
-              <Button component="label" variant="outlined" startIcon={<IconCamera size={20} />} disabled={!isEditing}>
-                Scan & Upload
+            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px', bgcolor: 'grey.50' }}>
+              <Button component="label" variant="contained" color="secondary" startIcon={<IconCamera size={20} />} disabled={!isEditing} sx={{ mb: 2 }}>
+                Snap Camera
                 <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => setScannedFiles(prev => [...prev, ...Array.from(e.target.files)])} />
               </Button>
-              <Box sx={{ mt: 2 }}>
-                {scannedFiles.length === 0 ? (
-                  <Typography variant="caption" color="text.disabled">No scans yet</Typography>
-                ) : (
-                  scannedFiles.map((f, i) => (
-                    <Typography key={i} variant="caption" display="block">{f.name}</Typography>
-                  ))
-                )}
-              </Box>
+              <BOSFileGallery files={scannedFiles} onRemove={(idx) => removeFile(scannedFiles, setScannedFiles, idx)} isEditing={isEditing} />
             </Box>
           </BOSFormSection>
         </Stack>
