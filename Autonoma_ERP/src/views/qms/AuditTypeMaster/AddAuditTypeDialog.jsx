@@ -7,6 +7,7 @@ import axios from 'utils/axios';
 import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
 import Autocomplete from '@mui/material/Autocomplete';
 import Checkbox from '@mui/material/Checkbox';
+import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| AUDIT TYPE - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
@@ -29,7 +30,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        const res = await axios.get('/api/master/qms/audit-area');
+        const res = await axios.get(API_PATHS.QMS.AUDIT_AREA);
         setAuditAreas(res.data);
       } catch (error) {
         console.error('Failed to fetch areas:', error);
@@ -88,7 +89,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`/api/master/qms/audit-type/${formData.id}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`);
       handleClose(true);
     } catch (error) {
       console.error('Failed to delete audit type:', error);
@@ -112,9 +113,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
       };
 
       if (formData.id) {
-        await axios.put(`/api/master/qms/audit-type/${formData.id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload);
       } else {
-        await axios.post('/api/master/qms/audit-type', payload);
+        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload);
       }
       handleClose(true);
     } catch (error) {

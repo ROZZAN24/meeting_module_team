@@ -12,6 +12,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
 import { Chip } from '@mui/material';
 
 // ==============================|| AUDIT CRITERIA MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -69,7 +70,7 @@ export default function AuditCriteriaMaster() {
   const fetchAuditCriteria = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/master/qms/audit-criteria');
+      const response = await axios.get(API_PATHS.QMS.AUDIT_CRITERIA);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch audit criteria:', error);
@@ -85,7 +86,7 @@ export default function AuditCriteriaMaster() {
     setSelectedRow(null);
     setIsReadOnly(false);
     try {
-      const res = await axios.get('/api/master/qms/audit-criteria/next-seq');
+      const res = await axios.get(`${API_PATHS.QMS.AUDIT_CRITERIA}/next-seq`);
       setNextSeq(res.data);
     } catch (e) {
       setNextSeq('1');
@@ -105,7 +106,7 @@ export default function AuditCriteriaMaster() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/master/qms/audit-criteria/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_CRITERIA}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Audit Criteria deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchAuditCriteria();
     } catch (error) {
@@ -213,7 +214,6 @@ export default function AuditCriteriaMaster() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
         renderCell={renderCell}
