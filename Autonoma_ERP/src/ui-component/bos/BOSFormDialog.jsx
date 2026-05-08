@@ -86,7 +86,7 @@ export default function BOSFormDialog({
       PaperProps={{ sx: ds.paper }}
     >
       {/* ── TITLE BAR ── */}
-      <DialogTitle sx={ds.titleBar}>
+      <DialogTitle sx={ds.titleBar} component="div">
         <Typography variant="h5" component="span" sx={ds.titleText}>
           {title}
         </Typography>
