@@ -27,7 +27,7 @@ export default function AddContactDialog({ open, handleToggleAddDialog, row }) {
           <DialogTitle sx={{ px: 3, py: 2.5 }}>
             <Stack direction="row" sx={{ justifyContent: 'space-between' }}>
               {!row ? (
-                <Typography variant="h4">Add Contact</Typography>
+                <Typography variant="h4">New Contact</Typography>
               ) : (
                 <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
                   <Typography variant="h4">Edit Contact</Typography>

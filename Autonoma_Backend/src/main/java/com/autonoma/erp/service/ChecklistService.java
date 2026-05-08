@@ -136,6 +136,13 @@ public class ChecklistService {
         }
     }
 
+    @Transactional
+    public void deleteMasterChecklist(Long id) {
+        MasterChecklist checklist = masterRepo.findById(id).orElseThrow();
+        deptRepo.deleteByChecklist(checklist);
+        masterRepo.delete(checklist);
+    }
+
     // --- Assignments ---
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate, String category, String searchBy, String searchValue, Pageable pageable) {

@@ -7,17 +7,17 @@ import { setFilterConfig } from 'store/slices/search';
  * @param {Array} config - Array of filter field configurations.
  */
 const useSearchFilter = (config) => {
-    const dispatch = useDispatch();
+  const dispatch = useDispatch();
 
-    useEffect(() => {
-        if (config) {
-            dispatch(setFilterConfig(config));
-        }
+  useEffect(() => {
+    if (config) {
+      dispatch(setFilterConfig(config));
+    }
 
-        return () => {
-            dispatch(setFilterConfig(null));
-        };
-    }, [config, dispatch]);
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [config, dispatch]);
 };
 
 export default useSearchFilter;

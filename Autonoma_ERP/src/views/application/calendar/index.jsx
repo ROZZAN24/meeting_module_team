@@ -151,10 +151,9 @@ export default function Calendar() {
     <MainCard
       title="Event Calendar"
       secondary={
-        <Button color="secondary" variant="contained" onClick={handleAddClick}>
-          <AddAlarmTwoToneIcon fontSize="small" sx={{ mr: 0.75 }} />
-          Add New Event
-        </Button>
+          <Button color="secondary" variant="contained" onClick={handleAddClick}>
+            + New
+          </Button>
       }
     >
       <CalendarStyled>

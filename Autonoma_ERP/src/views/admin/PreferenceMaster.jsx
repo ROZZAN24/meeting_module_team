@@ -278,7 +278,10 @@ const PreferenceMaster = () => {
       <Divider sx={{ mb: 3 }} />
 
       {/* Bottom Table Section */}
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider', maxHeight: 'calc(100vh - 420px)' }}>
+      <TableContainer
+        component={Paper}
+        sx={{ boxShadow: 'none', border: '1px solid', borderColor: 'divider', maxHeight: 'calc(100vh - 420px)' }}
+      >
         <Table stickyHeader sx={{ minWidth: 650 }} aria-label="preference table">
           <TableHead sx={{ '& th': { bgcolor: 'primary.light' } }}>
             <TableRow>
@@ -289,7 +292,9 @@ const PreferenceMaster = () => {
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Type</TableCell>
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Updated By</TableCell>
               <TableCell sx={{ color: 'primary.main', fontWeight: 'bold' }}>Updated Date</TableCell>
-              <TableCell align="center" sx={{ color: 'primary.main', fontWeight: 'bold' }}>Actions</TableCell>
+              <TableCell align="center" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -302,14 +307,12 @@ const PreferenceMaster = () => {
                   <TableCell>{row.comments}</TableCell>
                   <TableCell>{row.prefType}</TableCell>
                   <TableCell>{row.updatedBy || row.createdBy}</TableCell>
-                  <TableCell>{row.updatedDate || row.createdDate ? new Date(row.updatedDate || row.createdDate).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>
+                    {row.updatedDate || row.createdDate ? new Date(row.updatedDate || row.createdDate).toLocaleDateString() : '-'}
+                  </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Edit" placement="top">
-                      <IconButton
-                        color="primary"
-                        onClick={() => setEditRow(row)}
-                        size="small"
-                      >
+                      <IconButton color="primary" onClick={() => setEditRow(row)} size="small">
                         <IconEdit stroke={1.5} size="1.3rem" />
                       </IconButton>
                     </Tooltip>

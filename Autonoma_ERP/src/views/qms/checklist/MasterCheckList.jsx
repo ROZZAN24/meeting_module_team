@@ -1,443 +1,238 @@
-import { useState, useEffect, useCallback } from 'react';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
-import IconButton from '@mui/material/IconButton';
-import Drawer from '@mui/material/Drawer';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Divider from '@mui/material/Divider';
-import Chip from '@mui/material/Chip';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
-import Collapse from '@mui/material/Collapse';
-import TablePagination from '@mui/material/TablePagination';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Typography, Box, Button, Stack, Tooltip, IconButton, Chip } from '@mui/material';
+import {
+  IconPlus,
+  IconListCheck,
+  IconUserPlus,
+  IconFileDots,
+  IconFileDownload,
+  IconTrash,
+  IconRefresh
+} from '@tabler/icons-react';
 import axios from 'utils/axios';
-
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilters, resetFilters } from 'store/slices/search';
+import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import useSearchFilter from 'hooks/useSearchFilter';
-
 import MainCard from 'ui-component/cards/MainCard';
+import { exportToExcel } from 'utils/excelExport';
+import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddCheckListDialog from './AddCheckListDialog';
 
-import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
-
 const columns = [
-  '#','Seq No','Checking Point','Category','Frequency','Department',
-  'Effective from','Days','Expire Date','Reminder Date','Stock Link',
-  'Assign To','Assign Date','Item Code','Qty','Photo Required',
-  'Created Date','Created By','Modified By','Status','Task Status',
-  'Verify Status','Verified By','Verified Date','Rej Reason'
+  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
+  { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
+  { id: 'category', label: 'Category', minWidth: 120 },
+  { id: 'frequency', label: 'Frequency', minWidth: 120 },
+  { id: 'department', label: 'Department', minWidth: 150 },
+  { id: 'effectiveFrom', label: 'Effective from', minWidth: 120 },
+  { id: 'reminderDays', label: 'Days', minWidth: 80 },
+  { id: 'expiryDate', label: 'Expire Date', minWidth: 120 },
+  { id: 'reminderDate', label: 'Reminder Date', minWidth: 120 },
+  { id: 'stockLink', label: 'Stock Link', minWidth: 100 },
+  { id: 'itemCode', label: 'Item Code', minWidth: 120 },
+  { id: 'qty', label: 'Qty', minWidth: 80 },
+  { id: 'photoRequired', label: 'Photo Required', minWidth: 120 },
+  { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'verifyStatus', label: 'Verify Status', minWidth: 150 }
 ];
 
 const DEPARTMENTS = [
-  'ACCOUNTS','ADMIN','ASSEMBLY','BUSINESS DEVELOPMENT','DESIGN & DEVELOPMENT',
-  'HRA','LOGISTICS','MAINTENANCE','MANAGEMENT','MANAGEMENT REPRESENTATIVE',
-  'OPERATIONS','PLANNING','PRODUCT DEVELOPMENT','PRODUCTION','PURCHASE',
-  'QMS','QUALITY','SALES & MARKETING','STORES','STRATEGIC PROCUREMENT','TOP MANAGEMENT'
+  'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT', 
+  'HRA', 'LOGISTICS', 'MAINTENANCE', 'MANAGEMENT', 'MANAGEMENT REPRESENTATIVE', 
+  'OPERATIONS', 'PLANNING', 'PRODUCT DEVELOPMENT', 'PRODUCTION', 'PURCHASE', 
+  'QMS', 'QUALITY', 'SALES & MARKETING', 'STORES', 'STRATEGIC PROCUREMENT', 'TOP MANAGEMENT'
 ];
 
-const DEFAULT_FILTERS = {
-  status: 'All',
-  taskStatus: 'All',
-  recordStatus: 'All',
-  category: 'All',
-  departments: [],
-  employeeName: '',
-  leftCompany: 'All'
-};
-
-// Collapsible filter section
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <Box sx={{ mb: 0.5 }}>
-      <Box onClick={onToggle} sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer', py:1, px:2, '&:hover':{ bgcolor:'action.hover' }, borderRadius:1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight:700 }}>{title}</Typography>
-        {open ? <IconChevronUp size={16}/> : <IconChevronDown size={16}/>}
-      </Box>
-      <Collapse in={open}><Box sx={{ px:2, pb:1 }}>{children}</Box></Collapse>
-    </Box>
-  );
-}
-
 export default function MasterCheckList() {
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const dispatch = useDispatch();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
-  
-  const [selectedRowId, setSelectedRowId] = useState(null);
-  const dispatch = useDispatch();
-  const searchQuery = useSelector((state) => state.search.query);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isView, setIsView] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  const globalQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Register filters for the top search bar
-  useSearchFilter([
-    {
-      id: 'status',
-      label: 'Status',
-      type: 'select',
-      options: [
-        { label: 'All Status', value: 'All' },
-        { label: 'Pending for Verify', value: 'Pending for Verify' },
-        { label: 'Verified', value: 'Verified' },
-        { label: 'Rejected', value: 'Rejected' }
-      ]
-    },
-    {
-      id: 'taskStatus',
-      label: 'Task Status',
-      type: 'select',
-      options: [
-        { label: 'All', value: 'All' },
-        { label: 'Not Assigned', value: 'Not Assigned' },
-        { label: 'Assigned', value: 'Assigned' }
-      ]
-    },
-    {
-      id: 'recordStatus',
-      label: 'Record Status',
-      type: 'select',
-      options: [
-        { label: 'All', value: 'All' },
-        { label: 'Active', value: 'Active' },
-        { label: 'In Active', value: 'In Active' }
-      ]
-    },
-    {
-      id: 'category',
-      label: 'Category',
-      type: 'select',
-      options: [
-        { label: 'All', value: 'All' },
-        { label: 'Renewal', value: 'RENEWAL' },
-        { label: 'Check List', value: 'CHECK LIST' }
-      ]
-    },
-    {
-      id: 'departments',
-      label: 'Departments',
-      type: 'select',
-      multiple: true,
-      options: DEPARTMENTS.map(d => ({ label: d, value: d }))
-    },
-    {
-      id: 'employeeName',
-      label: 'Employee Name',
-      type: 'text',
-      placeholder: 'Search employee...'
-    },
-    {
-      id: 'leftCompany',
-      label: 'Left Company',
-      type: 'select',
-      options: [
-        { label: 'All', value: 'All' },
-        { label: 'No', value: 'No' },
-        { label: 'Yes', value: 'Yes' }
-      ]
-    }
-  ]);
-
-
-  // Section toggles
-  const [openSections, setOpenSections] = useState({ status:true, taskStatus:true, recordStatus:true, category:true, department:false, employee:false, leftCompany:false });
-  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
+  useEffect(() => {
+    dispatch(setFilterConfig([
+      {
+        id: 'status', label: 'Status', type: 'select',
+        options: [
+          { label: 'All', value: 'All' },
+          { label: 'Active', value: 'Active' },
+          { label: 'In Active', value: 'In Active' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'category', label: 'Category', type: 'select',
+        options: [
+          { label: 'All', value: 'All' },
+          { label: 'Renewal', value: 'RENEWAL' },
+          { label: 'Check List', value: 'CHECK LIST' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'department', label: 'Department', type: 'select',
+        options: [{ label: 'All', value: 'All' }, ...DEPARTMENTS.map(d => ({ label: d, value: d }))],
+        defaultValue: 'All'
+      }
+    ]));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
-        page,
-        size,
+        page, size,
         category: filters.category !== 'All' ? filters.category : undefined,
-        department: (filters.departments || []).length > 0 ? filters.departments[0] : undefined, // Simplification for now
-        searchValue: searchQuery || undefined,
-        searchBy: undefined
+        department: filters.department !== 'All' ? filters.department : undefined,
+        status: filters.status !== 'All' ? filters.status : undefined,
+        searchValue: globalQuery || undefined
       };
       const response = await axios.get('/api/qms/checklist', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      setRows(response.data.content || []);
+      setTotalElements(response.data.totalElements || 0);
     } catch (error) {
       console.error('Failed to fetch checklists:', error);
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: 'Failed to fetch checklists',
-          variant: 'alert',
-          severity: 'error',
-          close: false
-        })
-      );
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery]);
+  }, [page, size, filters, globalQuery]);
 
-  useEffect(() => {
-    fetchChecklists();
-  }, [fetchChecklists]);
+  useEffect(() => { fetchChecklists(); }, [fetchChecklists]);
 
-  const setFilter = (key, val) => {
-    dispatch(setFilters({ [key]: val }));
-    setPage(0);
-  };
-  
-  const toggleDept = (dept) => {
-    const arr = filters.departments || [];
-    const newDepts = arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept];
-    dispatch(setFilters({ departments: newDepts }));
-    setPage(0);
-  };
+  const handleOpenAdd = () => { setSelectedRow(null); setIsView(false); setDialogOpen(true); };
+  const handleOpenEdit = (row) => { setSelectedRow(row); setIsView(false); setDialogOpen(true); };
+  const handleOpenView = (row) => { setSelectedRow(row); setIsView(true); setDialogOpen(true); };
 
-  const handleResetFilters = () => {
-    dispatch(resetFilters());
-    setPage(0);
-  };
-
-  const activeCount = (filters.status && filters.status !== 'All' ? 1 : 0) + 
-                    (filters.taskStatus && filters.taskStatus !== 'All' ? 1 : 0) + 
-                    (filters.recordStatus && filters.recordStatus !== 'All' ? 1 : 0) + 
-                    (filters.category && filters.category !== 'All' ? 1 : 0) + 
-                    (filters.departments?.length || 0) + 
-                    (filters.employeeName ? 1 : 0) + 
-                    (filters.leftCompany && filters.leftCompany !== 'All' ? 1 : 0);
-
-  const handleSaveData = async (data) => {
+  const handleDeleteConfirm = async () => {
+    if (!selectedRow) return;
     try {
-      // Build the payload matching the backend MasterChecklist model fields exactly
-      const payload = {
-        seqNo: data.seqNo,
-        checkingPoint: data.checkingPoint,
-        description: data.description,
-        category: data.category,
-        frequency: data.frequency,
-        effectiveFrom: data.effectiveFrom || null,
-        expiryDate: data.expiryDate || null,
-        reminderDays: data.reminderDays ? parseInt(data.reminderDays) : null,
-        reminderDate: data.reminderDate || null,
-        stockLink: data.stockLink || null,
-        photoRequired: data.photoRequired || null,
-        itemCode: data.itemCode || null,
-        qty: data.qty || null,
-      };
-
-      // Build URLSearchParams so departments are sent as repeated params: ?departments=A&departments=B
-      const params = new URLSearchParams();
-      (data.department || []).forEach(d => params.append('departments', d));
-
-      await axios.post(`/api/qms/checklist?${params.toString()}`, payload);
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: data.id ? 'Checklist updated successfully' : 'Checklist created successfully',
-          variant: 'alert',
-          severity: 'success',
-          close: false
-        })
-      );
+      await axios.delete(`/api/qms/checklist/${selectedRow.id}`);
+      dispatch(openSnackbar({ open: true, message: 'Checklist deleted successfully', severity: 'success', variant: 'alert' }));
       fetchChecklists();
-      setDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to save checklist:', error);
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: error.response?.data?.message || error.message || 'Failed to save checklist',
-          variant: 'alert',
-          severity: 'error',
-          close: false
-        })
-      );
+      setSelectedRow(null);
+      setDeleteDialogOpen(false);
+    } catch (err) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete', severity: 'error', variant: 'alert' }));
     }
-  };
-  const handleEditClick = () => {
-    if (!selectedRowId) {
-      dispatch(
-        openSnackbar({
-          open: true,
-          message: 'Please select a row first!',
-          variant: 'alert',
-          severity: 'warning',
-          close: false
-        })
-      );
-      return;
-    }
-    setDialogOpen(true);
   };
 
-  const activeRow = rows.find((r) => r.id === selectedRowId) || null;
+  const handleExport = () => {
+    const exportData = rows.map((r, i) => ({
+      '#': i + 1,
+      'Seq No': r.seqNo,
+      'Checking Point': r.checkingPoint,
+      Category: r.category,
+      Frequency: r.frequency,
+      Department: (r.departments || []).map((d) => d.departmentName).join(', '),
+      Status: r.status
+    }));
+    exportToExcel(exportData, 'Checklist_Master');
+  };
+
+  useKeyboardShortcuts({
+    'ctrl+n': handleOpenAdd,
+    'escape': () => setDialogOpen(false)
+  });
+
+  const renderCell = (col, row, idx) => {
+    if (col.id === 'index') return idx + 1 + page * size;
+    if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'Active' ? 'ACTIVE' : 'INACTIVE')} />;
+    if (col.id === 'verifyStatus') return <Chip label={row.verifyStatus || 'Pending'} size="small" sx={getStatusChipSx(row.verifyStatus === 'Verified' ? 'ACTIVE' : 'PENDING')} />;
+    if (col.id === 'department') return (row.departments || []).map((d) => d.departmentName).join(', ');
+    return row[col.id] || '-';
+  };
 
   return (
     <MainCard
-      title="Master Check List"
+      title={
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <IconListCheck size={24} />
+          <Typography variant="h3">Master Check List</Typography>
+        </Stack>
+      }
       secondary={
-        <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconUserPlus size={18}/>}>Assign To</Button>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>}>Amendment</Button>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setDialogOpen(true); }}>Add</Button>
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
-            <IconAdjustmentsHorizontal size={20}/>
-            {activeCount > 0 && <Box sx={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', bgcolor:'error.main', color:'#fff', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>{activeCount}</Box>}
-          </IconButton>
-        </Box>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Tooltip title="Refresh">
+            <IconButton onClick={fetchChecklists} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
+              <IconRefresh size={20} />
+            </IconButton>
+          </Tooltip>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconUserPlus size={18} />} disabled={!selectedRow} sx={{ borderRadius: '8px' }}>
+            Assign
+          </Button>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow} sx={{ borderRadius: '8px' }}>
+            Amendment
+          </Button>
+          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
+            Export Excel
+          </Button>
+          <Tooltip title={shortcutTooltip('Create New Check List', 'Ctrl + N')}>
+            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
+              + New
+            </Button>
+          </Tooltip>
+        </Stack>
       }
     >
-      <Box sx={{ p: 0.5, pb: 0 }}>
-      {activeCount > 0 && (
-        <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
-          <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.status && filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
-          {filters.taskStatus && filters.taskStatus !== 'All' && <Chip label={`Task: ${filters.taskStatus}`} size="small" color="primary" onDelete={() => setFilter('taskStatus','All')}/>}
-          {filters.recordStatus && filters.recordStatus !== 'All' && <Chip label={`Record: ${filters.recordStatus}`} size="small" color="primary" onDelete={() => setFilter('recordStatus','All')}/>}
-          {filters.category && filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
-          {filters.departments?.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
-          {filters.employeeName && <Chip label={`Employee: ${filters.employeeName}`} size="small" color="warning" onDelete={() => setFilter('employeeName','')}/>}
-          {filters.leftCompany && filters.leftCompany !== 'All' && <Chip label={`Left: ${filters.leftCompany}`} size="small" color="error" onDelete={() => setFilter('leftCompany','All')}/>}
-          <Button size="small" color="error" onClick={handleResetFilters} sx={{ ml:1 }}>Clear All</Button>
-        </Box>
-      )}
-
-      </Box>
-
-      <TableContainer component={Paper} sx={{ maxHeight:'calc(100vh - 380px)', borderTop:'1px solid', borderColor:'divider', borderRadius: 0, '&::-webkit-scrollbar':{width:10,height:10}, '&::-webkit-scrollbar-track':{backgroundColor:'background.paper'}, '&::-webkit-scrollbar-thumb':{backgroundColor:'grey.400',borderRadius:2} }}>
-        <Table stickyHeader sx={{ minWidth: 4000 }} aria-label="checklist table">
-          <TableHead><TableRow>{columns.map((col,i) => <TableCell key={i} sx={{ minWidth: 200, bgcolor:'primary.dark', color:'white', fontWeight:'bold', whiteSpace:'nowrap', borderRight:'1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-            ) : rows.map((row,idx) => (
-              <TableRow key={row.id} hover onClick={() => setSelectedRowId(row.id)} sx={{ cursor:'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}>
-                <TableCell sx={{ minWidth: 200 }}>{page * size + idx + 1}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.seqNo}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.checkingPoint}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.category}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.frequency}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.effectiveFrom}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.reminderDays}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.expiryDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.reminderDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.stockLink}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.assignTo}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.assignDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.itemCode}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.qty}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.photoRequired}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.createdBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.updatedBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.status}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.taskStatus}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifyStatus}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifiedBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifiedDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.rejReason}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      <TablePagination
-        component="div"
-        count={totalElements}
+      <BOSDataTable
+        columns={columns}
+        rows={rows}
         page={page}
-        onPageChange={(e, p) => setPage(p)}
-        rowsPerPage={size}
-        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        sx={{
-          '& .MuiTablePagination-toolbar': { justifyContent: 'center' },
-          '& .MuiTablePagination-spacer': { display: 'none' }
+        size={size}
+        totalCount={totalElements}
+        loading={loading}
+        onPageChange={setPage}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onDoubleClickRow={handleOpenView}
+        onClickRow={setSelectedRow}
+        selectedRowId={selectedRow?.id}
+        onEditRow={handleOpenEdit}
+        onDeleteRow={() => setDeleteDialogOpen(true)}
+        renderCell={renderCell}
+        showActions={true}
+        id="master-checklist-table"
+      />
+
+      <AddCheckListDialog 
+        open={dialogOpen} 
+        handleClose={() => setDialogOpen(false)} 
+        initialData={selectedRow} 
+        readOnly={isView}
+        onSave={async (data) => {
+          try {
+            const params = new URLSearchParams();
+            (data.department || []).forEach((d) => params.append('departments', d));
+            await axios.post(`/api/qms/checklist?${params.toString()}`, data);
+            dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
+            fetchChecklists();
+            setDialogOpen(false);
+          } catch (err) {
+            dispatch(openSnackbar({ open: true, message: 'Failed to save', severity: 'error', variant: 'alert' }));
+          }
         }}
       />
 
-
-      {/* ===== FILTER DRAWER ===== */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx:{ width:320 } }}>
-        <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', p:2, borderBottom:'1px solid', borderColor:'divider' }}>
-          <Typography variant="h5" sx={{ fontWeight:700 }}>Filters</Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20}/></IconButton>
-        </Box>
-
-        <Box sx={{ overflowY:'auto', flex:1 }}>
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status || 'All'} onChange={(e) => setFilter('status', e.target.value)}>
-              {['All','Pending for Verify','Verified','Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Task Status" open={openSections.taskStatus} onToggle={() => toggleSection('taskStatus')}>
-            <FormControl><RadioGroup value={filters.taskStatus || 'All'} onChange={(e) => setFilter('taskStatus', e.target.value)}>
-              {['All','Not Assigned','Assigned'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Record Status" open={openSections.recordStatus} onToggle={() => toggleSection('recordStatus')}>
-            <FormControl><RadioGroup value={filters.recordStatus} onChange={(e) => setFilter('recordStatus', e.target.value)}>
-              {['All','Active','In Active'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
-            <FormControl><RadioGroup value={filters.category} onChange={(e) => setFilter('category', e.target.value)}>
-              {['All','RENEWAL','CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
-            <Box sx={{ maxHeight:250, overflowY:'auto' }}>
-              {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={(filters.departments || []).includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
-            </Box>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Employee Name" open={openSections.employee} onToggle={() => toggleSection('employee')}>
-            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.employeeName || ''} onChange={(e) => setFilter('employeeName', e.target.value)}/>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Left Company" open={openSections.leftCompany} onToggle={() => toggleSection('leftCompany')}>
-            <FormControl><RadioGroup value={filters.leftCompany || 'All'} onChange={(e) => setFilter('leftCompany', e.target.value)}>
-              {['All','No','Yes'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-        </Box>
-
-        <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { handleResetFilters(); setDrawerOpen(false); }}>Reset All</Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
-        </Box>
-      </Drawer>
-
-      <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow}/>
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Check List"
+        message="Are you sure you want to delete this check list item?"
+        itemName={selectedRow?.seqNo + ' - ' + selectedRow?.checkingPoint}
+      />
     </MainCard>
   );
 }

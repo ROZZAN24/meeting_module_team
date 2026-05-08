@@ -56,7 +56,7 @@ export default function AddNewForm() {
       {({ values, handleSubmit, setFieldValue, touched, errors }) => (
         <form onSubmit={handleSubmit}>
           <MainCard
-            title="Add New"
+            title="New Blog"
             secondary={
               <Stack direction="row" sx={{ flexWrap: 'wrap', gap: { xs: 1, lg: 2 } }}>
                 <Button
@@ -80,7 +80,7 @@ export default function AddNewForm() {
           >
             <Grid container spacing={gridSpacing}>
               <Grid size={12}>
-                <TextField fullWidth id="outlined-email-address" label="Add title" />
+                <TextField fullWidth id="outlined-email-address" label="New Title" />
               </Grid>
               <Grid size={12}>
                 <ReactQuill editorMinHeight={300} />
@@ -111,7 +111,7 @@ export default function AddNewForm() {
                   multiple
                   options={tags}
                   getOptionLabel={(option) => option.label}
-                  renderInput={(params) => <TextField placeholder="Add Tag" {...params} />}
+                  renderInput={(params) => <TextField placeholder="New Tag" {...params} />}
                 />
                 <FormHelperText>ex. #uidesign, #React</FormHelperText>
               </Grid>

@@ -325,7 +325,7 @@ export default function ProductList() {
             </Tooltip>
 
             {/* product add & dialog */}
-            <Tooltip title="Add Product">
+            <Tooltip title="+ New">
               <Fab
                 color="primary"
                 size="small"

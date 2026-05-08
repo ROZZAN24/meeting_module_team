@@ -287,7 +287,7 @@ export default function CreateInvoice() {
             ) : (
               <Grid>
                 <Button variant="text" onClick={() => setAddItemClicked(true)}>
-                  + Add Item
+                  + New
                 </Button>
               </Grid>
             )}
@@ -315,7 +315,7 @@ export default function CreateInvoice() {
             </Grid>
             <Grid sx={{ display: 'flex', justifyContent: 'flex-end' }} size={12}>
               <Button variant="contained" type="submit">
-                Add Invoice
+                + New
               </Button>
             </Grid>
             <Grid>

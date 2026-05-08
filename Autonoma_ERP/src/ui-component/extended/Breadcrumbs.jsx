@@ -294,7 +294,10 @@ export default function Breadcrumbs({
             <Grid
               container
               direction={rightAlign ? 'row' : 'column'}
-              sx={{ justifyContent: title && !titleBottom ? 'space-between' : (rightAlign ? 'flex-end' : 'flex-start'), alignItems: rightAlign ? 'center' : 'flex-start' }}
+              sx={{
+                justifyContent: title && !titleBottom ? 'space-between' : rightAlign ? 'flex-end' : 'flex-start',
+                alignItems: rightAlign ? 'center' : 'flex-start'
+              }}
               spacing={1}
             >
               <Activity mode={title && !titleBottom ? 'visible' : 'hidden'}>

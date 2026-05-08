@@ -91,7 +91,7 @@ export default function Filter({ handleToggleDrawer, rows, setRows }) {
           </Tooltip>
 
           {/* lead add & dialog */}
-          <Tooltip title="Add New Lead">
+          <Tooltip title="+ New">
             <Fab
               color="primary"
               size="small"

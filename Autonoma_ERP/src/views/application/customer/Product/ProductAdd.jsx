@@ -161,7 +161,7 @@ export default function ProductAdd({ open, handleCloseDialog }) {
     >
       {open && (
         <>
-          <DialogTitle>Add Product</DialogTitle>
+          <DialogTitle>New Product</DialogTitle>
           <DialogContent>
             <Grid container spacing={gridSpacing}>
               <Grid size={12} sx={{ mt: 1.25 }}>

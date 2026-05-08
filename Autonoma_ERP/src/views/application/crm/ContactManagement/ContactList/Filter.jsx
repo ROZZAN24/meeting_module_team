@@ -82,7 +82,7 @@ export default function Filter({ rows, setRows, handleToggleAddDialog }) {
         </Tooltip>
 
         {/* contact add & dialog */}
-        <Tooltip title="Add New Contact">
+        <Tooltip title="+ New">
           <Fab
             color="primary"
             size="small"

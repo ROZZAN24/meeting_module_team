@@ -32,7 +32,7 @@ export default function AddLeadDialog({ open, handleToggleAddDialog, row }) {
           <DialogTitle sx={{ px: 3, py: 2 }}>
             <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
               {!row ? (
-                <Typography variant="h4">Add Lead</Typography>
+                <Typography variant="h4">New Lead</Typography>
               ) : (
                 <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
                   <Typography variant="h4">Edit Lead</Typography>

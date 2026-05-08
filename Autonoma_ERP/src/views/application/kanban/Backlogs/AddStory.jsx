@@ -106,7 +106,7 @@ export default function AddStory({ open, handleDrawerOpen }) {
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <Grid container spacing={3}>
                 <Grid size={12}>
-                  <Typography variant="h4">Add Story</Typography>
+                  <Typography variant="h4">New Story</Typography>
                 </Grid>
                 <Grid size={12}>
                   <TextField
