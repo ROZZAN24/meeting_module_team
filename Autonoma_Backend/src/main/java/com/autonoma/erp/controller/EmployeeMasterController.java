@@ -5,18 +5,22 @@ import com.autonoma.erp.service.EmployeeMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/master/employee")
 @CrossOrigin(origins = "*", maxAge = 3600)
+@Tag(name = "HRM - Employee Master", description = "Endpoints for managing employee records")
 public class EmployeeMasterController {
 
     @Autowired
     private EmployeeMasterService service;
 
     @GetMapping
+    @Operation(summary = "Get All Employees", description = "Fetches a complete list of employees")
     public List<EmployeeMaster> getAllEmployees() {
         return service.getAllEmployees();
     }

@@ -6,11 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/hrm/departments")
 @CrossOrigin(origins = "*")
+@Tag(name = "HRM - Departments", description = "Endpoints for managing organization departments")
 public class DepartmentController {
 
     @Autowired
@@ -19,6 +22,7 @@ public class DepartmentController {
     @Autowired
     private com.autonoma.erp.repository.DepartmentRepository departmentRepository;
 
+    @Operation(summary = "Get next available Department Number")
     @GetMapping("/next-code")
     public ResponseEntity<Integer> getNextCode() {
         return ResponseEntity.ok(departmentRepository.findMaxDepartmentNo().orElse(0) + 1);

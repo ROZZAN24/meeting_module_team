@@ -10,6 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 
@@ -86,7 +87,7 @@ export default function AuditObservationList() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/qms/audit/observation');
+      const response = await axios.get(API_PATHS.QMS.AUDIT_OBSERVATION);
       setRows(response.data || []);
     } catch (error) {
       console.error('Failed to fetch observations:', error);
@@ -102,7 +103,7 @@ export default function AuditObservationList() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`/api/qms/audit/observation/${deleteTarget.id}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_OBSERVATION}/${deleteTarget.id}`);
       dispatch(openSnackbar({ open: true, message: 'Observation deleted!', severity: 'success', variant: 'alert' }));
       setDeleteDialogOpen(false);
       fetchData();

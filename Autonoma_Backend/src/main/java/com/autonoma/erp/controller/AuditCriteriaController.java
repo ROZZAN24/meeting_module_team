@@ -5,12 +5,15 @@ import com.autonoma.erp.repository.AuditCriteriaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/master/qms/audit-criteria")
 @CrossOrigin(origins = "*")
+@Tag(name = "QMS - Audit Criteria Master", description = "Endpoints for managing audit criteria, clauses, and sequences")
 public class AuditCriteriaController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuditCriteriaController.class);
@@ -19,12 +22,14 @@ public class AuditCriteriaController {
     private AuditCriteriaRepository auditCriteriaRepository;
 
     @GetMapping
+    @Operation(summary = "Get All Audit Criteria", description = "Fetches a complete list of audit criteria")
     public List<AuditCriteria> getAllAuditCriteria() {
         log.info("Fetching all audit criteria");
         return auditCriteriaRepository.findAll();
     }
 
     @PostMapping
+    @Operation(summary = "Create/Update Audit Criteria", description = "Creates a new audit criteria or updates an existing one")
     public AuditCriteria createAuditCriteria(@RequestBody AuditCriteria auditCriteria) {
         log.info("Saving audit criteria: {}", auditCriteria);
         return auditCriteriaRepository.save(auditCriteria);
@@ -37,6 +42,7 @@ public class AuditCriteriaController {
     }
 
     @GetMapping("/next-seq")
+    @Operation(summary = "Get Next Sequence Number", description = "Generates the next available sequence number for audit criteria")
     public String getNextSeqNo() {
         return auditCriteriaRepository.findFirstByOrderBySeqNoDesc()
                 .map(latest -> incrementSequence(latest.getSeqNo(), "AC-"))

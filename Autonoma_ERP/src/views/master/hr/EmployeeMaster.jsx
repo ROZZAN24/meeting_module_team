@@ -5,6 +5,8 @@ import MainCard from 'ui-component/cards/MainCard';
 import SubCard from 'ui-component/cards/SubCard';
 import { IconDeviceFloppy, IconX, IconUserPlus, IconPhotoPlus, IconSignature } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { useLookups } from 'hooks/useLookups';
+import { API_PATHS } from 'utils/api-constants';
 
 const initialFormState = {
   categoryId: '',
@@ -34,12 +36,15 @@ const EmployeeMaster = () => {
   const [loading, setLoading] = useState(false);
   const [previews, setPreviews] = useState({ profileUpload: null, signature: null });
 
+  // PROFESSIONAL LOOKUP FETCH
+  const { departments = [], designations = [], loading: lookupsLoading } = useLookups(['DEPARTMENTS', 'DESIGNATIONS']);
+
   // Fetch employee if ID exists (Edit Mode)
   useEffect(() => {
     if (employeeId) {
       const fetchEmployee = async () => {
         try {
-          const response = await axios.get(`/api/master/employee/${employeeId}`);
+          const response = await axios.get(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`);
           const data = response.data;
           // Format dates to YYYY-MM-DD if present
           if (data.dateOfJoining) data.dateOfJoining = data.dateOfJoining.split('T')[0];
@@ -120,10 +125,10 @@ const EmployeeMaster = () => {
       });
 
       if (employeeId) {
-        await axios.put(`/api/master/employee/${employeeId}`, payload);
+        await axios.put(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`, payload);
         alert('Employee details updated successfully');
       } else {
-        await axios.post('/api/master/employee', payload);
+        await axios.post(API_PATHS.HRM.EMPLOYEES, payload);
         alert('Employee details saved successfully');
         handleClear();
       }
@@ -249,10 +254,11 @@ const EmployeeMaster = () => {
                   Department
                 </Typography>
                 <TextField select fullWidth name="departmentId" value={formData.departmentId} onChange={handleChange} size="small">
-                  <MenuItem value={1}>IT</MenuItem>
-                  <MenuItem value={2}>HR</MenuItem>
-                  <MenuItem value={3}>Finance</MenuItem>
-                  <MenuItem value={4}>Sales</MenuItem>
+                  {departments.map((dept) => (
+                    <MenuItem key={dept.id} value={dept.id}>
+                      {dept.departmentName}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
               <Grid item xs={6} sm={6} md={2}>
@@ -260,9 +266,11 @@ const EmployeeMaster = () => {
                   Designation
                 </Typography>
                 <TextField select fullWidth name="designationId" value={formData.designationId} onChange={handleChange} size="small">
-                  <MenuItem value={1}>Manager</MenuItem>
-                  <MenuItem value={2}>Developer</MenuItem>
-                  <MenuItem value={3}>Executive</MenuItem>
+                  {designations.map((desig) => (
+                    <MenuItem key={desig.id} value={desig.id}>
+                      {desig.designationName}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
 

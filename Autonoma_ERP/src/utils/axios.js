@@ -27,6 +27,7 @@ axiosServices.interceptors.request.use(
       config.url = config.url.substring(1);
     }
 
+    console.debug(`[Axios Request] ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
