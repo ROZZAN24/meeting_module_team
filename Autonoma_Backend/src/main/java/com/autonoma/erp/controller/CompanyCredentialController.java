@@ -22,6 +22,15 @@ public class CompanyCredentialController {
     @Autowired
     private CompanyCredentialService service;
 
+    private String getCurrentUserId() {
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
+            return auth.getName();
+        }
+        return "SYSTEM";
+    }
+
     // -----------------------------------------------------------------------
     // GET – Fetch all records (typically just one row for a company)
     // -----------------------------------------------------------------------
@@ -46,9 +55,7 @@ public class CompanyCredentialController {
     @PostMapping("/create")
     public ResponseEntity<CompanyCredential> create(@RequestBody CompanyCredential company) {
         company.setCreatedDate(new Date());
-        if (company.getCreatedBy() == null || company.getCreatedBy().isEmpty()) {
-            company.setCreatedBy("SYSTEM");
-        }
+        company.setCreatedBy(getCurrentUserId());
         CompanyCredential saved = service.save(company);
         return ResponseEntity.ok(saved);
     }
@@ -64,8 +71,7 @@ public class CompanyCredentialController {
             CompanyCredential existing = optional.get();
             existing.setCompanyName(details.getCompanyName());
             existing.setShortName(details.getShortName());
-            existing.setAddress1(details.getAddress1());
-            existing.setAddress2(details.getAddress2());
+            existing.setAddress(details.getAddress());
             existing.setCity(details.getCity());
             existing.setState(details.getState());
             existing.setStateCode(details.getStateCode());
@@ -75,6 +81,7 @@ public class CompanyCredentialController {
             existing.setDbSourceName(details.getDbSourceName());
             existing.setLicRenewalDate(details.getLicRenewalDate());
             existing.setLicExpiryDate(details.getLicExpiryDate());
+            existing.setDirectoryPath(details.getDirectoryPath());
             // Only overwrite image names if the caller provides them
             if (details.getLogoFileName() != null && !details.getLogoFileName().isEmpty()) {
                 existing.setLogoFileName(details.getLogoFileName());
@@ -82,7 +89,7 @@ public class CompanyCredentialController {
             if (details.getLogInBgFileName() != null && !details.getLogInBgFileName().isEmpty()) {
                 existing.setLogInBgFileName(details.getLogInBgFileName());
             }
-            existing.setUpdatedBy(details.getUpdatedBy() != null ? details.getUpdatedBy() : "SYSTEM");
+            existing.setUpdatedBy(getCurrentUserId());
             existing.setUpdatedDate(new Date());
             return ResponseEntity.ok(service.save(existing));
         }
@@ -122,6 +129,30 @@ public class CompanyCredentialController {
             Map<String, String> error = new HashMap<>();
             error.put("message", "Background upload failed: " + e.getMessage());
             return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // GET – Retrieve image
+    // -----------------------------------------------------------------------
+    @GetMapping("/image/{filename:.+}")
+    public ResponseEntity<org.springframework.core.io.Resource> getImage(@PathVariable String filename) {
+        try {
+            org.springframework.core.io.Resource resource = service.loadFileAsResource(filename);
+            String contentType = "application/octet-stream";
+            try {
+                contentType = java.nio.file.Files.probeContentType(resource.getFile().toPath());
+            } catch (Exception ex) {
+                // Ignore and fallback
+            }
+            return ResponseEntity.ok()
+                    .contentType(
+                            MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"" + resource.getFilename() + "\"")
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
         }
     }
 

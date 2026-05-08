@@ -16,13 +16,30 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.autonoma.erp.model.AppPreference;
+import com.autonoma.erp.repository.AppPreferenceRepository;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class CompanyCredentialService {
 
-    private static final String UPLOAD_DIR = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "company" + File.separator;
-
     @Autowired
     private CompanyCredentialRepository repository;
+
+    @Autowired
+    private AppPreferenceRepository appPreferenceRepository;
+
+    private Path getUploadDirectory() {
+        Optional<AppPreference> pref = appPreferenceRepository.findByPrefName("FILE_LOCATION");
+        if (pref.isPresent() && pref.get().getPrefValue() != null && !pref.get().getPrefValue().trim().isEmpty()) {
+            return Paths.get(pref.get().getPrefValue().trim());
+        }
+        return Paths.get(System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "company");
+    }
 
     public List<CompanyCredential> findAll() {
         return repository.findAll();
@@ -41,27 +58,45 @@ public class CompanyCredentialService {
     }
 
     /**
-     * Saves uploaded file to the uploads/company directory and returns the saved filename.
+     * Saves uploaded file to the configured directory and returns the saved
+     * filename.
      */
     public String saveUploadedFile(MultipartFile file) throws IOException {
-        // Ensure upload directory exists
-        Path uploadPath = Paths.get(UPLOAD_DIR);
+        Path uploadPath = getUploadDirectory();
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        // Generate unique filename
         String originalFilename = file.getOriginalFilename();
-        String extension = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        if (originalFilename == null) {
+            originalFilename = "upload";
         }
-        String uniqueFilename = UUID.randomUUID().toString() + extension;
 
-        // Save file
+        String baseName = originalFilename;
+        String extension = "";
+        int dotIndex = originalFilename.lastIndexOf(".");
+        if (dotIndex != -1) {
+            baseName = originalFilename.substring(0, dotIndex);
+            extension = originalFilename.substring(dotIndex);
+        }
+
+        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+        String timestamp = LocalDateTime.now().format(dtf);
+        String uniqueFilename = baseName + "_" + timestamp + extension;
+
         Path targetPath = uploadPath.resolve(uniqueFilename);
         Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
         return uniqueFilename;
+    }
+
+    public Resource loadFileAsResource(String filename) throws Exception {
+        Path filePath = getUploadDirectory().resolve(filename).normalize();
+        Resource resource = new UrlResource(filePath.toUri());
+        if (resource.exists() || resource.isReadable()) {
+            return resource;
+        } else {
+            throw new RuntimeException("Could not read file: " + filename);
+        }
     }
 }
