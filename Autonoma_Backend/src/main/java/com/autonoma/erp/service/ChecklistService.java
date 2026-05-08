@@ -106,6 +106,8 @@ public class ChecklistService {
             existing.setAssignDate(checklist.getAssignDate());
             existing.setItemCode(checklist.getItemCode());
             existing.setQty(checklist.getQty());
+            existing.setUploadedFiles(checklist.getUploadedFiles());
+            existing.setScannedFiles(checklist.getScannedFiles());
             existing.setUpdatedDate(new Date());
             
             // Re-sync departments

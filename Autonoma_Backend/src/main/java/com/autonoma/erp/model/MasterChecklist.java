@@ -124,6 +124,14 @@ public class MasterChecklist {
     @Column(name = "CARRY_FORWARD")
     private String carryForward = "NO";
 
+    @Convert(converter = com.autonoma.erp.util.StringListConverter.class)
+    @Column(name = "UPLOADED_FILES", columnDefinition = "NVARCHAR(MAX)")
+    private List<String> uploadedFiles;
+
+    @Convert(converter = com.autonoma.erp.util.StringListConverter.class)
+    @Column(name = "SCANNED_FILES", columnDefinition = "NVARCHAR(MAX)")
+    private List<String> scannedFiles;
+
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistDepartment> departments;
 
@@ -192,4 +200,10 @@ public class MasterChecklist {
     public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
     public List<ChecklistDepartment> getDepartments() { return departments; }
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
+
+    public List<String> getUploadedFiles() { return uploadedFiles; }
+    public void setUploadedFiles(List<String> uploadedFiles) { this.uploadedFiles = uploadedFiles; }
+
+    public List<String> getScannedFiles() { return scannedFiles; }
+    public void setScannedFiles(List<String> scannedFiles) { this.scannedFiles = scannedFiles; }
 }
