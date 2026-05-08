@@ -117,6 +117,13 @@ public class MasterChecklist {
 
     @Column(name = "QTY")
     private String qty;
+
+    @Column(name = "DUAL_CHECK")
+    private String dualCheck = "NO";
+
+    @Column(name = "CARRY_FORWARD")
+    private String carryForward = "NO";
+
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistDepartment> departments;
 
@@ -179,6 +186,10 @@ public class MasterChecklist {
     public void setItemCode(String itemCode) { this.itemCode = itemCode; }
     public String getQty() { return qty; }
     public void setQty(String qty) { this.qty = qty; }
+    public String getDualCheck() { return dualCheck; }
+    public void setDualCheck(String dualCheck) { this.dualCheck = dualCheck; }
+    public String getCarryForward() { return carryForward; }
+    public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
     public List<ChecklistDepartment> getDepartments() { return departments; }
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
 }
