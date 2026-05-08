@@ -2,11 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, Grid, Typography, TextField, Button, Divider, Snackbar, Alert,
   CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl,
-  InputLabel, FormHelperText, Paper, Chip, Stack
+  InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete,
+  InputAdornment, IconButton,
+  Dialog, DialogTitle, DialogContent, DialogActions,
+  List, ListItemIcon, ListItemText, ListItemButton
 } from '@mui/material';
 import {
   IconBuilding, IconUpload, IconDeviceFloppy, IconRefresh,
-  IconPhoto, IconLogin, IconCheck, IconAlertCircle
+  IconPhoto, IconLogin, IconCheck, IconAlertCircle, IconFolderOpen,
+  IconChevronRight, IconArrowLeft, IconFolder, IconDeviceFloppy as IconDrive
 } from '@tabler/icons-react';
 
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
@@ -58,10 +62,10 @@ const CITIES_BY_STATE = {
 const DEFAULT_CITIES = ['City 1', 'City 2', 'City 3', 'City 4'];
 
 const emptyForm = {
-  companyName: '', shortName: '', address1: '', address2: '',
+  companyName: '', shortName: '', address: '',
   city: '', state: '', stateCode: '', country: '', pincode: '',
   gstIn: '', dbSourceName: '', licRenewalDate: '', licExpiryDate: '',
-  logoFileName: '', logInBgFileName: ''
+  logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS'
 };
 
 // ─── Image Upload Card ───────────────────────────────────────────────────────
@@ -94,11 +98,23 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
       />
       {preview ? (
         <Box>
-          <Avatar
-            src={`${API_BASE}/uploads/company/${preview}`}
-            variant="rounded"
-            sx={{ width: '100%', height: 110, mx: 'auto', mb: 1, objectFit: 'cover' }}
-          />
+          <Tooltip
+            title={
+              <img
+                src={`${API_BASE}/api/company-profile/image/${preview}`}
+                alt="Preview"
+                style={{ maxWidth: 300, maxHeight: 300, objectFit: 'contain', display: 'block', borderRadius: 4 }}
+              />
+            }
+            placement="top"
+            arrow
+          >
+            <Avatar
+              src={`${API_BASE}/api/company-profile/image/${preview}`}
+              variant="rounded"
+              sx={{ width: '100%', height: 110, mx: 'auto', mb: 1, objectFit: 'cover' }}
+            />
+          </Tooltip>
           <Chip
             label={preview.length > 22 ? preview.slice(0, 22) + '…' : preview}
             size="small" color="primary" variant="outlined"
@@ -128,6 +144,9 @@ const CompanyProfile = () => {
   const [uploading, setUploading] = useState({ logo: false, bg: false });
   const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
   const [errors, setErrors] = useState({});
+  const [browserOpen, setBrowserOpen] = useState(false);
+  const [browserData, setBrowserData] = useState({ currentPath: '', folders: [], roots: [], parentPath: null });
+  const [browserLoading, setBrowserLoading] = useState(false);
 
   const citiesForState = CITIES_BY_STATE[form.state] || DEFAULT_CITIES;
   const statesForCountry = STATES_BY_COUNTRY[form.country] || [];
@@ -146,19 +165,19 @@ const CompanyProfile = () => {
           setForm({
             companyName: rec.companyName || '',
             shortName: rec.shortName || '',
-            address1: rec.address1 || '',
-            address2: rec.address2 || '',
+            address: rec.address || '',
             city: rec.city || '',
             state: rec.state || '',
             stateCode: rec.stateCode != null ? String(rec.stateCode) : '',
             country: rec.country || '',
             pincode: rec.pincode || '',
             gstIn: rec.gstIn || '',
-            dbSourceName: rec.dbSourceName || '',
+            dbSourceName: rec.dbSourceName || 'BOSDBSRC',
             licRenewalDate: rec.licRenewalDate ? rec.licRenewalDate.slice(0, 10) : '',
             licExpiryDate: rec.licExpiryDate ? rec.licExpiryDate.slice(0, 10) : '',
             logoFileName: rec.logoFileName || '',
             logInBgFileName: rec.logInBgFileName || '',
+            directoryPath: rec.directoryPath || 'D:\\BOS_DOCUMENTS',
           });
         }
       })
@@ -210,13 +229,82 @@ const CompanyProfile = () => {
       });
       if (!res.ok) throw new Error('Upload failed');
       const data = await res.json();
-      setForm(prev => ({ ...prev, [field]: data.fileName }));
+      const updatedFileName = data.fileName;
+
+      setForm(prev => ({ ...prev, [field]: updatedFileName }));
       showSnack(data.message || 'File uploaded!', 'success');
+
+      // ── Auto-save if already exists ──
+      if (recordId) {
+        const payload = {
+          ...form,
+          [field]: updatedFileName,
+          stateCode: form.stateCode ? parseInt(form.stateCode) : null,
+          licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
+          licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
+        };
+
+        await fetch(`${API_BASE}/api/company-profile/update/${recordId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (isLogo) {
+          window.dispatchEvent(new CustomEvent('companyLogoUpdated', { detail: { fileName: updatedFileName } }));
+        }
+      }
     } catch (err) {
       showSnack('Upload failed: ' + err.message, 'error');
     } finally {
       setUploading(prev => ({ ...prev, [isLogo ? 'logo' : 'bg']: false }));
     }
+  };
+
+  // ── Directory Browser Logic ──
+  const fetchDirectory = async (path) => {
+    setBrowserLoading(true);
+    try {
+      const token = localStorage.getItem('serviceToken') || '';
+      const url = path
+        ? `${API_BASE}/api/directory/list?path=${encodeURIComponent(path)}`
+        : `${API_BASE}/api/directory/roots`;
+
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showSnack(data.error || 'Could not access this path', 'error');
+        // If it was a specific path that failed, reset to roots
+        if (path) fetchDirectory(null);
+        return;
+      }
+
+      if (path) {
+        setBrowserData(prev => ({
+          ...prev,
+          currentPath: data.currentPath,
+          folders: data.folders || [],
+          parentPath: data.parentPath
+        }));
+      } else {
+        setBrowserData({ currentPath: '', folders: [], roots: Array.isArray(data) ? data : [], parentPath: null });
+      }
+    } catch (err) {
+      showSnack('Failed to load directories', 'error');
+    } finally {
+      setBrowserLoading(false);
+    }
+  };
+
+  const handleOpenBrowser = () => {
+    setBrowserOpen(true);
+    fetchDirectory(form.directoryPath || null);
   };
 
   // ── Save / Update ──
@@ -290,7 +378,13 @@ const CompanyProfile = () => {
     error: !!errors[name],
     helperText: errors[name] || '',
     size: 'small', fullWidth: true,
-    sx: { '& .MuiOutlinedInput-root': { borderRadius: 2 } },
+    sx: {
+      '& .MuiOutlinedInput-root': {
+        borderRadius: 2,
+        bgcolor: extra.InputProps?.readOnly ? 'action.hover' : 'background.paper',
+        '&:hover fieldset': { borderColor: 'primary.main' }
+      }
+    },
     ...extra
   });
 
@@ -301,26 +395,157 @@ const CompanyProfile = () => {
   });
 
   const DropdownField = ({ name, label, options, disabled }) => (
-    <FormControl fullWidth size="small" error={!!errors[name]} disabled={disabled}>
-      <InputLabel id={`${name}-label`}>{label}</InputLabel>
-      <Select
-        labelId={`${name}-label`}
-        id={name}
-        name={name}
-        value={form[name]}
-        label={label}
-        onChange={handleChange}
-        sx={{ borderRadius: 2 }}
-      >
-        <MenuItem value=""><em>Select {label}</em></MenuItem>
-        {options.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-      </Select>
-      {errors[name] && <FormHelperText>{errors[name]}</FormHelperText>}
-    </FormControl>
+    <Autocomplete
+      fullWidth
+      size="small"
+      sx={{ minWidth: 200 }}
+      disabled={disabled}
+      options={options}
+      value={form[name] || null}
+      onChange={(event, newValue) => {
+        const syntheticEvent = {
+          target: {
+            name: name,
+            value: newValue || ''
+          }
+        };
+        handleChange(syntheticEvent);
+      }}
+      isOptionEqualToValue={(option, value) => option === value || value === ""}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={label}
+          error={!!errors[name]}
+          helperText={errors[name]}
+          placeholder={`Search ${label}...`}
+          sx={{
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              bgcolor: disabled ? 'action.hover' : 'background.paper',
+              '&:hover fieldset': { borderColor: 'primary.main' }
+            }
+          }}
+        />
+      )}
+    />
+  );
+
+  const FolderBrowserDialog = () => (
+    <Dialog open={browserOpen} onClose={() => setBrowserOpen(false)} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{
+        display: 'flex', alignItems: 'center', gap: 1.5,
+        bgcolor: 'primary.main', color: '#fff', py: 2,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+      }}>
+        <IconFolderOpen size={24} stroke={2} />
+        <Typography variant="h5" color="inherit" fontWeight={700}>Select Directory</Typography>
+      </DialogTitle>
+      <DialogContent sx={{ p: 0, minHeight: 450, maxHeight: 600, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{
+          p: 1.5, bgcolor: 'grey.50', display: 'flex', alignItems: 'center', gap: 1,
+          borderBottom: '1px solid', borderColor: 'divider'
+        }}>
+          <IconButton
+            size="small"
+            disabled={!browserData.currentPath}
+            onClick={() => fetchDirectory(browserData.parentPath || null)}
+            sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', '&:hover': { bgcolor: 'primary.lighter' } }}
+          >
+            <IconArrowLeft size={18} />
+          </IconButton>
+          <Paper
+            variant="outlined"
+            sx={{
+              flex: 1, py: 0.5, px: 1.5, bgcolor: '#fff', borderRadius: 1.5,
+              display: 'flex', alignItems: 'center', overflow: 'hidden'
+            }}
+          >
+            <Typography variant="caption" fontWeight={600} color="primary" sx={{ whiteSpace: 'nowrap' }}>
+              {browserData.currentPath || 'This PC'}
+            </Typography>
+          </Paper>
+        </Box>
+
+        <List sx={{ py: 0, overflowY: 'auto', flex: 1, bgcolor: '#fff' }}>
+          {browserLoading && (
+            <Box sx={{ p: 6, textAlign: 'center' }}>
+              <CircularProgress size={40} thickness={4} />
+              <Typography variant="body2" mt={2} color="text.secondary">Accessing file system...</Typography>
+            </Box>
+          )}
+
+          {/* Drives View */}
+          {!browserLoading && !browserData.currentPath && browserData.roots.map(root => (
+            <ListItemButton
+              key={root}
+              onClick={() => fetchDirectory(root)}
+              sx={{ borderBottom: '1px solid', borderColor: 'grey.50', py: 1.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: 45 }}>
+                <IconDrive color="#5e72e4" size={28} />
+              </ListItemIcon>
+              <ListItemText
+                primary={`Local Disk (${root.replace('\\', '')})`}
+                secondary={root}
+                primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
+                secondaryTypographyProps={{ variant: 'caption' }}
+              />
+              <IconChevronRight size={18} opacity={0.3} />
+            </ListItemButton>
+          ))}
+
+          {/* Folders View */}
+          {!browserLoading && browserData.folders.map(f => (
+            <ListItemButton
+              key={f.path}
+              onClick={() => fetchDirectory(f.path)}
+              sx={{ borderBottom: '1px solid', borderColor: 'grey.50', py: 1 }}
+            >
+              <ListItemIcon sx={{ minWidth: 45 }}>
+                <IconFolder color="#febc2c" size={26} fill="#febc2c30" />
+              </ListItemIcon>
+              <ListItemText
+                primary={f.name}
+                primaryTypographyProps={{ variant: 'body2', fontWeight: 500 }}
+              />
+              <IconChevronRight size={16} opacity={0.2} />
+            </ListItemButton>
+          ))}
+
+          {!browserLoading && browserData.currentPath && browserData.folders.length === 0 && (
+            <Box sx={{ p: 8, textAlign: 'center', opacity: 0.4 }}>
+              <IconFolder size={64} stroke={0.5} />
+              <Typography variant="body1" mt={1}>This folder is empty</Typography>
+            </Box>
+          )}
+        </List>
+      </DialogContent>
+      <Divider />
+      <DialogActions sx={{ p: 2, bgcolor: 'grey.50', justifyContent: 'space-between' }}>
+        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+          Selected: <strong>{browserData.currentPath || 'None'}</strong>
+        </Typography>
+        <Box>
+          <Button onClick={() => setBrowserOpen(false)} sx={{ fontWeight: 600, mr: 1 }}>Cancel</Button>
+          <Button
+            variant="contained"
+            disabled={!browserData.currentPath}
+            onClick={() => {
+              setForm(prev => ({ ...prev, directoryPath: browserData.currentPath }));
+              setBrowserOpen(false);
+            }}
+            sx={{ borderRadius: 2, px: 4, fontWeight: 700, boxShadow: '0 4px 12px rgba(94,114,228,0.2)' }}
+          >
+            Select Folder
+          </Button>
+        </Box>
+      </DialogActions>
+    </Dialog>
   );
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1100, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, maxWidth: '100%', mx: 0 }}>
       {/* ── Page Header ── */}
       <Box sx={{
         background: 'linear-gradient(135deg,#5e72e4 0%,#825ee4 100%)',
@@ -366,7 +591,8 @@ const CompanyProfile = () => {
         {/* ── Section 1 – Company Info ── */}
         <Box sx={{ p: { xs: 2, md: 3 } }}>
           {sectionTitle('Company Information', IconBuilding)}
-          <Grid container spacing={2.5}>
+          {/* Row 1: Names */}
+          <Grid container spacing={2.5} mb={2.5}>
             <Grid item xs={12} md={6}>
               <TextField {...fieldProps('companyName', 'Company Name *')} />
             </Grid>
@@ -374,68 +600,49 @@ const CompanyProfile = () => {
               <TextField {...fieldProps('shortName', 'Short Name')} />
             </Grid>
             <Grid item xs={12} md={3}>
-              <TextField {...fieldProps('dbSourceName', 'DB Source')} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField {...fieldProps('address1', 'Address Line 1')} />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField {...fieldProps('address2', 'Address Line 2')} />
+              <TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} />
             </Grid>
 
-            {/* Country → State → City cascade */}
-            <Grid item xs={12} md={4}>
-              <DropdownField name="country" label="Country *" options={COUNTRIES} />
+            <Grid item xs={12}>
+              <TextField
+                {...fieldProps('address', 'Address')}
+                multiline
+                rows={2}
+                fullWidth
+                sx={{ ...fieldProps('address', 'Address').sx, width: '440px' }}
+                inputProps={{ maxLength: 500 }}
+              />
             </Grid>
-            <Grid item xs={12} md={4}>
+          </Grid>
+
+          {/* Row 3: Geo Selection */}
+          <Grid container spacing={2.5} mb={2.5}>
+            <Grid item xs={12} md={6}>
+              <DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth />
+            </Grid>
+            <Grid item xs={12} md={6}>
               <DropdownField
                 name="state" label="State *"
                 options={statesForCountry}
-                disabled={!form.country}
+                disabled={!form.country} fullWidth
               />
             </Grid>
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={6}>
               <DropdownField
                 name="city" label="City *"
                 options={citiesForState}
-                disabled={!form.state}
+                disabled={!form.state} fullWidth
               />
             </Grid>
 
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={6}>
               <TextField {...fieldProps('stateCode', 'State Code')}
                 InputProps={{ readOnly: true }}
                 sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
               />
             </Grid>
-            <Grid item xs={12} md={3}>
+            <Grid item xs={12} md={6}>
               <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 10 }} />
-            </Grid>
-            <Grid item xs={12} md={3}>
-              <TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} />
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Divider />
-
-        {/* ── Section 2 – License Info ── */}
-        <Box sx={{ p: { xs: 2, md: 3 } }}>
-          {sectionTitle('License Details', IconAlertCircle)}
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                {...fieldProps('licRenewalDate', 'License Renewal Date')}
-                type="date"
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                {...fieldProps('licExpiryDate', 'License Expiry Date')}
-                type="date"
-                InputLabelProps={{ shrink: true }}
-              />
             </Grid>
           </Grid>
         </Box>
@@ -474,6 +681,56 @@ const CompanyProfile = () => {
             </Grid>
           </Grid>
         </Box>
+
+        <Divider />
+        {/* ── Section 2 – License Info ── */}
+        <Box sx={{ p: { xs: 3, md: 3 } }}>
+          {sectionTitle('License Details', IconAlertCircle)}
+
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} md={4}>
+              <TextField {...fieldProps('dbSourceName', 'DB Source')} inputProps={{ maxLength: 10 }} />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                {...fieldProps('licRenewalDate', 'License Renewal Date')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                {...fieldProps('licExpiryDate', 'License Expiry Date')}
+                type="date"
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={12}>
+              <TextField
+                {...fieldProps('directoryPath', 'Directory Path')}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        color="primary"
+                        onClick={handleOpenBrowser}
+                        title="Browse Server Folders"
+                      >
+                        <IconFolderOpen size={20} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        <FolderBrowserDialog />
+
+        <Divider />
+
+
 
         <Divider />
 
