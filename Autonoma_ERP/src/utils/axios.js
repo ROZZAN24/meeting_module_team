@@ -4,7 +4,7 @@
 
 import axios from 'axios';
 
-const axiosServices = axios.create({ baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/' });
+const axiosServices = axios.create({ baseURL: (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '') });
 
 // ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
 
@@ -24,8 +24,11 @@ axiosServices.interceptors.request.use(
 axiosServices.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response.status === 401 && !window.location.href.includes('/login')) {
+    if (error.response?.status === 401 && !window.location.href.includes('/login')) {
       window.location.pathname = '/login';
+    }
+    if (!error.response) {
+      return Promise.reject('Backend server is unreachable. Please ensure the backend is running on ' + (import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/'));
     }
     return Promise.reject((error.response && error.response.data) || 'Wrong Services');
   }
