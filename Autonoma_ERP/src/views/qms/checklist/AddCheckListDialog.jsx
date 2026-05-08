@@ -31,6 +31,9 @@ import {
   BOSTextField,
   btnClear,
   btnSave,
+  btnCancel,
+  getStatusChipSx,
+  formatBOSFiles,
   BOSFileGallery
 } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
@@ -61,15 +64,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     itemCode: '',
     qty: '',
     dualCheck: 'NO',
-    carryForward: 'NO'
+    carryForward: 'NO',
+    assignTo: ''
   });
 
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
-  const lookups = useLookups(['DEPARTMENTS']);
+  const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
   const departmentList = (lookups.departments || []).map(d => (d.departmentName || '').toUpperCase());
+  const employeeList = (lookups.employees || []).map(e => e.employeeName);
   const speechRef = useRef(null);
 
   useEffect(() => {
@@ -80,6 +85,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   useEffect(() => {
     if (open) {
+      console.log('BOS Checklist initialData:', initialData);
       if (initialData) {
         setFormData({
           seqNo: initialData.seqNo || '',
@@ -97,19 +103,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           itemCode: initialData.itemCode || '',
           qty: initialData.qty || '',
           dualCheck: initialData.dualCheck || 'NO',
-          carryForward: initialData.carryForward || 'NO'
+          carryForward: initialData.carryForward || 'NO',
+          assignTo: initialData.assignTo || ''
         });
         
-        // Fix: Explicitly reset files before loading to avoid stale data from previous record
-        setUploadedFiles([]);
-        setScannedFiles([]);
-
-        if (initialData.uploadedFiles) {
-          setUploadedFiles(initialData.uploadedFiles.map(name => ({ name, isServer: true, type: name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg' })));
-        }
-        if (initialData.scannedFiles) {
-          setScannedFiles(initialData.scannedFiles.map(name => ({ name, isServer: true, type: 'image/jpeg' })));
-        }
+        // Use standardized BOS utility for robust file loading
+        setUploadedFiles(formatBOSFiles(initialData.uploadedFiles || initialData.uploaded_files));
+        setScannedFiles(formatBOSFiles(initialData.scannedFiles || initialData.scanned_files));
       } else {
         resetForm();
         fetchNextSeq();
@@ -143,7 +143,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       itemCode: '',
       qty: '',
       dualCheck: 'NO',
-      carryForward: 'NO'
+      carryForward: 'NO',
+      assignTo: ''
     });
     setUploadedFiles([]);
     setScannedFiles([]);
@@ -188,8 +189,9 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   };
 
   const handleSave = async () => {
-    if (!formData.category || !formData.frequency || !formData.checkingPoint || !formData.description) {
-      alert('Please fill required fields');
+    if (!formData.category || !formData.frequency || !formData.checkingPoint || !formData.description || !formData.reminderDays || 
+        !formData.photoRequired || !formData.stockLink || !formData.dualCheck || !formData.carryForward) {
+      alert('Please fill all mandatory fields including Photo Required, Stock Link, Dual Check and Carry Forward');
       return;
     }
 
@@ -232,7 +234,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       open={open}
       onClose={handleClose}
       onSave={handleSave}
-      onClear={resetForm}
+      onClear={isEditing ? resetForm : null}
       title="Check List Master Details"
       maxWidth="lg"
     >
@@ -269,6 +271,19 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     <BOSTextField {...params} label="Departments" placeholder={departmentList.length > 0 ? "Select Departments" : "Loading departments..."} />
                   )}
                 />
+                
+                <BOSTextField
+                  select
+                  label="Assign To (Executor)"
+                  name="assignTo"
+                  value={formData.assignTo}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                >
+                  {employeeList.map(emp => (
+                    <MenuItem key={emp} value={emp}>{emp}</MenuItem>
+                  ))}
+                </BOSTextField>
             </Stack>
           </BOSFormSection>
 
@@ -285,27 +300,38 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             <Stack spacing={2.5}>
               <BOSTextField label="Checking Point" name="checkingPoint" value={formData.checkingPoint} onChange={handleChange} required disabled={!isEditing} />
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                <BOSTextField select label="Photo Required" name="photoRequired" value={formData.photoRequired} onChange={handleChange} disabled={!isEditing}>
+                <BOSTextField select label="Photo Required" name="photoRequired" value={formData.photoRequired} onChange={handleChange} disabled={!isEditing} required>
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
-                <BOSTextField select label="Stock Link" name="stockLink" value={formData.stockLink} onChange={handleChange} disabled={!isEditing}>
+                <BOSTextField select label="Stock Link" name="stockLink" value={formData.stockLink} onChange={handleChange} disabled={!isEditing} required>
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
                 <BOSTextField label="Item Code" name="itemCode" value={formData.itemCode} onChange={handleChange} disabled={!isEditing} />
               </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                <BOSTextField select label="Dual Check" name="dualCheck" value={formData.dualCheck} onChange={handleChange} disabled={!isEditing}>
+                <BOSTextField select label="Dual Check" name="dualCheck" value={formData.dualCheck} onChange={handleChange} disabled={!isEditing} required>
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
-                <BOSTextField select label="Carry Forward" name="carryForward" value={formData.carryForward} onChange={handleChange} disabled={!isEditing}>
+                <BOSTextField select label="Carry Forward" name="carryForward" value={formData.carryForward} onChange={handleChange} disabled={!isEditing} required>
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
                 <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} />
               </Box>
+              {initialData?.rejReason && (
+                <BOSTextField
+                  label="Rejection Reason"
+                  value={initialData.rejReason}
+                  multiline
+                  rows={2}
+                  disabled
+                  color="error"
+                  sx={{ mt: 1, '& .MuiOutlinedInput-root': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                />
+              )}
             </Stack>
           </BOSFormSection>
 

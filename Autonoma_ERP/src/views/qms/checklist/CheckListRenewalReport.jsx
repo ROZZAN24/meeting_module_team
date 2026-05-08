@@ -15,16 +15,19 @@ import AddCheckListDialog from './AddCheckListDialog';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
+  { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
+  { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
   { id: 'category', label: 'Category', minWidth: 120 },
-  { id: 'checkingPoint', label: 'Check Point', minWidth: 200, bold: true },
-  { id: 'department', label: 'Dept', minWidth: 150 },
-  { id: 'frequency', label: 'Frequency', minWidth: 120 },
-  { id: 'stockLink', label: 'Stock Link', minWidth: 100 },
-  { id: 'remarks', label: 'Comments', minWidth: 200 },
-  { id: 'verificationRequired', label: 'Verify Req', minWidth: 100 },
-  { id: 'assignedTo', label: 'Assigned To', minWidth: 120 },
+  { id: 'frequency', label: 'Frequency', minWidth: 100 },
+  { id: 'department', label: 'Department', minWidth: 150 },
+  { id: 'photoRequired', label: 'Photo Req', minWidth: 90 },
+  { id: 'verificationRequired', label: 'Verify Req', minWidth: 90 },
+  { id: 'stockLink', label: 'Stock Link', minWidth: 90 },
+  { id: 'assignTo', label: 'Assigned To', minWidth: 120 },
   { id: 'assignedBy', label: 'Assigned By', minWidth: 120 },
-  { id: 'status', label: 'Status', minWidth: 150 }
+  { id: 'checklistDate', label: 'Checklist Date', minWidth: 120 },
+  { id: 'remarks', label: 'Comments', minWidth: 200 },
+  { id: 'status', label: 'Status', minWidth: 130 }
 ];
 
 export default function CheckListRenewalReport() {
@@ -81,28 +84,50 @@ export default function CheckListRenewalReport() {
   useEffect(() => { fetchReportData(); }, [fetchReportData]);
 
   const handleExport = () => {
-    const exportData = rows.map((r, i) => ({
-      '#': i + 1,
-      Category: r.checklist?.category,
-      'Check Point': r.checklist?.checkingPoint,
-      Status: typeof r.status === 'object' ? r.status?.name : r.status
-    }));
+    const exportData = rows.map((r, i) => {
+      const m = r.checklist || {};
+      return {
+        '#': i + 1,
+        'Seq No': m.seqNo,
+        'Checking Point': m.checkingPoint,
+        'Category': m.category,
+        'Frequency': m.frequency,
+        'Department': (m.departments || []).map((d) => d.departmentName).join(', '),
+        'Photo Required': m.photoRequired || '-',
+        'Verification Required': m.dualCheck || '-',
+        'Stock Link': m.stockLink || '-',
+        'Assigned To': r.assignedTo || m.assignTo || '-',
+        'Assigned By': r.assignedBy || '-',
+        'Checklist Date': r.checklistDate ? new Date(r.checklistDate).toLocaleDateString() : '-',
+        'Comments': r.remarks || '-',
+        'Status': typeof r.status === 'object' ? r.status?.name : r.status
+      };
+    });
     exportToExcel(exportData, 'Checklist_Report');
   };
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'category') return row.checklist?.category;
-    if (col.id === 'checkingPoint') return row.checklist?.checkingPoint;
-    if (col.id === 'frequency') return row.checklist?.frequency;
-    if (col.id === 'stockLink') return row.checklist?.stockLink;
-    if (col.id === 'verificationRequired') return row.checklist?.verificationRequired;
-    if (col.id === 'department') return (row.checklist?.departments || []).map((d) => d.departmentName).join(', ');
+    
+    const master = row.checklist || {};
+    
+    if (col.id === 'seqNo') return master.seqNo;
+    if (col.id === 'checkingPoint') return master.checkingPoint;
+    if (col.id === 'category') return master.category;
+    if (col.id === 'frequency') return master.frequency;
+    if (col.id === 'department') return (master.departments || []).map((d) => d.departmentName).join(', ');
+    if (col.id === 'photoRequired') return master.photoRequired || '-';
+    if (col.id === 'verificationRequired') return master.dualCheck || '-';
+    if (col.id === 'stockLink') return master.stockLink || '-';
+    if (col.id === 'assignTo') return row.assignedTo || master.assignTo || '-';
+    if (col.id === 'assignedBy') return row.assignedBy || '-';
+    if (col.id === 'checklistDate') return row.checklistDate ? new Date(row.checklistDate).toLocaleDateString() : '-';
+    if (col.id === 'remarks') return row.remarks || '-';
     if (col.id === 'status') {
       const s = typeof row.status === 'object' ? row.status?.name : row.status;
       let chipStatus = 'PENDING';
-      if (s === 'Verified') chipStatus = 'ACTIVE';
-      if (s === 'Open') chipStatus = 'PENDING';
+      if (s === 'Verified' || s === 'Completed' || s === 'Accepted') chipStatus = 'ACTIVE';
+      if (s === 'Rejected' || s === 'Missed' || s === 'Unresolved') chipStatus = 'INACTIVE';
       return <Chip label={s || 'Open'} size="small" sx={getStatusChipSx(chipStatus)} />;
     }
     return row[col.id] || '-';

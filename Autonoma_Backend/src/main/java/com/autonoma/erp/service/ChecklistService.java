@@ -40,9 +40,30 @@ public class ChecklistService {
         return (maxSeq != null ? maxSeq : 0) + 1;
     }
 
-    public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy, String searchValue, Pageable pageable) {
+    /**
+     * Retrieves master checklists based on comprehensive filtering criteria.
+     * 
+     * @param status The lifecycle status of the checklist (e.g., Active, Inactive).
+     * @param category The functional category (RENEWAL, CHECK LIST).
+     * @param department Optional department filter.
+     * @param searchBy The field to perform textual search on.
+     * @param searchValue The textual search term.
+     * @param dualCheck Filter for dual verification requirements.
+     * @param verifyStatus Filter by the current verification workflow state.
+     * @param pageable Pagination and sorting configuration.
+     * @return A paginated result set of MasterChecklist entities.
+     */
+    public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy, String searchValue, String dualCheck, String verifyStatus, Pageable pageable) {
         return masterRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+            
+            if (dualCheck != null && !dualCheck.isEmpty()) {
+                predicates.add(cb.equal(root.get("dualCheck"), dualCheck));
+            }
+            
+            if (verifyStatus != null && !verifyStatus.isEmpty() && !verifyStatus.equals("All")) {
+                predicates.add(cb.equal(root.get("verifyStatus"), verifyStatus));
+            }
             
             if (status != null && !status.equals("All")) {
                 predicates.add(cb.equal(root.get("status"), status));
@@ -123,9 +144,10 @@ public class ChecklistService {
             return masterRepo.save(existing);
         } else {
             checklist.setCreatedDate(new Date());
-            if (checklist.getStatus() == null) checklist.setStatus("Pending for Verify");
+            if (checklist.getStatus() == null) checklist.setStatus("Active");
             if (checklist.getVerifyStatus() == null) checklist.setVerifyStatus("Pending for Verify");
             MasterChecklist saved = masterRepo.save(checklist);
+            
             if (departments != null) {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
@@ -134,6 +156,12 @@ public class ChecklistService {
                     deptRepo.save(dept);
                 }
             }
+
+            // Automatic Assignment Trigger (Wiring 1)
+            if (saved.getAssignTo() != null && !saved.getAssignTo().isEmpty()) {
+                assignTask(saved.getId(), saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System");
+            }
+
             return saved;
         }
     }
@@ -221,10 +249,17 @@ public class ChecklistService {
     // --- Verification ---
 
     @Transactional
-    public ChecklistVerification verifyTask(Long assignmentId, String verifiedBy, String statusName, String remarks) {
+    public ChecklistVerification verifyTask(Long assignmentId, String verifiedBy, String statusName, String remarks, List<String> actualFiles) {
         ChecklistAssignment assignment = assignRepo.findById(assignmentId).orElseThrow();
         StatusMaster status = statusRepo.findByName(statusName).orElseThrow();
         
+        // Update assignment details
+        assignment.setStatus(status);
+        if (actualFiles != null && !actualFiles.isEmpty()) {
+            assignment.setActualFiles(actualFiles);
+        }
+        assignRepo.save(assignment);
+
         // Create verification record
         ChecklistVerification verification = new ChecklistVerification();
         verification.setAssignment(assignment);
@@ -232,10 +267,6 @@ public class ChecklistService {
         verification.setStatus(status);
         verification.setRemarks(remarks);
         verification.setVerifiedDate(new Date());
-        
-        // Update assignment status
-        assignment.setStatus(status);
-        assignRepo.save(assignment);
         
         return verifyRepo.save(verification);
     }

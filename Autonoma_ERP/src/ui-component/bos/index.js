@@ -25,3 +25,4 @@ export {
   tableActionDeleteSx,
   getStatusChipSx
 } from './BOSStyles';
+export * from './BOSUtils';
