@@ -16,22 +16,30 @@ import { exportToExcel } from 'utils/excelExport';
 import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
-import AddCheckListDialog from './AddCheckListDialog';
+import { AddCheckListDialog } from './AddCheckListDialog';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { Tabs, Tab, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { API_PATHS } from 'utils/api-constants';
 import { BOSFileGallery } from 'ui-component/bos';
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'index', label: 'S.No', minWidth: 50 },
   { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
   { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
   { id: 'category', label: 'Category', minWidth: 120 },
   { id: 'frequency', label: 'Frequency', minWidth: 120 },
-  { id: 'department', label: 'Dept', minWidth: 150 },
+  { id: 'department', label: 'Department', minWidth: 150 },
+  { id: 'photoRequired', label: 'Photo Required', minWidth: 120 },
+  { id: 'verificationRequired', label: 'Verification Required', minWidth: 150 },
+  { id: 'stockLink', label: 'Stock Link', minWidth: 100 },
+  { id: 'itemCode', label: 'Item Code', minWidth: 100 },
+  { id: 'qty', label: 'Qty', minWidth: 80 },
   { id: 'assignedTo', label: 'Assign To', minWidth: 120 },
   { id: 'checklistDate', label: 'Checklist Date', minWidth: 120 },
-  { id: 'actualFiles', label: 'Proof', minWidth: 80, align: 'center' },
+  { id: 'expiryDate', label: 'Expire Date', minWidth: 120 },
+  { id: 'carryForward', label: 'Carry Forward Count', minWidth: 150 },
+  { id: 'assignType', label: 'Assign Type', minWidth: 120 },
+  { id: 'nextDueDate', label: 'NextDue Date/Next Expire Date', minWidth: 200 },
   { id: 'status', label: 'Status', minWidth: 150 }
 ];
 
@@ -76,53 +84,18 @@ export default function CheckListRenewalVerify() {
 
   useEffect(() => {
     dispatch(setFilterConfig([
-      {
-        id: 'taskType', label: 'Task Type', type: 'select',
-        options: [
-          { label: 'Mine', value: 'Mine' },
-          { label: 'Team', value: 'Team' },
-          { label: 'All', value: 'All' }
-        ],
-        defaultValue: 'Mine'
-      },
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))],
-        defaultValue: 'All'
-      },
+      { id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, options: [{ label: 'Mine', value: 'Mine' }, { label: 'Team', value: 'Team' }, { label: 'All', value: 'All' }], defaultValue: 'Mine' },
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))], defaultValue: 'All' },
+      { id: 'assignedTo', label: 'Assign To', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...(lookups.employees || []).map(e => ({ label: e.employeeName || `${e.firstName} ${e.lastName}`, value: e.employeeName || `${e.firstName} ${e.lastName}` }))], defaultValue: 'All' },
+      { id: 'seqNo', label: 'Seq No', type: 'text' },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text' },
+      { id: 'category', label: 'Category', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'Renewal', value: 'RENEWAL' }, { label: 'Check List', value: 'CHECK LIST' }], defaultValue: 'All' },
+      { id: 'frequency', label: 'Frequency', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'DAILY', value: 'DAILY' }, { label: 'WEEKLY', value: 'WEEKLY' }, { label: 'MONTHLY', value: 'MONTHLY' }, { label: 'YEARLY', value: 'YEARLY' }], defaultValue: 'All' },
+      { id: 'department', label: 'Department', type: 'text' },
+      { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ label: 'No', value: 'No' }, { label: 'Yes', value: 'Yes' }], defaultValue: 'No' },
       { id: 'fromDate', label: 'From Date', type: 'date' },
       { id: 'toDate', label: 'To Date', type: 'date' },
-      {
-        id: 'considerDate', label: 'Consider Date?', type: 'select',
-        options: [
-          { label: 'No', value: 'No' },
-          { label: 'Yes', value: 'Yes' }
-        ],
-        defaultValue: 'No'
-      },
-      {
-        id: 'assignedTo', label: 'Assign To', type: 'select',
-        options: [{ label: 'All', value: 'All' }, ...(lookups.employees || []).map(e => ({ label: e.employeeName || `${e.firstName} ${e.lastName}`, value: e.employeeName || `${e.firstName} ${e.lastName}` }))],
-        defaultValue: 'All'
-      },
-      {
-        id: 'category', label: 'Category', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Renewal', value: 'RENEWAL' },
-          { label: 'Check List', value: 'CHECK LIST' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'searchBy', label: 'Search by', type: 'select',
-        options: [
-          { label: 'Seq No', value: 'seqNo' },
-          { label: 'Checking Point', value: 'checkingPoint' },
-          { label: 'Category', value: 'category' }
-        ],
-        defaultValue: 'checkingPoint'
-      }
+      { id: 'searchBy', label: 'Search by', type: 'select', options: [{ label: 'Seq No', value: 'seqNo' }, { label: 'Checking Point', value: 'checkingPoint' }, { label: 'Category', value: 'category' }], defaultValue: 'checkingPoint' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch, lookups.employees]);
@@ -138,6 +111,10 @@ export default function CheckListRenewalVerify() {
           status: filters.status !== 'All' ? filters.status : undefined,
           assignedTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
           category: filters.category !== 'All' ? filters.category : undefined,
+          seqNo: filters.seqNo || undefined,
+          checkingPoint: filters.checkingPoint || undefined,
+          frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
+          department: filters.department || undefined,
           fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
           toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
           searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
@@ -154,6 +131,10 @@ export default function CheckListRenewalVerify() {
           verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : 'Verified',
           assignedTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
           category: filters.category !== 'All' ? filters.category : undefined,
+          seqNo: filters.seqNo || undefined,
+          checkingPoint: filters.checkingPoint || undefined,
+          frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
+          department: filters.department || undefined,
           searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
           searchValue: globalQuery || undefined,
           dualCheck: 'YES'
@@ -239,6 +220,14 @@ export default function CheckListRenewalVerify() {
     if (col.id === 'reminderDays') return data.reminderDays || '-';
     if (col.id === 'expiryDate') return data.expiryDate ? new Date(data.expiryDate).toLocaleDateString() : '-';
     if (col.id === 'stockLink') return data.stockLink || 'No';
+    if (col.id === 'photoRequired') return data.photoRequired || '-';
+    if (col.id === 'verificationRequired') return data.verificationRequired || '-';
+    if (col.id === 'itemCode') return data.itemCode || '-';
+    if (col.id === 'qty') return data.qty || '-';
+    if (col.id === 'carryForward') return row.carryForward || '-';
+    if (col.id === 'assignType') return row.assignType || '-';
+    if (col.id === 'nextDueDate') return data.nextDueDate ? new Date(data.nextDueDate).toLocaleDateString() : '-';
+
     if (col.id === 'createdBy') return data.createdBy || '-';
     if (col.id === 'verifiedBy') return data.verifiedBy || '-';
     if (col.id === 'verifiedDate') return data.verifiedDate ? new Date(data.verifiedDate).toLocaleDateString() : '-';
@@ -310,7 +299,7 @@ export default function CheckListRenewalVerify() {
           open={dialogOpen}
           handleClose={() => setDialogOpen(false)}
           data={selectedRow}
-          onVerify={() => handleVerify('Verified')}
+          onVerify={() => handleVerify('Accepted')}
           onReject={() => setRejectDialogOpen(true)}
         />
       ) : (

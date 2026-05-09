@@ -37,6 +37,7 @@ import {
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
 import { API_PATHS } from 'utils/api-constants';
+import { AddCheckListDialog } from './AddCheckListDialog';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -74,40 +75,13 @@ export default function CheckListVerify() {
 
   useEffect(() => {
     dispatch(setFilterConfig([
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [
-          { label: 'Pending for Verify', value: 'Pending for Verify' },
-          { label: 'Verified', value: 'Verified' },
-          { label: 'Rejected', value: 'Rejected' },
-          { label: 'All Status', value: 'All' }
-        ],
-        defaultValue: 'Pending for Verify'
-      },
-      {
-        id: 'category', label: 'Category', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Renewal', value: 'RENEWAL' },
-          { label: 'Check List', value: 'CHECK LIST' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'department', label: 'Department', type: 'select',
-        options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))],
-        defaultValue: 'All'
-      },
-      {
-        id: 'searchBy', label: 'Search by', type: 'select',
-        options: [
-          { label: 'Seq No', value: 'seqNo' },
-          { label: 'Checking Point', value: 'checkingPoint' },
-          { label: 'Category', value: 'category' },
-          { label: 'Frequency', value: 'frequency' }
-        ],
-        defaultValue: 'checkingPoint'
-      }
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'Pending for Verify', value: 'Pending for Verify' }, { label: 'Verified', value: 'Verified' }, { label: 'Rejected', value: 'Rejected' }, { label: 'All Status', value: 'All' }], defaultValue: 'Pending for Verify' },
+      { id: 'category', label: 'Category', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Renewal', value: 'RENEWAL' }, { label: 'Check List', value: 'CHECK LIST' }], defaultValue: 'All' },
+      { id: 'department', label: 'Department', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))], defaultValue: 'All' },
+      { id: 'seqNo', label: 'Seq No', type: 'text' },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text' },
+      { id: 'frequency', label: 'Frequency', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'DAILY', value: 'DAILY' }, { label: 'WEEKLY', value: 'WEEKLY' }, { label: 'MONTHLY', value: 'MONTHLY' }, { label: 'YEARLY', value: 'YEARLY' }], defaultValue: 'All' },
+      { id: 'searchBy', label: 'Search by', type: 'select', options: [{ label: 'Seq No', value: 'seqNo' }, { label: 'Checking Point', value: 'checkingPoint' }, { label: 'Category', value: 'category' }, { label: 'Frequency', value: 'frequency' }], defaultValue: 'checkingPoint' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch, lookups.departments]);
@@ -120,6 +94,9 @@ export default function CheckListVerify() {
         verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : (filters.status === 'All' ? undefined : 'Pending for Verify'),
         category: filters.category !== 'All' ? filters.category : undefined,
         department: filters.department !== 'All' ? filters.department : undefined,
+        seqNo: filters.seqNo || undefined,
+        checkingPoint: filters.checkingPoint || undefined,
+        frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
         searchValue: searchQuery || undefined
       };
@@ -269,128 +246,14 @@ export default function CheckListVerify() {
         id="checklist-verify-table"
       />
 
-      {/* ===== Read-Only Verify Dialog ===== */}
-      <Dialog open={dialogOpen && !!dialogData} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white', py: 2 }}>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <IconChecks size={24} />
-            <Typography variant="h4" color="inherit">
-              Verify Checklist — {dialogData?.seqNo}
-            </Typography>
-          </Stack>
-        </DialogTitle>
-
-        <DialogContent sx={{ mt: 2 }}>
-          {dialogData && (
-            <Grid container spacing={3}>
-              {/* Summary Row */}
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4, p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                  <Box>
-                    <Typography variant="caption" color="textSecondary">Seq No</Typography>
-                    <Typography variant="body1" fontWeight="bold" color="primary">{dialogData.seqNo}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="textSecondary">Category</Typography>
-                    <Typography variant="body1" fontWeight="bold">{dialogData.category}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="textSecondary">Frequency</Typography>
-                    <Typography variant="body1" fontWeight="bold">{dialogData.frequency}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="textSecondary">Department</Typography>
-                    <Typography variant="body1" fontWeight="bold">{dialogData.department}</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="textSecondary">Stock Link</Typography>
-                    <Typography variant="body1" fontWeight="bold">{dialogData.stockLink}</Typography>
-                  </Box>
-                </Box>
-              </Grid>
-
-              <Grid item xs={12}><Divider /></Grid>
-
-              {/* Details */}
-              <Grid item xs={12} md={6}>
-                <Typography variant="caption" color="textSecondary">Effective From</Typography>
-                <Typography variant="body1">{dialogData.effectiveFrom ? new Date(dialogData.effectiveFrom).toLocaleDateString() : '-'}</Typography>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="caption" color="textSecondary">Expiry Date</Typography>
-                <Typography variant="body1">{dialogData.expiryDate ? new Date(dialogData.expiryDate).toLocaleDateString() : '-'}</Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="caption" color="textSecondary">Photo Required</Typography>
-                <Typography variant="body1">{dialogData.photoRequired}</Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="caption" color="textSecondary">Dual Check</Typography>
-                <Typography variant="body1">{dialogData.dualCheck}</Typography>
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Typography variant="caption" color="textSecondary">Carry Forward</Typography>
-                <Typography variant="body1">{dialogData.carryForward}</Typography>
-              </Grid>
-
-              <Grid item xs={12}><Divider /></Grid>
-
-              {/* Checking Point */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary" gutterBottom>Checking Point</Typography>
-                <Typography variant="h4" sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-                  {dialogData.checkingPoint}
-                </Typography>
-              </Grid>
-
-              {/* Description */}
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="textSecondary" gutterBottom>Description / SOP</Typography>
-                <Typography variant="body1" sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'divider', whiteSpace: 'pre-wrap', minHeight: 80 }}>
-                  {dialogData.description || 'No description provided.'}
-                </Typography>
-              </Grid>
-
-              {/* Rejection Reason (if previously rejected) */}
-              {dialogData.rejReason && (
-                <Grid item xs={12}>
-                  <Typography variant="subtitle2" color="error" gutterBottom>Previous Rejection Reason</Typography>
-                  <Typography variant="body1" sx={{ p: 2, bgcolor: 'error.lighter', borderRadius: 1, border: '1px solid', borderColor: 'error.light', color: 'error.main' }}>
-                    {dialogData.rejReason}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          )}
-        </DialogContent>
-
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button variant="outlined" color="inherit" onClick={() => setDialogOpen(false)}>
-            Close
-          </Button>
-          <Box sx={{ flexGrow: 1 }} />
-          <Button
-            variant="contained"
-            color="error"
-            startIcon={<IconBan size={18} />}
-            onClick={() => { setDialogOpen(false); setRejectDialogOpen(true); }}
-            sx={{ borderRadius: '8px', fontWeight: 600 }}
-            disabled={dialogData?.verifyStatus === 'Verified'}
-          >
-            Reject
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={<IconChecks size={18} />}
-            onClick={() => handleVerify('Verified')}
-            sx={{ borderRadius: '8px', fontWeight: 600 }}
-            disabled={dialogData?.verifyStatus === 'Verified'}
-          >
-            Verify
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <AddCheckListDialog 
+        open={dialogOpen} 
+        handleClose={() => setDialogOpen(false)} 
+        initialData={selectedRow} 
+        readOnly={true}
+        onVerify={() => handleVerify('Verified')}
+        onReject={() => setRejectDialogOpen(true)}
+      />
 
       {/* ===== Reject Reason Dialog ===== */}
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>

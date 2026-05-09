@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // material-ui
@@ -129,7 +129,7 @@ export default function SearchSection() {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [advancedAnchorEl, setAdvancedAnchorEl] = useState(null);
-  const [visibleFilterIds, setVisibleFilterIds] = useState(['status', 'category']); // Default visible filters
+  const [visibleFilterIds, setVisibleFilterIds] = useState([]); 
   const anchorRef = useRef(null);
   const isAdvancedOpen = Boolean(advancedAnchorEl);
 
@@ -144,6 +144,26 @@ export default function SearchSection() {
   const setValue = (val) => {
     dispatch(setQuery(val));
   };
+
+  const currentPrefs = useSelector((state) => state.search.preferences[location.pathname] || []);
+
+  // Sync visible filter IDs with searchConfig and preferences
+  useEffect(() => {
+    if (searchConfig && searchConfig.length > 0) {
+      if (currentPrefs.length > 0) {
+        setVisibleFilterIds(currentPrefs);
+      } else {
+        const starred = searchConfig.filter(f => f.isStarred).map(f => f.id);
+        setVisibleFilterIds(starred);
+      }
+    }
+  }, [searchConfig, location.pathname]);
+
+  const updateVisibleFilters = (newIds) => {
+    setVisibleFilterIds(newIds);
+    dispatch(setFilterPreferences({ path: location.pathname, visibleIds: newIds }));
+  };
+
   const handleFilterChange = (key, val) => {
     dispatch(setFilters({ [key]: val }));
   };
@@ -290,7 +310,7 @@ export default function SearchSection() {
                           key={f.id}
                           label={`${f.label}: ${f.options?.find(o => o.value === (filters[f.id] || f.defaultValue))?.label || filters[f.id] || 'All'}`}
                           size="small"
-                          onDelete={() => setVisibleFilterIds(prev => prev.filter(id => id !== f.id))}
+                          onDelete={() => updateVisibleFilters(visibleFilterIds.filter(id => id !== f.id))}
                           sx={{ 
                             height: 22, 
                             fontSize: '0.7rem', 
@@ -339,69 +359,142 @@ export default function SearchSection() {
                         slotProps={{
                           paper: {
                             sx: {
-                              mt: 1.5, p: 2, width: 350, maxHeight: '80vh', overflow: 'hidden',
-                              boxShadow: (theme) => theme.customShadows?.z1 || theme.shadows[8],
-                              border: '1px solid', borderColor: 'divider'
+                              mt: 1.2, width: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                              borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden'
                             }
                           }
                         }}
                       >
-                        <Stack spacing={2}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Filter Selection</Typography>
-                          <Typography variant="caption" color="textSecondary">Toggle filters to show them in the search bar</Typography>
-                          
-                          <Box sx={{ overflowY: 'auto', maxHeight: '50vh', px: 0.5 }}>
-                            <Stack spacing={1}>
-                              {searchConfig?.map((field) => (
-                                <Box key={field.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}>
-                                  <FormControlLabel
-                                    control={
-                                      <Checkbox 
-                                        size="small" 
-                                        checked={visibleFilterIds.includes(field.id)} 
-                                        onChange={(e) => {
-                                          if (e.target.checked) setVisibleFilterIds(prev => [...prev, field.id]);
-                                          else setVisibleFilterIds(prev => prev.filter(id => id !== field.id));
-                                        }}
-                                      />
-                                    }
-                                    label={<Typography variant="body2">{field.label}</Typography>}
-                                  />
-                                  {visibleFilterIds.includes(field.id) && (
-                                    <Box sx={{ width: 140 }}>
-                                      {field.type === 'select' ? (
-                                        <Select
-                                          fullWidth size="small"
-                                          value={filters[field.id] || field.defaultValue || 'All'}
-                                          onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                          sx={{ height: 32, fontSize: '0.8rem' }}
-                                        >
-                                          {field.options.map((opt) => (
-                                            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                                          ))}
-                                        </Select>
-                                      ) : (
-                                        <TextField
-                                          fullWidth size="small"
-                                          value={filters[field.id] || ''}
-                                          onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                          placeholder={field.placeholder}
-                                          sx={{ '& .MuiInputBase-root': { height: 32, fontSize: '0.8rem' } }}
-                                        />
+                        {/* Header */}
+                        <Box sx={{ p: 1, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', bgcolor: 'grey.50' }}>
+                          <IconButton size="small" onClick={handleAdvancedClose} sx={{ mr: 1 }}><IconX size={14} /></IconButton>
+                          <Typography variant="subtitle2" fontWeight={700}>Advanced Filters</Typography>
+                        </Box>
+                        
+                        {/* Content */}
+                        <Box sx={{ p: 1.5, overflowY: 'auto', flexGrow: 1 }}>
+                          <Stack spacing={1.5}>
+                            {searchConfig?.filter(f => visibleFilterIds.includes(f.id)).map((field) => (
+                              <Grid container spacing={2} key={field.id} alignItems="center">
+                                <Grid size={4}>
+                                  <Typography variant="body2" color="text.secondary" fontWeight={500}>{field.label}</Typography>
+                                </Grid>
+                                <Grid size={8}>
+                                  {field.type === 'autocomplete' ? (
+                                    <Autocomplete
+                                      multiple={field.multiple}
+                                      size="small"
+                                      options={field.options || []}
+                                      getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
+                                      value={filters[field.id] || (field.multiple ? [] : null)}
+                                      onChange={(e, newVal) => handleFilterChange(field.id, newVal)}
+                                      renderInput={(params) => (
+                                        <TextField {...params} variant="standard" placeholder={`Select ${field.label}...`} sx={{ fontSize: '0.8rem' }} />
                                       )}
-                                    </Box>
+                                      sx={{ 
+                                        '& .MuiInputBase-root': { fontSize: '0.8rem', pt: 0, pb: 0 },
+                                        '& .MuiAutocomplete-tag': { height: 20, fontSize: '0.7rem' }
+                                      }}
+                                    />
+                                  ) : field.type === 'select' ? (
+                                    <Select
+                                      fullWidth size="small"
+                                      variant="standard"
+                                      value={filters[field.id] || field.defaultValue || 'All'}
+                                      onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                      sx={{ fontSize: '0.875rem', '&:before': { borderColor: 'divider' } }}
+                                    >
+                                      {field.options.map((opt) => (
+                                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                      ))}
+                                    </Select>
+                                  ) : field.type === 'date' ? (
+                                    <TextField
+                                      type="date"
+                                      fullWidth size="small"
+                                      variant="standard"
+                                      value={filters[field.id] || ''}
+                                      onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                      slotProps={{ inputLabel: { shrink: true } }}
+                                      sx={{ fontSize: '0.875rem', '&:before': { borderColor: 'divider' } }}
+                                    />
+                                  ) : (
+                                    <TextField
+                                      fullWidth size="small"
+                                      variant="standard"
+                                      value={filters[field.id] || ''}
+                                      onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                      placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                      sx={{ fontSize: '0.875rem', '&:before': { borderColor: 'divider' } }}
+                                    />
                                   )}
-                                </Box>
-                              ))}
-                            </Stack>
-                          </Box>
-
-                          <Divider />
-                          <Stack direction="row" spacing={1} justifyContent="flex-end">
-                            <Button size="small" color="error" onClick={() => dispatch(resetFilters())}>Reset</Button>
-                            <Button size="small" variant="contained" onClick={handleAdvancedClose}>Done</Button>
+                                </Grid>
+                              </Grid>
+                            ))}
                           </Stack>
-                        </Stack>
+                        </Box>
+
+                        {/* Footer */}
+                        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'grey.50' }}>
+                          <Box>
+                            <PopupState variant="popper" popupId="add-filter-popper">
+                              {(popupState) => (
+                                <>
+                                  <Button 
+                                    variant="outlined" 
+                                    size="small" 
+                                    startIcon={<IconPlus size={16} />}
+                                    {...bindToggle(popupState)}
+                                    sx={{ borderRadius: 2, borderColor: 'divider', color: 'text.primary' }}
+                                  >
+                                    Add filters
+                                  </Button>
+                                  <Popper {...bindPopper(popupState)} transition sx={{ zIndex: 1300 }}>
+                                    {({ TransitionProps }) => (
+                                      <Transitions type="fade" {...TransitionProps}>
+                                        <Card sx={{ p: 1, boxShadow: 12, border: '1px solid', borderColor: 'divider', width: 340, mt: 1, borderRadius: 1.5 }}>
+                                          <Stack spacing={1}>
+                                            <Typography variant="caption" sx={{ px: 0.5, fontWeight: 800, color: 'primary.main', fontSize: '0.6rem' }}>AVAILABLE FIELDS</Typography>
+                                            <Divider />
+                                            <Grid container spacing={0}>
+                                              {searchConfig?.map((field) => (
+                                                <Grid size={6} key={field.id}>
+                                                  <FormControlLabel
+                                                    sx={{ m: 0, px: 1, width: '100%', borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
+                                                    control={
+                                                      <Checkbox 
+                                                        size="small" 
+                                                        checked={visibleFilterIds.includes(field.id)} 
+                                                        onChange={(e) => {
+                                                          if (e.target.checked) updateVisibleFilters([...visibleFilterIds, field.id]);
+                                                          else updateVisibleFilters(visibleFilterIds.filter(id => id !== field.id));
+                                                        }}
+                                                      />
+                                                    }
+                                                    label={<Typography variant="caption" sx={{ fontSize: '0.75rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{field.label}</Typography>}
+                                                  />
+                                                </Grid>
+                                              ))}
+                                            </Grid>
+                                          </Stack>
+                                        </Card>
+                                      </Transitions>
+                                    )}
+                                  </Popper>
+                                </>
+                              )}
+                            </PopupState>
+                          </Box>
+                          <Stack direction="row" spacing={1.5}>
+                            <Button variant="outlined" color="secondary" size="medium" onClick={() => dispatch(resetFilters())} sx={{ borderRadius: 2 }}>
+                              Clear filters
+                            </Button>
+                            <Button variant="contained" color="primary" size="medium" onClick={handleAdvancedClose} sx={{ borderRadius: 2, px: 4 }}>
+                              Search
+                            </Button>
+                          </Stack>
+                        </Box>
                       </Popover>
                     </Stack>
                   </InputAdornment>

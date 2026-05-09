@@ -21,7 +21,7 @@ import { exportToExcel } from 'utils/excelExport';
 import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import AddCheckListDialog from './AddCheckListDialog';
+import { AddCheckListDialog } from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
@@ -80,73 +80,21 @@ export default function MasterCheckList() {
 
   useEffect(() => {
     dispatch(setFilterConfig([
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Active', value: 'Active' },
-          { label: 'In Active', value: 'In Active' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'taskStatus', label: 'Task Status', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'COMPLETED', value: 'COMPLETED' },
-          { label: 'PENDING', value: 'PENDING' },
-          { label: 'IN PROGRESS', value: 'IN PROGRESS' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'verifyStatus', label: 'Verify Status', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Pending for Verify', value: 'Pending for Verify' },
-          { label: 'Verified', value: 'Verified' },
-          { label: 'Rejected', value: 'Rejected' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'category', label: 'Category', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Renewal', value: 'RENEWAL' },
-          { label: 'Check List', value: 'CHECK LIST' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'department', label: 'Department', type: 'select',
-        options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))],
-        defaultValue: 'All'
-      },
-      {
-        id: 'assignedTo', label: 'Employee Name', type: 'select',
-        options: [{ label: 'All', value: 'All' }, ...(lookups.employees || []).map(e => ({ label: e.employeeName || `${e.firstName} ${e.lastName}`, value: e.employeeName || `${e.firstName} ${e.lastName}` }))],
-        defaultValue: 'All'
-      },
-      {
-        id: 'leftCompany', label: 'Left Company', type: 'select',
-        options: [
-          { label: 'No', value: 'No' },
-          { label: 'Yes', value: 'Yes' }
-        ],
-        defaultValue: 'No'
-      },
-      {
-        id: 'searchBy', label: 'Search by', type: 'select',
-        options: [
-          { label: 'Seq No', value: 'seqNo' },
-          { label: 'Checking Point', value: 'checkingPoint' },
-          { label: 'Category', value: 'category' },
-          { label: 'Frequency', value: 'frequency' },
-          { label: 'Assigned To', value: 'assignTo' }
-        ],
-        defaultValue: 'checkingPoint'
-      }
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Active', value: 'Active' }, { label: 'In Active', value: 'In Active' }], defaultValue: 'All' },
+      { id: 'taskStatus', label: 'Task Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'COMPLETED', value: 'COMPLETED' }, { label: 'PENDING', value: 'PENDING' }, { label: 'IN PROGRESS', value: 'IN PROGRESS' }], defaultValue: 'All' },
+      { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Pending for Verify', value: 'Pending for Verify' }, { label: 'Verified', value: 'Verified' }, { label: 'Rejected', value: 'Rejected' }], defaultValue: 'All' },
+      { id: 'category', label: 'Category', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Renewal', value: 'RENEWAL' }, { label: 'Check List', value: 'CHECK LIST' }], defaultValue: 'All' },
+      { id: 'department', label: 'Department', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))], defaultValue: 'All' },
+      { id: 'assignedTo', label: 'Employee Name', type: 'autocomplete', multiple: true, isStarred: true, options: (lookups.employees || []).map(e => e.employeeName || `${e.firstName} ${e.lastName}`), defaultValue: [] },
+      { id: 'leftCompany', label: 'Left Company', type: 'select', isStarred: true, options: [{ label: 'No', value: 'No' }, { label: 'Yes', value: 'Yes' }], defaultValue: 'No' },
+      { id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, options: [{ label: 'Seq No', value: 'seqNo' }, { label: 'Checking Point', value: 'checkingPoint' }, { label: 'Category', value: 'category' }, { label: 'Frequency', value: 'frequency' }, { label: 'Assigned To', value: 'assignTo' }], defaultValue: 'checkingPoint' },
+      { id: 'frequency', label: 'Frequency', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'DAILY', value: 'DAILY' }, { label: 'WEEKLY', value: 'WEEKLY' }, { label: 'MONTHLY', value: 'MONTHLY' }, { label: 'YEARLY', value: 'YEARLY' }], defaultValue: 'All' },
+      { id: 'level', label: 'Level', type: 'text' },
+      { id: 'photoRequired', label: 'Photo Required', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'YES', value: 'YES' }, { label: 'NO', value: 'NO' }], defaultValue: 'All' },
+      { id: 'verificationRequired', label: 'Verification Required', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'YES', value: 'YES' }, { label: 'NO', value: 'NO' }], defaultValue: 'All' },
+      { id: 'stockLink', label: 'Stock Link', type: 'text' },
+      { id: 'itemCode', label: 'Item Code', type: 'text' },
+      { id: 'qty', label: 'Qty', type: 'text' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch, lookups.departments, lookups.employees]);
@@ -161,7 +109,7 @@ export default function MasterCheckList() {
         category: filters.category !== 'All' ? filters.category : undefined,
         department: filters.department !== 'All' ? filters.department : undefined,
         dualCheck: filters.dualCheck !== 'All' ? filters.dualCheck : undefined,
-        assignTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
+        assignTo: filters.assignedTo && filters.assignedTo.length > 0 ? filters.assignedTo.join(',') : undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
         searchValue: globalQuery || undefined
       };
@@ -183,13 +131,23 @@ export default function MasterCheckList() {
 
   const handleDeleteConfirm = async () => {
     if (!selectedRow) return;
+    console.log('BOS Checklist Delete - Attempting to delete ID:', selectedRow.id);
+    const deleteUrl = `${API_PATHS.QMS.CHECKLIST}/${selectedRow.id}`;
+    console.log('BOS Checklist Delete - Request URL:', deleteUrl);
+    
     try {
-      await axios.delete(`${API_PATHS.QMS.CHECKLIST}/${selectedRow.id}`);
+      const response = await axios.delete(deleteUrl);
+      console.log('BOS Checklist Delete - Server Response Status:', response.status);
       dispatch(openSnackbar({ open: true, message: 'Checklist deleted successfully', severity: 'success', variant: 'alert' }));
       fetchChecklists();
       setSelectedRow(null);
       setDeleteDialogOpen(false);
     } catch (err) {
+      console.error('BOS Checklist Delete - Error Object:', err);
+      if (err.response) {
+        console.error('BOS Checklist Delete - Error Response Data:', err.response.data);
+        console.error('BOS Checklist Delete - Error Response Status:', err.response.status);
+      }
       dispatch(openSnackbar({ open: true, message: 'Failed to delete', severity: 'error', variant: 'alert' }));
     }
   };
@@ -310,8 +268,21 @@ export default function MasterCheckList() {
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onClickRow={setSelectedRow}
         selectedRowId={selectedRow?.id}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={(row) => { setSelectedRow(row); setDeleteDialogOpen(true); }}
+        onEditRow={(row) => {
+          if (row.verifyStatus === 'Verified') {
+            dispatch(openSnackbar({ open: true, message: 'Verified checklists can only be modified via Amendment', severity: 'info', variant: 'alert' }));
+            return;
+          }
+          handleOpenEdit(row);
+        }}
+        onDeleteRow={(row) => {
+          if (row.verifyStatus === 'Verified') {
+            dispatch(openSnackbar({ open: true, message: 'Verified checklists cannot be deleted', severity: 'error', variant: 'alert' }));
+            return;
+          }
+          setSelectedRow(row);
+          setDeleteDialogOpen(true);
+        }}
         renderCell={renderCell}
         showActions={true}
         id="master-checklist-table"

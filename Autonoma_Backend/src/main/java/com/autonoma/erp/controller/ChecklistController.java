@@ -58,7 +58,7 @@ public class ChecklistController {
 
     @GetMapping("/next-sequence")
     @Operation(summary = "Get Next Sequence Number", description = "Calculates the next available sequence number for a new checklist")
-    public ResponseEntity<Map<String, Integer>> getNextSequence() {
+    public ResponseEntity<Map<String, String>> getNextSequence() {
         return ResponseEntity.ok(Map.of("nextSeqNo", checklistService.getNextSequenceNumber()));
     }
 

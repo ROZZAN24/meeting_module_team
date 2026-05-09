@@ -153,7 +153,8 @@ export default function BOSFormDialog({
                   </Tooltip>
                 )}
               </Box>
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
+                {secondaryActions}
                 <Tooltip title={shortcutTooltip('Save Changes', 'Ctrl + S')}>
                   <Button onClick={onSave} variant="contained" sx={btnSave} startIcon={<IconCheck size={20} />}>
                     Save

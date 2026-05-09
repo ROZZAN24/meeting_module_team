@@ -20,6 +20,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
@@ -37,8 +38,9 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   });
 
   const employeeOptions = filteredEmployees.map(e => ({
-    label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})`,
-    value: e.employeeName || (e.firstName + ' ' + e.lastName)
+    label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})${e.status !== 'Active' ? ' - INACTIVE' : ''}`,
+    value: e.employeeName || (e.firstName + ' ' + e.lastName),
+    status: e.status
   }));
 
   const [assignments, setAssignments] = useState([]);
@@ -159,16 +161,21 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     });
   };
 
-  const handleDeleteAssignment = async (id) => {
-    if (!window.confirm('Are you sure you want to remove this assignment?')) return;
+  const handleDeleteAssignment = async () => {
+    if (!selectedAssignmentId) return;
     try {
-      await axios.delete(`${API_PATHS.QMS.CHECKLIST}/assignment/${id}`);
+      await axios.delete(`${API_PATHS.QMS.CHECKLIST}/assignment/${selectedAssignmentId}`);
       dispatch(openSnackbar({ open: true, message: 'Assignment removed', severity: 'success', variant: 'alert' }));
       fetchAssignments();
+      setDeleteDialogOpen(false);
+      setSelectedAssignmentId(null);
     } catch (err) {
       dispatch(openSnackbar({ open: true, message: 'Delete failed', severity: 'error', variant: 'alert' }));
     }
   };
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
@@ -233,7 +240,10 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               onPageChange={() => {}}
               onSizeChange={() => {}}
               onEditRow={handleEditAssignment}
-              onDeleteRow={(row) => handleDeleteAssignment(row.id)}
+              onDeleteRow={(row) => {
+                setSelectedAssignmentId(row.id);
+                setDeleteDialogOpen(true);
+              }}
               showActions={true}
               renderCell={(col, row) => {
                 if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' || row.status === 'Started' ? 'ACTIVE' : 'INACTIVE')} />;
@@ -242,6 +252,15 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
             />
           </Box>
         </Stack>
+
+        <ConfirmDeleteDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDeleteAssignment}
+          title="Remove Assignment"
+          message="Are you sure you want to remove this employee assignment? This action cannot be undone."
+          itemName={assignments.find(a => a.id === selectedAssignmentId)?.assignedTo || 'Assignment'}
+        />
       </DialogContent>
       <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
         <Button onClick={onClose} sx={btnCancel}>Close</Button>

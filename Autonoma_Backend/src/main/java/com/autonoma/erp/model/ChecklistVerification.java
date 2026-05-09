@@ -27,7 +27,7 @@ public class ChecklistVerification {
     @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "VERIFIED_DATE")

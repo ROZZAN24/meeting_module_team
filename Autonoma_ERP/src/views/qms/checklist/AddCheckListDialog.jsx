@@ -48,7 +48,7 @@ import useLookups from 'hooks/useLookups';
 const CATEGORIES = ['RENEWAL', 'CHECK LIST'];
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF YEARLY', 'YEARLY'];
 
-export default function AddCheckListDialog({ open, handleClose, onSave, initialData, readOnly, onVerify, onReject }) {
+export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, readOnly, onVerify, onReject }) => {
   const theme = useTheme();
   const [isEditing, setIsEditing] = useState(!readOnly);
 
@@ -154,7 +154,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const fetchNextSeq = async () => {
     try {
       const res = await axios.get(`${API_PATHS.QMS.CHECKLIST}/next-sequence`);
-      setFormData(prev => ({ ...prev, seqNo: String(res.data.nextSeqNo).padStart(3, '0') }));
+      setFormData(prev => ({ ...prev, seqNo: res.data.nextSeqNo }));
     } catch (error) {
       setFormData(prev => ({ ...prev, seqNo: String(Date.now()).slice(-4) }));
     }
@@ -306,7 +306,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       onSave={handleSave}
       onClear={isEditing ? resetForm : null}
       isViewOnly={!isEditing}
-      onEditClick={() => setIsEditing(true)}
+      onEditClick={readOnly ? null : () => setIsEditing(true)}
       secondaryActions={
         (onVerify || onReject) && !isEditing && (
           <Box sx={{ display: 'flex', gap: 1.5 }}>
@@ -390,6 +390,57 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 ))}
               </BOSTextField>
             </Stack>
+          </BOSFormSection>
+          <BOSFormSection title="Description / SOP" icon={<IconFileText size={20} color={theme.palette.success.main} />}>
+            <Box sx={{ position: 'relative' }}>
+              <BOSTextField
+                fullWidth
+                multiline
+                rows={4}
+                label="Standard Operating Procedure"
+                required
+                name="description"
+                value={isListening ? formData.description + ' ' + interimText : formData.description}
+                onChange={handleChange}
+                disabled={!isEditing}
+                InputProps={{
+                  endAdornment: isEditing && (
+                    <IconButton
+                      onClick={() => {
+                        if (isListening) {
+                          speechRef.current?.stop();
+                          setIsListening(false);
+                        } else {
+                          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                          if (!SR) return;
+                          const rec = new SR();
+                          rec.lang = 'en-US';
+                          rec.continuous = true;
+                          rec.interimResults = true;
+                          rec.onresult = (e) => {
+                            let interim = '';
+                            let final = '';
+                            for (let i = e.resultIndex; i < e.results.length; i++) {
+                              if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                              else interim += e.results[i][0].transcript;
+                            }
+                            if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
+                            setInterimText(interim);
+                          };
+                          rec.start();
+                          speechRef.current = rec;
+                          setIsListening(true);
+                        }
+                      }}
+                      size="small"
+                      color={isListening ? 'error' : 'default'}
+                    >
+                      {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
+                    </IconButton>
+                  )
+                }}
+              />
+            </Box>
           </BOSFormSection>
 
           <BOSFormSection title="Timeline & Reminders" icon={<IconCalendarEvent size={20} color={theme.palette.secondary.main} />}>
@@ -486,57 +537,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             </Stack>
           </BOSFormSection>
 
-          <BOSFormSection title="Description / SOP" icon={<IconFileText size={20} color={theme.palette.success.main} />}>
-            <Box sx={{ position: 'relative' }}>
-              <BOSTextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Standard Operating Procedure"
-                required
-                name="description"
-                value={isListening ? formData.description + ' ' + interimText : formData.description}
-                onChange={handleChange}
-                disabled={!isEditing}
-                InputProps={{
-                  endAdornment: isEditing && (
-                    <IconButton
-                      onClick={() => {
-                        if (isListening) {
-                          speechRef.current?.stop();
-                          setIsListening(false);
-                        } else {
-                          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                          if (!SR) return;
-                          const rec = new SR();
-                          rec.lang = 'en-US';
-                          rec.continuous = true;
-                          rec.interimResults = true;
-                          rec.onresult = (e) => {
-                            let interim = '';
-                            let final = '';
-                            for (let i = e.resultIndex; i < e.results.length; i++) {
-                              if (e.results[i].isFinal) final += e.results[i][0].transcript;
-                              else interim += e.results[i][0].transcript;
-                            }
-                            if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
-                            setInterimText(interim);
-                          };
-                          rec.start();
-                          speechRef.current = rec;
-                          setIsListening(true);
-                        }
-                      }}
-                      size="small"
-                      color={isListening ? 'error' : 'default'}
-                    >
-                      {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
-                    </IconButton>
-                  )
-                }}
-              />
-            </Box>
-          </BOSFormSection>
         </Stack>
 
         {/* Right Column: Attachments */}

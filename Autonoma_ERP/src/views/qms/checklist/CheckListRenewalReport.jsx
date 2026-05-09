@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
-import AddCheckListDialog from './AddCheckListDialog';
+import { AddCheckListDialog } from './AddCheckListDialog';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -45,46 +45,15 @@ export default function CheckListRenewalReport() {
 
   useEffect(() => {
     dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date' },
-      { id: 'toDate', label: 'To Date', type: 'date' },
-      {
-        id: 'considerDate', label: 'Consider Date?', type: 'select',
-        options: [
-          { label: 'No', value: 'No' },
-          { label: 'Yes', value: 'Yes' }
-        ],
-        defaultValue: 'No'
-      },
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Open', value: 'Open' },
-          { label: 'Pending for Verified', value: 'Pending for Verified' },
-          { label: 'Verified', value: 'Verified' },
-          { label: 'Rejected', value: 'Rejected' },
-          { label: 'Accepted', value: 'Accepted' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'category', label: 'Category', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Renewal', value: 'RENEWAL' },
-          { label: 'Check List', value: 'CHECK LIST' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'searchBy', label: 'Search by', type: 'select',
-        options: [
-          { label: 'Seq No', value: 'seqNo' },
-          { label: 'Checking Point', value: 'checkingPoint' },
-          { label: 'Category', value: 'category' }
-        ],
-        defaultValue: 'checkingPoint'
-      }
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Open', value: 'Open' }, { label: 'Pending for Verified', value: 'Pending for Verified' }, { label: 'Verified', value: 'Verified' }, { label: 'Rejected', value: 'Rejected' }, { label: 'Accepted', value: 'Accepted' }], defaultValue: 'All' },
+      { id: 'category', label: 'Category', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Renewal', value: 'RENEWAL' }, { label: 'Check List', value: 'CHECK LIST' }], defaultValue: 'All' },
+      { id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, options: [{ label: 'No', value: 'No' }, { label: 'Yes', value: 'Yes' }], defaultValue: 'No' },
+      { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
+      { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
+      { id: 'seqNo', label: 'Seq No', type: 'text' },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text' },
+      { id: 'frequency', label: 'Frequency', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'DAILY', value: 'DAILY' }, { label: 'WEEKLY', value: 'WEEKLY' }, { label: 'MONTHLY', value: 'MONTHLY' }, { label: 'YEARLY', value: 'YEARLY' }], defaultValue: 'All' },
+      { id: 'searchBy', label: 'Search by', type: 'select', options: [{ label: 'Seq No', value: 'seqNo' }, { label: 'Checking Point', value: 'checkingPoint' }, { label: 'Category', value: 'category' }], defaultValue: 'checkingPoint' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -96,6 +65,9 @@ export default function CheckListRenewalReport() {
         page, size,
         status: filters.status !== 'All' ? filters.status : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
+        seqNo: filters.seqNo || undefined,
+        checkingPoint: filters.checkingPoint || undefined,
+        frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
         fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
         toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,

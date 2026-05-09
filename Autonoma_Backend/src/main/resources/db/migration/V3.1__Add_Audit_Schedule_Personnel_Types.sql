@@ -13,4 +13,3 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[au
 BEGIN
     ALTER TABLE [dbo].[audit_schedules] ADD [ncrApprovedByType] NVARCHAR(255) NULL;
 END
-基础工程
