@@ -70,6 +70,12 @@ export const masters = {
           title: 'Designation Details',
           type: 'item',
           url: '/master/hr/designation'
+        },
+        {
+          id: 'master-hr-grade-details',
+          title: 'Grade Details',
+          type: 'item',
+          url: '/master/hr/grade'
         }
       ]
     },
