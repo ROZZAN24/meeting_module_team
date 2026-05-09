@@ -22,6 +22,7 @@ import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/b
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddCheckListDialog from './AddCheckListDialog';
+import ChecklistAssignDialog from './ChecklistAssignDialog';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 
@@ -31,6 +32,7 @@ const columns = [
   { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
   { id: 'category', label: 'Category', minWidth: 120 },
   { id: 'frequency', label: 'Frequency', minWidth: 120 },
+  { id: 'level', label: 'Level', minWidth: 150 },
   { id: 'department', label: 'Department', minWidth: 150 },
   { id: 'effectiveFrom', label: 'Effective from', minWidth: 120 },
   { id: 'reminderDays', label: 'Days', minWidth: 80 },
@@ -65,6 +67,7 @@ export default function MasterCheckList() {
   const [loading, setLoading] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isView, setIsView] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const lookups = useLookups(['DEPARTMENTS']);
@@ -154,25 +157,9 @@ export default function MasterCheckList() {
     }
   };
 
-  const handleAssign = async () => {
+  const handleAssign = () => {
     if (!selectedRow) return;
-    const assignTo = selectedRow.assignTo;
-    if (!assignTo) {
-      dispatch(openSnackbar({ open: true, message: 'No executor assigned to this checklist. Please edit and set Assign To first.', severity: 'warning', variant: 'alert' }));
-      return;
-    }
-    try {
-      await axios.post(`${API_PATHS.QMS.CHECKLIST}/assign`, {
-        checklistId: selectedRow.id,
-        assignedTo: assignTo,
-        assignedBy: 'Current User' // TODO: Get from auth context
-      });
-      dispatch(openSnackbar({ open: true, message: `Task assigned to ${assignTo} successfully!`, severity: 'success', variant: 'alert' }));
-      setSelectedRow(null);
-      fetchChecklists();
-    } catch (err) {
-      dispatch(openSnackbar({ open: true, message: 'Assignment failed', severity: 'error', variant: 'alert' }));
-    }
+    setAssignDialogOpen(true);
   };
 
   const handleExport = () => {
@@ -210,6 +197,7 @@ export default function MasterCheckList() {
       return <Chip label={row.taskStatus || 'Pending'} size="small" sx={getStatusChipSx(row.taskStatus === 'Completed' ? 'ACTIVE' : 'PENDING')} />;
     }
     if (col.id === 'department') return (row.departments || []).map((d) => d.departmentName).join(', ');
+    if (col.id === 'level') return row.levelIds || '-';
     if (col.id === 'rejReason') return row.rejReason || '-';
     if (['createdDate', 'verifiedDate', 'updatedDate', 'assignDate'].includes(col.id)) {
       return row[col.id] ? new Date(row[col.id]).toLocaleDateString() : '-';
@@ -256,7 +244,7 @@ export default function MasterCheckList() {
           <Button variant="contained" color="secondary" size="medium" startIcon={<IconUserPlus size={18} />} disabled={!selectedRow} onClick={handleAssign} sx={{ borderRadius: '8px' }}>
             Assign
           </Button>
-          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow} sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow} onClick={() => handleOpenEdit(selectedRow)} sx={{ borderRadius: '8px' }}>
             Amendment
           </Button>
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
@@ -314,6 +302,16 @@ export default function MasterCheckList() {
         title="Delete Check List"
         message="Are you sure you want to delete this check list item?"
         itemName={selectedRow?.seqNo + ' - ' + selectedRow?.checkingPoint}
+      />
+
+      <ChecklistAssignDialog
+        open={assignDialogOpen}
+        onClose={() => {
+          setAssignDialogOpen(false);
+          fetchChecklists();
+        }}
+        checklistId={selectedRow?.id}
+        initialData={selectedRow}
       />
 
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>

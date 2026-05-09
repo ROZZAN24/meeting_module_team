@@ -82,10 +82,19 @@ public class ChecklistController {
     @PostMapping("/assign")
     @Operation(summary = "Assign Checklist to User", description = "Creates a new assignment for a specific checklist and user")
     public ResponseEntity<ChecklistAssignment> assignTask(@RequestBody Map<String, Object> payload) {
+        Long id = payload.get("id") != null ? Long.valueOf(payload.get("id").toString()) : null;
         Long checklistId = Long.valueOf(payload.get("checklistId").toString());
         String assignedTo = payload.get("assignedTo").toString();
         String assignedBy = payload.get("assignedBy").toString();
-        return ResponseEntity.ok(checklistService.assignTask(checklistId, assignedTo, assignedBy));
+        String assignType = payload.containsKey("assignType") ? payload.get("assignType").toString() : "PRIMARY";
+        return ResponseEntity.ok(checklistService.assignTask(id, checklistId, assignedTo, assignedBy, assignType));
+    }
+
+    @DeleteMapping("/assignment/{id}")
+    @Operation(summary = "Delete Assignment", description = "Deletes a specific checklist assignment")
+    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
+        checklistService.deleteAssignment(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/verify")

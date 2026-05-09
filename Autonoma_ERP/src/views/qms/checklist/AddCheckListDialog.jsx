@@ -65,16 +65,22 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     qty: '',
     dualCheck: 'NO',
     carryForward: 'NO',
-    assignTo: ''
+    assignTo: '',
+    verificationRequired: 'YES',
+    status: 'ACTIVE',
+    amendmentReason: '',
+    levelIds: ''
   });
 
+  const [docDetails, setDocDetails] = useState('');
+  const [currentFile, setCurrentFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
   const departmentList = (lookups.departments || []).map(d => (d.departmentName || '').toUpperCase());
-  const employeeList = (lookups.employees || []).map(e => e.employeeName);
+  const employeeList = (lookups.employees || []).map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
   const speechRef = useRef(null);
 
   useEffect(() => {
@@ -104,7 +110,11 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           qty: initialData.qty || '',
           dualCheck: initialData.dualCheck || 'NO',
           carryForward: initialData.carryForward || 'NO',
-          assignTo: initialData.assignTo || ''
+          assignTo: initialData.assignTo || '',
+          verificationRequired: initialData.verificationRequired || 'YES',
+          status: initialData.status === 'In Active' ? 'INACTIVE' : (initialData.status || 'ACTIVE'),
+          amendmentReason: '',
+          levelIds: initialData.levelIds || ''
         });
         
         // Use standardized BOS utility for robust file loading
@@ -144,14 +154,23 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       qty: '',
       dualCheck: 'NO',
       carryForward: 'NO',
-      assignTo: ''
+      assignTo: '',
+      verificationRequired: 'YES',
+      status: 'ACTIVE',
+      amendmentReason: '',
+      levelIds: ''
     });
+    setDocDetails('');
+    setCurrentFile(null);
     setUploadedFiles([]);
     setScannedFiles([]);
     if (!initialData) {
       fetchNextSeq();
     }
   };
+
+  const [docDetails, setDocDetails] = useState('');
+  const [currentFile, setCurrentFile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -213,6 +232,10 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       await onSave({
         ...formData,
         id: initialData?.id,
+        status: formData.status === 'INACTIVE' ? 'In Active' : 'Active',
+        amendmentReason: formData.amendmentReason,
+        levelIds: formData.levelIds, // Need to add levelIds to formData state
+        description: formData.amendmentReason ? formData.description + '\n[Amendment]: ' + formData.amendmentReason : formData.description,
         uploadedFiles: finalUploaded,
         scannedFiles: finalScanned
       });
@@ -222,6 +245,26 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       console.error('Save failed:', error);
       alert('Failed to save record or upload files.');
     }
+  };
+
+  const handleAddFile = () => {
+    if (!currentFile) {
+      alert('Please choose a file'); // Using native alert as a fallback, but should use snackbar normally.
+      return;
+    }
+    const newFile = {
+      id: Date.now(),
+      docDetails: docDetails || 'N/A',
+      file: currentFile,
+      name: currentFile.name
+    };
+    setUploadedFiles(prev => [...prev, newFile]);
+    setDocDetails('');
+    setCurrentFile(null);
+  };
+
+  const handleFileDelete = (id) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== id));
   };
 
   // Speech Recognition Logic
@@ -280,6 +323,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                   onChange={handleChange}
                   disabled={!isEditing}
                 >
+                  <MenuItem value="">-Select-</MenuItem>
                   {employeeList.map(emp => (
                     <MenuItem key={emp} value={emp}>{emp}</MenuItem>
                   ))}
@@ -309,6 +353,22 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
                 <BOSTextField label="Item Code" name="itemCode" value={formData.itemCode} onChange={handleChange} disabled={!isEditing} />
+                <Autocomplete
+                  multiple
+                  options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
+                  value={formData.levelIds ? formData.levelIds.split(',') : []}
+                  disabled={!isEditing}
+                  onChange={(e, val) => setFormData(p => ({ ...p, levelIds: val.join(',') }))}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <BOSTextField {...params} label="Levels" placeholder="Select Levels" />
+                  )}
+                />
               </Box>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
                 <BOSTextField select label="Dual Check" name="dualCheck" value={formData.dualCheck} onChange={handleChange} disabled={!isEditing} required>
@@ -319,8 +379,30 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
+                <BOSTextField select label="Verification Required" name="verificationRequired" value={formData.verificationRequired} onChange={handleChange} disabled={!isEditing} required>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </BOSTextField>
                 <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} />
               </Box>
+              
+              {isEditing && initialData?.id && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <BOSTextField 
+                    label="Amendment Reason" 
+                    name="amendmentReason" 
+                    value={formData.amendmentReason} 
+                    onChange={handleChange} 
+                    required 
+                    color="warning" 
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'warning.lighter' } }}
+                  />
+                  <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} required>
+                    <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                    <MenuItem value="INACTIVE">IN ACTIVE</MenuItem>
+                  </BOSTextField>
+                </Box>
+              )}
               {initialData?.rejReason && (
                 <BOSTextField
                   label="Rejection Reason"
@@ -391,22 +473,38 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         {/* Right Column: Attachments */}
         <Stack spacing={3}>
           <BOSFormSection title="Attachments" icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />}>
-            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px', bgcolor: 'grey.50' }}>
-              <Button component="label" variant="contained" startIcon={<IconCloudUpload size={20} />} disabled={!isEditing} sx={{ mb: 2 }}>
-                Select Files
-                <input type="file" multiple hidden onChange={(e) => setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)])} />
-              </Button>
-              <BOSFileGallery files={uploadedFiles} onRemove={(idx) => removeFile(uploadedFiles, setUploadedFiles, idx)} isEditing={isEditing} />
-            </Box>
-          </BOSFormSection>
+            <Box sx={{ mt: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 2, alignItems: 'center', mb: 3 }}>
+                <BOSTextField 
+                  label="Doc Details" 
+                  value={docDetails} 
+                  onChange={(e) => setDocDetails(e.target.value)} 
+                  disabled={!isEditing} 
+                />
+                <Button component="label" variant="outlined" startIcon={<IconCloudUpload size={18} />} disabled={!isEditing} sx={{ height: 40 }}>
+                  {currentFile ? currentFile.name : 'Choose File'}
+                  <input type="file" hidden onChange={(e) => setCurrentFile(e.target.files[0])} />
+                </Button>
+                <Button variant="contained" color="primary" onClick={handleAddFile} disabled={!isEditing} sx={{ height: 40 }}>
+                  Add
+                </Button>
+              </Box>
 
-          <BOSFormSection title="Scan Documents" icon={<IconCamera size={20} color={theme.palette.secondary.main} />}>
-            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px', bgcolor: 'grey.50' }}>
-              <Button component="label" variant="contained" color="secondary" startIcon={<IconCamera size={20} />} disabled={!isEditing} sx={{ mb: 2 }}>
-                Snap Camera
-                <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => setScannedFiles(prev => [...prev, ...Array.from(e.target.files)])} />
-              </Button>
-              <BOSFileGallery files={scannedFiles} onRemove={(idx) => removeFile(scannedFiles, setScannedFiles, idx)} isEditing={isEditing} />
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Uploaded Files</Typography>
+              <BOSDataTable 
+                columns={[
+                  { id: 'docDetails', label: 'Doc Details' },
+                  { id: 'name', label: 'File Name' }
+                ]}
+                rows={uploadedFiles}
+                showActions={isEditing}
+                onDeleteRow={(row) => handleFileDelete(row.id)}
+                size={5}
+                page={0}
+                onPageChange={() => {}}
+                onSizeChange={() => {}}
+                hidePagination
+              />
             </Box>
           </BOSFormSection>
         </Stack>

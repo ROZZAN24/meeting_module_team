@@ -127,6 +127,8 @@ public class ChecklistService {
             existing.setAssignDate(checklist.getAssignDate());
             existing.setItemCode(checklist.getItemCode());
             existing.setQty(checklist.getQty());
+            existing.setLevelIds(checklist.getLevelIds());
+            existing.setAmendmentReason(checklist.getAmendmentReason());
             existing.setUploadedFiles(checklist.getUploadedFiles());
             existing.setScannedFiles(checklist.getScannedFiles());
             existing.setUpdatedDate(new Date());
@@ -159,7 +161,7 @@ public class ChecklistService {
 
             // Automatic Assignment Trigger (Wiring 1)
             if (saved.getAssignTo() != null && !saved.getAssignTo().isEmpty()) {
-                assignTask(saved.getId(), saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System");
+                assignTask(saved.getId(), saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
             }
 
             return saved;
@@ -231,19 +233,30 @@ public class ChecklistService {
     }
 
     @Transactional
-    public ChecklistAssignment assignTask(Long checklistId, String assignedTo, String assignedBy) {
+    public ChecklistAssignment assignTask(Long id, Long checklistId, String assignedTo, String assignedBy, String assignType) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         
-        ChecklistAssignment assignment = new ChecklistAssignment();
+        ChecklistAssignment assignment;
+        if (id != null) {
+            assignment = assignRepo.findById(id).orElse(new ChecklistAssignment());
+        } else {
+            assignment = new ChecklistAssignment();
+            // Default status: Pending (only for new)
+            statusRepo.findByName("Pending").ifPresent(assignment::setStatus);
+        }
+
         assignment.setChecklist(checklist);
         assignment.setAssignedTo(assignedTo);
         assignment.setAssignedBy(assignedBy);
+        assignment.setAssignType(assignType);
         assignment.setAssignedDate(new Date());
         
-        // Default status: Pending
-        statusRepo.findByName("Pending").ifPresent(assignment::setStatus);
-        
         return assignRepo.save(assignment);
+    }
+
+    @Transactional
+    public void deleteAssignment(Long id) {
+        assignRepo.deleteById(id);
     }
 
     // --- Verification ---

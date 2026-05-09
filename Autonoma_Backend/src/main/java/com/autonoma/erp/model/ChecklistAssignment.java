@@ -28,6 +28,9 @@ public class ChecklistAssignment {
     @Column(name = "ASSIGNED_BY")
     private String assignedBy;
 
+    @Column(name = "ASSIGN_TYPE", length = 50)
+    private String assignType;
+
     @Column(name = "ASSIGNED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date assignedDate;
@@ -58,6 +61,8 @@ public class ChecklistAssignment {
     public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
     public String getAssignedBy() { return assignedBy; }
     public void setAssignedBy(String assignedBy) { this.assignedBy = assignedBy; }
+    public String getAssignType() { return assignType; }
+    public void setAssignType(String assignType) { this.assignType = assignType; }
     public Date getAssignedDate() { return assignedDate; }
     public void setAssignedDate(Date assignedDate) { this.assignedDate = assignedDate; }
     public StatusMaster getStatus() { return status; }
