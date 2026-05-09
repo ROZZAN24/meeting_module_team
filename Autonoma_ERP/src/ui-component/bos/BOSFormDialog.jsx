@@ -56,7 +56,6 @@ export default function BOSFormDialog({
   onEditClick,
   hasId = false,
   maxWidth = 'md',
-  extraActions,
   children
 }) {
   const theme = useTheme();
@@ -149,7 +148,6 @@ export default function BOSFormDialog({
               )}
             </Box>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              {extraActions}
               <Tooltip title={shortcutTooltip('Save Changes', 'Ctrl + S')}>
                 <Button onClick={onSave} variant="contained" sx={btnSave} startIcon={<IconCheck size={20} />}>
                   Save

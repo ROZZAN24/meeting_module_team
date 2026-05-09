@@ -11,6 +11,9 @@ export const API_PATHS = {
   HRM: {
     DEPARTMENTS: `${API_BASE}/hrm/departments`,
     DESIGNATIONS: `${API_BASE}/hrm/designations`,
+    CATEGORIES: `${API_BASE}/hrm/categories`,
+    DESIGNATION_LEVELS: `${API_BASE}/master/hr/designationlevel`,
+    TYPES: `${API_BASE}/hrm/employee-types`,
     EMPLOYEES: `${API_BASE}/master/employee`,
   },
   

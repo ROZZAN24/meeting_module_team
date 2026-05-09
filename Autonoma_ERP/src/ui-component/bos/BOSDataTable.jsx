@@ -32,7 +32,6 @@ export default function BOSDataTable({
   onDeleteRow,
   showActions = true,
   renderCell,
-  footerActions,
   sx = {},
   id
 }) {
@@ -152,10 +151,7 @@ export default function BOSDataTable({
           </TableBody>
         </Table>
       </TableContainer>
-      <Box sx={{ p: 0.5, px: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
-        <Box>
-          {footerActions}
-        </Box>
+      <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider' }}>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"

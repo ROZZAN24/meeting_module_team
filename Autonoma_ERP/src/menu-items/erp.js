@@ -60,16 +60,16 @@ export const masters = {
           url: '/master/hr/department'
         },
         {
-          id: 'master-hr-employee',
-          title: 'Employee Master',
-          type: 'item',
-          url: '/master/hr/employee'
-        },
-        {
           id: 'master-hr-designation-details',
           title: 'Designation Details',
           type: 'item',
           url: '/master/hr/designation'
+        },
+        {
+          id: 'master-hr-designation-level',
+          title: 'Designation Level',
+          type: 'item', 
+          url: '/master/hr/desg-level'
         }
       ]
     },
@@ -121,7 +121,28 @@ export const hra = {
   caption: 'HR & Admin HA0000',
   type: 'group',
   icon: icons.IconUsers,
-  children: []
+  children: [
+    {
+      id: 'hra-hr',
+      title: 'HR',
+      type: 'collapse',
+      children: [
+        {
+          id: 'hra-hr-employee',
+          title: 'Employee',
+          type: 'collapse',
+          children: [
+            {
+              id: 'hra-hr-employee-details',
+              title: 'Employee Master',
+              type: 'item',
+              url: '/hra/hr/employee/master'
+            }
+          ]
+        }
+      ]
+    }
+  ]
 };
 
 export const sm = {
@@ -130,85 +151,7 @@ export const sm = {
   caption: 'Sales & Marketing SM0000',
   type: 'group',
   icon: icons.IconBriefcase,
-  children: [
-    {
-      id: 'sm-ocr',
-      title: 'OCR',
-      type: 'collapse',
-      icon: icons.IconReport,
-      children: [
-        {
-          id: 'sm-ocr-dashboard',
-          title: 'Enquiry Dashboard',
-          type: 'item',
-          url: '/sm/ocr/dashboard',
-          icon: icons.IconDashboard
-        },
-        {
-          id: 'sm-ocr-work-items',
-          title: 'Work Items',
-          type: 'item',
-          url: '/sm/ocr/work-items',
-          icon: icons.IconListCheck
-        },
-        {
-          id: 'sm-customer-master',
-          title: 'Customer Master',
-          type: 'item',
-          url: '/sm/ocr/customers',
-          icon: icons.IconUsers
-        },
-        {
-          id: 'sm-contact-master',
-          title: 'Contact Master',
-          type: 'item',
-          url: '/sm/ocr/contacts',
-          icon: icons.IconUsers
-        },
-        {
-          id: 'sm-vendor',
-          title: 'Vendor',
-          type: 'collapse',
-          icon: icons.IconBuildingFactory,
-          children: [
-            {
-              id: 'sm-vendor-supplier',
-              title: 'Supplier',
-              type: 'item',
-              url: '/sm/ocr/vendor/supplier',
-            },
-            {
-              id: 'sm-vendor-sub-contractor',
-              title: 'Sub Contractor',
-              type: 'item',
-              url: '/sm/ocr/vendor/sub-contractor',
-            }
-          ]
-        },
-        {
-          id: 'sm-ocr-enquiry',
-          title: 'Enquiry',
-          type: 'item',
-          url: '/sm/ocr/enquiry',
-          icon: icons.IconRocket
-        },
-        {
-          id: 'sm-ocr-price-master',
-          title: 'Price Master',
-          type: 'item',
-          url: '/sm/ocr/price-master',
-          icon: icons.IconRocket
-        },
-        {
-          id: 'sm-ocr-quotation',
-          title: 'Quotation',
-          type: 'item',
-          url: '/sm/ocr/quotation',
-          icon: icons.IconRocket
-        }
-      ]
-    }
-  ]
+  children: []
 };
 
 export const pp = {

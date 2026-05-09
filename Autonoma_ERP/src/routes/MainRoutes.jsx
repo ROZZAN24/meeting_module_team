@@ -197,6 +197,7 @@ const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/Departmen
 const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
 const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
 const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/DesignationMaster')));
+const MasterHrDesignationLevel = Loadable(lazy(() => import('views/master/hr/DesignationLevelMaster')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -209,17 +210,6 @@ const QmsAddAuditObservation = Loadable(lazy(() => import('views/qms/AuditObserv
 const QmsAuditNcrClose = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrClose')));
 const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrApproval')));
 const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
-
-// sm - sales & marketing ocr routing
-const SmEnquiryDashboard = Loadable(lazy(() => import('views/sm/EnquiryDashboard')));
-const SmEnquiryList = Loadable(lazy(() => import('views/sm/EnquiryList')));
-const SmCustomerMasterList = Loadable(lazy(() => import('views/sm/CustomerMasterList')));
-const SmContactMasterList = Loadable(lazy(() => import('views/sm/ContactMasterList')));
-const SmPriceMasterList = Loadable(lazy(() => import('views/sm/PriceMasterList')));
-const SmQuotationList = Loadable(lazy(() => import('views/sm/QuotationList')));
-const SmWorkItems = Loadable(lazy(() => import('views/sm/WorkItems')));
-const SmSupplierList = Loadable(lazy(() => import('views/sm/SupplierList')));
-const SmSubContractorList = Loadable(lazy(() => import('views/sm/SubContractorList')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -812,16 +802,20 @@ const MainRoutes = {
       element: <MasterHrDepartment />
     },
     {
-      path: '/master/hr/employee',
+      path: '/hra/hr/employee/master',
       element: <MasterHrEmployeeList />
     },
     {
-      path: '/master/hr/employee/create',
+      path: '/hra/hr/employee/master/create',
       element: <MasterHrEmployee />
     },
     {
       path: '/master/hr/designation',
       element: <MasterHrDesignation />
+    },
+    {
+      path: '/master/hr/desg-level',
+      element: <MasterHrDesignationLevel />
     },
     {
       path: '/master/qms/audit/type',
@@ -874,42 +868,6 @@ const MainRoutes = {
     {
       path: '/qms/audit/report',
       element: <QmsAuditReport />
-    },
-    {
-      path: '/sm/ocr/dashboard',
-      element: <SmEnquiryDashboard />
-    },
-    {
-      path: '/sm/ocr/enquiry',
-      element: <SmEnquiryList />
-    },
-    {
-      path: '/sm/ocr/work-items',
-      element: <SmWorkItems />
-    },
-    {
-      path: '/sm/ocr/customers',
-      element: <SmCustomerMasterList />
-    },
-    {
-      path: '/sm/ocr/contacts',
-      element: <SmContactMasterList />
-    },
-    {
-      path: '/sm/ocr/price-master',
-      element: <SmPriceMasterList />
-    },
-    {
-      path: '/sm/ocr/quotation',
-      element: <SmQuotationList />
-    },
-    {
-      path: '/sm/ocr/vendor/supplier',
-      element: <SmSupplierList />
-    },
-    {
-      path: '/sm/ocr/vendor/sub-contractor',
-      element: <SmSubContractorList />
     },
     {
       path: '*',

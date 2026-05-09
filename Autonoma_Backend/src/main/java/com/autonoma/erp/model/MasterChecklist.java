@@ -135,6 +135,12 @@ public class MasterChecklist {
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistDepartment> departments;
 
+    @Column(name = "LEVEL_IDS")
+    private String levelIds; // L1,L2...
+
+    @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
+    private String amendmentReason;
+
     // Getters and Setters (manually added for compatibility if Lombok has issues)
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -200,6 +206,12 @@ public class MasterChecklist {
     public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
     public List<ChecklistDepartment> getDepartments() { return departments; }
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
+
+    public String getLevelIds() { return levelIds; }
+    public void setLevelIds(String levelIds) { this.levelIds = levelIds; }
+
+    public String getAmendmentReason() { return amendmentReason; }
+    public void setAmendmentReason(String amendmentReason) { this.amendmentReason = amendmentReason; }
 
     public List<String> getUploadedFiles() { return uploadedFiles; }
     public void setUploadedFiles(List<String> uploadedFiles) { this.uploadedFiles = uploadedFiles; }

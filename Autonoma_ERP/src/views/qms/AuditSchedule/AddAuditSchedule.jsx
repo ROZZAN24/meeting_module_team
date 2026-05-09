@@ -93,6 +93,7 @@ export default function AddAuditSchedule() {
   const [selectedCriteriaIds, setSelectedCriteriaIds] = useState([]);
 
   useEffect(() => {
+    fetchDropdowns();
     if (isEditing) {
       fetchSchedule();
     } else {
@@ -115,7 +116,6 @@ export default function AddAuditSchedule() {
     try {
       const res = await axios.get(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`);
       const data = res.data;
-      if (!data) return;
       setFormData({
         scheduleNo: data.scheduleNo || '',
         scheduleDate: data.scheduleDate ? data.scheduleDate.split('T')[0] : '',
@@ -280,7 +280,7 @@ export default function AddAuditSchedule() {
               <Autocomplete
                 options={departments}
                 getOptionLabel={(option) => option.departmentName || ''}
-                value={(departments || []).find((d) => d.departmentName === formData.department) || null}
+                value={departments.find((d) => d.departmentName === formData.department) || null}
                 onChange={(event, newValue) => {
                   setFormData({ ...formData, department: newValue ? newValue.departmentName : '' });
                 }}
@@ -305,7 +305,7 @@ export default function AddAuditSchedule() {
                 disableCloseOnSelect
                 options={auditTypes}
                 getOptionLabel={(option) => option.auditType || ''}
-                value={(auditTypes || []).filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
+                value={auditTypes.filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
                 onChange={(event, newValue) => {
                   setFormData({ ...formData, auditType: newValue.map((v) => v.auditType).join(',') });
                 }}
@@ -412,7 +412,7 @@ export default function AddAuditSchedule() {
                 const name = value ? value.split(' - ')[0] : '-';
                 const code = value ? value.split(' - ')[1] || '-' : '-';
 
-                const employeeOptions = (employees || []).map(emp => `${emp.employeeName} - ${emp.employeeCode}`);
+                const employeeOptions = employees.map(emp => `${emp.employeeName || (emp.firstName + ' ' + emp.lastName)} - ${emp.empCode || emp.employeeCode}`);
 
                 return (
                   <Card key={person.role} sx={{
@@ -516,9 +516,9 @@ export default function AddAuditSchedule() {
               { id: 'criteriaText', label: 'Criteria Details', minWidth: 400 },
               { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
             ]}
-            rows={availableCriteria || []}
+            rows={availableCriteria}
             page={0}
-            size={Math.max(1, availableCriteria.length)}
+            size={availableCriteria.length}
             onPageChange={() => {}}
             onSizeChange={() => {}}
             showActions={false}

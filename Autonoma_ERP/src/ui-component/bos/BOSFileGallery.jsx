@@ -10,7 +10,8 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  useTheme
+  useTheme,
+  Tooltip
 } from '@mui/material';
 import {
   IconEye,
@@ -117,6 +118,10 @@ export const BOSFileGallery = ({
             const isSvr = file.isServer || file.serverFileName;
             const img = isImage(file);
             
+            // Shorten filename for display (remove UUID prefixes)
+            const parts = fileName.split('_');
+            const displayFileName = parts.length > 1 ? parts[parts.length - 1] : fileName;
+            
             return (
               <Box key={i} sx={{
                 display: 'flex', alignItems: 'center', p: 1, mb: 1, borderRadius: 1.5, border: '1px solid', borderColor: 'divider',
@@ -139,22 +144,35 @@ export const BOSFileGallery = ({
                   </Box>
                 )}
 
-                <Box sx={{ flexGrow: 1, overflow: 'hidden', mr: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.primary' }} noWrap>
-                    {fileName}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
+                <Box sx={{ flexGrow: 1, minWidth: 0, mr: 2 }}>
+                  <Tooltip title={fileName} arrow placement="top">
+                    <Typography 
+                      variant="subtitle2" 
+                      sx={{ 
+                        fontWeight: 600, 
+                        color: 'text.primary',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: 'block',
+                        width: '100%'
+                      }}
+                    >
+                      {displayFileName}
+                    </Typography>
+                  </Tooltip>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', opacity: 0.8 }}>
                     {isSvr ? 'Saved on Server' : 'Local Upload'}
                   </Typography>
                 </Box>
-
-                <Stack direction="row" spacing={0.5}>
-                  <IconButton size="small" color="primary" onClick={() => handlePreview(file)}>
-                    <IconEye size={18} />
+                
+                <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+                  <IconButton size="small" color="primary" onClick={() => handlePreview(file)} sx={{ bgcolor: 'primary.light', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}>
+                    <IconEye size={16} />
                   </IconButton>
                   {isEditing && (
-                    <IconButton size="small" color="error" onClick={() => onRemove(i)}>
-                      <IconTrash size={18} />
+                    <IconButton size="small" color="error" onClick={() => onRemove(i)} sx={{ bgcolor: 'error.light', '&:hover': { bgcolor: 'error.main', color: 'white' } }}>
+                      <IconTrash size={16} />
                     </IconButton>
                   )}
                 </Stack>

@@ -22,6 +22,7 @@ import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/b
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddCheckListDialog from './AddCheckListDialog';
+import ChecklistAssignDialog from './ChecklistAssignDialog';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 
@@ -31,17 +32,28 @@ const columns = [
   { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
   { id: 'category', label: 'Category', minWidth: 120 },
   { id: 'frequency', label: 'Frequency', minWidth: 120 },
+  { id: 'level', label: 'Level', minWidth: 150 },
   { id: 'department', label: 'Department', minWidth: 150 },
   { id: 'effectiveFrom', label: 'Effective from', minWidth: 120 },
   { id: 'reminderDays', label: 'Days', minWidth: 80 },
   { id: 'expiryDate', label: 'Expire Date', minWidth: 120 },
   { id: 'reminderDate', label: 'Reminder Date', minWidth: 120 },
   { id: 'stockLink', label: 'Stock Link', minWidth: 100 },
+  { id: 'assignTo', label: 'Assign To', minWidth: 120 },
+  { id: 'assignDate', label: 'Assign Date', minWidth: 120 },
   { id: 'itemCode', label: 'Item Code', minWidth: 120 },
   { id: 'qty', label: 'Qty', minWidth: 80 },
+  { id: 'photoRequired', label: 'Photo Required', minWidth: 100 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'updatedBy', label: 'Modified By', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'attachments', label: 'Docs', minWidth: 80, align: 'center' },
-  { id: 'verifyStatus', label: 'Verify Status', minWidth: 150 }
+  { id: 'taskStatus', label: 'Task Status', minWidth: 120 },
+  { id: 'verifyStatus', label: 'Verify Status', minWidth: 150 },
+  { id: 'verifiedBy', label: 'Verified By', minWidth: 120 },
+  { id: 'verifiedDate', label: 'Verified Date', minWidth: 120 },
+  { id: 'rejReason', label: 'Rej Reason', minWidth: 200 },
+  { id: 'attachments', label: 'Docs', minWidth: 80, align: 'center' }
 ];
 
 
@@ -55,6 +67,7 @@ export default function MasterCheckList() {
   const [loading, setLoading] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isView, setIsView] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const lookups = useLookups(['DEPARTMENTS']);
@@ -73,6 +86,16 @@ export default function MasterCheckList() {
           { label: 'All', value: 'All' },
           { label: 'Active', value: 'Active' },
           { label: 'In Active', value: 'In Active' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'verifyStatus', label: 'Verify Status', type: 'select',
+        options: [
+          { label: 'All', value: 'All' },
+          { label: 'Pending for Verify', value: 'Pending for Verify' },
+          { label: 'Verified', value: 'Verified' },
+          { label: 'Rejected', value: 'Rejected' }
         ],
         defaultValue: 'All'
       },
@@ -99,9 +122,10 @@ export default function MasterCheckList() {
     try {
       const params = {
         page, size,
+        status: filters.status !== 'All' ? filters.status : undefined,
+        verifyStatus: filters.verifyStatus !== 'All' ? filters.verifyStatus : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
         department: filters.department !== 'All' ? filters.department : undefined,
-        status: filters.status !== 'All' ? filters.status : undefined,
         searchValue: globalQuery || undefined
       };
       const response = await axios.get(API_PATHS.QMS.CHECKLIST, { params });
@@ -133,6 +157,11 @@ export default function MasterCheckList() {
     }
   };
 
+  const handleAssign = () => {
+    if (!selectedRow) return;
+    setAssignDialogOpen(true);
+  };
+
   const handleExport = () => {
     const exportData = rows.map((r, i) => ({
       '#': i + 1,
@@ -153,9 +182,26 @@ export default function MasterCheckList() {
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'Active' ? 'ACTIVE' : 'INACTIVE')} />;
-    if (col.id === 'verifyStatus') return <Chip label={row.verifyStatus || 'Pending'} size="small" sx={getStatusChipSx(row.verifyStatus === 'Verified' ? 'ACTIVE' : 'PENDING')} />;
+    if (col.id === 'status') {
+      const s = row.status || 'Active';
+      return <Chip label={s} size="small" sx={getStatusChipSx(s === 'Active' ? 'ACTIVE' : 'INACTIVE')} />;
+    }
+    if (col.id === 'verifyStatus') {
+      const s = row.verifyStatus || 'Pending for Verify';
+      let chipStatus = 'PENDING';
+      if (s === 'Verified') chipStatus = 'ACTIVE';
+      if (s === 'Rejected') chipStatus = 'INACTIVE';
+      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+    }
+    if (col.id === 'taskStatus') {
+      return <Chip label={row.taskStatus || 'Pending'} size="small" sx={getStatusChipSx(row.taskStatus === 'Completed' ? 'ACTIVE' : 'PENDING')} />;
+    }
     if (col.id === 'department') return (row.departments || []).map((d) => d.departmentName).join(', ');
+    if (col.id === 'level') return row.levelIds || '-';
+    if (col.id === 'rejReason') return row.rejReason || '-';
+    if (['createdDate', 'verifiedDate', 'updatedDate', 'assignDate'].includes(col.id)) {
+      return row[col.id] ? new Date(row[col.id]).toLocaleDateString() : '-';
+    }
     if (col.id === 'attachments') {
       const hasFiles = (row.uploadedFiles && row.uploadedFiles.length > 0) || (row.scannedFiles && row.scannedFiles.length > 0);
       if (!hasFiles) return '-';
@@ -195,10 +241,10 @@ export default function MasterCheckList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="contained" color="secondary" size="medium" startIcon={<IconUserPlus size={18} />} disabled={!selectedRow} sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconUserPlus size={18} />} disabled={!selectedRow} onClick={handleAssign} sx={{ borderRadius: '8px' }}>
             Assign
           </Button>
-          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow} sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow} onClick={() => handleOpenEdit(selectedRow)} sx={{ borderRadius: '8px' }}>
             Amendment
           </Button>
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
@@ -256,6 +302,16 @@ export default function MasterCheckList() {
         title="Delete Check List"
         message="Are you sure you want to delete this check list item?"
         itemName={selectedRow?.seqNo + ' - ' + selectedRow?.checkingPoint}
+      />
+
+      <ChecklistAssignDialog
+        open={assignDialogOpen}
+        onClose={() => {
+          setAssignDialogOpen(false);
+          fetchChecklists();
+        }}
+        checklistId={selectedRow?.id}
+        initialData={selectedRow}
       />
 
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>

@@ -25,18 +25,20 @@ public class ChecklistController {
     private ChecklistService checklistService;
 
     @GetMapping
-    @Operation(summary = "Get Master Checklists", description = "Fetches a paginated list of Master Checklists with optional filters")
-    public ResponseEntity<Page<MasterChecklist>> getMasterChecklist(
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String department,
-            @RequestParam(required = false) String searchBy,
-            @RequestParam(required = false) String searchValue,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    @Operation(summary = "Get All Master Checklists", description = "Retrieves a paginated list of master checklists with comprehensive filtering options including category, department, dual check flag, and verification status.")
+    public ResponseEntity<Page<MasterChecklist>> getAllChecklists(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by status (Active/Inactive)") @RequestParam(required = false) String status,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by category (RENEWAL/CHECK LIST)") @RequestParam(required = false) String category,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by department name") @RequestParam(required = false) String department,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Field to search by") @RequestParam(required = false) String searchBy,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Search term") @RequestParam(required = false) String searchValue,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by Dual Check flag (YES/NO)") @RequestParam(required = false) String dualCheck,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by Verification Status (Pending for Verify/Verified/Rejected)") @RequestParam(required = false) String verifyStatus,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Page number (0-indexed)") @RequestParam(defaultValue = "0") int page,
+            @io.swagger.v3.oas.annotations.Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, pageable));
+        return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, dualCheck, verifyStatus, pageable));
     }
 
     @PostMapping
@@ -80,10 +82,19 @@ public class ChecklistController {
     @PostMapping("/assign")
     @Operation(summary = "Assign Checklist to User", description = "Creates a new assignment for a specific checklist and user")
     public ResponseEntity<ChecklistAssignment> assignTask(@RequestBody Map<String, Object> payload) {
+        Long id = payload.get("id") != null ? Long.valueOf(payload.get("id").toString()) : null;
         Long checklistId = Long.valueOf(payload.get("checklistId").toString());
         String assignedTo = payload.get("assignedTo").toString();
         String assignedBy = payload.get("assignedBy").toString();
-        return ResponseEntity.ok(checklistService.assignTask(checklistId, assignedTo, assignedBy));
+        String assignType = payload.containsKey("assignType") ? payload.get("assignType").toString() : "PRIMARY";
+        return ResponseEntity.ok(checklistService.assignTask(id, checklistId, assignedTo, assignedBy, assignType));
+    }
+
+    @DeleteMapping("/assignment/{id}")
+    @Operation(summary = "Delete Assignment", description = "Deletes a specific checklist assignment")
+    public ResponseEntity<Void> deleteAssignment(@PathVariable Long id) {
+        checklistService.deleteAssignment(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/verify")
@@ -93,7 +104,9 @@ public class ChecklistController {
         String verifiedBy = payload.get("verifiedBy").toString();
         String status = payload.get("status").toString();
         String remarks = payload.getOrDefault("remarks", "").toString();
-        return ResponseEntity.ok(checklistService.verifyTask(assignmentId, verifiedBy, status, remarks));
+        @SuppressWarnings("unchecked")
+        List<String> actualFiles = (List<String>) payload.get("actualFiles");
+        return ResponseEntity.ok(checklistService.verifyTask(assignmentId, verifiedBy, status, remarks, actualFiles));
     }
 
     @PostMapping("/verify-master")
