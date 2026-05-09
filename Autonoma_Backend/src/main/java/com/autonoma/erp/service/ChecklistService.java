@@ -161,7 +161,7 @@ public class ChecklistService {
 
             // Automatic Assignment Trigger (Wiring 1)
             if (saved.getAssignTo() != null && !saved.getAssignTo().isEmpty()) {
-                assignTask(saved.getId(), saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
+                assignTask(saved.getId(),null, saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
             }
 
             return saved;
