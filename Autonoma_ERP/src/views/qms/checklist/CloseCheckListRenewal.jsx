@@ -66,20 +66,11 @@ export default function CloseCheckListRenewal() {
       {
         id: 'taskType', label: 'Task Type', type: 'select',
         options: [
-          { label: 'All', value: 'All' },
           { label: 'Mine', value: 'Mine' },
           { label: 'Team', value: 'Team' },
-          { label: 'Company', value: 'Company' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'team', label: 'Team', type: 'select',
-        options: [
           { label: 'All', value: 'All' }
-          // Employee names will be populated dynamically from assignments
         ],
-        defaultValue: 'All'
+        defaultValue: 'Mine'
       },
       {
         id: 'status', label: 'Status', type: 'select',
@@ -87,7 +78,24 @@ export default function CloseCheckListRenewal() {
         defaultValue: 'All'
       },
       { id: 'fromDate', label: 'From Date', type: 'date' },
-      { id: 'toDate', label: 'To Date', type: 'date' }
+      { id: 'toDate', label: 'To Date', type: 'date' },
+      {
+        id: 'considerDate', label: 'Consider Date?', type: 'select',
+        options: [
+          { label: 'No', value: 'No' },
+          { label: 'Yes', value: 'Yes' }
+        ],
+        defaultValue: 'No'
+      },
+      {
+        id: 'searchBy', label: 'Search by', type: 'select',
+        options: [
+          { label: 'Seq No', value: 'seqNo' },
+          { label: 'Checking Point', value: 'checkingPoint' },
+          { label: 'Category', value: 'category' }
+        ],
+        defaultValue: 'checkingPoint'
+      }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -97,10 +105,11 @@ export default function CloseCheckListRenewal() {
     try {
       const params = {
         page, size,
+        taskType: filters.taskType || 'Mine',
         status: filters.status !== 'All' ? filters.status : undefined,
-        assignedTo: filters.team !== 'All' ? filters.team : undefined,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
+        fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
+        toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
+        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
         searchValue: globalQuery || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });

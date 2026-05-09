@@ -36,9 +36,14 @@ export const parseBOSFiles = (files) => {
  * @returns {Array<Object>} - Formatted file objects for BOSFileGallery
  */
 export const formatBOSFiles = (fileNames = []) => {
-  return parseBOSFiles(fileNames).map(name => ({
-    name,
-    isServer: true,
-    type: name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'
-  }));
+  return parseBOSFiles(fileNames).map((raw, idx) => {
+    const [name, docDetails] = (raw || '').split('|');
+    return {
+      id: `server-${idx}-${name}`,
+      name,
+      docDetails: docDetails || 'Stored on Server',
+      isServer: true,
+      type: name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'
+    };
+  });
 };

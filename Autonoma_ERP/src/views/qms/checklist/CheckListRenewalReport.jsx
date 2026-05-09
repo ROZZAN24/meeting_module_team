@@ -48,14 +48,42 @@ export default function CheckListRenewalReport() {
       { id: 'fromDate', label: 'From Date', type: 'date' },
       { id: 'toDate', label: 'To Date', type: 'date' },
       {
+        id: 'considerDate', label: 'Consider Date?', type: 'select',
+        options: [
+          { label: 'No', value: 'No' },
+          { label: 'Yes', value: 'Yes' }
+        ],
+        defaultValue: 'No'
+      },
+      {
         id: 'status', label: 'Status', type: 'select',
         options: [
-          { label: 'All Status', value: 'All' },
+          { label: 'All', value: 'All' },
           { label: 'Open', value: 'Open' },
           { label: 'Pending for Verified', value: 'Pending for Verified' },
-          { label: 'Verified', value: 'Verified' }
+          { label: 'Verified', value: 'Verified' },
+          { label: 'Rejected', value: 'Rejected' },
+          { label: 'Accepted', value: 'Accepted' }
         ],
         defaultValue: 'All'
+      },
+      {
+        id: 'category', label: 'Category', type: 'select',
+        options: [
+          { label: 'All', value: 'All' },
+          { label: 'Renewal', value: 'RENEWAL' },
+          { label: 'Check List', value: 'CHECK LIST' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'searchBy', label: 'Search by', type: 'select',
+        options: [
+          { label: 'Seq No', value: 'seqNo' },
+          { label: 'Checking Point', value: 'checkingPoint' },
+          { label: 'Category', value: 'category' }
+        ],
+        defaultValue: 'checkingPoint'
       }
     ]));
     return () => dispatch(setFilterConfig(null));
@@ -67,8 +95,10 @@ export default function CheckListRenewalReport() {
       const params = {
         page, size,
         status: filters.status !== 'All' ? filters.status : undefined,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
+        category: filters.category !== 'All' ? filters.category : undefined,
+        fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
+        toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
+        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
         searchValue: globalQuery || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });

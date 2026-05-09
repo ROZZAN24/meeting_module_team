@@ -42,8 +42,8 @@ export const BOSFileGallery = ({
 
   const handlePreview = async (file) => {
     let url;
-    const name = file.name || file.fileName;
-    const ext = name.split('.').pop()?.toLowerCase();
+    const name = file.name || file.fileName || 'document';
+    const ext = name.includes('.') ? name.split('.').pop()?.toLowerCase() : '';
     
     setLoading(true);
     setPreviewOpen(true);
@@ -114,12 +114,12 @@ export const BOSFileGallery = ({
           </Typography>
         ) : (
           files.map((file, i) => {
-            const fileName = file.name || file.fileName;
+            const fileName = file.name || file.fileName || 'Unknown File';
             const isSvr = file.isServer || file.serverFileName;
             const img = isImage(file);
             
             // Shorten filename for display (remove UUID prefixes)
-            const parts = fileName.split('_');
+            const parts = fileName ? fileName.split('_') : [];
             const displayFileName = parts.length > 1 ? parts[parts.length - 1] : fileName;
             
             return (
@@ -161,8 +161,8 @@ export const BOSFileGallery = ({
                       {displayFileName}
                     </Typography>
                   </Tooltip>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', opacity: 0.8 }}>
-                    {isSvr ? 'Saved on Server' : 'Local Upload'}
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', opacity: 0.8, fontStyle: file.docDetails ? 'italic' : 'normal' }}>
+                    {file.docDetails || (isSvr ? 'Saved on Server' : 'Local Upload')}
                   </Typography>
                 </Box>
                 

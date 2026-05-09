@@ -18,7 +18,7 @@ import EmployeeSubSections from './EmployeeSubSections';
 const INITIAL = {
   categoryId: '', subCategoryId: '', empLevelId: '', employeeTypeId: '', gradeCode: '',
   title: '', firstName: '', lastName: '', empCode: '', oldEmpCode: '', fatherHusbandName: '', guest: 'No',
-  departmentId: '', designationId: '', unitId: '', productionLine: '', empClass: '', teamGroup: '', additionalRole: [],
+  departmentId: '', designationId: '', unitId: '', productionLine: '', empClass: '', teamGroup: '', additionalRole: '',
   dateOfJoining: '', confirmationDate: '', nextRevisionDate: '', exitDate: '', exitReason: '',
   dailySheetRequired: 'No', attendanceRequired: 'Yes', inductionStatus: 'PENDING', shift: 'Yes', shiftName: 'GENERAL', shiftDuration: '480', graceMinutes: '0',
   petrolAllowance: '0.00', petrolMode: 'NA', referMode: '', userName: '', homeManager: '', businessManager: '', supplierName: '',
@@ -32,7 +32,8 @@ const RULES = [
   { field: 'categoryId', label: 'Category', required: true },
   { field: 'empLevelId', label: 'Level', required: true },
   { field: 'employeeTypeId', label: 'Type', required: true },
-  { field: 'title', label: 'Title', required: true }
+  { field: 'title', label: 'Title', required: true },
+  { field: 'departmentId', label: 'Department', required: true }
 ];
 
 // Shared field renderer using Grid for consistent layout
@@ -160,7 +161,7 @@ export default function EmployeeMaster() {
         {/* ═══ SECTION 2: ORGANIZATION ═══ */}
         <BOSFormSection icon={<IconBriefcase size={20} color={theme.palette.primary.main} />} title="Organization & Assignment">
           <Grid container spacing={2.5}>
-            <R><BOSTextField select name="departmentId" label="Department" value={form.departmentId} onChange={h}>{departments.map((d) => <MenuItem key={d.id} value={d.id}>{d.departmentName}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="departmentId" label="Department" value={form.departmentId} onChange={h} required error={!!errors.departmentId} helperText={errors.departmentId}>{departments.map((d) => <MenuItem key={d.id} value={d.id}>{d.departmentName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="designationId" label="Designation" value={form.designationId} onChange={h}>{designations.map((d) => <MenuItem key={d.id} value={d.id}>{d.designationName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="unitId" label="Unit Name" value={form.unitId} onChange={h}><MenuItem value={1}>UNIT1</MenuItem></BOSTextField></R>
             <R><BOSTextField name="productionLine" label="Production Line" value={form.productionLine} onChange={h} maxLength={100} /></R>

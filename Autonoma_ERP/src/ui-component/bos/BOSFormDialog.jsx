@@ -56,6 +56,7 @@ export default function BOSFormDialog({
   onEditClick,
   hasId = false,
   maxWidth = 'md',
+  secondaryActions,
   children
 }) {
   const theme = useTheme();
@@ -107,7 +108,8 @@ export default function BOSFormDialog({
       {/* ── FOOTER ACTION BUTTONS (SOP #1, #12) ── */}
       <Box sx={ds.footer}>
         {isViewOnly ? (
-          <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
+          <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
+            {secondaryActions}
             <Tooltip title={shortcutTooltip('Edit Details', 'Ctrl + E')}>
               <Button
                 onClick={onEditClick}

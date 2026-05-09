@@ -38,6 +38,7 @@ import {
   getStatusChipSx
 } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import useLookups from 'hooks/useLookups';
 import AddCheckListDialog from './AddCheckListDialog';
 
 const columns = [
@@ -70,6 +71,7 @@ export default function CheckListVerify() {
   const [isView, setIsView] = useState(true);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectRemarks, setRejectRemarks] = useState('');
+  const lookups = useLookups(['DEPARTMENTS']);
 
   const searchQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
@@ -77,45 +79,55 @@ export default function CheckListVerify() {
   useEffect(() => {
     dispatch(setFilterConfig([
       {
-        id: 'status',
-        label: 'Status',
-        type: 'select',
+        id: 'status', label: 'Status', type: 'select',
         options: [
-          { label: 'All Status', value: 'All' },
           { label: 'Pending for Verify', value: 'Pending for Verify' },
           { label: 'Verified', value: 'Verified' },
-          { label: 'Rejected', value: 'Rejected' }
+          { label: 'Rejected', value: 'Rejected' },
+          { label: 'All Status', value: 'All' }
         ],
-        defaultValue: 'All'
+        defaultValue: 'Pending for Verify'
       },
       {
-        id: 'category',
-        label: 'Category',
-        type: 'select',
+        id: 'category', label: 'Category', type: 'select',
         options: [
-          { label: 'All Categories', value: 'All' },
+          { label: 'All', value: 'All' },
           { label: 'Renewal', value: 'RENEWAL' },
           { label: 'Check List', value: 'CHECK LIST' }
         ],
         defaultValue: 'All'
+      },
+      {
+        id: 'department', label: 'Department', type: 'select',
+        options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))],
+        defaultValue: 'All'
+      },
+      {
+        id: 'searchBy', label: 'Search by', type: 'select',
+        options: [
+          { label: 'Seq No', value: 'seqNo' },
+          { label: 'Checking Point', value: 'checkingPoint' },
+          { label: 'Category', value: 'category' },
+          { label: 'Frequency', value: 'frequency' }
+        ],
+        defaultValue: 'checkingPoint'
       }
     ]));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  }, [dispatch, lookups.departments]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
-        page,
-        size,
-        status: undefined, // Master status filter not used here
-        verifyStatus: filters.status !== 'All' ? filters.status : undefined,
+        page, size,
+        verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : (filters.status === 'All' ? undefined : 'Pending for Verify'),
         category: filters.category !== 'All' ? filters.category : undefined,
-        searchValue: searchQuery || undefined,
-        dualCheck: 'NO'
+        department: filters.department !== 'All' ? filters.department : undefined,
+        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
+        searchValue: searchQuery || undefined
       };
-      const response = await axios.get('/api/qms/checklist', { params });
+      const response = await axios.get(API_PATHS.QMS.CHECKLIST, { params });
       setRows(response.data.content || []);
       setTotalElements(response.data.totalElements || 0);
     } catch (error) {
@@ -204,28 +216,6 @@ export default function CheckListVerify() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button
-            variant="contained"
-            color="error"
-            size="medium"
-            startIcon={<IconBan size={18} />}
-            onClick={() => setRejectDialogOpen(true)}
-            disabled={!selectedRow}
-            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Reject
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            size="medium"
-            startIcon={<IconCheck size={18} />}
-            onClick={() => handleVerify('Verified')}
-            disabled={!selectedRow}
-            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Verify
-          </Button>
           <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
             Export Excel
@@ -270,9 +260,16 @@ export default function CheckListVerify() {
         handleClose={() => setDialogOpen(false)} 
         initialData={selectedRow} 
         readOnly={isView}
+        onVerify={() => handleVerify('Verified')}
+        onReject={() => setRejectDialogOpen(true)}
         onSave={async (data) => {
           try {
-            await axios.post('/api/qms/checklist', data);
+            const payload = { 
+              ...data, 
+              createdBy: data.id ? data.createdBy : 'Current User',
+              updatedBy: 'Current User'
+            };
+            await axios.post('/api/qms/checklist', payload);
             dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
             fetchChecklists();
           } catch (err) {

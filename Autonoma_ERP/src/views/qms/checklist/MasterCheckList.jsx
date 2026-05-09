@@ -70,7 +70,7 @@ export default function MasterCheckList() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isView, setIsView] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const lookups = useLookups(['DEPARTMENTS']);
+  const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState('');
   const [previewName, setPreviewName] = useState('');
@@ -86,6 +86,16 @@ export default function MasterCheckList() {
           { label: 'All', value: 'All' },
           { label: 'Active', value: 'Active' },
           { label: 'In Active', value: 'In Active' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'taskStatus', label: 'Task Status', type: 'select',
+        options: [
+          { label: 'All', value: 'All' },
+          { label: 'COMPLETED', value: 'COMPLETED' },
+          { label: 'PENDING', value: 'PENDING' },
+          { label: 'IN PROGRESS', value: 'IN PROGRESS' }
         ],
         defaultValue: 'All'
       },
@@ -112,10 +122,34 @@ export default function MasterCheckList() {
         id: 'department', label: 'Department', type: 'select',
         options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))],
         defaultValue: 'All'
+      },
+      {
+        id: 'assignedTo', label: 'Employee Name', type: 'select',
+        options: [{ label: 'All', value: 'All' }, ...(lookups.employees || []).map(e => ({ label: e.employeeName || `${e.firstName} ${e.lastName}`, value: e.employeeName || `${e.firstName} ${e.lastName}` }))],
+        defaultValue: 'All'
+      },
+      {
+        id: 'leftCompany', label: 'Left Company', type: 'select',
+        options: [
+          { label: 'No', value: 'No' },
+          { label: 'Yes', value: 'Yes' }
+        ],
+        defaultValue: 'No'
+      },
+      {
+        id: 'searchBy', label: 'Search by', type: 'select',
+        options: [
+          { label: 'Seq No', value: 'seqNo' },
+          { label: 'Checking Point', value: 'checkingPoint' },
+          { label: 'Category', value: 'category' },
+          { label: 'Frequency', value: 'frequency' },
+          { label: 'Assigned To', value: 'assignTo' }
+        ],
+        defaultValue: 'checkingPoint'
       }
     ]));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch, lookups.departments]);
+  }, [dispatch, lookups.departments, lookups.employees]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
@@ -126,6 +160,9 @@ export default function MasterCheckList() {
         verifyStatus: filters.verifyStatus !== 'All' ? filters.verifyStatus : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
         department: filters.department !== 'All' ? filters.department : undefined,
+        dualCheck: filters.dualCheck !== 'All' ? filters.dualCheck : undefined,
+        assignTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
+        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
         searchValue: globalQuery || undefined
       };
       const response = await axios.get(API_PATHS.QMS.CHECKLIST, { params });
@@ -285,7 +322,14 @@ export default function MasterCheckList() {
           try {
             const params = new URLSearchParams();
             (data.department || []).forEach((d) => params.append('departments', d));
-            await axios.post(`${API_PATHS.QMS.CHECKLIST}?${params.toString()}`, data);
+            
+            const payload = { 
+              ...data, 
+              createdBy: data.id ? data.createdBy : 'Current User',
+              updatedBy: 'Current User'
+            };
+            
+            await axios.post(`${API_PATHS.QMS.CHECKLIST}?${params.toString()}`, payload);
             dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
             fetchChecklists();
             setDialogOpen(false);

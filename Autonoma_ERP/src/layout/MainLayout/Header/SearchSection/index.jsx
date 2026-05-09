@@ -25,8 +25,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setQuery, setFilters, resetFilters } from 'store/slices/search';
 
 // assets
-import { IconSearch, IconX, IconApps, IconFileText, IconAdjustmentsHorizontal, IconCalendar, IconFilter } from '@tabler/icons-react';
-import { Divider, MenuItem, Select, Button, Stack, Popover } from '@mui/material';
+import { IconSearch, IconX, IconApps, IconFileText, IconAdjustmentsHorizontal, IconCalendar, IconFilter, IconPlus } from '@tabler/icons-react';
+import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Chip } from '@mui/material';
 
 const SUGGESTIONS = [
   { label: 'Master Check List', path: '/qms/checklist/master', type: 'Module' },
@@ -129,6 +129,7 @@ export default function SearchSection() {
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [advancedAnchorEl, setAdvancedAnchorEl] = useState(null);
+  const [visibleFilterIds, setVisibleFilterIds] = useState(['status', 'category']); // Default visible filters
   const anchorRef = useRef(null);
   const isAdvancedOpen = Boolean(advancedAnchorEl);
 
@@ -268,8 +269,41 @@ export default function SearchSection() {
               InputProps={{
                 ...params.InputProps,
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ pl: 1 }}>
-                    <IconSearch stroke={1.5} size="18px" />
+                  <InputAdornment position="start" sx={{ pl: 1, mr: 1 }}>
+                    <Stack 
+                      direction="row" 
+                      spacing={0.5} 
+                      alignItems="center" 
+                      sx={{ 
+                        maxWidth: isFocused ? 400 : 200, 
+                        overflowX: 'auto', 
+                        overflowY: 'hidden',
+                        pb: 0.2,
+                        '&::-webkit-scrollbar': { height: 0 }, // Hide scrollbar for cleaner look
+                        msOverflowStyle: 'none',
+                        scrollbarWidth: 'none'
+                      }}
+                    >
+                      <IconSearch stroke={1.5} size="18px" style={{ flexShrink: 0 }} />
+                      {searchConfig && searchConfig.filter(f => visibleFilterIds.includes(f.id)).map(f => (
+                        <Chip
+                          key={f.id}
+                          label={`${f.label}: ${f.options?.find(o => o.value === (filters[f.id] || f.defaultValue))?.label || filters[f.id] || 'All'}`}
+                          size="small"
+                          onDelete={() => setVisibleFilterIds(prev => prev.filter(id => id !== f.id))}
+                          sx={{ 
+                            height: 22, 
+                            fontSize: '0.7rem', 
+                            bgcolor: 'secondary.light', 
+                            color: 'secondary.dark',
+                            fontWeight: 600,
+                            flexShrink: 0,
+                            borderRadius: '6px',
+                            '& .MuiChip-deleteIcon': { color: 'secondary.dark', fontSize: 14, '&:hover': { color: 'secondary.main' } }
+                          }}
+                        />
+                      ))}
+                    </Stack>
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -294,167 +328,78 @@ export default function SearchSection() {
                           '&:hover': { color: 'primary.main' }
                         }}
                       >
-                        <IconAdjustmentsHorizontal stroke={1.5} size="20px" />
+                        <IconFilter stroke={1.5} size="20px" />
                       </IconButton>
                       <Popover
                         open={isAdvancedOpen}
                         anchorEl={advancedAnchorEl}
                         onClose={handleAdvancedClose}
-                        anchorOrigin={{
-                          vertical: 'bottom',
-                          horizontal: 'right'
-                        }}
-                        transformOrigin={{
-                          vertical: 'top',
-                          horizontal: 'right'
-                        }}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                         slotProps={{
                           paper: {
                             sx: {
-                              mt: 1.5,
-                              p: 2,
-                              width: 320,
-                              overflow: 'visible',
+                              mt: 1.5, p: 2, width: 350, maxHeight: '80vh', overflow: 'hidden',
                               boxShadow: (theme) => theme.customShadows?.z1 || theme.shadows[8],
-                              border: '1px solid',
-                              borderColor: 'divider',
-                              '&:before': {
-                                content: '""',
-                                display: 'block',
-                                position: 'absolute',
-                                top: 0,
-                                right: 14,
-                                width: 10,
-                                height: 10,
-                                bgcolor: 'background.paper',
-                                transform: 'translateY(-50%) rotate(45deg)',
-                                zIndex: 0,
-                                borderLeft: '1px solid',
-                                borderTop: '1px solid',
-                                borderColor: 'divider'
-                              }
+                              border: '1px solid', borderColor: 'divider'
                             }
                           }
                         }}
                       >
                         <Stack spacing={2}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                            Advanced Filters
-                          </Typography>
-                          <Box
-                            sx={{
-                              maxHeight: '60vh',
-                              overflowY: 'auto',
-                              px: 0.5,
-                              '&::-webkit-scrollbar': { width: 6 },
-                              '&::-webkit-scrollbar-track': { background: 'transparent' },
-                              '&::-webkit-scrollbar-thumb': {
-                                background: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'),
-                                borderRadius: 10
-                              }
-                            }}
-                          >
-                            <Stack spacing={2} sx={{ py: 1 }}>
-                              {searchConfig && searchConfig.length > 0 ? (
-                                searchConfig.map((field) => (
-                                  <Box key={field.id}>
-                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>
-                                      {field.label}
-                                    </Typography>
-                                    {field.type === 'select' ? (
-                                      <Select
-                                        fullWidth
-                                        size="small"
-                                        multiple={field.multiple}
-                                        value={filters[field.id] || field.defaultValue || (field.multiple ? [] : 'All')}
-                                        onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                      >
-                                        {field.options.map((opt) => (
-                                          <MenuItem key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
-                                    ) : field.type === 'date' ? (
-                                      <TextField
-                                        fullWidth
-                                        size="small"
-                                        type="date"
-                                        value={filters[field.id] || ''}
-                                        onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                        InputLabelProps={{ shrink: true }}
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Filter Selection</Typography>
+                          <Typography variant="caption" color="textSecondary">Toggle filters to show them in the search bar</Typography>
+                          
+                          <Box sx={{ overflowY: 'auto', maxHeight: '50vh', px: 0.5 }}>
+                            <Stack spacing={1}>
+                              {searchConfig?.map((field) => (
+                                <Box key={field.id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1, borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}>
+                                  <FormControlLabel
+                                    control={
+                                      <Checkbox 
+                                        size="small" 
+                                        checked={visibleFilterIds.includes(field.id)} 
+                                        onChange={(e) => {
+                                          if (e.target.checked) setVisibleFilterIds(prev => [...prev, field.id]);
+                                          else setVisibleFilterIds(prev => prev.filter(id => id !== field.id));
+                                        }}
                                       />
-                                    ) : (
-                                      <TextField
-                                        fullWidth
-                                        size="small"
-                                        value={filters[field.id] || ''}
-                                        onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                        placeholder={field.placeholder}
-                                      />
-                                    )}
-                                  </Box>
-                                ))
-                              ) : (
-                                <>
-                                  <Box>
-                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>
-                                      Search in Type
-                                    </Typography>
-                                    <Select
-                                      fullWidth
-                                      size="small"
-                                      value={filters.type || 'All'}
-                                      onChange={(e) => handleFilterChange('type', e.target.value)}
-                                    >
-                                      <MenuItem value="All">All Types</MenuItem>
-                                      <MenuItem value="Module">Modules</MenuItem>
-                                      <MenuItem value="Page">Pages</MenuItem>
-                                      <MenuItem value="Document">Documents</MenuItem>
-                                    </Select>
-                                  </Box>
-                                  <Box>
-                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>
-                                      Date Modified
-                                    </Typography>
-                                    <TextField
-                                      fullWidth
-                                      size="small"
-                                      type="date"
-                                      value={filters.date || ''}
-                                      onChange={(e) => handleFilterChange('date', e.target.value)}
-                                      InputLabelProps={{ shrink: true }}
-                                    />
-                                  </Box>
-                                  <Box>
-                                    <Typography variant="caption" color="textSecondary" sx={{ mb: 0.5, display: 'block', fontWeight: 500 }}>
-                                      Status
-                                    </Typography>
-                                    <Select
-                                      fullWidth
-                                      size="small"
-                                      value={filters.status || 'All'}
-                                      onChange={(e) => handleFilterChange('status', e.target.value)}
-                                    >
-                                      <MenuItem value="All">All Status</MenuItem>
-                                      <MenuItem value="Active">Active</MenuItem>
-                                      <MenuItem value="Pending">Pending</MenuItem>
-                                    </Select>
-                                  </Box>
-                                </>
-                              )}
+                                    }
+                                    label={<Typography variant="body2">{field.label}</Typography>}
+                                  />
+                                  {visibleFilterIds.includes(field.id) && (
+                                    <Box sx={{ width: 140 }}>
+                                      {field.type === 'select' ? (
+                                        <Select
+                                          fullWidth size="small"
+                                          value={filters[field.id] || field.defaultValue || 'All'}
+                                          onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                          sx={{ height: 32, fontSize: '0.8rem' }}
+                                        >
+                                          {field.options.map((opt) => (
+                                            <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                          ))}
+                                        </Select>
+                                      ) : (
+                                        <TextField
+                                          fullWidth size="small"
+                                          value={filters[field.id] || ''}
+                                          onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                          placeholder={field.placeholder}
+                                          sx={{ '& .MuiInputBase-root': { height: 32, fontSize: '0.8rem' } }}
+                                        />
+                                      )}
+                                    </Box>
+                                  )}
+                                </Box>
+                              ))}
                             </Stack>
                           </Box>
 
                           <Divider />
-
                           <Stack direction="row" spacing={1} justifyContent="flex-end">
-                            <Button size="small" color="error" onClick={() => dispatch(resetFilters())}>
-                              Reset
-                            </Button>
-                            <Button size="small" variant="contained" onClick={handleAdvancedClose}>
-                              Done
-                            </Button>
+                            <Button size="small" color="error" onClick={() => dispatch(resetFilters())}>Reset</Button>
+                            <Button size="small" variant="contained" onClick={handleAdvancedClose}>Done</Button>
                           </Stack>
                         </Stack>
                       </Popover>

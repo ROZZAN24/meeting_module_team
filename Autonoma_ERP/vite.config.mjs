@@ -10,11 +10,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     server: {
-      // this ensures that the browser opens upon server start
-      open: true,
-      // this sets a default port to 3000
-      port: PORT,
-      host: true
+      port: 3000,
+      strictPort: false,
+      host: true,
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost'
+      }
     },
     build: {
       chunkSizeWarningLimit: 1000,
