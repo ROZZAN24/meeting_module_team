@@ -1,12 +1,14 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "audit_schedule_criteria")
-@Data
+@Getter
+@Setter
 public class AuditScheduleCriteria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,7 +19,7 @@ public class AuditScheduleCriteria {
     @JsonIgnore
     private AuditSchedule auditSchedule;
 
-    private Integer seqNo;
+    private String seqNo;
 
     @Column(columnDefinition = "NVARCHAR(255)")
     private String clause;
@@ -35,8 +37,8 @@ public class AuditScheduleCriteria {
     public void setId(Long id) { this.id = id; }
     public AuditSchedule getAuditSchedule() { return auditSchedule; }
     public void setAuditSchedule(AuditSchedule auditSchedule) { this.auditSchedule = auditSchedule; }
-    public Integer getSeqNo() { return seqNo; }
-    public void setSeqNo(Integer seqNo) { this.seqNo = seqNo; }
+    public String getSeqNo() { return seqNo; }
+    public void setSeqNo(String seqNo) { this.seqNo = seqNo; }
     public String getClause() { return clause; }
     public void setClause(String clause) { this.clause = clause; }
     public String getCriteriaDetails() { return criteriaDetails; }

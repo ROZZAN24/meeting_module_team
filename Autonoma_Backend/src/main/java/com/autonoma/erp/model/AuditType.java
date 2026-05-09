@@ -11,34 +11,41 @@ public class AuditType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditType", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "standard", columnDefinition = "NVARCHAR(255)")
     private String standard;
     
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
+    @Column(name = "criteriaMinCount")
     private Integer criteriaMinCount;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "customerAuditArea", columnDefinition = "NVARCHAR(255)")
     private String customerAuditArea;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditArea", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
-    @Column(columnDefinition = "NVARCHAR(100)")
+    @Column(name = "criteriaType", columnDefinition = "NVARCHAR(100)")
     private String criteriaType;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
+    @Column(name = "createdBy")
     private String createdBy;
+
+    @Column(name = "createdDate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
     
+    @Column(name = "updatedBy")
     private String updatedBy;
+
+    @Column(name = "updatedDate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

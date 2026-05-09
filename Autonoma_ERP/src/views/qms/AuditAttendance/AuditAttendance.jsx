@@ -156,8 +156,15 @@ export default function AuditAttendance() {
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'attendanceStatus') return <Chip label={row.attendanceStatus} size="small" sx={getStatusChipSx(row.attendanceStatus === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
-    return row[col.id] || '-';
+    const val = row[col.id];
+    if (col.id === 'attendanceStatus') {
+      const statusText = typeof val === 'object' ? val?.name : val;
+      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
+    }
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return val || '-';
   };
 
   const handleClear = () => {

@@ -141,7 +141,8 @@ export default function CheckListRenewalVerify() {
           fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
           toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
           searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
-          searchValue: globalQuery || undefined
+          searchValue: globalQuery || undefined,
+          masterVerifyStatus: 'Verified'
         };
         const response = await axios.get('/api/qms/checklist/assignments', { params });
         setRows(response.data.content || []);
@@ -150,7 +151,7 @@ export default function CheckListRenewalVerify() {
         // Fetch Master Records (Dual Check)
         const params = {
           page, size,
-          verifyStatus: filters.status !== 'All' ? filters.status : undefined,
+          verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : 'Verified',
           assignedTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
           category: filters.category !== 'All' ? filters.category : undefined,
           searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
@@ -223,7 +224,9 @@ export default function CheckListRenewalVerify() {
     if (col.id === 'createdDate') return row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '-';
 
     if (col.id === 'status' || col.id === 'verifyStatus') {
-      const s = row.verifyStatus || row.status || 'Pending';
+      let s = row.verifyStatus || row.status || 'Pending';
+      if (typeof s === 'object' && s !== null) s = s.name || 'Pending';
+      
       let chipStatus = 'PENDING';
       if (s === 'Verified' || s === 'Accepted' || s === 'COMPLETED' || s === 'STARTED') chipStatus = 'ACTIVE';
       if (s === 'Rejected' || s === 'Missed' || s === 'UNRESOLVED') chipStatus = 'INACTIVE';
@@ -316,7 +319,7 @@ export default function CheckListRenewalVerify() {
           handleClose={() => setDialogOpen(false)} 
           initialData={selectedRow} 
           readOnly={true}
-          onVerify={() => handleVerify('Verified')}
+          onVerify={() => handleVerify('Accepted')}
           onReject={() => setRejectDialogOpen(true)}
           onSave={async (data) => {
             try {

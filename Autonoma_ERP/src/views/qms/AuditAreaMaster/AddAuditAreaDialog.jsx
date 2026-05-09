@@ -10,6 +10,7 @@ import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { API_PATHS } from 'utils/api-constants';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| AUDIT AREA - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
@@ -25,6 +26,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
   const dispatch = useDispatch();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { user } = useAuth();
   const { errors, validate, clearErrors } = useBOSValidation();
 
   const [formData, setFormData] = useState(INITIAL_STATE);
@@ -38,7 +40,8 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
         id: initialData.id,
         type: initialData.type || 'AREA',
         description: initialData.description || '',
-        status: initialData.status || 'ACTIVE'
+        status: initialData.status || 'ACTIVE',
+        createdBy: initialData.createdBy
       });
       setIsEditing(false);
     } else {
@@ -61,11 +64,17 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
     if (!validate(formData, VALIDATION_RULES)) return;
 
     try {
+      const payload = {
+        ...formData,
+        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
+        updatedBy: user?.name || 'Admin'
+      };
+
       if (formData.id) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_AREA}/${formData.id}`, formData);
+        await axios.put(`${API_PATHS.QMS.AUDIT_AREA}/${formData.id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Audit Area updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_AREA, formData);
+        await axios.post(API_PATHS.QMS.AUDIT_AREA, payload);
         dispatch(openSnackbar({ open: true, message: 'Audit Area created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       }
       handleClose(true);

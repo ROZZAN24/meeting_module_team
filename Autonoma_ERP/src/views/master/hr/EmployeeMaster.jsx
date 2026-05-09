@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Grid, Button, Typography, Stack, MenuItem, useTheme, Tooltip } from '@mui/material';
-import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings } from '@tabler/icons-react';
+import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings, IconShieldCheck, IconCloudUpload, IconFileDescription } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
 import { BOSFormSection, BOSTextField, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
@@ -22,7 +22,19 @@ const INITIAL = {
   dateOfJoining: '', confirmationDate: '', nextRevisionDate: '', exitDate: '', exitReason: '',
   dailySheetRequired: 'No', attendanceRequired: 'Yes', inductionStatus: 'PENDING', shift: 'Yes', shiftName: 'GENERAL', shiftDuration: '480', graceMinutes: '0',
   petrolAllowance: '0.00', petrolMode: 'NA', referMode: '', userName: '', homeManager: '', businessManager: '', supplierName: '',
-  profileUpload: '', signature: '', ndaCertificateUpload: '', fitnessCertificateUpload: '', status: 'Active'
+  profileUpload: '', signature: '', ndaCertificateUpload: '', fitnessCertificateUpload: '', status: 'Active',
+  isAuditor: 'NO', auditorType: '', auditorFileInfo: '',
+  isAuditee: 'NO', auditeeType: '', auditeeFileInfo: '',
+  isNcrApprover: 'NO', ncrApproverType: '', ncrApproverFileInfo: '',
+  isChaired: 'NO', chairedType: '',
+  isHost: 'YES', hostType: 'DDRM',
+  isParticipants: 'YES', participantsType: 'DDRM',
+  segment: '', subSegment: '',
+  isFirstAid: 'NO', firstAidFileInfo: '',
+  isFireFighter: 'NO', fireFighterFileInfo: '',
+  isTwoWheeler: 'NO', twoWheelerFileInfo: '',
+  isFourWheeler: 'NO', fourWheelerFileInfo: '',
+  isInductionEligible: 'NO', isInterviewer: 'NO', isEnquiryAssignee: 'NO', isPrAssignee: 'NO'
 };
 
 const RULES = [
@@ -30,7 +42,7 @@ const RULES = [
   { field: 'lastName', label: 'Last Name', required: true, maxLength: 100 },
   { field: 'empCode', label: 'Employee Code', required: true, maxLength: 50 },
   { field: 'categoryId', label: 'Category', required: true },
-  { field: 'empLevelId', label: 'Level', required: true },
+  { field: 'empLevelId', label: 'Level', required: false },
   { field: 'employeeTypeId', label: 'Type', required: true },
   { field: 'title', label: 'Title', required: true },
   { field: 'departmentId', label: 'Department', required: true }
@@ -66,7 +78,14 @@ export default function EmployeeMaster() {
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { departments = [], designations = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'DESIGNATION_LEVELS']);
+  
+  // Added AUDIT_TYPE to lookups
+  const { 
+    departments = [], 
+    designations = [], 
+    designationLevels = [],
+    auditTypes = [] 
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'DESIGNATION_LEVELS', 'AUDIT_TYPE']);
 
   const fetchEmployee = useCallback(async () => {
     if (!employeeId) return;
@@ -112,6 +131,80 @@ export default function EmployeeMaster() {
     } finally { setLoading(false); }
   };
 
+  const handleAbilityFileUpload = async (field, file) => {
+    if (!file) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await axios.post(`${API_PATHS.FILES}/upload`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      const fileInfo = JSON.stringify([{ id: Date.now(), fileName: file.name, serverFileName: data }]);
+      setForm(p => ({ ...p, [field]: fileInfo }));
+      dispatch(openSnackbar({ open: true, message: 'File uploaded!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+    } catch (e) {
+      dispatch(openSnackbar({ open: true, message: 'Upload failed.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+    }
+  };
+
+  const renderAbilityRow = (label, toggleName, typeName, fileName, hasType = true, hasFile = true) => {
+    const fileData = form[fileName] ? JSON.parse(form[fileName]) : [];
+    const displayFile = fileData[0]?.fileName || '';
+
+    return (
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 1.5, p: 1, borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
+        <Grid item xs={3}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{label}</Typography>
+        </Grid>
+        <Grid item xs={2}>
+          <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small">
+            <MenuItem value="YES">YES</MenuItem>
+            <MenuItem value="NO">NO</MenuItem>
+          </BOSTextField>
+        </Grid>
+        <Grid item xs={3}>
+          {hasType && (
+            <BOSTextField 
+              select 
+              name={typeName} 
+              label="Type" 
+              value={form[typeName] || ''} 
+              onChange={h} 
+              size="small"
+              disabled={form[toggleName] === 'NO'}
+            >
+              <MenuItem value="">-Select-</MenuItem>
+              {auditTypes.map((t) => (
+                <MenuItem key={t.id} value={t.auditType}>{t.auditType}</MenuItem>
+              ))}
+              {/* Fallback for system-defined types like DDRM if not in audit types */}
+              {['DDRM'].map(fallback => (
+                !auditTypes.some(at => at.auditType === fallback) && (
+                  <MenuItem key={fallback} value={fallback}>{fallback}</MenuItem>
+                )
+              ))}
+            </BOSTextField>
+          )}
+        </Grid>
+        <Grid item xs={4}>
+          {hasFile && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Button component="label" variant="outlined" size="small" startIcon={<IconCloudUpload size={16} />} sx={{ textTransform: 'none' }}>
+                {displayFile ? 'Replace' : 'Upload'}
+                <input type="file" hidden onChange={(e) => handleAbilityFileUpload(fileName, e.target.files[0])} />
+              </Button>
+              {displayFile && (
+                <Tooltip title={displayFile}>
+                  <Typography variant="caption" sx={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {displayFile}
+                  </Typography>
+                </Tooltip>
+              )}
+            </Stack>
+          )}
+        </Grid>
+      </Grid>
+    );
+  };
+
   const handleDelete = async () => {
     setDeleteOpen(false);
     try {
@@ -144,7 +237,7 @@ export default function EmployeeMaster() {
           <Grid container spacing={2.5}>
             <R><BOSTextField select name="categoryId" label="Category" value={form.categoryId} onChange={h} required error={!!errors.categoryId} helperText={errors.categoryId}>{CATEGORIES.map(c => <MenuItem key={c.id} value={c.id}>{c.categoryName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="subCategoryId" label="Sub Category" value={form.subCategoryId} onChange={h}>{SUB_CATEGORIES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</BOSTextField></R>
-            <R><BOSTextField select name="empLevelId" label="Level" value={form.empLevelId} onChange={h} required error={!!errors.empLevelId} helperText={errors.empLevelId}>{designationLevels.map(l => <MenuItem key={l.rowId} value={l.rowId}>{l.level}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="empLevelId" label="Level" value={form.empLevelId} onChange={h}>{designationLevels.map(l => <MenuItem key={l.rowId} value={l.rowId}>{l.level}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="employeeTypeId" label="Type" value={form.employeeTypeId} onChange={h} required error={!!errors.employeeTypeId} helperText={errors.employeeTypeId}>{TYPES.map(t => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="gradeCode" label="Grade Code" value={form.gradeCode} onChange={h}><MenuItem value="O">O</MenuItem><MenuItem value="P">P</MenuItem><MenuItem value="T">T</MenuItem><MenuItem value="C">C</MenuItem><MenuItem value="E">E</MenuItem></BOSTextField></R>
             <R><BOSTextField select name="title" label="Title" value={form.title} onChange={h} required error={!!errors.title} helperText={errors.title}><MenuItem value="Mr">Mr</MenuItem><MenuItem value="Miss">Miss</MenuItem><MenuItem value="Mrs">Mrs</MenuItem><MenuItem value="Mx">Mx</MenuItem></BOSTextField></R>
@@ -199,6 +292,37 @@ export default function EmployeeMaster() {
             <R><BOSTextField select name="petrolMode" label="Petrol Mode" value={form.petrolMode} onChange={h}><MenuItem value="BIKE">BIKE</MenuItem><MenuItem value="CAR">CAR</MenuItem><MenuItem value="NA">NA</MenuItem></BOSTextField></R>
             <R><BOSTextField name="petrolAllowance" label="Petrol Allowance" value={form.petrolAllowance} onChange={h} type="number" /></R>
             <R><BOSTextField select name="status" label="Status" value={form.status} onChange={h}><MenuItem value="Active">Active</MenuItem><MenuItem value="In Active">In Active</MenuItem></BOSTextField></R>
+          </Grid>
+        </BOSFormSection>
+
+        {/* ═══ SECTION 5: ABILITY ═══ */}
+        <BOSFormSection icon={<IconShieldCheck size={20} color={theme.palette.secondary.main} />} title="Employee Ability">
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              {renderAbilityRow('Auditor', 'isAuditor', 'auditorType', 'auditorFileInfo')}
+              {renderAbilityRow('Auditee', 'isAuditee', 'auditeeType', 'auditeeFileInfo')}
+              {renderAbilityRow('NCR Approved by', 'isNcrApprover', 'ncrApproverType', 'ncrApproverFileInfo')}
+              {renderAbilityRow('Chaired', 'isChaired', 'chairedType', '', true, false)}
+              {renderAbilityRow('Host', 'isHost', 'hostType', '', true, false)}
+              {renderAbilityRow('Participants', 'isParticipants', 'participantsType', '', true, false)}
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                <R lg={6}><BOSTextField name="segment" label="Segment" value={form.segment} onChange={h} /></R>
+                <R lg={6}><BOSTextField name="subSegment" label="Sub Segment" value={form.subSegment} onChange={h} /></R>
+              </Grid>
+            </Grid>
+            <Grid item xs={12} md={6}>
+              {renderAbilityRow('First Aid', 'isFirstAid', '', 'firstAidFileInfo', false, true)}
+              {renderAbilityRow('Fire Fighter', 'isFireFighter', '', 'fireFighterFileInfo', false, true)}
+              {renderAbilityRow('Two Wheeler Driving', 'isTwoWheeler', '', 'twoWheelerFileInfo', false, true)}
+              {renderAbilityRow('Four Wheeler Driving', 'isFourWheeler', '', 'fourWheelerFileInfo', false, true)}
+              
+              <Grid container spacing={2} sx={{ mt: 1, p: 1.5, bgcolor: 'action.hover', borderRadius: 2 }}>
+                <R lg={6}><BOSTextField select name="isInductionEligible" label="Induction" value={form.isInductionEligible} onChange={h}><MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem></BOSTextField></R>
+                <R lg={6}><BOSTextField select name="isInterviewer" label="Interviewer" value={form.isInterviewer} onChange={h}><MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem></BOSTextField></R>
+                <R lg={6}><BOSTextField select name="isEnquiryAssignee" label="Enquiry Assign" value={form.isEnquiryAssignee} onChange={h}><MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem></BOSTextField></R>
+                <R lg={6}><BOSTextField select name="isPrAssignee" label="PR Assign" value={form.isPrAssignee} onChange={h}><MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem></BOSTextField></R>
+              </Grid>
+            </Grid>
           </Grid>
         </BOSFormSection>
 

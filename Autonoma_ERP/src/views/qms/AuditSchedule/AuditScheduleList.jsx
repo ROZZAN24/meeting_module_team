@@ -138,9 +138,17 @@ export default function AuditScheduleList() {
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
-    if (col.id === 'auditDate' || col.id === 'createdDate') return row[col.id] ? format(new Date(row[col.id]), 'dd-MM-yyyy') : '-';
-    return row[col.id] || '-';
+    const val = row[col.id];
+    if (col.id === 'status') {
+      const statusText = typeof val === 'object' ? val?.name : val;
+      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
+    }
+    if (col.id === 'auditDate' || col.id === 'createdDate') return val ? format(new Date(val), 'dd-MM-yyyy') : '-';
+    
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return val || '-';
   };
 
   return (

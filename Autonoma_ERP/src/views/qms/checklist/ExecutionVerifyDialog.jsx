@@ -77,7 +77,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject }) 
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2" color="textSecondary">Status</Typography>
             <Chip 
-              label={data.status || master.status || 'STARTED'} 
+              label={(typeof data.status === 'object' ? data.status?.name : data.status) || (typeof master.status === 'object' ? master.status?.name : master.status) || 'STARTED'} 
               sx={{ mt: 1, ...getStatusChipSx('PENDING') }} 
             />
           </Grid>

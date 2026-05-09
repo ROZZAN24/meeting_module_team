@@ -224,9 +224,18 @@ public class ChecklistService {
 
     // --- Assignments ---
 
-    public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate, String category, String searchBy, String searchValue, Pageable pageable) {
+    public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate, String category, String searchBy, String searchValue, String masterVerifyStatus, Pageable pageable) {
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            if (masterVerifyStatus != null && !masterVerifyStatus.isEmpty()) {
+                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                if ("Verified".equals(masterVerifyStatus)) {
+                    predicates.add(masterJoin.get("verifyStatus").in("Verified", "Accepted"));
+                } else {
+                    predicates.add(cb.equal(masterJoin.get("verifyStatus"), masterVerifyStatus));
+                }
+            }
 
             if (status != null && !status.equals("All")) {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");

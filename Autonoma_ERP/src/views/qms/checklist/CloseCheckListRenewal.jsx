@@ -110,7 +110,8 @@ export default function CloseCheckListRenewal() {
         fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
         toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
-        searchValue: globalQuery || undefined
+        searchValue: globalQuery || undefined,
+        masterVerifyStatus: 'Verified'
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
       setRows(response.data.content || []);

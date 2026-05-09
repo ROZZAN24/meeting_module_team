@@ -260,7 +260,11 @@ export default function MasterCheckList() {
         </Tooltip>
       );
     }
-    return row[col.id] || '-';
+    const val = row[col.id];
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return val || '-';
   };
 
   return (
@@ -278,10 +282,10 @@ export default function MasterCheckList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="contained" color="secondary" size="medium" startIcon={<IconUserPlus size={18} />} disabled={!selectedRow} onClick={handleAssign} sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconUserPlus size={18} />} disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'} onClick={handleAssign} sx={{ borderRadius: '8px' }}>
             Assign
           </Button>
-          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow} onClick={() => handleOpenEdit(selectedRow)} sx={{ borderRadius: '8px' }}>
+          <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'} onClick={() => handleOpenEdit(selectedRow)} sx={{ borderRadius: '8px' }}>
             Amendment
           </Button>
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>

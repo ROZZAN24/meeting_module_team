@@ -64,6 +64,7 @@ public class EmployeeMasterService {
         if (employee.getCreatedDate() == null) {
             employee.setCreatedDate(new Date());
         }
+        sanitizeEmployee(employee);
         return employeeRepo.save(employee);
     }
 
@@ -75,7 +76,52 @@ public class EmployeeMasterService {
         details.setId(id);
         details.setCreatedBy(emp.getCreatedBy());
         details.setCreatedDate(emp.getCreatedDate());
+        sanitizeEmployee(details);
         return employeeRepo.save(details);
+    }
+
+    /** Coerce null Strings to empty string to satisfy NOT NULL DB columns. */
+    private void sanitizeEmployee(EmployeeMaster e) {
+        if (e.getFatherHusbandName() == null)     e.setFatherHusbandName("");
+        if (e.getOldEmpCode() == null)             e.setOldEmpCode("");
+        if (e.getGradeCode() == null)              e.setGradeCode("");
+        if (e.getProductionLine() == null)         e.setProductionLine("");
+        if (e.getEmpClass() == null)               e.setEmpClass("");
+        if (e.getTeamGroup() == null)              e.setTeamGroup("");
+        if (e.getAdditionalRole() == null)         e.setAdditionalRole("");
+        if (e.getExitReason() == null)             e.setExitReason("");
+        if (e.getReferMode() == null)              e.setReferMode("");
+        if (e.getUserName() == null)               e.setUserName("");
+        if (e.getHomeManager() == null)            e.setHomeManager("");
+        if (e.getBusinessManager() == null)        e.setBusinessManager("");
+        if (e.getSupplierName() == null)           e.setSupplierName("");
+        if (e.getProfileUpload() == null)          e.setProfileUpload("");
+        if (e.getSignature() == null)              e.setSignature("");
+        if (e.getNdaCertificateUpload() == null)   e.setNdaCertificateUpload("");
+        if (e.getFitnessCertificateUpload() == null) e.setFitnessCertificateUpload("");
+        if (e.getShiftDuration() == null)          e.setShiftDuration("480");
+        if (e.getShiftName() == null)              e.setShiftName("GENERAL");
+        if (e.getGuest() == null)                  e.setGuest("No");
+        if (e.getDailySheetRequired() == null)     e.setDailySheetRequired("No");
+        if (e.getAttendanceRequired() == null)     e.setAttendanceRequired("Yes");
+        if (e.getShift() == null)                  e.setShift("Yes");
+        if (e.getInductionStatus() == null)        e.setInductionStatus("PENDING");
+        if (e.getStatus() == null)                 e.setStatus("Active");
+        // Ability fields — safe nulls (columns were added nullable in V2.6)
+        if (e.getIsAuditor() == null)              e.setIsAuditor("NO");
+        if (e.getIsAuditee() == null)              e.setIsAuditee("NO");
+        if (e.getIsNcrApprover() == null)          e.setIsNcrApprover("NO");
+        if (e.getIsChaired() == null)              e.setIsChaired("NO");
+        if (e.getIsHost() == null)                 e.setIsHost("NO");
+        if (e.getIsParticipants() == null)         e.setIsParticipants("NO");
+        if (e.getIsFirstAid() == null)             e.setIsFirstAid("NO");
+        if (e.getIsFireFighter() == null)          e.setIsFireFighter("NO");
+        if (e.getIsTwoWheeler() == null)           e.setIsTwoWheeler("NO");
+        if (e.getIsFourWheeler() == null)          e.setIsFourWheeler("NO");
+        if (e.getIsInductionEligible() == null)    e.setIsInductionEligible("NO");
+        if (e.getIsInterviewer() == null)          e.setIsInterviewer("NO");
+        if (e.getIsEnquiryAssignee() == null)      e.setIsEnquiryAssignee("NO");
+        if (e.getIsPrAssignee() == null)           e.setIsPrAssignee("NO");
     }
 
     @Transactional

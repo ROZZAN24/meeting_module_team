@@ -1,15 +1,17 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
 @Table(name = "HRM_EMPLOYEE_MASTER")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class EmployeeMaster {
@@ -173,6 +175,94 @@ public class EmployeeMaster {
     @Column(name = "updated_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
+
+    // === Ability Section ===
+    @Column(name = "is_auditor", length = 10)
+    private String isAuditor = "NO";
+
+    @Column(name = "auditor_type", length = 255)
+    private String auditorType;
+
+    @Column(name = "auditor_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String auditorFileInfo;
+
+    @Column(name = "is_auditee", length = 10)
+    private String isAuditee = "NO";
+
+    @Column(name = "auditee_type", length = 255)
+    private String auditeeType;
+
+    @Column(name = "auditee_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String auditeeFileInfo;
+
+    @Column(name = "is_ncr_approver", length = 10)
+    private String isNcrApprover = "NO";
+
+    @Column(name = "ncr_approver_type", length = 255)
+    private String ncrApproverType;
+
+    @Column(name = "ncr_approver_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String ncrApproverFileInfo;
+
+    @Column(name = "is_chaired", length = 10)
+    private String isChaired = "NO";
+
+    @Column(name = "chaired_type", length = 255)
+    private String chairedType;
+
+    @Column(name = "is_host", length = 10)
+    private String isHost = "NO";
+
+    @Column(name = "host_type", length = 255)
+    private String hostType;
+
+    @Column(name = "is_participants", length = 10)
+    private String isParticipants = "NO";
+
+    @Column(name = "participants_type", length = 255)
+    private String participantsType;
+
+    @Column(name = "segment", length = 255)
+    private String segment;
+
+    @Column(name = "sub_segment", length = 255)
+    private String subSegment;
+
+    @Column(name = "is_first_aid", length = 10)
+    private String isFirstAid = "NO";
+
+    @Column(name = "first_aid_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String firstAidFileInfo;
+
+    @Column(name = "is_fire_fighter", length = 10)
+    private String isFireFighter = "NO";
+
+    @Column(name = "fire_fighter_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String fireFighterFileInfo;
+
+    @Column(name = "is_two_wheeler", length = 10)
+    private String isTwoWheeler = "NO";
+
+    @Column(name = "two_wheeler_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String twoWheelerFileInfo;
+
+    @Column(name = "is_four_wheeler", length = 10)
+    private String isFourWheeler = "NO";
+
+    @Column(name = "four_wheeler_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String fourWheelerFileInfo;
+
+    @Column(name = "is_induction_eligible", length = 10)
+    private String isInductionEligible = "NO";
+
+    @Column(name = "is_interviewer", length = 10)
+    private String isInterviewer = "NO";
+
+    @Column(name = "is_enquiry_assignee", length = 10)
+    private String isEnquiryAssignee = "NO";
+
+    @Column(name = "is_pr_assignee", length = 10)
+    private String isPrAssignee = "NO";
 
     @PrePersist
     protected void onCreate() {

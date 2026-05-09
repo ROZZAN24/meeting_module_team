@@ -21,6 +21,7 @@ import axios from 'utils/axios';
 import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| AUDIT CRITERIA - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
@@ -28,6 +29,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   const theme = useTheme();
   
   const fileInputRef = React.useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     seqNo: '',
     auditType: [],
@@ -37,9 +39,11 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
     attachmentRequired: 'NO',
     status: 'ACTIVE'
   });
-  const [isEditing, setIsEditing] = useState(false);
+  const { user } = useAuth();
   const { auditTypes = [], departments: deptLookups = [] } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS']);
   const [attachments, setAttachments] = useState([]);
+  const [docDetails, setDocDetails] = useState('');
+  const [currentFile, setCurrentFile] = useState(null);
 
   useEffect(() => {
     if (initialData) {
@@ -51,7 +55,8 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         criteriaText: initialData.criteriaText || '',
         department: initialData.department ? initialData.department.split(', ') : [],
         attachmentRequired: initialData.attachmentRequired || 'NO',
-        status: initialData.status || 'ACTIVE'
+        status: initialData.status || 'ACTIVE',
+        createdBy: initialData.createdBy
       });
 
       if (initialData.attachmentInfo) {
@@ -130,36 +135,19 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
     try {
       const updatedAttachments = [...attachments];
 
-      for (let i = 0; i < updatedAttachments.length; i++) {
-        const att = updatedAttachments[i];
-        if (!att.isLoaded && att.file) {
-          const fileData = new FormData();
-          fileData.append('file', att.file);
-          const uploadRes = await axios.post(`${API_PATHS.FILES}/upload`, fileData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          updatedAttachments[i] = {
-            ...att,
-            serverFileName: uploadRes.data,
-            isLoaded: true
-          };
-        }
-      }
-
-      const attachmentInfo = JSON.stringify(
-        updatedAttachments.map((att) => ({
-          id: att.id,
-          fileName: att.fileName,
-          fileType: att.fileType,
-          serverFileName: att.serverFileName
-        }))
-      );
-
       const submissionData = {
         ...formData,
         auditType: Array.isArray(formData.auditType) ? formData.auditType.join(', ') : formData.auditType,
         department: Array.isArray(formData.department) ? formData.department.join(', ') : formData.department,
-        attachmentInfo: attachmentInfo
+        attachmentInfo: JSON.stringify(updatedAttachments.map(att => ({
+          id: att.id,
+          fileName: att.fileName,
+          fileType: att.fileType,
+          serverFileName: att.serverFileName,
+          docDetails: att.docDetails
+        }))),
+        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
+        updatedBy: user?.name || 'Admin'
       };
 
       if (formData.id) {
@@ -170,26 +158,36 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit criteria:', error);
-      alert('Error saving data or uploading files. Please try again.');
+      alert('Error saving data. Please try again.');
     }
   };
 
-  const handleAddAttachment = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
+  const handleAddFile = async () => {
+    if (!currentFile) return;
+    
+    try {
+      const fileData = new FormData();
+      fileData.append('file', currentFile);
+      const uploadRes = await axios.post(`${API_PATHS.FILES}/upload`, fileData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
 
-  const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newAttachments = files.map((file) => ({
-      id: Date.now() + Math.random(),
-      fileName: file.name,
-      fileType: file.type.split('/')[1]?.toUpperCase() || 'FILE',
-      file: file
-    }));
-    setAttachments([...attachments, ...newAttachments]);
-    e.target.value = null;
+      const newAttachment = {
+        id: Date.now() + Math.random(),
+        fileName: currentFile.name,
+        fileType: currentFile.type.split('/')[1]?.toUpperCase() || 'FILE',
+        serverFileName: uploadRes.data,
+        docDetails: docDetails,
+        isLoaded: true
+      };
+
+      setAttachments([...attachments, newAttachment]);
+      setCurrentFile(null);
+      setDocDetails('');
+    } catch (error) {
+      console.error('File upload failed:', error);
+      alert('Failed to upload file.');
+    }
   };
 
   const handleRemoveAttachment = (id) => {
@@ -234,12 +232,15 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               renderInput={(params) => (
                 <BOSTextField {...params} label="Audit Type" required />
               )}
-              renderOption={(props, option, { selected }) => (
-                <li {...props}>
-                  <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
-                  {option.auditType}
-                </li>
-              )}
+              renderOption={(props, option, { selected }) => {
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                    {option.auditType}
+                  </li>
+                );
+              }}
               sx={{ '& .MuiAutocomplete-tag': { bgcolor: 'primary.light', color: 'primary.main', fontWeight: 600, height: 24 } }}
             />
 
@@ -275,12 +276,15 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               renderInput={(params) => (
                 <BOSTextField {...params} label="Department" required />
               )}
-              renderOption={(props, option, { selected }) => (
-                <li {...props}>
-                  <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
-                  {option.departmentName}
-                </li>
-              )}
+              renderOption={(props, option, { selected }) => {
+                const { key, ...optionProps } = props;
+                return (
+                  <li key={key} {...optionProps}>
+                    <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                    {option.departmentName}
+                  </li>
+                );
+              }}
               sx={{ '& .MuiAutocomplete-tag': { bgcolor: 'secondary.light', color: 'secondary.main', fontWeight: 600, height: 24 } }}
             />
 
@@ -297,15 +301,25 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         </Box>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
-          <BOSFormSection title="Attachments" icon={<IconPaperclip size={20} color={theme.palette.secondary.main} />}
-            action={
-              <Button startIcon={<IconPlus size={18} />} size="small" variant="contained" onClick={handleAddAttachment} disabled={isViewOnly} sx={{ borderRadius: '8px', textTransform: 'none' }}>
-                Add
+          <BOSFormSection title="Attachments" icon={<IconPaperclip size={20} color={theme.palette.secondary.main} />}>
+            <Box sx={{ mt: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 2, alignItems: 'center', mb: 2 }}>
+                <BOSTextField
+                  label="Doc Details"
+                  value={docDetails}
+                  onChange={(e) => setDocDetails(e.target.value)}
+                  disabled={isViewOnly}
+                />
+                <Button variant="contained" color="primary" onClick={handleAddFile} disabled={isViewOnly || !currentFile} sx={{ height: 40 }}>
+                  Add
+                </Button>
+              </Box>
+              <Button component="label" variant="outlined" startIcon={<IconPaperclip size={18} />} disabled={isViewOnly} fullWidth sx={{ mb: 3 }}>
+                {currentFile ? currentFile.name : 'Choose File'}
+                <input type="file" hidden onChange={(e) => setCurrentFile(e.target.files[0])} />
               </Button>
-            }
-          >
-            <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileChange} />
-            <BOSFileGallery files={attachments} onRemove={(idx) => handleRemoveAttachment(attachments[idx].id)} isEditing={!isViewOnly} />
+              <BOSFileGallery files={attachments} onRemove={(idx) => handleRemoveAttachment(attachments[idx].id)} isEditing={!isViewOnly} />
+            </Box>
           </BOSFormSection>
         </Box>
       </Box>

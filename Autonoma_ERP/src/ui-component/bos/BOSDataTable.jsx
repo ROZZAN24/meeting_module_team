@@ -52,6 +52,9 @@ export default function BOSDataTable({
       return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
     }
     if (col.id.toLowerCase().includes('date')) return formatDate(val);
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
     return val ?? '-';
   };
 

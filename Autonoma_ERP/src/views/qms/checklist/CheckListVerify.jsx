@@ -39,6 +39,7 @@ import {
 } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
+import { API_PATHS } from 'utils/api-constants';
 import AddCheckListDialog from './AddCheckListDialog';
 
 const columns = [
@@ -198,7 +199,11 @@ export default function CheckListVerify() {
     }
     if (col.id === 'department') return (row.departments || []).map((d) => d.departmentName).join(', ');
     if (col.id === 'createdDate') return row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '-';
-    return row[col.id] || '-';
+    const val = row[col.id];
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return val || '-';
   };
 
   return (

@@ -10,20 +10,26 @@ public class AuditArea {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "type", columnDefinition = "NVARCHAR(50)")
     private String type; // AREA or ZONE
     
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
+    @Column(name = "createdBy")
     private String createdBy;
+
+    @Column(name = "createdDate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
     
+    @Column(name = "updatedBy")
     private String updatedBy;
+
+    @Column(name = "updatedDate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

@@ -10,6 +10,7 @@
   "users": "Users",
   "user": "User",
   "user-access": "User Access",
+  "User Access": "User Access",
   "posts": "Posts",
   "social-profile": "Social Profile",
   "account-profile": "Account Profile",
@@ -293,5 +294,7 @@
   "Employee Master": "Employee Master",
   "Company Profile": "Company Profile",
   "Employee": "Employee",
-  "master-hr-employee": "Employee"
+  "master-hr-employee": "Employee",
+  "Grade Details": "Grade Details",
+  "Designation Level": "Designation Level"
 }

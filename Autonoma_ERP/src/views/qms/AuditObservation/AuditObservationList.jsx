@@ -146,9 +146,16 @@ export default function AuditObservationList() {
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'observationDate') return row[col.id] ? format(new Date(row[col.id]), 'dd-MM-yyyy') : '-';
-    if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'APPROVED' ? 'ACTIVE' : (row.status === 'PENDING' ? 'PENDING' : 'INACTIVE'))} />;
-    return row[col.id] || '-';
+    const val = row[col.id];
+    if (col.id === 'observationDate') return val ? format(new Date(val), 'dd-MM-yyyy') : '-';
+    if (col.id === 'status') {
+      const statusText = typeof val === 'object' ? val?.name : val;
+      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'APPROVED' ? 'ACTIVE' : (statusText === 'PENDING' ? 'PENDING' : 'INACTIVE'))} />;
+    }
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return val || '-';
   };
 
   return (

@@ -32,11 +32,14 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   // Filter employees whose department matches one of the checklist's departments
   const filteredEmployees = (lookups.employees || []).filter(emp => {
     if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
-    const empDept = (lookups.departments || []).find(d => d.id === emp.departmentId);
+    const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
     return empDept && allowedDeptNames.includes(empDept.departmentName);
   });
 
-  const employeeList = filteredEmployees.map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
+  const employeeOptions = filteredEmployees.map(e => ({
+    label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})`,
+    value: e.employeeName || (e.firstName + ' ' + e.lastName)
+  }));
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -190,8 +193,8 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
               >
-                {employeeList.map(emp => (
-                  <MenuItem key={emp} value={emp}>{emp}</MenuItem>
+                {employeeOptions.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </BOSTextField>
 
@@ -213,7 +216,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onClick={handleAssign}
                 sx={{ height: 40, mt: 2 }}
               >
-                Update
+                {formData.id ? 'Update' : 'Assign'}
               </Button>
             </Box>
           </Box>

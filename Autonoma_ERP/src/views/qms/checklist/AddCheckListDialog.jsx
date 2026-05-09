@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {
   MenuItem,
@@ -84,8 +84,28 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [interimText, setInterimText] = useState('');
   const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
   const departmentList = (lookups.departments || []).map(d => (d.departmentName || '').toUpperCase());
-  const employeeList = (lookups.employees || []).map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
+  
+  const filteredEmployees = useMemo(() => {
+    if (!lookups.employees) return [];
+    if (!formData.department || formData.department.length === 0) return lookups.employees;
+
+    // 1. Get IDs of selected departments
+    const selectedDeptIds = (lookups.departments || [])
+      .filter(d => formData.department.includes((d.departmentName || '').toUpperCase()))
+      .map(d => d.id);
+
+    // 2. Filter employees by those IDs
+    return lookups.employees.filter(e => selectedDeptIds.includes(e.departmentId));
+  }, [lookups.employees, lookups.departments, formData.department]);
+
+  const employeeList = filteredEmployees.map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
   const speechRef = useRef(null);
+
+  useEffect(() => {
+    if (formData.assignTo && !employeeList.includes(formData.assignTo)) {
+      setFormData(prev => ({ ...prev, assignTo: '' }));
+    }
+  }, [employeeList, formData.assignTo]);
 
   useEffect(() => {
     setIsEditing(!readOnly);
