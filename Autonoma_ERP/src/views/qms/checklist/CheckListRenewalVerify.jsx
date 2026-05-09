@@ -1,0 +1,207 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Typography, Box, Button, Stack, Tooltip, IconButton, Chip } from '@mui/material';
+import {
+  IconBan,
+  IconFileDownload,
+  IconCheck,
+  IconRefresh
+} from '@tabler/icons-react';
+import axios from 'utils/axios';
+import { useDispatch, useSelector } from 'react-redux';
+import { setFilterConfig } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
+import MainCard from 'ui-component/cards/MainCard';
+import { exportToExcel } from 'utils/excelExport';
+import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
+import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
+import AddCheckListDialog from './AddCheckListDialog';
+
+const columns = [
+  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'taskType', label: 'Task Type', minWidth: 100 },
+  { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
+  { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
+  { id: 'category', label: 'Category', minWidth: 120 },
+  { id: 'frequency', label: 'Frequency', minWidth: 120 },
+  { id: 'department', label: 'Dept', minWidth: 150 },
+  { id: 'assignedDate', label: 'Date', minWidth: 120 },
+  { id: 'checklistDate', label: 'Checklist Date', minWidth: 120 },
+  { id: 'status', label: 'Status', minWidth: 150 },
+  { id: 'nextDueDate', label: 'Next Due Date', minWidth: 120 },
+  { id: 'assignedTo', label: 'Assigned To', minWidth: 120 }
+];
+
+const STATUS_OPTIONS = ['Pending for Verified', 'Pending for Accepted', 'Verified', 'Rejected', 'Not Accepted', 'Accepted', 'Missed'];
+
+export default function CheckListRenewalVerify() {
+  const dispatch = useDispatch();
+  const [rows, setRows] = useState([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const globalQuery = useSelector((state) => state.search.query);
+  const filters = useSelector((state) => state.search.filters);
+
+  useEffect(() => {
+    dispatch(setFilterConfig([
+      {
+        id: 'taskType', label: 'Task Type', type: 'select',
+        options: [
+          { label: 'All', value: 'All' },
+          { label: 'Mine', value: 'Mine' },
+          { label: 'Team', value: 'Team' },
+          { label: 'Company', value: 'Company' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'status', label: 'Status', type: 'select',
+        options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))],
+        defaultValue: 'All'
+      },
+      { id: 'fromDate', label: 'From Date', type: 'date' },
+      { id: 'toDate', label: 'To Date', type: 'date' }
+    ]));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const fetchAssignments = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page, size,
+        status: filters.status !== 'All' ? filters.status : undefined,
+        fromDate: filters.fromDate || undefined,
+        toDate: filters.toDate || undefined,
+        searchValue: globalQuery || undefined
+      };
+      const response = await axios.get('/api/qms/checklist/assignments', { params });
+      setRows(response.data.content || []);
+      setTotalElements(response.data.totalElements || 0);
+    } catch (error) {
+      console.error('Failed to fetch assignments:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, size, filters, globalQuery]);
+
+  useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
+
+  const handleVerify = async (status) => {
+    if (!selectedRow) return;
+    try {
+      await axios.post('/api/qms/checklist/verify', {
+        assignmentId: selectedRow.id,
+        status: status,
+        verifiedBy: 'Current User',
+        remarks: `Verification action: ${status}`
+      });
+      dispatch(openSnackbar({ open: true, message: `Verification: ${status}`, severity: 'success', variant: 'alert' }));
+      fetchAssignments();
+    } catch (error) {
+      dispatch(openSnackbar({ open: true, message: 'Verification failed', severity: 'error', variant: 'alert' }));
+    }
+  };
+
+  const handleExport = () => {
+    const exportData = rows.map((r, i) => ({
+      '#': i + 1,
+      'Seq No': r.checklist?.seqNo,
+      'Checking Point': r.checklist?.checkingPoint,
+      Status: typeof r.status === 'object' ? r.status?.name : r.status
+    }));
+    exportToExcel(exportData, 'Checklist_Renewal_Verify');
+  };
+
+  const renderCell = (col, row, idx) => {
+    if (col.id === 'index') return idx + 1 + page * size;
+    if (col.id === 'seqNo') return row.checklist?.seqNo;
+    if (col.id === 'checkingPoint') return row.checklist?.checkingPoint;
+    if (col.id === 'category') return row.checklist?.category;
+    if (col.id === 'frequency') return row.checklist?.frequency;
+    if (col.id === 'department') return (row.checklist?.departments || []).map((d) => d.departmentName).join(', ');
+    if (col.id === 'nextDueDate') return row.checklist?.nextDueDate;
+    if (col.id === 'assignedDate') return row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : '-';
+    if (col.id === 'status') {
+      const s = typeof row.status === 'object' ? row.status?.name : row.status;
+      let chipStatus = 'PENDING';
+      if (s === 'Verified' || s === 'Accepted') chipStatus = 'ACTIVE';
+      if (s === 'Rejected' || s === 'Missed') chipStatus = 'INACTIVE';
+      return <Chip label={s || 'Pending'} size="small" sx={getStatusChipSx(chipStatus)} />;
+    }
+    return row[col.id] || '-';
+  };
+
+  return (
+    <MainCard
+      title={
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <IconChecks size={24} />
+          <Typography variant="h3">Check List / Renewal Verify</Typography>
+        </Stack>
+      }
+      secondary={
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Tooltip title="Refresh">
+            <IconButton onClick={fetchAssignments} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
+              <IconRefresh size={20} />
+            </IconButton>
+          </Tooltip>
+          <Button
+            variant="contained"
+            color="error"
+            size="medium"
+            startIcon={<IconBan size={18} />}
+            onClick={() => handleVerify('Rejected')}
+            disabled={!selectedRow}
+            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Reject
+          </Button>
+          <Button
+            variant="contained"
+            color="success"
+            size="medium"
+            startIcon={<IconCheck size={18} />}
+            onClick={() => handleVerify('Accepted')}
+            disabled={!selectedRow}
+            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Accept
+          </Button>
+          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
+            Export Excel
+          </Button>
+        </Stack>
+      }
+    >
+      <BOSDataTable
+        columns={columns}
+        rows={rows}
+        page={page}
+        size={size}
+        totalCount={totalElements}
+        loading={loading}
+        onPageChange={setPage}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onDoubleClickRow={() => setDialogOpen(true)}
+        onClickRow={setSelectedRow}
+        selectedRowId={selectedRow?.id}
+        showActions={false}
+        renderCell={renderCell}
+        id="renewal-verify-table"
+      />
+
+      <AddCheckListDialog
+        open={dialogOpen}
+        handleClose={() => setDialogOpen(false)}
+        initialData={selectedRow?.checklist}
+        readOnly={true}
+      />
+    </MainCard>
+  );
+}

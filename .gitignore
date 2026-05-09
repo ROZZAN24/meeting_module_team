@@ -1,0 +1,33 @@
+# Java
+Autonoma_Backend/target/
+Autonoma_Backend/*.class
+Autonoma_Backend/.settings/
+Autonoma_Backend/.classpath
+Autonoma_Backend/.project
+Autonoma_Backend/.factorypath
+
+# Node
+Autonoma_ERP/node_modules/
+Autonoma_ERP/dist/
+Autonoma_ERP/build/
+Autonoma_ERP/.env
+Autonoma_ERP/npm-debug.log*
+Autonoma_ERP/yarn-debug.log*
+Autonoma_ERP/yarn-error.log*
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Misc
+.DS_Store
+node_modules/
+target/
+Autonoma_Backend/maven.zip
+Autonoma_Backend/maven_new.zip
+Autonoma_Backend/apache-maven-3.9.6/
+tools/
+Autonoma_Backend/uploads/
+Autonoma_Backend/*.log
