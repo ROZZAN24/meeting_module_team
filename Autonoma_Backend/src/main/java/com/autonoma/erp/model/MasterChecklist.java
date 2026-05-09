@@ -117,8 +117,29 @@ public class MasterChecklist {
 
     @Column(name = "QTY")
     private String qty;
+
+    @Column(name = "DUAL_CHECK")
+    private String dualCheck = "NO";
+
+    @Column(name = "CARRY_FORWARD")
+    private String carryForward = "NO";
+
+    @Convert(converter = com.autonoma.erp.util.StringListConverter.class)
+    @Column(name = "UPLOADED_FILES", columnDefinition = "NVARCHAR(MAX)")
+    private List<String> uploadedFiles;
+
+    @Convert(converter = com.autonoma.erp.util.StringListConverter.class)
+    @Column(name = "SCANNED_FILES", columnDefinition = "NVARCHAR(MAX)")
+    private List<String> scannedFiles;
+
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChecklistDepartment> departments;
+
+    @Column(name = "LEVEL_IDS")
+    private String levelIds; // L1,L2...
+
+    @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
+    private String amendmentReason;
 
     // Getters and Setters (manually added for compatibility if Lombok has issues)
     public Long getId() { return id; }
@@ -179,6 +200,22 @@ public class MasterChecklist {
     public void setItemCode(String itemCode) { this.itemCode = itemCode; }
     public String getQty() { return qty; }
     public void setQty(String qty) { this.qty = qty; }
+    public String getDualCheck() { return dualCheck; }
+    public void setDualCheck(String dualCheck) { this.dualCheck = dualCheck; }
+    public String getCarryForward() { return carryForward; }
+    public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
     public List<ChecklistDepartment> getDepartments() { return departments; }
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
+
+    public String getLevelIds() { return levelIds; }
+    public void setLevelIds(String levelIds) { this.levelIds = levelIds; }
+
+    public String getAmendmentReason() { return amendmentReason; }
+    public void setAmendmentReason(String amendmentReason) { this.amendmentReason = amendmentReason; }
+
+    public List<String> getUploadedFiles() { return uploadedFiles; }
+    public void setUploadedFiles(List<String> uploadedFiles) { this.uploadedFiles = uploadedFiles; }
+
+    public List<String> getScannedFiles() { return scannedFiles; }
+    public void setScannedFiles(List<String> scannedFiles) { this.scannedFiles = scannedFiles; }
 }

@@ -8,7 +8,12 @@ import {
   Tooltip,
   Chip,
   Divider,
-  Paper
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField
 } from '@mui/material';
 import {
   IconPlus,
@@ -63,6 +68,8 @@ export default function CheckListVerify() {
   const [selectedRow, setSelectedRow] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isView, setIsView] = useState(true);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectRemarks, setRejectRemarks] = useState('');
 
   const searchQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
@@ -102,9 +109,11 @@ export default function CheckListVerify() {
       const params = {
         page,
         size,
-        status: filters.status !== 'All' ? filters.status : undefined,
+        status: undefined, // Master status filter not used here
+        verifyStatus: filters.status !== 'All' ? filters.status : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
-        searchValue: searchQuery || undefined
+        searchValue: searchQuery || undefined,
+        dualCheck: 'NO'
       };
       const response = await axios.get('/api/qms/checklist', { params });
       setRows(response.data.content || []);
@@ -127,16 +136,18 @@ export default function CheckListVerify() {
     setDialogOpen(true);
   };
 
-  const handleVerify = async (status) => {
+  const handleVerify = async (status, remarks) => {
     if (!selectedRow) return;
     try {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRow.id,
         status: status,
-        verifiedBy: 'Current User',
-        remarks: status === 'Rejected' ? 'Rejected by verifier' : 'Verified'
+        verifiedBy: 'Current User', // Should be dynamic
+        remarks: remarks || (status === 'Rejected' ? 'Rejected by verifier' : 'Verified')
       });
       dispatch(openSnackbar({ open: true, message: `Checklist ${status.toLowerCase()} successfully`, severity: 'success', variant: 'alert' }));
+      setRejectDialogOpen(false);
+      setRejectRemarks('');
       fetchChecklists();
       setSelectedRow(null);
     } catch (error) {
@@ -198,7 +209,7 @@ export default function CheckListVerify() {
             color="error"
             size="medium"
             startIcon={<IconBan size={18} />}
-            onClick={() => handleVerify('Rejected')}
+            onClick={() => setRejectDialogOpen(true)}
             disabled={!selectedRow}
             sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
           >
@@ -269,6 +280,28 @@ export default function CheckListVerify() {
           }
         }}
       />
+
+      <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Reject Master Checklist</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            label="Reason for Rejection"
+            value={rejectRemarks}
+            onChange={(e) => setRejectRemarks(e.target.value)}
+            placeholder="Please enter the reason for rejection..."
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={() => handleVerify('Rejected', rejectRemarks)} disabled={!rejectRemarks.trim()}>
+            Confirm Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MainCard>
   );
 }

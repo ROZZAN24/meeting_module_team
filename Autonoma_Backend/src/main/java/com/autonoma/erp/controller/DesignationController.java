@@ -6,16 +6,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/master/hr/designation")
+@RequestMapping("/api/hrm/designations")
 @CrossOrigin(origins = "*")
+@Tag(name = "HRM - Designations", description = "Endpoints for managing job designations")
 public class DesignationController {
 
     @Autowired
     private DesignationRepository designationRepository;
 
+    @Operation(summary = "Get next available Designation Code")
     @GetMapping("/next-code")
     public ResponseEntity<String> getNextCode() {
         try {

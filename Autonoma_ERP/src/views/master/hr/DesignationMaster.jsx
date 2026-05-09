@@ -51,7 +51,7 @@ export default function DesignationMaster() {
   const fetchDesignations = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/master/hr/designation');
+      const response = await axios.get('/api/hrm/designations');
       setRows(response.data || []);
     } catch (error) {
       console.error('Failed to fetch designations:', error);
@@ -68,7 +68,7 @@ export default function DesignationMaster() {
   const handleDeleteConfirm = async () => {
     if (!selectedRow) return;
     try {
-      await axios.delete(`/api/master/hr/designation/${selectedRow.id}`);
+      await axios.delete(`/api/hrm/designations/${selectedRow.id}`);
       dispatch(openSnackbar({ open: true, message: 'Designation deleted successfully', severity: 'success', variant: 'alert' }));
       fetchDesignations();
       setDeleteDialogOpen(false);

@@ -60,22 +60,23 @@ export const masters = {
           url: '/master/hr/department'
         },
         {
-          id: 'master-hr-employee',
-          title: 'Employee Master',
-          type: 'item',
-          url: '/master/hr/employee'
-        },
-        {
           id: 'master-hr-designation-details',
           title: 'Designation Details',
           type: 'item',
           url: '/master/hr/designation'
         },
         {
+<<<<<<< HEAD
           id: 'master-hr-grade-details',
           title: 'Grade Details',
           type: 'item',
           url: '/master/hr/grade'
+=======
+          id: 'master-hr-designation-level',
+          title: 'Designation Level',
+          type: 'item', 
+          url: '/master/hr/desg-level'
+>>>>>>> eb345df02f3fff5159b2fe2b88cf7f4f7c98dae3
         }
       ]
     },
@@ -127,7 +128,28 @@ export const hra = {
   caption: 'HR & Admin HA0000',
   type: 'group',
   icon: icons.IconUsers,
-  children: []
+  children: [
+    {
+      id: 'hra-hr',
+      title: 'HR',
+      type: 'collapse',
+      children: [
+        {
+          id: 'hra-hr-employee',
+          title: 'Employee',
+          type: 'collapse',
+          children: [
+            {
+              id: 'hra-hr-employee-details',
+              title: 'Employee Master',
+              type: 'item',
+              url: '/hra/hr/employee/master'
+            }
+          ]
+        }
+      ]
+    }
+  ]
 };
 
 export const sm = {

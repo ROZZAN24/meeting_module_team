@@ -4,8 +4,7 @@
 
 import axios from 'axios';
 
-const apiUrl = import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/';
-const axiosServices = axios.create({ baseURL: apiUrl });
+const axiosServices = axios.create({ baseURL: (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '') });
 
 // ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
 
@@ -28,6 +27,7 @@ axiosServices.interceptors.request.use(
       config.url = config.url.substring(1);
     }
 
+    console.debug(`[Axios Request] ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
@@ -43,9 +43,14 @@ axiosServices.interceptors.response.use(
       console.warn('QMS API Call failed. Checking backend availability...', error.config.url);
     }
 
-    if (error.response && error.response.status === 401 && !window.location.href.includes('/login')) {
+    if (error.response?.status === 401 && !window.location.href.includes('/login')) {
       window.location.pathname = '/login';
     }
+
+    if (!error.response) {
+      return Promise.reject('Backend server is unreachable. Please ensure the backend is running on ' + (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081'));
+    }
+
     return Promise.reject((error.response && error.response.data) || 'Service connection failed. Please try again later.');
   }
 );

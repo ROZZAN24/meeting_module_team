@@ -6,18 +6,22 @@ import com.autonoma.erp.repository.AuditObservationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/qms/audit/observation")
 @CrossOrigin(origins = "*")
+@Tag(name = "QMS - Audit Observation", description = "Endpoints for recording audit findings and scoring")
 public class AuditObservationController {
 
     @Autowired
     private AuditObservationRepository auditObservationRepository;
 
     @GetMapping
+    @Operation(summary = "Get All Observations", description = "Fetches a list of all audit observations")
     public List<AuditObservation> getAll() {
         return auditObservationRepository.findAll();
     }
@@ -30,6 +34,7 @@ public class AuditObservationController {
     }
 
     @PostMapping
+    @Operation(summary = "Create Observation", description = "Saves a new audit observation with findings details")
     public AuditObservation create(@RequestBody AuditObservation observation) {
         if (observation.getCreatedBy() == null) observation.setCreatedBy("Admin");
         
@@ -85,6 +90,7 @@ public class AuditObservationController {
     }
 
     @GetMapping("/next-no")
+    @Operation(summary = "Get Next Observation Number", description = "Generates the next available OB-XXXX sequence")
     public String getNextNo() {
         return auditObservationRepository.findFirstByOrderByObservationNoDesc()
                 .map(latest -> incrementSequence(latest.getObservationNo(), "OB-"))

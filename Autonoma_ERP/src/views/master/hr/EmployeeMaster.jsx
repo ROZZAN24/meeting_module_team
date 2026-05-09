@@ -1,402 +1,218 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Grid, TextField, Button, Typography, Stack, MenuItem, useTheme, IconButton, Avatar, Tooltip } from '@mui/material';
+import { Grid, Button, Typography, Stack, MenuItem, useTheme, Tooltip } from '@mui/material';
+import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings } from '@tabler/icons-react';
+import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
-import SubCard from 'ui-component/cards/SubCard';
-import { IconDeviceFloppy, IconX, IconUserPlus, IconPhotoPlus, IconSignature } from '@tabler/icons-react';
+import { BOSFormSection, BOSTextField, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+import useBOSValidation from 'hooks/useBOSValidation';
+import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
+import { useLookups } from 'hooks/useLookups';
+import EmployeeSubSections from './EmployeeSubSections';
 
-const initialFormState = {
-  categoryId: '',
-  empLevelId: '',
-  employeeTypeId: '',
-  title: '',
-  employeeName: '',
-  fatherHusbandName: '',
-  empCode: '',
-  departmentId: '',
-  designationId: '',
-  dateOfJoining: '',
-  confirmationDate: '',
-  unitId: '',
-  referMode: '',
-  profileUpload: '',
-  signature: ''
+const INITIAL = {
+  categoryId: '', subCategoryId: '', empLevelId: '', employeeTypeId: '', gradeCode: '',
+  title: '', firstName: '', lastName: '', empCode: '', oldEmpCode: '', fatherHusbandName: '', guest: 'No',
+  departmentId: '', designationId: '', unitId: '', productionLine: '', empClass: '', teamGroup: '', additionalRole: [],
+  dateOfJoining: '', confirmationDate: '', nextRevisionDate: '', exitDate: '', exitReason: '',
+  dailySheetRequired: 'No', attendanceRequired: 'Yes', inductionStatus: 'PENDING', shift: 'Yes', shiftName: 'GENERAL', shiftDuration: '480', graceMinutes: '0',
+  petrolAllowance: '0.00', petrolMode: 'NA', referMode: '', userName: '', homeManager: '', businessManager: '', supplierName: '',
+  profileUpload: '', signature: '', ndaCertificateUpload: '', fitnessCertificateUpload: '', status: 'Active'
 };
 
-const EmployeeMaster = () => {
+const RULES = [
+  { field: 'firstName', label: 'First Name', required: true, maxLength: 100 },
+  { field: 'lastName', label: 'Last Name', required: true, maxLength: 100 },
+  { field: 'empCode', label: 'Employee Code', required: true, maxLength: 50 },
+  { field: 'categoryId', label: 'Category', required: true },
+  { field: 'empLevelId', label: 'Level', required: true },
+  { field: 'employeeTypeId', label: 'Type', required: true },
+  { field: 'title', label: 'Title', required: true }
+];
+
+// Shared field renderer using Grid for consistent layout
+const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+
+export default function EmployeeMaster() {
   const theme = useTheme();
+  const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
+  const SUB_CATEGORIES = ['STAFF', 'TRAINEE', 'OFFICER', 'ASSISTANT', 'DIRECTOR', 'CEO', 'MD', 'ENGINEER', 'OPERATOR', 'MANAGER'];
+  const UNIT_NAMES = ['UNIT 1', 'UNIT 2'];
+  const PRODUCTION_LINES = ['N/A'];
+  const CLASSES = ['CLASS A', 'CLASS B', 'CLASS C'];
+  const SHIFT_NAMES = ['GENERAL', 'SHIFT A', 'SHIFT B', 'SHIFT C'];
+  const REF_MODES = ['INTERNAL', 'EXTERNAL', 'CONSULTANT'];
+  const SUPPLIERS = ['SUPPLIER A', 'SUPPLIER B'];
+  const TEAM_GROUPS = ['TEAM 1', 'TEAM 2'];
+  const STATUSES = ['ACTIVE', 'INACTIVE', 'EXITED'];
+  
+  const CATEGORIES = [{id: 1, categoryName: 'OFFICE'}, {id: 2, categoryName: 'SHOP FLOOR'}];
+  const TYPES = [{id: 1, typeName: 'CONFIRMED'}, {id: 2, typeName: 'PROBATION'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'CONTRACT'}];
+
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const ds = getDialogStyles(theme, isDark);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const employeeId = searchParams.get('id');
-
-  const [formData, setFormData] = useState(initialFormState);
+  const { errors, validate, clearErrors } = useBOSValidation();
+  const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
-  const [previews, setPreviews] = useState({ profileUpload: null, signature: null });
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const { departments = [], designations = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'DESIGNATION_LEVELS']);
 
-  // Fetch employee if ID exists (Edit Mode)
-  useEffect(() => {
-    if (employeeId) {
-      const fetchEmployee = async () => {
-        try {
-          const response = await axios.get(`/api/master/employee/${employeeId}`);
-          const data = response.data;
-          // Format dates to YYYY-MM-DD if present
-          if (data.dateOfJoining) data.dateOfJoining = data.dateOfJoining.split('T')[0];
-          if (data.confirmationDate) data.confirmationDate = data.confirmationDate.split('T')[0];
-          setFormData({ ...initialFormState, ...data });
-        } catch (error) {
-          console.error('Error fetching employee data:', error);
-        }
-      };
-      fetchEmployee();
-    }
+  const fetchEmployee = useCallback(async () => {
+    if (!employeeId) return;
+    try {
+      const { data } = await axios.get(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`);
+      const d = { ...INITIAL };
+      Object.keys(d).forEach((k) => { if (data[k] !== undefined && data[k] !== null) d[k] = data[k]; });
+      ['dateOfJoining', 'confirmationDate', 'nextRevisionDate', 'exitDate'].forEach((k) => {
+        if (d[k] && typeof d[k] === 'string') d[k] = d[k].split('T')[0];
+      });
+      setForm(d);
+    } catch (e) { console.error(e); }
   }, [employeeId]);
 
-  // BOS Standard 4: Shortcut Keys (Ctrl+S, Esc)
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-        event.preventDefault();
-        const isSaveDisabled =
-          loading ||
-          !formData.categoryId ||
-          !formData.empLevelId ||
-          !formData.employeeTypeId ||
-          !formData.title ||
-          !formData.employeeName ||
-          !formData.fatherHusbandName ||
-          !formData.empCode;
+  useEffect(() => { fetchEmployee(); }, [fetchEmployee]);
 
-        if (!isSaveDisabled) {
-          handleSave();
-        }
-      }
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        handleClear();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [formData, loading]);
-
-  const handleFileChange = (e, type) => {
-    const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPreviews((prev) => ({ ...prev, [type]: url }));
-      // Optionally store file name or base64 in formData if backend supports it
-      setFormData((prev) => ({ ...prev, [type]: file.name }));
-    }
-  };
-
-  const handleRemoveFile = (type) => {
-    setPreviews((prev) => ({ ...prev, [type]: null }));
-    setFormData((prev) => ({ ...prev, [type]: '' }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleClear = () => {
-    setFormData(initialFormState);
-    setPreviews({ profileUpload: null, signature: null });
-  };
+  const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
   const handleSave = async () => {
+    if (!validate(form, RULES)) return;
     setLoading(true);
     try {
-      const payload = { ...formData };
-
-      // Convert empty strings to null for numeric IDs and dates
-      ['categoryId', 'empLevelId', 'employeeTypeId', 'departmentId', 'designationId', 'unitId'].forEach((field) => {
-        if (payload[field] === '') payload[field] = null;
+      const payload = { ...form };
+      ['categoryId', 'subCategoryId', 'empLevelId', 'employeeTypeId', 'departmentId', 'designationId', 'unitId', 'graceMinutes'].forEach((f) => {
+        if (payload[f] === '') payload[f] = null;
       });
-      ['dateOfJoining', 'confirmationDate'].forEach((field) => {
-        if (payload[field] === '') payload[field] = null;
+      ['dateOfJoining', 'confirmationDate', 'nextRevisionDate', 'exitDate'].forEach((f) => {
+        if (payload[f] === '') payload[f] = null;
       });
+      if (payload.petrolAllowance === '') payload.petrolAllowance = null;
 
       if (employeeId) {
-        await axios.put(`/api/master/employee/${employeeId}`, payload);
-        alert('Employee details updated successfully');
+        await axios.put(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`, payload);
+        dispatch(openSnackbar({ open: true, message: 'Employee updated!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        await axios.post('/api/master/employee', payload);
-        alert('Employee details saved successfully');
-        handleClear();
+        const { data } = await axios.post(API_PATHS.HRM.EMPLOYEES, payload);
+        dispatch(openSnackbar({ open: true, message: 'Employee created!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+        navigate(`/hra/hr/employee/master/create?id=${data.id}`, { replace: true });
+        return;
       }
-      // Navigate back to overview after slight delay to ensure user sees alert
-      setTimeout(() => navigate('/master/hr/employee'), 500);
-    } catch (error) {
-      console.error('Error saving employee:', error);
-      alert('Failed to save employee details');
-    } finally {
-      setLoading(false);
+    } catch (e) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to save employee.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+    } finally { setLoading(false); }
+  };
+
+  const handleDelete = async () => {
+    setDeleteOpen(false);
+    try {
+      await axios.delete(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`);
+      dispatch(openSnackbar({ open: true, message: 'Employee deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      navigate('/hra/hr/employee/master');
+    } catch (e) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 
+  const handleClear = () => { setForm(INITIAL); clearErrors(); };
+
+  useKeyboardShortcuts({ 'ctrl+s': handleSave, 'escape': () => navigate('/hra/hr/employee/master') });
   return (
     <MainCard
-      title={
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconUserPlus size={24} />
-          <Typography variant="h3">Employee Master</Typography>
+      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{employeeId ? 'Edit Employee' : 'New Employee'}</Typography></Stack>}
+      secondary={
+        <Stack direction="row" spacing={1.5}>
+          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hra/hr/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
+          {employeeId && <Tooltip title={shortcutTooltip('Delete', 'Ctrl + D')}><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
+          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={handleClear} sx={btnClear}>Clear</Button></Tooltip>
+          <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
         </Stack>
       }
     >
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <SubCard title="Employee Details" sx={{ border: '1px solid', borderColor: theme.palette.divider }}>
-            <Grid container spacing={2}>
-              {/* === ROW 1 === */}
-              <Grid item xs={6} sm={4} md={2}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Category *
-                </Typography>
-                <TextField select fullWidth name="categoryId" value={formData.categoryId} onChange={handleChange} required size="small">
-                  <MenuItem value={1}>Staff</MenuItem>
-                  <MenuItem value={2}>Worker</MenuItem>
-                  <MenuItem value={3}>Management</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={6} sm={4} md={2}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Emp Level *
-                </Typography>
-                <TextField select fullWidth name="empLevelId" value={formData.empLevelId} onChange={handleChange} required size="small">
-                  <MenuItem value={1}>Level 1</MenuItem>
-                  <MenuItem value={2}>Level 2</MenuItem>
-                  <MenuItem value={3}>Level 3</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={6} sm={4} md={2}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Employee Type *
-                </Typography>
-                <TextField
-                  select
-                  fullWidth
-                  name="employeeTypeId"
-                  value={formData.employeeTypeId}
-                  onChange={handleChange}
-                  required
-                  size="small"
-                >
-                  <MenuItem value={1}>Permanent</MenuItem>
-                  <MenuItem value={2}>Contract</MenuItem>
-                  <MenuItem value={3}>Trainee</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={6} sm={4} md={2}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Title *
-                </Typography>
-                <TextField select fullWidth name="title" value={formData.title} onChange={handleChange} required size="small">
-                  <MenuItem value="Mr">Mr</MenuItem>
-                  <MenuItem value="Ms">Ms</MenuItem>
-                  <MenuItem value="Mrs">Mrs</MenuItem>
-                  <MenuItem value="Mx">Mx</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={8} md={4}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Employee Name *
-                </Typography>
-                <TextField
-                  fullWidth
-                  name="employeeName"
-                  value={formData.employeeName}
-                  onChange={handleChange}
-                  required
-                  size="small"
-                  inputProps={{ maxLength: 100 }}
-                />
-              </Grid>
+      <Stack spacing={3}>
+        {/* ═══ SECTION 1: CLASSIFICATION & IDENTITY ═══ */}
+        <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Classification & Identity">
+          <Grid container spacing={2.5}>
+            <R><BOSTextField select name="categoryId" label="Category" value={form.categoryId} onChange={h} required error={!!errors.categoryId} helperText={errors.categoryId}>{CATEGORIES.map(c => <MenuItem key={c.id} value={c.id}>{c.categoryName}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="subCategoryId" label="Sub Category" value={form.subCategoryId} onChange={h}>{SUB_CATEGORIES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="empLevelId" label="Level" value={form.empLevelId} onChange={h} required error={!!errors.empLevelId} helperText={errors.empLevelId}>{designationLevels.map(l => <MenuItem key={l.rowId} value={l.rowId}>{l.level}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="employeeTypeId" label="Type" value={form.employeeTypeId} onChange={h} required error={!!errors.employeeTypeId} helperText={errors.employeeTypeId}>{TYPES.map(t => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="gradeCode" label="Grade Code" value={form.gradeCode} onChange={h}><MenuItem value="O">O</MenuItem><MenuItem value="P">P</MenuItem><MenuItem value="T">T</MenuItem><MenuItem value="C">C</MenuItem><MenuItem value="E">E</MenuItem></BOSTextField></R>
+            <R><BOSTextField select name="title" label="Title" value={form.title} onChange={h} required error={!!errors.title} helperText={errors.title}><MenuItem value="Mr">Mr</MenuItem><MenuItem value="Miss">Miss</MenuItem><MenuItem value="Mrs">Mrs</MenuItem><MenuItem value="Mx">Mx</MenuItem></BOSTextField></R>
+            <R><BOSTextField name="firstName" label="First Name" value={form.firstName} onChange={h} required maxLength={100} error={!!errors.firstName} helperText={errors.firstName} /></R>
+            <R><BOSTextField name="lastName" label="Last Name" value={form.lastName} onChange={h} required maxLength={100} error={!!errors.lastName} helperText={errors.lastName} /></R>
+            <R><BOSTextField name="empCode" label="Employee Code" value={form.empCode} onChange={h} required maxLength={50} error={!!errors.empCode} helperText={errors.empCode} /></R>
+            <R><BOSTextField name="oldEmpCode" label="Old Employee Code" value={form.oldEmpCode} onChange={h} maxLength={50} /></R>
+            <R><BOSTextField name="fatherHusbandName" label="Father / Husband Name" value={form.fatherHusbandName || ''} onChange={h} maxLength={100} /></R>
+            <R><BOSTextField select name="guest" label="Guest?" value={form.guest} onChange={h}><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
+          </Grid>
+        </BOSFormSection>
 
-              {/* === ROW 2 === */}
-              <Grid item xs={12} sm={6} md={4}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Father/Husband Name *
-                </Typography>
-                <TextField
-                  fullWidth
-                  name="fatherHusbandName"
-                  value={formData.fatherHusbandName}
-                  onChange={handleChange}
-                  required
-                  size="small"
-                  inputProps={{ maxLength: 100 }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>
-                  Emp Code *
-                </Typography>
-                <TextField
-                  fullWidth
-                  name="empCode"
-                  value={formData.empCode}
-                  onChange={handleChange}
-                  required
-                  size="small"
-                  inputProps={{ maxLength: 50 }}
-                />
-              </Grid>
-              <Grid item xs={6} sm={6} md={2}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
-                  Department
-                </Typography>
-                <TextField select fullWidth name="departmentId" value={formData.departmentId} onChange={handleChange} size="small">
-                  <MenuItem value={1}>IT</MenuItem>
-                  <MenuItem value={2}>HR</MenuItem>
-                  <MenuItem value={3}>Finance</MenuItem>
-                  <MenuItem value={4}>Sales</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={6} sm={6} md={2}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
-                  Designation
-                </Typography>
-                <TextField select fullWidth name="designationId" value={formData.designationId} onChange={handleChange} size="small">
-                  <MenuItem value={1}>Manager</MenuItem>
-                  <MenuItem value={2}>Developer</MenuItem>
-                  <MenuItem value={3}>Executive</MenuItem>
-                </TextField>
-              </Grid>
+        {/* ═══ SECTION 2: ORGANIZATION ═══ */}
+        <BOSFormSection icon={<IconBriefcase size={20} color={theme.palette.primary.main} />} title="Organization & Assignment">
+          <Grid container spacing={2.5}>
+            <R><BOSTextField select name="departmentId" label="Department" value={form.departmentId} onChange={h}>{departments.map((d) => <MenuItem key={d.id} value={d.id}>{d.departmentName}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="designationId" label="Designation" value={form.designationId} onChange={h}>{designations.map((d) => <MenuItem key={d.id} value={d.id}>{d.designationName}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="unitId" label="Unit Name" value={form.unitId} onChange={h}><MenuItem value={1}>UNIT1</MenuItem></BOSTextField></R>
+            <R><BOSTextField name="productionLine" label="Production Line" value={form.productionLine} onChange={h} maxLength={100} /></R>
+            <R><BOSTextField select name="empClass" label="Class" value={form.empClass} onChange={h}><MenuItem value="EXECUTIVE">EXECUTIVE</MenuItem><MenuItem value="STAFF">STAFF</MenuItem><MenuItem value="TRAINEE">TRAINEE</MenuItem><MenuItem value="WORKER">WORKER</MenuItem></BOSTextField></R>
+            <R><BOSTextField name="teamGroup" label="Team Group" value={form.teamGroup} onChange={h} maxLength={100} /></R>
+            <R><BOSTextField name="additionalRole" label="Additional Role" value={form.additionalRole} onChange={h} maxLength={100} /></R>
+            <R><BOSTextField select name="referMode" label="Ref Mode" value={form.referMode} onChange={h}>{REF_MODES.map(r => <MenuItem key={r} value={r}>{r}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField name="userName" label="User Name" value={form.userName} onChange={h} maxLength={100} inputProps={{ readOnly: true }} /></R>
+            <R><BOSTextField name="homeManager" label="Home Manager" value={form.homeManager} onChange={h} maxLength={100} /></R>
+            <R><BOSTextField name="businessManager" label="Business Manager" value={form.businessManager} onChange={h} maxLength={100} /></R>
+            <R><BOSTextField name="supplierName" label="Supplier Name" value={form.supplierName} onChange={h} maxLength={100} /></R>
+          </Grid>
+        </BOSFormSection>
 
-              {/* === ROW 3 === */}
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
-                  Date of Joining
-                </Typography>
-                <TextField fullWidth name="dateOfJoining" type="date" value={formData.dateOfJoining} onChange={handleChange} size="small" />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
-                  Confirmation Date
-                </Typography>
-                <TextField
-                  fullWidth
-                  name="confirmationDate"
-                  type="date"
-                  value={formData.confirmationDate}
-                  onChange={handleChange}
-                  size="small"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
-                  Unit Name
-                </Typography>
-                <TextField select fullWidth name="unitId" value={formData.unitId} onChange={handleChange} size="small">
-                  <MenuItem value={1}>Unit 1</MenuItem>
-                  <MenuItem value={2}>Unit 2</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Typography variant="caption" sx={{ mb: 0.5, display: 'block' }}>
-                  Refer Mode
-                </Typography>
-                <TextField select fullWidth name="referMode" value={formData.referMode} onChange={handleChange} size="small">
-                  <MenuItem value="Direct">Direct</MenuItem>
-                  <MenuItem value="Consultancy">Consultancy</MenuItem>
-                  <MenuItem value="Reference">Reference</MenuItem>
-                </TextField>
-              </Grid>
+        {/* ═══ SECTION 3: DATES & SCHEDULING ═══ */}
+        <BOSFormSection icon={<IconCalendar size={20} color={theme.palette.primary.main} />} title="Dates & Scheduling">
+          <Grid container spacing={2.5}>
+            <R><BOSTextField name="dateOfJoining" label="Date Of Joining" type="date" value={form.dateOfJoining} onChange={h} InputLabelProps={{ shrink: true }} /></R>
+            <R><BOSTextField name="confirmationDate" label="Confirmation Date" type="date" value={form.confirmationDate} onChange={h} InputLabelProps={{ shrink: true }} /></R>
+            <R><BOSTextField name="nextRevisionDate" label="Next Revision Date" type="date" value={form.nextRevisionDate} onChange={h} InputLabelProps={{ shrink: true }} /></R>
+            <R><BOSTextField name="exitDate" label="Exit Date" type="date" value={form.exitDate} onChange={h} InputLabelProps={{ shrink: true }} /></R>
+            <R><BOSTextField select name="exitReason" label="Exit Reason" value={form.exitReason} onChange={h}><MenuItem value="Resigned">Resigned</MenuItem><MenuItem value="Termination">Termination</MenuItem><MenuItem value="Death">Death</MenuItem><MenuItem value="Others">Others</MenuItem></BOSTextField></R>
+            <R><BOSTextField name="inductionStatus" label="Induction Status" value={form.inductionStatus} onChange={h} maxLength={50} inputProps={{ readOnly: true }} /></R>
+          </Grid>
+        </BOSFormSection>
 
-              {/* === ROW 4 === */}
-              <Grid item xs={12} sm={6} md={4}>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
-                  {previews.profileUpload ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Avatar src={previews.profileUpload} sx={{ width: 40, height: 40 }} variant="rounded" />
-                      <IconButton color="error" size="small" onClick={() => handleRemoveFile('profileUpload')} sx={{ bgcolor: '#ffebee' }}>
-                        <IconX size={16} />
-                      </IconButton>
-                      <Button size="small" variant="text" onClick={() => window.open(previews.profileUpload, '_blank')}>
-                        View
-                      </Button>
-                    </Stack>
-                  ) : (
-                    <>
-                      <IconButton color="primary" component="label" sx={{ bgcolor: '#f5f5f5' }}>
-                        <input hidden accept="image/*" type="file" onChange={(e) => handleFileChange(e, 'profileUpload')} />
-                        <IconPhotoPlus />
-                      </IconButton>
-                      <Typography variant="body2" color="textSecondary">
-                        Profile Upload
-                      </Typography>
-                    </>
-                  )}
-                </Stack>
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1 }}>
-                  {previews.signature ? (
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Avatar src={previews.signature} sx={{ width: 40, height: 40 }} variant="rounded" />
-                      <IconButton color="error" size="small" onClick={() => handleRemoveFile('signature')} sx={{ bgcolor: '#ffebee' }}>
-                        <IconX size={16} />
-                      </IconButton>
-                      <Button size="small" variant="text" onClick={() => window.open(previews.signature, '_blank')}>
-                        View
-                      </Button>
-                    </Stack>
-                  ) : (
-                    <>
-                      <IconButton color="primary" component="label" sx={{ bgcolor: '#f5f5f5' }}>
-                        <input hidden accept="image/*" type="file" onChange={(e) => handleFileChange(e, 'signature')} />
-                        <IconSignature />
-                      </IconButton>
-                      <Typography variant="body2" color="textSecondary">
-                        Signature Upload
-                      </Typography>
-                    </>
-                  )}
-                </Stack>
-              </Grid>
-            </Grid>
-          </SubCard>
-        </Grid>
+        {/* ═══ SECTION 4: OPERATIONS ═══ */}
+        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Operations & Allowances">
+          <Grid container spacing={2.5}>
+            <R><BOSTextField select name="dailySheetRequired" label="Daily Sheet Required" value={form.dailySheetRequired} onChange={h}><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
+            <R><BOSTextField select name="attendanceRequired" label="Attendance Required" value={form.attendanceRequired} onChange={h}><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
+            <R><BOSTextField select name="shift" label="Shift?" value={form.shift} onChange={h}><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
+            <R><BOSTextField select name="shiftName" label="Shift Name" value={form.shiftName} onChange={h}><MenuItem value="GENERAL">GENERAL</MenuItem><MenuItem value="SHIFT 1">SHIFT 1</MenuItem><MenuItem value="SHIFT 2">SHIFT 2</MenuItem><MenuItem value="SHIFT 3">SHIFT 3</MenuItem></BOSTextField></R>
+            <R><BOSTextField name="shiftDuration" label="Shift Duration" value={form.shiftDuration} onChange={h} maxLength={50} /></R>
+            <R><BOSTextField name="graceMinutes" label="Grace Minutes" value={form.graceMinutes} onChange={h} type="number" /></R>
+            <R><BOSTextField select name="petrolMode" label="Petrol Mode" value={form.petrolMode} onChange={h}><MenuItem value="BIKE">BIKE</MenuItem><MenuItem value="CAR">CAR</MenuItem><MenuItem value="NA">NA</MenuItem></BOSTextField></R>
+            <R><BOSTextField name="petrolAllowance" label="Petrol Allowance" value={form.petrolAllowance} onChange={h} type="number" /></R>
+            <R><BOSTextField select name="status" label="Status" value={form.status} onChange={h}><MenuItem value="Active">Active</MenuItem><MenuItem value="In Active">In Active</MenuItem></BOSTextField></R>
+          </Grid>
+        </BOSFormSection>
 
-        {/* Action Buttons */}
-        <Grid item xs={12}>
-          <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Tooltip title="Clear (Esc)">
-              <Button variant="outlined" color="inherit" startIcon={<IconX size={18} />} onClick={handleClear} sx={{ borderRadius: 2 }}>
-                Clear
-              </Button>
-            </Tooltip>
-            <Tooltip title="Save (Ctrl + S)">
-              <span>
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={<IconDeviceFloppy size={18} />}
-                  onClick={handleSave}
-                  disabled={
-                    loading ||
-                    !formData.categoryId ||
-                    !formData.empLevelId ||
-                    !formData.employeeTypeId ||
-                    !formData.title ||
-                    !formData.employeeName ||
-                    !formData.fatherHusbandName ||
-                    !formData.empCode
-                  }
-                  sx={{ borderRadius: 2 }}
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </Button>
-              </span>
-            </Tooltip>
-          </Stack>
-        </Grid>
-      </Grid>
+        {/* ═══ SUB-SECTIONS — Continuous Scroll ═══ */}
+        {!employeeId && (
+          <BOSFormSection icon={<IconUser size={20} color={theme.palette.warning.main} />} title="Additional Sections">
+            <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 600 }}>
+              💡 Save the employee first to enable editing Personal, Contact, Job Profile, Education, Experience, Emergency, Passport, Dependent, Asset, KYC, and Activity sections below.
+            </Typography>
+          </BOSFormSection>
+        )}
+        <EmployeeSubSections employeeId={employeeId} />
+      </Stack>
+
+      <ConfirmDeleteDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} title="Delete Employee" message="This will permanently delete the employee and ALL related data." itemName={`${form.firstName} ${form.lastName}`} />
     </MainCard>
   );
-};
-
-export default EmployeeMaster;
+}

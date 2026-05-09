@@ -6,6 +6,7 @@ export { default as BOSFormDialog } from './BOSFormDialog';
 export { default as BOSFormSection } from './BOSFormSection';
 export { default as BOSDataTable } from './BOSDataTable';
 export { default as BOSTextField } from './BOSTextField';
+export * from './BOSFileGallery';
 export {
   getBOSStyles,
   getDialogStyles,
@@ -24,3 +25,4 @@ export {
   tableActionDeleteSx,
   getStatusChipSx
 } from './BOSStyles';
+export * from './BOSUtils';

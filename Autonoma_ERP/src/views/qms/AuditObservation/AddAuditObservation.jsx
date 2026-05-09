@@ -38,6 +38,8 @@ import {
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { format } from 'date-fns';
+import { API_PATHS } from 'utils/api-constants';
+import { useLookups } from 'hooks/useLookups';
 
 const VALIDATION_RULES = [
   { field: 'observationDate', label: 'Observation Date', required: true },
@@ -72,7 +74,7 @@ export default function AddAuditObservation() {
 
   const [details, setDetails] = useState([]);
   const [attendance, setAttendance] = useState([]);
-  const [schedules, setSchedules] = useState([]);
+  const { auditSchedule: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
   useEffect(() => {
     fetchSchedules();
@@ -83,23 +85,20 @@ export default function AddAuditObservation() {
     }
   }, [id, isEditing]);
 
-  const fetchSchedules = async () => {
-    try {
-      const res = await axios.get('/api/qms/audit-schedules');
-      setSchedules(res.data || []);
-    } catch (e) { console.error('Failed to fetch schedules'); }
-  };
+  // Remove manual fetch as useLookups handles it now
 
   const generateObservationNo = async () => {
     try {
-      const res = await axios.get('/api/qms/audit/observation/next-no');
-      setFormData(prev => ({ ...prev, observationNo: res.data }));
-    } catch (e) { setFormData(prev => ({ ...prev, observationNo: '1' })); }
+      const res = await axios.get(`${API_PATHS.QMS.AUDIT_OBSERVATION}/next-no`);
+      setFormData(prev => ({ ...prev, observationNo: res.data || 'OB-001' }));
+    } catch (e) { 
+      setFormData(prev => ({ ...prev, observationNo: 'OB-001' })); 
+    }
   };
 
   const fetchObservation = async () => {
     try {
-      const res = await axios.get(`/api/qms/audit/observation/${id}`);
+      const res = await axios.get(`${API_PATHS.QMS.AUDIT_OBSERVATION}/${id}`);
       setFormData(res.data);
       setDetails(res.data.details || []);
       if (res.data.auditScheduleNo) fetchAttendance(res.data.auditScheduleNo);
@@ -108,7 +107,7 @@ export default function AddAuditObservation() {
 
   const fetchAttendance = async (scheduleNo) => {
     try {
-      const res = await axios.get(`/api/qms/audit/attendance/by-schedule/${scheduleNo}`);
+      const res = await axios.get(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/by-schedule/${scheduleNo}`);
       setAttendance(res.data || []);
     } catch (e) { console.error('Failed to fetch attendance'); }
   };
@@ -170,9 +169,9 @@ export default function AddAuditObservation() {
     try {
       const payload = { ...formData, details };
       if (isEditing) {
-        await axios.put(`/api/qms/audit/observation/${id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_OBSERVATION}/${id}`, payload);
       } else {
-        await axios.post('/api/qms/audit/observation', payload);
+        await axios.post(API_PATHS.QMS.AUDIT_OBSERVATION, payload);
       }
       dispatch(openSnackbar({ open: true, message: 'Observation saved successfully!', severity: 'success', variant: 'alert' }));
       navigate('/qms/audit/observation');

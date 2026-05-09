@@ -12,6 +12,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -62,7 +63,7 @@ export default function AuditScheduleList() {
   const fetchAuditSchedules = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/qms/audit-schedules');
+      const response = await axios.get(API_PATHS.QMS.AUDIT_SCHEDULE);
       setRows(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Failed to fetch audit schedules:', error);
@@ -79,7 +80,7 @@ export default function AuditScheduleList() {
 
   const handleCloseAudit = async (row) => {
     try {
-      await axios.put(`/api/qms/audit-schedules/${row.id}`, { ...row, status: 'CLOSED' });
+      await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${row.id}`, { ...row, status: 'CLOSED' });
       dispatch(openSnackbar({ open: true, message: 'Audit closed successfully!', severity: 'success', variant: 'alert' }));
       fetchAuditSchedules();
     } catch (error) {
@@ -95,7 +96,7 @@ export default function AuditScheduleList() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/qms/audit-schedules/${deleteTarget.id}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${deleteTarget.id}`);
       dispatch(openSnackbar({ open: true, message: 'Audit Schedule deleted!', severity: 'success', variant: 'alert' }));
       fetchAuditSchedules();
     } catch (error) {

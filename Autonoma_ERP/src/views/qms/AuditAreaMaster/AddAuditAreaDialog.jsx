@@ -9,6 +9,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
+import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| AUDIT AREA - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
@@ -61,10 +62,10 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
 
     try {
       if (formData.id) {
-        await axios.put(`/api/master/qms/audit-area/${formData.id}`, formData);
+        await axios.put(`${API_PATHS.QMS.AUDIT_AREA}/${formData.id}`, formData);
         dispatch(openSnackbar({ open: true, message: 'Audit Area updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        await axios.post('/api/master/qms/audit-area', formData);
+        await axios.post(API_PATHS.QMS.AUDIT_AREA, formData);
         dispatch(openSnackbar({ open: true, message: 'Audit Area created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       }
       handleClose(true);
@@ -77,7 +78,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
   const handleDeleteConfirm = async () => {
     setDeleteOpen(false);
     try {
-      await axios.delete(`/api/master/qms/audit-area/${formData.id}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_AREA}/${formData.id}`);
       dispatch(openSnackbar({ open: true, message: 'Audit Area deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       handleClose(true);
     } catch (error) {

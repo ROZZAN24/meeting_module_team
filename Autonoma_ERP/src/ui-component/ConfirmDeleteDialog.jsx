@@ -37,6 +37,7 @@ export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title = 
       }}
     >
       <DialogTitle
+        component="div"
         sx={{
           display: 'flex',
           alignItems: 'center',

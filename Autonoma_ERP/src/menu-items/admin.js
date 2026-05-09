@@ -1,12 +1,17 @@
 // assets
-import { IconUserPlus, IconUsers, IconShieldLock, IconSettings } from '@tabler/icons-react';
+import {
+  IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper
+  , IconAccessPoint
+} from '@tabler/icons-react';
 
 // constant
 const icons = {
   IconUserPlus,
   IconUsers,
   IconShieldLock,
-  IconSettings
+  IconSettings,
+  IconBuildingSkyscraper
+  , IconAccessPoint
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -31,6 +36,22 @@ const admin = {
       type: 'item',
       url: '/admin/preference-master',
       icon: icons.IconSettings,
+      breadcrumbs: true
+    },
+    {
+      id: 'company-profile',
+      title: 'Company Profile',
+      type: 'item',
+      url: '/admin/company-profile',
+      icon: icons.IconBuildingSkyscraper,
+      breadcrumbs: true
+    },
+    {
+      id: 'user-access',
+      title: 'User Access',
+      type: 'item',
+      url: '/admin/user-access',
+      icon: icons.IconAccessPoint,
       breadcrumbs: true
     }
   ]

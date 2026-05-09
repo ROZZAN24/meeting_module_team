@@ -5,18 +5,22 @@ import com.autonoma.erp.service.AuditScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/qms/audit-schedules")
 @CrossOrigin(origins = "*", maxAge = 3600)
+@Tag(name = "QMS - Audit Schedule", description = "Endpoints for scheduling audits, assigning personnel, and criteria")
 public class AuditScheduleController {
 
     @Autowired
     private AuditScheduleService service;
 
     @GetMapping
+    @Operation(summary = "Get All Audit Schedules", description = "Fetches a complete list of scheduled audits")
     public List<AuditSchedule> getAllAuditSchedules() {
         return service.getAllAuditSchedules();
     }
@@ -29,6 +33,7 @@ public class AuditScheduleController {
     }
 
     @PostMapping
+    @Operation(summary = "Create Audit Schedule", description = "Saves a new audit schedule with criteria and personnel")
     public AuditSchedule createAuditSchedule(@RequestBody AuditSchedule auditSchedule) {
         return service.createAuditSchedule(auditSchedule);
     }
@@ -51,6 +56,7 @@ public class AuditScheduleController {
     }
 
     @GetMapping("/next-no")
+    @Operation(summary = "Get Next Schedule Number", description = "Generates the next available SCH-XXXX number")
     public String getNextNo() {
         return service.getNextScheduleNo();
     }

@@ -20,7 +20,9 @@ import {
   IconCamera,
   IconFileDescription,
   IconMicrophone,
-  IconMicrophoneOff
+  IconMicrophoneOff,
+  IconEye,
+  IconTrash
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import {
@@ -28,15 +30,16 @@ import {
   BOSFormSection,
   BOSTextField,
   btnClear,
-  btnSave
+  btnSave,
+  btnCancel,
+  getStatusChipSx,
+  formatBOSFiles,
+  BOSFileGallery
 } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
+import useLookups from 'hooks/useLookups';
 
-const DEPARTMENTS = [
-  'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT', 
-  'HRA', 'LOGISTICS', 'MAINTENANCE', 'MANAGEMENT', 'MANAGEMENT REPRESENTATIVE', 
-  'OPERATIONS', 'PLANNING', 'PRODUCT DEVELOPMENT', 'PRODUCTION', 'PURCHASE', 
-  'QMS', 'QUALITY', 'SALES & MARKETING', 'STORES', 'STRATEGIC PROCUREMENT', 'TOP MANAGEMENT'
-];
+// Departments are now fetched dynamically from API
 
 const CATEGORIES = ['RENEWAL', 'CHECK LIST'];
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF YEARLY', 'YEARLY'];
@@ -48,7 +51,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [formData, setFormData] = useState({
     seqNo: '',
     category: '',
-    effectiveFrom: '',
+    effectiveFrom: new Date().toISOString().split('T')[0],
     expiryDate: '',
     reminderDays: '',
     reminderDate: '',
@@ -59,21 +62,36 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     stockLink: 'NO',
     photoRequired: 'NO',
     itemCode: '',
-    qty: ''
+    qty: '',
+    dualCheck: 'NO',
+    carryForward: 'NO',
+    assignTo: '',
+    verificationRequired: 'YES',
+    status: 'ACTIVE',
+    amendmentReason: '',
+    levelIds: ''
   });
 
+  const [docDetails, setDocDetails] = useState('');
+  const [currentFile, setCurrentFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
+  const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
+  const departmentList = (lookups.departments || []).map(d => (d.departmentName || '').toUpperCase());
+  const employeeList = (lookups.employees || []).map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
   const speechRef = useRef(null);
 
   useEffect(() => {
     setIsEditing(!readOnly);
   }, [readOnly, open]);
 
+
+
   useEffect(() => {
     if (open) {
+      console.log('BOS Checklist initialData:', initialData);
       if (initialData) {
         setFormData({
           seqNo: initialData.seqNo || '',
@@ -85,12 +103,23 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           checkingPoint: initialData.checkingPoint || '',
           frequency: initialData.frequency || '',
           description: initialData.description || '',
-          department: (initialData.departments || []).map((d) => d.departmentName || d),
+          department: (initialData.departments || []).map((d) => (d.departmentName || d).toUpperCase()),
           stockLink: initialData.stockLink || 'NO',
           photoRequired: initialData.photoRequired || 'NO',
           itemCode: initialData.itemCode || '',
-          qty: initialData.qty || ''
+          qty: initialData.qty || '',
+          dualCheck: initialData.dualCheck || 'NO',
+          carryForward: initialData.carryForward || 'NO',
+          assignTo: initialData.assignTo || '',
+          verificationRequired: initialData.verificationRequired || 'YES',
+          status: initialData.status === 'In Active' ? 'INACTIVE' : (initialData.status || 'ACTIVE'),
+          amendmentReason: '',
+          levelIds: initialData.levelIds || ''
         });
+        
+        // Use standardized BOS utility for robust file loading
+        setUploadedFiles(formatBOSFiles(initialData.uploadedFiles || initialData.uploaded_files));
+        setScannedFiles(formatBOSFiles(initialData.scannedFiles || initialData.scanned_files));
       } else {
         resetForm();
         fetchNextSeq();
@@ -100,7 +129,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   const fetchNextSeq = async () => {
     try {
-      const res = await axios.get('/api/qms/checklist/next-sequence');
+      const res = await axios.get(`${API_PATHS.QMS.CHECKLIST}/next-sequence`);
       setFormData(prev => ({ ...prev, seqNo: String(res.data.nextSeqNo).padStart(3, '0') }));
     } catch (error) {
       setFormData(prev => ({ ...prev, seqNo: String(Date.now()).slice(-4) }));
@@ -111,7 +140,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setFormData({
       seqNo: '',
       category: '',
-      effectiveFrom: '',
+      effectiveFrom: new Date().toISOString().split('T')[0],
       expiryDate: '',
       reminderDays: '',
       reminderDate: '',
@@ -122,57 +151,125 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       stockLink: 'NO',
       photoRequired: 'NO',
       itemCode: '',
-      qty: ''
+      qty: '',
+      dualCheck: 'NO',
+      carryForward: 'NO',
+      assignTo: '',
+      verificationRequired: 'YES',
+      status: 'ACTIVE',
+      amendmentReason: '',
+      levelIds: ''
     });
+    setDocDetails('');
+    setCurrentFile(null);
     setUploadedFiles([]);
     setScannedFiles([]);
+    if (!initialData) {
+      fetchNextSeq();
+    }
   };
+
+  const [docDetails, setDocDetails] = useState('');
+  const [currentFile, setCurrentFile] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const newData = { ...prev, [name]: value };
+      
+      // Case 1: Change Expiry or Days -> Update Date
+      if (name === 'expiryDate' || name === 'reminderDays') {
+        const expiry = name === 'expiryDate' ? value : prev.expiryDate;
+        const days = name === 'reminderDays' ? value : prev.reminderDays;
+        
+        if (expiry && days) {
+          const date = new Date(expiry);
+          const dayCount = parseInt(days);
+          if (!isNaN(dayCount)) {
+            date.setDate(date.getDate() - dayCount);
+            newData.reminderDate = date.toISOString().split('T')[0];
+          }
+        }
+      }
+      
+      // Case 2: Change Reminder Date -> Update Days
+      if (name === 'reminderDate' && value && prev.expiryDate) {
+        const expiry = new Date(prev.expiryDate);
+        const reminder = new Date(value);
+        const diffTime = expiry - reminder;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (!isNaN(diffDays)) {
+          newData.reminderDays = diffDays >= 0 ? diffDays : 0;
+        }
+      }
+      
+      return newData;
+    });
   };
 
-  const handleSave = () => {
-    if (!formData.category || !formData.frequency || !formData.checkingPoint || !formData.description) {
-      alert('Please fill required fields');
+  const handleSave = async () => {
+    if (!formData.category || !formData.frequency || !formData.checkingPoint || !formData.description || !formData.reminderDays || 
+        !formData.photoRequired || !formData.stockLink || !formData.dualCheck || !formData.carryForward) {
+      alert('Please fill all mandatory fields including Photo Required, Stock Link, Dual Check and Carry Forward');
       return;
     }
-    onSave({
-      ...formData,
-      id: initialData?.id,
-      uploadedFiles: uploadedFiles.map(f => f.name),
-      scannedFiles: scannedFiles.map(f => f.name)
-    });
-    handleClose();
+
+    try {
+      const uploadFile = async (fileObj) => {
+        if (fileObj.isServer) return fileObj.name; // Already on server
+        
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', fileObj);
+        const res = await axios.post(`${API_PATHS.FILES}/upload`, formDataUpload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return res.data; // Server filename
+      };
+
+      const finalUploaded = await Promise.all(uploadedFiles.map(uploadFile));
+      const finalScanned = await Promise.all(scannedFiles.map(uploadFile));
+
+      await onSave({
+        ...formData,
+        id: initialData?.id,
+        status: formData.status === 'INACTIVE' ? 'In Active' : 'Active',
+        amendmentReason: formData.amendmentReason,
+        levelIds: formData.levelIds, // Need to add levelIds to formData state
+        description: formData.amendmentReason ? formData.description + '\n[Amendment]: ' + formData.amendmentReason : formData.description,
+        uploadedFiles: finalUploaded,
+        scannedFiles: finalScanned
+      });
+      
+      handleClose();
+    } catch (error) {
+      console.error('Save failed:', error);
+      alert('Failed to save record or upload files.');
+    }
+  };
+
+  const handleAddFile = () => {
+    if (!currentFile) {
+      alert('Please choose a file'); // Using native alert as a fallback, but should use snackbar normally.
+      return;
+    }
+    const newFile = {
+      id: Date.now(),
+      docDetails: docDetails || 'N/A',
+      file: currentFile,
+      name: currentFile.name
+    };
+    setUploadedFiles(prev => [...prev, newFile]);
+    setDocDetails('');
+    setCurrentFile(null);
+  };
+
+  const handleFileDelete = (id) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== id));
   };
 
   // Speech Recognition Logic
-  const toggleListening = () => {
-    if (isListening) {
-      speechRef.current?.stop();
-      setIsListening(false);
-    } else {
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SR) return;
-      const rec = new SR();
-      rec.lang = 'en-US';
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.onresult = (e) => {
-        let interim = '';
-        let final = '';
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          if (e.results[i].isFinal) final += e.results[i][0].transcript;
-          else interim += e.results[i][0].transcript;
-        }
-        if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
-        setInterimText(interim);
-      };
-      rec.start();
-      speechRef.current = rec;
-      setIsListening(true);
-    }
+  const removeFile = (list, setList, index) => {
+    setList(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -180,7 +277,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       open={open}
       onClose={handleClose}
       onSave={handleSave}
-      onClear={resetForm}
+      onClear={isEditing ? resetForm : null}
       title="Check List Master Details"
       maxWidth="lg"
     >
@@ -201,21 +298,36 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               </Box>
 
               {/* Solves "long select" issue using Autocomplete with Chips */}
-              <Autocomplete
-                multiple
-                options={DEPARTMENTS}
-                value={formData.department}
-                disabled={!isEditing}
-                onChange={(e, val) => setFormData(p => ({ ...p, department: val }))}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => (
-                    <Chip variant="outlined" label={option} size="small" {...getTagProps({ index })} />
-                  ))
-                }
-                renderInput={(params) => (
-                  <BOSTextField {...params} label="Departments" placeholder="Select Departments" />
-                )}
-              />
+                <Autocomplete
+                  multiple
+                  options={departmentList}
+                  value={formData.department}
+                  disabled={!isEditing}
+                  onChange={(e, val) => setFormData(p => ({ ...p, department: val }))}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <BOSTextField {...params} label="Departments" placeholder={departmentList.length > 0 ? "Select Departments" : "Loading departments..."} />
+                  )}
+                />
+                
+                <BOSTextField
+                  select
+                  label="Assign To (Executor)"
+                  name="assignTo"
+                  value={formData.assignTo}
+                  onChange={handleChange}
+                  disabled={!isEditing}
+                >
+                  <MenuItem value="">-Select-</MenuItem>
+                  {employeeList.map(emp => (
+                    <MenuItem key={emp} value={emp}>{emp}</MenuItem>
+                  ))}
+                </BOSTextField>
             </Stack>
           </BOSFormSection>
 
@@ -232,17 +344,76 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             <Stack spacing={2.5}>
               <BOSTextField label="Checking Point" name="checkingPoint" value={formData.checkingPoint} onChange={handleChange} required disabled={!isEditing} />
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                <BOSTextField select label="Photo Required" name="photoRequired" value={formData.photoRequired} onChange={handleChange} disabled={!isEditing}>
+                <BOSTextField select label="Photo Required" name="photoRequired" value={formData.photoRequired} onChange={handleChange} disabled={!isEditing} required>
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
-                <BOSTextField select label="Stock Link" name="stockLink" value={formData.stockLink} onChange={handleChange} disabled={!isEditing}>
+                <BOSTextField select label="Stock Link" name="stockLink" value={formData.stockLink} onChange={handleChange} disabled={!isEditing} required>
                   <MenuItem value="YES">YES</MenuItem>
                   <MenuItem value="NO">NO</MenuItem>
                 </BOSTextField>
                 <BOSTextField label="Item Code" name="itemCode" value={formData.itemCode} onChange={handleChange} disabled={!isEditing} />
+                <Autocomplete
+                  multiple
+                  options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
+                  value={formData.levelIds ? formData.levelIds.split(',') : []}
+                  disabled={!isEditing}
+                  onChange={(e, val) => setFormData(p => ({ ...p, levelIds: val.join(',') }))}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <BOSTextField {...params} label="Levels" placeholder="Select Levels" />
+                  )}
+                />
               </Box>
-              <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} />
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+                <BOSTextField select label="Dual Check" name="dualCheck" value={formData.dualCheck} onChange={handleChange} disabled={!isEditing} required>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </BOSTextField>
+                <BOSTextField select label="Carry Forward" name="carryForward" value={formData.carryForward} onChange={handleChange} disabled={!isEditing} required>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </BOSTextField>
+                <BOSTextField select label="Verification Required" name="verificationRequired" value={formData.verificationRequired} onChange={handleChange} disabled={!isEditing} required>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </BOSTextField>
+                <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} />
+              </Box>
+              
+              {isEditing && initialData?.id && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <BOSTextField 
+                    label="Amendment Reason" 
+                    name="amendmentReason" 
+                    value={formData.amendmentReason} 
+                    onChange={handleChange} 
+                    required 
+                    color="warning" 
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'warning.lighter' } }}
+                  />
+                  <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} required>
+                    <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                    <MenuItem value="INACTIVE">IN ACTIVE</MenuItem>
+                  </BOSTextField>
+                </Box>
+              )}
+              {initialData?.rejReason && (
+                <BOSTextField
+                  label="Rejection Reason"
+                  value={initialData.rejReason}
+                  multiline
+                  rows={2}
+                  disabled
+                  color="error"
+                  sx={{ mt: 1, '& .MuiOutlinedInput-root': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                />
+              )}
             </Stack>
           </BOSFormSection>
 
@@ -260,7 +431,36 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 disabled={!isEditing}
                 InputProps={{
                   endAdornment: isEditing && (
-                    <IconButton onClick={toggleListening} size="small" color={isListening ? 'error' : 'default'}>
+                    <IconButton 
+                      onClick={() => {
+                        if (isListening) {
+                          speechRef.current?.stop();
+                          setIsListening(false);
+                        } else {
+                          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                          if (!SR) return;
+                          const rec = new SR();
+                          rec.lang = 'en-US';
+                          rec.continuous = true;
+                          rec.interimResults = true;
+                          rec.onresult = (e) => {
+                            let interim = '';
+                            let final = '';
+                            for (let i = e.resultIndex; i < e.results.length; i++) {
+                              if (e.results[i].isFinal) final += e.results[i][0].transcript;
+                              else interim += e.results[i][0].transcript;
+                            }
+                            if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
+                            setInterimText(interim);
+                          };
+                          rec.start();
+                          speechRef.current = rec;
+                          setIsListening(true);
+                        }
+                      }} 
+                      size="small" 
+                      color={isListening ? 'error' : 'default'}
+                    >
                       {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
                     </IconButton>
                   )
@@ -273,38 +473,38 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         {/* Right Column: Attachments */}
         <Stack spacing={3}>
           <BOSFormSection title="Attachments" icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />}>
-            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px' }}>
-              <Button component="label" variant="outlined" startIcon={<IconCloudUpload size={20} />} disabled={!isEditing}>
-                Upload Files
-                <input type="file" multiple hidden onChange={(e) => setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)])} />
-              </Button>
-              <Box sx={{ mt: 2 }}>
-                {uploadedFiles.length === 0 ? (
-                  <Typography variant="caption" color="text.disabled">No files uploaded</Typography>
-                ) : (
-                  uploadedFiles.map((f, i) => (
-                    <Typography key={i} variant="caption" display="block">{f.name}</Typography>
-                  ))
-                )}
+            <Box sx={{ mt: 1 }}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 2, alignItems: 'center', mb: 3 }}>
+                <BOSTextField 
+                  label="Doc Details" 
+                  value={docDetails} 
+                  onChange={(e) => setDocDetails(e.target.value)} 
+                  disabled={!isEditing} 
+                />
+                <Button component="label" variant="outlined" startIcon={<IconCloudUpload size={18} />} disabled={!isEditing} sx={{ height: 40 }}>
+                  {currentFile ? currentFile.name : 'Choose File'}
+                  <input type="file" hidden onChange={(e) => setCurrentFile(e.target.files[0])} />
+                </Button>
+                <Button variant="contained" color="primary" onClick={handleAddFile} disabled={!isEditing} sx={{ height: 40 }}>
+                  Add
+                </Button>
               </Box>
-            </Box>
-          </BOSFormSection>
 
-          <BOSFormSection title="Scan Documents" icon={<IconCamera size={20} color={theme.palette.secondary.main} />}>
-            <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '8px' }}>
-              <Button component="label" variant="outlined" startIcon={<IconCamera size={20} />} disabled={!isEditing}>
-                Scan & Upload
-                <input type="file" accept="image/*" capture="environment" hidden onChange={(e) => setScannedFiles(prev => [...prev, ...Array.from(e.target.files)])} />
-              </Button>
-              <Box sx={{ mt: 2 }}>
-                {scannedFiles.length === 0 ? (
-                  <Typography variant="caption" color="text.disabled">No scans yet</Typography>
-                ) : (
-                  scannedFiles.map((f, i) => (
-                    <Typography key={i} variant="caption" display="block">{f.name}</Typography>
-                  ))
-                )}
-              </Box>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Uploaded Files</Typography>
+              <BOSDataTable 
+                columns={[
+                  { id: 'docDetails', label: 'Doc Details' },
+                  { id: 'name', label: 'File Name' }
+                ]}
+                rows={uploadedFiles}
+                showActions={isEditing}
+                onDeleteRow={(row) => handleFileDelete(row.id)}
+                size={5}
+                page={0}
+                onPageChange={() => {}}
+                onSizeChange={() => {}}
+                hidePagination
+              />
             </Box>
           </BOSFormSection>
         </Stack>

@@ -5,12 +5,15 @@ import com.autonoma.erp.repository.AuditTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/master/qms/audit-type")
 @CrossOrigin(origins = "*")
+@Tag(name = "QMS - Audit Type Master", description = "Endpoints for managing QMS audit types and standards")
 public class AuditTypeController {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuditTypeController.class);
@@ -19,6 +22,7 @@ public class AuditTypeController {
     private com.autonoma.erp.service.AuditTypeService auditTypeService;
 
     @GetMapping
+    @Operation(summary = "Get All Audit Types", description = "Fetches a paginated list of audit types with optional filters")
     public ResponseEntity<java.util.Map<String, Object>> getAllAuditTypes(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
@@ -52,6 +56,7 @@ public class AuditTypeController {
     }
 
     @PostMapping
+    @Operation(summary = "Create Audit Type", description = "Creates a new audit type configuration")
     public AuditType createAuditType(@RequestBody AuditType auditType) {
         log.info("Saving audit type: {}", auditType);
         return auditTypeService.save(auditType);

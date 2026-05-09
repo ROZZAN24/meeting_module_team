@@ -12,6 +12,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| AUDIT TYPE MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -68,7 +69,7 @@ export default function AuditTypeMaster() {
   const fetchAuditTypes = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/master/qms/audit-type', {
+      const response = await axios.get(API_PATHS.QMS.AUDIT_TYPE, {
         params: {
           page, size,
           search: globalQuery,
@@ -103,7 +104,7 @@ export default function AuditTypeMaster() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/master/qms/audit-type/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.QMS.AUDIT_TYPE}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Audit Type deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchAuditTypes();
     } catch (error) {

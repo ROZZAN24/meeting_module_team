@@ -185,6 +185,7 @@ const SamplePage = Loadable(lazy(() => import('views/sample-page')));
 // admin routing
 const AdminUserOverview = Loadable(lazy(() => import('views/admin/UserOverview')));
 const AdminPreferenceMaster = Loadable(lazy(() => import('views/admin/PreferenceMaster')));
+const AdminCompanyProfile = Loadable(lazy(() => import('views/admin/CompanyProfile')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -196,7 +197,11 @@ const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/Departmen
 const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
 const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
 const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/DesignationMaster')));
+<<<<<<< HEAD
 const MasterHrGrade = Loadable(lazy(() => import('views/master/GradeDetails')));
+=======
+const MasterHrDesignationLevel = Loadable(lazy(() => import('views/master/hr/DesignationLevelMaster')));
+>>>>>>> eb345df02f3fff5159b2fe2b88cf7f4f7c98dae3
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -231,6 +236,10 @@ const MainRoutes = {
     {
       path: '/admin/user-credentials',
       element: <AdminUserOverview />
+    },
+    {
+      path: '/admin/company-profile',
+      element: <AdminCompanyProfile />
     },
     {
       path: '/widget/statistics',
@@ -797,11 +806,11 @@ const MainRoutes = {
       element: <MasterHrDepartment />
     },
     {
-      path: '/master/hr/employee',
+      path: '/hra/hr/employee/master',
       element: <MasterHrEmployeeList />
     },
     {
-      path: '/master/hr/employee/create',
+      path: '/hra/hr/employee/master/create',
       element: <MasterHrEmployee />
     },
     {
@@ -809,8 +818,13 @@ const MainRoutes = {
       element: <MasterHrDesignation />
     },
     {
+<<<<<<< HEAD
       path: '/master/hr/grade',
       element: <MasterHrGrade />
+=======
+      path: '/master/hr/desg-level',
+      element: <MasterHrDesignationLevel />
+>>>>>>> eb345df02f3fff5159b2fe2b88cf7f4f7c98dae3
     },
     {
       path: '/master/qms/audit/type',
