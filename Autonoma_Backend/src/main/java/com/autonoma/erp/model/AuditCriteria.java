@@ -34,6 +34,9 @@ public class AuditCriteria {
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String attachmentInfo; // JSON string of file metadata
 
+    @Column(columnDefinition = "NVARCHAR(100)")
+    private String level; // L1,L2...
+
     private String createdBy;
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
@@ -61,6 +64,8 @@ public class AuditCriteria {
     public void setStatus(String status) { this.status = status; }
     public String getAttachmentInfo() { return attachmentInfo; }
     public void setAttachmentInfo(String attachmentInfo) { this.attachmentInfo = attachmentInfo; }
+    public String getLevel() { return level; }
+    public void setLevel(String level) { this.level = level; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     public Date getCreatedDate() { return createdDate; }

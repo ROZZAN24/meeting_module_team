@@ -90,8 +90,10 @@ export default function AddAuditObservation() {
   const generateObservationNo = async () => {
     try {
       const res = await axios.get(`${API_PATHS.QMS.AUDIT_OBSERVATION}/next-no`);
-      setFormData(prev => ({ ...prev, observationNo: res.data }));
-    } catch (e) { setFormData(prev => ({ ...prev, observationNo: '1' })); }
+      setFormData(prev => ({ ...prev, observationNo: res.data || 'OB-001' }));
+    } catch (e) { 
+      setFormData(prev => ({ ...prev, observationNo: 'OB-001' })); 
+    }
   };
 
   const fetchObservation = async () => {
