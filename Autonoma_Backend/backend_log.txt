@@ -12,8 +12,7 @@
 [INFO] Copying 11 resources from src/main/resources to target/classes
 [INFO] 
 [INFO] --- compiler:3.13.0:compile (default-compile) @ erp-backend ---
-[INFO] Recompiling the module because of changed source code.
-[INFO] Compiling 100 source files with javac [debug parameters release 21] to target/classes
+[INFO] Nothing to compile - all classes are up to date.
 [INFO] 
 [INFO] --- resources:3.3.1:testResources (default-testResources) @ erp-backend ---
 [INFO] skip non existing resourceDirectory /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_ERP/Autonoma_Backend/src/test/resources
@@ -35,34 +34,34 @@
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::                (v3.2.5)
 
-2026-05-09T16:27:18.617+05:30  INFO 40277 --- [  restartedMain] c.a.erp.AutonomaBackendApplication       : Starting AutonomaBackendApplication using Java 21.0.9 with PID 40277 (/Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_ERP/Autonoma_Backend/target/classes started by eash in /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_ERP/Autonoma_Backend)
-2026-05-09T16:27:18.618+05:30  INFO 40277 --- [  restartedMain] c.a.erp.AutonomaBackendApplication       : No active profile set, falling back to 1 default profile: "default"
-2026-05-09T16:27:18.632+05:30  INFO 40277 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-2026-05-09T16:27:18.632+05:30  INFO 40277 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-2026-05-09T16:27:18.880+05:30  INFO 40277 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-05-09T16:27:18.917+05:30  INFO 40277 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 34 ms. Found 33 JPA repository interfaces.
-2026-05-09T16:27:19.114+05:30  INFO 40277 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
-2026-05-09T16:27:19.118+05:30  INFO 40277 --- [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-05-09T16:27:19.118+05:30  INFO 40277 --- [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
-2026-05-09T16:27:19.139+05:30  INFO 40277 --- [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2026-05-09T16:27:19.139+05:30  INFO 40277 --- [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 507 ms
-2026-05-09T16:27:19.162+05:30  INFO 40277 --- [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-05-09T16:27:19.307+05:30  INFO 40277 --- [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection ConnectionID:1 ClientConnectionId: edd76f2e-d8b8-441c-a319-5c0ef8f637dc
-2026-05-09T16:27:19.308+05:30  INFO 40277 --- [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-05-09T16:27:19.314+05:30  INFO 40277 --- [  restartedMain] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;'
-2026-05-09T16:27:19.378+05:30  INFO 40277 --- [  restartedMain] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
-2026-05-09T16:27:19.378+05:30  INFO 40277 --- [  restartedMain] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
-2026-05-09T16:27:19.378+05:30  INFO 40277 --- [  restartedMain] o.f.c.internal.license.VersionPrinter    : 
-2026-05-09T16:27:19.387+05:30  INFO 40277 --- [  restartedMain] org.flywaydb.core.FlywayExecutor         : Database: jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite; (Microsoft SQL Server 16.0)
-2026-05-09T16:27:19.430+05:30  INFO 40277 --- [  restartedMain] o.f.core.internal.command.DbValidate     : Successfully validated 11 migrations (execution time 00:00.019s)
-2026-05-09T16:27:19.444+05:30  INFO 40277 --- [  restartedMain] o.f.core.internal.command.DbMigrate      : Current version of schema [dbo]: 2.2
-2026-05-09T16:27:19.447+05:30  INFO 40277 --- [  restartedMain] o.f.core.internal.command.DbMigrate      : Schema [dbo] is up to date. No migration necessary.
-2026-05-09T16:27:19.483+05:30  INFO 40277 --- [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-05-09T16:27:19.500+05:30  INFO 40277 --- [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
-2026-05-09T16:27:19.510+05:30  INFO 40277 --- [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-05-09T16:27:19.575+05:30  INFO 40277 --- [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-05-09T16:27:19.590+05:30  WARN 40277 --- [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-05-09T16:27:20.080+05:30  INFO 40277 --- [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-05-09T16:37:50.628+05:30  INFO 41166 --- [  restartedMain] c.a.erp.AutonomaBackendApplication       : Starting AutonomaBackendApplication using Java 21.0.9 with PID 41166 (/Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_ERP/Autonoma_Backend/target/classes started by eash in /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_ERP/Autonoma_Backend)
+2026-05-09T16:37:50.629+05:30  INFO 41166 --- [  restartedMain] c.a.erp.AutonomaBackendApplication       : No active profile set, falling back to 1 default profile: "default"
+2026-05-09T16:37:50.645+05:30  INFO 41166 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-05-09T16:37:50.645+05:30  INFO 41166 --- [  restartedMain] .e.DevToolsPropertyDefaultsPostProcessor : For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-05-09T16:37:50.964+05:30  INFO 41166 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-05-09T16:37:51.009+05:30  INFO 41166 --- [  restartedMain] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 41 ms. Found 35 JPA repository interfaces.
+2026-05-09T16:37:51.304+05:30  INFO 41166 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8081 (http)
+2026-05-09T16:37:51.311+05:30  INFO 41166 --- [  restartedMain] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-05-09T16:37:51.311+05:30  INFO 41166 --- [  restartedMain] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.20]
+2026-05-09T16:37:51.328+05:30  INFO 41166 --- [  restartedMain] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-05-09T16:37:51.329+05:30  INFO 41166 --- [  restartedMain] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 684 ms
+2026-05-09T16:37:51.355+05:30  INFO 41166 --- [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-05-09T16:37:51.563+05:30  INFO 41166 --- [  restartedMain] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection ConnectionID:1 ClientConnectionId: d86eacd7-bc92-447b-b869-369e489a448a
+2026-05-09T16:37:51.564+05:30  INFO 41166 --- [  restartedMain] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-05-09T16:37:51.571+05:30  INFO 41166 --- [  restartedMain] o.s.b.a.h2.H2ConsoleAutoConfiguration    : H2 console available at '/h2-console'. Database available at 'jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;'
+2026-05-09T16:37:51.646+05:30  INFO 41166 --- [  restartedMain] o.f.c.internal.license.VersionPrinter    : Flyway Community Edition 9.22.3 by Redgate
+2026-05-09T16:37:51.646+05:30  INFO 41166 --- [  restartedMain] o.f.c.internal.license.VersionPrinter    : See release notes here: https://rd.gt/416ObMi
+2026-05-09T16:37:51.646+05:30  INFO 41166 --- [  restartedMain] o.f.c.internal.license.VersionPrinter    : 
+2026-05-09T16:37:51.656+05:30  INFO 41166 --- [  restartedMain] org.flywaydb.core.FlywayExecutor         : Database: jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite; (Microsoft SQL Server 16.0)
+2026-05-09T16:37:51.704+05:30  INFO 41166 --- [  restartedMain] o.f.core.internal.command.DbValidate     : Successfully validated 11 migrations (execution time 00:00.020s)
+2026-05-09T16:37:51.719+05:30  INFO 41166 --- [  restartedMain] o.f.core.internal.command.DbMigrate      : Current version of schema [dbo]: 2.2
+2026-05-09T16:37:51.722+05:30  INFO 41166 --- [  restartedMain] o.f.core.internal.command.DbMigrate      : Schema [dbo] is up to date. No migration necessary.
+2026-05-09T16:37:51.766+05:30  INFO 41166 --- [  restartedMain] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-05-09T16:37:51.791+05:30  INFO 41166 --- [  restartedMain] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-05-09T16:37:51.804+05:30  INFO 41166 --- [  restartedMain] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-05-09T16:37:51.886+05:30  INFO 41166 --- [  restartedMain] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-05-09T16:37:51.905+05:30  WARN 41166 --- [  restartedMain] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-05-09T16:37:52.442+05:30  INFO 41166 --- [  restartedMain] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
 Hibernate: 
     create table ad_app_preference (
         row_id int identity not null,
@@ -76,7 +75,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (row_id)
     )
-2026-05-09T16:27:20.179+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.547+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table ad_app_preference (
         row_id int identity not null,
         comments NVARCHAR(500),
@@ -162,15 +161,15 @@ Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an 
 
 Hibernate: 
     create table ad_company_credential (
-        id int identity not null,
-        address_1 NVARCHAR(200),
-        address_2 NVARCHAR(200),
+        id bigint identity not null,
+        address NVARCHAR(500),
         city NVARCHAR(50),
         company_name NVARCHAR(100) not null,
         country NVARCHAR(50),
         created_by NVARCHAR(50),
         created_date datetime2(6),
-        db_source_name NVARCHAR(10),
+        db_source_name NVARCHAR(50),
+        dir_path NVARCHAR(200),
         gst_in NVARCHAR(15),
         lic_expiry_date datetime2(6),
         lic_renewal_date datetime2(6),
@@ -184,17 +183,17 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.183+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.550+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table ad_company_credential (
-        id int identity not null,
-        address_1 NVARCHAR(200),
-        address_2 NVARCHAR(200),
+        id bigint identity not null,
+        address NVARCHAR(500),
         city NVARCHAR(50),
         company_name NVARCHAR(100) not null,
         country NVARCHAR(50),
         created_by NVARCHAR(50),
         created_date datetime2(6),
-        db_source_name NVARCHAR(10),
+        db_source_name NVARCHAR(50),
+        dir_path NVARCHAR(200),
         gst_in NVARCHAR(15),
         lic_expiry_date datetime2(6),
         lic_renewal_date datetime2(6),
@@ -211,15 +210,15 @@ Hibernate:
 
 org.hibernate.tool.schema.spi.CommandAcceptanceException: Error executing DDL "
     create table ad_company_credential (
-        id int identity not null,
-        address_1 NVARCHAR(200),
-        address_2 NVARCHAR(200),
+        id bigint identity not null,
+        address NVARCHAR(500),
         city NVARCHAR(50),
         company_name NVARCHAR(100) not null,
         country NVARCHAR(50),
         created_by NVARCHAR(50),
         created_date datetime2(6),
-        db_source_name NVARCHAR(10),
+        db_source_name NVARCHAR(50),
+        dir_path NVARCHAR(200),
         gst_in NVARCHAR(15),
         lic_expiry_date datetime2(6),
         lic_renewal_date datetime2(6),
@@ -303,7 +302,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (user_id)
     )
-2026-05-09T16:27:20.184+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.552+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table ad_user_credentials (
         user_id NVARCHAR(50) not null,
         created_by NVARCHAR(50),
@@ -388,12 +387,69 @@ Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an 
 	... 41 common frames omitted
 
 Hibernate: 
+    create table bos_modules (
+        module_id int not null,
+        mod_code NVARCHAR(10),
+        mod_name NVARCHAR(100),
+        primary key (module_id)
+    )
+Hibernate: 
+    create table bos_pages (
+        page_id int not null,
+        enabled int,
+        page_code NVARCHAR(10),
+        page_name NVARCHAR(100) not null,
+        mod_id int not null,
+        sub_mod_id int,
+        primary key (page_id)
+    )
+Hibernate: 
+    create table bos_sub_modules (
+        sub_mod_id int not null,
+        sub_mod_code NVARCHAR(10),
+        sub_mod_name NVARCHAR(100) not null,
+        mod_id int,
+        primary key (sub_mod_id)
+    )
+Hibernate: 
+    create table bos_user_module (
+        module_id int not null,
+        user_id NVARCHAR(50) not null,
+        enabled int,
+        primary key (module_id, user_id)
+    )
+Hibernate: 
+    create table bos_user_page_auth (
+        page_id int not null,
+        user_id NVARCHAR(50) not null,
+        additional1 int,
+        additional2 int,
+        approval int,
+        delete_acs int,
+        enable int,
+        export int,
+        manager int,
+        mod_id int not null,
+        read_acs int,
+        sub_mod_id int,
+        write int,
+        primary key (page_id, user_id)
+    )
+Hibernate: 
+    create table bos_user_sub_modules (
+        sub_mod_id int not null,
+        user_id NVARCHAR(50) not null,
+        enabled int,
+        mod_id int not null,
+        primary key (sub_mod_id, user_id)
+    )
+Hibernate: 
     create table hrm_category_master (
         id bigint identity not null,
         category_name varchar(255) not null,
         primary key (id)
     )
-2026-05-09T16:27:20.187+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.569+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_category_master (
         id bigint identity not null,
         category_name varchar(255) not null,
@@ -477,7 +533,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.188+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.571+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_department_master (
         id bigint identity not null,
         created_by varchar(255),
@@ -564,6 +620,20 @@ Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an 
 	... 41 common frames omitted
 
 Hibernate: 
+    create table hrm_desig_level (
+        row_id bigint identity not null,
+        basic float(53),
+        created_by NVARCHAR(100) not null,
+        created_date datetime2(6),
+        da float(53),
+        hra float(53),
+        level NVARCHAR(10),
+        screening_level int,
+        updated_by NVARCHAR(100),
+        updated_date datetime2(6),
+        primary key (row_id)
+    )
+Hibernate: 
     create table hrm_emp_activity (
         id bigint identity not null,
         activity_details NVARCHAR(MAX),
@@ -574,7 +644,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.190+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.575+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_activity (
         id bigint identity not null,
         activity_details NVARCHAR(MAX),
@@ -669,7 +739,7 @@ Hibernate:
         value numeric(12,2),
         primary key (id)
     )
-2026-05-09T16:27:20.191+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.576+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_asset (
         id bigint identity not null,
         asset_id varchar(50),
@@ -781,7 +851,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.193+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.578+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_contact (
         id bigint identity not null,
         comm_address1 varchar(255),
@@ -905,7 +975,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.194+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.579+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_dependent (
         id bigint identity not null,
         aadhar_id varchar(20),
@@ -1015,7 +1085,7 @@ Hibernate:
         year_of_passing varchar(10),
         primary key (id)
     )
-2026-05-09T16:27:20.196+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.580+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_education (
         id bigint identity not null,
         created_by varchar(100),
@@ -1121,7 +1191,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.197+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.581+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_emergency_contact (
         id bigint identity not null,
         address1 varchar(255),
@@ -1227,7 +1297,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.199+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.583+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_experience (
         id bigint identity not null,
         company_name varchar(255),
@@ -1359,7 +1429,7 @@ Hibernate:
         wages_type varchar(50),
         primary key (id)
     )
-2026-05-09T16:27:20.200+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.584+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_job_profile (
         id bigint identity not null,
         asset_id1 varchar(50),
@@ -1527,7 +1597,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.202+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.586+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_kyc (
         id bigint identity not null,
         aadhar_number varchar(20),
@@ -1652,7 +1722,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.203+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.587+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_kyc_document (
         id bigint identity not null,
         attachment varchar(500),
@@ -1755,7 +1825,7 @@ Hibernate:
         updated_date datetime2(6),
         primary key (id)
     )
-2026-05-09T16:27:20.205+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.588+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_passport (
         id bigint identity not null,
         comments NVARCHAR(MAX),
@@ -1882,7 +1952,7 @@ Hibernate:
         weight varchar(20),
         primary key (id)
     )
-2026-05-09T16:27:20.206+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.590+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_emp_personal_detail (
         id bigint identity not null,
         aadhar_number varchar(20),
@@ -2019,12 +2089,25 @@ Caused by: com.microsoft.sqlserver.jdbc.SQLServerException: There is already an 
 	... 41 common frames omitted
 
 Hibernate: 
+    create table hrm_grade_details (
+        id bigint identity not null,
+        created_by varchar(255),
+        created_date datetime2(6),
+        grade_code varchar(50),
+        grade_name varchar(100),
+        seq_no varchar(255),
+        status varchar(20),
+        updated_by varchar(255),
+        updated_date datetime2(6),
+        primary key (id)
+    )
+Hibernate: 
     create table hrm_level_master (
         id bigint identity not null,
         level_name varchar(255) not null,
         primary key (id)
     )
-2026-05-09T16:27:20.208+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.594+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_level_master (
         id bigint identity not null,
         level_name varchar(255) not null,
@@ -2100,7 +2183,7 @@ Hibernate:
         type_name varchar(255) not null,
         primary key (id)
     )
-2026-05-09T16:27:20.210+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.595+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table hrm_type_master (
         id bigint identity not null,
         type_name varchar(255) not null,
@@ -2209,7 +2292,7 @@ Hibernate:
         verify_status varchar(255),
         primary key (id)
     )
-2026-05-09T16:27:20.211+05:30  WARN 40277 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
+2026-05-09T16:37:52.597+05:30  WARN 41166 --- [  restartedMain] o.h.t.s.i.ExceptionHandlerLoggedImpl     : GenerationTarget encountered exception accepting command : Error executing DDL "
     create table qms_master_checklist (
         id bigint identity not null,
         amendment_reason TEXT,
@@ -2363,19 +2446,69 @@ Hibernate:
 Hibernate: 
     alter table hrm_type_master 
        add constraint UK_gackje4dgy4bvdta1fob4a199 unique (type_name)
-2026-05-09T16:27:20.272+05:30  INFO 40277 --- [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-05-09T16:27:20.384+05:30  INFO 40277 --- [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-05-09T16:27:20.678+05:30  WARN 40277 --- [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-05-09T16:27:20.685+05:30  WARN 40277 --- [  restartedMain] .s.s.UserDetailsServiceAutoConfiguration : 
+Hibernate: 
+    alter table bos_pages 
+       add constraint FKfc7rdm0qsshcebnt03xnyo1js 
+       foreign key (mod_id) 
+       references bos_modules
+Hibernate: 
+    alter table bos_pages 
+       add constraint FK4i6lh7pwvqs8bluqkpcktuquv 
+       foreign key (sub_mod_id) 
+       references bos_sub_modules
+Hibernate: 
+    alter table bos_sub_modules 
+       add constraint FKtsy55bo3sx2xc3asc22hao0r 
+       foreign key (mod_id) 
+       references bos_modules
+Hibernate: 
+    alter table bos_user_module 
+       add constraint FKcde50ek8kmhj191hrvu474c55 
+       foreign key (module_id) 
+       references bos_modules
+Hibernate: 
+    alter table bos_user_module 
+       add constraint FKmaeb7wajv1yokr8e441n16cj0 
+       foreign key (user_id) 
+       references ad_user_credentials
+Hibernate: 
+    alter table bos_user_page_auth 
+       add constraint FK876rr0g5lx7ktoxx6entgpsuy 
+       foreign key (page_id) 
+       references bos_pages
+Hibernate: 
+    alter table bos_user_page_auth 
+       add constraint FKhlvo5q8ydt6r6k57p7cmt9jwv 
+       foreign key (user_id) 
+       references ad_user_credentials
+Hibernate: 
+    alter table bos_user_sub_modules 
+       add constraint FKiguxau4jxxn4kg8m3jt4cypx2 
+       foreign key (mod_id) 
+       references bos_modules
+Hibernate: 
+    alter table bos_user_sub_modules 
+       add constraint FKrvpyegqixsd28nicuc97xxcd0 
+       foreign key (sub_mod_id) 
+       references bos_sub_modules
+Hibernate: 
+    alter table bos_user_sub_modules 
+       add constraint FK1rafv0jd0ocblwkpscrdtwq37 
+       foreign key (user_id) 
+       references ad_user_credentials
+2026-05-09T16:37:52.699+05:30  INFO 41166 --- [  restartedMain] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-05-09T16:37:52.836+05:30  INFO 41166 --- [  restartedMain] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-05-09T16:37:53.156+05:30  WARN 41166 --- [  restartedMain] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-05-09T16:37:53.163+05:30  WARN 41166 --- [  restartedMain] .s.s.UserDetailsServiceAutoConfiguration : 
 
-Using generated security password: b1247255-1bc6-4f60-a161-014a090754dd
+Using generated security password: 13bfcac1-bf86-4216-9114-79e1c8404829
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-2026-05-09T16:27:20.800+05:30  INFO 40277 --- [  restartedMain] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@1fac9132, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1704048d, org.springframework.security.web.context.SecurityContextHolderFilter@4348d78f, org.springframework.security.web.header.HeaderWriterFilter@24944674, org.springframework.web.filter.CorsFilter@1889909b, org.springframework.security.web.authentication.logout.LogoutFilter@51c0b607, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@7e3677a6, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@122b6f4c, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@481dee31, org.springframework.security.web.session.SessionManagementFilter@31991e50, org.springframework.security.web.access.ExceptionTranslationFilter@3325cbe5, org.springframework.security.web.access.intercept.AuthorizationFilter@3617c6ec]
-2026-05-09T16:27:20.903+05:30  INFO 40277 --- [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
-2026-05-09T16:27:20.917+05:30  INFO 40277 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
-2026-05-09T16:27:20.923+05:30  INFO 40277 --- [  restartedMain] c.a.erp.AutonomaBackendApplication       : Started AutonomaBackendApplication in 2.402 seconds (process running for 2.527)
+2026-05-09T16:37:53.270+05:30  INFO 41166 --- [  restartedMain] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@3a6c985, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6f6e26fa, org.springframework.security.web.context.SecurityContextHolderFilter@76e2f854, org.springframework.security.web.header.HeaderWriterFilter@48c1af06, org.springframework.web.filter.CorsFilter@1666a13f, org.springframework.security.web.authentication.logout.LogoutFilter@5387b37e, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@694f49de, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@58a9a3da, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@4ec30530, org.springframework.security.web.session.SessionManagementFilter@77dfa64c, org.springframework.security.web.access.ExceptionTranslationFilter@7c8cdfb4, org.springframework.security.web.access.intercept.AuthorizationFilter@3a7acbc0]
+2026-05-09T16:37:53.361+05:30  INFO 41166 --- [  restartedMain] o.s.b.d.a.OptionalLiveReloadServer       : LiveReload server is running on port 35729
+2026-05-09T16:37:53.373+05:30  INFO 41166 --- [  restartedMain] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8081 (http) with context path ''
+2026-05-09T16:37:53.378+05:30  INFO 41166 --- [  restartedMain] c.a.erp.AutonomaBackendApplication       : Started AutonomaBackendApplication in 2.88 seconds (process running for 3.038)
 Hibernate: 
     select
         uc1_0.user_id,
@@ -2421,513 +2554,9 @@ Hibernate:
     where
         user_id=?
 Admin password re-synced on startup.
-2026-05-09T16:27:24.540+05:30  INFO 40277 --- [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-05-09T16:27:24.540+05:30  INFO 40277 --- [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-05-09T16:27:24.541+05:30  INFO 40277 --- [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.verify_status=? 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
+2026-05-09T16:38:07.218+05:30  INFO 41166 --- [nio-8081-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-05-09T16:38:07.218+05:30  INFO 41166 --- [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-05-09T16:38:07.219+05:30  INFO 41166 --- [nio-8081-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 1 ms
 Hibernate: 
     select
         uc1_0.user_id,
@@ -2940,2545 +2569,20 @@ Hibernate:
         uc1_0.updated_by,
         uc1_0.updated_date 
     from
-        ad_user_credentials uc1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
+        ad_user_credentials uc1_0 
     where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        uc1_0.user_id,
-        uc1_0.created_by,
-        uc1_0.created_date,
-        uc1_0.emp_id,
-        uc1_0.img_name,
-        uc1_0.password,
-        uc1_0.status,
-        uc1_0.updated_by,
-        uc1_0.updated_date 
-    from
-        ad_user_credentials uc1_0
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        uc1_0.user_id,
-        uc1_0.created_by,
-        uc1_0.created_date,
-        uc1_0.emp_id,
-        uc1_0.img_name,
-        uc1_0.password,
-        uc1_0.status,
-        uc1_0.updated_by,
-        uc1_0.updated_date 
-    from
-        ad_user_credentials uc1_0
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        uc1_0.user_id,
-        uc1_0.created_by,
-        uc1_0.created_date,
-        uc1_0.emp_id,
-        uc1_0.img_name,
-        uc1_0.password,
-        uc1_0.status,
-        uc1_0.updated_by,
-        uc1_0.updated_date 
-    from
-        ad_user_credentials uc1_0
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.dual_check=? 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        ca1_0.id,
-        ca1_0.actual_files,
-        ca1_0.assign_type,
-        ca1_0.assigned_by,
-        ca1_0.assigned_date,
-        ca1_0.assigned_to,
-        ca1_0.carry_forward,
-        ca1_0.checklist_id,
-        ca1_0.checklist_date,
-        ca1_0.remarks,
-        ca1_0.status_id 
-    from
-        qms_checklist_assignment ca1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        mc1_0.id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        d1_0.id,
-        d1_0.created_by,
-        d1_0.created_date,
-        d1_0.dept_name,
-        d1_0.dept_no,
-        d1_0.nda_certificate,
-        d1_0.seq_no,
-        d1_0.status,
-        d1_0.updated_by,
-        d1_0.updated_date 
-    from
-        hrm_department_master d1_0
-Hibernate: 
-    select
-        em1_0.id,
-        em1_0.additional_role,
-        em1_0.attendance_required,
-        em1_0.business_manager,
-        em1_0.category_id,
-        em1_0.confirmation_date,
-        em1_0.created_by,
-        em1_0.created_date,
-        em1_0.daily_sheet_required,
-        em1_0.date_of_joining,
-        em1_0.department_id,
-        em1_0.designation_id,
-        em1_0.emp_class,
-        em1_0.emp_code,
-        em1_0.emp_level_id,
-        em1_0.employee_name,
-        em1_0.employee_type_id,
-        em1_0.exit_date,
-        em1_0.exit_reason,
-        em1_0.father_husband_name,
-        em1_0.first_name,
-        em1_0.fitness_certificate_upload,
-        em1_0.grace_minutes,
-        em1_0.grade_code,
-        em1_0.guest,
-        em1_0.home_manager,
-        em1_0.induction_status,
-        em1_0.last_name,
-        em1_0.nda_certificate_upload,
-        em1_0.next_revision_date,
-        em1_0.old_emp_code,
-        em1_0.petrol_allowance,
-        em1_0.production_line,
-        em1_0.profile_upload,
-        em1_0.refer_mode,
-        em1_0.shift,
-        em1_0.shift_duration,
-        em1_0.shift_name,
-        em1_0.signature,
-        em1_0.status,
-        em1_0.sub_category_id,
-        em1_0.supplier_name,
-        em1_0.team_group,
-        em1_0.title,
-        em1_0.unit_id,
-        em1_0.updated_by,
-        em1_0.updated_date,
-        em1_0.user_name 
-    from
-        hrm_employee_master em1_0
-Hibernate: 
-    select
-        mc1_0.id,
-        mc1_0.amendment_reason,
-        mc1_0.assign_date,
-        mc1_0.assign_to,
-        mc1_0.carry_forward,
-        mc1_0.category,
-        mc1_0.checking_point,
-        mc1_0.created_by,
-        mc1_0.created_date,
-        mc1_0.description,
-        mc1_0.dual_check,
-        mc1_0.effective_from,
-        mc1_0.expiry_date,
-        mc1_0.frequency,
-        mc1_0.item_code,
-        mc1_0.last_completed_date,
-        mc1_0.level_ids,
-        mc1_0.next_due_date,
-        mc1_0.photo_required,
-        mc1_0.qty,
-        mc1_0.rej_reason,
-        mc1_0.reminder_date,
-        mc1_0.reminder_days,
-        mc1_0.scanned_files,
-        mc1_0.seq_no,
-        mc1_0.status,
-        mc1_0.stock_link,
-        mc1_0.task_status,
-        mc1_0.updated_by,
-        mc1_0.updated_date,
-        mc1_0.uploaded_files,
-        mc1_0.verification_required,
-        mc1_0.verified_by,
-        mc1_0.verified_date,
-        mc1_0.verify_status 
-    from
-        qms_master_checklist mc1_0 
-    where
-        1=1 
-    order by
-        (select
-            0) 
-    offset
-        ? rows 
-    fetch
-        first ? rows only
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        d1_0.checklist_id,
-        d1_0.id,
-        d1_0.department_name 
-    from
-        qms_checklist_department d1_0 
-    where
-        d1_0.checklist_id=?
-Hibernate: 
-    select
-        uc1_0.user_id,
-        uc1_0.created_by,
-        uc1_0.created_date,
-        uc1_0.emp_id,
-        uc1_0.img_name,
-        uc1_0.password,
-        uc1_0.status,
-        uc1_0.updated_by,
-        uc1_0.updated_date 
-    from
-        ad_user_credentials uc1_0
+        uc1_0.user_id=?
 Hibernate: 
     select
         cc1_0.id,
-        cc1_0.address_1,
-        cc1_0.address_2,
+        cc1_0.address,
         cc1_0.city,
         cc1_0.company_name,
         cc1_0.country,
         cc1_0.created_by,
         cc1_0.created_date,
         cc1_0.db_source_name,
+        cc1_0.dir_path,
         cc1_0.gst_in,
         cc1_0.lic_expiry_date,
         cc1_0.lic_renewal_date,
@@ -5495,14 +2599,14 @@ Hibernate:
 Hibernate: 
     select
         cc1_0.id,
-        cc1_0.address_1,
-        cc1_0.address_2,
+        cc1_0.address,
         cc1_0.city,
         cc1_0.company_name,
         cc1_0.country,
         cc1_0.created_by,
         cc1_0.created_date,
         cc1_0.db_source_name,
+        cc1_0.dir_path,
         cc1_0.gst_in,
         cc1_0.lic_expiry_date,
         cc1_0.lic_renewal_date,
@@ -5516,13 +2620,13 @@ Hibernate:
         cc1_0.updated_date 
     from
         ad_company_credential cc1_0
-2026-05-09T16:34:08.004+05:30  WARN 40277 --- [nio-8081-exec-5] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
-2026-05-09T16:34:08.004+05:30  WARN 40277 --- [nio-8081-exec-3] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
-2026-05-09T16:34:08.005+05:30 ERROR 40277 --- [nio-8081-exec-5] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'created_by'.
-2026-05-09T16:34:08.005+05:30 ERROR 40277 --- [nio-8081-exec-3] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'created_by'.
-2026-05-09T16:34:08.023+05:30 ERROR 40277 --- [nio-8081-exec-5] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address_1,cc1_0.address_2,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'created_by'.] [n/a]; SQL [n/a]] with root cause
+2026-05-09T16:38:07.447+05:30  WARN 41166 --- [nio-8081-exec-4] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
+2026-05-09T16:38:07.447+05:30  WARN 41166 --- [nio-8081-exec-3] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
+2026-05-09T16:38:07.447+05:30 ERROR 41166 --- [nio-8081-exec-4] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'address'.
+2026-05-09T16:38:07.447+05:30 ERROR 41166 --- [nio-8081-exec-3] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'address'.
+2026-05-09T16:38:07.453+05:30 ERROR 41166 --- [nio-8081-exec-4] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.dir_path,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'address'.] [n/a]; SQL [n/a]] with root cause
 
-com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by'.
+com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'address'.
 	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1695) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:648) ~[mssql-jdbc-12.4.2.jre11.jar:na]
@@ -5579,9 +2683,9 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.1.6.jar:6.1.6]
-	at jdk.proxy4/jdk.proxy4.$Proxy168.findAll(Unknown Source) ~[na:na]
-	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:28) ~[classes/:na]
-	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:30) ~[classes/:na]
+	at jdk.proxy4/jdk.proxy4.$Proxy170.findAll(Unknown Source) ~[na:na]
+	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:45) ~[classes/:na]
+	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:39) ~[classes/:na]
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
 	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.6.jar:6.1.6]
@@ -5682,9 +2786,9 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
 	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
 
-2026-05-09T16:34:08.023+05:30 ERROR 40277 --- [nio-8081-exec-3] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address_1,cc1_0.address_2,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'created_by'.] [n/a]; SQL [n/a]] with root cause
+2026-05-09T16:38:07.453+05:30 ERROR 41166 --- [nio-8081-exec-3] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.dir_path,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'address'.] [n/a]; SQL [n/a]] with root cause
 
-com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by'.
+com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'address'.
 	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1695) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:648) ~[mssql-jdbc-12.4.2.jre11.jar:na]
@@ -5741,9 +2845,9 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.1.6.jar:6.1.6]
-	at jdk.proxy4/jdk.proxy4.$Proxy168.findAll(Unknown Source) ~[na:na]
-	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:28) ~[classes/:na]
-	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:30) ~[classes/:na]
+	at jdk.proxy4/jdk.proxy4.$Proxy170.findAll(Unknown Source) ~[na:na]
+	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:45) ~[classes/:na]
+	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:39) ~[classes/:na]
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
 	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.6.jar:6.1.6]
@@ -5860,14 +2964,14 @@ Hibernate:
 Hibernate: 
     select
         cc1_0.id,
-        cc1_0.address_1,
-        cc1_0.address_2,
+        cc1_0.address,
         cc1_0.city,
         cc1_0.company_name,
         cc1_0.country,
         cc1_0.created_by,
         cc1_0.created_date,
         cc1_0.db_source_name,
+        cc1_0.dir_path,
         cc1_0.gst_in,
         cc1_0.lic_expiry_date,
         cc1_0.lic_renewal_date,
@@ -5884,14 +2988,14 @@ Hibernate:
 Hibernate: 
     select
         cc1_0.id,
-        cc1_0.address_1,
-        cc1_0.address_2,
+        cc1_0.address,
         cc1_0.city,
         cc1_0.company_name,
         cc1_0.country,
         cc1_0.created_by,
         cc1_0.created_date,
         cc1_0.db_source_name,
+        cc1_0.dir_path,
         cc1_0.gst_in,
         cc1_0.lic_expiry_date,
         cc1_0.lic_renewal_date,
@@ -5905,13 +3009,13 @@ Hibernate:
         cc1_0.updated_date 
     from
         ad_company_credential cc1_0
-2026-05-09T16:35:03.304+05:30  WARN 40277 --- [io-8081-exec-10] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
-2026-05-09T16:35:03.304+05:30  WARN 40277 --- [nio-8081-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
-2026-05-09T16:35:03.305+05:30 ERROR 40277 --- [io-8081-exec-10] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'created_by'.
-2026-05-09T16:35:03.305+05:30 ERROR 40277 --- [nio-8081-exec-1] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'created_by'.
-2026-05-09T16:35:03.307+05:30 ERROR 40277 --- [io-8081-exec-10] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address_1,cc1_0.address_2,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'created_by'.] [n/a]; SQL [n/a]] with root cause
+2026-05-09T16:38:09.728+05:30  WARN 41166 --- [nio-8081-exec-7] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
+2026-05-09T16:38:09.728+05:30 ERROR 41166 --- [nio-8081-exec-7] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'address'.
+2026-05-09T16:38:09.730+05:30  WARN 41166 --- [nio-8081-exec-8] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
+2026-05-09T16:38:09.730+05:30 ERROR 41166 --- [nio-8081-exec-8] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'address'.
+2026-05-09T16:38:09.731+05:30 ERROR 41166 --- [nio-8081-exec-7] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.dir_path,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'address'.] [n/a]; SQL [n/a]] with root cause
 
-com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by'.
+com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'address'.
 	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1695) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:648) ~[mssql-jdbc-12.4.2.jre11.jar:na]
@@ -5968,9 +3072,9 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.1.6.jar:6.1.6]
-	at jdk.proxy4/jdk.proxy4.$Proxy168.findAll(Unknown Source) ~[na:na]
-	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:28) ~[classes/:na]
-	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:30) ~[classes/:na]
+	at jdk.proxy4/jdk.proxy4.$Proxy170.findAll(Unknown Source) ~[na:na]
+	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:45) ~[classes/:na]
+	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:39) ~[classes/:na]
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
 	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.6.jar:6.1.6]
@@ -6071,9 +3175,9 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
 	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
 
-2026-05-09T16:35:03.307+05:30 ERROR 40277 --- [nio-8081-exec-1] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address_1,cc1_0.address_2,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'created_by'.] [n/a]; SQL [n/a]] with root cause
+2026-05-09T16:38:09.732+05:30 ERROR 41166 --- [nio-8081-exec-8] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.dir_path,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'address'.] [n/a]; SQL [n/a]] with root cause
 
-com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by'.
+com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'address'.
 	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1695) ~[mssql-jdbc-12.4.2.jre11.jar:na]
 	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:648) ~[mssql-jdbc-12.4.2.jre11.jar:na]
@@ -6130,9 +3234,9 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
 	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.1.6.jar:6.1.6]
-	at jdk.proxy4/jdk.proxy4.$Proxy168.findAll(Unknown Source) ~[na:na]
-	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:28) ~[classes/:na]
-	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:30) ~[classes/:na]
+	at jdk.proxy4/jdk.proxy4.$Proxy170.findAll(Unknown Source) ~[na:na]
+	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:45) ~[classes/:na]
+	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:39) ~[classes/:na]
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
 	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.6.jar:6.1.6]
@@ -6233,3 +3337,660 @@ com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'created_by
 	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
 	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
 
+Hibernate: 
+    select
+        as1_0.id,
+        as1_0.audit_area,
+        as1_0.audit_date,
+        as1_0.audit_month,
+        as1_0.audit_type,
+        as1_0.auditee,
+        as1_0.auditor,
+        as1_0.created_by,
+        as1_0.created_date,
+        as1_0.department,
+        as1_0.end_time,
+        as1_0.is_deleted,
+        as1_0.item_code,
+        as1_0.ncr_approved_by,
+        as1_0.schedule_date,
+        as1_0.schedule_no,
+        as1_0.start_time,
+        as1_0.status,
+        as1_0.updated_by,
+        as1_0.updated_date 
+    from
+        audit_schedules as1_0
+2026-05-09T16:38:46.693+05:30  INFO 41166 --- [nio-8081-exec-7] c.a.e.c.AuditCriteriaController          : Fetching all audit criteria
+2026-05-09T16:38:46.694+05:30  INFO 41166 --- [nio-8081-exec-8] c.a.erp.controller.AuditTypeController   : Fetching audit types with search: null, status: null, area: null, page: 0, size: 10
+Hibernate: 
+    select
+        d1_0.id,
+        d1_0.created_by,
+        d1_0.created_date,
+        d1_0.dept_name,
+        d1_0.dept_no,
+        d1_0.nda_certificate,
+        d1_0.seq_no,
+        d1_0.status,
+        d1_0.updated_by,
+        d1_0.updated_date 
+    from
+        hrm_department_master d1_0
+Hibernate: 
+    select
+        em1_0.id,
+        em1_0.additional_role,
+        em1_0.attendance_required,
+        em1_0.business_manager,
+        em1_0.category_id,
+        em1_0.confirmation_date,
+        em1_0.created_by,
+        em1_0.created_date,
+        em1_0.daily_sheet_required,
+        em1_0.date_of_joining,
+        em1_0.department_id,
+        em1_0.designation_id,
+        em1_0.emp_class,
+        em1_0.emp_code,
+        em1_0.emp_level_id,
+        em1_0.employee_name,
+        em1_0.employee_type_id,
+        em1_0.exit_date,
+        em1_0.exit_reason,
+        em1_0.father_husband_name,
+        em1_0.first_name,
+        em1_0.fitness_certificate_upload,
+        em1_0.grace_minutes,
+        em1_0.grade_code,
+        em1_0.guest,
+        em1_0.home_manager,
+        em1_0.induction_status,
+        em1_0.last_name,
+        em1_0.nda_certificate_upload,
+        em1_0.next_revision_date,
+        em1_0.old_emp_code,
+        em1_0.petrol_allowance,
+        em1_0.production_line,
+        em1_0.profile_upload,
+        em1_0.refer_mode,
+        em1_0.shift,
+        em1_0.shift_duration,
+        em1_0.shift_name,
+        em1_0.signature,
+        em1_0.status,
+        em1_0.sub_category_id,
+        em1_0.supplier_name,
+        em1_0.team_group,
+        em1_0.title,
+        em1_0.unit_id,
+        em1_0.updated_by,
+        em1_0.updated_date,
+        em1_0.user_name 
+    from
+        hrm_employee_master em1_0
+Hibernate: 
+    select
+        ac1_0.id,
+        ac1_0.attachment_info,
+        ac1_0.attachment_required,
+        ac1_0.audit_type,
+        ac1_0.clause,
+        ac1_0.created_by,
+        ac1_0.created_date,
+        ac1_0.criteria_text,
+        ac1_0.department,
+        ac1_0.level,
+        ac1_0.seq_no,
+        ac1_0.status,
+        ac1_0.updated_by,
+        ac1_0.updated_date 
+    from
+        audit_criteria ac1_0
+Hibernate: 
+    select
+        at1_0.id,
+        at1_0.audit_area,
+        at1_0.audit_type,
+        at1_0.created_by,
+        at1_0.created_date,
+        at1_0.criteria_min_count,
+        at1_0.criteria_type,
+        at1_0.customer_audit_area,
+        at1_0.description,
+        at1_0.standard,
+        at1_0.status,
+        at1_0.updated_by,
+        at1_0.updated_date 
+    from
+        audit_types at1_0 
+    order by
+        at1_0.id desc 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        uc1_0.user_id,
+        uc1_0.created_by,
+        uc1_0.created_date,
+        uc1_0.emp_id,
+        uc1_0.img_name,
+        uc1_0.password,
+        uc1_0.status,
+        uc1_0.updated_by,
+        uc1_0.updated_date 
+    from
+        ad_user_credentials uc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_date,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_date 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_date,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_date 
+    from
+        ad_company_credential cc1_0
+2026-05-09T16:41:11.136+05:30  WARN 41166 --- [nio-8081-exec-5] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
+2026-05-09T16:41:11.136+05:30  WARN 41166 --- [nio-8081-exec-7] o.h.engine.jdbc.spi.SqlExceptionHelper   : SQL Error: 207, SQLState: S0001
+2026-05-09T16:41:11.136+05:30 ERROR 41166 --- [nio-8081-exec-5] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'address'.
+2026-05-09T16:41:11.136+05:30 ERROR 41166 --- [nio-8081-exec-7] o.h.engine.jdbc.spi.SqlExceptionHelper   : Invalid column name 'address'.
+2026-05-09T16:41:11.139+05:30 ERROR 41166 --- [nio-8081-exec-7] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.dir_path,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'address'.] [n/a]; SQL [n/a]] with root cause
+
+com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'address'.
+	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1695) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:648) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement$PrepStmtExecCmd.doExecute(SQLServerPreparedStatement.java:567) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7675) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:4137) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:272) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:246) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.executeQuery(SQLServerPreparedStatement.java:485) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeQuery(ProxyPreparedStatement.java:52) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeQuery(HikariProxyPreparedStatement.java) ~[HikariCP-5.0.1.jar:na]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.executeQuery(DeferredResultSetAccess.java:246) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.getResultSet(DeferredResultSetAccess.java:167) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.JdbcValuesResultSetImpl.advanceNext(JdbcValuesResultSetImpl.java:218) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.JdbcValuesResultSetImpl.processNext(JdbcValuesResultSetImpl.java:98) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.AbstractJdbcValues.next(AbstractJdbcValues.java:19) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.internal.RowProcessingStateStandardImpl.next(RowProcessingStateStandardImpl.java:66) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.spi.ListResultsConsumer.consume(ListResultsConsumer.java:202) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.spi.ListResultsConsumer.consume(ListResultsConsumer.java:33) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.doExecuteQuery(JdbcSelectExecutorStandardImpl.java:209) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.executeQuery(JdbcSelectExecutorStandardImpl.java:83) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.list(JdbcSelectExecutor.java:76) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.list(JdbcSelectExecutor.java:65) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.lambda$new$2(ConcreteSqmSelectQueryPlan.java:137) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.withCacheableSqmInterpretation(ConcreteSqmSelectQueryPlan.java:362) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.performList(ConcreteSqmSelectQueryPlan.java:303) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.QuerySqmImpl.doList(QuerySqmImpl.java:509) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.spi.AbstractSelectionQuery.list(AbstractSelectionQuery.java:427) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.Query.getResultList(Query.java:120) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.springframework.data.jpa.repository.support.SimpleJpaRepository.findAll(SimpleJpaRepository.java:383) ~[spring-data-jpa-3.2.5.jar:3.2.5]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:354) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker$RepositoryFragmentMethodInvoker.lambda$new$0(RepositoryMethodInvoker.java:277) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.doInvoke(RepositoryMethodInvoker.java:170) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.invoke(RepositoryMethodInvoker.java:158) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryComposition$RepositoryFragments.invoke(RepositoryComposition.java:516) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryComposition.invoke(RepositoryComposition.java:285) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryFactorySupport$ImplementationMethodExecutionInterceptor.invoke(RepositoryFactorySupport.java:628) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.doInvoke(QueryExecutorMethodInterceptor.java:168) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.invoke(QueryExecutorMethodInterceptor.java:143) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.projection.DefaultMethodInvokingMethodInterceptor.invoke(DefaultMethodInvokingMethodInterceptor.java:70) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:392) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:137) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.jpa.repository.support.CrudMethodMetadataPostProcessor$CrudMethodMetadataPopulatingMethodInterceptor.invoke(CrudMethodMetadataPostProcessor.java:164) ~[spring-data-jpa-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.1.6.jar:6.1.6]
+	at jdk.proxy4/jdk.proxy4.$Proxy170.findAll(Unknown Source) ~[na:na]
+	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:45) ~[classes/:na]
+	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:39) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564) ~[tomcat-embed-core-10.1.20.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.20.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:206) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at com.autonoma.erp.config.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:56) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230) ~[spring-security-config-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1736) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-05-09T16:41:11.139+05:30 ERROR 41166 --- [nio-8081-exec-5] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.InvalidDataAccessResourceUsageException: JDBC exception executing SQL [select cc1_0.id,cc1_0.address,cc1_0.city,cc1_0.company_name,cc1_0.country,cc1_0.created_by,cc1_0.created_date,cc1_0.db_source_name,cc1_0.dir_path,cc1_0.gst_in,cc1_0.lic_expiry_date,cc1_0.lic_renewal_date,cc1_0.login_bg_file_name,cc1_0.logo_file_name,cc1_0.pincode,cc1_0.short_name,cc1_0.state,cc1_0.state_cd,cc1_0.updated_by,cc1_0.updated_date from ad_company_credential cc1_0] [Invalid column name 'address'.] [n/a]; SQL [n/a]] with root cause
+
+com.microsoft.sqlserver.jdbc.SQLServerException: Invalid column name 'address'.
+	at com.microsoft.sqlserver.jdbc.SQLServerException.makeFromDatabaseError(SQLServerException.java:259) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.getNextResult(SQLServerStatement.java:1695) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.doExecutePreparedStatement(SQLServerPreparedStatement.java:648) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement$PrepStmtExecCmd.doExecute(SQLServerPreparedStatement.java:567) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.TDSCommand.execute(IOBuffer.java:7675) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerConnection.executeCommand(SQLServerConnection.java:4137) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeCommand(SQLServerStatement.java:272) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerStatement.executeStatement(SQLServerStatement.java:246) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.microsoft.sqlserver.jdbc.SQLServerPreparedStatement.executeQuery(SQLServerPreparedStatement.java:485) ~[mssql-jdbc-12.4.2.jre11.jar:na]
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeQuery(ProxyPreparedStatement.java:52) ~[HikariCP-5.0.1.jar:na]
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeQuery(HikariProxyPreparedStatement.java) ~[HikariCP-5.0.1.jar:na]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.executeQuery(DeferredResultSetAccess.java:246) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.DeferredResultSetAccess.getResultSet(DeferredResultSetAccess.java:167) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.JdbcValuesResultSetImpl.advanceNext(JdbcValuesResultSetImpl.java:218) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.JdbcValuesResultSetImpl.processNext(JdbcValuesResultSetImpl.java:98) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.jdbc.internal.AbstractJdbcValues.next(AbstractJdbcValues.java:19) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.internal.RowProcessingStateStandardImpl.next(RowProcessingStateStandardImpl.java:66) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.spi.ListResultsConsumer.consume(ListResultsConsumer.java:202) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.results.spi.ListResultsConsumer.consume(ListResultsConsumer.java:33) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.doExecuteQuery(JdbcSelectExecutorStandardImpl.java:209) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.internal.JdbcSelectExecutorStandardImpl.executeQuery(JdbcSelectExecutorStandardImpl.java:83) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.list(JdbcSelectExecutor.java:76) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.sql.exec.spi.JdbcSelectExecutor.list(JdbcSelectExecutor.java:65) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.lambda$new$2(ConcreteSqmSelectQueryPlan.java:137) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.withCacheableSqmInterpretation(ConcreteSqmSelectQueryPlan.java:362) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.ConcreteSqmSelectQueryPlan.performList(ConcreteSqmSelectQueryPlan.java:303) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.sqm.internal.QuerySqmImpl.doList(QuerySqmImpl.java:509) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.spi.AbstractSelectionQuery.list(AbstractSelectionQuery.java:427) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.hibernate.query.Query.getResultList(Query.java:120) ~[hibernate-core-6.4.4.Final.jar:6.4.4.Final]
+	at org.springframework.data.jpa.repository.support.SimpleJpaRepository.findAll(SimpleJpaRepository.java:383) ~[spring-data-jpa-3.2.5.jar:3.2.5]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:354) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker$RepositoryFragmentMethodInvoker.lambda$new$0(RepositoryMethodInvoker.java:277) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.doInvoke(RepositoryMethodInvoker.java:170) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryMethodInvoker.invoke(RepositoryMethodInvoker.java:158) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryComposition$RepositoryFragments.invoke(RepositoryComposition.java:516) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryComposition.invoke(RepositoryComposition.java:285) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.RepositoryFactorySupport$ImplementationMethodExecutionInterceptor.invoke(RepositoryFactorySupport.java:628) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.doInvoke(QueryExecutorMethodInterceptor.java:168) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.data.repository.core.support.QueryExecutorMethodInterceptor.invoke(QueryExecutorMethodInterceptor.java:143) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.projection.DefaultMethodInvokingMethodInterceptor.invoke(DefaultMethodInvokingMethodInterceptor.java:70) ~[spring-data-commons-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.transaction.interceptor.TransactionInterceptor$1.proceedWithInvocation(TransactionInterceptor.java:123) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:392) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:119) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:137) ~[spring-tx-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.data.jpa.repository.support.CrudMethodMetadataPostProcessor$CrudMethodMetadataPopulatingMethodInterceptor.invoke(CrudMethodMetadataPostProcessor.java:164) ~[spring-data-jpa-3.2.5.jar:3.2.5]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:97) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:184) ~[spring-aop-6.1.6.jar:6.1.6]
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:223) ~[spring-aop-6.1.6.jar:6.1.6]
+	at jdk.proxy4/jdk.proxy4.$Proxy170.findAll(Unknown Source) ~[na:na]
+	at com.autonoma.erp.service.CompanyCredentialService.findAll(CompanyCredentialService.java:45) ~[classes/:na]
+	at com.autonoma.erp.controller.CompanyCredentialController.getAll(CompanyCredentialController.java:39) ~[classes/:na]
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[na:na]
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[na:na]
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:255) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:188) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:118) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:926) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:831) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:87) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:1089) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:979) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1014) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.FrameworkServlet.doGet(FrameworkServlet.java:903) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:564) ~[tomcat-embed-core-10.1.20.jar:6.0]
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:885) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:658) ~[tomcat-embed-core-10.1.20.jar:6.0]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:206) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:51) ~[tomcat-embed-websocket-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at com.autonoma.erp.config.JwtAuthenticationFilter.doFilterInternal(JwtAuthenticationFilter.java:56) ~[classes/:na]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:231) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:365) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:100) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:131) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.session.SessionManagementFilter.doFilter(SessionManagementFilter.java:85) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:179) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:107) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:93) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:374) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:233) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:191) ~[spring-security-web-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.servlet.handler.HandlerMappingIntrospector.lambda$createCacheFilter$3(HandlerMappingIntrospector.java:195) ~[spring-webmvc-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.security.config.annotation.web.configuration.WebMvcSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebMvcSecurityConfiguration.java:230) ~[spring-security-config-6.2.4.jar:6.2.4]
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:352) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:268) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:201) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116) ~[spring-web-6.1.6.jar:6.1.6]
+	at org.apache.catalina.core.ApplicationFilterChain.internalDoFilter(ApplicationFilterChain.java:175) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:150) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:167) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:90) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:115) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:93) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:74) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:344) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:391) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:896) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1736) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1191) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:659) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63) ~[tomcat-embed-core-10.1.20.jar:10.1.20]
+	at java.base/java.lang.Thread.run(Thread.java:1583) ~[na:na]
+
+2026-05-09T16:41:11.503+05:30  INFO 41166 --- [nio-8081-exec-4] c.a.erp.controller.AuditTypeController   : Fetching audit types with search: null, status: null, area: null, page: 0, size: 10
+2026-05-09T16:41:11.504+05:30  INFO 41166 --- [nio-8081-exec-2] c.a.e.c.AuditCriteriaController          : Fetching all audit criteria
+Hibernate: 
+    select
+        ac1_0.id,
+        ac1_0.attachment_info,
+        ac1_0.attachment_required,
+        ac1_0.audit_type,
+        ac1_0.clause,
+        ac1_0.created_by,
+        ac1_0.created_date,
+        ac1_0.criteria_text,
+        ac1_0.department,
+        ac1_0.level,
+        ac1_0.seq_no,
+        ac1_0.status,
+        ac1_0.updated_by,
+        ac1_0.updated_date 
+    from
+        audit_criteria ac1_0
+Hibernate: 
+    select
+        at1_0.id,
+        at1_0.audit_area,
+        at1_0.audit_type,
+        at1_0.created_by,
+        at1_0.created_date,
+        at1_0.criteria_min_count,
+        at1_0.criteria_type,
+        at1_0.customer_audit_area,
+        at1_0.description,
+        at1_0.standard,
+        at1_0.status,
+        at1_0.updated_by,
+        at1_0.updated_date 
+    from
+        audit_types at1_0 
+    order by
+        at1_0.id desc 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        d1_0.id,
+        d1_0.created_by,
+        d1_0.created_date,
+        d1_0.dept_name,
+        d1_0.dept_no,
+        d1_0.nda_certificate,
+        d1_0.seq_no,
+        d1_0.status,
+        d1_0.updated_by,
+        d1_0.updated_date 
+    from
+        hrm_department_master d1_0
+Hibernate: 
+    select
+        top (?) as1_0.id,
+        as1_0.audit_area,
+        as1_0.audit_date,
+        as1_0.audit_month,
+        as1_0.audit_type,
+        as1_0.auditee,
+        as1_0.auditor,
+        as1_0.created_by,
+        as1_0.created_date,
+        as1_0.department,
+        as1_0.end_time,
+        as1_0.is_deleted,
+        as1_0.item_code,
+        as1_0.ncr_approved_by,
+        as1_0.schedule_date,
+        as1_0.schedule_no,
+        as1_0.start_time,
+        as1_0.status,
+        as1_0.updated_by,
+        as1_0.updated_date 
+    from
+        audit_schedules as1_0 
+    order by
+        as1_0.schedule_no desc
+Hibernate: 
+    select
+        em1_0.id,
+        em1_0.additional_role,
+        em1_0.attendance_required,
+        em1_0.business_manager,
+        em1_0.category_id,
+        em1_0.confirmation_date,
+        em1_0.created_by,
+        em1_0.created_date,
+        em1_0.daily_sheet_required,
+        em1_0.date_of_joining,
+        em1_0.department_id,
+        em1_0.designation_id,
+        em1_0.emp_class,
+        em1_0.emp_code,
+        em1_0.emp_level_id,
+        em1_0.employee_name,
+        em1_0.employee_type_id,
+        em1_0.exit_date,
+        em1_0.exit_reason,
+        em1_0.father_husband_name,
+        em1_0.first_name,
+        em1_0.fitness_certificate_upload,
+        em1_0.grace_minutes,
+        em1_0.grade_code,
+        em1_0.guest,
+        em1_0.home_manager,
+        em1_0.induction_status,
+        em1_0.last_name,
+        em1_0.nda_certificate_upload,
+        em1_0.next_revision_date,
+        em1_0.old_emp_code,
+        em1_0.petrol_allowance,
+        em1_0.production_line,
+        em1_0.profile_upload,
+        em1_0.refer_mode,
+        em1_0.shift,
+        em1_0.shift_duration,
+        em1_0.shift_name,
+        em1_0.signature,
+        em1_0.status,
+        em1_0.sub_category_id,
+        em1_0.supplier_name,
+        em1_0.team_group,
+        em1_0.title,
+        em1_0.unit_id,
+        em1_0.updated_by,
+        em1_0.updated_date,
+        em1_0.user_name 
+    from
+        hrm_employee_master em1_0

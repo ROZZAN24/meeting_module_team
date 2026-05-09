@@ -93,7 +93,6 @@ export default function AddAuditSchedule() {
   const [selectedCriteriaIds, setSelectedCriteriaIds] = useState([]);
 
   useEffect(() => {
-    fetchDropdowns();
     if (isEditing) {
       fetchSchedule();
     } else {
