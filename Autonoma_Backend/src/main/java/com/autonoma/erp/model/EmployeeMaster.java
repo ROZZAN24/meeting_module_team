@@ -23,8 +23,8 @@ public class EmployeeMaster {
     @Column(name = "category_id")
     private Long categoryId;
 
-    @Column(name = "sub_category_id")
-    private Long subCategoryId;
+    @Column(name = "sub_category_id", length = 100)
+    private String subCategoryId;
 
     @Column(name = "emp_level_id")
     private Long empLevelId;
@@ -79,7 +79,7 @@ public class EmployeeMaster {
     @Column(name = "team_group", length = 100)
     private String teamGroup;
 
-    @Column(name = "additional_role", length = 100)
+    @Column(name = "additional_role", length = 500)
     private String additionalRole;
 
     // === Dates ===

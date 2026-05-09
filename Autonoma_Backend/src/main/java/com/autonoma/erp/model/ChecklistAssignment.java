@@ -20,6 +20,7 @@ public class ChecklistAssignment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHECKLIST_ID")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MasterChecklist checklist;
 
     @Column(name = "ASSIGNED_TO")

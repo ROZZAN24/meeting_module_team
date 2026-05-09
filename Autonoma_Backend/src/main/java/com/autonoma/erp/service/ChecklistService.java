@@ -81,7 +81,16 @@ public class ChecklistService {
             if (searchValue != null && !searchValue.isEmpty()) {
                 String searchTerm = "%" + searchValue.toLowerCase() + "%";
                 if (searchBy != null && !searchBy.isEmpty()) {
-                    predicates.add(cb.like(cb.lower(root.get(searchBy)), searchTerm));
+                    if (searchBy.contains(".")) {
+                        String[] parts = searchBy.split("\\.");
+                        Path<Object> p = root.get(parts[0]);
+                        for (int i = 1; i < parts.length; i++) {
+                            p = p.get(parts[i]);
+                        }
+                        predicates.add(cb.like(cb.lower(p.as(String.class)), searchTerm));
+                    } else {
+                        predicates.add(cb.like(cb.lower(root.get(searchBy).as(String.class)), searchTerm));
+                    }
                 } else {
                     List<Predicate> orPredicates = new ArrayList<>();
                     orPredicates.add(cb.like(cb.lower(root.get("seqNo")), searchTerm));
@@ -106,7 +115,37 @@ public class ChecklistService {
     public MasterChecklist saveMasterChecklist(MasterChecklist checklist, List<String> departments) {
         if (checklist.getId() != null) {
             MasterChecklist existing = masterRepo.findById(checklist.getId()).orElseThrow();
-            // Update fields
+            
+            boolean isAmendmentOfVerified = "Verified".equals(existing.getVerifyStatus()) && 
+                                            checklist.getAmendmentReason() != null && 
+                                            !checklist.getAmendmentReason().isEmpty();
+
+            if (isAmendmentOfVerified) {
+                // Create a new version for the amendment. The old one remains active until this new one is verified.
+                checklist.setId(null);
+                checklist.setVerifyStatus("Pending for Verify");
+                checklist.setStatus("Active");
+                checklist.setCreatedDate(new Date());
+                if (checklist.getUpdatedBy() != null) {
+                    checklist.setCreatedBy(checklist.getUpdatedBy());
+                } else if (checklist.getCreatedBy() == null) {
+                    checklist.setCreatedBy("System");
+                }
+                
+                MasterChecklist saved = masterRepo.save(checklist);
+                
+                if (departments != null) {
+                    for (String deptName : departments) {
+                        ChecklistDepartment dept = new ChecklistDepartment();
+                        dept.setChecklist(saved);
+                        dept.setDepartmentName(deptName);
+                        deptRepo.save(dept);
+                    }
+                }
+                return saved;
+            }
+
+            // Normal update (either not verified yet, or no amendment reason)
             existing.setSeqNo(checklist.getSeqNo());
             existing.setCheckingPoint(checklist.getCheckingPoint());
             existing.setDescription(checklist.getDescription());
@@ -120,6 +159,11 @@ public class ChecklistService {
             existing.setVerificationRequired(checklist.getVerificationRequired());
             existing.setStatus(checklist.getStatus());
             existing.setVerifyStatus(checklist.getVerifyStatus());
+            
+            if (checklist.getAmendmentReason() != null && !checklist.getAmendmentReason().isEmpty()) {
+                existing.setVerifyStatus("Pending for Verify");
+            }
+            
             existing.setVerifiedBy(checklist.getVerifiedBy());
             existing.setVerifiedDate(checklist.getVerifiedDate());
             existing.setRejReason(checklist.getRejReason());
@@ -148,6 +192,9 @@ public class ChecklistService {
             checklist.setCreatedDate(new Date());
             if (checklist.getStatus() == null) checklist.setStatus("Active");
             if (checklist.getVerifyStatus() == null) checklist.setVerifyStatus("Pending for Verify");
+            if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
+                checklist.setCreatedBy("System");
+            }
             MasterChecklist saved = masterRepo.save(checklist);
             
             if (departments != null) {
@@ -161,7 +208,7 @@ public class ChecklistService {
 
             // Automatic Assignment Trigger (Wiring 1)
             if (saved.getAssignTo() != null && !saved.getAssignTo().isEmpty()) {
-                assignTask(saved.getId(), saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
+                assignTask(null, saved.getId(), saved.getAssignTo(), saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
             }
 
             return saved;
@@ -206,7 +253,16 @@ public class ChecklistService {
             if (searchValue != null && !searchValue.isEmpty()) {
                 String searchTerm = "%" + searchValue.toLowerCase() + "%";
                 if (searchBy != null && !searchBy.isEmpty()) {
-                    predicates.add(cb.like(cb.lower(root.get(searchBy)), searchTerm));
+                    if (searchBy.contains(".")) {
+                        String[] parts = searchBy.split("\\.");
+                        Path<Object> p = root.get(parts[0]);
+                        for (int i = 1; i < parts.length; i++) {
+                            p = p.get(parts[i]);
+                        }
+                        predicates.add(cb.like(cb.lower(p.as(String.class)), searchTerm));
+                    } else {
+                        predicates.add(cb.like(cb.lower(root.get(searchBy).as(String.class)), searchTerm));
+                    }
                 } else {
                     List<Predicate> orPredicates = new ArrayList<>();
                     orPredicates.add(cb.like(cb.lower(root.get("assignedTo")), searchTerm));
@@ -240,6 +296,18 @@ public class ChecklistService {
         if (id != null) {
             assignment = assignRepo.findById(id).orElse(new ChecklistAssignment());
         } else {
+            // Prevent duplicate assignments for same person on same checklist
+            if (assignRepo.findByChecklistIdAndAssignedTo(checklistId, assignedTo).isPresent()) {
+                // Return a dummy object or handle in controller to avoid 409 red console error
+                // For now, let's return a "special" assignment or just return null and handle in service?
+                // Actually, the cleanest way to avoid 409 in console but still inform UI is a custom response wrapper.
+                // But since I'm in Service, I'll throw a specific exception that I'll catch in Controller or 
+                // just return a dummy with an error message.
+                // Reverting to returning a "Duplicate" indicator.
+                ChecklistAssignment duplicate = new ChecklistAssignment();
+                duplicate.setRemarks("DUPLICATE_ASSIGNMENT");
+                return duplicate;
+            }
             assignment = new ChecklistAssignment();
             // Default status: Pending (only for new)
             statusRepo.findByName("Pending").ifPresent(assignment::setStatus);
@@ -251,12 +319,44 @@ public class ChecklistService {
         assignment.setAssignType(assignType);
         assignment.setAssignedDate(new Date());
         
-        return assignRepo.save(assignment);
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+
+        // Also update the MasterChecklist for the UI data table to show ALL assignees
+        java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklistId);
+        String allAssignedTo = allAssignments.stream()
+                .filter(a -> a.getAssignedTo() != null && !a.getAssignedTo().isEmpty())
+                .map(ChecklistAssignment::getAssignedTo)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+        
+        checklist.setAssignTo(allAssignedTo);
+        checklist.setAssignDate(new Date());
+        checklist.setTaskStatus("Pending");
+        masterRepo.save(checklist);
+        
+        return savedAssignment;
     }
 
     @Transactional
     public void deleteAssignment(Long id) {
+        ChecklistAssignment assignment = assignRepo.findById(id).orElseThrow();
+        MasterChecklist checklist = assignment.getChecklist();
         assignRepo.deleteById(id);
+        
+        // Recalculate assigned users
+        java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklist.getId());
+        String allAssignedTo = allAssignments.stream()
+                .filter(a -> !a.getId().equals(id) && a.getAssignedTo() != null && !a.getAssignedTo().isEmpty())
+                .map(ChecklistAssignment::getAssignedTo)
+                .distinct()
+                .collect(java.util.stream.Collectors.joining(", "));
+                
+        checklist.setAssignTo(allAssignedTo);
+        if (allAssignedTo.isEmpty()) {
+            checklist.setAssignDate(null);
+            checklist.setTaskStatus(null);
+        }
+        masterRepo.save(checklist);
     }
 
     // --- Verification ---
@@ -292,6 +392,15 @@ public class ChecklistService {
         checklist.setVerifiedDate(new Date());
         if ("Rejected".equals(status)) {
             checklist.setRejReason(remarks);
+        } else if ("Verified".equals(status)) {
+            // Once the new version is verified, invalidate older versions with the same sequence number
+            java.util.List<MasterChecklist> oldVersions = masterRepo.findBySeqNoAndIdNot(checklist.getSeqNo(), checklist.getId());
+            for (MasterChecklist old : oldVersions) {
+                if (!"In Active".equals(old.getStatus())) {
+                    old.setStatus("In Active");
+                    masterRepo.save(old);
+                }
+            }
         }
         return masterRepo.save(checklist);
     }
