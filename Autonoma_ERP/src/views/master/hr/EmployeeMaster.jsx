@@ -52,7 +52,6 @@ export default function EmployeeMaster() {
   const STATUSES = ['ACTIVE', 'INACTIVE', 'EXITED'];
   
   const CATEGORIES = [{id: 1, categoryName: 'OFFICE'}, {id: 2, categoryName: 'SHOP FLOOR'}];
-  const LEVELS = [{id: 1, levelName: 'L1'}, {id: 2, levelName: 'L2'}, {id: 3, levelName: 'L3'}, {id: 4, levelName: 'L4'}, {id: 5, levelName: 'L5'}, {id: 6, levelName: 'L6'}, {id: 7, levelName: 'L7'}];
   const TYPES = [{id: 1, typeName: 'CONFIRMED'}, {id: 2, typeName: 'PROBATION'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'CONTRACT'}];
 
   const { colorScheme } = useColorScheme();
@@ -66,7 +65,7 @@ export default function EmployeeMaster() {
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { departments = [], designations = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS']);
+  const { departments = [], designations = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'DESIGNATION_LEVELS']);
 
   const fetchEmployee = useCallback(async () => {
     if (!employeeId) return;
@@ -144,7 +143,7 @@ export default function EmployeeMaster() {
           <Grid container spacing={2.5}>
             <R><BOSTextField select name="categoryId" label="Category" value={form.categoryId} onChange={h} required error={!!errors.categoryId} helperText={errors.categoryId}>{CATEGORIES.map(c => <MenuItem key={c.id} value={c.id}>{c.categoryName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="subCategoryId" label="Sub Category" value={form.subCategoryId} onChange={h}>{SUB_CATEGORIES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</BOSTextField></R>
-            <R><BOSTextField select name="empLevelId" label="Level" value={form.empLevelId} onChange={h} required error={!!errors.empLevelId} helperText={errors.empLevelId}>{LEVELS.map(l => <MenuItem key={l.id} value={l.id}>{l.levelName}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="empLevelId" label="Level" value={form.empLevelId} onChange={h} required error={!!errors.empLevelId} helperText={errors.empLevelId}>{designationLevels.map(l => <MenuItem key={l.rowId} value={l.rowId}>{l.level}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="employeeTypeId" label="Type" value={form.employeeTypeId} onChange={h} required error={!!errors.employeeTypeId} helperText={errors.employeeTypeId}>{TYPES.map(t => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="gradeCode" label="Grade Code" value={form.gradeCode} onChange={h}><MenuItem value="O">O</MenuItem><MenuItem value="P">P</MenuItem><MenuItem value="T">T</MenuItem><MenuItem value="C">C</MenuItem><MenuItem value="E">E</MenuItem></BOSTextField></R>
             <R><BOSTextField select name="title" label="Title" value={form.title} onChange={h} required error={!!errors.title} helperText={errors.title}><MenuItem value="Mr">Mr</MenuItem><MenuItem value="Miss">Miss</MenuItem><MenuItem value="Mrs">Mrs</MenuItem><MenuItem value="Mx">Mx</MenuItem></BOSTextField></R>

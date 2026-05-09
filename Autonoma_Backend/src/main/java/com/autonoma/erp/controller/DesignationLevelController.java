@@ -39,16 +39,22 @@ public class DesignationLevelController {
     }
 
     @PostMapping
-    public DesignationLevel create(@RequestBody DesignationLevel level) {
+    public ResponseEntity<?> create(@RequestBody DesignationLevel level) {
+        if (designationLevelRepository.existsByLevel(level.getLevel())) {
+            return ResponseEntity.badRequest().body("Designation level already exists");
+        }
         if (level.getCreatedBy() == null)
             level.setCreatedBy("Admin");
-        return designationLevelRepository.save(level);
+        return ResponseEntity.ok(designationLevelRepository.save(level));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DesignationLevel> update(@PathVariable Long id, @RequestBody DesignationLevel levelDetails) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody DesignationLevel levelDetails) {
         return designationLevelRepository.findById(id)
                 .map(level -> {
+                    if (!level.getLevel().equals(levelDetails.getLevel()) && designationLevelRepository.existsByLevel(levelDetails.getLevel())) {
+                        return ResponseEntity.badRequest().body("Designation level already exists");
+                    }
                     level.setLevel(levelDetails.getLevel());
                     level.setBasic(levelDetails.getBasic());
                     level.setDa(levelDetails.getDa());

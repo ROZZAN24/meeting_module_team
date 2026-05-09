@@ -11,4 +11,6 @@ import java.util.Optional;
 public interface DesignationLevelRepository extends JpaRepository<DesignationLevel, Long> {
     @Query("SELECT MAX(d.screeningLevel) FROM DesignationLevel d")
     Optional<Integer> findMaxScreeningLevel();
+
+    boolean existsByLevel(String level);
 }
