@@ -412,7 +412,7 @@ export default function AddAuditSchedule() {
                 const name = value ? value.split(' - ')[0] : '-';
                 const code = value ? value.split(' - ')[1] || '-' : '-';
 
-                const employeeOptions = employees.map(emp => `${emp.employeeName} - ${emp.employeeCode}`);
+                const employeeOptions = employees.map(emp => `${emp.employeeName || (emp.firstName + ' ' + emp.lastName)} - ${emp.empCode || emp.employeeCode}`);
 
                 return (
                   <Card key={person.role} sx={{
