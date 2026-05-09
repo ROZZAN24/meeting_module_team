@@ -16,7 +16,7 @@ public class CompanyCredential {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "ID")
-    private Integer id;
+    private long id;
 
     @Column(name = "COMPANY_NAME", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String companyName;
@@ -24,11 +24,8 @@ public class CompanyCredential {
     @Column(name = "SHORT_NAME", columnDefinition = "NVARCHAR(50)")
     private String shortName;
 
-    @Column(name = "ADDRESS_1", columnDefinition = "NVARCHAR(200)")
-    private String address1;
-
-    @Column(name = "ADDRESS_2", columnDefinition = "NVARCHAR(200)")
-    private String address2;
+    @Column(name = "ADDRESS", columnDefinition = "NVARCHAR(500)")
+    private String address;
 
     @Column(name = "CITY", columnDefinition = "NVARCHAR(50)")
     private String city;
@@ -48,7 +45,7 @@ public class CompanyCredential {
     @Column(name = "GST_IN", columnDefinition = "NVARCHAR(15)")
     private String gstIn;
 
-    @Column(name = "DB_SOURCE_NAME", columnDefinition = "NVARCHAR(10)")
+    @Column(name = "DB_SOURCE_NAME", columnDefinition = "NVARCHAR(50)")
     private String dbSourceName;
 
     @Column(name = "LIC_RENEWAL_DATE")
@@ -65,6 +62,9 @@ public class CompanyCredential {
     @Column(name = "LOGIN_BG_FILE_NAME", columnDefinition = "NVARCHAR(100)")
     private String logInBgFileName;
 
+    @Column(name = "DIR_PATH", columnDefinition = "NVARCHAR(200)")
+    private String directoryPath;
+
     @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(50)")
     private String createdBy;
 
@@ -79,11 +79,11 @@ public class CompanyCredential {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 
-    public Integer getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(long id) {
         this.id = id;
     }
 
@@ -103,20 +103,12 @@ public class CompanyCredential {
         this.shortName = shortName;
     }
 
-    public String getAddress1() {
-        return address1;
+    public String getAddress() {
+        return address;
     }
 
-    public void setAddress1(String address1) {
-        this.address1 = address1;
-    }
-
-    public String getAddress2() {
-        return address2;
-    }
-
-    public void setAddress2(String address2) {
-        this.address2 = address2;
+    public void setAddress(String address) {
+        this.address = address;
     }
 
     public String getCity() {
@@ -237,5 +229,13 @@ public class CompanyCredential {
 
     public void setUpdatedDate(Date updatedDate) {
         this.updatedDate = updatedDate;
+    }
+
+    public String getDirectoryPath() {
+        return directoryPath;
+    }
+
+    public void setDirectoryPath(String directoryPath) {
+        this.directoryPath = directoryPath;
     }
 }

@@ -197,6 +197,8 @@ const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/Departmen
 const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
 const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
 const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/DesignationMaster')));
+const MasterHrGrade = Loadable(lazy(() => import('views/master/hr/GradeDetails')));
+const MasterHrDesignationLevel = Loadable(lazy(() => import('views/master/hr/DesignationLevelMaster')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -811,6 +813,14 @@ const MainRoutes = {
     {
       path: '/master/hr/designation',
       element: <MasterHrDesignation />
+    },
+    {
+      path: '/master/hr/grade',
+      element: <MasterHrGrade />
+    },
+    {
+      path: '/master/hr/desg-level',
+      element: <MasterHrDesignationLevel />
     },
     {
       path: '/master/qms/audit/type',
