@@ -9,7 +9,8 @@ import {
   IconTrash,
   IconRefresh,
   IconPaperclip,
-  IconEye
+  IconEye,
+  IconX
 } from '@tabler/icons-react';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import axios from 'utils/axios';
@@ -19,6 +20,9 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
+import { CircularProgress } from '@mui/material';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import { AddCheckListDialog } from './AddCheckListDialog';
@@ -72,8 +76,7 @@ export default function MasterCheckList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState('');
-  const [previewName, setPreviewName] = useState('');
+  const [previewData, setPreviewData] = useState({ url: '', name: '', content: '', loading: false });
 
   const globalQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
@@ -157,6 +160,36 @@ export default function MasterCheckList() {
     setAssignDialogOpen(true);
   };
 
+  const handleOpenPreview = async (serverFileName, originalName) => {
+    const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
+    const url = `${baseUrl}${API_PATHS.FILES}/view/${encodeURIComponent(serverFileName)}`;
+    const ext = originalName.split('.').pop()?.toLowerCase();
+    
+    setPreviewOpen(true);
+    setPreviewData({ url, name: originalName, content: '', loading: true });
+
+    try {
+      if (['docx', 'doc', 'xlsx', 'xls'].includes(ext)) {
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        const arrayBuffer = response.data;
+        let content = '';
+        if (ext.startsWith('doc')) {
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+          content = result.value;
+        } else if (ext.startsWith('xls')) {
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          content = XLSX.utils.sheet_to_html(firstSheet);
+        }
+        setPreviewData(p => ({ ...p, content, loading: false }));
+      } else {
+        setPreviewData(p => ({ ...p, loading: false }));
+      }
+    } catch (e) {
+      setPreviewData(p => ({ ...p, content: '<div style="color:red;padding:20px;">Failed to load preview.</div>', loading: false }));
+    }
+  };
+
   const handleExport = () => {
     const exportData = rows.map((r, i) => ({
       '#': i + 1,
@@ -208,12 +241,10 @@ export default function MasterCheckList() {
             color="primary" 
             onClick={(e) => {
               e.stopPropagation();
-              setPreviewName(fileName);
-              setPreviewUrl(`${axios.defaults.baseURL}${API_PATHS.FILES}/download/${fileName}`);
-              setPreviewOpen(true);
+              handleOpenPreview(fileName, fileName);
             }}
           >
-            <IconPaperclip size={18} />
+            <IconEye size={18} />
           </IconButton>
         </Tooltip>
       );
@@ -335,15 +366,21 @@ export default function MasterCheckList() {
 
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h4">Quick Preview: {previewName}</Typography>
-          <IconButton onClick={() => setPreviewOpen(false)}><IconEye size={20} /></IconButton>
+          <Typography variant="h4">Quick Preview: {previewData.name}</Typography>
+          <IconButton onClick={() => setPreviewOpen(false)}><IconX size={20} /></IconButton>
         </DialogTitle>
-        <DialogContent sx={{ textAlign: 'center', bgcolor: '#fafafa', p: 3 }}>
-          <Box component="img" src={previewUrl} sx={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 2, boxShadow: 3 }} />
+        <DialogContent sx={{ textAlign: 'center', bgcolor: '#fafafa', p: previewData.content ? 2 : 0, minHeight: '500px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {previewData.loading ? (
+            <CircularProgress />
+          ) : previewData.content ? (
+            <Box sx={{ width: '100%', height: '70vh', overflow: 'auto', textAlign: 'left', bgcolor: '#fff', p: 2, borderRadius: 1, border: '1px solid #ddd' }} dangerouslySetInnerHTML={{ __html: previewData.content }} />
+          ) : (
+            <Box component="img" src={`${(axios.defaults.baseURL || '').replace(/\/+$/, '')}${API_PATHS.FILES}/view/${previewData.name}`} sx={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 2, boxShadow: 3 }} />
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewOpen(false)}>Close</Button>
-          <Button variant="contained" onClick={() => window.open(previewUrl, '_blank')}>Open Full</Button>
+          <Button variant="contained" onClick={() => window.open(`${(axios.defaults.baseURL || '').replace(/\/+$/, '')}${API_PATHS.FILES}/view/${previewData.name}`, '_blank')}>Open Full</Button>
         </DialogActions>
       </Dialog>
     </MainCard>

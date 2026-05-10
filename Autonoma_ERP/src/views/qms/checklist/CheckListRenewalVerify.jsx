@@ -5,7 +5,9 @@ import {
   IconFileDownload,
   IconCheck,
   IconRefresh,
-  IconChecks
+  IconChecks,
+  IconX,
+  IconEye
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -245,7 +247,7 @@ export default function CheckListRenewalVerify() {
             setPreviewOpen(true);
           }}
         >
-          <IconChecks size={18} />
+          <IconEye size={18} />
         </IconButton>
       );
     }
@@ -352,7 +354,7 @@ export default function CheckListRenewalVerify() {
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4">Execution Proof (Actual Files)</Typography>
-          <IconButton onClick={() => setPreviewOpen(false)}><IconChecks size={20} /></IconButton>
+          <IconButton onClick={() => setPreviewOpen(false)}><IconX size={20} /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ bgcolor: 'grey.50', p: 3 }}>
           <BOSFileGallery files={selectedRow?.actualFiles || []} isEditing={false} />

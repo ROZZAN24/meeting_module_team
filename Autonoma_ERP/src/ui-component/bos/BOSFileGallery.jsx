@@ -54,7 +54,7 @@ export const BOSFileGallery = ({
         const fileName = file.serverFileName || file.name;
         const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
         const filePath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
-        url = `${baseUrl}${filePath}/download/${fileName}`;
+        url = `${baseUrl}${filePath}/view/${encodeURIComponent(fileName)}`;
       } else {
         url = URL.createObjectURL(file instanceof File ? file : file.file);
       }
