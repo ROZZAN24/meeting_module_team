@@ -91,6 +91,9 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
     if (name === 'auditType') {
       const selectedNames = typeof value === 'string' ? value.split(',') : value;
       setFormData((prev) => ({ ...prev, [name]: selectedNames }));
+    } else if (name === 'criteriaText') {
+      // SOP: Audit Criteria field should automatically convert to uppercase
+      setFormData((prev) => ({ ...prev, [name]: value.toUpperCase() }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -119,16 +122,21 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   };
 
   const handleSave = async () => {
+    // SOP: Validation Rules & Messages
+    if (!formData.seqNo) {
+      alert('Sequence No should be mandatory (Auto generated).');
+      return;
+    }
     if (!formData.auditType || formData.auditType.length === 0) {
-      alert('Audit Type is required');
+      alert('At least one Audit Type should be selected.');
       return;
     }
     if (!formData.criteriaText?.trim()) {
-      alert('Criteria Text is required');
+      alert('Audit Criteria field should not be empty.');
       return;
     }
     if (!formData.department || formData.department.length === 0) {
-      alert('Department is required');
+      alert('At least one Department should be selected.');
       return;
     }
 
@@ -217,6 +225,14 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               label="Seq No"
               value={formData.seqNo} 
               inputProps={{ readOnly: true }} 
+              // SOP: Sequence No should be displayed in highlighted format.
+              sx={{ 
+                '& .MuiOutlinedInput-root': { 
+                  backgroundColor: theme.palette.mode === 'dark' ? 'rgba(33, 150, 243, 0.15)' : 'rgba(33, 150, 243, 0.08)',
+                  fontWeight: 'bold',
+                  color: 'primary.main'
+                } 
+              }}
             />
 
             <Autocomplete

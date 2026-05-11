@@ -18,27 +18,26 @@ export const useLookups = (lookupTypes = []) => {
     const results = {};
     
     try {
-      await Promise.all(
+      const settledResults = await Promise.allSettled(
         lookupTypes.map(async (type) => {
-          // Find path in API_PATHS (searching HRM and QMS groups)
           const path = API_PATHS.HRM[type] || API_PATHS.QMS[type];
-          
           if (!path) {
             console.warn(`Lookup type "${type}" not found in API_PATHS`);
-            return;
+            return null;
           }
-
           const response = await axios.get(path);
           const data = response.data;
-          
-          // Store as camelCase plural (e.g., DEPARTMENTS -> departments, AUDIT_TYPE -> auditTypes)
           let key = type.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
           if (!key.endsWith('s')) key += 's';
-          
-          // Support both direct array and paginated response { content: [...] }
-          results[key] = Array.isArray(data) ? data : (data && Array.isArray(data.content) ? data.content : []);
+          return { key, data: Array.isArray(data) ? data : (data && Array.isArray(data.content) ? data.content : []) };
         })
       );
+      
+      settledResults.forEach(result => {
+        if (result.status === 'fulfilled' && result.value) {
+          results[result.value.key] = result.value.data;
+        }
+      });
       
       setLookups({
         ...results,

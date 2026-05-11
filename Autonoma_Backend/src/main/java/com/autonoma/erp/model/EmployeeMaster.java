@@ -18,62 +18,52 @@ public class EmployeeMaster {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
-    // === Classification ===
-    @Column(name = "category_id")
-    private Long categoryId;
+    @Column(name = "emp_code", unique = true, nullable = false)
+    private String empCode;
 
-    @Column(name = "sub_category_id", length = 100)
-    private String subCategoryId;
-
-    @Column(name = "emp_level_id")
-    private Long empLevelId;
-
-    @Column(name = "employee_type_id")
-    private Long employeeTypeId;
-
-    @Column(name = "grade_code", length = 50)
-    private String gradeCode;
-
-    // === Identity ===
     @Column(name = "title", length = 10)
     private String title;
 
-    @Column(name = "first_name", length = 100)
-    private String firstName;
-
-    @Column(name = "last_name", length = 100)
-    private String lastName;
-
-    @Column(name = "employee_name", length = 200)
+    @Column(name = "employee_name")
     private String employeeName;
 
-    @Column(name = "father_husband_name", length = 100)
-    private String fatherHusbandName;
+    @Column(name = "email")
+    private String email;
 
-    @Column(name = "emp_code", unique = true, length = 50)
-    private String empCode;
+    @Column(name = "phone")
+    private String phone;
 
-    @Column(name = "old_emp_code", length = 50)
-    private String oldEmpCode;
-
-    @Column(name = "guest", length = 10)
-    private String guest;
-
-    // === Organization ===
     @Column(name = "department_id")
     private Long departmentId;
 
     @Column(name = "designation_id")
     private Long designationId;
 
-    @Column(name = "unit_id")
-    private Long unitId;
+    @Column(name = "father_husband_name")
+    private String fatherHusbandName;
 
-    @Column(name = "production_line", length = 100)
+    @Column(name = "old_emp_code")
+    private String oldEmpCode;
+
+    @Column(name = "grade_code")
+    private String gradeCode;
+
+    @Column(name = "production_line")
     private String productionLine;
+
+    @Column(name = "guest")
+    private String guest = "No";
+
+    @Column(name = "status")
+    private String status = "Active";
+
+    @Column(name = "first_name", length = 100)
+    private String firstName;
+
+    @Column(name = "last_name", length = 100)
+    private String lastName;
 
     @Column(name = "emp_class", length = 50)
     private String empClass;
@@ -159,8 +149,6 @@ public class EmployeeMaster {
     private String fitnessCertificateUpload;
 
     // === Audit ===
-    @Column(name = "status", length = 50)
-    private String status = "Active";
 
     @Column(name = "created_by", length = 100)
     private String createdBy;
@@ -175,6 +163,22 @@ public class EmployeeMaster {
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
+
+    // === Classification ===
+    @Column(name = "category_id")
+    private Long categoryId;
+
+    @Column(name = "sub_category_id")
+    private String subCategoryId;
+
+    @Column(name = "emp_level_id")
+    private Long empLevelId;
+
+    @Column(name = "employee_type_id")
+    private Long employeeTypeId;
+
+    @Column(name = "unit_id")
+    private Long unitId;
 
     // === Ability Section ===
     @Column(name = "is_auditor", length = 10)
@@ -210,17 +214,26 @@ public class EmployeeMaster {
     @Column(name = "chaired_type", length = 255)
     private String chairedType;
 
+    @Column(name = "chaired_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String chairedFileInfo;
+
     @Column(name = "is_host", length = 10)
     private String isHost = "NO";
 
     @Column(name = "host_type", length = 255)
     private String hostType;
 
+    @Column(name = "host_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String hostFileInfo;
+
     @Column(name = "is_participants", length = 10)
     private String isParticipants = "NO";
 
     @Column(name = "participants_type", length = 255)
     private String participantsType;
+
+    @Column(name = "participants_file_info", columnDefinition = "NVARCHAR(MAX)")
+    private String participantsFileInfo;
 
     @Column(name = "segment", length = 255)
     private String segment;
@@ -284,4 +297,30 @@ public class EmployeeMaster {
             employeeName = firstName;
         }
     }
+
+    // Manual Getters and Setters for stability
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getEmpCode() { return empCode; }
+    public void setEmpCode(String empCode) { this.empCode = empCode; }
+    public String getEmployeeName() { return employeeName; }
+    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public Long getDepartmentId() { return departmentId; }
+    public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
+    public Long getDesignationId() { return designationId; }
+    public void setDesignationId(Long designationId) { this.designationId = designationId; }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+    public String getCreatedBy() { return createdBy; }
+    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+    public Date getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public String getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
+    public Date getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 }

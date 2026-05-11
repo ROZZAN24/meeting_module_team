@@ -13,10 +13,11 @@ export const API_PATHS = {
     ACTIVE_DEPARTMENTS: `${API_BASE}/hrm/departments/active`,
     DESIGNATIONS: `${API_BASE}/hrm/designations`,
     CATEGORIES: `${API_BASE}/hrm/categories`,
-    LEVELS: `${API_BASE}/hrm/levels`,
+    LEVELS: `${API_BASE}/master/hr/designationlevel`,
     DESIGNATION_LEVELS: `${API_BASE}/master/hr/designationlevel`,
     TYPES: `${API_BASE}/hrm/employee-types`,
     EMPLOYEES: `${API_BASE}/master/employee`,
+    USERS: `${API_BASE}/users/all`,
   },
   
   // QMS Module

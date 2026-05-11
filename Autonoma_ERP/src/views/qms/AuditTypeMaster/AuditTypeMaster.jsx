@@ -58,9 +58,18 @@ export default function AuditTypeMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE'
+        defaultValue: 'ACTIVE',
+        isStarred: true
       },
-      { id: 'standard', label: 'Standard', type: 'text', placeholder: 'Filter by Standard...' }
+      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Filter by Type...', isStarred: true },
+      { id: 'standard', label: 'Standard', type: 'text', placeholder: 'Filter by Standard...' },
+      { id: 'description', label: 'Description', type: 'text', placeholder: 'Filter by Description...' },
+      { id: 'auditArea', label: 'Audit Area', type: 'text', placeholder: 'Filter by Area...' },
+      { id: 'criteriaType', label: 'Criteria Type', type: 'select', 
+        options: [{value: 'All', label: 'ALL'}, {value: 'Fixed', label: 'Fixed'}, {value: 'Variable', label: 'Variable'}] 
+      },
+      { id: 'createdBy', label: 'Created User', type: 'text' },
+      { id: 'updatedBy', label: 'Updated User', type: 'text' }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -135,14 +144,29 @@ export default function AuditTypeMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
+      const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      
+      const auditTypeFilter = globalFilters.auditType || '';
+      const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
       const standardFilter = globalFilters.standard || '';
       const matchesStandard = !standardFilter || (row.standard && row.standard.toLowerCase().includes(standardFilter.toLowerCase()));
+      const descriptionFilter = globalFilters.description || '';
+      const matchesDescription = !descriptionFilter || (row.description && row.description.toLowerCase().includes(descriptionFilter.toLowerCase()));
+      const auditAreaFilter = globalFilters.auditArea || '';
+      const matchesAuditArea = !auditAreaFilter || (row.auditArea && row.auditArea.toLowerCase().includes(auditAreaFilter.toLowerCase()));
+      const criteriaTypeFilter = globalFilters.criteriaType || 'All';
+      const matchesCriteriaType = criteriaTypeFilter === 'All' || row.criteriaType === criteriaTypeFilter;
+      const createdByFilter = globalFilters.createdBy || '';
+      const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
+      const updatedByFilter = globalFilters.updatedBy || '';
+      const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
+
       const matchesSearch = !globalQuery ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.standard && row.standard.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesStandard && matchesSearch;
+      
+      return matchesStatus && matchesAuditType && matchesStandard && matchesDescription && matchesAuditArea && matchesCriteriaType && matchesCreatedBy && matchesUpdatedBy && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

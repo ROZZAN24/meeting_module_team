@@ -27,6 +27,11 @@ public class AuditObservationDetail {
         return auditObservation != null ? auditObservation.getAuditScheduleNo() : null;
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("observationDate")
+    public java.util.Date getObservationDate() {
+        return auditObservation != null ? auditObservation.getObservationDate() : null;
+    }
+
     @com.fasterxml.jackson.annotation.JsonProperty("auditType")
     public String getAuditType() {
         return auditObservation != null ? auditObservation.getAuditType() : null;
@@ -50,6 +55,11 @@ public class AuditObservationDetail {
     @com.fasterxml.jackson.annotation.JsonProperty("ncrApprovedBy")
     public String getNcrApprovedBy() {
         return auditObservation != null ? auditObservation.getNcrApprovedBy() : null;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("departmentName")
+    public String getDepartmentName() {
+        return auditObservation != null ? auditObservation.getDepartmentName() : null;
     }
 
     @Column(name = "ncr_no", columnDefinition = "NVARCHAR(50)")

@@ -18,6 +18,9 @@ public class AuditAttendance {
     @Column(name = "name", columnDefinition = "NVARCHAR(255)")
     private String name;
 
+    @Column(name = "employee_code", columnDefinition = "NVARCHAR(50)")
+    private String employeeCode;
+
     @Column(name = "in_time", columnDefinition = "NVARCHAR(50)")
     private String inTime;
 

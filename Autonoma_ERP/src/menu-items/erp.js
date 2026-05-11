@@ -129,22 +129,15 @@ export const hra = {
   icon: icons.IconUsers,
   children: [
     {
-      id: 'hra-hr',
-      title: 'HR',
+      id: 'hra-hr-employee',
+      title: 'Employee',
       type: 'collapse',
       children: [
         {
-          id: 'hra-hr-employee',
-          title: 'Employee',
-          type: 'collapse',
-          children: [
-            {
-              id: 'hra-hr-employee-details',
-              title: 'Employee Master',
-              type: 'item',
-              url: '/hra/hr/employee/master'
-            }
-          ]
+          id: 'hra-hr-employee-details',
+          title: 'Employee Master',
+          type: 'item',
+          url: '/hra/employee/master'
         }
       ]
     }

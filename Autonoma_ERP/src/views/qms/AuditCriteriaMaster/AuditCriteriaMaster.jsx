@@ -57,11 +57,15 @@ export default function AuditCriteriaMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE'
+        defaultValue: 'ACTIVE',
+        isStarred: true
       },
-      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Search by Type...' },
-      { id: 'clause', label: 'Clause', type: 'text', placeholder: 'Search by Clause...' },
-      { id: 'department', label: 'Department', type: 'text', placeholder: 'Search by Department...' }
+      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Filter by Type...', isStarred: true },
+      { id: 'clause', label: 'Clause', type: 'text', placeholder: 'Filter by Clause...', isStarred: true },
+      { id: 'criteriaText', label: 'Criteria', type: 'text', placeholder: 'Filter by Criteria...' },
+      { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Department...' },
+      { id: 'createdBy', label: 'Created User', type: 'text' },
+      { id: 'updatedBy', label: 'Updated User', type: 'text' }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -138,18 +142,26 @@ export default function AuditCriteriaMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
+      const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const auditTypeFilter = globalFilters.auditType || '';
       const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
       const clauseFilter = globalFilters.clause || '';
       const matchesClause = !clauseFilter || (row.clause && row.clause.toLowerCase().includes(clauseFilter.toLowerCase()));
+      const criteriaFilter = globalFilters.criteriaText || '';
+      const matchesCriteria = !criteriaFilter || (row.criteriaText && row.criteriaText.toLowerCase().includes(criteriaFilter.toLowerCase()));
       const departmentFilter = globalFilters.department || '';
       const matchesDepartment = !departmentFilter || (row.department && row.department.toLowerCase().includes(departmentFilter.toLowerCase()));
+      const createdByFilter = globalFilters.createdBy || '';
+      const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
+      const updatedByFilter = globalFilters.updatedBy || '';
+      const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
+
       const matchesSearch = !globalQuery ||
         (row.criteriaText && row.criteriaText.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesAuditType && matchesClause && matchesDepartment && matchesSearch;
+      
+      return matchesStatus && matchesAuditType && matchesClause && matchesCriteria && matchesDepartment && matchesCreatedBy && matchesUpdatedBy && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

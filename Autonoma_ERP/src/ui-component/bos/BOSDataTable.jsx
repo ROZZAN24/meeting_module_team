@@ -109,20 +109,24 @@ export default function BOSDataTable({
                 };
 
                 return (
-                  <TableRow key={row.id ?? idx} hover sx={rowSx} onClick={() => onClickRow?.(row)}>
+                  <TableRow 
+                    key={row.id ?? idx} 
+                    hover 
+                    sx={rowSx} 
+                    onClick={() => onClickRow?.(row)}
+                    onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
+                  >
                     {columns.map((col) => (
                       <TableCell
                         key={col.id}
-                        onDoubleClick={(e) => { 
-                          e.stopPropagation(); 
-                          if (onDoubleClickRow) onDoubleClickRow(row);
-                          else if (onEditRow) onEditRow(row);
-                        }}
                         sx={{
                           cursor: (onDoubleClickRow || onClickRow) ? 'pointer' : 'default',
                           ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
                           ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
-                          ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } : {})
+                          // SOP: 15-char wrap rule
+                          whiteSpace: (String(row[col.id] || '').length > 15) ? 'normal' : 'nowrap',
+                          ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
+                          minWidth: col.minWidth || 80
                         }}
                       >
                         {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}

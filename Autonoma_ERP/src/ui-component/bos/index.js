@@ -25,4 +25,7 @@ export {
   tableActionDeleteSx,
   getStatusChipSx
 } from './BOSStyles';
+export { default as BOSPersonnelCard } from './BOSPersonnelCard';
+export { default as BOSActionSection } from './BOSActionSection';
+export { default as useBOSForm } from 'hooks/useBOSForm';
 export * from './BOSUtils';

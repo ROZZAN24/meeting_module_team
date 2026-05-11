@@ -44,6 +44,16 @@ public class AuditTypeService {
     }
 
     public AuditType save(AuditType auditType) {
+        // SOP: Converted to uppercase automatically
+        if (auditType.getAuditType() != null) {
+            auditType.setAuditType(auditType.getAuditType().toUpperCase().trim());
+        }
+
+        // SOP: Validation - Criteria Minimum Count must be greater than zero
+        if (auditType.getCriteriaMinCount() == null || auditType.getCriteriaMinCount() <= 0) {
+            throw new IllegalArgumentException("Please Enter Audit Criteria Minimum Count...");
+        }
+
         if (auditType.getId() != null) {
             auditType.setUpdatedDate(new Date());
         } else {
