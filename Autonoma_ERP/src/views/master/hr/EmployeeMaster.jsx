@@ -19,6 +19,7 @@ import * as XLSX from 'xlsx';
 import { CircularProgress } from '@mui/material';
 
 const INITIAL = {
+  empCode: '', oldEmpCode: '',
   categoryId: '', empLevelId: '', employeeTypeId: '', gradeCode: '',
   title: '', firstName: '', lastName: '', fatherHusbandName: '',
   departmentId: '', designationId: '', unitId: '', verticalHead: '', hr: '', vendorName: '', referMode: '', referenceComments: '',
@@ -39,6 +40,7 @@ const INITIAL = {
 };
 
 const RULES = [
+  { field: 'empCode', label: 'Employee Code', required: true, maxLength: 50 },
   { field: 'firstName', label: 'First Name', required: true, maxLength: 100 },
   { field: 'lastName', label: 'Last Name', required: true, maxLength: 100 },
   { field: 'categoryId', label: 'Category', required: true },
@@ -310,6 +312,8 @@ export default function EmployeeMaster() {
         {/* ═══ SECTION 1: CLASSIFICATION & IDENTITY ═══ */}
         <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Classification & Identity">
           <Grid container spacing={2.5}>
+            <R><BOSTextField name="empCode" label="Employee Code" value={form.empCode} onChange={h} required error={!!errors.empCode} helperText={errors.empCode} /></R>
+            <R><BOSTextField name="oldEmpCode" label="Old Employee Code" value={form.oldEmpCode} onChange={h} maxLength={50} /></R>
             <R><BOSTextField select name="categoryId" label="Category" value={form.categoryId} onChange={h} required error={!!errors.categoryId} helperText={errors.categoryId}>{CATEGORIES.map(c => <MenuItem key={c.id} value={c.id}>{c.categoryName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="empLevelId" label="Level" value={form.empLevelId} onChange={h}>{levels.map(l => <MenuItem key={l.id} value={l.id}>{l.levelName}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="employeeTypeId" label="Type" value={form.employeeTypeId} onChange={h} required error={!!errors.employeeTypeId} helperText={errors.employeeTypeId}>{TYPES.map(t => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}</BOSTextField></R>
