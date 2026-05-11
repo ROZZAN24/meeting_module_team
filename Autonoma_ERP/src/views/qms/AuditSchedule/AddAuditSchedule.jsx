@@ -51,7 +51,8 @@ const VALIDATION_RULES = [
   { field: 'auditDate', label: 'Audit Date', required: true },
   { field: 'department', label: 'Department', required: true },
   { field: 'auditee', label: 'Auditee', required: true },
-  { field: 'auditor', label: 'Auditor', required: true }
+  { field: 'auditor', label: 'Auditor', required: true },
+  { field: 'criteriaMinCount', label: 'Criteria Min Count', required: true }
 ];
 
 export default function AddAuditSchedule() {
@@ -80,7 +81,8 @@ export default function AddAuditSchedule() {
     auditor: '',
     auditorType: '',
     ncrApprovedBy: '',
-    ncrApprovedByType: ''
+    ncrApprovedByType: '',
+    criteriaMinCount: 0
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
@@ -132,7 +134,8 @@ export default function AddAuditSchedule() {
         auditor: data.auditor || '',
         auditorType: data.auditorType || '',
         ncrApprovedBy: data.ncrApprovedBy || '',
-        ncrApprovedByType: data.ncrApprovedByType || ''
+        ncrApprovedByType: data.ncrApprovedByType || '',
+        criteriaMinCount: data.criteriaMinCount || 0
       });
       setCriteriaList(data.criteriaList || []);
     } catch (error) {
@@ -157,6 +160,11 @@ export default function AddAuditSchedule() {
 
     if (criteriaList.length === 0) {
       dispatch(openSnackbar({ open: true, message: 'At least one criteria must be added.', severity: 'error', variant: 'alert' }));
+      return;
+    }
+
+    if (formData.criteriaMinCount > criteriaList.length) {
+      dispatch(openSnackbar({ open: true, message: `Min Count (${formData.criteriaMinCount}) cannot be greater than selected criteria (${criteriaList.length}).`, severity: 'error', variant: 'alert' }));
       return;
     }
 
@@ -195,7 +203,8 @@ export default function AddAuditSchedule() {
         auditor: '',
         auditorType: '',
         ncrApprovedBy: '',
-        ncrApprovedByType: ''
+        ncrApprovedByType: '',
+        criteriaMinCount: 0
       });
       setCriteriaList([]);
       generateScheduleNo();
@@ -300,6 +309,16 @@ export default function AddAuditSchedule() {
                   />
                 )}
               />
+              <BOSTextField
+                required
+                type="number"
+                label="Criteria Min Count"
+                name="criteriaMinCount"
+                value={formData.criteriaMinCount}
+                onChange={handleChange}
+                error={!!errors.criteriaMinCount}
+                helperText={errors.criteriaMinCount || `Total Criteria Selected: ${criteriaList.length}`}
+              />
             </Box>
           </BOSFormSection>
 
@@ -313,7 +332,19 @@ export default function AddAuditSchedule() {
                 getOptionLabel={(option) => option.auditType || ''}
                 value={(Array.isArray(auditTypes) ? auditTypes : []).filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
                 onChange={(event, newValue) => {
-                  setFormData({ ...formData, auditType: newValue.map((v) => v.auditType).join(',') });
+                  const types = newValue.map((v) => v.auditType);
+                  const selectedTypeStr = types.join(',');
+                  let minCount = formData.criteriaMinCount;
+                  
+                  // If we just selected one type, try to find its default min count
+                  if (types.length === 1) {
+                    const match = auditTypes.find(t => t.auditType === types[0]);
+                    if (match && match.criteriaMinCount) {
+                      minCount = match.criteriaMinCount;
+                    }
+                  }
+                  
+                  setFormData({ ...formData, auditType: selectedTypeStr, criteriaMinCount: minCount });
                 }}
                 renderInput={(params) => (
                   <BOSTextField

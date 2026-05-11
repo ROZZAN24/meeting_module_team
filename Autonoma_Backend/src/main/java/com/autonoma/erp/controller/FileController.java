@@ -80,8 +80,13 @@ public class FileController {
             Path file = root.resolve(decodedFilename).toAbsolutePath().normalize();
             Path rootAbsolute = root.toAbsolutePath().normalize();
             
+            System.out.println("Checking path: " + file);
+            System.out.println("Against root: " + rootAbsolute);
+            
             if (!file.startsWith(rootAbsolute)) {
                 System.err.println("TRAVERSAL ATTEMPT DETECTED: " + decodedFilename);
+                System.err.println("File absolute: " + file);
+                System.err.println("Root absolute: " + rootAbsolute);
                 return ResponseEntity.status(403).build();
             }
             System.out.println("Absolute Path: " + file.toAbsolutePath());

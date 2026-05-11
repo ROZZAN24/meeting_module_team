@@ -34,7 +34,11 @@ public class AuditSchedule {
     @Column(columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
+    @Column(name = "isDeleted", nullable = false)
     private boolean isDeleted = false;
+
+    @Column(name = "criteriaMinCount")
+    private Integer criteriaMinCount;
     
     @Temporal(TemporalType.DATE)
     private Date auditDate;
@@ -96,6 +100,8 @@ public class AuditSchedule {
     public void setAuditArea(String auditArea) { this.auditArea = auditArea; }
     public boolean isDeleted() { return isDeleted; }
     public void setDeleted(boolean deleted) { isDeleted = deleted; }
+    public Integer getCriteriaMinCount() { return criteriaMinCount; }
+    public void setCriteriaMinCount(Integer criteriaMinCount) { this.criteriaMinCount = criteriaMinCount; }
     public Date getAuditDate() { return auditDate; }
     public void setAuditDate(Date auditDate) { this.auditDate = auditDate; }
     public String getAuditMonth() { return auditMonth; }
