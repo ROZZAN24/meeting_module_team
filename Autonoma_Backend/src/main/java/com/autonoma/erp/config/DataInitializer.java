@@ -22,23 +22,23 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         Optional<UserCredential> existingAdmin = userRepository.findByUserId("admin");
+        UserCredential admin;
         if (existingAdmin.isEmpty()) {
-            UserCredential admin = new UserCredential();
+            admin = new UserCredential();
             admin.setUserId("admin");
-            admin.setEmpId(1);
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setStatus(1);
+            admin.setEmpId(1L);
             admin.setCreatedBy("SYSTEM");
             admin.setCreatedDate(new Date());
-            userRepository.save(admin);
-            System.out.println("Admin user created successfully!");
+            System.out.println("Creating new admin user...");
         } else {
-            // Always re-encode the password on startup to stay in sync
-            UserCredential admin = existingAdmin.get();
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setStatus(1);
-            userRepository.save(admin);
-            System.out.println("Admin password re-synced on startup.");
+            admin = existingAdmin.get();
+            System.out.println("Updating existing admin user...");
         }
+        
+        // Use the new reversible encoder
+        admin.setPassword(passwordEncoder.encode("admin123"));
+        admin.setStatus(1);
+        userRepository.save(admin);
+        System.out.println("Admin password initialized/updated with reversible encryption.");
     }
 }

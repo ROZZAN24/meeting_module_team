@@ -20,7 +20,18 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new PasswordEncoder() {
+            @Override
+            public String encode(CharSequence rawPassword) {
+                return com.autonoma.erp.util.AESUtil.encrypt(rawPassword.toString());
+            }
+
+            @Override
+            public boolean matches(CharSequence rawPassword, String encodedPassword) {
+                String decrypted = com.autonoma.erp.util.AESUtil.decrypt(encodedPassword);
+                return rawPassword.toString().equals(decrypted);
+            }
+        };
     }
 
     @Bean

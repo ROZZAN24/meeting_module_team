@@ -1,8 +1,12 @@
 package com.autonoma.erp.service;
 
+import com.autonoma.erp.model.AppPreference;
 import com.autonoma.erp.model.CompanyCredential;
+import com.autonoma.erp.repository.AppPreferenceRepository;
 import com.autonoma.erp.repository.CompanyCredentialRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,31 +16,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import com.autonoma.erp.model.AppPreference;
-import com.autonoma.erp.repository.AppPreferenceRepository;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
 import AppUtil.BosDocConstants;
 
 @Service
-public class CompanyCredentialService {
+public class UserService {
 
     @Autowired
-    private CompanyCredentialRepository repository;
+    private CompanyCredentialRepository companyRepository;
 
     @Autowired
     private AppPreferenceRepository appPreferenceRepository;
 
     private Path getUploadDirectory() {
-        // Priority 1: From CompanyCredential record
-        List<CompanyCredential> all = repository.findAll();
+        // Priority 1: From CompanyCredential record (shared root)
+        List<CompanyCredential> all = companyRepository.findAll();
         if (!all.isEmpty() && all.get(0).getDirectoryPath() != null && !all.get(0).getDirectoryPath().trim().isEmpty()) {
             return Paths.get(all.get(0).getDirectoryPath().trim());
         }
@@ -47,29 +44,12 @@ public class CompanyCredentialService {
             return Paths.get(pref.get().getPrefValue().trim());
         }
 
-        // Fallback: Default uploads/company
-        return Paths.get(System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "company");
-    }
-
-    public List<CompanyCredential> findAll() {
-        return repository.findAll();
-    }
-
-    public Optional<CompanyCredential> findById(Integer id) {
-        return repository.findById(id);
-    }
-
-    public CompanyCredential save(CompanyCredential company) {
-        return repository.save(company);
-    }
-
-    public void deleteById(Integer id) {
-        repository.deleteById(id);
+        // Fallback: Default uploads
+        return Paths.get(System.getProperty("user.dir") + File.separator + "uploads");
     }
 
     /**
-     * Saves uploaded file to the configured directory and returns the saved
-     * filename.
+     * Saves uploaded file to the configured directory and returns the saved filename.
      */
     public String saveUploadedFile(MultipartFile file, String subDir) throws IOException {
         Path uploadPath = getUploadDirectory().resolve(subDir);

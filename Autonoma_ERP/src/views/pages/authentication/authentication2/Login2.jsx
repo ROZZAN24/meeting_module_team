@@ -18,7 +18,7 @@ import AuthFooter from 'ui-component/cards/AuthFooter';
 import AuthSlider from 'ui-component/cards/AuthSlider';
 
 // assets
-import imgMain from 'assets/images/auth/img-a2-login.svg';
+import imgMain from 'assets/images/auth/img-a2-forgotpass.svg';
 
 // carousel items
 const items = [

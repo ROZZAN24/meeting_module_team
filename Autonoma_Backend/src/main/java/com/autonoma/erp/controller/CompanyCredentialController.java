@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import AppUtil.BosDocConstants;
 
 @RestController
 @RequestMapping("/api/company-profile")
@@ -102,7 +103,7 @@ public class CompanyCredentialController {
     @PostMapping(value = "/upload-logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadLogo(@RequestParam("file") MultipartFile file) {
         try {
-            String filename = service.saveUploadedFile(file);
+            String filename = service.saveUploadedFile(file, BosDocConstants.COMPANY_PROFILE_PATH);
             Map<String, String> response = new HashMap<>();
             response.put("fileName", filename);
             response.put("message", "Logo uploaded successfully");
@@ -120,7 +121,7 @@ public class CompanyCredentialController {
     @PostMapping(value = "/upload-bg", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadBackground(@RequestParam("file") MultipartFile file) {
         try {
-            String filename = service.saveUploadedFile(file);
+            String filename = service.saveUploadedFile(file, BosDocConstants.COMPANY_PROFILE_PATH);
             Map<String, String> response = new HashMap<>();
             response.put("fileName", filename);
             response.put("message", "Login background uploaded successfully");
@@ -138,7 +139,7 @@ public class CompanyCredentialController {
     @GetMapping("/image/{filename:.+}")
     public ResponseEntity<org.springframework.core.io.Resource> getImage(@PathVariable String filename) {
         try {
-            org.springframework.core.io.Resource resource = service.loadFileAsResource(filename);
+            org.springframework.core.io.Resource resource = service.loadFileAsResource(filename, BosDocConstants.COMPANY_PROFILE_PATH);
             String contentType = "application/octet-stream";
             try {
                 contentType = java.nio.file.Files.probeContentType(resource.getFile().toPath());

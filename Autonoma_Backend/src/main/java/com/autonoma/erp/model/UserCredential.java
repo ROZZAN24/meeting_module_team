@@ -1,5 +1,6 @@
 package com.autonoma.erp.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,13 +12,14 @@ import java.util.Date;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class UserCredential {
     @Id
     @Column(name = "USER_ID", columnDefinition = "NVARCHAR(50)")
     private String userId;
 
     @Column(name = "EMP_ID", nullable = false)
-    private Integer empId;
+    private Long empId;
 
     @Column(name = "PASSWORD", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
@@ -50,11 +52,11 @@ public class UserCredential {
         this.userId = userId;
     }
 
-    public Integer getEmpId() {
+    public Long getEmpId() {
         return empId;
     }
 
-    public void setEmpId(Integer empId) {
+    public void setEmpId(Long empId) {
         this.empId = empId;
     }
 

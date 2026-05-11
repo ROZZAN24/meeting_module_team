@@ -7,12 +7,15 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 @Entity
 @Table(name = "bos_user_page_auth")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @IdClass(BosUserPageAuthId.class)
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class BosUserPageAuth {
 
     @Id
