@@ -7,30 +7,31 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "QMS_CHECKLIST_VERIFICATION")
+@Table(name = "qms_checklist_verification")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChecklistVerification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ASSIGNMENT_ID")
+    @JoinColumn(name = "assignment_id")
     private ChecklistAssignment assignment;
 
-    @Column(name = "VERIFIED_BY")
+    @Column(name = "verified_by")
     private String verifiedBy;
 
     @ManyToOne
-    @JoinColumn(name = "STATUS_ID")
+    @JoinColumn(name = "status_id")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
-    @Column(name = "VERIFIED_DATE")
+    @Column(name = "verified_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedDate;
 

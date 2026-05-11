@@ -5,13 +5,13 @@ import lombok.Data;
 import java.util.Date;
 
 @Entity
-@Table(name = "audit_types")
+@Table(name = "audit_type")
 public class AuditType {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "auditType", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "audit_type", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
     @Column(name = "standard", columnDefinition = "NVARCHAR(255)")
@@ -20,32 +20,32 @@ public class AuditType {
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
-    @Column(name = "criteriaMinCount")
+    @Column(name = "criteria_min_count")
     private Integer criteriaMinCount;
 
-    @Column(name = "customerAuditArea", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "customer_audit_area", columnDefinition = "NVARCHAR(255)")
     private String customerAuditArea;
 
-    @Column(name = "auditArea", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "audit_area", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
-    @Column(name = "criteriaType", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "criteria_type", columnDefinition = "NVARCHAR(100)")
     private String criteriaType;
 
     @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(name = "createdBy")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "createdDate")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
     
-    @Column(name = "updatedBy")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updatedDate")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

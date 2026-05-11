@@ -8,39 +8,39 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "HRM_GRADE_DETAILS")
+@Table(name = "hrm_grade_detail")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Gradedetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "GRADE_CODE", length = 50)
+    @Column(name = "grade_code", length = 50)
     private String gradeCode;
 
-    @Column(name = "SEQ_NO")
+    @Column(name = "seq_no")
     private String sequenceNo;
 
-    @Column(name = "GRADE_NAME", length = 100)
+    @Column(name = "grade_name", length = 100)
     private String gradeName;
 
-    @Column(name = "STATUS", length = 20)
+    @Column(name = "status", length = 20)
     private String status = "Active";
 
-    @Column(name = "CREATED_BY")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

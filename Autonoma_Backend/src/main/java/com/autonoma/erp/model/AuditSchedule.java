@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 @Entity
-@Table(name = "audit_schedules")
+@Table(name = "audit_schedule")
 @Getter
 @Setter
 public class AuditSchedule {
@@ -16,70 +16,87 @@ public class AuditSchedule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "schedule_no", columnDefinition = "NVARCHAR(255)")
     private String scheduleNo;
     
+    @Column(name = "schedule_date")
     @Temporal(TemporalType.DATE)
     private Date scheduleDate;
     
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "audit_type", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "item_code", columnDefinition = "NVARCHAR(255)")
     private String itemCode;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "audit_area", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
-    @Column(name = "isDeleted", nullable = false)
+    @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 
-    @Column(name = "criteriaMinCount")
+    @Column(name = "criteria_min_count")
     private Integer criteriaMinCount;
     
+    @Column(name = "audit_date")
     @Temporal(TemporalType.DATE)
     private Date auditDate;
     
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "audit_month", columnDefinition = "NVARCHAR(50)")
     private String auditMonth;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "start_time", columnDefinition = "NVARCHAR(50)")
     private String startTime;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "end_time", columnDefinition = "NVARCHAR(50)")
     private String endTime;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "department", columnDefinition = "NVARCHAR(255)")
     private String department;
     
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditee", columnDefinition = "NVARCHAR(255)")
     private String auditee;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditee_type", columnDefinition = "NVARCHAR(255)")
     private String auditeeType;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditee_details", columnDefinition = "NVARCHAR(MAX)")
+    private String auditeeDetails;
+
+    @Column(name = "auditor", columnDefinition = "NVARCHAR(255)")
     private String auditor;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditor_type", columnDefinition = "NVARCHAR(255)")
     private String auditorType;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditor_details", columnDefinition = "NVARCHAR(MAX)")
+    private String auditorDetails;
+
+    @Column(name = "ncr_approved_by", columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedBy;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "ncr_approved_by_type", columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedByType;
 
+    @Column(name = "ncr_approved_by_details", columnDefinition = "NVARCHAR(MAX)")
+    private String ncrApprovedByDetails;
+
+    @Column(name = "created_by")
     private String createdBy;
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate = new Date();
     
-    private String updatedBy;
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date createdAt = new Date();
+    
+    @Column(name = "updated_by")
+    private String updatedBy;
+    
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
 
     @OneToMany(mappedBy = "auditSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditScheduleCriteria> criteriaList = new ArrayList<>();
@@ -116,32 +133,38 @@ public class AuditSchedule {
     public void setAuditee(String auditee) { this.auditee = auditee; }
     public String getAuditeeType() { return auditeeType; }
     public void setAuditeeType(String auditeeType) { this.auditeeType = auditeeType; }
+    public String getAuditeeDetails() { return auditeeDetails; }
+    public void setAuditeeDetails(String auditeeDetails) { this.auditeeDetails = auditeeDetails; }
     public String getAuditor() { return auditor; }
     public void setAuditor(String auditor) { this.auditor = auditor; }
     public String getAuditorType() { return auditorType; }
     public void setAuditorType(String auditorType) { this.auditorType = auditorType; }
+    public String getAuditorDetails() { return auditorDetails; }
+    public void setAuditorDetails(String auditorDetails) { this.auditorDetails = auditorDetails; }
     public String getNcrApprovedBy() { return ncrApprovedBy; }
     public void setNcrApprovedBy(String ncrApprovedBy) { this.ncrApprovedBy = ncrApprovedBy; }
     public String getNcrApprovedByType() { return ncrApprovedByType; }
     public void setNcrApprovedByType(String ncrApprovedByType) { this.ncrApprovedByType = ncrApprovedByType; }
+    public String getNcrApprovedByDetails() { return ncrApprovedByDetails; }
+    public void setNcrApprovedByDetails(String ncrApprovedByDetails) { this.ncrApprovedByDetails = ncrApprovedByDetails; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
+    public Date getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
+    public Date getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
     public List<AuditScheduleCriteria> getCriteriaList() { return criteriaList; }
     public void setCriteriaList(List<AuditScheduleCriteria> criteriaList) { this.criteriaList = criteriaList; }
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
     }
 }

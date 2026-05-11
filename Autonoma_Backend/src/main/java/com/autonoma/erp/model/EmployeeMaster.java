@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "HRM_EMPLOYEE_MASTER")
+@Table(name = "hrm_employee_master")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -165,16 +165,16 @@ public class EmployeeMaster {
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private Date createdAt;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date updatedAt;
 
     // === Ability Section ===
     @Column(name = "is_auditor", length = 10)
@@ -266,7 +266,7 @@ public class EmployeeMaster {
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
         // Auto-compute employeeName from first + last
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
@@ -277,7 +277,7 @@ public class EmployeeMaster {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
         } else if (firstName != null) {

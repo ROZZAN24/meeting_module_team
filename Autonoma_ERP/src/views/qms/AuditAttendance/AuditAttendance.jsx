@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Stack, Button, Tooltip, IconButton, MenuItem, Box, Chip } from '@mui/material';
+import { Typography, Stack, Button, Tooltip, IconButton, MenuItem, Box, Chip, Divider } from '@mui/material';
 import { IconUsers, IconFileDownload, IconPlus, IconEdit, IconTrash, IconRefresh } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
@@ -22,6 +22,14 @@ const columns = [
   { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 }
 ];
 
+const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
+  const hours = Math.floor(i / 4);
+  const minutes = (i % 4) * 15;
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+});
+
 const VALIDATION_RULES = [
   { field: 'auditScheduleNo', label: 'Schedule No', required: true },
   { field: 'name', label: 'Name', required: true },
@@ -42,6 +50,7 @@ export default function AuditAttendance() {
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', inTime: '', outTime: '', attendanceStatus: 'PRESENT' });
+  const [participants, setParticipants] = useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
@@ -107,6 +116,32 @@ export default function AuditAttendance() {
       dispatch(openSnackbar({ open: true, message: 'Failed to save attendance', severity: 'error', variant: 'alert' }));
     }
   };
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      if (formData.auditScheduleNo && !formData.id) {
+        try {
+          const res = await axios.get(`/api/qms/audit/attendance/participants/${formData.auditScheduleNo}`);
+          setParticipants(res.data || []);
+          
+          const schedule = schedules.find(s => s.scheduleNo === formData.auditScheduleNo);
+          if (schedule) {
+            setFormData(prev => ({
+              ...prev,
+              inTime: schedule.startTime || prev.inTime,
+              outTime: schedule.endTime || prev.outTime
+            }));
+          }
+        } catch (err) {
+          console.error('Failed to fetch participants:', err);
+          setParticipants([]);
+        }
+      } else if (!formData.auditScheduleNo) {
+        setParticipants([]);
+      }
+    };
+    fetchParticipants();
+  }, [formData.auditScheduleNo, formData.id, schedules]);
 
   const handleDeleteClick = (row) => {
     setDeleteTarget(row);
@@ -236,29 +271,43 @@ export default function AuditAttendance() {
                 {schedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo} ({format(new Date(s.auditDate || s.scheduleDate), 'dd-MM-yyyy')})</MenuItem>)}
               </BOSTextField>
               <BOSTextField
+                select
                 required
                 label="Name"
                 name="name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 error={!!errors.name}
-                helperText={errors.name}
-              />
+                helperText={errors.name || (participants.length > 0 ? "Select from schedule participants" : "")}
+              >
+                {participants.length > 0 ? (
+                  participants.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)
+                ) : (
+                  <MenuItem value={formData.name} disabled>{formData.name || "No participants found"}</MenuItem>
+                )}
+                <Divider />
+                <MenuItem value="OTHER" onClick={() => {
+                  const customName = prompt("Enter custom name:");
+                  if (customName) setFormData({ ...formData, name: customName });
+                }}>+ Other Name</MenuItem>
+              </BOSTextField>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                 <BOSTextField
+                  select
                   label="In Time"
-                  type="time"
                   value={formData.inTime}
                   onChange={(e) => setFormData({ ...formData, inTime: e.target.value })}
-                  InputLabelProps={{ shrink: true }}
-                />
+                >
+                  {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                </BOSTextField>
                 <BOSTextField
+                  select
                   label="Out Time"
-                  type="time"
                   value={formData.outTime}
                   onChange={(e) => setFormData({ ...formData, outTime: e.target.value })}
-                  InputLabelProps={{ shrink: true }}
-                />
+                >
+                  {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                </BOSTextField>
               </Box>
               <BOSTextField
                 select

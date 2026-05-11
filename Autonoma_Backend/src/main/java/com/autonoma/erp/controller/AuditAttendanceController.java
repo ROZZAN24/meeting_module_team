@@ -54,4 +54,28 @@ public class AuditAttendanceController {
     public List<AuditAttendance> getBySchedule(@PathVariable String scheduleNo) {
         return auditAttendanceRepository.findByAuditScheduleNo(scheduleNo);
     }
+
+    @Autowired
+    private com.autonoma.erp.repository.AuditScheduleRepository scheduleRepo;
+
+    @GetMapping("/participants/{scheduleNo}")
+    public ResponseEntity<java.util.Set<String>> getParticipants(@PathVariable String scheduleNo) {
+        return scheduleRepo.findByScheduleNo(scheduleNo)
+                .map(s -> {
+                    java.util.Set<String> names = new java.util.TreeSet<>();
+                    if (s.getAuditor() != null) {
+                        java.util.Arrays.stream(s.getAuditor().split(","))
+                                .map(String::trim)
+                                .filter(n -> !n.isEmpty())
+                                .forEach(names::add);
+                    }
+                    if (s.getAuditee() != null) {
+                        java.util.Arrays.stream(s.getAuditee().split(","))
+                                .map(String::trim)
+                                .filter(n -> !n.isEmpty())
+                                .forEach(names::add);
+                    }
+                    return ResponseEntity.ok(names);
+                }).orElse(ResponseEntity.notFound().build());
+    }
 }

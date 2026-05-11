@@ -164,7 +164,12 @@ export default function AddAuditSchedule() {
     }
 
     if (formData.criteriaMinCount > criteriaList.length) {
-      dispatch(openSnackbar({ open: true, message: `Min Count (${formData.criteriaMinCount}) cannot be greater than selected criteria (${criteriaList.length}).`, severity: 'error', variant: 'alert' }));
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: `Audit Type requirements not met: Minimum ${formData.criteriaMinCount} criteria are required, but only ${criteriaList.length} are selected. Please add more criteria to continue.`, 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
       return;
     }
 
@@ -238,7 +243,7 @@ export default function AddAuditSchedule() {
   });
 
   const availableCriteria = useMemo(() => {
-    const selectedTypes = formData.auditType.split(',').filter((t) => t);
+    const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
     return masterCriteria.filter((c) => {
       const criteriaTypes = c.auditType ? c.auditType.split(', ') : [];
       const matchesType = selectedTypes.length === 0 || selectedTypes.some((st) => criteriaTypes.includes(st));
@@ -246,6 +251,20 @@ export default function AddAuditSchedule() {
       return matchesType && !isAlreadyAdded;
     });
   }, [masterCriteria, formData.auditType, criteriaList]);
+
+  const totalRequiredCount = useMemo(() => {
+    const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
+    return selectedTypes.reduce((acc, typeName) => {
+      const match = auditTypes.find(t => t.auditType === typeName);
+      return acc + (match?.criteriaMinCount || 0);
+    }, 0);
+  }, [formData.auditType, auditTypes]);
+
+  useEffect(() => {
+    if (totalRequiredCount > 0) {
+      setFormData(prev => ({ ...prev, criteriaMinCount: totalRequiredCount }));
+    }
+  }, [totalRequiredCount]);
 
   return (
     <>
@@ -317,7 +336,11 @@ export default function AddAuditSchedule() {
                 value={formData.criteriaMinCount}
                 onChange={handleChange}
                 error={!!errors.criteriaMinCount}
-                helperText={errors.criteriaMinCount || `Total Criteria Selected: ${criteriaList.length}`}
+                helperText={errors.criteriaMinCount || `Required based on Audit Type(s): ${totalRequiredCount}`}
+                InputProps={{
+                  readOnly: true,
+                  sx: { bgcolor: 'action.hover' }
+                }}
               />
             </Box>
           </BOSFormSection>
@@ -332,19 +355,8 @@ export default function AddAuditSchedule() {
                 getOptionLabel={(option) => option.auditType || ''}
                 value={(Array.isArray(auditTypes) ? auditTypes : []).filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
                 onChange={(event, newValue) => {
-                  const types = newValue.map((v) => v.auditType);
-                  const selectedTypeStr = types.join(',');
-                  let minCount = formData.criteriaMinCount;
-                  
-                  // If we just selected one type, try to find its default min count
-                  if (types.length === 1) {
-                    const match = auditTypes.find(t => t.auditType === types[0]);
-                    if (match && match.criteriaMinCount) {
-                      minCount = match.criteriaMinCount;
-                    }
-                  }
-                  
-                  setFormData({ ...formData, auditType: selectedTypeStr, criteriaMinCount: minCount });
+                  const selectedTypeStr = newValue.map((v) => v.auditType).join(',');
+                  setFormData({ ...formData, auditType: selectedTypeStr });
                 }}
                 renderInput={(params) => (
                   <BOSTextField
@@ -531,7 +543,17 @@ export default function AddAuditSchedule() {
 
           {/* Card 4: Audit Criteria Checklist */}
           <BOSFormSection icon={<IconListCheck size={20} color={theme.palette.success.main} />} title="Audit Criteria Checklist">
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                {criteriaList.length < formData.criteriaMinCount && (
+                  <Chip 
+                    label={`Attention: Minimum ${formData.criteriaMinCount} criteria required. Currently selected: ${criteriaList.length}`} 
+                    color="error" 
+                    variant="outlined"
+                    sx={{ fontWeight: 600, border: '2px solid' }}
+                  />
+                )}
+              </Box>
               <Tooltip title={shortcutTooltip('Add Criteria', 'Ctrl + N')}>
                 <Button variant="contained" size="small" onClick={() => setCriteriaDialogOpen(true)} startIcon={<IconPlus size={16} />} sx={{ borderRadius: '8px' }}>
                   Add Criteria

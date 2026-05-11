@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
+@org.springframework.transaction.annotation.Transactional
 public class AuditScheduleService {
+
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuditScheduleService.class);
 
     @Autowired
     private AuditScheduleRepository repository;
@@ -24,6 +27,9 @@ public class AuditScheduleService {
     }
 
     public AuditSchedule createAuditSchedule(AuditSchedule auditSchedule) {
+        logger.debug("Creating Audit Schedule with {} criteria items", 
+            auditSchedule.getCriteriaList() != null ? auditSchedule.getCriteriaList().size() : 0);
+            
         if (auditSchedule.getCriteriaList() != null) {
             for (AuditScheduleCriteria criteria : auditSchedule.getCriteriaList()) {
                 criteria.setAuditSchedule(auditSchedule);

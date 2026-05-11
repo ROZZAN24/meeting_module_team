@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "QMS_CHECKLIST_DEPARTMENT")
+@Table(name = "qms_checklist_department")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -21,7 +21,7 @@ public class ChecklistDepartment {
     @JsonIgnore
     private MasterChecklist checklist;
 
-    @Column(name = "DEPARTMENT_NAME")
+    @Column(name = "department_name")
     private String departmentName;
 
     public Long getId() { return id; }

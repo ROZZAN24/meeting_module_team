@@ -9,127 +9,128 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
-@Table(name = "QMS_MASTER_CHECKLIST")
+@Table(name = "qms_checklist_master")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class MasterChecklist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "SEQ_NO")
+    @Column(name = "seq_no")
     private String seqNo;
 
-    @Column(name = "CHECKING_POINT")
+    @Column(name = "checking_point")
     private String checkingPoint;
 
-    @Column(name = "DESCRIPTION", columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "CATEGORY")
+    @Column(name = "category")
     private String category; // RENEWAL or CHECK LIST
 
-    @Column(name = "FREQUENCY")
+    @Column(name = "frequency")
     private String frequency;
 
-    @Column(name = "EFFECTIVE_FROM")
+    @Column(name = "effective_from")
     @Temporal(TemporalType.DATE)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date effectiveFrom;
 
-    @Column(name = "EXPIRY_DATE")
+    @Column(name = "expiry_date")
     @Temporal(TemporalType.DATE)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date expiryDate;
 
-    @Column(name = "REMINDER_DAYS")
+    @Column(name = "reminder_days")
     private Integer reminderDays;
 
-    @Column(name = "REMINDER_DATE")
+    @Column(name = "reminder_date")
     @Temporal(TemporalType.DATE)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date reminderDate;
 
-    @Column(name = "STOCK_LINK")
+    @Column(name = "stock_link")
     private String stockLink;
 
-    @Column(name = "PHOTO_REQUIRED")
+    @Column(name = "photo_required")
     private String photoRequired;
 
-    @Column(name = "VERIFICATION_REQUIRED")
+    @Column(name = "verification_required")
     private String verificationRequired;
 
-    @Column(name = "LAST_COMPLETED_DATE")
+    @Column(name = "last_completed_date")
     @Temporal(TemporalType.DATE)
     private Date lastCompletedDate;
 
-    @Column(name = "NEXT_DUE_DATE")
+    @Column(name = "next_due_date")
     @Temporal(TemporalType.DATE)
     private Date nextDueDate;
 
-    @Column(name = "CREATED_BY")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedDate;
 
-    @Column(name = "STATUS")
+    @Column(name = "status")
     private String status;
 
-    @Column(name = "TASK_STATUS")
+    @Column(name = "task_status")
     private String taskStatus;
 
-    @Column(name = "VERIFY_STATUS")
+    @Column(name = "verify_status")
     private String verifyStatus;
 
-    @Column(name = "VERIFIED_BY")
+    @Column(name = "verified_by")
     private String verifiedBy;
 
-    @Column(name = "VERIFIED_DATE")
+    @Column(name = "verified_date")
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date verifiedDate;
 
-    @Column(name = "REJ_REASON")
+    @Column(name = "rej_reason")
     private String rejReason;
 
-    @Column(name = "ASSIGN_TO")
+    @Column(name = "assign_to")
     private String assignTo;
 
-    @Column(name = "ASSIGN_DATE")
+    @Column(name = "assign_date")
     @Temporal(TemporalType.DATE)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private Date assignDate;
 
-    @Column(name = "ITEM_CODE")
+    @Column(name = "item_code")
     private String itemCode;
 
-    @Column(name = "QTY")
+    @Column(name = "qty")
     private String qty;
 
-    @Column(name = "DUAL_CHECK")
+    @Column(name = "dual_check")
     private String dualCheck = "NO";
 
-    @Column(name = "CARRY_FORWARD")
+    @Column(name = "carry_forward")
     private String carryForward = "NO";
 
     @Convert(converter = com.autonoma.erp.util.StringListConverter.class)
-    @Column(name = "UPLOADED_FILES", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "uploaded_files", columnDefinition = "NVARCHAR(MAX)")
     private List<String> uploadedFiles;
 
     @Convert(converter = com.autonoma.erp.util.StringListConverter.class)
-    @Column(name = "SCANNED_FILES", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "scanned_files", columnDefinition = "NVARCHAR(MAX)")
     private List<String> scannedFiles;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -140,10 +141,10 @@ public class MasterChecklist {
     @com.fasterxml.jackson.annotation.JsonIgnore
     private List<ChecklistAssignment> assignments;
 
-    @Column(name = "LEVEL_IDS")
+    @Column(name = "level_ids")
     private String levelIds; // L1,L2...
 
-    @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
+    @Column(name = "amendment_reason", columnDefinition = "TEXT")
     private String amendmentReason;
 
     // Getters and Setters (manually added for compatibility if Lombok has issues)

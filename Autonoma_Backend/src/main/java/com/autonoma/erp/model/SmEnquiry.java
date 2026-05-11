@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_ENQUIRY")
+@Table(name = "sm_enquiry")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,67 +16,67 @@ public class SmEnquiry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "ENQUIRY_NO", nullable = false, length = 50)
+    @Column(name = "enquiry_no", nullable = false, length = 50)
     private String enquiryNo;
 
-    @Column(name = "ENQUIRY_DATE")
+    @Column(name = "enquiry_date")
     @Temporal(TemporalType.DATE)
     private Date enquiryDate;
 
-    @Column(name = "CUSTOMER_NAME", length = 200)
+    @Column(name = "customer_name", length = 200)
     private String customerName;
 
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_ID")
     private CustomerMaster customer;
 
-    @Column(name = "CONTACT_PERSON", length = 200)
+    @Column(name = "contact_person", length = 200)
     private String contactPerson;
 
-    @Column(name = "EMAIL", length = 200)
+    @Column(name = "email", length = 200)
     private String email;
 
-    @Column(name = "PHONE", length = 50)
+    @Column(name = "phone", length = 50)
     private String phone;
 
-    @Column(name = "SUBJECT", length = 500)
+    @Column(name = "subject", length = 500)
     private String subject;
 
-    @Column(name = "REQUIREMENTS", columnDefinition = "TEXT")
+    @Column(name = "requirements", columnDefinition = "TEXT")
     private String requirements;
 
-    @Column(name = "SOURCE", length = 100)
+    @Column(name = "source", length = 100)
     private String source;
 
-    @Column(name = "PRIORITY", length = 50)
+    @Column(name = "priority", length = 50)
     private String priority = "Medium";
 
-    @Column(name = "OCR_DOCUMENT_PATH", length = 500)
+    @Column(name = "ocr_document_path", length = 500)
     private String ocrDocumentPath;
 
-    @Column(name = "OCR_EXTRACTED_TEXT", columnDefinition = "TEXT")
+    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
     private String ocrExtractedText;
 
-    @Column(name = "OCR_CONFIDENCE", length = 10)
+    @Column(name = "ocr_confidence", length = 10)
     private String ocrConfidence;
 
-    @Column(name = "STATUS", length = 50)
+    @Column(name = "status", length = 50)
     private String status = "Open";
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
-    @Column(name = "CREATED_BY", length = 100)
+    @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", length = 100)
+    @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

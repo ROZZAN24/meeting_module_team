@@ -7,63 +7,90 @@ import java.util.List;
 import java.util.ArrayList;
 
 @Entity
-@Table(name = "audit_observations")
+@Table(name = "audit_observation")
 @Data
 public class AuditObservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "observation_no", columnDefinition = "NVARCHAR(50)")
     private String observationNo;
 
+    @Column(name = "observation_date")
     @Temporal(TemporalType.DATE)
     private Date observationDate;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "audit_schedule_no", columnDefinition = "NVARCHAR(50)")
     private String auditScheduleNo;
 
-    @Column(columnDefinition = "NVARCHAR(100)")
+    @Column(name = "audit_type", columnDefinition = "NVARCHAR(100)")
     private String auditType;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "audit_area", columnDefinition = "NVARCHAR(255)")
+    private String auditArea;
+
+    @Column(name = "department_name", columnDefinition = "NVARCHAR(255)")
     private String departmentName;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditee", columnDefinition = "NVARCHAR(255)")
     private String auditee;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditor", columnDefinition = "NVARCHAR(255)")
     private String auditor;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "ncr_approved_by", columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedBy;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
+    @Column(name = "audit_score")
     private Integer auditScore = 0;
+    
+    @Column(name = "ofi_count")
     private Integer ofiCount = 0;
+    
+    @Column(name = "compliance_count")
     private Integer complianceCount = 0;
+    
+    @Column(name = "ncr_count")
     private Integer ncrCount = 0;
 
+    @Column(name = "created_by")
     private String createdBy;
+    
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate = new Date();
+    private Date createdAt = new Date();
 
+    @Column(name = "updated_by")
     private String updatedBy;
+    
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date updatedAt;
 
     @OneToMany(mappedBy = "auditObservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditObservationDetail> details = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("auditType")
+    public String getAuditType() {
+        return auditType;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("auditArea")
+    public String getAuditArea() {
+        return auditArea;
     }
 }
