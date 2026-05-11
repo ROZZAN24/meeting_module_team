@@ -3,7 +3,6 @@ import { Typography, Box, Button, Stack, Tooltip, IconButton, Chip } from '@mui/
 import {
   IconBan,
   IconFileDownload,
-  IconCheck,
   IconRefresh,
   IconChecks,
   IconX,
@@ -87,7 +86,7 @@ export default function CheckListRenewalVerify() {
   useEffect(() => {
     dispatch(setFilterConfig([
       { id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, options: [{ label: 'Mine', value: 'Mine' }, { label: 'Team', value: 'Team' }, { label: 'All', value: 'All' }], defaultValue: 'Mine' },
-      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))], defaultValue: 'All' },
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))], defaultValue: 'Pending' },
       { id: 'assignedTo', label: 'Assign To', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...(lookups.employees || []).map(e => ({ label: e.employeeName || `${e.firstName} ${e.lastName}`, value: e.employeeName || `${e.firstName} ${e.lastName}` }))], defaultValue: 'All' },
       { id: 'seqNo', label: 'Seq No', type: 'text' },
       { id: 'checkingPoint', label: 'Checking Point', type: 'text' },
@@ -127,10 +126,11 @@ export default function CheckListRenewalVerify() {
         setRows(response.data.content || []);
         setTotalElements(response.data.totalElements || 0);
       } else {
-        // Fetch Master Records (Dual Check)
+        // Fetch Dual Check Assignments (Second Level Approval)
         const params = {
           page, size,
-          verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : 'Verified',
+          status: 'Pending for Verified',
+          taskType: 'All', 
           assignedTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
           category: filters.category !== 'All' ? filters.category : undefined,
           seqNo: filters.seqNo || undefined,
@@ -138,10 +138,9 @@ export default function CheckListRenewalVerify() {
           frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
           department: filters.department || undefined,
           searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
-          searchValue: globalQuery || undefined,
-          dualCheck: 'YES'
+          searchValue: globalQuery || undefined
         };
-        const response = await axios.get('/api/qms/checklist', { params });
+        const response = await axios.get('/api/qms/checklist/assignments', { params });
         setRows(response.data.content || []);
         setTotalElements(response.data.totalElements || 0);
       }
@@ -154,25 +153,55 @@ export default function CheckListRenewalVerify() {
 
   useEffect(() => { fetchAssignments(); }, [fetchAssignments]);
 
+  const handleSaveExecution = async (executionData) => {
+    if (!selectedRow) return;
+    try {
+      // First, handle file uploads if any new files are present
+      const uploadFile = async (fileObj) => {
+        if (fileObj.isServer) return fileObj.name + (fileObj.docDetails ? `|${fileObj.docDetails}` : '');
+        const formDataUpload = new FormData();
+        formDataUpload.append('file', fileObj.file);
+        const res = await axios.post(`${API_PATHS.FILES}/upload`, formDataUpload);
+        return res.data + (fileObj.docDetails ? `|${fileObj.docDetails}` : '');
+      };
+
+      const actualFiles = await Promise.all((executionData.actualFiles || []).map(uploadFile));
+
+      const payload = {
+        assignmentId: selectedRow.id,
+        status: executionData.status,
+        remarks: executionData.remarks,
+        verifiedBy: 'Current User', // In execution mode, this acts as 'Last Updated By'
+        actualFiles
+      };
+
+      await axios.post('/api/qms/checklist/verify', payload);
+      dispatch(openSnackbar({ open: true, message: 'Progress saved successfully!', severity: 'success', variant: 'alert' }));
+      setDialogOpen(false);
+      fetchAssignments();
+    } catch (err) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to save progress', severity: 'error', variant: 'alert' }));
+    }
+  };
+
   const handleVerify = async (status, remarks) => {
     if (!selectedRow) return;
     try {
-      const endpoint = activeTab === 0 ? '/api/qms/checklist/verify' : '/api/qms/checklist/verify-master';
-      const payload = activeTab === 0 ? {
+      const payload = {
         assignmentId: selectedRow.id,
         verifiedBy: 'Current User',
         status: status,
-        remarks: remarks || `Verification action: ${status}`
-      } : {
-        checklistId: selectedRow.id,
-        verifiedBy: 'Current User',
-        status: status,
-        remarks: remarks || `Verification action: ${status}`
+        remarks: remarks || `Verification: ${status}`
       };
 
-      await axios.post(endpoint, payload);
-      dispatch(openSnackbar({ open: true, message: `Checklist ${status} successfully!`, severity: status === 'Verified' ? 'success' : 'error', variant: 'alert' }));
-      setSelectedRow(null);
+      await axios.post('/api/qms/checklist/verify', payload);
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: `Checklist ${status} successfully!`, 
+        severity: ['Verified', 'Accepted'].includes(status) ? 'success' : 'error', 
+        variant: 'alert' 
+      }));
+      setDialogOpen(false);
       setRejectDialogOpen(false);
       setRejectRemarks('');
       fetchAssignments();
@@ -194,8 +223,8 @@ export default function CheckListRenewalVerify() {
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
 
-    // Use nested checklist object for assignments (activeTab 0)
-    const data = activeTab === 0 ? (row.checklist || {}) : row;
+    // Both tabs now display Assignments, which have nested checklist data
+    const data = row.checklist || row;
 
     if (col.id === 'seqNo') return data.seqNo;
     if (col.id === 'checkingPoint') return data.checkingPoint;
@@ -276,8 +305,8 @@ export default function CheckListRenewalVerify() {
       }
     >
       <Tabs value={activeTab} onChange={(e, v) => { setActiveTab(v); setPage(0); setSelectedRow(null); }} sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab label="Renewal Assignments (Execution)" />
-        <Tab label="Dual Check Verification (Master)" />
+        <Tab label="Renewal Assignments" />
+        <Tab label="Second Level Approval (Dual Check)" />
       </Tabs>
       <BOSDataTable
         columns={activeTab === 0 ? columns : masterColumns}
@@ -296,38 +325,15 @@ export default function CheckListRenewalVerify() {
         id="renewal-verify-table"
       />
 
-      {activeTab === 0 ? (
-        <ExecutionVerifyDialog
-          open={dialogOpen}
-          handleClose={() => setDialogOpen(false)}
-          data={selectedRow}
-          onVerify={() => handleVerify('Accepted')}
-          onReject={() => setRejectDialogOpen(true)}
-        />
-      ) : (
-        <AddCheckListDialog 
-          open={dialogOpen} 
-          handleClose={() => setDialogOpen(false)} 
-          initialData={selectedRow} 
-          readOnly={true}
-          onVerify={() => handleVerify('Accepted')}
-          onReject={() => setRejectDialogOpen(true)}
-          onSave={async (data) => {
-            try {
-              const payload = { 
-                ...data, 
-                createdBy: data.id ? data.createdBy : 'Current User',
-                updatedBy: 'Current User'
-              };
-              await axios.post('/api/qms/checklist', payload);
-              dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
-              fetchAssignments();
-            } catch (err) {
-              dispatch(openSnackbar({ open: true, message: 'Failed to save', severity: 'error', variant: 'alert' }));
-            }
-          }}
-        />
-      )}
+      <ExecutionVerifyDialog
+        open={dialogOpen}
+        handleClose={() => setDialogOpen(false)}
+        data={selectedRow}
+        onSave={activeTab === 0 ? handleSaveExecution : null}
+        onVerify={activeTab === 1 ? () => handleVerify('Accepted') : null}
+        onReject={activeTab === 1 ? () => setRejectDialogOpen(true) : null}
+        isExecution={activeTab === 0}
+      />
 
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Reject {activeTab === 1 ? 'Master Record' : 'Assignment'}</DialogTitle>

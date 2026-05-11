@@ -111,7 +111,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
       onSave={isExecution ? () => onSave({ ...formData }) : null}
       title={isExecution ? `Update Progress - ${master.seqNo}` : (isAssignment ? `Verify Execution - ${master.seqNo}` : `Verify Master Record - ${master.seqNo}`)}
       maxWidth="lg"
-      isViewOnly={!isExecution}
+      isViewOnly={!isExecution || formData.status === 'Pending for Verified' || formData.status === 'Accepted' || formData.status === 'Verified'}
       secondaryActions={
         (onVerify || onReject) && (
           <Stack direction="row" spacing={1.5}>
@@ -173,7 +173,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
                   <BOSTextField 
                     select 
                     label="Status" 
-                    value={formData.status} 
+                    value={formData.status === 'Pending for Verified' ? 'Completed' : formData.status} 
                     onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
                     required
                   >

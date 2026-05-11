@@ -493,6 +493,11 @@ public class ChecklistService {
         }
 
         Date nextDate = cal.getTime();
+        
+        // DUPLICATE PREVENTION: Check if a future assignment for this date already exists
+        boolean exists = assignRepo.existsByChecklistIdAndAssignedToAndChecklistDate(
+            master.getId(), current.getAssignedTo(), nextDate);
+        if (exists) return; // Skip if already generated
 
         // Create new assignment
         ChecklistAssignment next = new ChecklistAssignment();

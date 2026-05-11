@@ -61,8 +61,8 @@ public class EmployeeMasterService {
     }
 
     public EmployeeMaster createEmployee(EmployeeMaster employee) {
-        if (employee.getCreatedDate() == null) {
-            employee.setCreatedDate(new Date());
+        if (employee.getCreatedAt() == null) {
+            employee.setCreatedAt(new Date());
         }
         
         // Auto-generate empCode if missing
@@ -84,7 +84,7 @@ public class EmployeeMasterService {
         // Copy all fields from details, preserving id and audit trail
         details.setId(id);
         details.setCreatedBy(emp.getCreatedBy());
-        details.setCreatedDate(emp.getCreatedDate());
+        details.setCreatedAt(emp.getCreatedAt());
         sanitizeEmployee(details);
         return employeeRepo.save(details);
     }

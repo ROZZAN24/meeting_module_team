@@ -7,7 +7,6 @@ import java.util.Base64;
 public class AESUtil {
 
     private static final String ALGORITHM = "AES";
-
     // EXACTLY 16 characters
     private static final String KEY = "AutonomaERP@2026";
 

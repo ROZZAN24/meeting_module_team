@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "HRM_EMP_JOB_PROFILE")
+@Table(name = "hrm_employee_job_profile")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -120,14 +120,14 @@ public class EmployeeJobProfile {
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

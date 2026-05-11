@@ -16,6 +16,8 @@ import java.util.List;
 @Tag(name = "QMS - Audit Schedule", description = "Endpoints for scheduling audits, assigning personnel, and criteria")
 public class AuditScheduleController {
 
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(AuditScheduleController.class);
+
     @Autowired
     private AuditScheduleService service;
 
@@ -35,7 +37,15 @@ public class AuditScheduleController {
     @PostMapping
     @Operation(summary = "Create Audit Schedule", description = "Saves a new audit schedule with criteria and personnel")
     public AuditSchedule createAuditSchedule(@RequestBody AuditSchedule auditSchedule) {
-        return service.createAuditSchedule(auditSchedule);
+        logger.info("Attempting to create Audit Schedule: {}", auditSchedule.getScheduleNo());
+        try {
+            AuditSchedule created = service.createAuditSchedule(auditSchedule);
+            logger.info("Successfully created Audit Schedule: {}", created.getScheduleNo());
+            return created;
+        } catch (Exception e) {
+            logger.error("Failed to create Audit Schedule {}: {}", auditSchedule.getScheduleNo(), e.getMessage(), e);
+            throw e;
+        }
     }
 
     @PutMapping("/{id}")

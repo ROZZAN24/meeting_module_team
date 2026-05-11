@@ -19,18 +19,19 @@ public class AuditScheduleCriteria {
     @JsonIgnore
     private AuditSchedule auditSchedule;
 
+    @Column(name = "seq_no")
     private String seqNo;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "clause", columnDefinition = "NVARCHAR(255)")
     private String clause;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "criteria_details", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaDetails;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "attachment_req", columnDefinition = "NVARCHAR(50)")
     private String attachmentReq;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     public Long getId() { return id; }

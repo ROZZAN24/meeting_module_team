@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "HRM_DESIG_LEVEL")
+@Table(name = "hrm_designation_level")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,35 +24,35 @@ public class DesignationLevel {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "ROW_ID")
+	@Column(name = "row_id")
 	private Long rowId;
 
-	@Column(name = "LEVEL", columnDefinition = "NVARCHAR(10)")
+	@Column(name = "level", columnDefinition = "NVARCHAR(10)")
 	private String level;
 
-	@Column(name = "BASIC")
+	@Column(name = "basic")
 	private double basic;
 
-	@Column(name = "DA")
+	@Column(name = "da")
 	private double da;
 
-	@Column(name = "HRA")
+	@Column(name = "hra")
 	private double hra;
 
-	@Column(name = "SCREENING_LEVEL")
+	@Column(name = "screening_level")
 	private int screeningLevel;
 
-	@Column(name = "CREATED_BY", nullable = false, columnDefinition = "NVARCHAR(100)")
+	@Column(name = "created_by", nullable = false, columnDefinition = "NVARCHAR(100)")
 	private String createdBy;
 
-	@Column(name = "CREATED_DATE")
+	@Column(name = "created_at")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date createdDate;
 
-	@Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
+	@Column(name = "updated_by", columnDefinition = "NVARCHAR(100)")
 	private String updatedBy;
 
-	@Column(name = "UPDATED_DATE")
+	@Column(name = "updated_at")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updatedDate;
 

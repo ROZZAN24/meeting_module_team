@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "HRM_EMP_ACTIVITY")
+@Table(name = "hrm_employee_activity")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,14 +26,14 @@ public class EmployeeActivity {
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 
