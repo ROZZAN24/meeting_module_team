@@ -186,6 +186,8 @@ const SamplePage = Loadable(lazy(() => import('views/sample-page')));
 const AdminUserOverview = Loadable(lazy(() => import('views/admin/UserOverview')));
 const AdminPreferenceMaster = Loadable(lazy(() => import('views/admin/PreferenceMaster')));
 const AdminCompanyProfile = Loadable(lazy(() => import('views/admin/CompanyProfile')));
+const AdminUserAccess = Loadable(lazy(() => import('views/admin/UserAccess')));
+const AdminBusinessAuthorization = Loadable(lazy(() => import('views/admin/BusinessAuthorization')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -235,6 +237,14 @@ const MainRoutes = {
     {
       path: '/admin/company-profile',
       element: <AdminCompanyProfile />
+    },
+    {
+      path: '/admin/user-access',
+      element: <AdminUserAccess />
+    },
+    {
+      path: '/admin/business-authorization',
+      element: <AdminBusinessAuthorization />
     },
     {
       path: '/widget/statistics',

@@ -66,73 +66,7 @@ CREATE TABLE [dbo].[bos_pages](
 GO
 
 
-
-/****** Object:  Table [dbo].[bos_user_module]    Script Date: 08-05-2026 17:38:30 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[bos_user_module](
-	[user_id] [nvarchar](50) NOT NULL,
-	[module_id] [int] NOT NULL,
-	[enabled] [int] NULL
-) ON [PRIMARY]
-GO
-
-ALTER TABLE [dbo].[bos_user_module]  WITH CHECK ADD  CONSTRAINT [FK_bos_user_module_AD_USER_CREDENTIALS] FOREIGN KEY([user_id])
-REFERENCES [dbo].[AD_USER_CREDENTIALS] ([USER_ID])
-GO
-
-ALTER TABLE [dbo].[bos_user_module] CHECK CONSTRAINT [FK_bos_user_module_AD_USER_CREDENTIALS]
-GO
-
-ALTER TABLE [dbo].[bos_user_module]  WITH CHECK ADD  CONSTRAINT [FK_bos_user_module_bos_modules] FOREIGN KEY([module_id])
-REFERENCES [dbo].[bos_modules] ([module_id])
-GO
-
-ALTER TABLE [dbo].[bos_user_module] CHECK CONSTRAINT [FK_bos_user_module_bos_modules]
-GO
-
  
-/****** Object:  Table [dbo].[bos_user_sub_modules]    Script Date: 08-05-2026 17:43:33 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[bos_user_sub_modules](
-	[user_id] [nvarchar](50) NOT NULL,
-	[sub_mod_id] [int] NOT NULL,
-	[mod_id] [int] NOT NULL,
-	[enabled] [int] NULL
-) ON [PRIMARY]
-GO
-
-ALTER TABLE [dbo].[bos_user_sub_modules]  WITH CHECK ADD  CONSTRAINT [FK_bos_user_sub_modules_AD_USER_CREDENTIALS] FOREIGN KEY([user_id])
-REFERENCES [dbo].[AD_USER_CREDENTIALS] ([USER_ID])
-GO
-
-ALTER TABLE [dbo].[bos_user_sub_modules] CHECK CONSTRAINT [FK_bos_user_sub_modules_AD_USER_CREDENTIALS]
-GO
-
-ALTER TABLE [dbo].[bos_user_sub_modules]  WITH CHECK ADD  CONSTRAINT [FK_bos_user_sub_modules_bos_modules] FOREIGN KEY([mod_id])
-REFERENCES [dbo].[bos_modules] ([module_id])
-GO
-
-ALTER TABLE [dbo].[bos_user_sub_modules] CHECK CONSTRAINT [FK_bos_user_sub_modules_bos_modules]
-GO
-
-ALTER TABLE [dbo].[bos_user_sub_modules]  WITH CHECK ADD  CONSTRAINT [FK_bos_user_sub_modules_bos_sub_modules] FOREIGN KEY([sub_mod_id])
-REFERENCES [dbo].[bos_sub_modules] ([sub_mod_id])
-GO
-
-ALTER TABLE [dbo].[bos_user_sub_modules] CHECK CONSTRAINT [FK_bos_user_sub_modules_bos_sub_modules]
-GO
-
-
 /****** Object:  Table [dbo].[bos_user_page_auth]    Script Date: 08-05-2026 17:59:45 ******/
 SET ANSI_NULLS ON
 GO

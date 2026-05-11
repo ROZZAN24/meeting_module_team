@@ -23,11 +23,19 @@ const admin = {
   icon: icons.IconShieldLock,
   children: [
     {
-      id: 'user-credentials',
-      title: 'User Credentials',
+      id: 'company-profile',
+      title: 'Company Profile',
       type: 'item',
-      url: '/admin/user-credentials',
-      icon: icons.IconUsers,
+      url: '/admin/company-profile',
+      icon: icons.IconBuildingSkyscraper,
+      breadcrumbs: true
+    },
+    {
+      id: 'business-authorization',
+      title: 'Business Authorization',
+      type: 'item',
+      url: '/admin/business-authorization',
+      icon: icons.IconShieldLock,
       breadcrumbs: true
     },
     {
@@ -37,15 +45,15 @@ const admin = {
       url: '/admin/preference-master',
       icon: icons.IconSettings,
       breadcrumbs: true
-    },
-    {
-      id: 'company-profile',
-      title: 'Company Profile',
+    }, {
+      id: 'user-credentials',
+      title: 'User Credentials',
       type: 'item',
-      url: '/admin/company-profile',
-      icon: icons.IconBuildingSkyscraper,
+      url: '/admin/user-credentials',
+      icon: icons.IconUsers,
       breadcrumbs: true
     },
+
     {
       id: 'user-access',
       title: 'User Access',
