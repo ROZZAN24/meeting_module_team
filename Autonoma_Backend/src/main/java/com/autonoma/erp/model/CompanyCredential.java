@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "AD_COMPANY_CREDENTIAL")
+@Table(name = "ad_company_credential")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,67 +15,67 @@ public class CompanyCredential {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ID")
+    @Column(name = "id")
     private long id;
 
-    @Column(name = "COMPANY_NAME", nullable = false, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "company_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String companyName;
 
-    @Column(name = "SHORT_NAME", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "short_name", columnDefinition = "NVARCHAR(50)")
     private String shortName;
 
-    @Column(name = "ADDRESS", columnDefinition = "NVARCHAR(500)")
+    @Column(name = "address", columnDefinition = "NVARCHAR(500)")
     private String address;
 
-    @Column(name = "CITY", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "city", columnDefinition = "NVARCHAR(50)")
     private String city;
 
-    @Column(name = "STATE", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "state", columnDefinition = "NVARCHAR(50)")
     private String state;
 
-    @Column(name = "STATE_CD")
+    @Column(name = "state_cd")
     private Integer stateCode;
 
-    @Column(name = "COUNTRY", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "country", columnDefinition = "NVARCHAR(50)")
     private String country;
 
-    @Column(name = "PINCODE", columnDefinition = "NVARCHAR(10)")
+    @Column(name = "pincode", columnDefinition = "NVARCHAR(10)")
     private String pincode;
 
-    @Column(name = "GST_IN", columnDefinition = "NVARCHAR(15)")
+    @Column(name = "gst_in", columnDefinition = "NVARCHAR(15)")
     private String gstIn;
 
-    @Column(name = "DB_SOURCE_NAME", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "db_source_name", columnDefinition = "NVARCHAR(50)")
     private String dbSourceName;
 
-    @Column(name = "LIC_RENEWAL_DATE")
+    @Column(name = "lic_renewal_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date licRenewalDate;
 
-    @Column(name = "LIC_EXPIRY_DATE")
+    @Column(name = "lic_expiry_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date licExpiryDate;
 
-    @Column(name = "LOGO_FILE_NAME", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "logo_file_name", columnDefinition = "NVARCHAR(100)")
     private String logoFileName;
 
-    @Column(name = "LOGIN_BG_FILE_NAME", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "login_bg_file_name", columnDefinition = "NVARCHAR(100)")
     private String logInBgFileName;
 
-    @Column(name = "DIR_PATH", columnDefinition = "NVARCHAR(200)")
+    @Column(name = "dir_path", columnDefinition = "NVARCHAR(200)")
     private String directoryPath;
 
-    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

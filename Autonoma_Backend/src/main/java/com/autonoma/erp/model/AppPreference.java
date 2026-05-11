@@ -7,39 +7,39 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "AD_APP_PREFERENCE")
+@Table(name = "ad_app_preference")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class AppPreference {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ROW_ID")
+    @Column(name = "row_id")
     private Integer rowId;
 
-    @Column(name = "PREF_NAME", nullable = false, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "pref_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String prefName;
 
-    @Column(name = "PREF_VALUE", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "pref_value", columnDefinition = "NVARCHAR(100)")
     private String prefValue;
 
-    @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(500)")
+    @Column(name = "comments", columnDefinition = "NVARCHAR(500)")
     private String comments;
 
-    @Column(name = "PREF_TYPE", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "pref_type", columnDefinition = "NVARCHAR(100)")
     private String prefType;
 
-    @Column(name = "CREATED_BY", nullable = false, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "created_by", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "updated_by", columnDefinition = "NVARCHAR(100)")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

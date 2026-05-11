@@ -8,40 +8,40 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "AD_USER_CREDENTIALS")
+@Table(name = "ad_user_credential")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class UserCredential {
     @Id
-    @Column(name = "USER_ID", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "user_id", columnDefinition = "NVARCHAR(50)")
     private String userId;
 
-    @Column(name = "EMP_ID", nullable = false)
+    @Column(name = "emp_id", nullable = false)
     private Long empId;
 
-    @Column(name = "PASSWORD", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "password", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
-    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+	private Date updatedDate;
 
-    @Column(name = "STATUS")
+    @Column(name = "status")
     private Integer status;
 
-    @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "img_name", columnDefinition = "NVARCHAR(255)")
     private String imgName;
 
     @Column(name = "IS_BOS_ADMIN")

@@ -297,5 +297,17 @@
   "master-hr-employee": "Employee",
   "Grade Details": "Grade Details",
   "Designation Level": "Designation Level",
-  "OCR": "OCR"
+  "OCR": "OCR",
+  "Business Authorization": "Business Authorization",
+  "Enquiry Dashboard": "Enquiry Dashboard",
+  "Customer Master": "Customer Master",
+  "Vendor": "Vendor",
+  "Contact Master": "Contact Master",
+  "Enquiry": "Enquiry",
+  "Price Master": "Price Master",
+  "Quotation": "Quotation",
+  "Work Items": "Work Items",
+  "Supplier Master": "Supplier Master",
+  "Sub Contractor": "Sub Contractor",
+  "business-authorization": "Business Authorization"
 }

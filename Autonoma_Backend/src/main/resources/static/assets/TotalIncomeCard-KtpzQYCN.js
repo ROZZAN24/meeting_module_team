@@ -1,2 +1,0 @@
-import{j as t,ag as a,an as r,bj as e,bk as i,aq as n}from"./index-B2Gfh3Zm.js";import{S as s}from"./Skeleton-B6kxI6LL.js";function m(){return t.jsx(a,{sx:{p:2},children:t.jsx(r,{sx:{py:0},children:t.jsxs(e,{alignItems:"center",disableGutters:!0,sx:{py:0},children:[t.jsx(i,{children:t.jsx(s,{variant:"rectangular",width:44,height:44})}),t.jsx(n,{sx:{py:0},primary:t.jsx(s,{variant:"rectangular",height:20}),secondary:t.jsx(s,{variant:"text"})})]})})})}export{m as T};
-//# sourceMappingURL=TotalIncomeCard-KtpzQYCN.js.map

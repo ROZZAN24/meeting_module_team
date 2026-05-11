@@ -12,26 +12,32 @@ public class AuditAttendance {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "audit_schedule_no", columnDefinition = "NVARCHAR(50)")
     private String auditScheduleNo;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "name", columnDefinition = "NVARCHAR(255)")
     private String name;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "in_time", columnDefinition = "NVARCHAR(50)")
     private String inTime;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "out_time", columnDefinition = "NVARCHAR(50)")
     private String outTime;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "attendance_status", columnDefinition = "NVARCHAR(50)")
     private String attendanceStatus;
 
+    @Column(name = "created_by")
     private String createdBy;
+    
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
 
+    @Column(name = "updated_by")
     private String updatedBy;
+    
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

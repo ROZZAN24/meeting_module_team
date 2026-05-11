@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_PRICE_MASTER")
+@Table(name = "sm_price_master")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,69 +16,69 @@ public class SmPriceMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "MASTER_NO", nullable = false, length = 50)
+    @Column(name = "master_no", nullable = false, length = 50)
     private String masterNo;
 
-    @Column(name = "ENTRY_DATE")
+    @Column(name = "entry_date")
     @Temporal(TemporalType.DATE)
     private Date entryDate;
 
-    @Column(name = "CUSTOMER_NAME", length = 200)
+    @Column(name = "customer_name", length = 200)
     private String customerName;
 
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_ID")
     private CustomerMaster customer;
 
-    @Column(name = "PRODUCT_NAME", length = 200)
+    @Column(name = "product_name", length = 200)
     private String productName;
 
-    @Column(name = "UNIT_PRICE", length = 50)
+    @Column(name = "unit_price", length = 50)
     private String unitPrice;
 
-    @Column(name = "QUANTITY", length = 50)
+    @Column(name = "quantity", length = 50)
     private String quantity;
 
-    @Column(name = "CURRENCY", length = 10)
+    @Column(name = "currency", length = 10)
     private String currency = "INR";
 
-    @Column(name = "VALID_FROM")
+    @Column(name = "valid_from")
     @Temporal(TemporalType.DATE)
     private Date validFrom;
 
-    @Column(name = "VALID_TO")
+    @Column(name = "valid_to")
     @Temporal(TemporalType.DATE)
     private Date validTo;
 
-    @Column(name = "TERMS_AND_CONDITIONS", columnDefinition = "TEXT")
+    @Column(name = "terms_and_conditions", columnDefinition = "TEXT")
     private String termsAndConditions;
 
-    @Column(name = "OCR_DOCUMENT_PATH", length = 500)
+    @Column(name = "ocr_document_path", length = 500)
     private String ocrDocumentPath;
 
-    @Column(name = "OCR_EXTRACTED_TEXT", columnDefinition = "TEXT")
+    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
     private String ocrExtractedText;
 
-    @Column(name = "OCR_CONFIDENCE", length = 10)
+    @Column(name = "ocr_confidence", length = 10)
     private String ocrConfidence;
 
-    @Column(name = "STATUS", length = 50)
+    @Column(name = "status", length = 50)
     private String status = "Active";
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
-    @Column(name = "CREATED_BY", length = 100)
+    @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", length = 100)
+    @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

@@ -12,4 +12,6 @@ public interface AuditObservationDetailRepository extends JpaRepository<AuditObs
     List<AuditObservationDetail> findAllNcrAndOfi();
 
     List<AuditObservationDetail> findByObservationStatus(String status);
+    
+    AuditObservationDetail findFirstByNcrNoIsNotNullOrderByNcrNoDesc();
 }

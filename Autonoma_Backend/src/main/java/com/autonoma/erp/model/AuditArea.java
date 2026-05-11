@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "audit_areas")
+@Table(name = "audit_area")
 public class AuditArea {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,17 +19,17 @@ public class AuditArea {
     @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(name = "createdBy")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "createdDate")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
     
-    @Column(name = "updatedBy")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updatedDate")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

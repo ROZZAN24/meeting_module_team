@@ -9,49 +9,50 @@ import java.util.List;
 import com.autonoma.erp.util.StringListConverter;
 
 @Entity
-@Table(name = "QMS_CHECKLIST_ASSIGNMENT")
+@Table(name = "qms_checklist_assignment")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChecklistAssignment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "CHECKLIST_ID")
+    @JoinColumn(name = "checklist_id")
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MasterChecklist checklist;
 
-    @Column(name = "ASSIGNED_TO")
+    @Column(name = "assigned_to")
     private String assignedTo;
 
-    @Column(name = "ASSIGNED_BY")
+    @Column(name = "assigned_by")
     private String assignedBy;
 
-    @Column(name = "ASSIGN_TYPE", length = 50)
+    @Column(name = "assign_type", length = 50)
     private String assignType;
 
-    @Column(name = "ASSIGNED_DATE")
+    @Column(name = "assigned_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date assignedDate;
 
     @ManyToOne
-    @JoinColumn(name = "STATUS_ID")
+    @JoinColumn(name = "status_id")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
-    @Column(name = "CHECKLIST_DATE")
+    @Column(name = "checklist_date")
     @Temporal(TemporalType.DATE)
     private Date checklistDate;
 
-    @Column(name = "CARRY_FORWARD")
+    @Column(name = "carry_forward")
     private String carryForward;
 
     @Convert(converter = StringListConverter.class)
-    @Column(name = "ACTUAL_FILES", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "actual_files", columnDefinition = "NVARCHAR(MAX)")
     private List<String> actualFiles;
 
     @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)

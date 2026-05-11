@@ -188,6 +188,8 @@
   "disabled-menu": "禁用菜单",
   "oval-chip-menu": "椭圆形芯片",
   "coded": "已编码",
+  "OCR": "OCR",
+  "Business Authorization": "Business Authorization",
   "c": "C",
   "outlined": "概述",
   "sample-page": "样本页面",
@@ -200,4 +202,5 @@
   "account-settings": "帳號設定",
   "logout": "登出",
   "more-items": "更多項目"
+  ,"Enquiry Dashboard": "Enquiry Dashboard", "Customer Master": "Customer Master", "Vendor": "Vendor", "Contact Master": "Contact Master", "Enquiry": "Enquiry", "Price Master": "Price Master", "Quotation": "Quotation", "Work Items": "Work Items", "Supplier Master": "Supplier Master", "Sub Contractor": "Sub Contractor" 
 }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_CONTACT_MASTER")
+@Table(name = "sm_contact_master")
 @Data
 @Builder
 @NoArgsConstructor
@@ -56,14 +56,14 @@ public class ContactMaster {
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

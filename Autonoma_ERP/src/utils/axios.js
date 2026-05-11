@@ -5,7 +5,7 @@
 import axios from 'axios';
 
 const axiosServices = axios.create({
-  baseURL: window.location.origin
+  baseURL: import.meta.env.VITE_API_URL || window.location.origin
 });
 // ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
 

@@ -4,50 +4,50 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "audit_criteria")
+@Table(name = "audit_criterion")
 public class AuditCriteria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "seqNo", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "seq_no", columnDefinition = "NVARCHAR(50)")
     private String seqNo;
 
-    @Column(name = "auditType", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "audit_type", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
     @Column(name = "clause", columnDefinition = "NVARCHAR(255)")
     private String clause;
     
-    @Column(name = "criteriaText", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "criteria_text", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaText;
     
     @Column(name = "department", columnDefinition = "NVARCHAR(255)")
     private String department;
 
-    @Column(name = "attachmentRequired", columnDefinition = "NVARCHAR(20)")
+    @Column(name = "attachment_required", columnDefinition = "NVARCHAR(20)")
     private String attachmentRequired; // YES/NO
 
     @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(name = "attachmentInfo", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "attachment_info", columnDefinition = "NVARCHAR(MAX)")
     private String attachmentInfo; // JSON string of file metadata
 
     @Column(name = "level", columnDefinition = "NVARCHAR(100)")
     private String level; // L1,L2...
 
-    @Column(name = "createdBy")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "createdDate")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
     
-    @Column(name = "updatedBy")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updatedDate")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

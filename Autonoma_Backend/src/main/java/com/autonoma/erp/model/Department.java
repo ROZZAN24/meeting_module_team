@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "HRM_DEPARTMENT_MASTER")
+@Table(name = "hrm_department_master")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,32 +16,32 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "DEPT_NO", nullable = false)
+    @Column(name = "dept_no", nullable = false)
     private Integer departmentNo = 0;
 
-    @Column(name = "DEPT_NAME", nullable = false, length = 100)
+    @Column(name = "dept_name", nullable = false, length = 100)
     private String departmentName;
 
-    @Column(name = "NDA_CERTIFICATE", length = 10)
+    @Column(name = "nda_certificate", length = 10)
     private String ndaCertificate = "No";
 
-    @Column(name = "SEQ_NO")
+    @Column(name = "seq_no")
     private Integer sequenceNo = 0;
 
-    @Column(name = "STATUS")
+    @Column(name = "status")
     private String status = "Active";
 
-    @Column(name = "CREATED_BY")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

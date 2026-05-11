@@ -22,7 +22,7 @@ import PopupState, { bindPopper, bindToggle } from 'material-ui-popup-state';
 // project imports
 import Transitions from 'ui-component/extended/Transitions';
 import { useDispatch, useSelector } from 'react-redux';
-import { setQuery, setFilters, resetFilters } from 'store/slices/search';
+import { setQuery, setFilters, resetFilters, setFilterPreferences } from 'store/slices/search';
 
 // assets
 import { IconSearch, IconX, IconApps, IconFileText, IconAdjustmentsHorizontal, IconCalendar, IconFilter, IconPlus } from '@tabler/icons-react';
