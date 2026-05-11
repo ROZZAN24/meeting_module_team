@@ -16,7 +16,7 @@ const PagesLanding = Loadable(lazy(() => import('views/pages/landing')));
 // ==============================|| ROUTING RENDER ||============================== //
 
 const router = createBrowserRouter(
-  [{ path: '/', element: <PagesLanding />, errorElement: <ErrorBoundary /> }, MainRoutes, LoginRoutes, AuthenticationRoutes, SimpleRoutes],
+  [{ path: '/', element: <Navigate to="/login" />, errorElement: <ErrorBoundary /> }, MainRoutes, LoginRoutes, AuthenticationRoutes, SimpleRoutes],
   {
     basename: import.meta.env.VITE_APP_BASE_NAME
   }

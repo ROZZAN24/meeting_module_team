@@ -12,6 +12,7 @@ import {
   IconPhoto, IconLogin, IconCheck, IconAlertCircle, IconFolderOpen,
   IconChevronRight, IconArrowLeft, IconFolder, IconDeviceFloppy as IconDrive
 } from '@tabler/icons-react';
+import useAuth from 'hooks/useAuth';
 
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
@@ -65,7 +66,8 @@ const emptyForm = {
   companyName: '', shortName: '', address: '',
   city: '', state: '', stateCode: '', country: '', pincode: '',
   gstIn: '', dbSourceName: '', licRenewalDate: '', licExpiryDate: '',
-  logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS'
+  logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS',
+  licExpRemainderDays: 0
 };
 
 // ─── Image Upload Card ───────────────────────────────────────────────────────
@@ -138,6 +140,9 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CompanyProfile = () => {
+  const { user } = useAuth();
+  const isSuperUser = user?.isBosAdmin === 1;
+
   const [form, setForm] = useState(emptyForm);
   const [recordId, setRecordId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -178,6 +183,7 @@ const CompanyProfile = () => {
             logoFileName: rec.logoFileName || '',
             logInBgFileName: rec.logInBgFileName || '',
             directoryPath: rec.directoryPath || 'D:\\BOS_DOCUMENTS',
+            licExpRemainderDays: rec.licExpRemainderDays || 0
           });
         }
       })
@@ -240,6 +246,7 @@ const CompanyProfile = () => {
           ...form,
           [field]: updatedFileName,
           stateCode: form.stateCode ? parseInt(form.stateCode) : null,
+          licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
           licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
           licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
         };
@@ -316,6 +323,7 @@ const CompanyProfile = () => {
       const payload = {
         ...form,
         stateCode: form.stateCode ? parseInt(form.stateCode) : null,
+        licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
         licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
         licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
       };
@@ -689,13 +697,14 @@ const CompanyProfile = () => {
 
           <Grid container spacing={2.5}>
             <Grid item xs={12} md={4}>
-              <TextField {...fieldProps('dbSourceName', 'DB Source')} inputProps={{ maxLength: 10 }} />
+              <TextField {...fieldProps('dbSourceName', 'DB Source')} inputProps={{ maxLength: 10 }} disabled={!isSuperUser} />
             </Grid>
             <Grid item xs={12} md={4}>
               <TextField
                 {...fieldProps('licRenewalDate', 'License Renewal Date')}
                 type="date"
                 InputLabelProps={{ shrink: true }}
+                disabled={!isSuperUser}
               />
             </Grid>
             <Grid item xs={12} md={4}>
@@ -703,17 +712,27 @@ const CompanyProfile = () => {
                 {...fieldProps('licExpiryDate', 'License Expiry Date')}
                 type="date"
                 InputLabelProps={{ shrink: true }}
+                disabled={!isSuperUser}
               />
             </Grid>
-            <Grid item xs={12} sm={12}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                {...fieldProps('licExpRemainderDays', 'Lic Exp Remainder Days')}
+                type="number"
+                disabled={!isSuperUser}
+              />
+            </Grid>
+            <Grid item xs={12} sm={8}>
               <TextField
                 {...fieldProps('directoryPath', 'Directory Path')}
+                disabled={!isSuperUser}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
                         color="primary"
                         onClick={handleOpenBrowser}
+                        disabled={!isSuperUser}
                         title="Browse Server Folders"
                       >
                         <IconFolderOpen size={20} />
@@ -740,7 +759,7 @@ const CompanyProfile = () => {
           bgcolor: 'action.hover',
           display: 'flex', gap: 2, justifyContent: 'flex-end', flexWrap: 'wrap'
         }}>
-          <Tooltip title="Reset form">
+          {/* <Tooltip title="Reset form">
             <Button
               variant="outlined"
               startIcon={<IconRefresh size={18} />}
@@ -749,7 +768,7 @@ const CompanyProfile = () => {
             >
               Reset
             </Button>
-          </Tooltip>
+          </Tooltip> */}
           <Button
             variant="contained"
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}

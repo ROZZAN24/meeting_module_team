@@ -79,6 +79,9 @@ public class CompanyCredential {
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 
+    @Column(name = "LIC_EXP_REMAINDER_DAYS")
+    private long licExpRemainderDays;
+
     public long getId() {
         return id;
     }
@@ -237,5 +240,13 @@ public class CompanyCredential {
 
     public void setDirectoryPath(String directoryPath) {
         this.directoryPath = directoryPath;
+    }
+
+    public long getLicExpRemainderDays() {
+        return licExpRemainderDays;
+    }
+
+    public void setLicExpRemainderDays(long licExpRemainderDays) {
+        this.licExpRemainderDays = licExpRemainderDays;
     }
 }

@@ -53,6 +53,7 @@ export default function ProfileSection() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { logout, user } = useAuth();
   const [open, setOpen] = useState(false);
+  const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
   /**
    * anchorRef is used on different components and specifying one type leads to other components throwing an error
@@ -111,7 +112,7 @@ export default function ProfileSection() {
         }}
       >
         <Avatar
-          src={User1}
+          src={user?.imgName ? `${API_BASE}/api/users/image/${user.imgName}` : User1}
           alt="user-images"
           sx={{
             typography: 'mediumAvatar',

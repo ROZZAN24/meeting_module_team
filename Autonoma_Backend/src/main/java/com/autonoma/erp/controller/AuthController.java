@@ -3,6 +3,7 @@ package com.autonoma.erp.controller;
 import com.autonoma.erp.model.UserCredential;
 import com.autonoma.erp.repository.UserRepository;
 import com.autonoma.erp.service.JwtService;
+import com.autonoma.erp.service.CompanyCredentialService;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +27,9 @@ public class AuthController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private CompanyCredentialService companyService;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         // Find user by userId
@@ -44,6 +48,23 @@ public class AuthController {
                     return ResponseEntity.status(403).body(error);
                 }
 
+                // License Check
+                java.util.List<com.autonoma.erp.model.CompanyCredential> configs = companyService.findAll();
+                if (!configs.isEmpty()) {
+                    com.autonoma.erp.model.CompanyCredential config = configs.get(0);
+                    if (config.getLicExpiryDate() != null) {
+                        java.util.Date now = new java.util.Date();
+                        if (now.after(config.getLicExpiryDate())) {
+                            // Expired - only allow IS_BOS_ADMIN=1
+                            if (user.getIsBosAdmin() == null || user.getIsBosAdmin() != 1) {
+                                Map<String, String> error = new HashMap<>();
+                                error.put("message", "System License Expired. Please contact support.");
+                                return ResponseEntity.status(403).body(error);
+                            }
+                        }
+                    }
+                }
+
                 String token = jwtService.generateToken(user.getUserId());
 
                 Map<String, Object> response = new HashMap<>();
@@ -55,6 +76,8 @@ public class AuthController {
                 userMap.put("email", user.getUserId());
                 userMap.put("name", "Employee " + user.getEmpId());
                 userMap.put("role", "ADMIN");
+                userMap.put("imgName", user.getImgName());
+                userMap.put("isBosAdmin", user.getIsBosAdmin());
 
                 response.put("user", userMap);
 
@@ -72,22 +95,62 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(@RequestHeader("Authorization") String token) {
-        // Return first user or mock for now to satisfy session check
-        // In production, this would use token validation
-        return userRepository.findAll().stream().findFirst()
-                .map(user -> {
-                    Map<String, Object> userMap = new HashMap<>();
-                    userMap.put("id", user.getUserId());
-                    userMap.put("email", user.getUserId());
-                    userMap.put("name", user.getEmpId());
-                    userMap.put("role", "ADMIN");
+    public ResponseEntity<?> me(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(401).body("Missing or invalid Authorization header");
+        }
+        
+        String token = authHeader.substring(7);
+        try {
+            String userId = jwtService.extractUsername(token);
+            return userRepository.findByUserId(userId)
+                    .map(user -> {
+                        Map<String, Object> userMap = new HashMap<>();
+                        userMap.put("id", user.getUserId());
+                        userMap.put("email", user.getUserId());
+                        userMap.put("name", user.getEmpId());
+                        userMap.put("role", "ADMIN");
+                        userMap.put("imgName", user.getImgName());
+                        userMap.put("isBosAdmin", user.getIsBosAdmin());
 
-                    Map<String, Object> resp = new HashMap<>();
-                    resp.put("user", userMap);
-                    return ResponseEntity.ok(resp);
-                })
-                .orElse(ResponseEntity.status(401).build());
+                        Map<String, Object> resp = new HashMap<>();
+                        resp.put("user", userMap);
+                        return ResponseEntity.ok(resp);
+                    })
+                    .orElse(ResponseEntity.status(401).build());
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Invalid token");
+        }
+    }
+
+    @GetMapping("/license-status")
+    public ResponseEntity<?> getLicenseStatus() {
+        java.util.List<com.autonoma.erp.model.CompanyCredential> configs = companyService.findAll();
+        Map<String, Object> status = new HashMap<>();
+
+        if (!configs.isEmpty()) {
+            com.autonoma.erp.model.CompanyCredential config = configs.get(0);
+            status.put("licExpiryDate", config.getLicExpiryDate());
+            status.put("licExpRemainderDays", config.getLicExpRemainderDays());
+
+            if (config.getLicExpiryDate() != null) {
+                java.util.Date now = new java.util.Date();
+                status.put("isExpired", now.after(config.getLicExpiryDate()));
+
+                long diff = config.getLicExpiryDate().getTime() - now.getTime();
+                long daysLeft = diff / (1000 * 60 * 60 * 24);
+                status.put("daysLeft", daysLeft);
+                status.put("isWarningPeriod", daysLeft <= config.getLicExpRemainderDays() && daysLeft >= 0);
+            } else {
+                status.put("isExpired", false);
+                status.put("isWarningPeriod", false);
+            }
+        } else {
+            status.put("isExpired", false);
+            status.put("isWarningPeriod", false);
+        }
+
+        return ResponseEntity.ok(status);
     }
 
     @GetMapping("/bootstrap")

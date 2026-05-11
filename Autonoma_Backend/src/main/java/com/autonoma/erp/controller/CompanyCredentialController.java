@@ -83,6 +83,7 @@ public class CompanyCredentialController {
             existing.setLicRenewalDate(details.getLicRenewalDate());
             existing.setLicExpiryDate(details.getLicExpiryDate());
             existing.setDirectoryPath(details.getDirectoryPath());
+            existing.setLicExpRemainderDays(details.getLicExpRemainderDays());
             // Only overwrite image names if the caller provides them
             if (details.getLogoFileName() != null && !details.getLogoFileName().isEmpty()) {
                 existing.setLogoFileName(details.getLogoFileName());

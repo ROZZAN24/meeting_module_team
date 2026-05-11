@@ -17,6 +17,13 @@ export default defineConfig(({ mode }) => {
       hmr: {
         protocol: 'ws',
         host: 'localhost'
+      },
+      proxy: {
+        '/api': {
+          target: 'http://localhost:8081',
+          changeOrigin: true,
+          secure: false
+        }
       }
     },
     build: {

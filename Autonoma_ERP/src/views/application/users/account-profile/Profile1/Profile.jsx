@@ -71,6 +71,7 @@ function createData(name, calories, fat, carbs, protein) {
 
 export default function Profile() {
   const { user } = useAuth();
+  const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
   const rows = [
     createData('Full Name', ':', user?.name),
@@ -89,7 +90,7 @@ export default function Profile() {
           title={
             <Grid container spacing={2} sx={{ alignItems: 'center' }}>
               <Grid>
-                <Avatar alt="User 1" src={Avatar3} />
+                <Avatar alt="User 1" src={user?.imgName ? `${API_BASE}/api/users/image/${user.imgName}` : Avatar3} />
               </Grid>
               <Grid size="grow">
                 <Typography variant="subtitle1">{user?.name}</Typography>

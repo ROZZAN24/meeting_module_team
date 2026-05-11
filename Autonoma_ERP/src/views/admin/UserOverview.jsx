@@ -31,7 +31,8 @@ import {
   Avatar,
   Tooltip,
   Autocomplete,
-  TextField
+  TextField,
+  CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 
@@ -45,6 +46,7 @@ import AnimateButton from 'ui-component/extended/AnimateButton';
 import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
+import useAuth from 'hooks/useAuth';
 
 // assets
 import EditIcon from '@mui/icons-material/Edit';
@@ -70,6 +72,7 @@ const UserOverview = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const { user: currentUser, updateProfile } = useAuth();
   const query = useSelector((state) => state.search.query);
 
   const getErrorMessage = (err) => {
@@ -202,21 +205,37 @@ const UserOverview = () => {
         </AnimateButton>
       }
     >
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', borderRadius: 0, border: '1px solid', borderColor: 'divider' }}>
-        <Table sx={{ minWidth: 650 }} aria-label="user table">
-          <TableHead sx={{ bgcolor: 'grey.50' }}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          boxShadow: 'none',
+          borderRadius: '12px',
+          border: '1px solid',
+          borderColor: 'divider',
+          height: 'calc(100vh - 310px)',
+          overflowY: 'auto',
+          bgcolor: 'background.paper',
+          '&::-webkit-scrollbar': { width: '6px' },
+          '&::-webkit-scrollbar-thumb': { bgcolor: 'grey.300', borderRadius: '10px' }
+        }}
+      >
+        <Table sx={{ minWidth: 650 }} aria-label="user table" stickyHeader>
+          <TableHead>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>User</TableCell>
-              <TableCell sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Details</TableCell>
-              <TableCell sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Status</TableCell>
-              <TableCell align="right" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', bgcolor: 'grey.50', color: 'text.secondary', borderBottom: '2px solid', borderColor: 'primary.light', py: 1.5 }}>User Identity</TableCell>
+              <TableCell sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', bgcolor: 'grey.50', color: 'text.secondary', borderBottom: '2px solid', borderColor: 'primary.light', py: 1.5 }}>Employee Details</TableCell>
+              <TableCell sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', bgcolor: 'grey.50', color: 'text.secondary', borderBottom: '2px solid', borderColor: 'primary.light', py: 1.5 }}>Account Status</TableCell>
+              <TableCell align="right" sx={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.08em', bgcolor: 'grey.50', color: 'text.secondary', borderBottom: '2px solid', borderColor: 'primary.light', py: 1.5, pr: 3 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
-                  Loading users...
+                <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                  <Stack spacing={2} alignItems="center">
+                    <CircularProgress size={32} thickness={5} />
+                    <Typography variant="body2" color="textSecondary" fontWeight={500}>Synchronizing credentials...</Typography>
+                  </Stack>
                 </TableCell>
               </TableRow>
             ) : paginatedUsers.length > 0 ? (
@@ -225,7 +244,7 @@ const UserOverview = () => {
                   key={row.userId}
                   sx={{
                     '&:last-child td, &:last-child th': { border: 0 },
-                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.02)' }
+                    '&:hover': { bgcolor: 'primary.lighter', transition: 'all 0.2s ease' }
                   }}
                 >
                   <TableCell component="th" scope="row">
@@ -247,74 +266,120 @@ const UserOverview = () => {
                         <Avatar
                           src={row.imgName ? `${API_BASE}/api/users/image/${row.imgName}` : ''}
                           sx={{
-                            width: 40,
-                            height: 40,
-                            bgcolor: 'secondary.light',
+                            width: 44,
+                            height: 44,
+                            bgcolor: 'primary.light',
+                            color: 'primary.dark',
                             border: '2px solid white',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                            fontSize: '1rem',
+                            fontWeight: 700
                           }}
                         >
                           {row.userId.charAt(0).toUpperCase()}
                         </Avatar>
                       </Tooltip>
                       <Box>
-                        <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'grey.900', lineHeight: 1.2 }}>
                           {row.userId}
                         </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          ID: {row.userId.toUpperCase()}
+                        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
+                          ACCESS ENABLED
                         </Typography>
                       </Box>
                     </Stack>
                   </TableCell>
                   <TableCell>
                     <Box>
-                      <Typography variant="body2" fontWeight={600} color="primary">
-                        {employeeMap[row.empId]?.employeeName || `ID: ${row.empId}`}
+                      <Typography variant="subtitle2" fontWeight={700} color="grey.800">
+                        {employeeMap[row.empId]?.employeeName || `Unknown Employee`}
                       </Typography>
-                      <Typography variant="caption" color="textSecondary" sx={{ display: 'block' }}>
-                        {employeeMap[row.empId]?.empCode || 'No Code'}
-                      </Typography>
+                      <Stack direction="row" spacing={1} sx={{ mt: 0.75, flexWrap: 'wrap', gap: 0.5 }}>
+                        <Tooltip title="Employee System ID">
+                          <Chip
+                            label={employeeMap[row.empId]?.empCode || 'No Code'}
+                            size="small"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700, borderRadius: '6px', borderColor: 'primary.200', color: 'primary.700', bgcolor: 'primary.50' }}
+                          />
+                        </Tooltip>
+                        {employeeMap[row.empId]?.oldEmpCode && (
+                          <Tooltip title="Legacy Identification">
+                            <Chip
+                              label={`OLD: ${employeeMap[row.empId].oldEmpCode}`}
+                              size="small"
+                              sx={{ height: 20, fontSize: '0.65rem', bgcolor: 'warning.light', color: 'warning.dark', fontWeight: 800, borderRadius: '6px' }}
+                            />
+                          </Tooltip>
+                        )}
+                      </Stack>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={row.status === 1 ? 'ACTIVE' : 'INACTIVE'}
+                      label={row.status === 1 ? 'ACTIVE' : 'SUSPENDED'}
                       size="small"
+                      icon={
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            ml: 1,
+                            bgcolor: row.status === 1 ? 'success.main' : 'error.main',
+                            boxShadow: row.status === 1 ? '0 0 8px #4caf50' : '0 0 8px #f44336'
+                          }}
+                        />
+                      }
                       sx={{
-                        fontWeight: 800,
-                        fontSize: '0.65rem',
-                        height: 20,
-                        borderRadius: '4px',
+                        fontWeight: 700,
+                        fontSize: '0.68rem',
+                        height: 24,
+                        borderRadius: '20px',
+                        pl: 0.5,
                         bgcolor: row.status === 1 ? 'success.light' : 'error.light',
-                        color: row.status === 1 ? 'success.dark' : 'error.dark'
+                        color: row.status === 1 ? 'success.dark' : 'error.dark',
+                        border: '1px solid',
+                        borderColor: row.status === 1 ? 'success.main' : 'error.main',
+                        '& .MuiChip-icon': { ml: 0.5, mr: -0.5 }
                       }}
                     />
                   </TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                      <IconButton
-                        color="secondary"
-                        size="small"
-                        onClick={() => handleEdit(row)}
-                        sx={{
-                          bgcolor: 'secondary.light',
-                          '&:hover': { bgcolor: 'secondary.main', color: 'white' }
-                        }}
-                      >
-                        <IconPencil size={18} />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        size="small"
-                        onClick={() => handleDelete(row.userId)}
-                        sx={{
-                          bgcolor: 'error.light',
-                          '&:hover': { bgcolor: 'error.main', color: 'white' }
-                        }}
-                      >
-                        <IconTrash size={18} />
-                      </IconButton>
+                  <TableCell align="right" sx={{ pr: 3 }}>
+                    <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                      <Tooltip title="Modify Account">
+                        <IconButton
+                          color="primary"
+                          size="small"
+                          onClick={() => handleEdit(row)}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'primary.200',
+                            bgcolor: 'primary.50',
+                            '&:hover': { bgcolor: 'primary.main', color: 'white', borderColor: 'primary.main', transform: 'translateY(-2px)' },
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <IconPencil size={18} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Revoke Access">
+                        <IconButton
+                          color="error"
+                          size="small"
+                          onClick={() => handleDelete(row.userId)}
+                          sx={{
+                            border: '1px solid',
+                            borderColor: 'error.200',
+                            bgcolor: 'error.50',
+                            '&:hover': { bgcolor: 'error.main', color: 'white', borderColor: 'error.main', transform: 'translateY(-2px)' },
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <IconTrash size={18} />
+                        </IconButton>
+                      </Tooltip>
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -322,11 +387,16 @@ const UserOverview = () => {
             ) : (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  <Stack spacing={1} alignItems="center" sx={{ py: 5 }}>
-                    <IconShieldLock size={48} color="#ccc" />
-                    <Typography variant="h5" color="textSecondary">
-                      No users found
-                    </Typography>
+                  <Stack spacing={2} alignItems="center" sx={{ py: 10, opacity: 0.6 }}>
+                    <IconShieldLock size={64} stroke={1.5} color={theme.palette.grey[400]} />
+                    <Box>
+                      <Typography variant="h4" color="textSecondary" fontWeight={600}>
+                        No Credentials Found
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        Try adjusting your search or add a new user
+                      </Typography>
+                    </Box>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -345,8 +415,10 @@ const UserOverview = () => {
         sx={{
           borderTop: '1px solid',
           borderColor: 'divider',
+          p: '0px !important',
           '.MuiTablePagination-toolbar': {
-            minHeight: 60
+            minHeight: 40,
+            p: '0px !important'
           }
         }}
       />
@@ -450,6 +522,10 @@ const UserOverview = () => {
                   status: Number(values.status),
                   imgName: values.imgName
                 });
+              }
+
+              if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) {
+                updateProfile({ imgName: values.imgName });
               }
 
               dispatch(

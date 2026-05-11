@@ -44,6 +44,9 @@ public class UserCredential {
     @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
     private String imgName;
 
+    @Column(name = "IS_BOS_ADMIN")
+    private Integer isBosAdmin;
+
     public String getUserId() {
         return userId;
     }
@@ -114,5 +117,13 @@ public class UserCredential {
 
     public void setImgName(String imgName) {
         this.imgName = imgName;
+    }
+
+    public Integer getIsBosAdmin() {
+        return isBosAdmin;
+    }
+
+    public void setIsBosAdmin(Integer isBosAdmin) {
+        this.isBosAdmin = isBosAdmin;
     }
 }
