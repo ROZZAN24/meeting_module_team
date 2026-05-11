@@ -74,7 +74,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    // SOP: Converted to uppercase automatically for auditType
+    const finalValue = name === 'auditType' ? value.toUpperCase() : value;
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
   };
 
   const handleClear = () => {
@@ -100,12 +102,17 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
   };
 
   const handleSave = async () => {
+    // SOP: Mandatory Field Validation & Error Messages
     if (!formData.auditType?.trim()) {
-      alert('Audit Type is required');
+      alert('Please Enter Audit Type...');
       return;
     }
     if (!formData.description?.trim()) {
-      alert('Description is required');
+      alert('Please Enter Audit Description...');
+      return;
+    }
+    if (Number(formData.criteriaMinCount) <= 0) {
+      alert('Please Enter Audit Criteria Minimum Count...');
       return;
     }
 
@@ -149,7 +156,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           label="Audit Type"
           value={formData.auditType}
           onChange={handleChange}
-          disabled={isViewOnly}
+          // SOP: During edit operation, Audit Type field should become Read Only
+          disabled={isViewOnly || !!formData.id}
           required
         />
 

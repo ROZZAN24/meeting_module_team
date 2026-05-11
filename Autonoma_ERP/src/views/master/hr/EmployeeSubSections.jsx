@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Grid, Button, Stack, MenuItem, Typography, useTheme } from '@mui/material';
-import { IconPlus, IconDeviceFloppy, IconHeart, IconPhone, IconWallet, IconSchool, IconBriefcase, IconAlertTriangle, IconEPassport, IconUsers, IconDevices, IconShieldCheck, IconFileText, IconActivity } from '@tabler/icons-react';
+import { Grid, Button, Stack, MenuItem, Typography, useTheme, Box, Divider } from '@mui/material';
+import { IconPlus, IconDeviceFloppy, IconHeart, IconPhone, IconWallet, IconSchool, IconBriefcase, IconAlertTriangle, IconEPassport, IconUsers, IconDevices, IconShieldCheck, IconFileText, IconActivity, IconReceipt2, IconBuildingBank, IconMapPin } from '@tabler/icons-react';
 import { BOSFormSection, BOSTextField, BOSDataTable, btnSave } from 'ui-component/bos';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -10,11 +10,9 @@ import { API_PATHS } from 'utils/api-constants';
 const API = API_PATHS.HRM.EMPLOYEES;
 const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
 
-// ─── Grid field wrapper (standardized to 4 columns for even spacing) ────────────────────────────
 const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
 
-// ─── SECTION 1:1 (single record per employee) ────────────────
-function Section1to1({ title, icon, endpoint, employeeId, fields }) {
+function Section1to1({ title, icon, endpoint, employeeId, fields, validation }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const [form, setForm] = useState({});
@@ -29,6 +27,7 @@ function Section1to1({ title, icon, endpoint, employeeId, fields }) {
 
   const save = async () => {
     if (!employeeId) return;
+    if (validation && !validation(form)) return;
     try { const { data } = await axios.post(`${API}/${employeeId}/${endpoint}`, form); setForm(data); snack(dispatch, `${title} saved!`); }
     catch { snack(dispatch, `Failed to save ${title}`, 'error'); }
   };
@@ -37,15 +36,33 @@ function Section1to1({ title, icon, endpoint, employeeId, fields }) {
   return (
     <BOSFormSection icon={icon || <IconHeart size={20} color={theme.palette.primary.main} />} title={title}>
       <Grid container spacing={2.5}>
-        {fields.map((f) => (
-          <R key={f.name} lg={f.lg || 4}>
-            {f.select ? (
-              <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled}>{f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-            ) : (
-              <BOSTextField name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} type={f.type || 'text'} maxLength={f.max} InputLabelProps={f.type === 'date' ? { shrink: true } : undefined} disabled={disabled} multiline={f.multiline} rows={f.rows} />
-            )}
-          </R>
-        ))}
+        {fields.map((f) => {
+          const isHidden = f.hideIf && f.hideIf(form);
+          if (isHidden) return null;
+          return (
+            <R key={f.name} lg={f.lg || 4}>
+              {f.select ? (
+                <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled || f.disabled}>
+                  {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                </BOSTextField>
+              ) : (
+                <BOSTextField 
+                  name={f.name} 
+                  label={f.label} 
+                  value={form[f.name] || ''} 
+                  onChange={h} 
+                  type={f.type || 'text'} 
+                  maxLength={f.max} 
+                  InputLabelProps={f.type === 'date' ? { shrink: true } : undefined} 
+                  disabled={disabled || f.disabled} 
+                  multiline={f.multiline} 
+                  rows={f.rows}
+                  required={f.required}
+                />
+              )}
+            </R>
+          );
+        })}
       </Grid>
       <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
         <Button variant="contained" startIcon={<IconDeviceFloppy size={16} />} onClick={save} disabled={disabled} sx={btnSave}>
@@ -56,7 +73,6 @@ function Section1to1({ title, icon, endpoint, employeeId, fields }) {
   );
 }
 
-// ─── SECTION 1:N (multiple records per employee) ────────────
 function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -101,29 +117,28 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
         </Button>
       </Stack>
       {rows.length > 0 && (
-        <BOSDataTable
-          columns={tableCols}
-          rows={rows}
-          page={0}
-          size={rows.length}
-          totalCount={rows.length}
-          loading={false}
-          onPageChange={() => {}}
-          onSizeChange={() => {}}
-          onDeleteRow={del}
-        />
-      )}
-      {rows.length === 0 && employeeId && (
-        <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2, fontStyle: 'italic' }}>No records added yet</Typography>
+        <Box sx={{ mt: 2 }}>
+          <BOSDataTable
+            columns={tableCols}
+            rows={rows}
+            page={0}
+            size={rows.length}
+            totalCount={rows.length}
+            loading={false}
+            onPageChange={() => {}}
+            onSizeChange={() => {}}
+            onDeleteRow={del}
+          />
+        </Box>
       )}
     </BOSFormSection>
   );
 }
 
-// ─── MAIN EXPORT ────────────────────────────────────────────
 export default function EmployeeSubSections({ employeeId }) {
   const theme = useTheme();
   const pc = theme.palette.primary.main;
+  const sc = theme.palette.secondary.main;
   const wc = theme.palette.warning.main;
 
   return (
@@ -132,7 +147,7 @@ export default function EmployeeSubSections({ employeeId }) {
       <Section1to1 title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
         { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'TRANS GENDER'] },
         { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['UNMARRIED', 'MARRIED', 'WIDOW', 'DIVORCED'] },
-        { name: 'marriageDate', label: 'Married Date', type: 'date' }, 
+        { name: 'marriageDate', label: 'Married Date', type: 'date', hideIf: (f) => f.maritalStatus !== 'MARRIED' }, 
         { name: 'birthDate', label: 'DOB', type: 'date' },
         { name: 'dateOfJoining', label: 'DOJ', type: 'date' }, 
         { name: 'nationality', label: 'Nationality', max: 100 },
@@ -147,16 +162,31 @@ export default function EmployeeSubSections({ employeeId }) {
       ]} />
 
       {/* ADDRESS DETAILS */}
-      <Section1to1 title="Address Details" icon={<IconPhone size={20} color={pc} />} endpoint="contact" employeeId={employeeId} fields={[
-        { name: 'permCity', label: 'Permanent Address - City', max: 100 },
-        { name: 'permState', label: 'Permanent Address - State', max: 100 },
-        { name: 'permCountry', label: 'Permanent Address - Country', max: 100 },
-        { name: 'permPinCode', label: 'Permanent Address - Pincode', max: 20 },
-        { name: 'commCity', label: 'Communication Address - City', max: 100 },
-        { name: 'commState', label: 'Communication Address - State', max: 100 },
-        { name: 'commCountry', label: 'Communication Address - Country', max: 100 },
-        { name: 'commPinCode', label: 'Communication Address - Pincode', max: 20 }
-      ]} />
+      <BOSFormSection icon={<IconMapPin size={20} color={pc} />} title="Address Details">
+        <Stack spacing={3}>
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, color: 'text.secondary' }}>PERMANENT ADDRESS</Typography>
+            <Section1to1 endpoint="contact" employeeId={employeeId} fields={[
+              { name: 'address', label: 'Address', max: 500, multiline: true, rows: 2, lg: 12 },
+              { name: 'city', label: 'City', max: 100 },
+              { name: 'state', label: 'State', max: 100 },
+              { name: 'country', label: 'Country', max: 100 },
+              { name: 'pincode', label: 'Pincode', max: 20 }
+            ]} />
+          </Box>
+          <Divider />
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, color: 'text.secondary' }}>COMMUNICATION ADDRESS</Typography>
+            <Section1to1 endpoint="contact" employeeId={employeeId} fields={[
+              { name: 'commAddress', label: 'Address', max: 500, multiline: true, rows: 2, lg: 12 },
+              { name: 'commCity', label: 'City', max: 100 },
+              { name: 'commState', label: 'State', max: 100 },
+              { name: 'commCountry', label: 'Country', max: 100 },
+              { name: 'commPincode', label: 'Pincode', max: 20 }
+            ]} />
+          </Box>
+        </Stack>
+      </BOSFormSection>
 
       {/* ID DETAILS */}
       <Section1to1 title="ID Details" icon={<IconEPassport size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
@@ -176,7 +206,7 @@ export default function EmployeeSubSections({ employeeId }) {
       ]} />
 
       {/* BANK DETAILS */}
-      <Section1to1 title="Bank Details" icon={<IconWallet size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
+      <Section1to1 title="Bank Details" icon={<IconBuildingBank size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
         { name: 'salaryAccountNumber', label: 'Account No', max: 50 },
         { name: 'accountName', label: 'Account Name', max: 100 },
         { name: 'branchName', label: 'Branch Name', max: 100 },
@@ -185,7 +215,7 @@ export default function EmployeeSubSections({ employeeId }) {
         { name: 'ifscCode', label: 'IFSC Code', max: 20 }
       ]} />
 
-      {/* QUALIFICATION DETAILS (1:N) */}
+      {/* QUALIFICATION DETAILS */}
       <Section1toN title="Qualification Details" icon={<IconSchool size={20} color={pc} />} endpoint="education" employeeId={employeeId}
         fields={[
           { name: 'education', label: 'Qualification', max: 100 }, { name: 'institutionName', label: 'Institution', max: 255 },
@@ -195,39 +225,87 @@ export default function EmployeeSubSections({ employeeId }) {
         tableCols={[{ id: 'education', label: 'Qualification', minWidth: 140 }, { id: 'institutionName', label: 'Institution', minWidth: 200 }, { id: 'type', label: 'Type', minWidth: 100 }, { id: 'yearOfPassing', label: 'Year', minWidth: 80 }, { id: 'percentageGrade', label: '% / Grade', minWidth: 100 }]}
       />
 
-      {/* EXPERIENCE (1:N) */}
-      <Section1toN title="Experience / Services" icon={<IconBriefcase size={20} color={pc} />} endpoint="experience" employeeId={employeeId}
+      {/* PAY COMPONENTS & CTC DETAILS */}
+      <BOSFormSection icon={<IconReceipt2 size={20} color={sc} />} title="Pay Component & CTC Details">
+        <Stack spacing={3}>
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, color: 'secondary.main' }}>PAY COMPONENTS</Typography>
+            <Section1to1 endpoint="job-profile" employeeId={employeeId} fields={[
+              { name: 'grossSalary', label: 'Gross Salary', type: 'number' },
+              { name: 'netSalary', label: 'Net Salary', type: 'number' },
+              { name: 'basicSalary', label: 'Basic', type: 'number' },
+              { name: 'da', label: 'DA', type: 'number' },
+              { name: 'hra', label: 'HRA', type: 'number' },
+              { name: 'specialAllowance', label: 'Special Allowance', type: 'number' },
+              { name: 'performanceIncentive', label: 'Performance Incentive', type: 'number' },
+              { name: 'canteenDeduction', label: 'Canteen Deduction', type: 'number' },
+              { name: 'pfType', label: 'PF Type', select: true, options: ['FULL', 'RESTRICTED', 'NONE'] },
+              { name: 'pfEmployee', label: 'PF Employee Contribution', type: 'number' },
+              { name: 'esiEmployee', label: 'ESI Employee Contribution', type: 'number' },
+              { name: 'professionalTax', label: 'Professional Tax', type: 'number' }
+            ]} />
+          </Box>
+          <Divider />
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700, color: 'secondary.main' }}>ANNUAL CTC DETAILS</Typography>
+            <Section1to1 endpoint="job-profile" employeeId={employeeId} fields={[
+              { name: 'monthlyCtc', label: 'Monthly CTC', type: 'number' },
+              { name: 'annualCtc', label: 'Annual CTC', type: 'number' },
+              { name: 'gratuity', label: 'Gratuity', type: 'number' },
+              { name: 'employerPf', label: 'Employer Contribution PF', type: 'number' },
+              { name: 'employerEsi', label: 'Employer Contribution ESI', type: 'number' },
+              { name: 'uniformAllowance', label: 'Uniform Allowance', type: 'number' },
+              { name: 'shoeAllowance', label: 'Shoe Allowance', type: 'number' },
+              { name: 'mobileAllowanceCug', label: 'Mobile Allowance CUG', type: 'number' },
+              { name: 'healthInsurance', label: 'Health Insurance', type: 'number' },
+              { name: 'bonus', label: 'Bonus', type: 'number' },
+              { name: 'specialIncentive', label: 'Special Incentive', type: 'number' }
+            ]} />
+          </Box>
+        </Stack>
+      </BOSFormSection>
+
+      {/* EXPERIENCE */}
+      <Section1toN title="Work Experience" icon={<IconBriefcase size={20} color={pc} />} endpoint="experience" employeeId={employeeId}
         fields={[
           { name: 'companyName', label: 'Company', max: 255 }, { name: 'location', label: 'Location', max: 255 },
+          { name: 'designation', label: 'Designation', max: 100 },
           { name: 'fromDate', label: 'From', type: 'date' }, { name: 'toDate', label: 'To', type: 'date' },
           { name: 'totalExperienceMonths', label: 'Experience (Months)', type: 'number' }
         ]}
-        tableCols={[{ id: 'companyName', label: 'Company', minWidth: 200 }, { id: 'location', label: 'Location', minWidth: 150 }, { id: 'fromDate', label: 'From', minWidth: 120 }, { id: 'toDate', label: 'To', minWidth: 120 }, { id: 'totalExperienceMonths', label: 'Months', minWidth: 80 }]}
+        tableCols={[{ id: 'companyName', label: 'Company', minWidth: 200 }, { id: 'designation', label: 'Designation', minWidth: 150 }, { id: 'fromDate', label: 'From', minWidth: 120 }, { id: 'toDate', label: 'To', minWidth: 120 }, { id: 'totalExperienceMonths', label: 'Months', minWidth: 80 }]}
       />
 
-      {/* EMERGENCY CONTACTS (1:N) */}
+      {/* FAMILY DETAILS */}
+      <Section1toN title="Family Details" icon={<IconUsers size={20} color={pc} />} endpoint="dependent" employeeId={employeeId}
+        fields={[
+          { name: 'name', label: 'Name', max: 100 },
+          { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
+          { name: 'dob', label: 'DOB', type: 'date' },
+          { name: 'relationship', label: 'Relationship', max: 50 },
+          { name: 'occupation', label: 'Occupation', max: 100 },
+          { name: 'bloodGroup', label: 'Blood Group', max: 10 },
+          { name: 'contactNo', label: 'Contact No', max: 20 }
+        ]}
+        tableCols={[{ id: 'name', label: 'Name', minWidth: 150 }, { id: 'relationship', label: 'Relation', minWidth: 100 }, { id: 'gender', label: 'Gender', minWidth: 100 }, { id: 'contactNo', label: 'Contact', minWidth: 120 }]}
+      />
+
+      {/* EMERGENCY CONTACTS */}
       <Section1toN title="Emergency Contact Details" icon={<IconAlertTriangle size={20} color={wc} />} endpoint="emergency-contact" employeeId={employeeId}
         fields={[
           { name: 'contactName', label: 'Name', max: 100 }, { name: 'relation', label: 'Relation', max: 50 },
-          { name: 'address1', label: 'Address 1', max: 255 }, { name: 'address2', label: 'Address 2', max: 255 },
-          { name: 'mobileNumber', label: 'Mobile', max: 20 }, { name: 'homePhoneNumber', label: 'Home Phone', max: 20 }
+          { name: 'mobileNumber', label: 'Mobile', max: 20 }, { name: 'address1', label: 'Address', max: 255 }
         ]}
-        tableCols={[{ id: 'contactName', label: 'Name', minWidth: 150 }, { id: 'relation', label: 'Relation', minWidth: 100 }, { id: 'mobileNumber', label: 'Mobile', minWidth: 120 }, { id: 'homePhoneNumber', label: 'Home Phone', minWidth: 120 }]}
+        tableCols={[{ id: 'contactName', label: 'Name', minWidth: 150 }, { id: 'relation', label: 'Relation', minWidth: 100 }, { id: 'mobileNumber', label: 'Mobile', minWidth: 120 }]}
       />
 
-      {/* KYC DOCUMENTS (1:N) */}
+      {/* KYC DOCUMENTS */}
       <Section1toN title="KYC Documents" icon={<IconFileText size={20} color={pc} />} endpoint="kyc-document" employeeId={employeeId}
         fields={[
-          { name: 'seqNo', label: 'Seq No', type: 'number' }, { name: 'documentName', label: 'Document Name', max: 255 },
+          { name: 'documentName', label: 'Document Name', max: 255 },
           { name: 'documentNumber', label: 'Document Number', max: 100 }, { name: 'fileName', label: 'File Name', max: 255 }
         ]}
-        tableCols={[{ id: 'seqNo', label: 'Seq', minWidth: 60 }, { id: 'documentName', label: 'Document', minWidth: 200 }, { id: 'documentNumber', label: 'Number', minWidth: 150 }, { id: 'fileName', label: 'File', minWidth: 150 }]}
-      />
-
-      {/* ACTIVITY (1:N) */}
-      <Section1toN title="Employee Activity" icon={<IconActivity size={20} color={pc} />} endpoint="activity" employeeId={employeeId}
-        fields={[{ name: 'activityDetails', label: 'Activity Details', max: 1000 }]}
-        tableCols={[{ id: 'activityDetails', label: 'Activity Details', minWidth: 400 }]}
+        tableCols={[{ id: 'documentName', label: 'Document', minWidth: 200 }, { id: 'documentNumber', label: 'Number', minWidth: 150 }, { id: 'fileName', label: 'File', minWidth: 150 }]}
       />
     </Stack>
   );

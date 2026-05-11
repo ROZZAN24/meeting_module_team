@@ -116,6 +116,8 @@ function MobileSearch({ value, setValue, popupState, placeholder }) {
   );
 }
 
+const EMPTY_ARRAY = [];
+
 // ==============================|| SEARCH INPUT ||============================== //
 
 export default function SearchSection() {
@@ -145,7 +147,7 @@ export default function SearchSection() {
     dispatch(setQuery(val));
   };
 
-  const currentPrefs = useSelector((state) => state.search.preferences[location.pathname] || []);
+  const currentPrefs = useSelector((state) => state.search.preferences[location.pathname]) || EMPTY_ARRAY;
 
   // Sync visible filter IDs with searchConfig and preferences
   useEffect(() => {
@@ -154,10 +156,16 @@ export default function SearchSection() {
         setVisibleFilterIds(currentPrefs);
       } else {
         const starred = searchConfig.filter(f => f.isStarred).map(f => f.id);
-        setVisibleFilterIds(starred);
+        if (starred.length > 0) {
+          setVisibleFilterIds(starred);
+        } else {
+          // Systemic Fix: Default to the first 2 filters if nothing is starred/pref'd
+          const defaultIds = searchConfig.slice(0, 2).map(f => f.id);
+          setVisibleFilterIds(defaultIds);
+        }
       }
     }
-  }, [searchConfig, location.pathname]);
+  }, [searchConfig, location.pathname, currentPrefs]);
 
   const updateVisibleFilters = (newIds) => {
     setVisibleFilterIds(newIds);

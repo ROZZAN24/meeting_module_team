@@ -13,27 +13,29 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import { useLookups } from 'hooks/useLookups';
 
 // ==============================|| EMPLOYEE MASTER LIST (BOS SOP COMPLIANT) ||============================== //
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'oldEmpCode', label: 'Old Emp Code', minWidth: 110 },
-  { id: 'firstName', label: 'First Name', minWidth: 140, bold: true },
-  { id: 'lastName', label: 'Last Name', minWidth: 140 },
-  { id: 'empCode', label: 'Emp Code', minWidth: 110 },
-  { id: 'designationId', label: 'Designation', minWidth: 120 },
-  { id: 'gradeCode', label: 'Grade', minWidth: 80 },
-  { id: 'departmentId', label: 'Department', minWidth: 120 },
-  { id: 'unitId', label: 'Unit Name', minWidth: 100 },
-  { id: 'homeManager', label: 'Home Manager', minWidth: 130 },
-  { id: 'businessManager', label: 'Business Manager', minWidth: 140 },
-  { id: 'supplierName', label: 'Supplier Name', minWidth: 130 },
-  { id: 'createdBy', label: 'Created By', minWidth: 110 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 140 },
-  { id: 'updatedBy', label: 'Modified By', minWidth: 110 },
-  { id: 'updatedDate', label: 'Modified Date', minWidth: 140 },
-  { id: 'status', label: 'Status', minWidth: 90 }
+  { id: 'oldEmpCode', label: 'OLD EMP CODE', minWidth: 110 },
+  { id: 'firstName', label: 'FIRST NAME', minWidth: 140, bold: true },
+  { id: 'lastName', label: 'LAST NAME', minWidth: 140 },
+  { id: 'empCode', label: 'EMP CODE', minWidth: 110 },
+  { id: 'designationId', label: 'DESIGNATION', minWidth: 120 },
+  { id: 'gradeCode', label: 'GRADE', minWidth: 80 },
+  { id: 'departmentId', label: 'DEPARTMENT', minWidth: 120 },
+  { id: 'empLevelId', label: 'LEVEL', minWidth: 100 },
+  { id: 'unitId', label: 'UNIT NAME', minWidth: 100 },
+  { id: 'homeManager', label: 'HOME MANAGER', minWidth: 130 },
+  { id: 'businessManager', label: 'BUSINESS MANAGER', minWidth: 140 },
+  { id: 'supplierName', label: 'SUPPLIER NAME', minWidth: 130 },
+  { id: 'createdBy', label: 'CREATED BY', minWidth: 110 },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
+  { id: 'updatedBy', label: 'MODIFIED BY', minWidth: 110 },
+  { id: 'updatedAt', label: 'MODIFIED DATE', minWidth: 140 },
+  { id: 'status', label: 'STATUS', minWidth: 90 }
 ];
 
 export default function EmployeeList() {
@@ -49,6 +51,39 @@ export default function EmployeeList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
+
+  // Resolution Lookups
+  const { 
+    departments = [], 
+    designations = [], 
+    levels = [],
+    users = []
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS']);
+
+  const getDeptName = (id) => departments.find(d => String(d.id) === String(id))?.departmentName || id || '-';
+  const getDesigName = (id) => designations.find(d => String(d.id) === String(id))?.designationName || id || '-';
+  const getLevelName = (id) => levels.find(l => String(l.rowId) === String(id))?.level || id || '-';
+  const getUnitName = (id) => [{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-';
+  const getUserName = (id) => {
+    if (!id) return '-';
+    if (id === 'SYSTEM') return 'SYSTEM';
+    const u = users.find(u => String(u.userId) === String(id));
+    return u ? u.userId : id;
+  };
+
+  const safeDateFormat = (dateStr) => {
+    if (!dateStr) return '-';
+    // If it's a string, try to show at least the date part
+    if (typeof dateStr === 'string') {
+      return dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
+    }
+    try {
+      const d = new Date(dateStr);
+      return isNaN(d.getTime()) ? String(dateStr) : format(d, 'dd-MM-yyyy HH:mm');
+    } catch (e) {
+      return String(dateStr);
+    }
+  };
 
   // SOP #16 — Global filter config
   useEffect(() => {
@@ -89,8 +124,8 @@ export default function EmployeeList() {
 
   useEffect(() => { fetchEmployees(); }, [fetchEmployees]);
 
-  const handleOpenAdd = () => navigate('/hra/hr/employee/master/create');
-  const handleOpenEdit = (row) => navigate(`/hra/hr/employee/master/create?id=${row.id}`);
+  const handleOpenAdd = () => navigate('/hra/employee/master/create');
+  const handleOpenEdit = (row) => navigate(`/hra/employee/master/create?id=${row.id}`);
 
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.id);
@@ -119,21 +154,18 @@ export default function EmployeeList() {
   const handleExport = () => {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
-      'Old Emp Code': r.oldEmpCode,
       'First Name': r.firstName,
       'Last Name': r.lastName,
       'Emp Code': r.empCode,
-      'Designation': r.designationId,
+      'Designation': getDesigName(r.designationId),
       'Grade': r.gradeCode,
-      'Department': r.departmentId,
-      'Unit Name': r.unitId,
+      'Department': getDeptName(r.departmentId),
+      'Level': getLevelName(r.empLevelId),
       'Home Manager': r.homeManager,
       'Business Manager': r.businessManager,
-      'Supplier Name': r.supplierName,
+      'Supplier Name': r.supplierName || r.vendorName,
       'Created By': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
-      'Modified By': r.updatedBy,
-      'Modified Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
+      'Created Date': r.createdAt ? format(new Date(r.createdAt), 'dd-MM-yyyy HH:mm') : '',
       'Status': r.status
     }));
     exportToExcel(exportData, 'Employee_Master');
@@ -146,21 +178,40 @@ export default function EmployeeList() {
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
 
       const deptFilter = globalFilters.departmentId || '';
-      const matchesDept = !deptFilter || String(row.departmentId || '').toLowerCase().includes(deptFilter.toLowerCase());
+      const matchesDept = !deptFilter || getDeptName(row.departmentId).toLowerCase().includes(deptFilter.toLowerCase());
 
       const desigFilter = globalFilters.designationId || '';
-      const matchesDesig = !desigFilter || String(row.designationId || '').toLowerCase().includes(desigFilter.toLowerCase());
+      const matchesDesig = !desigFilter || getDesigName(row.designationId).toLowerCase().includes(desigFilter.toLowerCase());
 
       const matchesSearch = !globalQuery || [
-        row.firstName, row.lastName, row.empCode, row.oldEmpCode,
-        row.homeManager, row.businessManager, row.supplierName
-      ].some((val) => val && val.toLowerCase().includes(globalQuery.toLowerCase()));
+        row.firstName, row.lastName, row.empCode,
+        row.homeManager, row.businessManager, row.supplierName, row.vendorName
+      ].some((val) => val && String(val).toLowerCase().includes(globalQuery.toLowerCase()));
 
       return matchesStatus && matchesDept && matchesDesig && matchesSearch;
     });
-  }, [rows, globalQuery, globalFilters]);
+  }, [rows, globalQuery, globalFilters, departments, designations]);
 
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
+  const paginatedRows = useMemo(() => {
+    if (rows.length > 0 && page === 0) {
+       console.log('DEBUG: First Row Keys:', Object.keys(rows[0]));
+       console.log('DEBUG: First Row Dates:', { createdAt: rows[0].createdAt, updatedAt: rows[0].updatedAt });
+    }
+    return filteredRows.slice(page * size, page * size + size).map((row, i) => ({
+      ...row,
+      index: page * size + i + 1,
+      departmentId: getDeptName(row.departmentId),
+      designationId: getDesigName(row.designationId),
+      empLevelId: getLevelName(row.empLevelId),
+      unitId: getUnitName(row.unitId),
+      supplierName: row.supplierName || row.vendorName || '-',
+      createdBy: getUserName(row.createdBy || row.created_by),
+      createdAt: safeDateFormat(row.createdAt || row.created_at),
+      updatedBy: getUserName(row.updatedBy || row.updated_by),
+      updatedAt: safeDateFormat(row.updatedAt || row.updated_at),
+      status: row.status || 'Active'
+    }));
+  }, [filteredRows, page, size, departments, designations, levels, users]);
 
   return (
     <MainCard

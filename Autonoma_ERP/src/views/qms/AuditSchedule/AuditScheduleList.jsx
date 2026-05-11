@@ -54,8 +54,15 @@ export default function AuditScheduleList() {
           { value: 'CLOSED', label: 'CLOSED' },
           { value: 'CANCELLED', label: 'CANCELLED' }
         ],
-        defaultValue: 'All'
-      }
+        defaultValue: 'OPEN',
+        isStarred: true
+      },
+      { id: 'scheduleNo', label: 'Schedule No', type: 'text', placeholder: 'Filter by No...', isStarred: true },
+      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Filter by Type...', isStarred: true },
+      { id: 'auditArea', label: 'Audit Area', type: 'text', placeholder: 'Filter by Area...' },
+      { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Dept...' },
+      { id: 'auditor', label: 'Auditor', type: 'text', placeholder: 'Filter by Auditor...' },
+      { id: 'auditee', label: 'Auditee', type: 'text', placeholder: 'Filter by Auditee...' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -119,13 +126,28 @@ export default function AuditScheduleList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
+      const statusFilter = globalFilters.status || 'OPEN';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      
+      const scheduleNoFilter = globalFilters.scheduleNo || '';
+      const matchesScheduleNo = !scheduleNoFilter || (row.scheduleNo && row.scheduleNo.toLowerCase().includes(scheduleNoFilter.toLowerCase()));
+      const auditTypeFilter = globalFilters.auditType || '';
+      const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
+      const auditAreaFilter = globalFilters.auditArea || '';
+      const matchesAuditArea = !auditAreaFilter || (row.auditArea && row.auditArea.toLowerCase().includes(auditAreaFilter.toLowerCase()));
+      const departmentFilter = globalFilters.department || '';
+      const matchesDepartment = !departmentFilter || (row.department && row.department.toLowerCase().includes(departmentFilter.toLowerCase()));
+      const auditorFilter = globalFilters.auditor || '';
+      const matchesAuditor = !auditorFilter || (row.auditor && row.auditor.toLowerCase().includes(auditorFilter.toLowerCase()));
+      const auditeeFilter = globalFilters.auditee || '';
+      const matchesAuditee = !auditeeFilter || (row.auditee && row.auditee.toLowerCase().includes(auditeeFilter.toLowerCase()));
+
       const matchesSearch = !globalQuery ||
         (row.scheduleNo && row.scheduleNo.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.auditArea && row.auditArea.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesSearch;
+      
+      return matchesStatus && matchesScheduleNo && matchesAuditType && matchesAuditArea && matchesDepartment && matchesAuditor && matchesAuditee && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

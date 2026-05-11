@@ -60,10 +60,17 @@ public class EmployeeMasterService {
         return result;
     }
 
+    public String getNextEmpCode() {
+        return employeeRepo.findFirstByOrderByEmpCodeDesc()
+                .map(latest -> incrementSequence(latest.getEmpCode(), "EMP-"))
+                .orElse("EMP-001");
+    }
+
     public EmployeeMaster createEmployee(EmployeeMaster employee) {
         if (employee.getCreatedAt() == null) {
             employee.setCreatedAt(new Date());
         }
+        employee.setUpdatedAt(new Date());
         
         // Auto-generate empCode if missing
         if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
@@ -83,8 +90,9 @@ public class EmployeeMasterService {
 
         // Copy all fields from details, preserving id and audit trail
         details.setId(id);
-        details.setCreatedBy(emp.getCreatedBy());
-        details.setCreatedAt(emp.getCreatedAt());
+        if (details.getCreatedBy() == null) details.setCreatedBy(emp.getCreatedBy());
+        if (details.getCreatedAt() == null) details.setCreatedAt(emp.getCreatedAt());
+        
         sanitizeEmployee(details);
         return employeeRepo.save(details);
     }

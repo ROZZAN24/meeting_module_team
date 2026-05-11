@@ -52,7 +52,8 @@ export default function AuditAreaMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE'
+        defaultValue: 'ACTIVE',
+        isStarred: true
       },
       {
         id: 'type', label: 'Type', type: 'select',
@@ -61,7 +62,8 @@ export default function AuditAreaMaster() {
           { value: 'AREA', label: 'AREA' },
           { value: 'ZONE', label: 'ZONE' }
         ],
-        defaultValue: 'All'
+        defaultValue: 'All',
+        isStarred: true
       }
     ];
     dispatch(setFilterConfig(config));
@@ -126,7 +128,7 @@ export default function AuditAreaMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
+      const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const typeFilter = globalFilters.type || 'All';
       const matchesType = typeFilter === 'All' || row.type === typeFilter;

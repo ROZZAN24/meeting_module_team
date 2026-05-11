@@ -829,11 +829,11 @@ const MainRoutes = {
       element: <MasterHrDepartment />
     },
     {
-      path: '/hra/hr/employee/master',
+      path: '/hra/employee/master',
       element: <MasterHrEmployeeList />
     },
     {
-      path: '/hra/hr/employee/master/create',
+      path: '/hra/employee/master/create',
       element: <MasterHrEmployee />
     },
     {
