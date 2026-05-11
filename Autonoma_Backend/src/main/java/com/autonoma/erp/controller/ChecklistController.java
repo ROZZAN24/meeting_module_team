@@ -58,7 +58,7 @@ public class ChecklistController {
 
     @GetMapping("/next-sequence")
     @Operation(summary = "Get Next Sequence Number", description = "Calculates the next available sequence number for a new checklist")
-    public ResponseEntity<Map<String, Integer>> getNextSequence() {
+    public ResponseEntity<Map<String, String>> getNextSequence() {
         return ResponseEntity.ok(Map.of("nextSeqNo", checklistService.getNextSequenceNumber()));
     }
 
@@ -72,11 +72,12 @@ public class ChecklistController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String searchBy,
             @RequestParam(required = false) String searchValue,
+            @RequestParam(required = false) String masterVerifyStatus,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, pageable));
+        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, pageable));
     }
 
     @PostMapping("/assign")

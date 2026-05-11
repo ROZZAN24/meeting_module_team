@@ -74,10 +74,9 @@ export default function AddAuditObservation() {
 
   const [details, setDetails] = useState([]);
   const [attendance, setAttendance] = useState([]);
-  const { auditSchedule: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
+  const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
   useEffect(() => {
-    fetchSchedules();
     if (isEditing) {
       fetchObservation();
     } else {

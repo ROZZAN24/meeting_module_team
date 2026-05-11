@@ -142,7 +142,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 10,
+    pt: 2,
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
     overflowX: 'hidden'
@@ -227,9 +227,7 @@ export const getTableRowSx = (isDark) => ({
   '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 },
   '&:nth-of-type(even)': { bgcolor: isDark ? '#161b22' : '#fafafa' },
   '&:hover': {
-    bgcolor: isDark ? '#30363d !important' : 'grey.50 !important',
-    transform: 'translateY(-1px)',
-    boxShadow: 1
+    bgcolor: isDark ? '#30363d !important' : 'grey.50 !important'
   }
 });
 

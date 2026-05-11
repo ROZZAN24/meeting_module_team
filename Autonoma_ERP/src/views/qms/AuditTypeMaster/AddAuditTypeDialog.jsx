@@ -8,6 +8,7 @@ import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
 import Autocomplete from '@mui/material/Autocomplete';
 import Checkbox from '@mui/material/Checkbox';
 import { API_PATHS } from 'utils/api-constants';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| AUDIT TYPE - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
@@ -24,6 +25,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     criteriaType: 'Fixed',
     status: 'ACTIVE'
   });
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [auditAreas, setAuditAreas] = useState([]);
 
@@ -51,7 +53,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
         customerAuditArea: initialData.customerAuditArea || 'NO',
         auditArea: initialData.auditArea ? initialData.auditArea.split(', ') : [],
         criteriaType: initialData.criteriaType || 'Fixed',
-        status: initialData.status || 'ACTIVE'
+        status: initialData.status || 'ACTIVE',
+        createdBy: initialData.createdBy
       });
       setIsEditing(false);
     } else {
@@ -109,7 +112,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     try {
       const payload = {
         ...formData,
-        auditArea: Array.isArray(formData.auditArea) ? formData.auditArea.join(', ') : formData.auditArea
+        auditArea: Array.isArray(formData.auditArea) ? formData.auditArea.join(', ') : formData.auditArea,
+        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
+        updatedBy: user?.name || 'Admin'
       };
 
       if (formData.id) {
@@ -202,12 +207,15 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           renderInput={(params) => (
             <BOSTextField {...params} label="Audit Area" />
           )}
-          renderOption={(props, option, { selected }) => (
-            <li {...props}>
-              <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
-              {option.description}
-            </li>
-          )}
+          renderOption={(props, option, { selected }) => {
+            const { key, ...optionProps } = props;
+            return (
+              <li key={key} {...optionProps}>
+                <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                {option.description}
+              </li>
+            );
+          }}
           sx={{
             '& .MuiAutocomplete-tag': {
               bgcolor: 'primary.light',

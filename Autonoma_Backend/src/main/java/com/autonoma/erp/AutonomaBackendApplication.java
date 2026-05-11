@@ -2,9 +2,10 @@ package com.autonoma.erp;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-// Touch to trigger restart - Designation Master
 @SpringBootApplication
+@EnableScheduling
 public class AutonomaBackendApplication {
 
 	public static void main(String[] args) {

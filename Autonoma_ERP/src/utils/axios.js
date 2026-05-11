@@ -4,8 +4,9 @@
 
 import axios from 'axios';
 
-const axiosServices = axios.create({ baseURL: (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '') });
-
+const axiosServices = axios.create({
+  baseURL: window.location.origin
+});
 // ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
 
 axiosServices.interceptors.request.use(
@@ -48,7 +49,7 @@ axiosServices.interceptors.response.use(
     }
 
     if (!error.response) {
-      return Promise.reject('Backend server is unreachable. Please ensure the backend is running on ' + (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081'));
+      return Promise.reject('Backend server is unreachable. Please ensure the backend is running.');
     }
 
     return Promise.reject((error.response && error.response.data) || 'Service connection failed. Please try again later.');

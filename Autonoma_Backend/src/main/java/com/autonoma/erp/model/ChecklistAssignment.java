@@ -20,6 +20,7 @@ public class ChecklistAssignment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHECKLIST_ID")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private MasterChecklist checklist;
 
     @Column(name = "ASSIGNED_TO")
@@ -39,7 +40,7 @@ public class ChecklistAssignment {
     @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "CHECKLIST_DATE")
@@ -52,6 +53,10 @@ public class ChecklistAssignment {
     @Convert(converter = StringListConverter.class)
     @Column(name = "ACTUAL_FILES", columnDefinition = "NVARCHAR(MAX)")
     private List<String> actualFiles;
+
+    @OneToMany(mappedBy = "assignment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<ChecklistVerification> verifications;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

@@ -1,129 +1,277 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Grid,
-  Typography,
-  Divider,
-  Box,
+  MenuItem,
   Stack,
-  Chip
+  Box,
+  Typography,
+  Chip,
+  Button,
+  useTheme
 } from '@mui/material';
-import { IconFileDescription, IconUser, IconCalendar, IconInfoCircle, IconChecks } from '@tabler/icons-react';
-import { BOSFileGallery, getStatusChipSx } from 'ui-component/bos';
+import { 
+  IconUser, 
+  IconCalendar, 
+  IconChecks, 
+  IconFileText, 
+  IconStatusChange,
+  IconMessageDots,
+  IconCloudUpload,
+  IconBan,
+  IconDeviceFloppy
+} from '@tabler/icons-react';
+import { 
+  BOSFormDialog, 
+  BOSFormSection, 
+  BOSTextField, 
+  getStatusChipSx,
+  BOSFileGallery 
+} from 'ui-component/bos';
 
-const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject }) => {
+/**
+ * ExecutionVerifyDialog - Standardized BOS Template for Verification & Execution
+ * Handles:
+ * 1. Master Template verification (Admin)
+ * 2. Assignment Execution verification (Auditor)
+ * 3. Assignment Execution reporting (Executor - Editable mode)
+ */
+const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, onSave, isExecution = false }) => {
+  const theme = useTheme();
+  const [formData, setFormData] = useState({
+    status: '',
+    remarks: '',
+    actualFiles: []
+  });
+
+  useEffect(() => {
+    if (data) {
+      let currentStatus = '';
+      if (typeof data.status === 'object' && data.status !== null) {
+        currentStatus = data.status.name;
+      } else {
+        currentStatus = data.status || '';
+      }
+
+      setFormData({
+        status: currentStatus,
+        remarks: data.remarks || '',
+        actualFiles: (data.actualFiles || []).map(f => {
+          if (typeof f === 'string') {
+            const [name, ...detailsParts] = f.split('|');
+            const details = detailsParts.join('|');
+            // IMPORTANT: serverFileName must be ONLY the filename for the API to work
+            return { 
+              name: name, 
+              docDetails: details || '', 
+              isServer: true, 
+              serverFileName: name 
+            };
+          }
+          return f;
+        })
+      });
+    }
+  }, [data, open]);
+
   if (!data) return null;
 
   // Assignments have a nested checklist object, Master records don't
   const isAssignment = !!data.checklist;
   const master = isAssignment ? data.checklist : data;
 
+  const statusRaw = data.status;
+  const statusText = (typeof statusRaw === 'object' ? statusRaw?.name : statusRaw) || 
+                     (typeof master.status === 'object' ? master.status?.name : master.status) || 'Pending';
+
+  // Helper for status chip
+  let chipStatus = 'PENDING';
+  if (statusText === 'Verified' || statusText === 'Accepted' || statusText === 'COMPLETED') chipStatus = 'ACTIVE';
+  if (statusText === 'Rejected' || statusText === 'Missed' || statusText === 'NOT COMPLETED') chipStatus = 'INACTIVE';
+
+  const EXECUTION_STATUSES = ['-Select-', 'Started', '25%', '50%', '75%', 'Completed'];
+
+  // Helper to convert filename|details strings to BOS file objects
+  const parseFile = (f) => {
+    if (typeof f === 'string') {
+      const [name, ...detailsParts] = f.split('|');
+      const details = detailsParts.join('|');
+      return { 
+        name: name, 
+        docDetails: details || '', 
+        isServer: true, 
+        serverFileName: name 
+      };
+    }
+    return f;
+  };
+
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white', py: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconChecks size={24} />
-          <Typography variant="h4" color="inherit">
-            {isAssignment ? 'Verify Execution' : 'Verify Master Record'}
-          </Typography>
+    <BOSFormDialog
+      open={open}
+      onClose={handleClose}
+      onSave={isExecution ? () => onSave({ ...formData }) : null}
+      title={isExecution ? `Update Progress - ${master.seqNo}` : (isAssignment ? `Verify Execution - ${master.seqNo}` : `Verify Master Record - ${master.seqNo}`)}
+      maxWidth="lg"
+      isViewOnly={!isExecution}
+      secondaryActions={
+        (onVerify || onReject) && (
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={onReject}
+              startIcon={<IconBan size={20} />}
+              sx={{ borderRadius: '8px', fontWeight: 600 }}
+            >
+              {isAssignment ? 'Not Accept' : 'Reject'}
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={onVerify}
+              startIcon={<IconChecks size={20} />}
+              sx={{ borderRadius: '8px', fontWeight: 600 }}
+            >
+              {isAssignment ? 'Accept' : 'Verify'}
+            </Button>
+          </Stack>
+        )
+      }
+    >
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
+        {/* Left Column: Core Data */}
+        <Stack spacing={3}>
+          <BOSFormSection title="Assignment Header" icon={<IconUser size={20} color={theme.palette.primary.main} />}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2.5, mb: 2 }}>
+              <BOSTextField label="Assign To" value={data.assignedTo || master.assignTo || 'N/A'} disabled />
+              <BOSTextField label="Date" value={data.checklistDate ? new Date(data.checklistDate).toLocaleDateString() : 'N/A'} disabled />
+              <BOSTextField label="Assign Type" value={data.assignType || 'PRIMARY'} disabled />
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
+              <BOSTextField label="Frequency" value={master.frequency || '-'} disabled />
+              <BOSTextField label="Seq No" value={master.seqNo} disabled />
+            </Box>
+          </BOSFormSection>
+
+          <BOSFormSection title="Task Details" icon={<IconFileText size={20} color={theme.palette.success.main} />}>
+            <Stack spacing={2.5}>
+              <BOSTextField label="Checking Point" value={master.checkingPoint || '-'} multiline rows={2} disabled />
+              <BOSTextField label="Description / SOP" value={master.description || '-'} multiline rows={4} disabled />
+            </Stack>
+          </BOSFormSection>
+
+          <BOSFormSection title={isExecution ? "Execution Update" : "Status & Feedback"} icon={<IconStatusChange size={20} color={theme.palette.warning.main} />}>
+            <Stack spacing={2.5}>
+              {!isExecution && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={600}>Status:</Typography>
+                  <Chip label={statusText} sx={getStatusChipSx(chipStatus)} />
+                </Box>
+              )}
+              
+              {isExecution ? (
+                <>
+                  <BOSTextField 
+                    select 
+                    label="Status" 
+                    value={formData.status} 
+                    onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
+                    required
+                  >
+                    {EXECUTION_STATUSES.map(s => <MenuItem key={s} value={s === '-Select-' ? '' : s}>{s}</MenuItem>)}
+                  </BOSTextField>
+                  <BOSTextField 
+                    label="Execution Comments" 
+                    value={formData.remarks} 
+                    onChange={(e) => setFormData(p => ({ ...p, remarks: e.target.value }))}
+                    multiline 
+                    rows={3} 
+                    placeholder="Describe your progress..."
+                  />
+                </>
+              ) : (
+                <BOSTextField 
+                  label="Execution Comments" 
+                  value={data.comments || 'No comments provided.'} 
+                  multiline 
+                  rows={2} 
+                  disabled 
+                />
+              )}
+              
+              {data.rejReason && (
+                <BOSTextField 
+                  label="Rejection Comments" 
+                  value={data.rejReason} 
+                  multiline 
+                  rows={2} 
+                  disabled 
+                  color="error"
+                  sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'error.lighter' } }}
+                />
+              )}
+            </Stack>
+          </BOSFormSection>
         </Stack>
-      </DialogTitle>
-      
-      <DialogContent sx={{ mt: 2 }}>
-        <Grid container spacing={3}>
-          {/* Header Info */}
-          <Grid item xs={12} md={3}>
-            <Typography variant="subtitle2" color="textSecondary">Assign To</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <IconUser size={18} color="#666" />
-              <Typography variant="body1" fontWeight="600">{data.assignedTo || master.assignTo || 'N/A'}</Typography>
-            </Stack>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="subtitle2" color="textSecondary">Date</Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <IconCalendar size={18} color="#666" />
-              <Typography variant="body1">{data.checklistDate ? new Date(data.checklistDate).toLocaleDateString() : 'N/A'}</Typography>
-            </Stack>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="subtitle2" color="textSecondary">Assign Type</Typography>
-            <Typography variant="body1">{data.assignType || master.assignType || 'NONE'}</Typography>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <Typography variant="subtitle2" color="textSecondary">Seq No</Typography>
-            <Typography variant="body1" fontWeight="bold" color="primary">{master.seqNo}</Typography>
-          </Grid>
 
-          <Grid item xs={12}><Divider /></Grid>
+        {/* Right Column: Attachments */}
+        <Stack spacing={3}>
+          <BOSFormSection title="Samples (Template)" icon={<IconCloudUpload size={20} color={theme.palette.secondary.main} />}>
+             <BOSFileGallery 
+               files={(master.uploadedFiles || []).map(parseFile)} 
+               isEditing={false}
+               title="SAMPLES"
+             />
+          </BOSFormSection>
 
-          {/* Main Content */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="textSecondary">Renewal Point</Typography>
-            <Typography variant="h4" sx={{ mt: 0.5 }}>{master.checkingPoint}</Typography>
-          </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="subtitle2" color="textSecondary">Descriptions</Typography>
-            <Typography variant="body1" sx={{ mt: 0.5, p: 2, bgcolor: 'grey.50', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-              {master.description || 'No additional description provided.'}
-            </Typography>
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-            <Chip 
-              label={data.status || master.status || 'STARTED'} 
-              sx={{ mt: 1, ...getStatusChipSx('PENDING') }} 
-            />
-          </Grid>
-
-          <Grid item xs={12}><Divider /></Grid>
-
-          {/* Documents Section */}
-          <Grid item xs={12}>
-            <Typography variant="h5" sx={{ mb: 2 }}>Upload Documents</Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <IconFileDescription size={18} /> SAMPLES
-                </Typography>
-                <BOSFileGallery 
-                  files={master.uploadedFiles || []} 
-                  isEditing={false} 
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom color="secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <IconChecks size={18} /> ACTUAL
-                </Typography>
-                <BOSFileGallery 
-                  files={data.actualFiles || []} 
-                  isEditing={false} 
-                />
-              </Grid>
-            </Grid>
-          </Grid>
-        </Grid>
-      </DialogContent>
-
-      <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Button variant="outlined" color="inherit" onClick={handleClose}>
-          Clear
-        </Button>
-        <Box sx={{ flexGrow: 1 }} />
-        <Button variant="contained" color="error" onClick={onReject}>
-          Reject
-        </Button>
-        <Button variant="contained" color="success" onClick={onVerify}>
-          Save / Verify
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <BOSFormSection title="Actual Proof (Execution)" icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />}>
+             {isExecution && (
+               <Box sx={{ mb: 2 }}>
+                 <Button 
+                   component="label" 
+                   variant="contained" 
+                   fullWidth
+                   startIcon={<IconCloudUpload size={18} />} 
+                   sx={{ height: 45, borderRadius: 2 }}
+                 >
+                   Upload Document
+                   <input 
+                     type="file" 
+                     hidden 
+                     onChange={(e) => {
+                       const file = e.target.files[0];
+                       if (file) {
+                         const fileEntry = {
+                           name: file.name,
+                           docDetails: 'N/A',
+                           file: file,
+                           isServer: false
+                         };
+                         setFormData(prev => ({
+                           ...prev,
+                           actualFiles: [...prev.actualFiles, fileEntry]
+                         }));
+                       }
+                       e.target.value = '';
+                     }} 
+                   />
+                 </Button>
+               </Box>
+             )}
+             <BOSFileGallery 
+               files={(formData.actualFiles || []).map(parseFile)} 
+               isEditing={isExecution}
+               onRemove={isExecution ? (idx) => {
+                 setFormData(prev => ({
+                   ...prev,
+                   actualFiles: prev.actualFiles.filter((_, i) => i !== idx)
+                 }));
+               } : null}
+               title="ACTUAL"
+             />
+          </BOSFormSection>
+        </Stack>
+      </Box>
+    </BOSFormDialog>
   );
 };
 

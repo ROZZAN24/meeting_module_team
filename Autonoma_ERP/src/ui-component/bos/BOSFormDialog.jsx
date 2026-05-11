@@ -43,6 +43,8 @@ const Transition = React.forwardRef(function Transition(props, ref) {
  * @param {function} onEditClick   - Called when Edit button clicked in view mode
  * @param {boolean}  hasId         - Whether record has an existing ID (controls Delete button visibility)
  * @param {string}   maxWidth      - MUI Dialog maxWidth (default "md")
+ * @param {boolean}  hideFooter    - If true, hides the action footer
+ * @param {node}     secondaryActions - Additional buttons to show in the footer
  * @param {node}     children      - Form content
  */
 export default function BOSFormDialog({
@@ -56,6 +58,8 @@ export default function BOSFormDialog({
   onEditClick,
   hasId = false,
   maxWidth = 'md',
+  hideFooter = false,
+  secondaryActions,
   children
 }) {
   const theme = useTheme();
@@ -99,64 +103,68 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       <DialogContent sx={ds.content}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 5, width: '100%', alignItems: 'start', mt: 2 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%', alignItems: 'start' }}>
           {children}
         </Box>
       </DialogContent>
 
       {/* ── FOOTER ACTION BUTTONS (SOP #1, #12) ── */}
-      <Box sx={ds.footer}>
-        {isViewOnly ? (
-          <Box sx={{ display: 'flex', gap: 2, ml: 'auto' }}>
-            <Tooltip title={shortcutTooltip('Edit Details', 'Ctrl + E')}>
-              <Button
-                onClick={onEditClick}
-                variant="contained"
-                sx={btnEdit(theme)}
-                startIcon={<IconEdit size={20} />}
-              >
-                Edit
-              </Button>
-            </Tooltip>
-            <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
-              <Button
-                onClick={() => onClose()}
-                variant="contained"
-                sx={{ ...btnDelete, bgcolor: 'grey.500', '&:hover': { bgcolor: 'grey.700' } }}
-                startIcon={<IconX size={20} />}
-              >
-                Close
-              </Button>
-            </Tooltip>
-          </Box>
-        ) : (
-          <>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              {onClear && (
-                <Tooltip title="Clear all fields">
-                  <Button onClick={onClear} variant="contained" sx={btnClear} startIcon={<IconEraser size={20} />}>
-                    Clear
-                  </Button>
-                </Tooltip>
-              )}
-              {hasId && onDelete && (
-                <Tooltip title={shortcutTooltip('Delete Record', 'Ctrl + D')}>
-                  <Button onClick={onDelete} variant="contained" sx={btnDelete} startIcon={<IconTrash size={20} />}>
-                    Delete
-                  </Button>
-                </Tooltip>
-              )}
-            </Box>
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Tooltip title={shortcutTooltip('Save Changes', 'Ctrl + S')}>
-                <Button onClick={onSave} variant="contained" sx={btnSave} startIcon={<IconCheck size={20} />}>
-                  Save
+      {!hideFooter && (
+        <Box sx={ds.footer}>
+          {isViewOnly ? (
+            <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
+              {secondaryActions}
+              <Tooltip title={shortcutTooltip('Edit Details', 'Ctrl + E')}>
+                <Button
+                  onClick={onEditClick}
+                  variant="contained"
+                  sx={btnEdit(theme)}
+                  startIcon={<IconEdit size={20} />}
+                >
+                  Edit
+                </Button>
+              </Tooltip>
+              <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
+                <Button
+                  onClick={() => onClose()}
+                  variant="contained"
+                  sx={{ ...btnDelete, bgcolor: 'grey.500', '&:hover': { bgcolor: 'grey.700' } }}
+                  startIcon={<IconX size={20} />}
+                >
+                  Close
                 </Button>
               </Tooltip>
             </Box>
-          </>
-        )}
-      </Box>
+          ) : (
+            <>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                {onClear && (
+                  <Tooltip title="Clear all fields">
+                    <Button onClick={onClear} variant="contained" sx={btnClear} startIcon={<IconEraser size={20} />}>
+                      Clear
+                    </Button>
+                  </Tooltip>
+                )}
+                {hasId && onDelete && (
+                  <Tooltip title={shortcutTooltip('Delete Record', 'Ctrl + D')}>
+                    <Button onClick={onDelete} variant="contained" sx={btnDelete} startIcon={<IconTrash size={20} />}>
+                      Delete
+                    </Button>
+                  </Tooltip>
+                )}
+              </Box>
+              <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
+                {secondaryActions}
+                <Tooltip title={shortcutTooltip('Save Changes', 'Ctrl + S')}>
+                  <Button onClick={onSave} variant="contained" sx={btnSave} startIcon={<IconCheck size={20} />}>
+                    Save
+                  </Button>
+                </Tooltip>
+              </Box>
+            </>
+          )}
+        </Box>
+      )}
     </Dialog>
   );
 }
@@ -172,5 +180,7 @@ BOSFormDialog.propTypes = {
   onEditClick: PropTypes.func,
   hasId: PropTypes.bool,
   maxWidth: PropTypes.string,
+  hideFooter: PropTypes.bool,
+  secondaryActions: PropTypes.node,
   children: PropTypes.node
 };

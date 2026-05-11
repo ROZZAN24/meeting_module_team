@@ -199,6 +199,8 @@ const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/Departmen
 const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
 const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
 const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/DesignationMaster')));
+const MasterHrGrade = Loadable(lazy(() => import('views/master/hr/GradeDetails')));
+const MasterHrDesignationLevel = Loadable(lazy(() => import('views/master/hr/DesignationLevelMaster')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -211,6 +213,17 @@ const QmsAddAuditObservation = Loadable(lazy(() => import('views/qms/AuditObserv
 const QmsAuditNcrClose = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrClose')));
 const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrApproval')));
 const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
+
+// sales & marketing routing
+const SmCustomerMasterList = Loadable(lazy(() => import('views/sm/CustomerMasterList')));
+const SmContactMasterList = Loadable(lazy(() => import('views/sm/ContactMasterList')));
+const SmEnquiryDashboard = Loadable(lazy(() => import('views/sm/EnquiryDashboard')));
+const SmWorkItems = Loadable(lazy(() => import('views/sm/WorkItems')));
+const SmPriceMasterList = Loadable(lazy(() => import('views/sm/PriceMasterList')));
+const SmSupplierList = Loadable(lazy(() => import('views/sm/SupplierList')));
+const SmSubContractorList = Loadable(lazy(() => import('views/sm/SubContractorList')));
+const SmQuotationList = Loadable(lazy(() => import('views/sm/QuotationList')));
+const SmEnquiryList = Loadable(lazy(() => import('views/sm/EnquiryList')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -823,6 +836,14 @@ const MainRoutes = {
       element: <MasterHrDesignation />
     },
     {
+      path: '/master/hr/grade',
+      element: <MasterHrGrade />
+    },
+    {
+      path: '/master/hr/desg-level',
+      element: <MasterHrDesignationLevel />
+    },
+    {
       path: '/master/qms/audit/type',
       element: <QmsAuditTypeMaster />
     },
@@ -873,6 +894,42 @@ const MainRoutes = {
     {
       path: '/qms/audit/report',
       element: <QmsAuditReport />
+    },
+    {
+      path: '/sm/customers',
+      element: <SmCustomerMasterList />
+    },
+    {
+      path: '/sm/contacts',
+      element: <SmContactMasterList />
+    },
+    {
+      path: '/sm/enquiry/dashboard',
+      element: <SmEnquiryDashboard />
+    },
+    {
+      path: '/sm/work-items',
+      element: <SmWorkItems />
+    },
+    {
+      path: '/sm/price-master',
+      element: <SmPriceMasterList />
+    },
+    {
+      path: '/sm/suppliers',
+      element: <SmSupplierList />
+    },
+    {
+      path: '/sm/sub-contractors',
+      element: <SmSubContractorList />
+    },
+    {
+      path: '/sm/quotations',
+      element: <SmQuotationList />
+    },
+    {
+      path: '/sm/enquiries',
+      element: <SmEnquiryList />
     },
     {
       path: '*',

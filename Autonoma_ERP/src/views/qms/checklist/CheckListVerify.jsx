@@ -13,14 +13,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Grid
 } from '@mui/material';
 import {
-  IconPlus,
   IconFileDownload,
   IconChecks,
-  IconCheck,
-  IconCircleCheck,
   IconX,
   IconRefresh,
   IconBan
@@ -34,11 +32,12 @@ import { exportToExcel } from 'utils/excelExport';
 import {
   BOSDataTable,
   btnExport,
-  btnNew,
   getStatusChipSx
 } from 'ui-component/bos';
-import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import AddCheckListDialog from './AddCheckListDialog';
+import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
+import useLookups from 'hooks/useLookups';
+import { API_PATHS } from 'utils/api-constants';
+import { AddCheckListDialog } from './AddCheckListDialog';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -67,55 +66,41 @@ export default function CheckListVerify() {
   const [loading, setLoading] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [isView, setIsView] = useState(true);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
   const [rejectRemarks, setRejectRemarks] = useState('');
+  const lookups = useLookups(['DEPARTMENTS']);
 
   const searchQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
 
   useEffect(() => {
     dispatch(setFilterConfig([
-      {
-        id: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { label: 'All Status', value: 'All' },
-          { label: 'Pending for Verify', value: 'Pending for Verify' },
-          { label: 'Verified', value: 'Verified' },
-          { label: 'Rejected', value: 'Rejected' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'category',
-        label: 'Category',
-        type: 'select',
-        options: [
-          { label: 'All Categories', value: 'All' },
-          { label: 'Renewal', value: 'RENEWAL' },
-          { label: 'Check List', value: 'CHECK LIST' }
-        ],
-        defaultValue: 'All'
-      }
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'Pending for Verify', value: 'Pending for Verify' }, { label: 'Verified', value: 'Verified' }, { label: 'Rejected', value: 'Rejected' }, { label: 'All Status', value: 'All' }], defaultValue: 'Pending for Verify' },
+      { id: 'category', label: 'Category', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, { label: 'Renewal', value: 'RENEWAL' }, { label: 'Check List', value: 'CHECK LIST' }], defaultValue: 'All' },
+      { id: 'department', label: 'Department', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...(lookups.departments || []).map(d => ({ label: d.departmentName, value: d.departmentName }))], defaultValue: 'All' },
+      { id: 'seqNo', label: 'Seq No', type: 'text' },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text' },
+      { id: 'frequency', label: 'Frequency', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'DAILY', value: 'DAILY' }, { label: 'WEEKLY', value: 'WEEKLY' }, { label: 'MONTHLY', value: 'MONTHLY' }, { label: 'YEARLY', value: 'YEARLY' }], defaultValue: 'All' },
+      { id: 'searchBy', label: 'Search by', type: 'select', options: [{ label: 'Seq No', value: 'seqNo' }, { label: 'Checking Point', value: 'checkingPoint' }, { label: 'Category', value: 'category' }, { label: 'Frequency', value: 'frequency' }], defaultValue: 'checkingPoint' }
     ]));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  }, [dispatch, lookups.departments]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
     try {
       const params = {
-        page,
-        size,
-        status: undefined, // Master status filter not used here
-        verifyStatus: filters.status !== 'All' ? filters.status : undefined,
+        page, size,
+        verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : (filters.status === 'All' ? undefined : 'Pending for Verify'),
         category: filters.category !== 'All' ? filters.category : undefined,
-        searchValue: searchQuery || undefined,
-        dualCheck: 'NO'
+        department: filters.department !== 'All' ? filters.department : undefined,
+        seqNo: filters.seqNo || undefined,
+        checkingPoint: filters.checkingPoint || undefined,
+        frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
+        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
+        searchValue: searchQuery || undefined
       };
-      const response = await axios.get('/api/qms/checklist', { params });
+      const response = await axios.get(API_PATHS.QMS.CHECKLIST, { params });
       setRows(response.data.content || []);
       setTotalElements(response.data.totalElements || 0);
     } catch (error) {
@@ -132,7 +117,6 @@ export default function CheckListVerify() {
   const handleRowClick = (row) => setSelectedRow(row);
   const handleRowDoubleClick = (row) => {
     setSelectedRow(row);
-    setIsView(true);
     setDialogOpen(true);
   };
 
@@ -142,10 +126,11 @@ export default function CheckListVerify() {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRow.id,
         status: status,
-        verifiedBy: 'Current User', // Should be dynamic
+        verifiedBy: 'Current User',
         remarks: remarks || (status === 'Rejected' ? 'Rejected by verifier' : 'Verified')
       });
-      dispatch(openSnackbar({ open: true, message: `Checklist ${status.toLowerCase()} successfully`, severity: 'success', variant: 'alert' }));
+      dispatch(openSnackbar({ open: true, message: `Checklist ${status.toLowerCase()} successfully`, severity: status === 'Verified' ? 'success' : 'warning', variant: 'alert' }));
+      setDialogOpen(false);
       setRejectDialogOpen(false);
       setRejectRemarks('');
       fetchChecklists();
@@ -165,13 +150,12 @@ export default function CheckListVerify() {
       Department: (r.departments || []).map((d) => d.departmentName).join(', '),
       'Effective From': r.effectiveFrom,
       'Expire Date': r.expiryDate,
-      'Status': r.status
+      'Verify Status': r.verifyStatus || 'Pending for Verify'
     }));
     exportToExcel(exportData, 'Checklist_Verify');
   };
 
   useKeyboardShortcuts({
-    'ctrl+n': () => setDialogOpen(true),
     'escape': () => setSelectedRow(null)
   });
 
@@ -185,9 +169,35 @@ export default function CheckListVerify() {
       return <Chip label={status} size="small" sx={getStatusChipSx(chipStatus)} />;
     }
     if (col.id === 'department') return (row.departments || []).map((d) => d.departmentName).join(', ');
-    if (col.id === 'createdDate') return row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '-';
-    return row[col.id] || '-';
+    if (col.id === 'createdDate' || col.id === 'verifiedDate') {
+      return row[col.id] ? new Date(row[col.id]).toLocaleDateString() : '-';
+    }
+    const val = row[col.id];
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return val || '-';
   };
+
+  // Build dialog data from selectedRow
+  const dialogData = selectedRow ? {
+    seqNo: selectedRow.seqNo || '-',
+    checkingPoint: selectedRow.checkingPoint || '-',
+    category: selectedRow.category || '-',
+    frequency: selectedRow.frequency || '-',
+    department: (selectedRow.departments || []).map(d => d.departmentName).join(', ') || '-',
+    description: selectedRow.description || '',
+    effectiveFrom: selectedRow.effectiveFrom,
+    expiryDate: selectedRow.expiryDate,
+    reminderDays: selectedRow.reminderDays,
+    stockLink: selectedRow.stockLink || '-',
+    photoRequired: selectedRow.photoRequired || '-',
+    verificationRequired: selectedRow.verificationRequired || '-',
+    dualCheck: selectedRow.dualCheck || '-',
+    carryForward: selectedRow.carryForward || '-',
+    verifyStatus: selectedRow.verifyStatus || 'Pending for Verify',
+    rejReason: selectedRow.rejReason
+  } : null;
 
   return (
     <MainCard
@@ -204,44 +214,16 @@ export default function CheckListVerify() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button
-            variant="contained"
-            color="error"
-            size="medium"
-            startIcon={<IconBan size={18} />}
-            onClick={() => setRejectDialogOpen(true)}
-            disabled={!selectedRow}
-            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Reject
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            size="medium"
-            startIcon={<IconCheck size={18} />}
-            onClick={() => handleVerify('Verified')}
-            disabled={!selectedRow}
-            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Verify
-          </Button>
-          <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
             Export Excel
           </Button>
-          <Tooltip title={shortcutTooltip('Create New Check List', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={() => { setSelectedRow(null); setIsView(false); setDialogOpen(true); }} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>
         </Stack>
       }
     >
       <Box sx={{ mb: 2 }}>
         {selectedRow && (
           <Paper sx={{ p: 1.5, mb: 2, bgcolor: 'primary.light', border: '1px solid', borderColor: 'primary.main', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="body2" fontWeight={600}>Selected Row: {selectedRow.seqNo} - {selectedRow.checkingPoint}</Typography>
+            <Typography variant="body2" fontWeight={600}>Selected: {selectedRow.seqNo} — {selectedRow.checkingPoint}</Typography>
             <IconButton size="small" onClick={() => setSelectedRow(null)}><IconX size={16} /></IconButton>
           </Paper>
         )}
@@ -259,9 +241,8 @@ export default function CheckListVerify() {
         onDoubleClickRow={handleRowDoubleClick}
         onClickRow={handleRowClick}
         selectedRowId={selectedRow?.id}
-        onEditRow={(row) => { setSelectedRow(row); setIsView(false); setDialogOpen(true); }}
         renderCell={renderCell}
-        showActions={true}
+        showActions={false}
         id="checklist-verify-table"
       />
 
@@ -269,18 +250,12 @@ export default function CheckListVerify() {
         open={dialogOpen} 
         handleClose={() => setDialogOpen(false)} 
         initialData={selectedRow} 
-        readOnly={isView}
-        onSave={async (data) => {
-          try {
-            await axios.post('/api/qms/checklist', data);
-            dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
-            fetchChecklists();
-          } catch (err) {
-            dispatch(openSnackbar({ open: true, message: 'Failed to save', severity: 'error', variant: 'alert' }));
-          }
-        }}
+        readOnly={true}
+        onVerify={() => handleVerify('Verified')}
+        onReject={() => setRejectDialogOpen(true)}
       />
 
+      {/* ===== Reject Reason Dialog ===== */}
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Reject Master Checklist</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>

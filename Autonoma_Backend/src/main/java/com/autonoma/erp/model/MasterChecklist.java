@@ -133,7 +133,12 @@ public class MasterChecklist {
     private List<String> scannedFiles;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"checklist", "hibernateLazyInitializer", "handler"})
     private List<ChecklistDepartment> departments;
+
+    @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private List<ChecklistAssignment> assignments;
 
     @Column(name = "LEVEL_IDS")
     private String levelIds; // L1,L2...

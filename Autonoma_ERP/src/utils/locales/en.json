@@ -9,6 +9,8 @@
   "application": "Application",
   "users": "Users",
   "user": "User",
+  "user-access": "User Access",
+  "User Access": "User Access",
   "posts": "Posts",
   "social-profile": "Social Profile",
   "account-profile": "Account Profile",
@@ -290,5 +292,10 @@
   "qms-audit-report": "Audit Report",
   "master-qms-audit-report": "Audit Report",
   "Employee Master": "Employee Master",
-  "Company Profile": "Company Profile"
+  "Company Profile": "Company Profile",
+  "Employee": "Employee",
+  "master-hr-employee": "Employee",
+  "Grade Details": "Grade Details",
+  "Designation Level": "Designation Level",
+  "OCR": "OCR"
 }

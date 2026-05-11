@@ -37,3 +37,12 @@
 - [ ] Route added in `MainRoutes.jsx` children array
 - [ ] Menu item added in `menu-items/erp.js`
 - [ ] Lazy import with `Loadable(lazy(() => import(...)))`
+
+## 5. Execution & Verification Workflow (BOS Pattern)
+- [ ] Uses `ExecutionVerifyDialog` pattern for dual reporting/auditing
+- [ ] "Samples" vs "Actual" dual-layer document display
+- [ ] `filename|details` pipe-separated metadata for attachments
+- [ ] Automatic `Pending for Verified` routing if `Dual Check` is enabled
+- [ ] One-click upload (no separate "Add" button for documents)
+- [ ] `parseFile` helper used in all galleries to handle server strings
+- [ ] Remarks/Comments persisted directly to the Assignment record

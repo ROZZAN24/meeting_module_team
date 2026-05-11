@@ -10,8 +10,8 @@ import { API_PATHS } from 'utils/api-constants';
 const API = API_PATHS.HRM.EMPLOYEES;
 const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
 
-// ─── Grid field wrapper ────────────────────────────
-const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+// ─── Grid field wrapper (standardized to 4 columns for even spacing) ────────────────────────────
+const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
 
 // ─── SECTION 1:1 (single record per employee) ────────────────
 function Section1to1({ title, icon, endpoint, employeeId, fields }) {
@@ -131,82 +131,68 @@ export default function EmployeeSubSections({ employeeId }) {
       {/* PERSONAL DETAILS */}
       <Section1to1 title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
         { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'TRANS GENDER'] },
-        { name: 'birthDate', label: 'Birth Date', type: 'date' },
         { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['UNMARRIED', 'MARRIED', 'WIDOW', 'DIVORCED'] },
-        { name: 'marriageDate', label: 'Marriage Date', type: 'date' },
-        { name: 'numberOfChildren', label: 'No. of Children', type: 'number' },
-        { name: 'emailId', label: 'Email ID', max: 255 },
+        { name: 'marriageDate', label: 'Married Date', type: 'date' }, 
+        { name: 'birthDate', label: 'DOB', type: 'date' },
+        { name: 'dateOfJoining', label: 'DOJ', type: 'date' }, 
         { name: 'nationality', label: 'Nationality', max: 100 },
+        { name: 'emailId', label: 'Email', max: 255 },
         { name: 'bloodGroup', label: 'Blood Group', select: true, options: ['UNINFORMED', 'O+ve', 'O-ve', 'A+ve', 'A-ve', 'B+ve', 'B-ve', 'AB+ve', 'AB-ve'] },
-        { name: 'religion', label: 'Religion', select: true, options: ['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKHISM', 'BUDDHISM'] },
-        { name: 'height', label: 'Height', max: 20 },
-        { name: 'weight', label: 'Weight', max: 20 },
+        { name: 'region', label: 'Region', max: 100 },
         { name: 'shirtSize', label: 'Shirt Size', max: 20 },
         { name: 'pantSize', label: 'Pant Size', max: 20 },
         { name: 'shoeSize', label: 'Shoe Size', max: 20 },
-        { name: 'insuranceNumber', label: 'Insurance Number', max: 100 },
-        { name: 'esicNumber', label: 'ESIC Number', max: 100 },
-        { name: 'pfNumber', label: 'PF Number', max: 100 },
-        { name: 'insuranceExpiryDate', label: 'Insurance Expiry', type: 'date' },
-        { name: 'uanNumber', label: 'UAN Number', max: 100 },
-        { name: 'panNumber', label: 'PAN Number', max: 20 },
-        { name: 'aadharNumber', label: 'Aadhar Number', max: 20 },
-        { name: 'drivingLicenseNumber', label: 'Driving License', max: 50 },
-        { name: 'licenseExpiryDate', label: 'License Expiry', type: 'date' },
-        { name: 'electionCardNumber', label: 'Election Card', max: 50 },
-        { name: 'rationCardNumber', label: 'Ration Card', max: 50 },
-        { name: 'companyIssuedMobile', label: 'Company Mobile', max: 20 },
-        { name: 'mobileDeduction', label: 'Mobile Deduction', type: 'number' },
-        { name: 'canteenAllowance', label: 'Canteen Allowance', type: 'number' },
-        { name: 'loanInstallmentMonth', label: 'Loan Installment Month', max: 50 }
+        { name: 'height', label: 'Height', max: 20 },
+        { name: 'weight', label: 'Weight', max: 20 }
       ]} />
 
-      {/* CONTACT DETAILS */}
-      <Section1to1 title="Contact Details" icon={<IconPhone size={20} color={pc} />} endpoint="contact" employeeId={employeeId} fields={[
-        { name: 'permAddress1', label: 'Perm Address 1', max: 255 }, { name: 'permAddress2', label: 'Perm Address 2', max: 255 },
-        { name: 'permCity', label: 'Perm City', max: 100 }, { name: 'permState', label: 'Perm State', max: 100 },
-        { name: 'permPinCode', label: 'Perm Pin Code', max: 20 }, { name: 'permPhone', label: 'Perm Phone', max: 20 }, { name: 'permMobile', label: 'Perm Mobile', max: 20 },
-        { name: 'commAddress1', label: 'Comm Address 1', max: 255 }, { name: 'commAddress2', label: 'Comm Address 2', max: 255 },
-        { name: 'commCity', label: 'Comm City', max: 100 }, { name: 'commState', label: 'Comm State', max: 100 },
-        { name: 'commPinCode', label: 'Comm Pin Code', max: 20 }, { name: 'commPhone', label: 'Comm Phone', max: 20 }, { name: 'commMobile', label: 'Comm Mobile', max: 20 }
+      {/* ADDRESS DETAILS */}
+      <Section1to1 title="Address Details" icon={<IconPhone size={20} color={pc} />} endpoint="contact" employeeId={employeeId} fields={[
+        { name: 'permCity', label: 'Permanent Address - City', max: 100 },
+        { name: 'permState', label: 'Permanent Address - State', max: 100 },
+        { name: 'permCountry', label: 'Permanent Address - Country', max: 100 },
+        { name: 'permPinCode', label: 'Permanent Address - Pincode', max: 20 },
+        { name: 'commCity', label: 'Communication Address - City', max: 100 },
+        { name: 'commState', label: 'Communication Address - State', max: 100 },
+        { name: 'commCountry', label: 'Communication Address - Country', max: 100 },
+        { name: 'commPinCode', label: 'Communication Address - Pincode', max: 20 }
       ]} />
 
-      {/* JOB PROFILE */}
-      <Section1to1 title="Job Profile" icon={<IconWallet size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
-        { name: 'wagesType', label: 'Wages Type', select: true, options: ['Monthly', 'Daily', 'Hourly'] },
-        { name: 'paymentMode', label: 'Payment Mode', select: true, options: ['Cheque', 'Cash', 'Bank'] },
-        { name: 'salaryAccountNumber', label: 'Salary A/C No', max: 50 }, { name: 'personalAccountNumber', label: 'Personal A/C No', max: 50 },
-        { name: 'bankName', label: 'Bank Name', max: 100 }, { name: 'ifscCode', label: 'IFSC Code', max: 20 },
-        { name: 'branchName', label: 'Branch Name', max: 100 }, { name: 'bankMicroCode', label: 'Bank Micro Code', max: 50 },
-        { name: 'officeEmail', label: 'Office Email', max: 255 }, { name: 'officialPassword', label: 'Official Password', max: 255 },
-        { name: 'providentFund', label: 'Provident Fund', select: true, options: ['Yes', 'No'] },
-        { name: 'esiAllowed', label: 'ESI Allowed', select: true, options: ['Yes', 'No'] },
-        { name: 'professionalTax', label: 'Professional Tax', select: true, options: ['Yes', 'No'] },
-        { name: 'bonus', label: 'Bonus', select: true, options: ['Yes', 'No'] },
-        { name: 'overTimeAllowed', label: 'OT Allowed', select: true, options: ['Yes', 'No'] },
-        { name: 'overTimeFactorial', label: 'OT Factorial', max: 20 },
-        { name: 'physicallyChallenged', label: 'Physically Challenged', select: true, options: ['No', 'Yes-Locomotive disability', 'Yes-Visual', 'Yes-Hearing', 'Yes-Others'] },
-        { name: 'lossOfMinutesDeduct', label: 'LOM Deduct', select: true, options: ['Yes', 'No'] },
-        { name: 'lossOfMinutesAllow', label: 'LOM Allow', select: true, options: ['Yes', 'No'] },
-        { name: 'internationalWorker', label: 'Intl Worker', select: true, options: ['Yes', 'No'] },
-        { name: 'ltaEligible', label: 'LTA Eligible', select: true, options: ['Yes', 'No'] },
-        { name: 'pfRestrictionTo', label: 'PF Restriction To', max: 50 },
-        { name: 'companyContact1', label: 'Company Contact 1', max: 20 }, { name: 'companyContact2', label: 'Company Contact 2', max: 20 },
-        { name: 'overTimeRatePerHour', label: 'OT Rate/Hr', type: 'number' }, { name: 'numberOfLeaveAllow', label: 'Leaves Allowed', type: 'number' },
-        { name: 'assetId1', label: 'Asset ID 1', max: 50 }, { name: 'ipAddress1', label: 'IP Address 1', max: 50 },
-        { name: 'assetId2', label: 'Asset ID 2', max: 50 }, { name: 'ipAddress2', label: 'IP Address 2', max: 50 },
-        { name: 'permissionRequest', label: 'Permission Request', select: true, options: ['Yes', 'No'] },
-        { name: 'permissionHours', label: 'Permission Hours', max: 20 }
+      {/* ID DETAILS */}
+      <Section1to1 title="ID Details" icon={<IconEPassport size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
+        { name: 'aadharNumber', label: 'Aadhar No', max: 20 },
+        { name: 'drivingLicenseNumber', label: 'Driving License No', max: 50 },
+        { name: 'passportNumber', label: 'Passport No', max: 50 },
+        { name: 'passportIssueCity', label: 'Place Of Issue', max: 100 },
+        { name: 'licenseExpiryDate', label: 'Date Of Expiry', type: 'date' },
+        { name: 'loanInstallmentAmount', label: 'Loan Installment Amount', type: 'number' }
       ]} />
 
-      {/* EDUCATION (1:N) */}
-      <Section1toN title="Education Details" icon={<IconSchool size={20} color={pc} />} endpoint="education" employeeId={employeeId}
+      {/* STATUTORY DETAILS */}
+      <Section1to1 title="Statutory Details" icon={<IconShieldCheck size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
+        { name: 'panNumber', label: 'PAN No', max: 20 },
+        { name: 'pfNumber', label: 'PF No', max: 100 },
+        { name: 'uanNumber', label: 'UAN No', max: 100 }
+      ]} />
+
+      {/* BANK DETAILS */}
+      <Section1to1 title="Bank Details" icon={<IconWallet size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
+        { name: 'salaryAccountNumber', label: 'Account No', max: 50 },
+        { name: 'accountName', label: 'Account Name', max: 100 },
+        { name: 'branchName', label: 'Branch Name', max: 100 },
+        { name: 'bankAccountType', label: 'Bank Account Type', select: true, options: ['SAVINGS', 'CURRENT', 'SALARY'] },
+        { name: 'bankName', label: 'Bank Name', max: 100 },
+        { name: 'ifscCode', label: 'IFSC Code', max: 20 }
+      ]} />
+
+      {/* QUALIFICATION DETAILS (1:N) */}
+      <Section1toN title="Qualification Details" icon={<IconSchool size={20} color={pc} />} endpoint="education" employeeId={employeeId}
         fields={[
-          { name: 'education', label: 'Education', max: 100 }, { name: 'institutionName', label: 'Institution', max: 255 },
+          { name: 'education', label: 'Qualification', max: 100 }, { name: 'institutionName', label: 'Institution', max: 255 },
           { name: 'type', label: 'Type', select: true, options: ['Full Time', 'Part Time', 'Distance'] },
           { name: 'yearOfPassing', label: 'Year', max: 10 }, { name: 'percentageGrade', label: '% / Grade', max: 20 }
         ]}
-        tableCols={[{ id: 'education', label: 'Education', minWidth: 140 }, { id: 'institutionName', label: 'Institution', minWidth: 200 }, { id: 'type', label: 'Type', minWidth: 100 }, { id: 'yearOfPassing', label: 'Year', minWidth: 80 }, { id: 'percentageGrade', label: '% / Grade', minWidth: 100 }]}
+        tableCols={[{ id: 'education', label: 'Qualification', minWidth: 140 }, { id: 'institutionName', label: 'Institution', minWidth: 200 }, { id: 'type', label: 'Type', minWidth: 100 }, { id: 'yearOfPassing', label: 'Year', minWidth: 80 }, { id: 'percentageGrade', label: '% / Grade', minWidth: 100 }]}
       />
 
       {/* EXPERIENCE (1:N) */}
@@ -228,50 +214,6 @@ export default function EmployeeSubSections({ employeeId }) {
         ]}
         tableCols={[{ id: 'contactName', label: 'Name', minWidth: 150 }, { id: 'relation', label: 'Relation', minWidth: 100 }, { id: 'mobileNumber', label: 'Mobile', minWidth: 120 }, { id: 'homePhoneNumber', label: 'Home Phone', minWidth: 120 }]}
       />
-
-      {/* PASSPORT */}
-      <Section1to1 title="Passport Details" icon={<IconEPassport size={20} color={pc} />} endpoint="passport" employeeId={employeeId} fields={[
-        { name: 'passportNumber', label: 'Passport Number', max: 50 }, { name: 'passportIssueCity', label: 'Issue City', max: 100 },
-        { name: 'issueDate', label: 'Issue Date', type: 'date' }, { name: 'expiryDate', label: 'Expiry Date', type: 'date' },
-        { name: 'comments', label: 'Comments', max: 500, multiline: true, rows: 2 }
-      ]} />
-
-      {/* DEPENDENTS (1:N) */}
-      <Section1toN title="Dependent Details" icon={<IconUsers size={20} color={pc} />} endpoint="dependent" employeeId={employeeId}
-        fields={[
-          { name: 'relationName', label: 'Name', max: 100 }, { name: 'relation', label: 'Relation', max: 50 },
-          { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'TRANS GENDER'] },
-          { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['UNMARRIED', 'MARRIED', 'WIDOW', 'DIVORCED'] },
-          { name: 'aadharId', label: 'Aadhar ID', max: 20 },
-          { name: 'contactNumber1', label: 'Contact 1', max: 20 }, { name: 'contactNumber2', label: 'Contact 2', max: 20 },
-          { name: 'contactAddress', label: 'Address', max: 500 }
-        ]}
-        tableCols={[{ id: 'relationName', label: 'Name', minWidth: 150 }, { id: 'relation', label: 'Relation', minWidth: 100 }, { id: 'gender', label: 'Gender', minWidth: 80 }, { id: 'contactNumber1', label: 'Contact', minWidth: 120 }]}
-      />
-
-      {/* ASSETS (1:N) */}
-      <Section1toN title="Asset Details" icon={<IconDevices size={20} color={pc} />} endpoint="asset" employeeId={employeeId}
-        fields={[
-          { name: 'assetId', label: 'Asset ID', max: 50 }, { name: 'assetName', label: 'Asset Name', max: 255 },
-          { name: 'value', label: 'Value', type: 'number' }, { name: 'issueDate', label: 'Issue Date', type: 'date' },
-          { name: 'comments', label: 'Comments', max: 500 }
-        ]}
-        tableCols={[{ id: 'assetId', label: 'Asset ID', minWidth: 100 }, { id: 'assetName', label: 'Name', minWidth: 200 }, { id: 'value', label: 'Value', minWidth: 100 }, { id: 'issueDate', label: 'Issue Date', minWidth: 120 }]}
-      />
-
-      {/* KYC */}
-      <Section1to1 title="KYC Details" icon={<IconShieldCheck size={20} color={pc} />} endpoint="kyc" employeeId={employeeId} fields={[
-        { name: 'pfNumber', label: 'PF Number', max: 100 }, { name: 'uanNumber', label: 'UAN Number', max: 100 },
-        { name: 'panNumber', label: 'PAN Number', max: 20 }, { name: 'aadharNumber', label: 'Aadhar Number', max: 20 },
-        { name: 'drivingLicenseNumber', label: 'Driving License', max: 50 }, { name: 'licenseExpiryDate', label: 'License Expiry', type: 'date' },
-        { name: 'electionCardNumber', label: 'Election Card', max: 50 }, { name: 'rationCardNumber', label: 'Ration Card', max: 50 },
-        { name: 'personalAccountNumber', label: 'Personal A/C', max: 50 }, { name: 'bankName', label: 'Bank Name', max: 100 },
-        { name: 'ifscCode', label: 'IFSC Code', max: 20 },
-        { name: 'physicallyChallenged', label: 'Physically Challenged', select: true, options: ['No', 'Yes-Locomotive disability', 'Yes-Visual', 'Yes-Hearing', 'Yes-Others'] },
-        { name: 'physicallyChallengedCategory', label: 'PH Category', max: 50 },
-        { name: 'internationalWorker', label: 'Intl Worker', select: true, options: ['Yes', 'No'] },
-        { name: 'passportNumber', label: 'Passport Number', max: 50 }, { name: 'passportExpiryDate', label: 'Passport Expiry', type: 'date' }
-      ]} />
 
       {/* KYC DOCUMENTS (1:N) */}
       <Section1toN title="KYC Documents" icon={<IconFileText size={20} color={pc} />} endpoint="kyc-document" employeeId={employeeId}

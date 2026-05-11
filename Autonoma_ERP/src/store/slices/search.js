@@ -1,14 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Load preferences from localStorage
+const savedPrefs = JSON.parse(localStorage.getItem('bos_search_prefs') || '{}');
+
 const initialState = {
   query: '',
-  filters: {
-    type: 'All',
-    date: '',
-    status: 'All'
-  },
+  filters: {},
   // Configuration for dynamic filters in the search bar
-  config: null
+  config: null,
+  // Page-specific visibility preferences { [path]: [visibleId1, visibleId2] }
+  preferences: savedPrefs
 };
 
 const search = createSlice({
@@ -23,15 +24,18 @@ const search = createSlice({
     },
     setFilterConfig(state, action) {
       state.config = action.payload;
-      // Optionally reset filters that aren't in the new config?
-      // For now, let's just update the config.
     },
     resetFilters(state) {
       state.filters = {};
+    },
+    setFilterPreferences(state, action) {
+      const { path, visibleIds } = action.payload;
+      state.preferences[path] = visibleIds;
+      localStorage.setItem('bos_search_prefs', JSON.stringify(state.preferences));
     }
   }
 });
 
 export default search.reducer;
 
-export const { setQuery, setFilters, setFilterConfig, resetFilters } = search.actions;
+export const { setQuery, setFilters, setFilterConfig, resetFilters, setFilterPreferences } = search.actions;

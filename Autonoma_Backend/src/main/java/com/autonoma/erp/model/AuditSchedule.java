@@ -1,14 +1,16 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 
 @Entity
 @Table(name = "audit_schedules")
-@Data
+@Getter
+@Setter
 public class AuditSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,10 +55,19 @@ public class AuditSchedule {
     private String auditee;
 
     @Column(columnDefinition = "NVARCHAR(255)")
+    private String auditeeType;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String auditor;
 
     @Column(columnDefinition = "NVARCHAR(255)")
+    private String auditorType;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedBy;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
+    private String ncrApprovedByType;
 
     private String createdBy;
     @Temporal(TemporalType.TIMESTAMP)
@@ -97,10 +108,16 @@ public class AuditSchedule {
     public void setDepartment(String department) { this.department = department; }
     public String getAuditee() { return auditee; }
     public void setAuditee(String auditee) { this.auditee = auditee; }
+    public String getAuditeeType() { return auditeeType; }
+    public void setAuditeeType(String auditeeType) { this.auditeeType = auditeeType; }
     public String getAuditor() { return auditor; }
     public void setAuditor(String auditor) { this.auditor = auditor; }
+    public String getAuditorType() { return auditorType; }
+    public void setAuditorType(String auditorType) { this.auditorType = auditorType; }
     public String getNcrApprovedBy() { return ncrApprovedBy; }
     public void setNcrApprovedBy(String ncrApprovedBy) { this.ncrApprovedBy = ncrApprovedBy; }
+    public String getNcrApprovedByType() { return ncrApprovedByType; }
+    public void setNcrApprovedByType(String ncrApprovedByType) { this.ncrApprovedByType = ncrApprovedByType; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
     public Date getCreatedDate() { return createdDate; }

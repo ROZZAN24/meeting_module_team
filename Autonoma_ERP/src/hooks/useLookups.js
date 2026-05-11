@@ -29,9 +29,14 @@ export const useLookups = (lookupTypes = []) => {
           }
 
           const response = await axios.get(path);
-          // Store as camelCase (e.g., DEPARTMENTS -> departments)
-          const key = type.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
-          results[key] = response.data || [];
+          const data = response.data;
+          
+          // Store as camelCase plural (e.g., DEPARTMENTS -> departments, AUDIT_TYPE -> auditTypes)
+          let key = type.toLowerCase().replace(/_([a-z])/g, (g) => g[1].toUpperCase());
+          if (!key.endsWith('s')) key += 's';
+          
+          // Support both direct array and paginated response { content: [...] }
+          results[key] = Array.isArray(data) ? data : (data && Array.isArray(data.content) ? data.content : []);
         })
       );
       

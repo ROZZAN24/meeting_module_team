@@ -64,6 +64,18 @@ export const masters = {
           title: 'Designation Details',
           type: 'item',
           url: '/master/hr/designation'
+        },
+        {
+          id: 'master-hr-grade-details',
+          title: 'Grade Details',
+          type: 'item',
+          url: '/master/hr/grade'
+        },
+        {
+          id: 'master-hr-designation-level',
+          title: 'Designation Level',
+          type: 'item',
+          url: '/master/hr/desg-level'
         }
       ]
     },
@@ -145,7 +157,87 @@ export const sm = {
   caption: 'Sales & Marketing SM0000',
   type: 'group',
   icon: icons.IconBriefcase,
-  children: []
+  children: [
+    {
+      id: 'sm-ocr',
+      title: 'OCR',
+      type: 'collapse',
+      icon: icons.IconServerCog,
+      children: [
+        {
+          id: 'sm-enquiry-dashboard',
+          title: 'Enquiry Dashboard',
+          type: 'item',
+          url: '/sm/enquiry/dashboard',
+          icon: icons.IconDashboard
+        },
+        {
+          id: 'sm-customer-master',
+          title: 'Customer Master',
+          type: 'item',
+          url: '/sm/customers',
+          icon: icons.IconUsers
+        },
+        {
+          id: 'sm-vendor',
+          title: 'Vendor',
+          type: 'collapse',
+          icon: icons.IconTruckDelivery,
+          children: [
+            {
+              id: 'sm-supplier-master',
+              title: 'Supplier Master',
+              type: 'item',
+              url: '/sm/suppliers',
+              icon: icons.IconTruckDelivery
+            },
+            {
+              id: 'sm-subcontractor',
+              title: 'Sub Contractor',
+              type: 'item',
+              url: '/sm/sub-contractors',
+              icon: icons.IconTool
+            }
+          ]
+        },
+        {
+          id: 'sm-contact-master',
+          title: 'Contact Master',
+          type: 'item',
+          url: '/sm/contacts',
+          icon: icons.IconUsers
+        },
+        {
+          id: 'sm-enquiry',
+          title: 'Enquiry',
+          type: 'item',
+          url: '/sm/enquiries',
+          icon: icons.IconListCheck
+        },
+        {
+          id: 'sm-price-master',
+          title: 'Price Master',
+          type: 'item',
+          url: '/sm/price-master',
+          icon: icons.IconReport
+        },
+        {
+          id: 'sm-quotation',
+          title: 'Quotation',
+          type: 'item',
+          url: '/sm/quotations',
+          icon: icons.IconReport
+        },
+        {
+          id: 'sm-work-items',
+          title: 'Work Items',
+          type: 'item',
+          url: '/sm/work-items',
+          icon: icons.IconRocket
+        }
+      ]
+    }
+  ]
 };
 
 export const pp = {

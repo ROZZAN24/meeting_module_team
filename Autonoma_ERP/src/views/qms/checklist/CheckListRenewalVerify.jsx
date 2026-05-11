@@ -5,7 +5,9 @@ import {
   IconFileDownload,
   IconCheck,
   IconRefresh,
-  IconChecks
+  IconChecks,
+  IconX,
+  IconEye
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,22 +17,31 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
-import AddCheckListDialog from './AddCheckListDialog';
+import useLookups from 'hooks/useLookups';
+import { AddCheckListDialog } from './AddCheckListDialog';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { Tabs, Tab, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { API_PATHS } from 'utils/api-constants';
 import { BOSFileGallery } from 'ui-component/bos';
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'index', label: 'S.No', minWidth: 50 },
   { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
   { id: 'checkingPoint', label: 'Checking Point', minWidth: 200 },
   { id: 'category', label: 'Category', minWidth: 120 },
   { id: 'frequency', label: 'Frequency', minWidth: 120 },
-  { id: 'department', label: 'Dept', minWidth: 150 },
+  { id: 'department', label: 'Department', minWidth: 150 },
+  { id: 'photoRequired', label: 'Photo Required', minWidth: 120 },
+  { id: 'verificationRequired', label: 'Verification Required', minWidth: 150 },
+  { id: 'stockLink', label: 'Stock Link', minWidth: 100 },
+  { id: 'itemCode', label: 'Item Code', minWidth: 100 },
+  { id: 'qty', label: 'Qty', minWidth: 80 },
   { id: 'assignedTo', label: 'Assign To', minWidth: 120 },
   { id: 'checklistDate', label: 'Checklist Date', minWidth: 120 },
-  { id: 'actualFiles', label: 'Proof', minWidth: 80, align: 'center' },
+  { id: 'expiryDate', label: 'Expire Date', minWidth: 120 },
+  { id: 'carryForward', label: 'Carry Forward Count', minWidth: 150 },
+  { id: 'assignType', label: 'Assign Type', minWidth: 120 },
+  { id: 'nextDueDate', label: 'NextDue Date/Next Expire Date', minWidth: 200 },
   { id: 'status', label: 'Status', minWidth: 150 }
 ];
 
@@ -71,28 +82,25 @@ export default function CheckListRenewalVerify() {
   const globalQuery = useSelector((state) => state.search.query);
   const filters = useSelector((state) => state.search.filters);
 
+  const lookups = useLookups(['EMPLOYEES']);
+
   useEffect(() => {
     dispatch(setFilterConfig([
-      {
-        id: 'taskType', label: 'Task Type', type: 'select',
-        options: [
-          { label: 'All', value: 'All' },
-          { label: 'Mine', value: 'Mine' },
-          { label: 'Team', value: 'Team' },
-          { label: 'Company', value: 'Company' }
-        ],
-        defaultValue: 'All'
-      },
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))],
-        defaultValue: 'All'
-      },
+      { id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, options: [{ label: 'Mine', value: 'Mine' }, { label: 'Team', value: 'Team' }, { label: 'All', value: 'All' }], defaultValue: 'Mine' },
+      { id: 'status', label: 'Status', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...STATUS_OPTIONS.map(s => ({ label: s, value: s }))], defaultValue: 'All' },
+      { id: 'assignedTo', label: 'Assign To', type: 'select', isStarred: true, options: [{ label: 'All', value: 'All' }, ...(lookups.employees || []).map(e => ({ label: e.employeeName || `${e.firstName} ${e.lastName}`, value: e.employeeName || `${e.firstName} ${e.lastName}` }))], defaultValue: 'All' },
+      { id: 'seqNo', label: 'Seq No', type: 'text' },
+      { id: 'checkingPoint', label: 'Checking Point', type: 'text' },
+      { id: 'category', label: 'Category', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'Renewal', value: 'RENEWAL' }, { label: 'Check List', value: 'CHECK LIST' }], defaultValue: 'All' },
+      { id: 'frequency', label: 'Frequency', type: 'select', options: [{ label: 'All', value: 'All' }, { label: 'DAILY', value: 'DAILY' }, { label: 'WEEKLY', value: 'WEEKLY' }, { label: 'MONTHLY', value: 'MONTHLY' }, { label: 'YEARLY', value: 'YEARLY' }], defaultValue: 'All' },
+      { id: 'department', label: 'Department', type: 'text' },
+      { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ label: 'No', value: 'No' }, { label: 'Yes', value: 'Yes' }], defaultValue: 'No' },
       { id: 'fromDate', label: 'From Date', type: 'date' },
-      { id: 'toDate', label: 'To Date', type: 'date' }
+      { id: 'toDate', label: 'To Date', type: 'date' },
+      { id: 'searchBy', label: 'Search by', type: 'select', options: [{ label: 'Seq No', value: 'seqNo' }, { label: 'Checking Point', value: 'checkingPoint' }, { label: 'Category', value: 'category' }], defaultValue: 'checkingPoint' }
     ]));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  }, [dispatch, lookups.employees]);
 
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
@@ -101,8 +109,19 @@ export default function CheckListRenewalVerify() {
         // Fetch Execution Assignments
         const params = {
           page, size,
+          taskType: filters.taskType || 'Mine',
           status: filters.status !== 'All' ? filters.status : undefined,
-          searchValue: globalQuery || undefined
+          assignedTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
+          category: filters.category !== 'All' ? filters.category : undefined,
+          seqNo: filters.seqNo || undefined,
+          checkingPoint: filters.checkingPoint || undefined,
+          frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
+          department: filters.department || undefined,
+          fromDate: filters.considerDate === 'Yes' ? filters.fromDate : undefined,
+          toDate: filters.considerDate === 'Yes' ? filters.toDate : undefined,
+          searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
+          searchValue: globalQuery || undefined,
+          masterVerifyStatus: 'Verified'
         };
         const response = await axios.get('/api/qms/checklist/assignments', { params });
         setRows(response.data.content || []);
@@ -111,7 +130,14 @@ export default function CheckListRenewalVerify() {
         // Fetch Master Records (Dual Check)
         const params = {
           page, size,
-          verifyStatus: filters.status !== 'All' ? filters.status : undefined,
+          verifyStatus: (filters.status && filters.status !== 'All') ? filters.status : 'Verified',
+          assignedTo: filters.assignedTo !== 'All' ? filters.assignedTo : undefined,
+          category: filters.category !== 'All' ? filters.category : undefined,
+          seqNo: filters.seqNo || undefined,
+          checkingPoint: filters.checkingPoint || undefined,
+          frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
+          department: filters.department || undefined,
+          searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
           searchValue: globalQuery || undefined,
           dualCheck: 'YES'
         };
@@ -181,7 +207,9 @@ export default function CheckListRenewalVerify() {
     if (col.id === 'createdDate') return row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '-';
 
     if (col.id === 'status' || col.id === 'verifyStatus') {
-      const s = row.verifyStatus || row.status || 'Pending';
+      let s = row.verifyStatus || row.status || 'Pending';
+      if (typeof s === 'object' && s !== null) s = s.name || 'Pending';
+      
       let chipStatus = 'PENDING';
       if (s === 'Verified' || s === 'Accepted' || s === 'COMPLETED' || s === 'STARTED') chipStatus = 'ACTIVE';
       if (s === 'Rejected' || s === 'Missed' || s === 'UNRESOLVED') chipStatus = 'INACTIVE';
@@ -194,6 +222,14 @@ export default function CheckListRenewalVerify() {
     if (col.id === 'reminderDays') return data.reminderDays || '-';
     if (col.id === 'expiryDate') return data.expiryDate ? new Date(data.expiryDate).toLocaleDateString() : '-';
     if (col.id === 'stockLink') return data.stockLink || 'No';
+    if (col.id === 'photoRequired') return data.photoRequired || '-';
+    if (col.id === 'verificationRequired') return data.verificationRequired || '-';
+    if (col.id === 'itemCode') return data.itemCode || '-';
+    if (col.id === 'qty') return data.qty || '-';
+    if (col.id === 'carryForward') return row.carryForward || '-';
+    if (col.id === 'assignType') return row.assignType || '-';
+    if (col.id === 'nextDueDate') return data.nextDueDate ? new Date(data.nextDueDate).toLocaleDateString() : '-';
+
     if (col.id === 'createdBy') return data.createdBy || '-';
     if (col.id === 'verifiedBy') return data.verifiedBy || '-';
     if (col.id === 'verifiedDate') return data.verifiedDate ? new Date(data.verifiedDate).toLocaleDateString() : '-';
@@ -211,7 +247,7 @@ export default function CheckListRenewalVerify() {
             setPreviewOpen(true);
           }}
         >
-          <IconChecks size={18} />
+          <IconEye size={18} />
         </IconButton>
       );
     }
@@ -233,28 +269,6 @@ export default function CheckListRenewalVerify() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button
-            variant="contained"
-            color="error"
-             size="medium"
-            startIcon={<IconBan size={18} />}
-            onClick={() => setRejectDialogOpen(true)}
-            disabled={!selectedRow}
-            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Reject
-          </Button>
-          <Button
-            variant="contained"
-            color="success"
-            size="medium"
-            startIcon={<IconCheck size={18} />}
-            onClick={() => handleVerify('Verified')}
-            disabled={!selectedRow}
-            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
-          >
-            Verify
-          </Button>
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
             Export Excel
           </Button>
@@ -282,13 +296,38 @@ export default function CheckListRenewalVerify() {
         id="renewal-verify-table"
       />
 
-      <ExecutionVerifyDialog
-        open={dialogOpen}
-        handleClose={() => setDialogOpen(false)}
-        data={selectedRow}
-        onVerify={() => handleVerify('Verified')}
-        onReject={() => setRejectDialogOpen(true)}
-      />
+      {activeTab === 0 ? (
+        <ExecutionVerifyDialog
+          open={dialogOpen}
+          handleClose={() => setDialogOpen(false)}
+          data={selectedRow}
+          onVerify={() => handleVerify('Accepted')}
+          onReject={() => setRejectDialogOpen(true)}
+        />
+      ) : (
+        <AddCheckListDialog 
+          open={dialogOpen} 
+          handleClose={() => setDialogOpen(false)} 
+          initialData={selectedRow} 
+          readOnly={true}
+          onVerify={() => handleVerify('Accepted')}
+          onReject={() => setRejectDialogOpen(true)}
+          onSave={async (data) => {
+            try {
+              const payload = { 
+                ...data, 
+                createdBy: data.id ? data.createdBy : 'Current User',
+                updatedBy: 'Current User'
+              };
+              await axios.post('/api/qms/checklist', payload);
+              dispatch(openSnackbar({ open: true, message: 'Checklist saved successfully!', severity: 'success', variant: 'alert' }));
+              fetchAssignments();
+            } catch (err) {
+              dispatch(openSnackbar({ open: true, message: 'Failed to save', severity: 'error', variant: 'alert' }));
+            }
+          }}
+        />
+      )}
 
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>Reject {activeTab === 1 ? 'Master Record' : 'Assignment'}</DialogTitle>
@@ -315,7 +354,7 @@ export default function CheckListRenewalVerify() {
       <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4">Execution Proof (Actual Files)</Typography>
-          <IconButton onClick={() => setPreviewOpen(false)}><IconChecks size={20} /></IconButton>
+          <IconButton onClick={() => setPreviewOpen(false)}><IconX size={20} /></IconButton>
         </DialogTitle>
         <DialogContent sx={{ bgcolor: 'grey.50', p: 3 }}>
           <BOSFileGallery files={selectedRow?.actualFiles || []} isEditing={false} />

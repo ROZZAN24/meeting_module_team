@@ -7,6 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.HandlerMapping;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -24,12 +26,20 @@ public class FileController {
 
     public FileController() {
         try {
+            System.out.println("FileController Initialized. Current Dir: " + System.getProperty("user.dir"));
+            System.out.println("Uploads Root Path: " + root.toAbsolutePath());
             if (!Files.exists(root)) {
-                Files.createDirectory(root);
+                Files.createDirectories(root);
+                System.out.println("Created uploads directory at: " + root.toAbsolutePath());
             }
         } catch (IOException e) {
             throw new RuntimeException("Could not initialize folder for upload!");
         }
+    }
+
+    @GetMapping("/test")
+    public ResponseEntity<String> test() {
+        return ResponseEntity.ok("File Controller is ACTIVE. Root: " + root.toAbsolutePath());
     }
 
     @PostMapping("/upload")
@@ -43,13 +53,36 @@ public class FileController {
         }
     }
 
-    @GetMapping("/download/{filename:.+}")
-    public ResponseEntity<Resource> getFile(@PathVariable String filename) {
-        try {
-            Path file = root.resolve(filename);
-            Resource resource = new UrlResource(file.toUri());
+    @GetMapping("/download/{*filename}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
+        if (filename != null && filename.startsWith("/")) filename = filename.substring(1);
+        return getFileInternal(filename);
+    }
 
+    @GetMapping("/view/{*filename}")
+    public ResponseEntity<Resource> viewFile(@PathVariable String filename) {
+        if (filename != null && filename.startsWith("/")) filename = filename.substring(1);
+        return getFileInternal(filename);
+    }
+
+    private ResponseEntity<Resource> getFileInternal(String filename) {
+        try {
+            System.out.println("--- File Request Start ---");
+            System.out.println("Incoming filename: " + filename);
+            String decodedFilename = java.net.URLDecoder.decode(filename, java.nio.charset.StandardCharsets.UTF_8.name());
+            System.out.println("Decoded filename: " + decodedFilename);
+            
+            Path file = root.resolve(decodedFilename);
+            System.out.println("Absolute Path: " + file.toAbsolutePath());
+            
+            if (!Files.exists(file)) {
+                System.err.println("FILE NOT FOUND ON DISK: " + file.toAbsolutePath());
+                return ResponseEntity.status(404).body(null);
+            }
+
+            Resource resource = new UrlResource(file.toUri());
             if (resource.exists() || resource.isReadable()) {
+                System.out.println("Resource is valid and readable");
                 String contentType = Files.probeContentType(file);
                 if (contentType == null) {
                     contentType = "application/octet-stream";

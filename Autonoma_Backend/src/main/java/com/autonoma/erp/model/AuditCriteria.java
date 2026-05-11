@@ -10,38 +10,44 @@ public class AuditCriteria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "seqNo", columnDefinition = "NVARCHAR(50)")
     private String seqNo;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "auditType", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "clause", columnDefinition = "NVARCHAR(255)")
     private String clause;
     
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "criteriaText", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaText;
     
-    @Column(columnDefinition = "NVARCHAR(255)")
+    @Column(name = "department", columnDefinition = "NVARCHAR(255)")
     private String department;
 
-    @Column(columnDefinition = "NVARCHAR(20)")
+    @Column(name = "attachmentRequired", columnDefinition = "NVARCHAR(20)")
     private String attachmentRequired; // YES/NO
 
-    @Column(columnDefinition = "NVARCHAR(50)")
+    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "attachmentInfo", columnDefinition = "NVARCHAR(MAX)")
     private String attachmentInfo; // JSON string of file metadata
 
-    @Column(columnDefinition = "NVARCHAR(100)")
+    @Column(name = "level", columnDefinition = "NVARCHAR(100)")
     private String level; // L1,L2...
 
+    @Column(name = "createdBy")
     private String createdBy;
+
+    @Column(name = "createdDate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate = new Date();
     
+    @Column(name = "updatedBy")
     private String updatedBy;
+
+    @Column(name = "updatedDate")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

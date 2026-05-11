@@ -7,6 +7,8 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
 public interface MasterChecklistRepository extends JpaRepository<MasterChecklist, Long>, JpaSpecificationExecutor<MasterChecklist> {
-    @Query(value = "SELECT COALESCE(MAX(CAST(seq_no AS INT)), 0) FROM QMS_MASTER_CHECKLIST", nativeQuery = true)
-    Integer findMaxSeqNo();
+    java.util.Optional<MasterChecklist> findFirstByOrderBySeqNoDesc();
+    
+    java.util.List<MasterChecklist> findBySeqNoAndIdNot(String seqNo, Long id);
+    java.util.List<MasterChecklist> findByStatusAndVerifyStatus(String status, String verifyStatus);
 }

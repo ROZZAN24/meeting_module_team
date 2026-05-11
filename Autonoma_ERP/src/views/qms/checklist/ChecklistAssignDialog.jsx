@@ -20,12 +20,28 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const lookups = useLookups(['EMPLOYEES']);
-  const employeeList = (lookups.employees || []).map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
+  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS']);
+  
+  // Get allowed department names for this checklist
+  const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
+  
+  // Filter employees whose department matches one of the checklist's departments
+  const filteredEmployees = (lookups.employees || []).filter(emp => {
+    if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
+    const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
+    return empDept && allowedDeptNames.includes(empDept.departmentName);
+  });
+
+  const employeeOptions = filteredEmployees.map(e => ({
+    label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})${e.status !== 'Active' ? ' - INACTIVE' : ''}`,
+    value: e.employeeName || (e.firstName + ' ' + e.lastName),
+    status: e.status
+  }));
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -65,20 +81,48 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       dispatch(openSnackbar({ open: true, message: 'Please select Assign To and Assign Type', severity: 'warning', variant: 'alert' }));
       return;
     }
+
+    // Frontend duplicate check to avoid console errors
+    const isDuplicate = assignments.some(a => a.assignedTo === formData.assignTo);
+    if (isDuplicate && !formData.id) {
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Duplicate assignment for this person!', 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
+      return;
+    }
     
     try {
-      await axios.post(`${API_PATHS.QMS.CHECKLIST}/assign`, {
+      const res = await axios.post(`${API_PATHS.QMS.CHECKLIST}/assign`, {
         id: formData.id,
         checklistId: checklistId,
         assignedTo: formData.assignTo,
         assignType: formData.assignType,
         assignedBy: 'Current User' // TODO: Get from auth context
       });
+
+      if (res.data?.remarks === 'DUPLICATE_ASSIGNMENT') {
+        dispatch(openSnackbar({ 
+          open: true, 
+          message: 'Duplicate assignment for this person!', 
+          severity: 'error', 
+          variant: 'alert' 
+        }));
+        return;
+      }
+
       dispatch(openSnackbar({ open: true, message: formData.id ? 'Assignment updated!' : 'Task assigned!', severity: 'success', variant: 'alert' }));
       setFormData({ assignTo: '', assignType: 'PRIMARY', id: null });
       fetchAssignments();
     } catch (err) {
-      dispatch(openSnackbar({ open: true, message: 'Assignment failed', severity: 'error', variant: 'alert' }));
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Assignment failed', 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
     }
   };
 
@@ -117,22 +161,27 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     });
   };
 
-  const handleDeleteAssignment = async (id) => {
-    if (!window.confirm('Are you sure you want to remove this assignment?')) return;
+  const handleDeleteAssignment = async () => {
+    if (!selectedAssignmentId) return;
     try {
-      await axios.delete(`${API_PATHS.QMS.CHECKLIST}/assignment/${id}`);
+      await axios.delete(`${API_PATHS.QMS.CHECKLIST}/assignment/${selectedAssignmentId}`);
       dispatch(openSnackbar({ open: true, message: 'Assignment removed', severity: 'success', variant: 'alert' }));
       fetchAssignments();
+      setDeleteDialogOpen(false);
+      setSelectedAssignmentId(null);
     } catch (err) {
       dispatch(openSnackbar({ open: true, message: 'Delete failed', severity: 'error', variant: 'alert' }));
     }
   };
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: theme.palette.primary.light, color: theme.palette.primary.dark }}>
+      <DialogTitle component="div" sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: theme.palette.primary.light, color: theme.palette.primary.dark }}>
         <IconUsersGroup size={24} />
-        <Typography variant="h3" color="inherit">Assign Checklist - {initialData?.seqNo}</Typography>
+        <Typography component="span" variant="h3" color="inherit">Assign Checklist - {initialData?.seqNo}</Typography>
       </DialogTitle>
       <DialogContent sx={{ p: 3, pt: '24px !important' }}>
         <Stack spacing={3}>
@@ -151,8 +200,8 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
               >
-                {employeeList.map(emp => (
-                  <MenuItem key={emp} value={emp}>{emp}</MenuItem>
+                {employeeOptions.map(opt => (
+                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </BOSTextField>
 
@@ -174,7 +223,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onClick={handleAssign}
                 sx={{ height: 40, mt: 2 }}
               >
-                Update
+                {formData.id ? 'Update' : 'Assign'}
               </Button>
             </Box>
           </Box>
@@ -191,7 +240,10 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               onPageChange={() => {}}
               onSizeChange={() => {}}
               onEditRow={handleEditAssignment}
-              onDeleteRow={(row) => handleDeleteAssignment(row.id)}
+              onDeleteRow={(row) => {
+                setSelectedAssignmentId(row.id);
+                setDeleteDialogOpen(true);
+              }}
               showActions={true}
               renderCell={(col, row) => {
                 if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' || row.status === 'Started' ? 'ACTIVE' : 'INACTIVE')} />;
@@ -200,6 +252,15 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
             />
           </Box>
         </Stack>
+
+        <ConfirmDeleteDialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDeleteAssignment}
+          title="Remove Assignment"
+          message="Are you sure you want to remove this employee assignment? This action cannot be undone."
+          itemName={assignments.find(a => a.id === selectedAssignmentId)?.assignedTo || 'Assignment'}
+        />
       </DialogContent>
       <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
         <Button onClick={onClose} sx={btnCancel}>Close</Button>

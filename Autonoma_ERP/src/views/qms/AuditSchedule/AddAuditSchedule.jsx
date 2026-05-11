@@ -76,15 +76,18 @@ export default function AddAuditSchedule() {
     endTime: '17:00',
     department: '',
     auditee: '',
+    auditeeType: '',
     auditor: '',
-    ncrApprovedBy: ''
+    auditorType: '',
+    ncrApprovedBy: '',
+    ncrApprovedByType: ''
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
   const { 
-    auditType: auditTypes = [], 
+    auditTypes = [], 
     departments = [], 
-    auditCriteria: masterCriteria = [], 
+    auditCriterias: masterCriteria = [], 
     employees = [] 
   } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES']);
 
@@ -93,15 +96,12 @@ export default function AddAuditSchedule() {
   const [selectedCriteriaIds, setSelectedCriteriaIds] = useState([]);
 
   useEffect(() => {
-    fetchDropdowns();
     if (isEditing) {
       fetchSchedule();
     } else {
       generateScheduleNo();
     }
   }, [id, isEditing]);
-
-  // Remove manual fetch as useLookups handles it now
 
   const generateScheduleNo = async () => {
     try {
@@ -128,8 +128,11 @@ export default function AddAuditSchedule() {
         endTime: data.endTime || '17:00',
         department: data.department || '',
         auditee: data.auditee || '',
+        auditeeType: data.auditeeType || '',
         auditor: data.auditor || '',
-        ncrApprovedBy: data.ncrApprovedBy || ''
+        auditorType: data.auditorType || '',
+        ncrApprovedBy: data.ncrApprovedBy || '',
+        ncrApprovedByType: data.ncrApprovedByType || ''
       });
       setCriteriaList(data.criteriaList || []);
     } catch (error) {
@@ -188,8 +191,11 @@ export default function AddAuditSchedule() {
         endTime: '17:00',
         department: '',
         auditee: '',
+        auditeeType: '',
         auditor: '',
-        ncrApprovedBy: ''
+        auditorType: '',
+        ncrApprovedBy: '',
+        ncrApprovedByType: ''
       });
       setCriteriaList([]);
       generateScheduleNo();
@@ -227,7 +233,7 @@ export default function AddAuditSchedule() {
     return masterCriteria.filter((c) => {
       const criteriaTypes = c.auditType ? c.auditType.split(', ') : [];
       const matchesType = selectedTypes.length === 0 || selectedTypes.some((st) => criteriaTypes.includes(st));
-      const isAlreadyAdded = criteriaList.some((cl) => cl.criteriaDetails === c.criteriaText);
+      const isAlreadyAdded = (Array.isArray(criteriaList) ? criteriaList : []).some((cl) => cl.criteriaDetails === c.criteriaText);
       return matchesType && !isAlreadyAdded;
     });
   }, [masterCriteria, formData.auditType, criteriaList]);
@@ -282,7 +288,7 @@ export default function AddAuditSchedule() {
                 getOptionLabel={(option) => option.departmentName || ''}
                 value={departments.find((d) => d.departmentName === formData.department) || null}
                 onChange={(event, newValue) => {
-                  setFormData({ ...formData, department: newValue ? newValue.departmentName : '' });
+                  setFormData({ ...formData, department: newValue ? newValue.departmentName : '', auditee: '' }); // Reset auditee when dept changes
                 }}
                 renderInput={(params) => (
                   <BOSTextField
@@ -305,7 +311,7 @@ export default function AddAuditSchedule() {
                 disableCloseOnSelect
                 options={auditTypes}
                 getOptionLabel={(option) => option.auditType || ''}
-                value={auditTypes.filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
+                value={(Array.isArray(auditTypes) ? auditTypes : []).filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
                 onChange={(event, newValue) => {
                   setFormData({ ...formData, auditType: newValue.map((v) => v.auditType).join(',') });
                 }}
@@ -404,15 +410,26 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.warning.main} />} title="Personnel Information">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
               {[
-                { role: 'AUDITEE', field: 'auditee', label: 'Auditee' },
-                { role: 'AUDITOR', field: 'auditor', label: 'Auditor' },
-                { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', label: 'NCR Approved By' }
+                { role: 'AUDITEE', field: 'auditee', typeField: 'auditeeType', label: 'Auditee' },
+                { role: 'AUDITOR', field: 'auditor', typeField: 'auditorType', label: 'Auditor' },
+                { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', typeField: 'ncrApprovedByType', label: 'NCR Approved By' }
               ].map((person) => {
                 const value = formData[person.field];
                 const name = value ? value.split(' - ')[0] : '-';
                 const code = value ? value.split(' - ')[1] || '-' : '-';
 
-                const employeeOptions = employees.map(emp => `${emp.employeeName || (emp.firstName + ' ' + emp.lastName)} - ${emp.empCode || emp.employeeCode}`);
+                const filteredEmployees = employees.filter(emp => {
+                  if (person.field === 'auditor') return emp.isAuditor === 'YES';
+                  if (person.field === 'auditee') {
+                    if (!formData.department) return false;
+                    const empDept = departments.find(d => String(d.id) === String(emp.departmentId));
+                    return emp.isAuditee === 'YES' && empDept?.departmentName === formData.department;
+                  }
+                  if (person.field === 'ncrApprovedBy') return emp.isNcrApprover === 'YES';
+                  return true;
+                });
+
+                const employeeOptions = filteredEmployees.map(emp => `${emp.employeeName || (emp.firstName + ' ' + emp.lastName)} - ${emp.empCode || emp.employeeCode}`);
 
                 return (
                   <Card key={person.role} sx={{
@@ -441,21 +458,39 @@ export default function AddAuditSchedule() {
                       <Box sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.100', px: 2.5, py: 0.5, borderRadius: '16px', mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap>{code !== '-' ? code : 'No Code'}</Typography>
                       </Box>
-                      <BOSTextField
-                        select
-                        required
-                        label={`Select ${person.label}`}
-                        name={person.field}
-                        value={formData[person.field]}
-                        onChange={handleChange}
-                        error={!!errors[person.field]}
-                        helperText={errors[person.field]}
-                      >
-                        <MenuItem value="">-Select-</MenuItem>
-                        {employeeOptions.map((opt) => (
-                          <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                        ))}
-                      </BOSTextField>
+                      <Stack spacing={2} sx={{ width: '100%' }}>
+                        <BOSTextField
+                          select
+                          required
+                          label={`Select ${person.label}`}
+                          name={person.field}
+                          value={formData[person.field]}
+                          onChange={handleChange}
+                          error={!!errors[person.field]}
+                          helperText={errors[person.field]}
+                        >
+                          <MenuItem value="">-Select-</MenuItem>
+                          {employeeOptions.map((opt) => (
+                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                          ))}
+                        </BOSTextField>
+                        
+                        <BOSTextField
+                          select
+                          required
+                          label={`${person.label} Type`}
+                          name={person.typeField}
+                          value={formData[person.typeField]}
+                          onChange={handleChange}
+                          error={!!errors[person.typeField]}
+                          helperText={errors[person.typeField]}
+                        >
+                          <MenuItem value="">-Select Type-</MenuItem>
+                          {auditTypes.map((type) => (
+                            <MenuItem key={type.auditType} value={type.auditType}>{type.auditType}</MenuItem>
+                          ))}
+                        </BOSTextField>
+                      </Stack>
                     </CardContent>
                   </Card>
                 );

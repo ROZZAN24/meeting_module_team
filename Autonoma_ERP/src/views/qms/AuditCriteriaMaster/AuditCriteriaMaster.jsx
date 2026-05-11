@@ -124,12 +124,12 @@ export default function AuditCriteriaMaster() {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Audit Type': r.auditType,
-      Standard: r.standard,
-      Type: r.criteriaType,
-      Description: r.description,
-      'Created User': r.createdBy,
+      'Clause': r.clause,
+      'Criteria': r.criteriaText,
+      'Department': r.department,
+      'Created User': r.createdBy || 'Admin',
       'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
-      'Updated User': r.updatedBy,
+      'Updated User': r.updatedBy || 'Admin',
       'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
       Status: r.status
     }));
@@ -172,6 +172,7 @@ export default function AuditCriteriaMaster() {
       );
     }
     if (col.id === 'status') return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
+    if (col.id === 'createdBy' || col.id === 'updatedBy') return val || 'Admin';
     if (col.id.toLowerCase().includes('date')) {
       if (!val) return '-';
       try { return format(new Date(val), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }

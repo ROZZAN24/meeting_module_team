@@ -32,6 +32,7 @@ export default function BOSDataTable({
   onDeleteRow,
   showActions = true,
   renderCell,
+  footerActions,
   sx = {},
   id
 }) {
@@ -52,6 +53,9 @@ export default function BOSDataTable({
       return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
     }
     if (col.id.toLowerCase().includes('date')) return formatDate(val);
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
     return val ?? '-';
   };
 
@@ -151,7 +155,20 @@ export default function BOSDataTable({
           </TableBody>
         </Table>
       </TableContainer>
-      <Box sx={{ p: 0.5, display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider' }}>
+      <Box sx={{ 
+        p: 1.5, 
+        display: 'flex', 
+        alignItems: 'center',
+        justifyContent: 'space-between', 
+        borderTop: '1px solid', 
+        borderColor: 'divider',
+        bgcolor: isDark ? 'background.default' : 'grey.50',
+        borderBottomLeftRadius: '16px',
+        borderBottomRightRadius: '16px'
+      }}>
+        <Box sx={{ flexGrow: 1 }}>
+          {footerActions}
+        </Box>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
@@ -160,6 +177,7 @@ export default function BOSDataTable({
           page={page}
           onPageChange={(e, p) => onPageChange(p)}
           onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
+          sx={{ border: 'none' }}
         />
       </Box>
     </>
@@ -182,5 +200,6 @@ BOSDataTable.propTypes = {
   onDeleteRow: PropTypes.func,
   showActions: PropTypes.bool,
   renderCell: PropTypes.func,
+  footerActions: PropTypes.node,
   id: PropTypes.string
 };
