@@ -10,6 +10,7 @@ export const API_PATHS = {
   // HRM Module
   HRM: {
     DEPARTMENTS: `${API_BASE}/hrm/departments`,
+    ACTIVE_DEPARTMENTS: `${API_BASE}/hrm/departments/active`,
     DESIGNATIONS: `${API_BASE}/hrm/designations`,
     CATEGORIES: `${API_BASE}/hrm/categories`,
     LEVELS: `${API_BASE}/hrm/levels`,

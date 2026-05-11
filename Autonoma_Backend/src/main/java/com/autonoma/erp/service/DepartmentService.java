@@ -18,6 +18,10 @@ public class DepartmentService {
         return departmentRepository.findAll();
     }
 
+    public List<Department> getActiveDepartments() {
+        return departmentRepository.findByStatus("Active");
+    }
+
     public Optional<Department> getDepartmentById(Long id) {
         return departmentRepository.findById(id);
     }

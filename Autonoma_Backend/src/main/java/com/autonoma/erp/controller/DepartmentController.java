@@ -38,6 +38,12 @@ public class DepartmentController {
         return departmentService.getAllDepartments();
     }
 
+    @Operation(summary = "Get all active departments")
+    @GetMapping("/active")
+    public List<Department> getActiveDepartments() {
+        return departmentService.getActiveDepartments();
+    }
+
     @PostMapping
     public ResponseEntity<Department> saveDepartment(@RequestBody Department department) {
         return ResponseEntity.ok(departmentService.saveDepartment(department));

@@ -15,4 +15,6 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
 
     @org.springframework.data.jpa.repository.Query("SELECT MAX(d.departmentNo) FROM Department d")
     java.util.Optional<Integer> findMaxDepartmentNo();
+    
+    java.util.List<Department> findByStatus(String status);
 }

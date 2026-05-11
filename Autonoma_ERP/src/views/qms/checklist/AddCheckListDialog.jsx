@@ -82,9 +82,9 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
-  const lookups = useLookups(['DEPARTMENTS', 'EMPLOYEES']);
-  const departmentList = (lookups.departments || []).map(d => (d.departmentName || '').toUpperCase());
-  
+  const lookups = useLookups(['ACTIVE_DEPARTMENTS', 'EMPLOYEES']);
+  const departmentList = (lookups.activeDepartments || []).map(d => (d.departmentName || '').toUpperCase());
+
   const filteredEmployees = useMemo(() => {
     if (!lookups.employees) return [];
     if (!formData.department || formData.department.length === 0) return lookups.employees;
@@ -248,7 +248,7 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
           });
           serverName = res.data; // Server filename
         }
-        
+
         // Append docDetails metadata using pipe separator
         return fileObj.docDetails ? `${serverName}|${fileObj.docDetails}` : serverName;
       };
@@ -311,9 +311,9 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
         (onVerify || onReject) && !isEditing && (
           <Box sx={{ display: 'flex', gap: 1.5 }}>
             {onReject && (
-              <Button 
-                variant="contained" 
-                color="error" 
+              <Button
+                variant="contained"
+                color="error"
                 onClick={onReject}
                 startIcon={<IconBan size={20} />}
                 sx={{ borderRadius: '8px', fontWeight: 600 }}
@@ -322,9 +322,9 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
               </Button>
             )}
             {onVerify && (
-              <Button 
-                variant="contained" 
-                color="success" 
+              <Button
+                variant="contained"
+                color="success"
                 onClick={onVerify}
                 startIcon={<IconChecks size={20} />}
                 sx={{ borderRadius: '8px', fontWeight: 600 }}
@@ -336,7 +336,7 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
         )
       }
       title={
-        initialData?.id 
+        initialData?.id
           ? (initialData?.verifyStatus === 'Verified' ? `Amend Checklist - ${initialData.seqNo}` : `Edit Checklist - ${initialData.seqNo}`)
           : 'Add New Check List'
       }
@@ -497,19 +497,19 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
                 </BOSTextField>
                 <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} />
               </Box>
-              
+
               {isEditing && initialData?.id && initialData?.verifyStatus === 'Verified' && (
                 <Box sx={{ mt: 1, p: 2, border: '1px solid', borderColor: 'warning.light', borderRadius: 1, bgcolor: 'warning.lighter' }}>
                   <Typography variant="subtitle2" color="warning.dark" sx={{ mb: 1, fontWeight: 'bold' }}>
                     Amendment Required: This checklist is already verified. Any changes will create a new version.
                   </Typography>
-                  <BOSTextField 
+                  <BOSTextField
                     fullWidth
-                    label="Amendment Reason" 
-                    name="amendmentReason" 
-                    value={formData.amendmentReason} 
-                    onChange={handleChange} 
-                    required 
+                    label="Amendment Reason"
+                    name="amendmentReason"
+                    value={formData.amendmentReason}
+                    onChange={handleChange}
+                    required
                     placeholder="Describe why you are amending this checklist..."
                     color="warning"
                   />
@@ -560,7 +560,7 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
               </Box>
 
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Uploaded Files</Typography>
-              <BOSFileGallery 
+              <BOSFileGallery
                 files={uploadedFiles}
                 onRemove={(idx) => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))}
                 isEditing={isEditing}
@@ -570,7 +570,7 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
               {scannedFiles.length > 0 && (
                 <>
                   <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>Scanned Files</Typography>
-                  <BOSFileGallery 
+                  <BOSFileGallery
                     files={scannedFiles}
                     onRemove={(idx) => setScannedFiles(prev => prev.filter((_, i) => i !== idx))}
                     isEditing={isEditing}
