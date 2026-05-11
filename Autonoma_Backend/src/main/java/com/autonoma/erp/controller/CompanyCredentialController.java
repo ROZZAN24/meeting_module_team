@@ -56,7 +56,9 @@ public class CompanyCredentialController {
     @PostMapping("/create")
     public ResponseEntity<CompanyCredential> create(@RequestBody CompanyCredential company) {
         company.setCreatedDate(new Date());
-        company.setCreatedBy(getCurrentUserId());
+        if (company.getCreatedBy() == null || company.getCreatedBy().isEmpty()) {
+            company.setCreatedBy(getCurrentUserId());
+        }
         CompanyCredential saved = service.save(company);
         return ResponseEntity.ok(saved);
     }
@@ -91,7 +93,11 @@ public class CompanyCredentialController {
             if (details.getLogInBgFileName() != null && !details.getLogInBgFileName().isEmpty()) {
                 existing.setLogInBgFileName(details.getLogInBgFileName());
             }
-            existing.setUpdatedBy(getCurrentUserId());
+            if (details.getUpdatedBy() != null && !details.getUpdatedBy().isEmpty()) {
+                existing.setUpdatedBy(details.getUpdatedBy());
+            } else {
+                existing.setUpdatedBy(getCurrentUserId());
+            }
             existing.setUpdatedDate(new Date());
             return ResponseEntity.ok(service.save(existing));
         }

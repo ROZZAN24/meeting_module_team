@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
+import com.autonoma.erp.service.UserSessionService;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -30,16 +32,19 @@ public class AuthController {
     @Autowired
     private CompanyCredentialService companyService;
 
+    @Autowired
+    private UserSessionService userSessionService;
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         // Find user by userId
-        Optional<UserCredential> userOpt = userRepository.findByUserId(request.getUsername());
+        Optional<UserCredential> userOpt = userRepository.findByUserId(loginRequest.getUsername());
 
         if (userOpt.isPresent()) {
             UserCredential user = userOpt.get();
 
             // Validate Password
-            if (passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            if (passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
 
                 // Validate Status (assuming 1 is Active)
                 if (user.getStatus() != null && user.getStatus() != 1) {
@@ -66,6 +71,9 @@ public class AuthController {
                 }
 
                 String token = jwtService.generateToken(user.getUserId());
+
+                // Record Login Session
+                userSessionService.recordLogin(user.getUserId(), request, request.getHeader("User-Agent"));
 
                 Map<String, Object> response = new HashMap<>();
                 response.put("serviceToken", token);
@@ -163,6 +171,15 @@ public class AuthController {
             return ResponseEntity.ok("Admin password updated to encrypted 'admin'");
         }
         return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestBody Map<String, String> body) {
+        String userId = body.get("userId");
+        if (userId != null) {
+            userSessionService.recordLogout(userId);
+        }
+        return ResponseEntity.ok().build();
     }
 }
 

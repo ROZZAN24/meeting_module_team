@@ -21,26 +21,25 @@ import {
   Fade,
   InputAdornment,
   TextField,
-  TablePagination
+  TablePagination,
+  alpha
 } from '@mui/material';
 import {
   IconDeviceFloppy,
-  IconShieldLock,
   IconUser,
   IconCheck,
   IconX,
-  IconLayout2
+  IconCopy,
+  IconLayoutGrid
 } from '@tabler/icons-react';
+import { useSelector, useDispatch } from 'react-redux';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
-import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig, setFilters, resetFilters } from 'store/slices/search';
-import { BOSTextField } from 'ui-component/bos';
+import { setFilterConfig, resetFilters } from 'store/slices/search';
 
-// Search Configuration for this page
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
 const userAccessSearchConfig = [
@@ -53,6 +52,7 @@ const userAccessSearchConfig = [
 const UserAccess = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const isDark = theme.palette.mode === 'dark';
 
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
@@ -60,31 +60,20 @@ const UserAccess = () => {
   const [authData, setAuthData] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Get global search query and filters from Redux
   const searchQuery = useSelector((state) => state.search.query);
-  const searchFilters = useSelector((state) => state.search.filters);
 
-  // Pagination state
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
 
   useEffect(() => {
     fetchUsers();
-    // Set page-specific search filters
     dispatch(setFilterConfig(userAccessSearchConfig));
     dispatch(resetFilters());
-
     return () => {
-      // Clear filters on unmount
       dispatch(setFilterConfig(null));
       dispatch(resetFilters());
     };
   }, [dispatch]);
-
-  // Reset page when search query or filters change
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery, searchFilters]);
 
   const fetchUsers = async () => {
     try {
@@ -98,18 +87,12 @@ const UserAccess = () => {
   const fetchAuthData = async (userId) => {
     if (!userId) return;
     setLoading(true);
-    setPage(0);
     try {
       const res = await axios.get(`/api/user-page-auth/${userId}`);
       setAuthData(res.data);
     } catch (error) {
       console.error('Failed to fetch auth data', error);
-      dispatch(openSnackbar({
-        open: true,
-        message: 'Failed to fetch authorization data',
-        variant: 'alert',
-        severity: 'error'
-      }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to fetch authorization data', variant: 'alert', severity: 'error' }));
     } finally {
       setLoading(false);
     }
@@ -121,53 +104,6 @@ const UserAccess = () => {
     fetchAuthData(userId);
   };
 
-  const handleCopyPermissions = async () => {
-    if (!sourceUser || !selectedUser) return;
-    setLoading(true);
-    try {
-      const res = await axios.get(`/api/user-page-auth/${sourceUser}`);
-      const sourceAuth = res.data;
-
-      // Map source permissions to current authData by pageId
-      const newData = authData.map(item => {
-        const sourceItem = sourceAuth.find(s => s.pageId === item.pageId);
-        if (sourceItem) {
-          return {
-            ...item,
-            enable: sourceItem.enable,
-            readAcs: sourceItem.readAcs,
-            write: sourceItem.write,
-            deleteAcs: sourceItem.deleteAcs,
-            export: sourceItem.export,
-            approval: sourceItem.approval,
-            manager: sourceItem.manager,
-            additional1: sourceItem.additional1,
-            additional2: sourceItem.additional2
-          };
-        }
-        return item;
-      });
-
-      setAuthData(newData);
-      dispatch(openSnackbar({
-        open: true,
-        message: `Permissions copied from ${sourceUser}. Review and save changes.`,
-        variant: 'alert',
-        severity: 'info'
-      }));
-    } catch (error) {
-      console.error('Copy failed', error);
-      dispatch(openSnackbar({
-        open: true,
-        message: 'Failed to copy permissions',
-        variant: 'alert',
-        severity: 'error'
-      }));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCheckboxChange = (idx, field) => {
     const newData = [...authData];
     newData[idx][field] = newData[idx][field] === 1 ? 0 : 1;
@@ -175,10 +111,7 @@ const UserAccess = () => {
   };
 
   const handleSelectAll = (field, checked) => {
-    const newData = authData.map(item => ({
-      ...item,
-      [field]: checked ? 1 : 0
-    }));
+    const newData = authData.map(item => ({ ...item, [field]: checked ? 1 : 0 }));
     setAuthData(newData);
   };
 
@@ -189,32 +122,16 @@ const UserAccess = () => {
     if (!selectedUser) return;
     try {
       await axios.post('/api/user-page-auth/save-all', authData);
-      dispatch(openSnackbar({
-        open: true,
-        message: 'All authorizations saved successfully',
-        variant: 'alert',
-        severity: 'success'
-      }));
+      dispatch(openSnackbar({ open: true, message: 'Saved successfully', variant: 'alert', severity: 'success' }));
     } catch (error) {
       console.error('Save failed', error);
-      dispatch(openSnackbar({
-        open: true,
-        message: 'Failed to save authorizations',
-        variant: 'alert',
-        severity: 'error'
-      }));
     }
   };
 
   const handleSaveRow = async (row) => {
     try {
       await axios.post('/api/user-page-auth/save-all', [row]);
-      dispatch(openSnackbar({
-        open: true,
-        message: `Saved access for ${row.page?.pageName}`,
-        variant: 'alert',
-        severity: 'success'
-      }));
+      dispatch(openSnackbar({ open: true, message: `Saved ${row.page?.pageName}`, variant: 'alert', severity: 'success' }));
     } catch (error) {
       console.error('Row save failed', error);
     }
@@ -222,372 +139,277 @@ const UserAccess = () => {
 
   const filteredData = useMemo(() => {
     return authData.filter(item => {
-      const query = searchQuery.toLowerCase();
-
-      // Global keyword search
-      const matchesKeyword = (
-        item.page?.pageName?.toLowerCase().includes(query) ||
-        item.page?.module?.modName?.toLowerCase().includes(query) ||
-        item.page?.subModule?.subModName?.toLowerCase().includes(query) ||
-        item.page?.pageCode?.toLowerCase().includes(query) ||
-        item.pageId?.toString().includes(query)
-      );
-
-      // Advanced field filters
-      const moduleFilter = searchFilters.module?.toLowerCase() || '';
-      const subModuleFilter = searchFilters.subModule?.toLowerCase() || '';
-      const pageNameFilter = searchFilters.pageName?.toLowerCase() || '';
-      const pageCodeFilter = searchFilters.pageCode?.toLowerCase() || '';
-
-      const matchesModule = !moduleFilter || item.page?.module?.modName?.toLowerCase().includes(moduleFilter);
-      const matchesSubModule = !subModuleFilter || item.page?.subModule?.subModName?.toLowerCase().includes(subModuleFilter);
-      const matchesPageName = !pageNameFilter || item.page?.pageName?.toLowerCase().includes(pageNameFilter);
-      const matchesPageCode = !pageCodeFilter || item.page?.pageCode?.toLowerCase().includes(pageCodeFilter);
-
-      return matchesKeyword && matchesModule && matchesSubModule && matchesPageName && matchesPageCode;
+      const query = (searchQuery || '').toLowerCase();
+      return item.page?.pageName?.toLowerCase().includes(query) || item.page?.module?.modName?.toLowerCase().includes(query);
     });
-  }, [authData, searchQuery, searchFilters]);
+  }, [authData, searchQuery]);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+  const paginatedData = useMemo(() => filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage), [filteredData, page, rowsPerPage]);
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  const permissionHeaders = [
+    { id: 'enable', label: 'ENABLE', color: '#2196f3' },
+    { id: 'readAcs', label: 'READ', color: '#4caf50' },
+    { id: 'write', label: 'WRITE', color: '#ffc107' },
+    { id: 'deleteAcs', label: 'DELETE', color: '#f44336' },
+    { id: 'export', label: 'EXPORT', color: '#673ab7' },
+    { id: 'approval', label: 'APPROVAL', color: '#00bcd4' },
+    { id: 'manager', label: 'MANAGER', color: '#78909c' },
+    { id: 'additional1', label: 'ADD 1', color: '#b0bec5' },
+    { id: 'additional2', label: 'ADD 2', color: '#b0bec5' }
+  ];
 
-  const paginatedData = useMemo(() => {
-    return filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  }, [filteredData, page, rowsPerPage]);
-
-  const PermissionHeader = ({ label, field, color }) => (
+  const PermissionHeaderCell = ({ header }) => (
     <TableCell align="center" sx={{
-      fontWeight: 700,
-      color: color || theme.palette.text.primary,
-      bgcolor: color ? (color + '10') : 'inherit',
-      borderBottom: '2px solid',
-      borderColor: color || 'divider',
-      minWidth: 100
+      p: 0,
+      minWidth: 85,
+      bgcolor: alpha(header.color, 0.02),
+      borderTop: `3px solid ${header.color}`,
+      borderBottom: `1px solid ${alpha(header.color, 0.2)}`,
+      height: 60
     }}>
-      <Stack direction="column" alignItems="center" spacing={0.5}>
+      <Stack direction="column" alignItems="center" sx={{ py: 1 }}>
         <Checkbox
           size="small"
-          indeterminate={isSomeChecked(field)}
-          checked={isAllChecked(field)}
-          onChange={(e) => handleSelectAll(field, e.target.checked)}
-          sx={{
-            p: 0,
-            color: color || 'inherit',
-            '&.Mui-checked': { color: color || 'inherit' },
-            '&.MuiCheckbox-indeterminate': { color: color || 'inherit' }
-          }}
+          checked={isAllChecked(header.id)}
+          indeterminate={isSomeChecked(header.id)}
+          onChange={(e) => handleSelectAll(header.id, e.target.checked)}
+          sx={{ color: header.color, '&.Mui-checked': { color: header.color }, '&.MuiCheckbox-indeterminate': { color: header.color }, p: 0.2 }}
         />
-        <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
-          {label}
-        </Typography>
+        <Typography variant="caption" sx={{ fontWeight: 800, color: '#333', fontSize: '0.6rem', textTransform: 'uppercase' }}>{header.label}</Typography>
       </Stack>
     </TableCell>
   );
 
+  const selectedUserInfo = useMemo(() => users.find(u => u.userId === selectedUser), [users, selectedUser]);
+  const sourceUserInfo = useMemo(() => users.find(u => u.userId === sourceUser), [users, sourceUser]);
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-      {/* Header Selection Card */}
-      <MainCard sx={{
-        backgroundImage: `linear-gradient(135deg, ${theme.palette.primary.light} 0%, ${theme.palette.background.paper} 100%)`,
-        border: 'none',
-        boxShadow: theme.shadows[2]
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 145px)', gap: 1, overflow: 'hidden' }}>
+      {/* ── HEADER SECTION ── */}
+      <Box sx={{
+        bgcolor: 'white',
+        p: '10px 20px',
+        borderRadius: '12px',
+        border: '1px solid #eef2f6',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexShrink: 0,
+        boxShadow: '0 1px 4px rgba(0,0,0,0.03)'
       }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Tooltip
-                title={
-                  selectedUser && users.find(u => u.userId === selectedUser)?.imgName ? (
-                    <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'background.paper', borderRadius: 2, overflow: 'hidden' }}>
-                      <img 
-                        src={`${API_BASE}/api/files/download/${users.find(u => u.userId === selectedUser).imgName}`} 
-                        alt="Profile" 
-                        style={{ maxWidth: 350, maxHeight: 350, borderRadius: 6, display: 'block' }} 
-                      />
-                    </Paper>
-                  ) : null
-                }
-                placement="right"
-                arrow
-                componentsProps={{
-                  tooltip: {
-                    sx: {
-                      bgcolor: 'transparent',
-                      p: 0,
-                      '& .MuiTooltip-arrow': { color: 'background.paper' }
-                    }
-                  }
-                }}
-              >
-                <Avatar 
-                  src={selectedUser && users.find(u => u.userId === selectedUser)?.imgName ? `${API_BASE}/api/files/download/${users.find(u => u.userId === selectedUser).imgName}` : ''}
-                  sx={{ bgcolor: theme.palette.secondary.main, width: 48, height: 48, cursor: 'pointer', border: '2px solid white', boxShadow: theme.shadows[2] }}
-                >
-                  {!selectedUser || !users.find(u => u.userId === selectedUser)?.imgName ? <IconShieldLock size={28} color="white" /> : null}
-                </Avatar>
-              </Tooltip>
-              <Box>
-                <Typography variant="h4" fontWeight={700}>User Access</Typography>
-                <Typography variant="caption" color="textSecondary">Granular Control</Typography>
-              </Box>
-            </Stack>
-          </Grid>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Avatar
+            src={selectedUserInfo?.imgName ? `${API_BASE}/api/users/image/${selectedUserInfo.imgName}` : ''}
+            sx={{ width: 50, height: 50, border: '1px solid #eee' }}
+          >
+            {!selectedUserInfo?.imgName && <IconUser size={26} color="#ccc" />}
+          </Avatar>
+          <Box>
+            <Typography variant="h3" sx={{ fontWeight: 800, color: '#1a223f', lineHeight: 1.2 }}>User Access</Typography>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: '#9e9e9e', textTransform: 'uppercase', fontSize: '0.65rem' }}>GRANULAR CONTROL</Typography>
+          </Box>
+        </Stack>
 
-          <Grid item xs={12} md={9}>
-            <Stack direction="row" spacing={1.5} alignItems="center" justifyContent="flex-end">
-              <BOSTextField
-                select
-                size="small"
-                label="Target User"
-                value={selectedUser}
-                onChange={handleUserChange}
-                sx={{ width: 220 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <IconUser size={18} color={theme.palette.primary.main} />
-                    </InputAdornment>
-                  )
-                }}
-              >
-                <MenuItem value="">- Select User -</MenuItem>
-                {users.map((u) => (
-                  <MenuItem key={u.userId} value={u.userId}>
-                    <Stack direction="row" spacing={1.2} alignItems="center">
-                      <Avatar 
-                        src={u.imgName ? `${API_BASE}/api/files/download/${u.imgName}` : ''} 
-                        sx={{ width: 28, height: 28, fontSize: '0.85rem', bgcolor: theme.palette.primary.light }}
-                      >
-                        {u.userId.charAt(0).toUpperCase()}
-                      </Avatar>
-                      <Typography variant="body2" fontWeight={500}>
-                        {u.userId} {u.empId ? <Box component="span" sx={{ opacity: 0.6, ml: 0.5 }}>({u.empId})</Box> : ''}
-                      </Typography>
-                    </Stack>
-                  </MenuItem>
-                ))}
-              </BOSTextField>
+        <Box sx={{ flexGrow: 1 }} />
 
-              <BOSTextField
-                select
-                size="small"
-                label="Copy From User"
-                value={sourceUser}
-                onChange={(e) => setSourceUser(e.target.value)}
-                disabled={!selectedUser}
-                sx={{ width: 200 }}
-              >
-                <MenuItem value="">- Select Source -</MenuItem>
-                {users.filter(u => u.userId !== selectedUser).map((u) => (
-                  <MenuItem key={u.userId} value={u.userId}>
-                    {u.userId}
-                  </MenuItem>
-                ))}
-              </BOSTextField>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <TextField
+            select
+            size="small"
+            label="Target User"
+            value={selectedUser}
+            onChange={handleUserChange}
+            sx={{
+              width: 260,
+              '& .MuiOutlinedInput-root': { borderRadius: '10px', '& fieldset': { borderColor: '#2196f3 !important' } },
+              '& .MuiInputLabel-root': { color: '#2196f3', fontWeight: 800, fontSize: '0.75rem' }
+            }}
+            SelectProps={{
+              renderValue: (selected) => {
+                const u = users.find(u => u.userId === selected);
+                return (
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Avatar src={u?.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 22, height: 22, fontSize: '0.7rem' }}>
+                      {selected.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography variant="body2" fontWeight={600}>{selected} ({u?.empId || 'N/A'})</Typography>
+                  </Stack>
+                );
+              }
+            }}
+          >
+            {users.map((u) => (
+              <MenuItem key={u.userId} value={u.userId}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Avatar src={u.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 24, height: 24 }} />
+                  <Typography variant="body2">{u.userId}</Typography>
+                </Stack>
+              </MenuItem>
+            ))}
+          </TextField>
 
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={handleCopyPermissions}
-                disabled={!sourceUser || !selectedUser || loading}
-                sx={{ whiteSpace: 'nowrap', height: 40 }}
-              >
-                Copy
-              </Button>
+          <TextField
+            select
+            size="small"
+            label="Copy From User"
+            value={sourceUser}
+            onChange={(e) => setSourceUser(e.target.value)}
+            sx={{
+              width: 220,
+              '& .MuiOutlinedInput-root': { borderRadius: '10px', '& fieldset': { borderColor: '#2196f3 !important' } },
+              '& .MuiInputLabel-root': { color: '#2196f3', fontWeight: 800, fontSize: '0.75rem' }
+            }}
+            SelectProps={{
+              renderValue: (selected) => {
+                const u = users.find(u => u.userId === selected);
+                return (
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Avatar src={u?.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 22, height: 22, fontSize: '0.7rem' }}>
+                      {selected.charAt(0).toUpperCase()}
+                    </Avatar>
+                    <Typography variant="body2" fontWeight={600}>{selected}</Typography>
+                  </Stack>
+                );
+              }
+            }}
+          >
+            {users.filter(u => u.userId !== selectedUser).map((u) => (
+              <MenuItem key={u.userId} value={u.userId}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Avatar src={u.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 24, height: 24 }} />
+                  <Typography variant="body2">{u.userId}</Typography>
+                </Stack>
+              </MenuItem>
+            ))}
+          </TextField>
 
-              <AnimateButton>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  size="large"
-                  startIcon={<IconDeviceFloppy size={20} />}
-                  onClick={handleSaveAll}
-                  disabled={!selectedUser || authData.length === 0 || loading}
-                  sx={{ height: 40, borderRadius: '8px', fontWeight: 600, px: 3 }}
-                >
-                  Save
-                </Button>
-              </AnimateButton>
-            </Stack>
-          </Grid>
-        </Grid>
-      </MainCard>
+          <Button
+            variant="outlined"
+            startIcon={<IconCopy size={18} />}
+            sx={{ height: 40, borderRadius: '8px', color: '#2196f3', borderColor: '#2196f3', textTransform: 'none', fontWeight: 700 }}
+          >
+            Copy
+          </Button>
 
-      {/* Main Table Card */}
+          <Button
+            variant="contained"
+            startIcon={<IconDeviceFloppy size={20} />}
+            onClick={handleSaveAll}
+            sx={{ height: 40, borderRadius: '8px', bgcolor: '#673ab7', '&:hover': { bgcolor: '#5e35b1' }, px: 3, fontWeight: 700, boxShadow: 'none' }}
+          >
+            Save
+          </Button>
+        </Stack>
+      </Box>
+
+      {/* ── PERMISSION MATRIX LABEL ──
       <Fade in={Boolean(selectedUser)}>
-        <MainCard
-          content={false}
-          sx={{ '& .MuiCardHeader-root': { p: '10px' } }}
-          title={
-            <Stack direction="row" spacing={2} alignItems="center">
-              <IconLayout2 size={22} color={theme.palette.primary.main} />
-              <Typography variant="h4">
-                Permission Matrix - 
-              </Typography>
+        <Box sx={{ px: 1, py: 0.5, flexShrink: 0 }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <IconLayoutGrid size={20} color="#673ab7" />
+            <Typography variant="h4" sx={{ fontWeight: 800, color: '#1a223f', display: 'flex', alignItems: 'center', gap: 1 }}>
+              Permission Matrix - 
               <Stack direction="row" spacing={1} alignItems="center">
-                <Tooltip
-                  title={
-                    selectedUser && users.find(u => u.userId === selectedUser)?.imgName ? (
-                      <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'background.paper', borderRadius: 2, overflow: 'hidden' }}>
-                        <img 
-                          src={`${API_BASE}/api/files/download/${users.find(u => u.userId === selectedUser).imgName}`} 
-                          alt="Profile Preview" 
-                          style={{ maxWidth: 250, maxHeight: 250, borderRadius: 6, display: 'block' }} 
-                        />
-                      </Paper>
-                    ) : null
-                  }
-                  arrow
-                  componentsProps={{
-                    tooltip: {
-                      sx: {
-                        bgcolor: 'transparent',
-                        p: 0,
-                        '& .MuiTooltip-arrow': { color: 'background.paper' }
-                      }
-                    }
-                  }}
+                <Avatar 
+                  sx={{ width: 28, height: 28, bgcolor: alpha('#673ab7', 0.1), color: '#673ab7', border: '1px solid', borderColor: alpha('#673ab7', 0.2), fontSize: '0.85rem', fontWeight: 900 }}
                 >
-                  <Avatar 
-                    src={selectedUser && users.find(u => u.userId === selectedUser)?.imgName ? `${API_BASE}/api/files/download/${users.find(u => u.userId === selectedUser).imgName}` : ''}
-                    sx={{ width: 32, height: 32, bgcolor: 'secondary.light', cursor: 'pointer', border: '1px solid white' }}
-                  >
-                    {selectedUser?.charAt(0).toUpperCase()}
-                  </Avatar>
-                </Tooltip>
-                <Box component="span" sx={{ color: 'secondary.main', fontWeight: 800, textTransform: 'uppercase' }}>
-                  {selectedUser}
-                </Box>
+                  {selectedUser?.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box component="span" sx={{ color: '#673ab7', textTransform: 'uppercase' }}>{selectedUser}</Box>
               </Stack>
-            </Stack>
-          }
-        >
-          <TableContainer sx={{ maxHeight: 'calc(100vh - 310px)', borderRadius: '0 0 12px 12px' }}>
+            </Typography>
+          </Stack>
+        </Box>
+      </Fade> */}
+
+      {/* ── TABLE SECTION ── */}
+      <Fade in={Boolean(selectedUser)}>
+        <Box sx={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          border: '1px solid #eef2f6',
+          bgcolor: 'white',
+          minHeight: 0
+        }}>
+          <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
             <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: '#f8fafc', color: theme.palette.text.secondary, py: 1.5 }}>#</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: '#f8fafc', py: 1.5 }}>MODULE / SUBMODULE</TableCell>
-                  <TableCell sx={{ fontWeight: 700, bgcolor: '#f8fafc', py: 1.5 }}>PAGE NAME</TableCell>
-                  <PermissionHeader label="Enable" field="enable" color={theme.palette.info.main} />
-                  <PermissionHeader label="Read" field="readAcs" color={theme.palette.success.main} />
-                  <PermissionHeader label="Write" field="write" color={theme.palette.warning.main} />
-                  <PermissionHeader label="Delete" field="deleteAcs" color={theme.palette.error.main} />
-                  <PermissionHeader label="Export" field="export" color={theme.palette.secondary.main} />
-                  <PermissionHeader label="Approval" field="approval" color={theme.palette.primary.main} />
-                  <PermissionHeader label="Manager" field="manager" color={theme.palette.grey[700]} />
-                  <PermissionHeader label="Add 1" field="additional1" color={theme.palette.grey[600]} />
-                  <PermissionHeader label="Add 2" field="additional2" color={theme.palette.grey[600]} />
-                  <TableCell align="center" sx={{ fontWeight: 700, bgcolor: '#f8fafc', py: 1.5 }}>ACTION</TableCell>
+                  <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#999', fontSize: '0.65rem', py: 2, width: 40 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>MODULE / SUBMODULE</TableCell>
+                  <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>PAGE NAME</TableCell>
+                  {permissionHeaders.map(h => <PermissionHeaderCell key={h.id} header={h} />)}
+                  <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>ACTION</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {loading ? (
-                  <TableRow><TableCell colSpan={13} align="center" sx={{ py: 5 }}><Typography variant="h4">Loading Permissions...</Typography></TableCell></TableRow>
-                ) : filteredData.length === 0 ? (
-                  <TableRow><TableCell colSpan={13} align="center" sx={{ py: 5 }}><Typography variant="h4">No Pages Found</Typography></TableCell></TableRow>
-                ) : (
-                  paginatedData.map((row, idx) => {
-                    const globalIdx = authData.findIndex(item => item.pageId === row.pageId);
-                    const displayIdx = page * rowsPerPage + idx + 1;
-                    return (
-                      <TableRow key={row.pageId} hover sx={{
-                        bgcolor: idx % 2 === 0 ? 'inherit' : '#f9fbff',
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                        '&:hover': { bgcolor: '#f0f7ff !important' },
-                        '& .MuiTableCell-root': { py: 1, borderBottom: 'none' }
-                      }}>
-                        <TableCell sx={{ fontWeight: 600, color: theme.palette.text.secondary }}>{displayIdx}</TableCell>
-                        <TableCell>
-                          <Typography variant="subtitle2" fontWeight={700} sx={{ color: 'text.primary', lineHeight: 1.2 }}>
-                            {row.page?.module?.modName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary" sx={{ textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 500 }}>
-                            {row.page?.subModule?.subModName || '-'}
-                          </Typography>
+                {paginatedData.map((row, idx) => {
+                  const globalIdx = authData.findIndex(item => item.pageId === row.pageId);
+                  return (
+                    <TableRow 
+                      key={row.pageId} 
+                      sx={{ 
+                        '& td': { py: 1.2, borderBottom: '1px solid #f8fafc' }, 
+                        '&:hover': { bgcolor: '#f1f5f9 !important' },
+                        bgcolor: idx % 2 === 0 ? 'white' : '#f9fbff'
+                      }}
+                    >
+                      <TableCell sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.7rem' }}>{page * rowsPerPage + idx + 1}</TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.module?.modName}</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.6rem' }}>{row.page?.subModule?.subModName}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.pageName}</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.6rem' }}>ID: {row.pageId} | {row.page?.pageCode}</Typography>
+                      </TableCell>
+                      {permissionHeaders.map(h => (
+                        <TableCell key={h.id} align="center" sx={{ borderLeft: '1px solid #f1f5f9' }}>
+                          <Checkbox
+                            checked={row[h.id] === 1}
+                            onChange={() => handleCheckboxChange(globalIdx, h.id)}
+                            icon={<IconX size={16} color="#e5e7eb" />}
+                            checkedIcon={<IconCheck size={16} color="#4caf50" stroke={3} />}
+                            sx={{ p: 0.2 }}
+                          />
                         </TableCell>
-                        <TableCell>
-                          <Typography variant="subtitle2" fontWeight={700} sx={{ color: '#2196f3', textTransform: 'uppercase', lineHeight: 1.2 }}>
-                            {row.page?.pageName}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary" sx={{ fontSize: '0.7rem', fontWeight: 500 }}>
-                            ID: {row.pageId} | {row.page?.pageCode || 'N/A'}
-                          </Typography>
-                        </TableCell>
-
-                        {['enable', 'readAcs', 'write', 'deleteAcs', 'export', 'approval', 'manager', 'additional1', 'additional2'].map(field => (
-                          <TableCell key={field} align="center">
-                            <Checkbox
-                              checked={row[field] === 1}
-                              onChange={() => handleCheckboxChange(globalIdx, field)}
-                              icon={<IconX size={20} stroke={1.5} color="#e2e8f0" />}
-                              checkedIcon={<IconCheck size={20} stroke={3} color="#4caf50" />}
-                              sx={{
-                                p: 0.5,
-                                '&:hover': { bgcolor: 'transparent', transform: 'scale(1.1)' },
-                                transition: 'transform 0.2s'
-                              }}
-                            />
-                          </TableCell>
-                        ))}
-
-                        <TableCell align="center">
-                          <Tooltip title="Save Row">
-                            <IconButton
-                              onClick={() => handleSaveRow(row)}
-                              sx={{
-                                color: '#2196f3',
-                                p: 0.5,
-                                borderRadius: '4px',
-                                '&:hover': { 
-                                  bgcolor: 'rgba(33, 150, 243, 0.1)',
-                                  color: '#1976d2'
-                                }
-                              }}
-                            >
-                              <IconDeviceFloppy size={20} stroke={1.5} />
-                            </IconButton>
-                          </Tooltip>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
+                      ))}
+                      <TableCell align="center" sx={{ borderLeft: '1px solid #f1f5f9' }}>
+                        <Tooltip title="Save Permissions" arrow>
+                          <IconButton onClick={() => handleSaveRow(row)} sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}>
+                            <IconDeviceFloppy size={18} />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
           <TablePagination
-            rowsPerPageOptions={[5, 10, 25, 50, 100]}
+            rowsPerPageOptions={[50, 100]}
             component="div"
             count={filteredData.length}
             rowsPerPage={rowsPerPage}
             page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
+            onPageChange={(e, p) => setPage(p)}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
             sx={{
-              borderTop: '1px solid',
-              borderColor: 'divider',
-              '& .MuiTablePagination-toolbar': { p: 0, minHeight: 48 },
-              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { m: 0 }
+              borderTop: '1px solid #f1f5f9',
+              bgcolor: '#fff',
+              flexShrink: 0,
+              '& .MuiTablePagination-toolbar': { p: 0, minHeight: '40px !important' },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { m: 0, fontSize: '0.75rem' }
             }}
           />
-        </MainCard>
+        </Box>
       </Fade>
     </Box>
   );
 };
-
-// Helper for animations
-const AnimateButton = ({ children }) => (
-  <Box sx={{ transition: 'transform 0.1s', '&:hover': { transform: 'scale(1.02)' }, '&:active': { transform: 'scale(0.98)' } }}>
-    {children}
-  </Box>
-);
 
 export default UserAccess;
