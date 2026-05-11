@@ -69,6 +69,11 @@ public class UserController {
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserCredential userDetails) {
         return userRepository.findById(id).map(user -> {
+            // Delete old image if it's being replaced
+            if (userDetails.getImgName() != null && !userDetails.getImgName().equals(user.getImgName())) {
+                userService.deleteFile(user.getImgName(), BosDocConstants.USER_PROFILE_DOC_PATH);
+            }
+
             user.setEmpId(userDetails.getEmpId());
             user.setStatus(userDetails.getStatus());
             user.setImgName(userDetails.getImgName());
@@ -87,8 +92,15 @@ public class UserController {
     }
 
     @PostMapping(value = "/upload-profile-pic", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadProfilePic(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> uploadProfilePic(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "previousFile", required = false) String previousFile) {
         try {
+            // Delete old file if provided to prevent orphaned files during multiple crop attempts
+            if (previousFile != null && !previousFile.isEmpty() && !"null".equalsIgnoreCase(previousFile)) {
+                userService.deleteFile(previousFile, BosDocConstants.USER_PROFILE_DOC_PATH);
+            }
+
             String filename = userService.saveUploadedFile(file, BosDocConstants.USER_PROFILE_DOC_PATH);
             Map<String, String> response = new HashMap<>();
             response.put("fileName", filename);

@@ -56,7 +56,14 @@ export function JWTProvider({ children }) {
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [logoutCountdown, setLogoutCountdown] = useState(null);
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      if (state.user?.id) {
+        await axios.post('/api/account/logout', { userId: state.user.id });
+      }
+    } catch (err) {
+      console.error('Logout audit failed:', err);
+    }
     setSession(null);
     dispatch({ type: LOGOUT });
     setLogoutCountdown(null);
@@ -94,7 +101,7 @@ export function JWTProvider({ children }) {
     };
 
     checkLicense();
-    const interval = setInterval(checkLicense, 600000); // check every 1 min
+    const interval = setInterval(checkLicense, 6000); // check every 1 min
     return () => clearInterval(interval);
   }, [state.isLoggedIn, state.user?.isBosAdmin, logoutCountdown === null]);
 

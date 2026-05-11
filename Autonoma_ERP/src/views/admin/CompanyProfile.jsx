@@ -10,7 +10,8 @@ import {
 import {
   IconBuilding, IconUpload, IconDeviceFloppy, IconRefresh,
   IconPhoto, IconLogin, IconCheck, IconAlertCircle, IconFolderOpen,
-  IconChevronRight, IconArrowLeft, IconFolder, IconDeviceFloppy as IconDrive
+  IconChevronRight, IconArrowLeft, IconFolder, IconDeviceFloppy as IconDrive,
+  IconUser, IconCalendar
 } from '@tabler/icons-react';
 import useAuth from 'hooks/useAuth';
 
@@ -67,7 +68,11 @@ const emptyForm = {
   city: '', state: '', stateCode: '', country: '', pincode: '',
   gstIn: '', dbSourceName: '', licRenewalDate: '', licExpiryDate: '',
   logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS',
-  licExpRemainderDays: 0
+  licExpRemainderDays: 0,
+  createdBy: '',
+  createdDate: '',
+  updatedBy: '',
+  updatedDate: ''
 };
 
 // ─── Image Upload Card ───────────────────────────────────────────────────────
@@ -183,7 +188,11 @@ const CompanyProfile = () => {
             logoFileName: rec.logoFileName || '',
             logInBgFileName: rec.logInBgFileName || '',
             directoryPath: rec.directoryPath || 'D:\\BOS_DOCUMENTS',
-            licExpRemainderDays: rec.licExpRemainderDays || 0
+            licExpRemainderDays: rec.licExpRemainderDays || 0,
+            createdBy: rec.createdBy || '',
+            createdDate: rec.createdDate || '',
+            updatedBy: rec.updatedBy || '',
+            updatedDate: rec.updatedDate || ''
           });
         }
       })
@@ -249,6 +258,7 @@ const CompanyProfile = () => {
           licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
           licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
           licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
+          updatedBy: user?.id || 'SYSTEM'
         };
 
         await fetch(`${API_BASE}/api/company-profile/update/${recordId}`, {
@@ -326,7 +336,12 @@ const CompanyProfile = () => {
         licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
         licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
         licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
+        updatedBy: user?.id || 'SYSTEM'
       };
+      
+      if (!recordId) {
+        payload.createdBy = user?.id || 'SYSTEM';
+      }
 
       let url, method;
       if (recordId) {
@@ -746,6 +761,83 @@ const CompanyProfile = () => {
         </Box>
 
         <FolderBrowserDialog />
+
+        <Divider />
+
+        {/* ── Section 4 – System Info ── */}
+        <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: 'rgba(0,0,0,0.01)' }}>
+          {sectionTitle('System Information', IconAlertCircle)}
+          <Grid container spacing={2.5}>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Created By"
+                value={form.createdBy}
+                fullWidth
+                size="small"
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconUser size={18} opacity={0.5} />
+                    </InputAdornment>
+                  )
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Created Date"
+                value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''}
+                fullWidth
+                size="small"
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconCalendar size={18} opacity={0.5} />
+                    </InputAdornment>
+                  )
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Updated By"
+                value={form.updatedBy}
+                fullWidth
+                size="small"
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconUser size={18} opacity={0.5} />
+                    </InputAdornment>
+                  )
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <TextField
+                label="Updated Date"
+                value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''}
+                fullWidth
+                size="small"
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <IconCalendar size={18} opacity={0.5} />
+                    </InputAdornment>
+                  )
+                }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }}
+              />
+            </Grid>
+          </Grid>
+        </Box>
 
         <Divider />
 

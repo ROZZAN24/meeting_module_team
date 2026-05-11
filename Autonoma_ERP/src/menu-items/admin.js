@@ -1,7 +1,7 @@
 // assets
 import {
   IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper
-  , IconAccessPoint
+  , IconAccessPoint, IconHistory
 } from '@tabler/icons-react';
 
 // constant
@@ -10,8 +10,9 @@ const icons = {
   IconUsers,
   IconShieldLock,
   IconSettings,
-  IconBuildingSkyscraper
-  , IconAccessPoint
+  IconBuildingSkyscraper,
+  IconAccessPoint,
+  IconHistory
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -60,6 +61,14 @@ const admin = {
       type: 'item',
       url: '/admin/user-access',
       icon: icons.IconAccessPoint,
+      breadcrumbs: true
+    },
+    {
+      id: 'session-monitoring',
+      title: 'Session Monitoring',
+      type: 'item',
+      url: '/admin/session-monitoring',
+      icon: icons.IconHistory,
       breadcrumbs: true
     }
   ]

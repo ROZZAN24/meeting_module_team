@@ -89,4 +89,18 @@ public class UserService {
             throw new RuntimeException("Could not read file: " + filename);
         }
     }
+
+    /**
+     * Deletes a file from the configured directory.
+     */
+    public boolean deleteFile(String filename, String subDir) {
+        if (filename == null || filename.isEmpty() || "null".equalsIgnoreCase(filename)) return false;
+        try {
+            Path filePath = getUploadDirectory().resolve(subDir).resolve(filename).normalize();
+            return Files.deleteIfExists(filePath);
+        } catch (IOException e) {
+            System.err.println("Failed to delete file: " + filename + ". " + e.getMessage());
+            return false;
+        }
+    }
 }
