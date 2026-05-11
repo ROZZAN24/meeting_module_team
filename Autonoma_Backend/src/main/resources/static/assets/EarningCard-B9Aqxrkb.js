@@ -1,2 +1,0 @@
-import{j as a,ag as n,ad as e,S as t}from"./index-B2Gfh3Zm.js";import{S as r}from"./Skeleton-B6kxI6LL.js";function h(){return a.jsx(n,{children:a.jsx(e,{children:a.jsxs(t,{children:[a.jsxs(t,{direction:"row",sx:{justifyContent:"space-between"},children:[a.jsx(r,{variant:"rectangular",width:44,height:44}),a.jsx(r,{variant:"rectangular",width:34,height:34})]}),a.jsx(r,{variant:"rectangular",sx:{my:2},height:40}),a.jsx(r,{variant:"rectangular",height:30})]})})})}export{h as E};
-//# sourceMappingURL=EarningCard-B9Aqxrkb.js.map

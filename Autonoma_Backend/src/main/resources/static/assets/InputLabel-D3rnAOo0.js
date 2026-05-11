@@ -1,2 +1,0 @@
-import{j as a,h as e,ab as n,P as r}from"./index-B2Gfh3Zm.js";const p=e(o=>a.jsx(n,{...o}),{shouldForwardProp:o=>o!=="horizontal"})(({theme:o,horizontal:t})=>({color:o.vars.palette.text.primary,fontWeight:500,marginBottom:t?0:8}));function l({children:o,horizontal:t=!1,...s}){return a.jsx(p,{horizontal:t,...s,children:o})}l.propTypes={children:r.any,horizontal:r.bool,others:r.any};export{l as I};
-//# sourceMappingURL=InputLabel-D3rnAOo0.js.map
