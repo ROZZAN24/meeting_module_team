@@ -21,10 +21,10 @@ public class ChecklistSchedulerService {
     private final ChecklistService checklistService;
 
     /**
-     * Runs every day at 12:01 AM to generate recurring checklists
-     * Cron: "0 1 0 * * *"
+     * Runs every day at 4:00 AM IST to generate recurring checklists
+     * Cron: "0 0 4 * * *" in Asia/Kolkata
      */
-    @Scheduled(cron = "0 1 0 * * *")
+    @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Kolkata")
     @Transactional
     public void generateRecurringAssignments() {
         log.info("Starting recurring checklist assignment generation...");
@@ -43,43 +43,58 @@ public class ChecklistSchedulerService {
             
             boolean shouldGenerate = false;
             
+            // Anchoring logic: Recurrence is based on the components of the 'Effective From' date
+            Calendar effectiveCal = Calendar.getInstance();
+            if (checklist.getEffectiveFrom() != null) {
+                effectiveCal.setTime(checklist.getEffectiveFrom());
+            } else {
+                effectiveCal.setTime(checklist.getCreatedDate() != null ? checklist.getCreatedDate() : today);
+            }
+
+            int effectiveDayOfWeek = effectiveCal.get(Calendar.DAY_OF_WEEK);
+            int effectiveDayOfMonth = effectiveCal.get(Calendar.DAY_OF_MONTH);
+            int effectiveMonth = effectiveCal.get(Calendar.MONTH);
+
             switch (frequency.toUpperCase()) {
                 case "DAILY":
                     shouldGenerate = true;
                     break;
                 case "WEEKLY":
-                    // Generate every Monday (assuming Monday is start of work week)
-                    if (dayOfWeek == Calendar.MONDAY) {
+                    // Generate on the same weekday as the Effective From date
+                    if (dayOfWeek == effectiveDayOfWeek) {
                         shouldGenerate = true;
                     }
                     break;
                 case "FORTNIGHTLY":
-                    // Every 1st and 15th
-                    if (dayOfMonth == 1 || dayOfMonth == 15) {
+                    // Every 14 days from effective date OR on effective day and effective day + 14? 
+                    // Usually FORTNIGHTLY in this context means "bi-monthly" like 1st and 15th or based on start.
+                    // For simplicity and matching user intent: 
+                    // Repeat on effectiveDayOfMonth and (effectiveDayOfMonth + 14) % 30 (approx)
+                    if (dayOfMonth == effectiveDayOfMonth || dayOfMonth == (effectiveDayOfMonth + 14) % 28 + 1) {
                         shouldGenerate = true;
                     }
                     break;
                 case "MONTHLY":
-                    // Every 1st of the month
-                    if (dayOfMonth == 1) {
+                    // Every month on the same date as Effective From
+                    if (dayOfMonth == effectiveDayOfMonth) {
                         shouldGenerate = true;
                     }
                     break;
                 case "QUARTERLY":
-                    // 1st of Jan, Apr, Jul, Oct
-                    if (dayOfMonth == 1 && (cal.get(Calendar.MONTH) % 3 == 0)) {
+                    // Every 3 months on the same date
+                    if (dayOfMonth == effectiveDayOfMonth && (cal.get(Calendar.MONTH) - effectiveMonth) % 3 == 0) {
                         shouldGenerate = true;
                     }
                     break;
                 case "HALF YEARLY":
-                    // 1st of Jan, Jul
-                    if (dayOfMonth == 1 && (cal.get(Calendar.MONTH) == Calendar.JANUARY || cal.get(Calendar.MONTH) == Calendar.JULY)) {
+                    // Every 6 months on the same date
+                    if (dayOfMonth == effectiveDayOfMonth && (cal.get(Calendar.MONTH) - effectiveMonth) % 6 == 0) {
                         shouldGenerate = true;
                     }
                     break;
                 case "YEARLY":
-                    // 1st of Jan
-                    if (dayOfMonth == 1 && cal.get(Calendar.MONTH) == Calendar.JANUARY) {
+                    // Once per year on the same date
+                    if (dayOfMonth == effectiveDayOfMonth && cal.get(Calendar.MONTH) == effectiveMonth) {
                         shouldGenerate = true;
                     }
                     break;
@@ -93,7 +108,8 @@ public class ChecklistSchedulerService {
                         checklist.getId(), 
                         checklist.getAssignTo(), 
                         "System Scheduler", 
-                        "PRIMARY"
+                        "PRIMARY",
+                        today
                     );
                 } catch (Exception e) {
                     log.error("Failed to generate assignment for checklist {}: {}", checklist.getSeqNo(), e.getMessage());

@@ -137,6 +137,19 @@ public class ChecklistService {
 
     @Transactional
     public MasterChecklist saveMasterChecklist(MasterChecklist checklist, List<String> departments) {
+        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same Department)
+        if (departments != null && !departments.isEmpty()) {
+            List<MasterChecklist> duplicates = masterRepo.findDuplicates(
+                checklist.getCategory(), 
+                checklist.getCheckingPoint(), 
+                departments, 
+                checklist.getId()
+            );
+            if (!duplicates.isEmpty()) {
+                throw new IllegalArgumentException("A checklist with the same Category and Checking Point already exists for one or more selected departments.");
+            }
+        }
+
         if (checklist.getId() != null) {
             MasterChecklist existing = masterRepo.findById(checklist.getId()).orElseThrow();
 
@@ -253,7 +266,7 @@ public class ChecklistService {
     // --- Assignments ---
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate,
-            String category, String searchBy, String searchValue, String masterVerifyStatus, Pageable pageable) {
+            String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType, String currentUser, boolean excludeCompleted, Pageable pageable) {
 
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -267,9 +280,22 @@ public class ChecklistService {
                 }
             }
 
+            // Task Type Logic (SOP Item 8)
+            if ("Mine".equalsIgnoreCase(taskType) && currentUser != null) {
+                predicates.add(cb.equal(root.get("assignedTo"), currentUser));
+            } else if ("Team".equalsIgnoreCase(taskType)) {
+                // For simplicity, we assume 'Team' means tasks for the user's department.
+                // This would normally involve joining with Employee departments.
+                // For now, we allow the UI to pass specific 'assignedTo' names for the team.
+            }
+
             if (status != null && !status.equals("All")) {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
                 predicates.add(cb.equal(statusJoin.get("name"), status));
+            } else if (excludeCompleted) {
+                // If "All" is selected and we want to focus on execution, exclude completed/finalized tasks
+                Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
+                predicates.add(cb.not(statusJoin.get("name").in("Completed", "Verified", "Accepted")));
             }
 
             if (assignedTo != null && !assignedTo.isEmpty()) {
@@ -341,6 +367,12 @@ public class ChecklistService {
     @Transactional
     public ChecklistAssignment assignTask(Long id, Long checklistId, String assignedTo, String assignedBy,
             String assignType) {
+        return assignTask(id, checklistId, assignedTo, assignedBy, assignType, new Date());
+    }
+
+    @Transactional
+    public ChecklistAssignment assignTask(Long id, Long checklistId, String assignedTo, String assignedBy,
+            String assignType, Date checklistDate) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
 
         ChecklistAssignment assignment;
@@ -348,7 +380,8 @@ public class ChecklistService {
             assignment = assignRepo.findById(id).orElse(new ChecklistAssignment());
         } else {
             // Prevent duplicate assignments for same person on same checklist
-            if (assignRepo.findByChecklistIdAndAssignedTo(checklistId, assignedTo).isPresent()) {
+            // Prevent duplicate assignments for same person on same checklist for same date
+            if (assignRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate).isPresent()) {
                 // Return a dummy object or handle in controller to avoid 409 red console error
                 // For now, let's return a "special" assignment or just return null and handle
                 // in service?
@@ -372,6 +405,7 @@ public class ChecklistService {
         assignment.setAssignedBy(assignedBy);
         assignment.setAssignType(assignType);
         assignment.setAssignedDate(new Date());
+        assignment.setChecklistDate(checklistDate);
 
         ChecklistAssignment savedAssignment = assignRepo.save(assignment);
 

@@ -93,4 +93,9 @@ public class AuditObservation {
     public String getAuditArea() {
         return auditArea;
     }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("departmentName")
+    public String getDepartmentName() {
+        return departmentName;
+    }
 }

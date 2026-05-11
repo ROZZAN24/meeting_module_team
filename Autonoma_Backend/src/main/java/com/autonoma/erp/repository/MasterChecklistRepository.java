@@ -11,4 +11,7 @@ public interface MasterChecklistRepository extends JpaRepository<MasterChecklist
     
     java.util.List<MasterChecklist> findBySeqNoAndIdNot(String seqNo, Long id);
     java.util.List<MasterChecklist> findByStatusAndVerifyStatus(String status, String verifyStatus);
+    
+    @Query("SELECT m FROM MasterChecklist m JOIN m.departments d WHERE m.category = :category AND m.checkingPoint = :checkingPoint AND d.departmentName IN :departments AND (:id IS NULL OR m.id != :id)")
+    java.util.List<MasterChecklist> findDuplicates(String category, String checkingPoint, java.util.List<String> departments, Long id);
 }

@@ -24,6 +24,9 @@ public class ChecklistController {
     @Autowired
     private ChecklistService checklistService;
 
+    @Autowired
+    private com.autonoma.erp.service.ChecklistSchedulerService schedulerService;
+
     @GetMapping
     @Operation(summary = "Get All Master Checklists", description = "Retrieves a paginated list of master checklists with comprehensive filtering options including category, department, dual check flag, and verification status.")
     public ResponseEntity<Page<MasterChecklist>> getAllChecklists(
@@ -73,11 +76,14 @@ public class ChecklistController {
             @RequestParam(required = false) String searchBy,
             @RequestParam(required = false) String searchValue,
             @RequestParam(required = false) String masterVerifyStatus,
+            @RequestParam(required = false) String taskType,
+            @RequestParam(required = false) String currentUser,
+            @RequestParam(defaultValue = "false") boolean excludeCompleted,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, pageable));
+        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, taskType, currentUser, excludeCompleted, pageable));
     }
 
     @PostMapping("/assign")
@@ -118,6 +124,13 @@ public class ChecklistController {
         String status = payload.get("status").toString();
         String remarks = payload.getOrDefault("remarks", "").toString();
         return ResponseEntity.ok(checklistService.verifyMasterChecklist(checklistId, verifiedBy, status, remarks));
+    }
+
+    @PostMapping("/trigger-scheduler")
+    @Operation(summary = "Manual Scheduler Trigger", description = "Manually triggers the recurring checklist generation (for testing/maintenance)")
+    public ResponseEntity<String> triggerScheduler() {
+        schedulerService.generateRecurringAssignments();
+        return ResponseEntity.ok("Scheduler triggered successfully. Check logs for details.");
     }
 
     @GetMapping("/bootstrap")

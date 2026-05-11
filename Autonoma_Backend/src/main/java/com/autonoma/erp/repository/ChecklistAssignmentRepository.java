@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 public interface ChecklistAssignmentRepository extends JpaRepository<ChecklistAssignment, Long>, JpaSpecificationExecutor<ChecklistAssignment> {
     java.util.List<ChecklistAssignment> findByChecklistId(Long checklistId);
-    java.util.Optional<ChecklistAssignment> findByChecklistIdAndAssignedTo(Long checklistId, String assignedTo);
+    java.util.Optional<ChecklistAssignment> findByChecklistIdAndAssignedToAndChecklistDate(Long checklistId, String assignedTo, java.util.Date checklistDate);
     boolean existsByChecklistIdAndAssignedToAndChecklistDate(Long checklistId, String assignedTo, java.util.Date checklistDate);
 }
