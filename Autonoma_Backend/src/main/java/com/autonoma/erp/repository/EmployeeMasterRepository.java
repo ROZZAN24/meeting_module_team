@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface EmployeeMasterRepository extends JpaRepository<EmployeeMaster, Long> {
     boolean existsByEmpCode(String empCode);
+    java.util.Optional<EmployeeMaster> findFirstByOrderByEmpCodeDesc();
 }

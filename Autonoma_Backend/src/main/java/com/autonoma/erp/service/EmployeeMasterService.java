@@ -64,6 +64,15 @@ public class EmployeeMasterService {
         if (employee.getCreatedDate() == null) {
             employee.setCreatedDate(new Date());
         }
+        
+        // Auto-generate empCode if missing
+        if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
+            String nextCode = employeeRepo.findFirstByOrderByEmpCodeDesc()
+                    .map(latest -> incrementSequence(latest.getEmpCode(), "EMP-"))
+                    .orElse("001");
+            employee.setEmpCode(nextCode);
+        }
+        
         sanitizeEmployee(employee);
         return employeeRepo.save(employee);
     }
@@ -82,6 +91,7 @@ public class EmployeeMasterService {
 
     /** Coerce null Strings to empty string to satisfy NOT NULL DB columns. */
     private void sanitizeEmployee(EmployeeMaster e) {
+        if (e.getEmpCode() == null)                e.setEmpCode("");
         if (e.getFatherHusbandName() == null)     e.setFatherHusbandName("");
         if (e.getOldEmpCode() == null)             e.setOldEmpCode("");
         if (e.getGradeCode() == null)              e.setGradeCode("");
@@ -122,6 +132,24 @@ public class EmployeeMasterService {
         if (e.getIsInterviewer() == null)          e.setIsInterviewer("NO");
         if (e.getIsEnquiryAssignee() == null)      e.setIsEnquiryAssignee("NO");
         if (e.getIsPrAssignee() == null)           e.setIsPrAssignee("NO");
+    }
+
+    private String incrementSequence(String latest, String prefix) {
+        if (latest == null || latest.isEmpty()) return "001";
+        try {
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d+$");
+            java.util.regex.Matcher matcher = pattern.matcher(latest.trim());
+            if (matcher.find()) {
+                String numericPart = matcher.group();
+                int num = Integer.parseInt(numericPart);
+                int length = Math.max(numericPart.length(), 3);
+                String nextNum = String.format("%0" + length + "d", num + 1);
+                return latest.substring(0, matcher.start()).trim() + nextNum;
+            }
+            return prefix + "001";
+        } catch (Exception ex) {
+            return prefix + "001";
+        }
     }
 
     @Transactional

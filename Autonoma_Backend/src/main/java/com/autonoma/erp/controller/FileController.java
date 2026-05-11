@@ -66,18 +66,27 @@ public class FileController {
     }
 
     private ResponseEntity<Resource> getFileInternal(String filename) {
+        System.out.println("[FILE_CONTROLLER] Request for: " + filename);
         try {
-            System.out.println("--- File Request Start ---");
-            System.out.println("Incoming filename: " + filename);
+            if (filename == null || filename.trim().isEmpty() || filename.equals("/")) {
+                System.err.println("EMPTY FILENAME REQUESTED");
+                return ResponseEntity.status(400).build();
+            }
+            
             String decodedFilename = java.net.URLDecoder.decode(filename, java.nio.charset.StandardCharsets.UTF_8.name());
+            if (decodedFilename.startsWith("/")) decodedFilename = decodedFilename.substring(1);
             System.out.println("Decoded filename: " + decodedFilename);
             
-            Path file = root.resolve(decodedFilename);
+            Path file = root.resolve(decodedFilename).normalize();
+            if (!file.startsWith(root.toAbsolutePath().normalize())) {
+                System.err.println("TRAVERSAL ATTEMPT DETECTED: " + decodedFilename);
+                return ResponseEntity.status(403).build();
+            }
             System.out.println("Absolute Path: " + file.toAbsolutePath());
             
-            if (!Files.exists(file)) {
-                System.err.println("FILE NOT FOUND ON DISK: " + file.toAbsolutePath());
-                return ResponseEntity.status(404).body(null);
+            if (!Files.exists(file) || Files.isDirectory(file)) {
+                System.err.println("FILE NOT FOUND OR IS DIRECTORY: " + file.toAbsolutePath());
+                return ResponseEntity.status(404).build();
             }
 
             Resource resource = new UrlResource(file.toUri());
@@ -87,14 +96,18 @@ public class FileController {
                 if (contentType == null) {
                     contentType = "application/octet-stream";
                 }
+                System.out.println("Serving file with content type: " + contentType);
                 return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(contentType))
                         .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
                         .body(resource);
             } else {
+                System.err.println("Resource exists check failed for: " + file.toAbsolutePath());
                 return ResponseEntity.status(404).build();
             }
         } catch (Exception e) {
+            System.err.println("ERROR SERVING FILE: " + filename);
+            e.printStackTrace();
             return ResponseEntity.status(500).build();
         }
     }
