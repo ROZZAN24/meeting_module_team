@@ -73,7 +73,12 @@ export default function EmployeeList() {
     setLoading(true);
     try {
       const response = await axios.get(API_PATHS.HRM.EMPLOYEES);
-      setRows(response.data);
+      if (Array.isArray(response.data)) {
+        setRows(response.data);
+      } else {
+        console.error('API did not return an array:', response.data);
+        setRows([]);
+      }
     } catch (error) {
       console.error('Failed to fetch employees:', error);
       setRows([]);

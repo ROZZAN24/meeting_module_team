@@ -77,8 +77,10 @@ public class FileController {
             if (decodedFilename.startsWith("/")) decodedFilename = decodedFilename.substring(1);
             System.out.println("Decoded filename: " + decodedFilename);
             
-            Path file = root.resolve(decodedFilename).normalize();
-            if (!file.startsWith(root.toAbsolutePath().normalize())) {
+            Path file = root.resolve(decodedFilename).toAbsolutePath().normalize();
+            Path rootAbsolute = root.toAbsolutePath().normalize();
+            
+            if (!file.startsWith(rootAbsolute)) {
                 System.err.println("TRAVERSAL ATTEMPT DETECTED: " + decodedFilename);
                 return ResponseEntity.status(403).build();
             }
