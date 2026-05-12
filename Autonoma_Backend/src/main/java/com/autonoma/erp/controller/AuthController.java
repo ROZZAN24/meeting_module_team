@@ -72,6 +72,10 @@ public class AuthController {
 
                 String token = jwtService.generateToken(user.getUserId());
 
+                // Set context for auditing before recording session to avoid "anonymousUser" in logs
+                com.autonoma.erp.util.AuditContextHolder.setUserId(user.getUserId());
+                com.autonoma.erp.util.AuditContextHolder.setPageName("Login Page");
+
                 // Record Login Session
                 userSessionService.recordLogin(user.getUserId(), request, request.getHeader("User-Agent"));
 
@@ -177,6 +181,8 @@ public class AuthController {
     public ResponseEntity<?> logout(@RequestBody Map<String, String> body) {
         String userId = body.get("userId");
         if (userId != null) {
+            com.autonoma.erp.util.AuditContextHolder.setUserId(userId);
+            com.autonoma.erp.util.AuditContextHolder.setPageName("Logout Action");
             userSessionService.recordLogout(userId);
         }
         return ResponseEntity.ok().build();

@@ -64,6 +64,8 @@ export function JWTProvider({ children }) {
     } catch (err) {
       console.error('Logout audit failed:', err);
     }
+    // Clear session-based alert acknowledgments so they reappear after re-login
+    sessionStorage.removeItem('license_alert_acknowledged');
     setSession(null);
     dispatch({ type: LOGOUT });
     setLogoutCountdown(null);
@@ -101,9 +103,90 @@ export function JWTProvider({ children }) {
     };
 
     checkLicense();
-    const interval = setInterval(checkLicense, 6000); // check every 1 min
+    const interval = setInterval(checkLicense, 600000); // check every 1 min
     return () => clearInterval(interval);
   }, [state.isLoggedIn, state.user?.isBosAdmin, logoutCountdown === null]);
+
+  // ==============================|| IDLE TRACKING ||============================== //
+
+  const IDLE_THRESHOLD = 120000; // 2 minutes of inactivity
+  const [lastActive, setLastActive] = useState(Date.now());
+  const [isIdle, setIsIdle] = useState(false);
+  const [idleStartTime, setIdleStartTime] = useState(null);
+
+  useEffect(() => {
+    if (!state.isLoggedIn) return;
+
+    const handleActivity = () => {
+      const now = Date.now();
+
+      if (isIdle) {
+        // User was idle and just came back
+        const idleDuration = now - idleStartTime;
+        if (idleDuration > 1000) {
+          logIdleActivity(idleDuration);
+        }
+        setIsIdle(false);
+        setIdleStartTime(null);
+      }
+
+      setLastActive(now);
+    };
+
+    const logIdleActivity = async (duration) => {
+      try {
+        await axios.post('/api/analytics/sessions/log', {
+          userId: state.user?.id,
+          pageName: 'SYSTEM_IDLE',
+          pageUrl: window.location.pathname,
+          entryTime: new Date(idleStartTime).toISOString(),
+          exitTime: new Date().toISOString(),
+          durationMs: duration,
+          isIdle: true,
+          idleTimeMs: duration
+        });
+        console.log(`[Analytics] Logged idle duration: ${Math.round(duration / 1000)}s`);
+      } catch (err) {
+        console.error('[Analytics] Failed to log idle activity:', err);
+      }
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+    activityEvents.forEach(event => window.addEventListener(event, handleActivity));
+
+    const checkIdle = setInterval(() => {
+      const now = Date.now();
+      if (!isIdle && (now - lastActive > IDLE_THRESHOLD)) {
+        setIsIdle(true);
+        setIdleStartTime(now);
+        console.log('[Analytics] User is now IDLE');
+      }
+    }, 10000); // check every 10 seconds
+
+    return () => {
+      activityEvents.forEach(event => window.removeEventListener(event, handleActivity));
+      clearInterval(checkIdle);
+    };
+  }, [state.isLoggedIn, lastActive, isIdle, idleStartTime]);
+
+  useEffect(() => {
+    const checkSessionStatus = async () => {
+      if (state.isLoggedIn && state.user?.id) {
+        try {
+          const response = await axios.get(`/api/analytics/sessions/check-status/${state.user.id}`);
+          if (response.data === false) {
+            console.warn('Session has been terminated by administrator.');
+            logout();
+          }
+        } catch (err) {
+          console.error('Session status check failed:', err);
+        }
+      }
+    };
+
+    const interval = setInterval(checkSessionStatus, 30000); // check every 30 seconds
+    return () => clearInterval(interval);
+  }, [state.isLoggedIn, state.user?.id]);
 
   useEffect(() => {
     const init = async () => {

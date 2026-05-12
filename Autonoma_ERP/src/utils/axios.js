@@ -16,6 +16,10 @@ axiosServices.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
+    // Add X-Page-Name for auditing
+    const pageName = document.title || window.location.pathname;
+    config.headers['X-Page-Name'] = pageName;
+
     // Deep Fix: Ensure absolute URLs are not accidentally truncated or mis-prefixed
     if (!config.url.startsWith('http') && !config.url.startsWith('/') && config.baseURL) {
       if (config.baseURL.endsWith('/')) {
