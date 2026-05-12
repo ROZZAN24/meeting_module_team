@@ -188,9 +188,17 @@ export default function DepartmentDetails() {
       const matchesUpdatedDate = !updatedDateFilter || (row.updatedDate && row.updatedDate.includes(updatedDateFilter));
 
       // Global Search Query
-      const matchesSearch = !globalQuery ||
-        (row.departmentName && row.departmentName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.departmentNo && row.departmentNo.toString().includes(globalQuery));
+      const q = globalQuery ? globalQuery.toLowerCase() : '';
+      const matchesSearch = !q ||
+        (row.departmentName && row.departmentName.toLowerCase().includes(q)) ||
+        (row.departmentNo && row.departmentNo.toString().toLowerCase().includes(q)) ||
+        (row.ndaCertificate && row.ndaCertificate.toLowerCase().includes(q)) ||
+        (row.sequenceNo && row.sequenceNo.toString().toLowerCase().includes(q)) ||
+        (row.createdBy && row.createdBy.toLowerCase().includes(q)) ||
+        (row.createdDate && row.createdDate.toLowerCase().includes(q)) ||
+        (row.updatedBy && row.updatedBy.toLowerCase().includes(q)) ||
+        (row.updatedDate && row.updatedDate.toLowerCase().includes(q)) ||
+        (row.status && row.status.toString().toLowerCase().includes(q));
 
       return matchesStatus && matchesName && matchesNo && matchesNda && matchesSeq &&
         matchesCreatedBy && matchesUpdatedBy && matchesCreatedDate && matchesUpdatedDate && matchesSearch;
