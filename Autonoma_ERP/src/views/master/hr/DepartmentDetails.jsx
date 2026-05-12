@@ -47,15 +47,46 @@ export default function DepartmentDetails() {
   useEffect(() => {
     const config = [
       {
+        id: 'departmentNo', label: 'Department Number', type: 'text', placeholder: 'Search Dept No...'
+      },
+      {
+        id: 'departmentName', label: 'Department Name', type: 'text', placeholder: 'Search by Name...', isConstant: true
+      },
+      {
+        id: 'ndaCertificate', label: 'NDA', type: 'select',
+        options: [
+          { value: 'All', label: 'ALL' },
+          { value: 'Yes', label: 'YES' },
+          { value: 'No', label: 'NO' }
+        ],
+        defaultValue: 'All',
+        isConstant: true
+      },
+      {
+        id: 'sequenceNo', label: 'Sequence No', type: 'text', placeholder: 'Search Seq No...'
+      },
+      {
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'Active', label: 'ACTIVE' },
           { value: 'In Active', label: 'INACTIVE' }
         ],
-        defaultValue: 'Active'
+        defaultValue: 'Active',
+        isConstant: true
       },
-      { id: 'departmentName', label: 'Dept Name', type: 'text', placeholder: 'Search by Name...' }
+      {
+        id: 'createdBy', label: 'Created User', type: 'text', placeholder: 'Search Created By...'
+      },
+      {
+        id: 'createdDate', label: 'Created Date', type: 'dateRange'
+      },
+      {
+        id: 'updatedBy', label: 'Updated User', type: 'text', placeholder: 'Search Updated By...'
+      },
+      {
+        id: 'updatedDate', label: 'Updated Date', type: 'dateRange'
+      }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -120,14 +151,77 @@ export default function DepartmentDetails() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      // Status
       const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+
+      // Department Name
       const nameFilter = globalFilters.departmentName || '';
       const matchesName = !nameFilter || (row.departmentName && row.departmentName.toLowerCase().includes(nameFilter.toLowerCase()));
-      const matchesSearch = !globalQuery ||
-        (row.departmentName && row.departmentName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.departmentNo && row.departmentNo.toString().includes(globalQuery));
-      return matchesStatus && matchesName && matchesSearch;
+
+      // Department Number
+      const noFilter = globalFilters.departmentNo || '';
+      const matchesNo = !noFilter || (row.departmentNo && row.departmentNo.toString().includes(noFilter.toString()));
+
+      // NDA Certificate
+      const ndaFilter = globalFilters.ndaCertificate || 'All';
+      const matchesNda = ndaFilter === 'All' || row.ndaCertificate === ndaFilter;
+
+      // Sequence Number
+      const seqFilter = globalFilters.sequenceNo || '';
+      const matchesSeq = !seqFilter || (row.sequenceNo && row.sequenceNo.toString().includes(seqFilter.toString()));
+
+      // Created By
+      const createdByFilter = globalFilters.createdBy || '';
+      const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
+
+      // Updated By
+      const updatedByFilter = globalFilters.updatedBy || '';
+      const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
+
+      // Created Date Range
+      const createdStart = globalFilters.createdDateStart;
+      const createdEnd = globalFilters.createdDateEnd;
+      let matchesCreatedDate = true;
+      if (createdStart || createdEnd) {
+        if (!row.createdDate) {
+          matchesCreatedDate = false;
+        } else {
+          const rowDateStr = row.createdDate.split('T')[0];
+          if (createdStart && rowDateStr < createdStart) matchesCreatedDate = false;
+          if (createdEnd && rowDateStr > createdEnd) matchesCreatedDate = false;
+        }
+      }
+
+      // Updated Date Range
+      const updatedStart = globalFilters.updatedDateStart;
+      const updatedEnd = globalFilters.updatedDateEnd;
+      let matchesUpdatedDate = true;
+      if (updatedStart || updatedEnd) {
+        if (!row.updatedDate) {
+          matchesUpdatedDate = false;
+        } else {
+          const rowUpdatedStr = row.updatedDate.split('T')[0];
+          if (updatedStart && rowUpdatedStr < updatedStart) matchesUpdatedDate = false;
+          if (updatedEnd && rowUpdatedStr > updatedEnd) matchesUpdatedDate = false;
+        }
+      }
+
+      // Global Search Query
+      const q = globalQuery ? globalQuery.toLowerCase() : '';
+      const matchesSearch = !q ||
+        (row.departmentName && row.departmentName.toLowerCase().includes(q)) ||
+        (row.departmentNo && row.departmentNo.toString().toLowerCase().includes(q)) ||
+        (row.ndaCertificate && row.ndaCertificate.toLowerCase().includes(q)) ||
+        (row.sequenceNo && row.sequenceNo.toString().toLowerCase().includes(q)) ||
+        (row.createdBy && row.createdBy.toLowerCase().includes(q)) ||
+        (row.createdDate && row.createdDate.toLowerCase().includes(q)) ||
+        (row.updatedBy && row.updatedBy.toLowerCase().includes(q)) ||
+        (row.updatedDate && row.updatedDate.toLowerCase().includes(q)) ||
+        (row.status && row.status.toString().toLowerCase().includes(q));
+
+      return matchesStatus && matchesName && matchesNo && matchesNda && matchesSeq &&
+        matchesCreatedBy && matchesUpdatedBy && matchesCreatedDate && matchesUpdatedDate && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

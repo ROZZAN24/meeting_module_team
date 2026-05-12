@@ -72,6 +72,10 @@ public class AuthController {
 
                 String token = jwtService.generateToken(user.getUserId());
 
+                // Set context for auditing before recording session to avoid "anonymousUser" in logs
+                com.autonoma.erp.util.AuditContextHolder.setUserId(user.getUserId());
+                com.autonoma.erp.util.AuditContextHolder.setPageName("Login Page");
+
                 // Record Login Session
                 userSessionService.recordLogin(user.getUserId(), request, request.getHeader("User-Agent"));
 
@@ -107,7 +111,7 @@ public class AuthController {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(401).body("Missing or invalid Authorization header");
         }
-        
+
         String token = authHeader.substring(7);
         try {
             String userId = jwtService.extractUsername(token);
@@ -177,6 +181,8 @@ public class AuthController {
     public ResponseEntity<?> logout(@RequestBody Map<String, String> body) {
         String userId = body.get("userId");
         if (userId != null) {
+            com.autonoma.erp.util.AuditContextHolder.setUserId(userId);
+            com.autonoma.erp.util.AuditContextHolder.setPageName("Logout Action");
             userSessionService.recordLogout(userId);
         }
         return ResponseEntity.ok().build();
@@ -187,10 +193,21 @@ class LoginRequest {
     private String username;
     private String password;
 
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
 
     // Getter/Setter for 'email' to handle frontend's payload
     public void setEmail(String email) {

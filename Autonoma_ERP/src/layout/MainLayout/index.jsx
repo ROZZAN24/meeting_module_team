@@ -22,6 +22,7 @@ import Customization from '../Customization';
 import Loader from 'ui-component/Loader';
 import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
+import useNavigationTracker from 'hooks/useNavigationTracker';
 import Alert from '@mui/material/Alert';
 
 import { MenuOrientation } from 'config';
@@ -46,11 +47,20 @@ function MainLayoutInner() {
   const { licenseStatus, logoutCountdown } = useAuth();
   const [showLicenseAlert, setShowLicenseAlert] = useState(false);
 
+  // Initialize navigation tracking
+  useNavigationTracker();
+
   useEffect(() => {
-    if (licenseStatus?.isWarningPeriod) {
+    const isDismissed = sessionStorage.getItem('license_alert_acknowledged') === 'true';
+    if (licenseStatus?.isWarningPeriod && !isDismissed) {
       setShowLicenseAlert(true);
     }
   }, [licenseStatus]);
+
+  const handleDismissLicenseAlert = () => {
+    setShowLicenseAlert(false);
+    sessionStorage.setItem('license_alert_acknowledged', 'true');
+  };
 
   useEffect(() => {
     handlerDrawerOpen(!miniDrawer);
@@ -157,7 +167,7 @@ function MainLayoutInner() {
               px: 2,
               '&:hover': { bgcolor: 'grey.100' }
             }}
-            onClick={() => setShowLicenseAlert(false)}
+            onClick={handleDismissLicenseAlert}
           >
             Got it
           </Button>

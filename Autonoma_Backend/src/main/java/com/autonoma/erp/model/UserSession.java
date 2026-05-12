@@ -36,4 +36,7 @@ public class UserSession {
 
     @Column(name = "SESSION_STATUS", columnDefinition = "NVARCHAR(20)")
     private String status; // ACTIVE, COMPLETED, TIMEOUT
+
+    @Transient
+    private String userImage;
 }

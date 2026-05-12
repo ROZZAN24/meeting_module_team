@@ -13,7 +13,13 @@ SET status = 'Active'
 WHERE status IS NULL OR status = '';
 
 -- 3. Fix Checklist Assignments without a status
--- First, get the ID of the 'Pending' status
+-- First, rename STATUS_MASTER to ad_status_master if it hasn't been done
+IF OBJECT_ID('STATUS_MASTER', 'U') IS NOT NULL AND OBJECT_ID('ad_status_master', 'U') IS NULL
+BEGIN
+    EXEC sp_rename 'STATUS_MASTER', 'ad_status_master';
+END
+
+-- Get the ID of the 'Pending' status
 DECLARE @PendingStatusId INT;
 SELECT @PendingStatusId = id FROM ad_status_master WHERE name = 'Pending';
 
