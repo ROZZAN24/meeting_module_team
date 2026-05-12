@@ -338,7 +338,7 @@ const CompanyProfile = () => {
         licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
         updatedBy: user?.id || 'SYSTEM'
       };
-      
+
       if (!recordId) {
         payload.createdBy = user?.id || 'SYSTEM';
       }
