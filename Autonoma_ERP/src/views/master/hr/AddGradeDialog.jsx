@@ -9,6 +9,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| GRADE - ADD/EDIT DIALOG ||============================== //
 
@@ -20,7 +21,7 @@ const VALIDATION_RULES = [
 const INITIAL_STATE = {
   gradeCode: '',
   gradeName: '',
-  sequenceNo: 0,
+  sequenceNo: '',
   status: 'Active'
 };
 
@@ -30,6 +31,7 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { errors, validate, clearErrors } = useBOSValidation();
+  const { user } = useAuth();
 
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [isEditing, setIsEditing] = useState(false);
@@ -43,7 +45,8 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
         gradeCode: initialData.gradeCode || '',
         gradeName: initialData.gradeName || '',
         sequenceNo: initialData.sequenceNo || 0,
-        status: initialData.status || 'Active'
+        status: initialData.status || 'Active',
+        createdBy: initialData.createdBy
       });
       setIsEditing(false);
     } else {
@@ -66,11 +69,19 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
     if (!validate(formData, VALIDATION_RULES)) return;
 
     try {
+      const currentUserName = user?.id ? String(user.id) : (user?.name ? String(user.name) : 'Admin');
+
+      const payload = {
+        ...formData,
+        createdBy: formData.id ? formData.createdBy : currentUserName,
+        updatedBy: currentUserName
+      };
+
       if (formData.id) {
-        await axios.put(`/api/master/hr/grade/${formData.id}`, formData);
+        await axios.put(`/api/master/hr/grade/${formData.id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Grade updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        await axios.post('/api/master/hr/grade', formData);
+        await axios.post('/api/master/hr/grade', payload);
         dispatch(openSnackbar({ open: true, message: 'Grade created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       }
       handleClose(true);

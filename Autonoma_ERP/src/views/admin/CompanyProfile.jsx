@@ -69,6 +69,7 @@ const emptyForm = {
   gstIn: '', dbSourceName: '', licRenewalDate: '', licExpiryDate: '',
   logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS',
   licExpRemainderDays: 0,
+  restoreEnableDays: 7,
   createdBy: '',
   createdDate: '',
   updatedBy: '',
@@ -189,6 +190,7 @@ const CompanyProfile = () => {
             logInBgFileName: rec.logInBgFileName || '',
             directoryPath: rec.directoryPath || 'D:\\BOS_DOCUMENTS',
             licExpRemainderDays: rec.licExpRemainderDays || 0,
+            restoreEnableDays: rec.restoreEnableDays || 0,
             createdBy: rec.createdBy || '',
             createdDate: rec.createdDate || '',
             updatedBy: rec.updatedBy || '',
@@ -256,6 +258,7 @@ const CompanyProfile = () => {
           [field]: updatedFileName,
           stateCode: form.stateCode ? parseInt(form.stateCode) : null,
           licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
+          restoreEnableDays: form.restoreEnableDays ? parseInt(form.restoreEnableDays) : 0,
           licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
           licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
           updatedBy: user?.id || 'SYSTEM'
@@ -334,6 +337,7 @@ const CompanyProfile = () => {
         ...form,
         stateCode: form.stateCode ? parseInt(form.stateCode) : null,
         licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
+        restoreEnableDays: form.restoreEnableDays ? parseInt(form.restoreEnableDays) : 0,
         licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
         licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
         updatedBy: user?.id || 'SYSTEM'
@@ -735,6 +739,14 @@ const CompanyProfile = () => {
                 {...fieldProps('licExpRemainderDays', 'Lic Exp Remainder Days')}
                 type="number"
                 disabled={!isSuperUser}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                {...fieldProps('restoreEnableDays', 'Restore Enable Days')}
+                type="number"
+                disabled={!isSuperUser}
+                helperText="Grace period (days) to restore deleted records"
               />
             </Grid>
             <Grid item xs={12} sm={8}>

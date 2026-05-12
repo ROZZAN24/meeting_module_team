@@ -319,7 +319,7 @@ const PreferenceMaster = () => {
                 <IconSettings size={24} color="white" />
               </Box>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'inherit', lineHeight: 1.1, fontSize: '1.1rem' }}>Prefence Configuration Editor</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'inherit', lineHeight: 1.1, fontSize: '1.1rem' }}>Preference Configuration Editor</Typography>
                 <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>ADVANCED SYSTEM PREFERENCES</Typography>
               </Box>
             </Stack>
