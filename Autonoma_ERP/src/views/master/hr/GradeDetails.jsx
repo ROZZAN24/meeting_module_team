@@ -119,7 +119,8 @@ export default function GradeDetails() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const matchesStatus = statusFilter === 'All' || 
+        (row.status && row.status.toLowerCase().replace(/\s+/g, '') === statusFilter.toLowerCase().replace(/\s+/g, ''));
       const nameFilter = globalFilters.gradeName || '';
       const matchesName = !nameFilter || (row.gradeName && row.gradeName.toLowerCase().includes(nameFilter.toLowerCase()));
       const matchesSearch = !globalQuery ||

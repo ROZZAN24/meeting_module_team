@@ -20,16 +20,16 @@ END
 GO
 
 -- 1. TABLE RENAMES
-IF OBJECT_ID('HRM_EMPLOYEE_MASTER', 'U') IS NOT NULL EXEC sp_rename 'HRM_EMPLOYEE_MASTER', 'hrm_employee_master';
+IF OBJECT_ID('HRM_EMPLOYEE_MASTER', 'U') IS NOT NULL AND OBJECT_ID('hrm_employee_master', 'U') IS NULL EXEC sp_rename 'HRM_EMPLOYEE_MASTER', 'hrm_employee_master';
 IF OBJECT_ID('EmployeeMaster', 'U') IS NOT NULL AND OBJECT_ID('hrm_employee_master', 'U') IS NULL EXEC sp_rename 'EmployeeMaster', 'hrm_employee_master';
-IF OBJECT_ID('DesignationMaster', 'U') IS NOT NULL EXEC sp_rename 'DesignationMaster', 'hrm_designation_master';
-IF OBJECT_ID('departments', 'U') IS NOT NULL EXEC sp_rename 'departments', 'hrm_department_master';
-IF OBJECT_ID('hrm_desig_level', 'U') IS NOT NULL EXEC sp_rename 'hrm_desig_level', 'hrm_designation_level';
-IF OBJECT_ID('AD_USER_CREDENTIALS', 'U') IS NOT NULL EXEC sp_rename 'AD_USER_CREDENTIALS', 'ad_user_credential';
-IF OBJECT_ID('audit_schedules', 'U') IS NOT NULL EXEC sp_rename 'audit_schedules', 'audit_schedule';
-IF OBJECT_ID('audit_observations', 'U') IS NOT NULL EXEC sp_rename 'audit_observations', 'audit_observation';
-IF OBJECT_ID('audit_observation_details', 'U') IS NOT NULL EXEC sp_rename 'audit_observation_details', 'audit_observation_detail';
-IF OBJECT_ID('QMS_MASTER_CHECKLIST', 'U') IS NOT NULL EXEC sp_rename 'QMS_MASTER_CHECKLIST', 'qms_checklist_master';
+IF OBJECT_ID('DesignationMaster', 'U') IS NOT NULL AND OBJECT_ID('hrm_designation_master', 'U') IS NULL EXEC sp_rename 'DesignationMaster', 'hrm_designation_master';
+IF OBJECT_ID('departments', 'U') IS NOT NULL AND OBJECT_ID('hrm_department_master', 'U') IS NULL EXEC sp_rename 'departments', 'hrm_department_master';
+IF OBJECT_ID('hrm_desig_level', 'U') IS NOT NULL AND OBJECT_ID('hrm_designation_level', 'U') IS NULL EXEC sp_rename 'hrm_desig_level', 'hrm_designation_level';
+IF OBJECT_ID('AD_USER_CREDENTIALS', 'U') IS NOT NULL AND OBJECT_ID('ad_user_credential', 'U') IS NULL EXEC sp_rename 'AD_USER_CREDENTIALS', 'ad_user_credential';
+IF OBJECT_ID('audit_schedules', 'U') IS NOT NULL AND OBJECT_ID('audit_schedule', 'U') IS NULL EXEC sp_rename 'audit_schedules', 'audit_schedule';
+IF OBJECT_ID('audit_observations', 'U') IS NOT NULL AND OBJECT_ID('audit_observation', 'U') IS NULL EXEC sp_rename 'audit_observations', 'audit_observation';
+IF OBJECT_ID('audit_observation_details', 'U') IS NOT NULL AND OBJECT_ID('audit_observation_detail', 'U') IS NULL EXEC sp_rename 'audit_observation_details', 'audit_observation_detail';
+IF OBJECT_ID('QMS_MASTER_CHECKLIST', 'U') IS NOT NULL AND OBJECT_ID('qms_checklist_master', 'U') IS NULL EXEC sp_rename 'QMS_MASTER_CHECKLIST', 'qms_checklist_master';
 
 -- 2. COLUMN RENAMES using the helper
 EXEC #RenameCol 'audit_observation', 'createdDate', 'created_at';

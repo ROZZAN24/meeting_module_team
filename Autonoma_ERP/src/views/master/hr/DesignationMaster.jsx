@@ -40,11 +40,67 @@ export default function DesignationMaster() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const globalQuery = useSelector((state) => state.search.query);
+  const globalFilters = useSelector((state) => state.search.filters);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'designationName', label: 'Designation Name', type: 'text', placeholder: 'Search name...' }
-    ]));
+    const config = [
+      {
+        id: 'designationName', label: 'Designation Name', type: 'text', placeholder: 'Search Name...', isConstant: true
+      },
+      {
+        id: 'subCategoryLevel', label: 'Sub Category Level', type: 'select',
+        options: [
+          { value: 'All', label: 'ALL' },
+          { value: 'L1', label: 'L1' },
+          { value: 'L2', label: 'L2' },
+          { value: 'L3', label: 'L3' },
+          { value: 'L4', label: 'L4' },
+          { value: 'L5', label: 'L5' },
+          { value: 'L6', label: 'L6' },
+          { value: 'L7', label: 'L7' }
+        ],
+        defaultValue: 'All',
+        isConstant: true
+      },
+      {
+        id: 'appearInCompetency', label: 'Appear in Competency', type: 'select',
+        options: [
+          { value: 'All', label: 'ALL' },
+          { value: 'YES', label: 'YES' },
+          { value: 'NO', label: 'NO' }
+        ],
+        defaultValue: 'All',
+        isConstant: true
+      },
+      {
+        id: 'qualification', label: 'Qualification', type: 'text', placeholder: 'Search Qualification...', isConstant: true
+      },
+      {
+        id: 'designationCode', label: 'Designation Code', type: 'text', placeholder: 'Search Code...'
+      },
+      {
+        id: 'experience', label: 'Experience', type: 'text', placeholder: 'Search Experience...'
+      },
+      {
+        id: 'displaySlNo', label: 'Display Serial Number', type: 'text', placeholder: 'Search Serial No...'
+      },
+      {
+        id: 'jobDescription', label: 'Job Description', type: 'text', placeholder: 'Search Description...'
+      },
+      {
+        id: 'orgSeqNo', label: 'Organization Sequence Number', type: 'text', placeholder: 'Search Sequence No...'
+      },
+      {
+        id: 'budgetedPositions', label: 'Budgeted Positions', type: 'text', placeholder: 'Search Budget...'
+      },
+      {
+        id: 'createdBy', label: 'Created By', type: 'text', placeholder: 'Search Created By...'
+      },
+      {
+        id: 'createdDate', label: 'Created Date', type: 'date'
+      }
+    ];
+    dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -93,12 +149,77 @@ export default function DesignationMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const matchesSearch = !globalQuery || 
-        (row.designationName && row.designationName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.designationCode && row.designationCode.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesSearch;
+      const globalFiltersSafe = globalFilters || {};
+
+      // Designation Name
+      const nameFilter = globalFiltersSafe.designationName || '';
+      const matchesName = !nameFilter || (row.designationName && row.designationName.toLowerCase().includes(nameFilter.toLowerCase()));
+
+      // Sub Category Level
+      const levelFilter = globalFiltersSafe.subCategoryLevel || 'All';
+      const matchesLevel = levelFilter === 'All' || row.subCategoryLevel === levelFilter;
+
+      // Appear in Competency
+      const appearFilter = globalFiltersSafe.appearInCompetency || 'All';
+      const matchesAppear = appearFilter === 'All' || row.appearInCompetency === appearFilter;
+
+      // Qualification
+      const qualFilter = globalFiltersSafe.qualification || '';
+      const matchesQual = !qualFilter || (row.qualification && row.qualification.toLowerCase().includes(qualFilter.toLowerCase()));
+
+      // Designation Code
+      const codeFilter = globalFiltersSafe.designationCode || '';
+      const matchesCode = !codeFilter || (row.designationCode && row.designationCode.toLowerCase().includes(codeFilter.toLowerCase()));
+
+      // Experience
+      const expFilter = globalFiltersSafe.experience || '';
+      const matchesExp = !expFilter || (row.experience && row.experience.toLowerCase().includes(expFilter.toLowerCase()));
+
+      // Display Serial Number
+      const slFilter = globalFiltersSafe.displaySlNo || '';
+      const matchesSl = !slFilter || (row.displaySlNo && row.displaySlNo.toString().includes(slFilter.toString()));
+
+      // Job Description
+      const descFilter = globalFiltersSafe.jobDescription || '';
+      const matchesDesc = !descFilter || (row.jobDescription && row.jobDescription.toLowerCase().includes(descFilter.toLowerCase()));
+
+      // Org Sequence Number
+      const seqFilter = globalFiltersSafe.orgSeqNo || '';
+      const matchesSeq = !seqFilter || (row.orgSeqNo && row.orgSeqNo.toString().includes(seqFilter.toString()));
+
+      // Budgeted Positions
+      const budgetFilter = globalFiltersSafe.budgetedPositions || '';
+      const matchesBudget = !budgetFilter || (row.budgetedPositions && row.budgetedPositions.toString().includes(budgetFilter.toString()));
+
+      // Created By
+      const createdByFilter = globalFiltersSafe.createdBy || '';
+      const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
+
+      // Created Date
+      const createdDateFilter = globalFiltersSafe.createdDate || '';
+      const matchesCreatedDate = !createdDateFilter || (row.createdDate && row.createdDate.includes(createdDateFilter));
+
+      // Global Search
+      const q = globalQuery ? globalQuery.toLowerCase() : '';
+      const matchesSearch = !q ||
+        (row.designationName && row.designationName.toLowerCase().includes(q)) ||
+        (row.designationCode && row.designationCode.toLowerCase().includes(q)) ||
+        (row.subCategoryLevel && row.subCategoryLevel.toLowerCase().includes(q)) ||
+        (row.experience && row.experience.toLowerCase().includes(q)) ||
+        (row.appearInCompetency && row.appearInCompetency.toLowerCase().includes(q)) ||
+        (row.displaySlNo && row.displaySlNo.toString().toLowerCase().includes(q)) ||
+        (row.qualification && row.qualification.toLowerCase().includes(q)) ||
+        (row.jobDescription && row.jobDescription.toLowerCase().includes(q)) ||
+        (row.orgSeqNo && row.orgSeqNo.toString().toLowerCase().includes(q)) ||
+        (row.budgetedPositions && row.budgetedPositions.toString().toLowerCase().includes(q)) ||
+        (row.createdBy && row.createdBy.toLowerCase().includes(q)) ||
+        (row.createdDate && row.createdDate.toLowerCase().includes(q));
+
+      return matchesName && matchesLevel && matchesAppear && matchesQual && matchesCode &&
+        matchesExp && matchesSl && matchesDesc && matchesSeq && matchesBudget &&
+        matchesCreatedBy && matchesCreatedDate && matchesSearch;
     });
-  }, [rows, globalQuery]);
+  }, [rows, globalQuery, globalFilters]);
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 

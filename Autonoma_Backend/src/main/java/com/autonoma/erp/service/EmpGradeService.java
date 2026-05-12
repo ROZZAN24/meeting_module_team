@@ -27,8 +27,14 @@ public class EmpGradeService {
         if (gradeDetail.getCreatedDate() == null) {
             gradeDetail.setCreatedDate(new Date());
         }
-        if (gradeDetail.getCreatedBy() == null) {
+        if (gradeDetail.getCreatedBy() == null || gradeDetail.getCreatedBy().trim().isEmpty()) {
             gradeDetail.setCreatedBy("Admin");
+        }
+        if (gradeDetail.getUpdatedBy() == null || gradeDetail.getUpdatedBy().trim().isEmpty()) {
+            gradeDetail.setUpdatedBy(gradeDetail.getCreatedBy());
+        }
+        if (gradeDetail.getUpdatedDate() == null) {
+            gradeDetail.setUpdatedDate(new Date());
         }
         if (gradeDetail.getStatus() == null) {
             gradeDetail.setStatus("Active");
@@ -43,7 +49,9 @@ public class EmpGradeService {
             gradeDetail.setSequenceNo(gradeDetailDetails.getSequenceNo());
             gradeDetail.setGradeName(gradeDetailDetails.getGradeName());
             gradeDetail.setStatus(gradeDetailDetails.getStatus());
-            gradeDetail.setUpdatedBy(gradeDetailDetails.getUpdatedBy() != null ? gradeDetailDetails.getUpdatedBy() : "Admin");
+            String updater = gradeDetailDetails.getUpdatedBy();
+            gradeDetail.setUpdatedBy((updater != null && !updater.trim().isEmpty()) ? updater : "Admin");
+            gradeDetail.setUpdatedDate(new Date());
             return repository.save(gradeDetail);
         }
         return null;
