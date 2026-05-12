@@ -317,7 +317,11 @@ export default function SearchSection() {
                       {searchConfig && searchConfig.filter(f => f.isConstant || visibleFilterIds.includes(f.id)).map(f => (
                         <Chip
                           key={f.id}
-                          label={`${f.label}: ${f.options?.find(o => o.value === (filters[f.id] || f.defaultValue))?.label || filters[f.id] || 'All'}`}
+                          label={
+                            f.type === 'dateRange'
+                              ? `${f.label}: ${filters[`${f.id}Start`] || filters[`${f.id}End`] ? `${filters[`${f.id}Start`] || 'Any'} to ${filters[`${f.id}End`] || 'Latest'}` : 'All'}`
+                              : `${f.label}: ${f.options?.find(o => o.value === (filters[f.id] || f.defaultValue))?.label || filters[f.id] || 'All'}`
+                          }
                           size="small"
                           onDelete={f.isConstant ? undefined : () => updateVisibleFilters(visibleFilterIds.filter(id => id !== f.id))}
                           sx={{ 
@@ -453,6 +457,28 @@ export default function SearchSection() {
                                       </MenuItem>
                                     ))}
                                   </Select>
+                                ) : field.type === 'dateRange' ? (
+                                  <Stack direction="row" spacing={1} alignItems="center">
+                                    <TextField
+                                      type="date"
+                                      fullWidth size="small"
+                                      variant="outlined"
+                                      value={filters[`${field.id}Start`] || ''}
+                                      onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
+                                      slotProps={{ inputLabel: { shrink: true } }}
+                                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
+                                    <TextField
+                                      type="date"
+                                      fullWidth size="small"
+                                      variant="outlined"
+                                      value={filters[`${field.id}End`] || ''}
+                                      onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
+                                      slotProps={{ inputLabel: { shrink: true } }}
+                                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                    />
+                                  </Stack>
                                 ) : field.type === 'date' ? (
                                   <TextField
                                     type="date"

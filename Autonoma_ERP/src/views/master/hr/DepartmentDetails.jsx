@@ -79,13 +79,13 @@ export default function DepartmentDetails() {
         id: 'createdBy', label: 'Created User', type: 'text', placeholder: 'Search Created By...'
       },
       {
-        id: 'createdDate', label: 'Created Date', type: 'date'
+        id: 'createdDate', label: 'Created Date', type: 'dateRange'
       },
       {
         id: 'updatedBy', label: 'Updated User', type: 'text', placeholder: 'Search Updated By...'
       },
       {
-        id: 'updatedDate', label: 'Updated Date', type: 'date'
+        id: 'updatedDate', label: 'Updated Date', type: 'dateRange'
       }
     ];
     dispatch(setFilterConfig(config));
@@ -179,13 +179,33 @@ export default function DepartmentDetails() {
       const updatedByFilter = globalFilters.updatedBy || '';
       const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
 
-      // Created Date
-      const createdDateFilter = globalFilters.createdDate || '';
-      const matchesCreatedDate = !createdDateFilter || (row.createdDate && row.createdDate.includes(createdDateFilter));
+      // Created Date Range
+      const createdStart = globalFilters.createdDateStart;
+      const createdEnd = globalFilters.createdDateEnd;
+      let matchesCreatedDate = true;
+      if (createdStart || createdEnd) {
+        if (!row.createdDate) {
+          matchesCreatedDate = false;
+        } else {
+          const rowDateStr = row.createdDate.split('T')[0];
+          if (createdStart && rowDateStr < createdStart) matchesCreatedDate = false;
+          if (createdEnd && rowDateStr > createdEnd) matchesCreatedDate = false;
+        }
+      }
 
-      // Updated Date
-      const updatedDateFilter = globalFilters.updatedDate || '';
-      const matchesUpdatedDate = !updatedDateFilter || (row.updatedDate && row.updatedDate.includes(updatedDateFilter));
+      // Updated Date Range
+      const updatedStart = globalFilters.updatedDateStart;
+      const updatedEnd = globalFilters.updatedDateEnd;
+      let matchesUpdatedDate = true;
+      if (updatedStart || updatedEnd) {
+        if (!row.updatedDate) {
+          matchesUpdatedDate = false;
+        } else {
+          const rowUpdatedStr = row.updatedDate.split('T')[0];
+          if (updatedStart && rowUpdatedStr < updatedStart) matchesUpdatedDate = false;
+          if (updatedEnd && rowUpdatedStr > updatedEnd) matchesUpdatedDate = false;
+        }
+      }
 
       // Global Search Query
       const q = globalQuery ? globalQuery.toLowerCase() : '';
