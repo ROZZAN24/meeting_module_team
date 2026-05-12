@@ -150,6 +150,10 @@ export default function DesignationMaster() {
       Experience: r.experience,
       Qualification: r.qualification,
       'Job Description': r.jobDescription,
+      'Created By': r.createdBy,
+      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
+      'Updated By': r.updatedBy,
+      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Designation_Master');
