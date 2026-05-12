@@ -26,7 +26,9 @@ const columns = [
   { id: 'orgSeqNo', label: 'Organization Sequence Number', minWidth: 200 },
   { id: 'budgetedPositions', label: 'Number of Positions (Budget)', minWidth: 180 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 }
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function DesignationMaster() {
@@ -97,7 +99,13 @@ export default function DesignationMaster() {
         id: 'createdBy', label: 'Created By', type: 'text', placeholder: 'Search Created By...'
       },
       {
-        id: 'createdDate', label: 'Created Date', type: 'date'
+        id: 'createdDate', label: 'Created Date', type: 'dateRange'
+      },
+      {
+        id: 'updatedBy', label: 'Updated By', type: 'text', placeholder: 'Search Updated By...'
+      },
+      {
+        id: 'updatedDate', label: 'Updated Date', type: 'dateRange'
       }
     ];
     dispatch(setFilterConfig(config));
@@ -195,9 +203,37 @@ export default function DesignationMaster() {
       const createdByFilter = globalFiltersSafe.createdBy || '';
       const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
 
-      // Created Date
-      const createdDateFilter = globalFiltersSafe.createdDate || '';
-      const matchesCreatedDate = !createdDateFilter || (row.createdDate && row.createdDate.includes(createdDateFilter));
+      // Updated By
+      const updatedByFilter = globalFiltersSafe.updatedBy || '';
+      const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
+
+      // Created Date Range
+      const createdStart = globalFiltersSafe.createdDateStart;
+      const createdEnd = globalFiltersSafe.createdDateEnd;
+      let matchesCreatedDate = true;
+      if (createdStart || createdEnd) {
+        if (!row.createdDate) {
+          matchesCreatedDate = false;
+        } else {
+          const rowDateStr = row.createdDate.split('T')[0];
+          if (createdStart && rowDateStr < createdStart) matchesCreatedDate = false;
+          if (createdEnd && rowDateStr > createdEnd) matchesCreatedDate = false;
+        }
+      }
+
+      // Updated Date Range
+      const updatedStart = globalFiltersSafe.updatedDateStart;
+      const updatedEnd = globalFiltersSafe.updatedDateEnd;
+      let matchesUpdatedDate = true;
+      if (updatedStart || updatedEnd) {
+        if (!row.updatedDate) {
+          matchesUpdatedDate = false;
+        } else {
+          const rowUpdatedStr = row.updatedDate.split('T')[0];
+          if (updatedStart && rowUpdatedStr < updatedStart) matchesUpdatedDate = false;
+          if (updatedEnd && rowUpdatedStr > updatedEnd) matchesUpdatedDate = false;
+        }
+      }
 
       // Global Search
       const q = globalQuery ? globalQuery.toLowerCase() : '';
@@ -213,11 +249,13 @@ export default function DesignationMaster() {
         (row.orgSeqNo && row.orgSeqNo.toString().toLowerCase().includes(q)) ||
         (row.budgetedPositions && row.budgetedPositions.toString().toLowerCase().includes(q)) ||
         (row.createdBy && row.createdBy.toLowerCase().includes(q)) ||
-        (row.createdDate && row.createdDate.toLowerCase().includes(q));
+        (row.createdDate && row.createdDate.toLowerCase().includes(q)) ||
+        (row.updatedBy && row.updatedBy.toLowerCase().includes(q)) ||
+        (row.updatedDate && row.updatedDate.toLowerCase().includes(q));
 
       return matchesName && matchesLevel && matchesAppear && matchesQual && matchesCode &&
         matchesExp && matchesSl && matchesDesc && matchesSeq && matchesBudget &&
-        matchesCreatedBy && matchesCreatedDate && matchesSearch;
+        matchesCreatedBy && matchesUpdatedBy && matchesCreatedDate && matchesUpdatedDate && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 
@@ -231,6 +269,7 @@ export default function DesignationMaster() {
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
     if (col.id === 'createdDate') return row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-';
+    if (col.id === 'updatedDate') return row.updatedDate ? format(new Date(row.updatedDate), 'dd-MM-yyyy HH:mm') : '-';
     return row[col.id] || '-';
   };
 
