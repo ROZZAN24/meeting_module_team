@@ -141,13 +141,25 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
     >
       <BOSFormSection title={isEdit ? "Attendance Details" : "Attendance Entry"} icon={<IconClock size={22} />}>
         <Stack spacing={2.5} sx={{ mt: 1 }}>
-          <BOSTextField
-            label="Schedule No"
-            value={selectedSchedule?.scheduleNo || ''}
-            InputProps={{ readOnly: true }}
-            fullWidth
-            sx={{ bgcolor: 'grey.50' }}
-          />
+          {isEdit ? (
+            <BOSTextField
+              label="Schedule No"
+              value={selectedSchedule?.scheduleNo || ''}
+              InputProps={{ readOnly: true }}
+              fullWidth
+              sx={{ bgcolor: 'grey.50' }}
+            />
+          ) : (
+            <Autocomplete
+              options={schedules}
+              getOptionLabel={(option) => option.scheduleNo || ''}
+              value={selectedSchedule}
+              onChange={(e, val) => setSelectedSchedule(val)}
+              renderInput={(params) => (
+                <BOSTextField {...params} label="Select Schedule No" required fullWidth />
+              )}
+            />
+          )}
 
           <BOSTextField
             label="Attendee Name"
