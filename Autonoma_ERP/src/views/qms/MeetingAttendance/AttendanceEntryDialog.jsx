@@ -208,5 +208,3 @@ AttendanceEntryDialog.propTypes = {
 };
 
 export default AttendanceEntryDialog;
-
-export default AttendanceEntryDialog;
