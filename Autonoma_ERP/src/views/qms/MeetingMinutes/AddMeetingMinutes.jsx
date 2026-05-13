@@ -447,8 +447,8 @@ export default function AddMeetingMinutes() {
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Chaired By" sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
-                    { label: 'Meeting Start Time', component: <BOSTextField fullWidth type="time" value={form.startTime} onChange={(e) => setForm({...form, startTime: e.target.value})} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> },
-                    { label: 'Meeting End Time', component: <BOSTextField fullWidth type="time" value={form.endTime} onChange={(e) => setForm({...form, endTime: e.target.value})} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> }
+                    { label: 'Meeting Start Time', component: <BOSTextField fullWidth type="time" value={form.startTime} onChange={(e) => setForm({...form, startTime: e.target.value})} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> },
+                    { label: 'Meeting End Time', component: <BOSTextField fullWidth type="time" value={form.endTime} onChange={(e) => setForm({...form, endTime: e.target.value})} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> }
                   ].map((row, idx) => (
                     <TableRow key={idx}>
                       <TableCell sx={{ width: '150px', whiteSpace: 'nowrap' }}>
@@ -505,12 +505,12 @@ export default function AddMeetingMinutes() {
                             const list = [...form.attendanceList];
                             list[idx].inTime = e.target.value;
                             setForm({...form, attendanceList: list});
-                          }} sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} /></TableCell>
+                          }} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} /></TableCell>
                           <TableCell><BOSTextField type="time" size="small" value={att.outTime} onChange={(e) => {
                             const list = [...form.attendanceList];
                             list[idx].outTime = e.target.value;
                             setForm({...form, attendanceList: list});
-                          }} sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} /></TableCell>
+                          }} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} /></TableCell>
                           <TableCell>
                             <BOSTextField 
                               select 
