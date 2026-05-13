@@ -1,6 +1,45 @@
-# IDEs and OS
-.vscode/
-.idea/
+# Java / Spring Boot
+autonoma-backend/target/
+autonoma-backend/*.class
+autonoma-backend/.settings/
+autonoma-backend/.classpath
+autonoma-backend/.project
+autonoma-backend/.factorypath
+autonoma-backend/*.log
+autonoma-backend/data/
+autonoma-backend/uploads/
+
+email-service/target/
+email-service/*.log
+email-service/generated-documents/
+
+# Node / React
+autonoma-frontend/node_modules/
+autonoma-frontend/dist/
+autonoma-frontend/build/
+autonoma-frontend/.env
+autonoma-frontend/npm-debug.log*
+autonoma-frontend/yarn-debug.log*
+autonoma-frontend/yarn-error.log*
+
+email-frontend/node_modules/
+email-frontend/dist/
+email-frontend/.env
+
+# Dependencies
+node_modules/
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/dist
+/build
+
+# Misc
 .DS_Store
 *.swp
 *.log
@@ -30,5 +69,14 @@ yarn-error.log*
 .eslintcache
 .stylelintcache
 
-# Submodule leftovers
-.gitmodules
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project specific
+target/
+*.log
+tools/
+nutech\ new/
