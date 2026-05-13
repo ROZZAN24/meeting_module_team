@@ -71,7 +71,7 @@ public class AuditTrailService {
         // Check retention period
         List<CompanyCredential> companies = companyCredentialRepository.findAll();
         if (!companies.isEmpty()) {
-            Long days = companies.get(0).getRestoreEnableDays();
+            Integer days = companies.get(0).getRestoreEnableDays();
             if (days != null && days > 0) {
                 long diff = new Date().getTime() - log.getCreatedAt().getTime();
                 long diffDays = diff / (24 * 60 * 60 * 1000);
