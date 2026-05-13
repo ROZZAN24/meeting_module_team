@@ -30,6 +30,7 @@ export default function AttendanceList() {
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
