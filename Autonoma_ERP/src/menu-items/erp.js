@@ -13,7 +13,12 @@ import {
   IconHelp,
   IconChecks,
   IconRocket,
-  IconUsersGroup
+  IconUsersGroup,
+  IconCoins,
+  IconChartBar,
+  IconChartPie,
+  IconCreditCard,
+  IconMapPin
 } from '@tabler/icons-react';
 
 const icons = {
@@ -31,7 +36,12 @@ const icons = {
   IconHelp,
   IconChecks,
   IconRocket,
-  IconUsersGroup
+  IconUsersGroup,
+  IconCoins,
+  IconChartBar,
+  IconChartPie,
+  IconCreditCard,
+  IconMapPin
 };
 
 export const masters = {
@@ -160,6 +170,101 @@ export const hra = {
           url: '/hra/employee/master'
         }
       ]
+    },
+    {
+      id: 'sam',
+      title: 'SAM - Sales & Management',
+      type: 'collapse',
+      icon: icons.IconBriefcase,
+      children: [
+        {
+          id: 'sam-ocr',
+          title: 'OCR',
+          type: 'collapse',
+          icon: icons.IconServerCog,
+          children: [
+            {
+              id: 'sm-customer-master',
+              title: 'Customer Master',
+              type: 'item',
+              url: '/sm/customers',
+              icon: icons.IconUsers
+            },
+            {
+              id: 'sm-vendor',
+              title: 'Vendor',
+              type: 'collapse',
+              icon: icons.IconTruckDelivery,
+              children: [
+                {
+                  id: 'sm-supplier-master',
+                  title: 'Supplier Master',
+                  type: 'item',
+                  url: '/sm/suppliers',
+                  icon: icons.IconTruckDelivery
+                },
+                {
+                  id: 'sm-subcontractor',
+                  title: 'Sub Contractor',
+                  type: 'item',
+                  url: '/sm/sub-contractors',
+                  icon: icons.IconTool
+                }
+              ]
+            },
+            {
+              id: 'sm-contact-master',
+              title: 'Contact Master',
+              type: 'item',
+              url: '/sm/contacts',
+              icon: icons.IconUsers
+            },
+            {
+              id: 'sm-customer-address',
+              title: 'Customer Address',
+              type: 'item',
+              url: '/sm/customer-address',
+              icon: icons.IconMapPin
+            },
+            {
+              id: 'sm-currency-master',
+              title: 'Currency Master',
+              type: 'item',
+              url: '/sm/ocr/currency-master',
+              icon: icons.IconCoins
+            },
+            {
+              id: 'sm-segment-master',
+              title: 'Segment Master',
+              type: 'item',
+              url: '/sm/ocr/segment-master',
+              icon: icons.IconChartBar
+            },
+            {
+              id: 'sm-sub-segment-master',
+              title: 'Sub Segment Master',
+              type: 'item',
+              url: '/sm/ocr/sub-segment-master',
+              icon: icons.IconChartPie
+            },
+            {
+              id: 'sm-payment-terms',
+              title: 'Payment Terms',
+              type: 'item',
+              url: '/sm/ocr/payment-terms',
+              icon: icons.IconCreditCard
+            },
+            {
+              id: 'sm-delivery-terms',
+              title: 'Delivery Terms',
+              type: 'item',
+              url: '/sm/ocr/delivery-terms',
+              icon: icons.IconTruckDelivery
+            }
+
+          ]
+        }
+      ]
     }
   ]
 };
@@ -172,86 +277,43 @@ export const sm = {
   icon: icons.IconBriefcase,
   children: [
     {
-      id: 'sm-ocr',
-      title: 'OCR',
-      type: 'collapse',
-      icon: icons.IconServerCog,
-      children: [
-        {
-          id: 'sm-enquiry-dashboard',
-          title: 'Enquiry Dashboard',
-          type: 'item',
-          url: '/sm/enquiry/dashboard',
-          icon: icons.IconDashboard
-        },
-        {
-          id: 'sm-customer-master',
-          title: 'Customer Master',
-          type: 'item',
-          url: '/sm/customers',
-          icon: icons.IconUsers
-        },
-        {
-          id: 'sm-vendor',
-          title: 'Vendor',
-          type: 'collapse',
-          icon: icons.IconTruckDelivery,
-          children: [
-            {
-              id: 'sm-supplier-master',
-              title: 'Supplier Master',
-              type: 'item',
-              url: '/sm/suppliers',
-              icon: icons.IconTruckDelivery
-            },
-            {
-              id: 'sm-subcontractor',
-              title: 'Sub Contractor',
-              type: 'item',
-              url: '/sm/sub-contractors',
-              icon: icons.IconTool
-            }
-          ]
-        },
-        {
-          id: 'sm-contact-master',
-          title: 'Contact Master',
-          type: 'item',
-          url: '/sm/contacts',
-          icon: icons.IconUsers
-        },
-        {
-          id: 'sm-enquiry',
-          title: 'Enquiry',
-          type: 'item',
-          url: '/sm/enquiries',
-          icon: icons.IconListCheck
-        },
-        {
-          id: 'sm-price-master',
-          title: 'Price Master',
-          type: 'item',
-          url: '/sm/price-master',
-          icon: icons.IconReport
-        },
-        {
-          id: 'sm-quotation',
-          title: 'Quotation',
-          type: 'item',
-          url: '/sm/quotations',
-          icon: icons.IconReport
-        },
-        {
-          id: 'sm-work-items',
-          title: 'Work Items',
-          type: 'item',
-          url: '/sm/work-items',
-          icon: icons.IconRocket
-        }
-      ]
+      id: 'sm-enquiry-dashboard',
+      title: 'Enquiry Dashboard',
+      type: 'item',
+      url: '/sm/enquiry/dashboard',
+      icon: icons.IconDashboard
+    },
+    {
+      id: 'sm-work-items',
+      title: 'Work Items',
+      type: 'item',
+      url: '/sm/work-items',
+      icon: icons.IconRocket
+    },
+    {
+      id: 'sm-enquiry',
+      title: 'Enquiry',
+      type: 'item',
+      url: '/sm/enquiries',
+      icon: icons.IconListCheck
+    },
+    {
+      id: 'sm-price-master',
+      title: 'Price Master',
+      type: 'item',
+      url: '/sm/price-master',
+      icon: icons.IconReport
+    },
+    {
+      id: 'sm-quotation',
+      title: 'Quotation',
+      type: 'item',
+      url: '/sm/quotations',
+      icon: icons.IconReport
     }
   ]
 };
+
 
 export const pp = {
   id: 'pp',
