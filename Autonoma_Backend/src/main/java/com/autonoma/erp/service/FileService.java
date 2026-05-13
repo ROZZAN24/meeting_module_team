@@ -65,10 +65,14 @@ public class FileService {
             }
         }
 
-        // Explicitly map to the exact folder named "D:\BOS_DOCUMENTS" inside the backend root
-        // as requested by the user to align all uploads with this path
+        // Standardize the document root path based on OS
         if (resolvedPath == null || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
-            resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
+            if (os.contains("win")) {
+                resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
+            } else {
+                // On Mac/Linux, we use a clean folder name without Windows drive letters
+                resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath();
+            }
         }
 
         // Ensure root directory exists
