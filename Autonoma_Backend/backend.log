@@ -11,7 +11,14 @@
 [[1;34mINFO[m] Copying 127 resources from src/main/resources to target/classes
 [[1;34mINFO[m] 
 [[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.13.0:compile[m [1m(default-compile)[m @ [36merp-backend[0;1m ---[m
-[[1;34mINFO[m] Nothing to compile - all classes are up to date.
+[[1;34mINFO[m] Recompiling the module because of [1mchanged source code[m.
+[[1;34mINFO[m] Compiling 210 source files with javac [debug parameters release 21] to target/classes
+[[1;33mWARNING[m] /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/model/UserSessionActivity.java:[43,21] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[[1;33mWARNING[m] /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/model/UserSessionActivity.java:[46,18] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[[1;34mINFO[m] /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/config/GlobalAuditInterceptor.java: /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/config/GlobalAuditInterceptor.java uses or overrides a deprecated API.
+[[1;34mINFO[m] /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/config/GlobalAuditInterceptor.java: Recompile with -Xlint:deprecation for details.
+[[1;34mINFO[m] /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/service/NcrOfiService.java: Some input files use unchecked or unsafe operations.
+[[1;34mINFO[m] /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/main/java/com/autonoma/erp/service/NcrOfiService.java: Recompile with -Xlint:unchecked for details.
 [[1;34mINFO[m] 
 [[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:3.3.1:testResources[m [1m(default-testResources)[m @ [36merp-backend[0;1m ---[m
 [[1;34mINFO[m] skip non existing resourceDirectory /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/src/test/resources
@@ -33,47 +40,47 @@
  =========|_|==============|___/=/_/_/_/
 [32m :: Spring Boot :: [39m              [2m (v3.2.5)[0;39m
 
-[2m2026-05-13T16:48:49.785+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mc.a.erp.AutonomaBackendApplication      [0;39m [2m:[0;39m Starting AutonomaBackendApplication using Java 23.0.1 with PID 35437 (/Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/target/classes started by eash in /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend)
-[2m2026-05-13T16:48:49.786+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mc.a.erp.AutonomaBackendApplication      [0;39m [2m:[0;39m No active profile set, falling back to 1 default profile: "default"
-[2m2026-05-13T16:48:49.809+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.e.DevToolsPropertyDefaultsPostProcessor[0;39m [2m:[0;39m Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
-[2m2026-05-13T16:48:49.809+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.e.DevToolsPropertyDefaultsPostProcessor[0;39m [2m:[0;39m For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
-[2m2026-05-13T16:48:50.169+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-[2m2026-05-13T16:48:50.226+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Finished Spring Data repository scanning in 53 ms. Found 55 JPA repository interfaces.
-[2m2026-05-13T16:48:50.566+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat initialized with port 8081 (http)
-[2m2026-05-13T16:48:50.573+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardService  [0;39m [2m:[0;39m Starting service [Tomcat]
-[2m2026-05-13T16:48:50.573+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardEngine   [0;39m [2m:[0;39m Starting Servlet engine: [Apache Tomcat/10.1.20]
-[2m2026-05-13T16:48:50.591+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.a.c.c.C.[Tomcat].[localhost].[/]      [0;39m [2m:[0;39m Initializing Spring embedded WebApplicationContext
-[2m2026-05-13T16:48:50.591+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mw.s.c.ServletWebServerApplicationContext[0;39m [2m:[0;39m Root WebApplicationContext: initialization completed in 782 ms
-[2m2026-05-13T16:48:50.626+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Starting...
-[2m2026-05-13T16:48:50.800+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Added connection ConnectionID:1 ClientConnectionId: e38f77c9-43a5-43a9-ad45-f0917b275b9c
-[2m2026-05-13T16:48:50.801+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Start completed.
-[2m2026-05-13T16:48:50.818+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.a.h2.H2ConsoleAutoConfiguration   [0;39m [2m:[0;39m H2 console available at '/h2-console'. Databases available at 'jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;', 'jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;'
-[2m2026-05-13T16:48:50.894+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.c.internal.license.VersionPrinter   [0;39m [2m:[0;39m Flyway Community Edition 9.22.3 by Redgate
-[2m2026-05-13T16:48:50.894+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.c.internal.license.VersionPrinter   [0;39m [2m:[0;39m See release notes here: https://rd.gt/416ObMi
-[2m2026-05-13T16:48:50.894+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.c.internal.license.VersionPrinter   [0;39m [2m:[0;39m 
-[2m2026-05-13T16:48:50.906+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36morg.flywaydb.core.FlywayExecutor        [0;39m [2m:[0;39m Database: jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite; (Microsoft SQL Server 16.0)
-[2m2026-05-13T16:48:50.967+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.core.internal.command.DbMigrate     [0;39m [2m:[0;39m Current version of schema [dbo]: 6.5
-[2m2026-05-13T16:48:50.967+05:30[0;39m [33m WARN[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.core.internal.command.DbMigrate     [0;39m [2m:[0;39m outOfOrder mode is active. Migration of schema [dbo] may not be reproducible.
-[2m2026-05-13T16:48:50.971+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.core.internal.command.DbMigrate     [0;39m [2m:[0;39m Schema [dbo] is up to date. No migration necessary.
-[2m2026-05-13T16:48:51.022+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.hibernate.jpa.internal.util.LogHelper [0;39m [2m:[0;39m HHH000204: Processing PersistenceUnitInfo [name: default]
-[2m2026-05-13T16:48:51.046+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36morg.hibernate.Version                   [0;39m [2m:[0;39m HHH000412: Hibernate ORM core version 6.4.4.Final
-[2m2026-05-13T16:48:51.058+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.h.c.internal.RegionFactoryInitiator   [0;39m [2m:[0;39m HHH000026: Second-level cache disabled
-[2m2026-05-13T16:48:51.140+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.o.j.p.SpringPersistenceUnitInfo     [0;39m [2m:[0;39m No LoadTimeWeaver setup: ignoring JPA class transformer
-[2m2026-05-13T16:48:51.157+05:30[0;39m [33m WARN[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36morg.hibernate.orm.deprecation           [0;39m [2m:[0;39m HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-[2m2026-05-13T16:48:51.863+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.h.e.t.j.p.i.JtaPlatformInitiator      [0;39m [2m:[0;39m HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-[2m2026-05-13T16:48:51.864+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mj.LocalContainerEntityManagerFactoryBean[0;39m [2m:[0;39m Initialized JPA EntityManagerFactory for persistence unit 'default'
-[2m2026-05-13T16:48:52.076+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.d.j.r.query.QueryEnhancerFactory    [0;39m [2m:[0;39m Hibernate is in classpath; If applicable, HQL parser will be used.
-[2m2026-05-13T16:48:52.740+05:30[0;39m [33m WARN[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mJpaBaseConfiguration$JpaWebConfiguration[0;39m [2m:[0;39m spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-[2m2026-05-13T16:48:52.751+05:30[0;39m [33m WARN[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.s.s.UserDetailsServiceAutoConfiguration[0;39m [2m:[0;39m 
+[2m2026-05-13T16:51:24.160+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mc.a.erp.AutonomaBackendApplication      [0;39m [2m:[0;39m Starting AutonomaBackendApplication using Java 23.0.1 with PID 35695 (/Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend/target/classes started by eash in /Users/eash/Desktop/ERP 1.11.56 AM/Autonoma_Backend)
+[2m2026-05-13T16:51:24.162+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mc.a.erp.AutonomaBackendApplication      [0;39m [2m:[0;39m No active profile set, falling back to 1 default profile: "default"
+[2m2026-05-13T16:51:24.181+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.e.DevToolsPropertyDefaultsPostProcessor[0;39m [2m:[0;39m Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+[2m2026-05-13T16:51:24.182+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.e.DevToolsPropertyDefaultsPostProcessor[0;39m [2m:[0;39m For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+[2m2026-05-13T16:51:24.506+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[2m2026-05-13T16:51:24.559+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Finished Spring Data repository scanning in 50 ms. Found 55 JPA repository interfaces.
+[2m2026-05-13T16:51:24.889+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat initialized with port 8081 (http)
+[2m2026-05-13T16:51:24.894+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardService  [0;39m [2m:[0;39m Starting service [Tomcat]
+[2m2026-05-13T16:51:24.894+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardEngine   [0;39m [2m:[0;39m Starting Servlet engine: [Apache Tomcat/10.1.20]
+[2m2026-05-13T16:51:24.910+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.a.c.c.C.[Tomcat].[localhost].[/]      [0;39m [2m:[0;39m Initializing Spring embedded WebApplicationContext
+[2m2026-05-13T16:51:24.911+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mw.s.c.ServletWebServerApplicationContext[0;39m [2m:[0;39m Root WebApplicationContext: initialization completed in 728 ms
+[2m2026-05-13T16:51:24.939+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Starting...
+[2m2026-05-13T16:51:25.160+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Added connection ConnectionID:1 ClientConnectionId: f791fd45-de51-4da9-b827-22b6a75c9574
+[2m2026-05-13T16:51:25.161+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Start completed.
+[2m2026-05-13T16:51:25.180+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.a.h2.H2ConsoleAutoConfiguration   [0;39m [2m:[0;39m H2 console available at '/h2-console'. Databases available at 'jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;', 'jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;'
+[2m2026-05-13T16:51:25.257+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.c.internal.license.VersionPrinter   [0;39m [2m:[0;39m Flyway Community Edition 9.22.3 by Redgate
+[2m2026-05-13T16:51:25.258+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.c.internal.license.VersionPrinter   [0;39m [2m:[0;39m See release notes here: https://rd.gt/416ObMi
+[2m2026-05-13T16:51:25.258+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.c.internal.license.VersionPrinter   [0;39m [2m:[0;39m 
+[2m2026-05-13T16:51:25.266+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36morg.flywaydb.core.FlywayExecutor        [0;39m [2m:[0;39m Database: jdbc:sqlserver://localhost:1433;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;prepareMethod=prepexec;encrypt=True;disableStatementPooling=true;databaseName=AUTONOMA;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite; (Microsoft SQL Server 16.0)
+[2m2026-05-13T16:51:25.343+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.core.internal.command.DbMigrate     [0;39m [2m:[0;39m Current version of schema [dbo]: 6.5
+[2m2026-05-13T16:51:25.343+05:30[0;39m [33m WARN[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.core.internal.command.DbMigrate     [0;39m [2m:[0;39m outOfOrder mode is active. Migration of schema [dbo] may not be reproducible.
+[2m2026-05-13T16:51:25.348+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.f.core.internal.command.DbMigrate     [0;39m [2m:[0;39m Schema [dbo] is up to date. No migration necessary.
+[2m2026-05-13T16:51:25.405+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.hibernate.jpa.internal.util.LogHelper [0;39m [2m:[0;39m HHH000204: Processing PersistenceUnitInfo [name: default]
+[2m2026-05-13T16:51:25.427+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36morg.hibernate.Version                   [0;39m [2m:[0;39m HHH000412: Hibernate ORM core version 6.4.4.Final
+[2m2026-05-13T16:51:25.438+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.h.c.internal.RegionFactoryInitiator   [0;39m [2m:[0;39m HHH000026: Second-level cache disabled
+[2m2026-05-13T16:51:25.519+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.o.j.p.SpringPersistenceUnitInfo     [0;39m [2m:[0;39m No LoadTimeWeaver setup: ignoring JPA class transformer
+[2m2026-05-13T16:51:25.535+05:30[0;39m [33m WARN[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36morg.hibernate.orm.deprecation           [0;39m [2m:[0;39m HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+[2m2026-05-13T16:51:26.248+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.h.e.t.j.p.i.JtaPlatformInitiator      [0;39m [2m:[0;39m HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[2m2026-05-13T16:51:26.249+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mj.LocalContainerEntityManagerFactoryBean[0;39m [2m:[0;39m Initialized JPA EntityManagerFactory for persistence unit 'default'
+[2m2026-05-13T16:51:26.463+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.d.j.r.query.QueryEnhancerFactory    [0;39m [2m:[0;39m Hibernate is in classpath; If applicable, HQL parser will be used.
+[2m2026-05-13T16:51:27.114+05:30[0;39m [33m WARN[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mJpaBaseConfiguration$JpaWebConfiguration[0;39m [2m:[0;39m spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[2m2026-05-13T16:51:27.125+05:30[0;39m [33m WARN[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36m.s.s.UserDetailsServiceAutoConfiguration[0;39m [2m:[0;39m 
 
-Using generated security password: 489f257a-b554-4062-b5f2-7601472bb0cf
+Using generated security password: 0f267a91-f1f5-4ee5-8f35-c4784c1f6b2b
 
 This generated password is for development use only. Your security configuration must be updated before running your application in production.
 
-[2m2026-05-13T16:48:52.904+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.s.web.DefaultSecurityFilterChain    [0;39m [2m:[0;39m Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@14556a6c, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@647da36, org.springframework.security.web.context.SecurityContextHolderFilter@37859082, org.springframework.security.web.header.HeaderWriterFilter@3942884c, org.springframework.web.filter.CorsFilter@488e5e21, org.springframework.security.web.authentication.logout.LogoutFilter@3a25e50f, com.autonoma.erp.config.JwtAuthenticationFilter@1f0e8b12, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@2b820648, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@31e6b943, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@57e35f70, org.springframework.security.web.session.SessionManagementFilter@680bf335, org.springframework.security.web.access.ExceptionTranslationFilter@3b9fb9fa, org.springframework.security.web.access.intercept.AuthorizationFilter@51973cc]
-[2m2026-05-13T16:48:53.061+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.d.a.OptionalLiveReloadServer      [0;39m [2m:[0;39m LiveReload server is running on port 35729
-[2m2026-05-13T16:48:53.080+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat started on port 8081 (http) with context path ''
-[2m2026-05-13T16:48:53.087+05:30[0;39m [32m INFO[0;39m [35m35437[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mc.a.erp.AutonomaBackendApplication      [0;39m [2m:[0;39m Started AutonomaBackendApplication in 3.439 seconds (process running for 3.598)
+[2m2026-05-13T16:51:27.278+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.s.web.DefaultSecurityFilterChain    [0;39m [2m:[0;39m Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@4b0ac63b, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@6e5b2def, org.springframework.security.web.context.SecurityContextHolderFilter@46d9e0c3, org.springframework.security.web.header.HeaderWriterFilter@49c28f0f, org.springframework.web.filter.CorsFilter@315a78b7, org.springframework.security.web.authentication.logout.LogoutFilter@1b0a33a7, com.autonoma.erp.config.JwtAuthenticationFilter@6f146cb0, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@18f03209, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@561b2a7a, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@2838682, org.springframework.security.web.session.SessionManagementFilter@92d5917, org.springframework.security.web.access.ExceptionTranslationFilter@2043f1c1, org.springframework.security.web.access.intercept.AuthorizationFilter@eaa3e85]
+[2m2026-05-13T16:51:27.435+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.d.a.OptionalLiveReloadServer      [0;39m [2m:[0;39m LiveReload server is running on port 35729
+[2m2026-05-13T16:51:27.453+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat started on port 8081 (http) with context path ''
+[2m2026-05-13T16:51:27.460+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[  restartedMain][0;39m [2m[0;39m[36mc.a.erp.AutonomaBackendApplication      [0;39m [2m:[0;39m Started AutonomaBackendApplication in 3.416 seconds (process running for 3.578)
 ======================================
 SQL MIGRATION STARTED
 ======================================
@@ -172,3 +179,207 @@ Hibernate:
     where
         uc1_0.user_id=?
 Admin password initialized/updated with reversible encryption.
+[2m2026-05-13T16:51:57.463+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[nio-8081-exec-1][0;39m [2m[0;39m[36mo.a.c.c.C.[Tomcat].[localhost].[/]      [0;39m [2m:[0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2m2026-05-13T16:51:57.463+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[nio-8081-exec-1][0;39m [2m[0;39m[36mo.s.web.servlet.DispatcherServlet       [0;39m [2m:[0;39m Initializing Servlet 'dispatcherServlet'
+[2m2026-05-13T16:51:57.465+05:30[0;39m [32m INFO[0;39m [35m35695[0;39m [2m---[0;39m [2m[nio-8081-exec-1][0;39m [2m[0;39m[36mo.s.web.servlet.DispatcherServlet       [0;39m [2m:[0;39m Completed initialization in 2 ms
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        uc1_0.user_id,
+        uc1_0.created_by,
+        uc1_0.created_at,
+        uc1_0.emp_id,
+        uc1_0.img_name,
+        uc1_0.IS_BOS_ADMIN,
+        uc1_0.password,
+        uc1_0.status,
+        uc1_0.updated_by,
+        uc1_0.updated_at 
+    from
+        ad_user_credential uc1_0 
+    where
+        uc1_0.user_id=?
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+Hibernate: 
+    select
+        cc1_0.id,
+        cc1_0.address,
+        cc1_0.city,
+        cc1_0.company_name,
+        cc1_0.country,
+        cc1_0.created_by,
+        cc1_0.created_at,
+        cc1_0.db_source_name,
+        cc1_0.dir_path,
+        cc1_0.gst_in,
+        cc1_0.LIC_EXP_REMAINDER_DAYS,
+        cc1_0.lic_expiry_date,
+        cc1_0.lic_renewal_date,
+        cc1_0.login_bg_file_name,
+        cc1_0.logo_file_name,
+        cc1_0.pincode,
+        cc1_0.RESTORE_ENABLE_DAYS,
+        cc1_0.short_name,
+        cc1_0.state,
+        cc1_0.state_cd,
+        cc1_0.updated_by,
+        cc1_0.updated_at 
+    from
+        ad_company_credential cc1_0
+;31mERROR[m] 
+[[1;31mERROR[m] For more information about the errors and possible solutions, please read the following articles:
+[[1;31mERROR[m] [1m[Help 1][m http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

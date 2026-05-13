@@ -116,9 +116,13 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         await axios.put(`${API_PATHS.QMS.MEETING_ATTENDANCE}/${item.id}/out`);
         dispatch(openSnackbar({ open: true, message: 'Out Time marked successfully', variant: 'alert', severity: 'success' }));
       } else {
+        // FIND employeeId
+        const selectedEmp = employees.find(e => e.employeeName === attendeeName);
+        
         // MARK IN ACTION
         await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
           scheduleId: selectedSchedule.id,
+          employeeId: selectedEmp ? selectedEmp.id : null,
           inTime: inTimeRaw,
           status: attendanceStatus
         });
@@ -161,13 +165,25 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             />
           )}
 
-          <BOSTextField
-            label="Attendee Name"
-            value={attendeeName}
-            InputProps={{ readOnly: true }}
-            fullWidth
-            sx={{ bgcolor: 'grey.50' }}
-          />
+          {isEdit ? (
+            <BOSTextField
+              label="Attendee Name"
+              value={attendeeName}
+              InputProps={{ readOnly: true }}
+              fullWidth
+              sx={{ bgcolor: 'grey.50' }}
+            />
+          ) : (
+            <Autocomplete
+              options={employees}
+              getOptionLabel={(option) => option.employeeName || ''}
+              value={employees.find(e => e.employeeName === attendeeName) || null}
+              onChange={(e, val) => setAttendeeName(val ? val.employeeName : 'Current User')}
+              renderInput={(params) => (
+                <BOSTextField {...params} label="Select Attendee (Testing Mode)" required fullWidth />
+              )}
+            />
+          )}
 
           <BOSTextField
             label="Attendance Status"

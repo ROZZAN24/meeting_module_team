@@ -122,19 +122,19 @@ export const masters = {
               url: '/master/qms/audit/criteria'
             }
           ]
-        },
+        }
+      ]
+    },
+    {
+      id: 'master-meeting',
+      title: 'Meeting',
+      type: 'collapse',
+      children: [
         {
-          id: 'master-qms-meeting',
-          title: 'Meeting',
-          type: 'collapse',
-          children: [
-            {
-              id: 'master-qms-meeting-master',
-              title: 'Meeting Master',
-              type: 'item',
-              url: '/master/qms/meeting/master'
-            }
-          ]
+          id: 'master-meeting-master',
+          title: 'Meeting Master',
+          type: 'item',
+          url: '/master/qms/meeting/master'
         }
       ]
     }
@@ -394,12 +394,6 @@ export const qms = {
       title: 'Meeting',
       type: 'collapse',
       children: [
-        {
-          id: 'qms-meeting-master',
-          title: 'Meeting Master',
-          type: 'item',
-          url: '/qms/meeting-master'
-        },
         {
           id: 'qms-meeting-schedule',
           title: 'Meeting Schedule',

@@ -868,7 +868,7 @@ const MainRoutes = {
       element: <QmsAuditCriteriaMaster />
     },
     {
-      path: '/qms/meeting-master',
+      path: '/master/qms/meeting/master',
       element: <MeetingMaster />
     },
     {

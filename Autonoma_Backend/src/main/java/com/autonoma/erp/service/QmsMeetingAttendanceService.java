@@ -38,10 +38,18 @@ public class QmsMeetingAttendanceService {
         QmsMeetingSchedule schedule = scheduleRepo.findById(scheduleId)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
 
-        // For now, use a default employee. In production, use UserSession.
-        // This is a placeholder for the logged-in user's employee record.
-        EmployeeMaster employee = employeeRepo.findAll().stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("No employee found"));
+        Long empIdStr = data.get("employeeId") != null ? Long.parseLong(data.get("employeeId").toString()) : null;
+
+        EmployeeMaster employee;
+        if (empIdStr != null) {
+            employee = employeeRepo.findById(empIdStr)
+                    .orElseThrow(() -> new RuntimeException("Selected employee not found"));
+        } else {
+            // For now, use a default employee. In production, use UserSession.
+            // This is a placeholder for the logged-in user's employee record.
+            employee = employeeRepo.findAll().stream().findFirst()
+                    .orElseThrow(() -> new RuntimeException("No employee found"));
+        }
 
         // Check if already marked
         Optional<QmsMeetingUserAttendance> existing = attendanceRepo

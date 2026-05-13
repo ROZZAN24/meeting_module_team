@@ -186,7 +186,7 @@ export default function AddMeetingMinutes() {
             employee: p.employee,
             inTime: record.inTime || val.startTime || '09:00',
             outTime: record.outTime || val.endTime || '10:00',
-            attendanceStatus: record.attendanceStatus || 'Present'
+            attendanceStatus: record.status ? record.status.toUpperCase() : 'PRESENT'
           };
         } else {
           // No attendance posted -> ABSENT
