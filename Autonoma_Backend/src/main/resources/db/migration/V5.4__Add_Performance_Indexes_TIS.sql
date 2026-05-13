@@ -10,7 +10,7 @@ IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_audit_schedule_status'
     CREATE INDEX IX_audit_schedule_status ON audit_schedule(status);
 
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_audit_schedule_date' AND object_id = OBJECT_ID('audit_schedule'))
-    CREATE INDEX IX_audit_schedule_date ON audit_schedule(schedule_date);
+    CREATE INDEX IX_audit_schedule_date ON audit_schedule(audit_date);
 
 -- Audit Observation Indexes
 IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_audit_observation_status' AND object_id = OBJECT_ID('audit_observation'))

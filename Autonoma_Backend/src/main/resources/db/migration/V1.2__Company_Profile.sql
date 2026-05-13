@@ -10,7 +10,7 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[AD_COMPANY_CREDENTIAL]') AND type in (N'U'))
 BEGIN
 CREATE TABLE [dbo].[AD_COMPANY_CREDENTIAL](
-	[ID] [int] NOT NULL,
+	[ID] [int] IDENTITY(1,1) PRIMARY KEY,
 	[COMPANY_NAME] [nvarchar](100) NULL,
 	[SHORT_NAME] [nvarchar](50) NULL,
 	[ADDRESS_1] [nvarchar](200) NULL,

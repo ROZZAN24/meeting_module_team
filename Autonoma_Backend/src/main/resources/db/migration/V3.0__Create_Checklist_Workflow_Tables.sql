@@ -1,19 +1,19 @@
 -- V3.0 Create Checklist Workflow Tables
 -- Tables for Assignments, Verification, and Status Master
 
--- 1. STATUS_MASTER
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[STATUS_MASTER]') AND type in (N'U'))
+-- 1. ad_status_master
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[ad_status_master]') AND type in (N'U'))
 BEGIN
-    CREATE TABLE [dbo].[STATUS_MASTER] (
+    CREATE TABLE [dbo].[ad_status_master] (
         [id] BIGINT IDENTITY(1,1) PRIMARY KEY,
         [NAME] NVARCHAR(100) NOT NULL UNIQUE
     );
 END
 
--- 2. Seed STATUS_MASTER
-IF NOT EXISTS (SELECT * FROM [dbo].[STATUS_MASTER] WHERE [NAME] = 'Pending')
+-- 2. Seed ad_status_master
+IF NOT EXISTS (SELECT * FROM [dbo].[ad_status_master] WHERE [NAME] = 'Pending')
 BEGIN
-    INSERT INTO [dbo].[STATUS_MASTER] ([NAME]) VALUES 
+    INSERT INTO [dbo].[ad_status_master] ([NAME]) VALUES 
     ('Pending'), ('Started'), ('Unresolved'), ('Missed'), ('Completed'), 
     ('Not Completed'), ('25%'), ('50%'), ('75%'), ('Pending for Verified'), 
     ('Verified'), ('Pending for Accepted'), ('Accepted'), ('Attended'), ('Rejected'), ('Open');
@@ -35,7 +35,7 @@ BEGIN
         [CARRY_FORWARD] NVARCHAR(50),
         [ACTUAL_FILES] NVARCHAR(MAX),
         CONSTRAINT [FK_Assignment_Checklist] FOREIGN KEY ([CHECKLIST_ID]) REFERENCES [dbo].[QMS_MASTER_CHECKLIST]([id]),
-        CONSTRAINT [FK_Assignment_Status] FOREIGN KEY ([STATUS_ID]) REFERENCES [dbo].[STATUS_MASTER]([id])
+        CONSTRAINT [FK_Assignment_Status] FOREIGN KEY ([STATUS_ID]) REFERENCES [dbo].[ad_status_master]([id])
     );
 END
 
@@ -50,6 +50,16 @@ BEGIN
         [REMARKS] TEXT,
         [VERIFIED_DATE] DATETIME,
         CONSTRAINT [FK_Verification_Assignment] FOREIGN KEY ([ASSIGNMENT_ID]) REFERENCES [dbo].[QMS_CHECKLIST_ASSIGNMENT]([id]),
-        CONSTRAINT [FK_Verification_Status] FOREIGN KEY ([STATUS_ID]) REFERENCES [dbo].[STATUS_MASTER]([id])
+        CONSTRAINT [FK_Verification_Status] FOREIGN KEY ([STATUS_ID]) REFERENCES [dbo].[ad_status_master]([id])
+    );
+END
+-- 5. qms_checklist_department
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[qms_checklist_department]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [dbo].[qms_checklist_department] (
+        [id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+        [CHECKLIST_ID] BIGINT NOT NULL,
+        [department_name] NVARCHAR(255),
+        CONSTRAINT [FK_Dept_Checklist] FOREIGN KEY ([CHECKLIST_ID]) REFERENCES [dbo].[QMS_MASTER_CHECKLIST]([id])
     );
 END
