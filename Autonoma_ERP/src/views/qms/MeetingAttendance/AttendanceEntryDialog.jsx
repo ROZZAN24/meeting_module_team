@@ -18,7 +18,7 @@ const formatTo12h = (time24) => {
   return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
 };
 
-const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
+const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
   const dispatch = useDispatch();
   const { employees = [] } = useLookups(['EMPLOYEES']);
   const [schedules, setSchedules] = useState([]);
@@ -27,51 +27,66 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
   const [attendanceStatus, setAttendanceStatus] = useState('PRESENT');
   const [inTime, setInTime] = useState('');
   const [inTimeRaw, setInTimeRaw] = useState('');
+  const [outTime, setOutTime] = useState('');
+  const [outTimeRaw, setOutTimeRaw] = useState('');
+
+  const isEdit = !!item;
 
   // Load eligible schedules (OPEN or RESCHEDULE, current date, within time window)
   useEffect(() => {
     if (open) {
-      const loadSchedules = async () => {
-        try {
-          const response = await axios.get(API_PATHS.QMS.MEETING_SCHEDULES);
-          const allSchedules = Array.isArray(response.data) ? response.data : [];
-          const now = new Date();
-          const today = now.toISOString().split('T')[0];
+      if (isEdit) {
+        setSelectedSchedule(item.schedule);
+        setAttendeeName(item.employee?.employeeName || 'N/A');
+        setAttendanceStatus(item.status || 'PRESENT');
+        setInTimeRaw(item.inTime);
+        setInTime(formatTo12h(item.inTime));
+        setOutTimeRaw(item.outTime || '');
+        setOutTime(formatTo12h(item.outTime));
+      } else {
+        const loadSchedules = async () => {
+          try {
+            const response = await axios.get(API_PATHS.QMS.MEETING_SCHEDULES);
+            const allSchedules = Array.isArray(response.data) ? response.data : [];
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
 
-          // Filter: only OPEN/RESCHEDULE schedules for today, within 10 min of start
-          const eligible = allSchedules.filter(s => {
-            if (s.status !== 'OPEN' && s.status !== 'RESCHEDULE') return false;
-            if (s.meetingDate !== today) return false;
+            const eligible = allSchedules.filter(s => {
+              if (s.status !== 'OPEN' && s.status !== 'RESCHEDULE') return false;
+              if (s.meetingDate !== today) return false;
+              if (!s.startTime) return false;
               const [h, m] = s.startTime.split(':').map(Number);
               const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
               
-              // End Time Check
               if (s.endTime) {
                 const [eh, em] = s.endTime.split(':').map(Number);
                 const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
-                if (now.getTime() > endMs) return false; // Too late, meeting ended
+                if (now.getTime() > endMs) return false;
               }
 
               const tenMinBefore = startMs - 10 * 60 * 1000;
               if (now.getTime() < tenMinBefore) return false;
-            return true;
-          });
-          setSchedules(eligible);
-        } catch (error) {
-          console.error('Failed to load schedules:', error);
-        }
-      };
-      loadSchedules();
-      setSelectedSchedule(null);
-      setInTime('');
-      setInTimeRaw('');
-      setAttendanceStatus('PRESENT');
+              return true;
+            });
+            setSchedules(eligible);
+          } catch (error) {
+            console.error('Failed to load schedules:', error);
+          }
+        };
+        loadSchedules();
+        setSelectedSchedule(null);
+        setInTime('');
+        setInTimeRaw('');
+        setAttendanceStatus('PRESENT');
+        setOutTime('');
+        setOutTimeRaw('');
+      }
     }
-  }, [open]);
+  }, [open, item, isEdit]);
 
-  // Determine attendance status based on time
+  // Determine attendance status based on time (Only for NEW entries)
   useEffect(() => {
-    if (selectedSchedule && selectedSchedule.startTime) {
+    if (!isEdit && selectedSchedule && selectedSchedule.startTime) {
       const now = new Date();
       const [h, m] = selectedSchedule.startTime.split(':').map(Number);
       const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
@@ -80,23 +95,36 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
       setInTimeRaw(timeStr);
       setInTime(formatTo12h(timeStr));
     }
-  }, [selectedSchedule]);
+  }, [selectedSchedule, isEdit]);
 
-  const handleIn = async () => {
+  const handleSaveAction = async () => {
     if (!selectedSchedule) {
       dispatch(openSnackbar({ open: true, message: 'Please select a schedule', variant: 'alert', severity: 'warning' }));
       return;
     }
+
     try {
-      await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
-        scheduleId: selectedSchedule.id,
-        inTime: inTimeRaw,
-        status: attendanceStatus
-      });
-      dispatch(openSnackbar({ open: true, message: 'Attendance marked successfully', variant: 'alert', severity: 'success' }));
+      if (isEdit) {
+        // MARK OUT ACTION
+        if (item.outTime) {
+           dispatch(openSnackbar({ open: true, message: 'Out Time already marked', variant: 'alert', severity: 'info' }));
+           onClose();
+           return;
+        }
+        await axios.put(`${API_PATHS.QMS.MEETING_ATTENDANCE}/${item.id}/out`);
+        dispatch(openSnackbar({ open: true, message: 'Out Time marked successfully', variant: 'alert', severity: 'success' }));
+      } else {
+        // MARK IN ACTION
+        await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
+          scheduleId: selectedSchedule.id,
+          inTime: inTimeRaw,
+          status: attendanceStatus
+        });
+        dispatch(openSnackbar({ open: true, message: 'Attendance marked successfully', variant: 'alert', severity: 'success' }));
+      }
       onSave();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: error.response?.data?.message || 'Failed to mark attendance', variant: 'alert', severity: 'error' }));
+      dispatch(openSnackbar({ open: true, message: error.response?.data?.message || 'Action failed', variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -104,18 +132,19 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
     <BOSFormDialog
       open={open}
       onClose={onClose}
-      onSave={handleIn}
-      title="Meeting User Attendance"
+      onSave={handleSaveAction}
+      title={isEdit ? "View/Update Attendance" : "Meeting User Attendance"}
+      saveLabel={isEdit ? (item.outTime ? "Close" : "Mark Out") : "Mark In"}
       maxWidth="sm"
     >
-      <BOSFormSection title="Attendance Entry" icon={<IconClock size={22} />}>
+      <BOSFormSection title={isEdit ? "Attendance Details" : "Attendance Entry"} icon={<IconClock size={22} />}>
         <Stack spacing={2.5} sx={{ mt: 1 }}>
-          <Autocomplete
-            options={schedules}
-            getOptionLabel={(option) => option.scheduleNo || ''}
-            value={selectedSchedule}
-            onChange={(e, val) => setSelectedSchedule(val)}
-            renderInput={(params) => <BOSTextField {...params} label="Schedule No *" fullWidth />}
+          <BOSTextField
+            label="Schedule No"
+            value={selectedSchedule?.scheduleNo || ''}
+            InputProps={{ readOnly: true }}
+            fullWidth
+            sx={{ bgcolor: 'grey.50' }}
           />
 
           <BOSTextField
@@ -127,26 +156,35 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
           />
 
           <BOSTextField
-            label="Attendance"
+            label="Attendance Status"
             value={attendanceStatus}
             InputProps={{ readOnly: true }}
             fullWidth
             sx={{
-              bgcolor: attendanceStatus === 'LATE' ? 'warning.lighter' : 'success.lighter',
+              bgcolor: attendanceStatus === 'LATE' ? 'warning.lighter' : (attendanceStatus === 'ABSENT' ? 'error.lighter' : 'success.lighter'),
               '& .MuiInputBase-input': {
-                color: attendanceStatus === 'LATE' ? 'warning.dark' : 'success.dark',
+                color: attendanceStatus === 'LATE' ? 'warning.dark' : (attendanceStatus === 'ABSENT' ? 'error.dark' : 'success.dark'),
                 fontWeight: 700
               }
             }}
           />
 
-          <BOSTextField
-            label="In Time"
-            value={inTime}
-            InputProps={{ readOnly: true }}
-            fullWidth
-            sx={{ bgcolor: 'grey.50' }}
-          />
+          <Stack direction="row" spacing={2}>
+            <BOSTextField
+              label="In Time"
+              value={inTime}
+              InputProps={{ readOnly: true }}
+              fullWidth
+              sx={{ bgcolor: 'grey.50' }}
+            />
+            <BOSTextField
+              label="Out Time"
+              value={isEdit ? (outTime || 'NOT MARKED') : 'PENDING'}
+              InputProps={{ readOnly: true }}
+              fullWidth
+              sx={{ bgcolor: 'grey.50' }}
+            />
+          </Stack>
 
           {selectedSchedule && (
             <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, bgcolor: 'primary.lighter' }}>
@@ -164,8 +202,11 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
 
 AttendanceEntryDialog.propTypes = {
   open: PropTypes.bool.isRequired,
+  item: PropTypes.object,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired
 };
+
+export default AttendanceEntryDialog;
 
 export default AttendanceEntryDialog;

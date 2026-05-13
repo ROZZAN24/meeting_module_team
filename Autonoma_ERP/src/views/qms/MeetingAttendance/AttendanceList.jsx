@@ -116,6 +116,11 @@ export default function AttendanceList() {
     return row[col.id] || '-';
   };
 
+  const handleEdit = (row) => {
+    setDialogOpen(true);
+    setSelectedRow(row);
+  };
+
   return (
     <MainCard
       title={
@@ -143,7 +148,7 @@ export default function AttendanceList() {
             ]}
           />
           <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
-            <Button variant="contained" color="secondary" size="medium" onClick={handleAdd} sx={btnNew}>
+            <Button variant="contained" color="secondary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
               + New
             </Button>
           </Tooltip>
@@ -161,13 +166,15 @@ export default function AttendanceList() {
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         renderCell={renderCell}
         showActions={false}
+        onDoubleClickRow={handleEdit}
         id="meeting-attendance-table"
       />
 
       <AttendanceEntryDialog
         open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSave={() => { setDialogOpen(false); fetchData(); }}
+        item={selectedRow}
+        onClose={() => { setDialogOpen(false); setSelectedRow(null); }}
+        onSave={() => { setDialogOpen(false); setSelectedRow(null); fetchData(); }}
       />
     </MainCard>
   );
