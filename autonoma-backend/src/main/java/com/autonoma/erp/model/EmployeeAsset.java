@@ -27,8 +27,9 @@ public class EmployeeAsset {
     @Column(name = "asset_name", length = 255)
     private String assetName;
 
-    @Column(precision = 12, scale = 2)
-    private BigDecimal value;
+    @Column(name = "asset_value", precision = 12, scale = 2)
+    private BigDecimal assetValue;
+
 
     @Column(name = "issue_date")
     @Temporal(TemporalType.DATE)

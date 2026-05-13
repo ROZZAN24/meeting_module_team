@@ -12,20 +12,26 @@ public class SubContractorMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "SUBCONTRACTOR_CODE", length = 50, unique = true)
+    private String subcontractorCode;
+
+    @Column(name = "GST_NO", length = 50)
+    private String gstNo;
+
     @Column(name = "SUBCONTRACTOR_NAME", length = 200)
     private String subcontractorName;
 
-    @Column(name = "INVOICE_NAME", length = 200)
-    private String invoiceName;
+    @Column(name = "LEDGER_NAME", length = 200)
+    private String ledgerName;
 
     @Column(name = "SHORT_NAME", length = 50)
     private String shortName;
 
+    @Column(name = "SUBCONTRACTOR_PRINT_NAME", length = 200)
+    private String subcontractorPrintName;
+
     @Column(name = "ADDRESS", length = 500)
     private String address;
-
-    @Column(name = "PINCODE", length = 20)
-    private String pincode;
 
     @Column(name = "CITY", length = 100)
     private String city;
@@ -36,59 +42,89 @@ public class SubContractorMaster {
     @Column(name = "COUNTRY", length = 100)
     private String country;
 
-    @Column(name = "DISPATCH_MODE", length = 50)
-    private String dispatchMode;
+    @Column(name = "PINCODE", length = 20)
+    private String pincode;
 
-    @Column(name = "SUBCONTRACTOR_CODE", length = 50, unique = true)
-    private String subcontractorCode;
+    @Column(name = "MOBILE_NO", length = 20)
+    private String mobileNo;
 
-    @Column(name = "GSTIN", length = 50)
-    private String gstin;
+    @Column(name = "CONTACT_PERSON", length = 100)
+    private String contactPerson;
 
-    @Column(name = "ISO_NUMBER", length = 50)
-    private String isoNumber;
+    @Column(name = "EMAIL_ID", length = 100)
+    private String emailId;
 
-    @Column(name = "ISO_EXPIRY")
-    private String isoExpiry;
+    @Column(name = "WEBSITE", length = 100)
+    private String website;
+
+    @Column(name = "PAN_NO", length = 50)
+    private String panNo;
+
+    @Column(name = "MSME_NO", length = 50)
+    private String msmeNo;
+
+    @Column(name = "ISO_NO", length = 50)
+    private String isoNo;
+
+    @Column(name = "ISO_EXPIRY_DATE")
+    private String isoExpiryDate;
+
+    @Column(name = "APPROVED_SUBCONTRACTOR", length = 10)
+    private String approvedSubcontractor;
 
     @Column(name = "NDA_REQUIRED", length = 10)
     private String ndaRequired;
 
-    @Column(name = "CURRENCY", length = 20)
-    private String currency;
+    @Column(name = "DELIVERY_TERMS", length = 100)
+    private String deliveryTerms;
 
-    @Column(name = "SEGMENT", length = 100)
-    private String segment;
-
-    @Column(name = "SUB_SEGMENT", length = 100)
-    private String subSegment;
+    @Column(name = "TYPE_OF_SERVICE", length = 100)
+    private String typeOfService;
 
     @Column(name = "PAYMENT_TERMS", length = 100)
     private String paymentTerms;
 
-    @Column(name = "DELIVERY_TERMS", length = 100)
-    private String deliveryTerms;
+    @Column(name = "PRIME_SUBCONTRACTOR", length = 10)
+    private String primeSubcontractor;
 
-    @Column(name = "DOMAIN_NAME", length = 100)
-    private String domainName;
+    @Column(name = "FREIGHT_REQUIRED", length = 10)
+    private String freightRequired;
 
-    @Column(name = "STATE_CODE", length = 20)
-    private String stateCode;
+    @Column(name = "CURRENCY", length = 20)
+    private String currency;
+
+    @Column(name = "DUE_DAYS")
+    private String dueDays;
+
+    @Column(name = "IS_AUDITOR_CONSULTANT", length = 10)
+    private String isAuditorConsultant;
+
+    @Column(name = "ACCOUNT_NO", length = 50)
+    private String accountNo;
+
+    @Column(name = "ACCOUNT_NAME", length = 100)
+    private String accountName;
+
+    @Column(name = "BANK_NAME", length = 100)
+    private String bankName;
+
+    @Column(name = "BRANCH_NAME", length = 100)
+    private String branchName;
+
+    @Column(name = "IFSC_CODE", length = 50)
+    private String ifscCode;
+
+    @Column(name = "SWIFT_CODE", length = 50)
+    private String swiftCode;
+
+    @Column(name = "ACCOUNT_TYPE", length = 50)
+    private String accountType;
 
     @Column(name = "STATUS", length = 20)
     private String status;
 
-    @Column(name = "DISTANCE", length = 50)
-    private String distance;
-
-    @Column(name = "NEGOTIATE_SUBCONTRACTOR", length = 10)
-    private String negotiateSubcontractor;
-
-    @Column(name = "DAILY_MAIL_REQ", length = 10)
-    private String dailyMailReq;
-
-    @Column(name = "FILE_UPLOAD", length = 2000)
-    private String fileUpload;
+    @Column(name = "UPLOAD_FILES", length = 2000)
+    private String uploadFiles;
 
     @Column(name = "CREATED_BY")
     private String createdBy;

@@ -229,7 +229,7 @@ CREATE TABLE [dbo].[HRM_EMP_ASSET] (
     [employee_id] BIGINT NOT NULL,
     [asset_id] NVARCHAR(50),
     [asset_name] NVARCHAR(255),
-    [value] DECIMAL(12,2),
+    [asset_value] DECIMAL(12,2),
     [issue_date] DATE,
     [comments] NVARCHAR(MAX),
     [created_by] NVARCHAR(100),

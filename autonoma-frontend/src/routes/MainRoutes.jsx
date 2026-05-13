@@ -226,9 +226,18 @@ const SmContactMasterList = Loadable(lazy(() => import('views/sm/ContactMasterLi
 const SmEnquiryDashboard = Loadable(lazy(() => import('views/sm/EnquiryDashboard')));
 const SmPriceMasterList = Loadable(lazy(() => import('views/sm/PriceMasterList')));
 const SmSupplierList = Loadable(lazy(() => import('views/sm/SupplierList')));
+const SmSupplierMaster = Loadable(lazy(() => import('views/sm/SupplierMaster')));
 const SmSubContractorList = Loadable(lazy(() => import('views/sm/SubContractorList')));
 const SmQuotationList = Loadable(lazy(() => import('views/sm/QuotationList')));
 const SmEnquiryList = Loadable(lazy(() => import('views/sm/EnquiryList')));
+
+// sm masters
+const CurrencyMaster = Loadable(lazy(() => import('views/sm/masters/CurrencyMaster')));
+const SegmentMaster = Loadable(lazy(() => import('views/sm/masters/SegmentMaster')));
+const SubSegmentMaster = Loadable(lazy(() => import('views/sm/masters/SubSegmentMaster')));
+const PaymentTerms = Loadable(lazy(() => import('views/sm/masters/PaymentTerms')));
+const DeliveryTerms = Loadable(lazy(() => import('views/sm/masters/DeliveryTerms')));
+const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -945,6 +954,14 @@ const MainRoutes = {
       element: <SmSupplierList />
     },
     {
+      path: '/sm/suppliers/create',
+      element: <SmSupplierMaster />
+    },
+    {
+      path: '/sm/suppliers/edit/:id',
+      element: <SmSupplierMaster />
+    },
+    {
       path: '/sm/sub-contractors',
       element: <SmSubContractorList />
     },
@@ -955,6 +972,30 @@ const MainRoutes = {
     {
       path: '/sm/enquiries',
       element: <SmEnquiryList />
+    },
+    {
+      path: '/sm/ocr/currency-master',
+      element: <CurrencyMaster />
+    },
+    {
+      path: '/sm/ocr/segment-master',
+      element: <SegmentMaster />
+    },
+    {
+      path: '/sm/ocr/sub-segment-master',
+      element: <SubSegmentMaster />
+    },
+    {
+      path: '/sm/ocr/payment-terms',
+      element: <PaymentTerms />
+    },
+    {
+      path: '/sm/ocr/delivery-terms',
+      element: <DeliveryTerms />
+    },
+    {
+      path: '/sm/ocr/type-of-service',
+      element: <TypeOfService />
     },
     {
       path: '*',

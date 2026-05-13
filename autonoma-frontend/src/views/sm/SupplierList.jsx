@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
@@ -6,7 +7,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
-import AddSupplierDialog from './AddSupplierDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -16,45 +16,30 @@ import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'gstin', label: 'GSTIN Number', minWidth: 150 },
+  { id: 'gstNo', label: 'GST No', minWidth: 150 },
+  { id: 'supplierCode', label: 'Supplier Code', minWidth: 120 },
   { id: 'supplierName', label: 'Supplier Name', minWidth: 200, bold: true },
-  { id: 'invoiceName', label: 'Supplier Invoice Name', minWidth: 200 },
+  { id: 'supplierPrintName', label: 'Print Name', minWidth: 200 },
   { id: 'shortName', label: 'Short Name', minWidth: 120 },
-  { id: 'address', label: 'Address', minWidth: 250 },
-  { id: 'pincode', label: 'PinCode', minWidth: 100 },
+  { id: 'contactPerson', label: 'Contact Person', minWidth: 150 },
+  { id: 'mobileNo', label: 'Mobile No', minWidth: 120 },
   { id: 'city', label: 'City', minWidth: 120 },
   { id: 'state', label: 'State', minWidth: 120 },
-  { id: 'country', label: 'Country', minWidth: 120 },
-  { id: 'dispatchMode', label: 'Mode of Dispatch', minWidth: 150 },
-  { id: 'supplierCode', label: 'Supplier Code', minWidth: 120 },
-  { id: 'isoNumber', label: 'ISO Number', minWidth: 120 },
-  { id: 'isoExpiry', label: 'ISO Expiry', minWidth: 120 },
-  { id: 'ndaRequired', label: 'NDA Required', minWidth: 120 },
-  { id: 'currency', label: 'Currency', minWidth: 100 },
-  { id: 'segment', label: 'Segment', minWidth: 120 },
-  { id: 'subSegment', label: 'Sub Segment', minWidth: 120 },
-  { id: 'paymentTerms', label: 'Payment Terms', minWidth: 150 },
-  { id: 'deliveryTerms', label: 'Delivery Terms', minWidth: 150 },
-  { id: 'domainName', label: 'Domain Name', minWidth: 150 },
-  { id: 'stateCode', label: 'State Code', minWidth: 100 },
-  { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'distance', label: 'Distance', minWidth: 100 },
-  { id: 'negotiateSupplier', label: 'Negotiate Supplier', minWidth: 150 },
-  { id: 'dailyMailReq', label: 'Daily Mail Req?', minWidth: 180 }
+  { id: 'isoNo', label: 'ISO No', minWidth: 120 },
+  { id: 'approvedSupplier', label: 'Approved', minWidth: 100 },
+  { id: 'status', label: 'Status', minWidth: 100 }
 ];
 
 export default function SupplierList() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
 
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [selectedRow, setSelectedRow] = useState(null);
-  const [isReadOnly, setIsReadOnly] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
@@ -64,8 +49,8 @@ export default function SupplierList() {
   useEffect(() => {
     const config = [
       { id: 'supplierName', label: 'Supplier Name', type: 'text', placeholder: 'Search by Name...' },
-      { id: 'gstin', label: 'GSTIN', type: 'text', placeholder: 'Search by GSTIN...' },
-      { id: 'invoiceName', label: 'Invoice Name', type: 'text', placeholder: 'Search by Invoice Name...' }
+      { id: 'gstNo', label: 'GST No', type: 'text', placeholder: 'Search by GST No...' },
+      { id: 'supplierPrintName', label: 'Print Name', type: 'text', placeholder: 'Search by Print Name...' }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -85,9 +70,8 @@ export default function SupplierList() {
 
   useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
 
-  const handleOpenAdd = () => { setSelectedRow(null); setIsReadOnly(false); setDialogOpen(true); };
-  const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };
-  const handleCloseDialog = (refresh) => { setDialogOpen(false); if (refresh === true) fetchSuppliers(); };
+  const handleOpenAdd = () => { navigate('/sm/suppliers/create'); };
+  const handleOpenEdit = (row) => { navigate(`/sm/suppliers/edit/${row.id}`); };
 
   const handleRowClick = (row) => {
     if (selectedListRow?.id === row.id) {
@@ -116,38 +100,31 @@ export default function SupplierList() {
   };
 
   useKeyboardShortcuts({
-    'ctrl+n': handleOpenAdd,
-    'escape': () => { if (dialogOpen) handleCloseDialog(); }
+    'ctrl+n': handleOpenAdd
   });
 
   const handleExport = () => {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
-      'GSTIN Number': r.gstin,
+      'GST No': r.gstNo,
+      'Supplier Code': r.supplierCode,
       'Supplier Name': r.supplierName,
-      'Supplier Invoice Name': r.invoiceName,
+      'Print Name': r.supplierPrintName,
       'Short Name': r.shortName,
-      'Address': r.address,
-      'PinCode': r.pincode,
+      'Contact Person': r.contactPerson,
+      'Mobile No': r.mobileNo,
+      'Email': r.emailId,
       'City': r.city,
       'State': r.state,
       'Country': r.country,
-      'Mode of Dispatch': r.dispatchMode,
-      'Supplier Code': r.supplierCode,
-      'ISO Number': r.isoNumber,
-      'ISO Expiry': r.isoExpiry,
+      'ISO No': r.isoNo,
+      'ISO Expiry': r.isoExpiryDate,
+      'Approved': r.approvedSupplier,
       'NDA Required': r.ndaRequired,
       'Currency': r.currency,
-      'Segment': r.segment,
-      'Sub Segment': r.subSegment,
       'Payment Terms': r.paymentTerms,
       'Delivery Terms': r.deliveryTerms,
-      'Domain Name': r.domainName,
-      'State Code': r.stateCode,
-      'Status': r.status,
-      'Distance': r.distance,
-      'Negotiate Supplier': r.negotiateSupplier,
-      'Daily Mail Req?': r.dailyMailReq
+      'Status': r.status
     }));
     exportToExcel(exportData, 'Supplier_Master');
   };
@@ -155,21 +132,21 @@ export default function SupplierList() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       const nameFilter = (globalFilters.supplierName || '').toLowerCase();
-      const gstinFilter = (globalFilters.gstin || '').toLowerCase();
-      const invoiceFilter = (globalFilters.invoiceName || '').toLowerCase();
+      const gstFilter = (globalFilters.gstNo || '').toLowerCase();
+      const printFilter = (globalFilters.supplierPrintName || '').toLowerCase();
       
       const matchesName = !nameFilter || (row.supplierName && row.supplierName.toLowerCase().includes(nameFilter));
-      const matchesGstin = !gstinFilter || (row.gstin && row.gstin.toLowerCase().includes(gstinFilter));
-      const matchesInvoice = !invoiceFilter || (row.invoiceName && row.invoiceName.toLowerCase().includes(invoiceFilter));
+      const matchesGst = !gstFilter || (row.gstNo && row.gstNo.toLowerCase().includes(gstFilter));
+      const matchesPrint = !printFilter || (row.supplierPrintName && row.supplierPrintName.toLowerCase().includes(printFilter));
       
       const q = (globalQuery || '').toLowerCase();
       const matchesSearch = !q ||
         (row.supplierName && row.supplierName.toLowerCase().includes(q)) ||
-        (row.gstin && row.gstin.toLowerCase().includes(q)) ||
-        (row.invoiceName && row.invoiceName.toLowerCase().includes(q)) ||
+        (row.gstNo && row.gstNo.toLowerCase().includes(q)) ||
+        (row.supplierPrintName && row.supplierPrintName.toLowerCase().includes(q)) ||
         (row.shortName && row.shortName.toLowerCase().includes(q));
 
-      return matchesName && matchesGstin && matchesInvoice && matchesSearch;
+      return matchesName && matchesGst && matchesPrint && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 
@@ -219,8 +196,6 @@ export default function SupplierList() {
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
       />
-
-      <AddSupplierDialog key={selectedRow?.id || 'new'} open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />
       
       <ConfirmDeleteDialog
         open={deleteDialogOpen}

@@ -80,12 +80,16 @@ export default function CustomerMaster() {
   const fetchNextCode = useCallback(async () => {
     if (customerId) return;
     try {
-      // In a real app, we fetch the actual next sequence from backend
-      // const { data } = await axios.get('/api/sm/customers/next-code');
+      const { data } = await axios.get('/api/sm/customers/next-code');
+      setForm(p => ({ ...p, customerCode: data }));
+    } catch (e) { 
+      console.error(e);
+      // Fallback in case of error
       const year = new Date().getFullYear().toString().slice(-2);
       setForm(p => ({ ...p, customerCode: `C-${year}-00001` }));
-    } catch (e) { console.error(e); }
+    }
   }, [customerId]);
+
 
   useEffect(() => { 
     if (customerId) fetchCustomer(); 

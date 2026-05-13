@@ -13,7 +13,12 @@ import {
   IconHelp,
   IconChecks,
   IconRocket,
-  IconMapPin
+  IconMapPin,
+  IconCoins,
+  IconChartBar,
+  IconChartPie,
+  IconCreditCard,
+  IconSettings
 } from '@tabler/icons-react';
 
 const icons = {
@@ -31,7 +36,12 @@ const icons = {
   IconHelp,
   IconChecks,
   IconRocket,
-  IconMapPin
+  IconMapPin,
+  IconCoins,
+  IconChartBar,
+  IconChartPie,
+  IconCreditCard,
+  IconSettings
 };
 
 export const masters = {
@@ -41,14 +51,6 @@ export const masters = {
   type: 'group',
   icon: icons.IconServerCog,
   children: [
-    {
-      id: 'inventory',
-      title: 'Inventory',
-      type: 'item',
-      url: '/admin/user-credentials',
-      icon: icons.IconBox,
-      breadcrumbs: true
-    },
     {
       id: 'master-hr',
       title: 'HR',
@@ -128,6 +130,107 @@ export const masters = {
           ]
         }
       ]
+    },
+    {
+      id: 'sam',
+      title: 'Sales',
+      type: 'collapse',
+      icon: icons.IconBriefcase,
+      children: [
+        {
+          id: 'sam-ocr',
+          title: 'OCR',
+          type: 'collapse',
+          icon: icons.IconServerCog,
+          children: [
+            {
+              id: 'sm-customer-master',
+              title: 'Customer Master',
+              type: 'item',
+              url: '/sm/customers',
+              icon: icons.IconUsers
+            },
+            {
+              id: 'sm-vendor',
+              title: 'Vendor',
+              type: 'collapse',
+              icon: icons.IconTruckDelivery,
+              children: [
+                {
+                  id: 'sm-supplier-master',
+                  title: 'Supplier Master',
+                  type: 'item',
+                  url: '/sm/suppliers',
+                  icon: icons.IconTruckDelivery
+                },
+                {
+                  id: 'sm-subcontractor',
+                  title: 'Sub Contractor',
+                  type: 'item',
+                  url: '/sm/sub-contractors',
+                  icon: icons.IconTool
+                }
+              ]
+            },
+            {
+              id: 'sm-contact-master',
+              title: 'Contact Master',
+              type: 'item',
+              url: '/sm/contacts',
+              icon: icons.IconUsers
+            },
+            {
+              id: 'sm-customer-address',
+              title: 'Customer Address',
+              type: 'item',
+              url: '/sm/customer-address',
+              icon: icons.IconMapPin
+            },
+            {
+              id: 'sm-currency-master',
+              title: 'Currency Master',
+              type: 'item',
+              url: '/sm/ocr/currency-master',
+              icon: icons.IconCoins
+            },
+            {
+              id: 'sm-segment-master',
+              title: 'Segment Master',
+              type: 'item',
+              url: '/sm/ocr/segment-master',
+              icon: icons.IconChartBar
+            },
+            {
+              id: 'sm-sub-segment-master',
+              title: 'Sub Segment Master',
+              type: 'item',
+              url: '/sm/ocr/sub-segment-master',
+              icon: icons.IconChartPie
+            },
+            {
+              id: 'sm-payment-terms',
+              title: 'Payment Terms',
+              type: 'item',
+              url: '/sm/ocr/payment-terms',
+              icon: icons.IconCreditCard
+            },
+            {
+              id: 'sm-delivery-terms',
+              title: 'Delivery Terms',
+              type: 'item',
+              url: '/sm/ocr/delivery-terms',
+              icon: icons.IconTruckDelivery
+            },
+            {
+              id: 'sm-type-of-service',
+              title: 'Type of Service',
+              type: 'item',
+              url: '/sm/ocr/type-of-service',
+              icon: icons.IconSettings
+            }
+          ]
+        }
+      ]
     }
   ]
 };
@@ -165,7 +268,7 @@ export const sm = {
   icon: icons.IconBriefcase,
   children: [
     {
-      id: 'sm-ocr',
+      id: 'sm-ocr-legacy',
       title: 'OCR',
       type: 'collapse',
       icon: icons.IconServerCog,
@@ -176,49 +279,6 @@ export const sm = {
           type: 'item',
           url: '/sm/enquiry/dashboard',
           icon: icons.IconDashboard
-        },
-        {
-          id: 'sm-customer-master',
-          title: 'Customer Master',
-          type: 'item',
-          url: '/sm/customers',
-          icon: icons.IconUsers
-        },
-        {
-          id: 'sm-vendor',
-          title: 'Vendor',
-          type: 'collapse',
-          icon: icons.IconTruckDelivery,
-          children: [
-            {
-              id: 'sm-supplier-master',
-              title: 'Supplier Master',
-              type: 'item',
-              url: '/sm/suppliers',
-              icon: icons.IconTruckDelivery
-            },
-            {
-              id: 'sm-subcontractor',
-              title: 'Sub Contractor',
-              type: 'item',
-              url: '/sm/sub-contractors',
-              icon: icons.IconTool
-            }
-          ]
-        },
-        {
-          id: 'sm-contact-master',
-          title: 'Contact Master',
-          type: 'item',
-          url: '/sm/contacts',
-          icon: icons.IconUsers
-        },
-        {
-          id: 'sm-customer-address',
-          title: 'Customer Address',
-          type: 'item',
-          url: '/sm/customer-address',
-          icon: icons.IconMapPin
         },
         {
           id: 'sm-enquiry',
