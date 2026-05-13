@@ -18,7 +18,8 @@ import {
   IconChartBar,
   IconChartPie,
   IconCreditCard,
-  IconMapPin
+  IconMapPin,
+  IconBox
 } from '@tabler/icons-react';
 
 const icons = {
@@ -41,7 +42,8 @@ const icons = {
   IconChartBar,
   IconChartPie,
   IconCreditCard,
-  IconMapPin
+  IconMapPin,
+  IconBox
 };
 
 export const masters = {
