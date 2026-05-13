@@ -7,7 +7,7 @@ import {
 import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings, IconShieldCheck, IconCloudUpload, IconFileDescription, IconEye, IconX, IconSignature, IconFileCertificate, IconLock, IconMail, IconFileUpload, IconPlus } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSFormSection, BOSTextField, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSFileUpload, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -95,6 +95,13 @@ const INITIAL = {
   createdBy: null, createdAt: null, updatedBy: null, updatedAt: null
 };
 
+const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
+const UNIT_NAMES = [{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }];
+const REF_MODES = ['INTERNAL', 'EXTERNAL', 'CONSULTANT'];
+const CATEGORIES = [{id: 1, categoryName: 'EMPLOYEE'}, {id: 2, categoryName: 'CONTRACTOR'}, {id: 3, categoryName: 'CONSULTANT'}];
+const TYPES = [{id: 1, typeName: 'PERMANENT'}, {id: 2, typeName: 'TEMPORARY'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'PROBATION'}];
+const YES_NO = ['YES', 'NO'];
+
 const RULES = [
   { field: 'empCode', label: 'Employee Code', required: true },
   { field: 'employeeName', label: 'Employee Name', required: true },
@@ -112,12 +119,6 @@ const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{ch
 export default function EmployeeMaster() {
   const theme = useTheme();
   const { user } = useAuth();
-  const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
-  const UNIT_NAMES = [{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }];
-  const REF_MODES = ['INTERNAL', 'EXTERNAL', 'CONSULTANT'];
-  const CATEGORIES = [{id: 1, categoryName: 'EMPLOYEE'}, {id: 2, categoryName: 'CONTRACTOR'}, {id: 3, categoryName: 'CONSULTANT'}];
-  const TYPES = [{id: 1, typeName: 'PERMANENT'}, {id: 2, typeName: 'TEMPORARY'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'PROBATION'}];
-  const YES_NO = ['YES', 'NO'];
 
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -137,9 +138,10 @@ export default function EmployeeMaster() {
     designations = [], 
     levels = [],
     auditTypes = [],
+    meetings = [],
     employees = [],
     grades = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'EMPLOYEES', 'GRADES']);
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES']);
 
   const fetchEmployee = useCallback(async () => {
     if (!employeeId) return;
@@ -216,14 +218,11 @@ export default function EmployeeMaster() {
     } finally { setLoading(false); }
   };
 
-  const handleSingleFileUpload = async (field, file) => {
-    if (!file) return;
-    try {
-      const uploadedPath = await autoUploadFile(file);
-      setForm(p => ({ ...p, [field]: uploadedPath }));
-      dispatch(openSnackbar({ open: true, message: 'Document uploaded successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
-    } catch (e) {
-      dispatch(openSnackbar({ open: true, message: 'File upload failed. Please check connection.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+  const handleBOSFileChange = (field, files) => {
+    if (files && files.length > 0) {
+      setForm(p => ({ ...p, [field]: files[0].serverFileName }));
+    } else {
+      setForm(p => ({ ...p, [field]: '' }));
     }
   };
 
@@ -245,14 +244,17 @@ export default function EmployeeMaster() {
     }
   };
 
-  const handleOpenPreview = (serverFileName, originalName) => {
-    setPreviewFile({ serverFileName, fileName: originalName });
+  const handleOpenPreview = useCallback((serverFileName, label) => {
+    if (!serverFileName) return;
+    const ext = serverFileName.split('.').pop();
+    const fileName = label.includes('.') ? label : `${label}.${ext}`;
+    setPreviewFile({ serverFileName, fileName, isServer: true });
     setPreviewOpen(true);
-  };
+  }, []);
 
   const [abilityUpload, setAbilityUpload] = useState({ open: false, field: '', types: [], selectedType: '' });
 
-  const renderAbilityRow = (label, toggleName, typeName, fileName, hasType = true, hasFile = true) => {
+  const renderAbilityRow = (label, toggleName, typeName, fileName, hasType = true, hasFile = true, customOptions = null) => {
     const isEnabled = form[toggleName] === 'YES';
     const fileValue = fileName ? form[fileName] : null;
     const fileData = fileValue ? JSON.parse(fileValue) : [];
@@ -284,7 +286,7 @@ export default function EmployeeMaster() {
                 {hasType && (
                   <Autocomplete 
                     multiple 
-                    options={auditTypes.map(t => t.auditType)} 
+                    options={customOptions || auditTypes.map(t => t.auditType)} 
                     value={selectedTypes} 
                     onChange={(e, val) => setForm(p => ({ ...p, [typeName]: val.join(',') }))} 
                     renderInput={(params) => (<BOSTextField {...params} label="Qualified For" placeholder="Select roles..." />)} 
@@ -302,7 +304,7 @@ export default function EmployeeMaster() {
                       <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
                         <IconFileUpload size={16} /> Credentials & Proofs
                       </Typography>
-                      <Button variant="contained" size="small" startIcon={<IconCloudUpload size={14} />} disabled={selectedTypes.length === 0} onClick={() => setAbilityUpload({ open: true, field: fileName, types: selectedTypes, selectedType: selectedTypes[0] || '' })} sx={{ height: 28, fontSize: '0.75rem' }}>Upload</Button>
+                      <Button variant="contained" size="small" startIcon={<IconCloudUpload size={14} />} disabled={selectedTypes.length === 0} onClick={() => setAbilityUpload({ open: true, field: fileName, types: selectedTypes, selectedType: selectedTypes[0] || '', allOptions: customOptions || auditTypes.map(t => t.auditType) })} sx={{ height: 28, fontSize: '0.75rem' }}>Upload</Button>
                     </Stack>
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                       {fileData.length === 0 ? (
@@ -380,41 +382,61 @@ export default function EmployeeMaster() {
             <R><BOSTextField name="employeeName" label="Employee Name *" value={form.employeeName} onChange={h} error={!!errors.employeeName} helperText={errors.employeeName} /></R>
             <R><BOSTextField name="fatherHusbandName" label="Father/Husband Name" value={form.fatherHusbandName} onChange={h} /></R>
             
-            <R>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button component="label" variant="outlined" fullWidth startIcon={<IconCloudUpload size={18} />}>
-                  {form.employeePhotoUpload ? 'Photo Uploaded' : 'Employee Photo upload'}
-                  <input type="file" hidden accept="image/*" onChange={(e) => handleSingleFileUpload('employeePhotoUpload', e.target.files[0])} />
-                </Button>
-                {form.employeePhotoUpload && <IconButton size="small" onClick={() => handleOpenPreview(form.employeePhotoUpload, 'Photo')} color="primary"><IconEye size={18} /></IconButton>}
-              </Stack>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.employeePhotoUpload ? [{ fileName: form.employeePhotoUpload.split('/').pop(), serverFileName: form.employeePhotoUpload, isServer: true }] : []}
+                  onChange={(files) => handleBOSFileChange('employeePhotoUpload', files)}
+                  module="HRA_PROFILE"
+                  multiple={false}
+                  accept="image/*"
+                  maxFiles={1}
+                  compact={true}
+                  label="Employee Photo Upload"
+                />
+              </Box>
             </R>
-            <R>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button component="label" variant="outlined" fullWidth startIcon={<IconSignature size={18} />}>
-                  {form.employeeSignatureUpload ? 'Signature Uploaded' : 'Employee Signature upload'}
-                  <input type="file" hidden accept="image/*" onChange={(e) => handleSingleFileUpload('employeeSignatureUpload', e.target.files[0])} />
-                </Button>
-                {form.employeeSignatureUpload && <IconButton size="small" onClick={() => handleOpenPreview(form.employeeSignatureUpload, 'Signature')} color="primary"><IconEye size={18} /></IconButton>}
-              </Stack>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.employeeSignatureUpload ? [{ fileName: form.employeeSignatureUpload.split('/').pop(), serverFileName: form.employeeSignatureUpload, isServer: true }] : []}
+                  onChange={(files) => handleBOSFileChange('employeeSignatureUpload', files)}
+                  module="HRA_SIGNATURE"
+                  multiple={false}
+                  accept="image/*"
+                  maxFiles={1}
+                  compact={true}
+                  label="Employee Signature Upload"
+                />
+              </Box>
             </R>
-            <R>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button component="label" variant="outlined" fullWidth startIcon={<IconFileDescription size={18} />}>
-                  {form.ndaUpload ? 'NDA Uploaded' : 'NDA Upload'}
-                  <input type="file" hidden accept=".pdf" onChange={(e) => handleSingleFileUpload('ndaUpload', e.target.files[0])} />
-                </Button>
-                {form.ndaUpload && <IconButton size="small" onClick={() => handleOpenPreview(form.ndaUpload, 'NDA.pdf')} color="primary"><IconEye size={18} /></IconButton>}
-              </Stack>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.ndaUpload ? [{ fileName: form.ndaUpload.split('/').pop(), serverFileName: form.ndaUpload, isServer: true }] : []}
+                  onChange={(files) => handleBOSFileChange('ndaUpload', files)}
+                  module="HRA_NDA"
+                  multiple={false}
+                  accept=".pdf"
+                  maxFiles={1}
+                  compact={true}
+                  label="NDA Upload"
+                />
+              </Box>
             </R>
-            <R>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button component="label" variant="outlined" fullWidth startIcon={<IconFileCertificate size={18} />}>
-                  {form.fitnessCertificateUpload ? 'Fittness Cert Uploaded' : 'Fittness Certicate Upload'}
-                  <input type="file" hidden accept=".pdf,image/*" onChange={(e) => handleSingleFileUpload('fitnessCertificateUpload', e.target.files[0])} />
-                </Button>
-                {form.fitnessCertificateUpload && <IconButton size="small" onClick={() => handleOpenPreview(form.fitnessCertificateUpload, 'Fitness_Cert')} color="primary"><IconEye size={18} /></IconButton>}
-              </Stack>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.fitnessCertificateUpload ? [{ fileName: form.fitnessCertificateUpload.split('/').pop(), serverFileName: form.fitnessCertificateUpload, isServer: true }] : []}
+                  onChange={(files) => handleBOSFileChange('fitnessCertificateUpload', files)}
+                  module="HRA_FITNESS"
+                  multiple={false}
+                  accept=".pdf,image/*"
+                  maxFiles={1}
+                  compact={true}
+                  label="Fitness Certificate Upload"
+                />
+              </Box>
             </R>
           </Grid>
         </BOSFormSection>
@@ -565,9 +587,9 @@ export default function EmployeeMaster() {
             <Box>
               <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 700 }}>Roles & Governance</Typography>
               <Grid item xs={12}>
-                {renderAbilityRow('Chaired', 'isChaired', 'chairedType', 'chairedFileInfo')}
-                {renderAbilityRow('Host', 'isHost', 'hostType', 'hostFileInfo')}
-                {renderAbilityRow('Participants', 'isParticipants', 'participantsType', 'participantsFileInfo')}
+                {renderAbilityRow('Chaired', 'isChaired', 'chairedType', 'chairedFileInfo', true, true, meetings.map(m => m.meetingName))}
+                {renderAbilityRow('Host', 'isHost', 'hostType', 'hostFileInfo', true, true, meetings.map(m => m.meetingName))}
+                {renderAbilityRow('Participants', 'isParticipants', 'participantsType', 'participantsFileInfo', true, true, meetings.map(m => m.meetingName))}
               </Grid>
             </Box>
             <Divider />
@@ -626,7 +648,7 @@ export default function EmployeeMaster() {
               fullWidth
               InputLabelProps={{ shrink: true }}
             >
-              {abilityUpload.types.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+              {(abilityUpload.allOptions || abilityUpload.types).map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
             </BOSTextField>
             
             <Box>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Grid, Button, Stack, MenuItem, Typography, useTheme, Box, Divider, IconButton } from '@mui/material';
-import { IconPlus, IconDeviceFloppy, IconHeart, IconPhone, IconWallet, IconSchool, IconBriefcase, IconAlertTriangle, IconEPassport, IconUsers, IconDevices, IconShieldCheck, IconFileText, IconActivity, IconReceipt2, IconBuildingBank, IconMapPin, IconCloudUpload, IconEye } from '@tabler/icons-react';
-import { BOSFormSection, BOSTextField, BOSDataTable, btnSave } from 'ui-component/bos';
+import { IconPlus, IconDeviceFloppy, IconTrash, IconHeart, IconFileText, IconMapPin, IconCertificate, IconCar, IconActivity, IconGavel, IconCamera, IconDeviceLaptop, IconUsers, IconAmbulance, IconAlertTriangle, IconEPassport, IconShieldCheck, IconBuildingBank, IconSchool, IconReceipt2, IconBriefcase, IconDevices } from '@tabler/icons-react';
+import { BOSFormSection, BOSTextField, BOSDataTable, btnSave, btnDelete, BOSFileUpload } from 'ui-component/bos';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -45,13 +45,12 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
     catch { snack(dispatch, `Failed to save ${title}. Please try again.`, 'error'); }
   };
 
-  const upload = async (field, file) => {
-    if (!file) return;
-    try {
-      const path = await autoUploadFile(file);
-      setForm(p => ({ ...p, [field]: path }));
-      snack(dispatch, 'File uploaded!');
-    } catch { snack(dispatch, 'Upload failed', 'error'); }
+  const upload = (field, files) => {
+    if (files && files.length > 0) {
+      setForm(p => ({ ...p, [field]: files[0].serverFileName }));
+    } else {
+      setForm(p => ({ ...p, [field]: '' }));
+    }
   };
 
   if (!loaded) return null;
@@ -78,13 +77,16 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
                 {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </BOSTextField>
             ) : f.type === 'file' ? (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button component="label" variant="outlined" fullWidth startIcon={<IconCloudUpload size={18} />} disabled={disabled}>
-                  {form[f.name] ? 'Uploaded' : f.label}
-                  <input type="file" hidden onChange={(e) => upload(f.name, e.target.files[0])} />
-                </Button>
-                {form[f.name] && onPreview && <IconButton size="small" onClick={() => onPreview(form[f.name], f.label)} color="primary"><IconEye size={18} /></IconButton>}
-              </Stack>
+              <BOSFileUpload
+                files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
+                onChange={(files) => upload(f.name, files)}
+                module="HRA_PROFILE"
+                multiple={false}
+                maxFiles={1}
+                compact={true}
+                label={f.label}
+                disabled={disabled || f.disabled}
+              />
             ) : (
               <BOSTextField 
                 name={f.name} 
@@ -143,13 +145,12 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
   }, [employeeId, endpoint]);
   useEffect(() => { load(); }, [load]);
 
-  const upload = async (field, file) => {
-    if (!file) return;
-    try {
-      const path = await autoUploadFile(file);
-      setForm(p => ({ ...p, [field]: path }));
-      snack(dispatch, 'File ready for add!');
-    } catch { snack(dispatch, 'Upload failed', 'error'); }
+  const upload = (field, files) => {
+    if (files && files.length > 0) {
+      setForm(p => ({ ...p, [field]: files[0].serverFileName }));
+    } else {
+      setForm(p => ({ ...p, [field]: '' }));
+    }
   };
 
   const add = async () => {
@@ -182,10 +183,16 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
         {fields.map((f) => (
           <R key={f.name} lg={f.lg || 4}>
             {f.type === 'file' ? (
-              <Button component="label" variant="outlined" fullWidth startIcon={<IconCloudUpload size={18} />} disabled={disabled}>
-                {form[f.name] ? 'File Ready' : f.label}
-                <input type="file" hidden onChange={(e) => upload(f.name, e.target.files[0])} />
-              </Button>
+              <BOSFileUpload
+                files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
+                onChange={(files) => upload(f.name, files)}
+                module="HRA_PROFILE"
+                multiple={false}
+                maxFiles={1}
+                compact={true}
+                label={f.label}
+                disabled={disabled}
+              />
             ) : f.select ? (
               <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled}>
                 {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}

@@ -36,6 +36,7 @@ import { API_PATHS } from 'utils/api-constants';
 import { sanitizeHTML } from 'utils/sanitize';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
+import { getFileViewUrl, getFileDownloadUrl } from 'utils/upload-helper';
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -64,26 +65,7 @@ import * as XLSX from 'xlsx';
  *   <BOSFilePreview open={open} onClose={close} url="https://..." fileName="doc.pdf" />
  */
 
-// ── Build view URL for server files ──
-const buildViewUrl = (serverFileName) => {
-  if (!serverFileName) return '';
-  const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
-  const filesPath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
-  // Encode segments but preserve slashes for Spring Boot {*filename}
-  const safeName = serverFileName.split('/').map(s => encodeURIComponent(s)).join('/');
-  return `${baseUrl}${filesPath}/view/${safeName}`;
-};
-
-// ── Build download URL for server files ──
-const buildDownloadUrl = (serverFileName) => {
-  if (!serverFileName) return '';
-  const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
-  const filesPath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
-  const safeName = serverFileName.split('/').map(s => encodeURIComponent(s)).join('/');
-  return `${baseUrl}${filesPath}/download/${safeName}`;
-};
-
-// ── Detect file category from extension ──
+// Detected file category from extension moved to helper if needed, keeping here for UI logic
 const getFileCategory = (fileName) => {
   const ext = (fileName || '').split('.').pop()?.toLowerCase();
   if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(ext)) return 'image';
@@ -163,8 +145,8 @@ export default function BOSFilePreview({
   };
   const displayName = getDisplayName(fileName);
 
-  const viewUrl = directUrl || (isServer ? buildViewUrl(currentFile.serverFileName || currentFile.name) : '');
-  const downloadUrl = isServer ? buildDownloadUrl(currentFile.serverFileName || currentFile.name) : viewUrl;
+  const viewUrl = directUrl || (isServer ? getFileViewUrl(currentFile.serverFileName || currentFile.name) : '');
+  const downloadUrl = isServer ? getFileDownloadUrl(currentFile.serverFileName || currentFile.name) : viewUrl;
 
   const currentIndex = allFiles.findIndex(f => (f.serverFileName || f.name) === (currentFile.serverFileName || currentFile.name));
   const hasMultiple = allFiles.length > 1;

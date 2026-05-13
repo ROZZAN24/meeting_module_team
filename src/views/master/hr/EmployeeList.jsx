@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
-import { IconFileDownload, IconRefresh, IconUsers } from '@tabler/icons-react';
+import { IconFileDownload, IconRefresh, IconUsers, IconUser } from '@tabler/icons-react';
+import { Avatar } from '@mui/material';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
@@ -11,7 +12,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getPhotoUrl } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import { useLookups } from 'hooks/useLookups';
 
@@ -19,23 +20,16 @@ import { useLookups } from 'hooks/useLookups';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'oldEmpCode', label: 'OLD EMP CODE', minWidth: 110 },
-  { id: 'firstName', label: 'FIRST NAME', minWidth: 140, bold: true },
-  { id: 'lastName', label: 'LAST NAME', minWidth: 140 },
+  { id: 'photo', label: 'PHOTO', minWidth: 80 },
+  { id: 'employeeName', label: 'EMPLOYEE NAME', minWidth: 200, bold: true },
   { id: 'empCode', label: 'EMP CODE', minWidth: 110 },
-  { id: 'designationId', label: 'DESIGNATION', minWidth: 120 },
+  { id: 'designationId', label: 'DESIGNATION', minWidth: 150 },
+  { id: 'departmentId', label: 'DEPARTMENT', minWidth: 150 },
   { id: 'gradeCode', label: 'GRADE', minWidth: 80 },
-  { id: 'departmentId', label: 'DEPARTMENT', minWidth: 120 },
   { id: 'empLevelId', label: 'LEVEL', minWidth: 100 },
-  { id: 'unitId', label: 'UNIT NAME', minWidth: 100 },
-  { id: 'homeManager', label: 'HOME MANAGER', minWidth: 130 },
-  { id: 'businessManager', label: 'BUSINESS MANAGER', minWidth: 140 },
-  { id: 'supplierName', label: 'SUPPLIER NAME', minWidth: 130 },
-  { id: 'createdBy', label: 'CREATED BY', minWidth: 110 },
-  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
-  { id: 'updatedBy', label: 'MODIFIED BY', minWidth: 110 },
-  { id: 'updatedAt', label: 'MODIFIED DATE', minWidth: 140 },
-  { id: 'status', label: 'STATUS', minWidth: 90 }
+  { id: 'unitId', label: 'UNIT NAME', minWidth: 120 },
+  { id: 'homeManager', label: 'MANAGER', minWidth: 150 },
+  { id: 'status', label: 'STATUS', minWidth: 100 }
 ];
 
 export default function EmployeeList() {
@@ -193,13 +187,11 @@ export default function EmployeeList() {
   }, [rows, globalQuery, globalFilters, departments, designations]);
 
   const paginatedRows = useMemo(() => {
-    if (rows.length > 0 && page === 0) {
-       console.log('DEBUG: First Row Keys:', Object.keys(rows[0]));
-       console.log('DEBUG: First Row Dates:', { createdAt: rows[0].createdAt, updatedAt: rows[0].updatedAt });
-    }
     return filteredRows.slice(page * size, page * size + size).map((row, i) => ({
       ...row,
       index: page * size + i + 1,
+      photo: row.employeePhotoUpload,
+      employeeName: row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '-',
       departmentId: getDeptName(row.departmentId),
       designationId: getDesigName(row.designationId),
       empLevelId: getLevelName(row.empLevelId),
@@ -212,6 +204,22 @@ export default function EmployeeList() {
       status: row.status || 'Active'
     }));
   }, [filteredRows, page, size, departments, designations, levels, users]);
+
+  const renderCell = (col, row) => {
+    if (col.id === 'index') return row.index;
+    if (col.id === 'photo') {
+      return (
+        <Avatar
+          src={getPhotoUrl(row.photo)}
+          variant="rounded"
+          sx={{ width: 32, height: 40, bgcolor: 'grey.100', border: '1px solid', borderColor: 'divider' }}
+        >
+          <IconUser size={18} color="#ccc" />
+        </Avatar>
+      );
+    }
+    return String(row[col.id] || '-');
+  };
 
   return (
     <MainCard
@@ -261,6 +269,7 @@ export default function EmployeeList() {
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
+        renderCell={renderCell}
       />
 
       <ConfirmDeleteDialog

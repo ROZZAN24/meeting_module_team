@@ -126,17 +126,13 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
   useEffect(() => {
     if (form.frequency === 'WEEKLY' && form.meetingDate) {
       const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      // Use UTC-safe date parsing or split to avoid timezone offsets
       const [y, m, d] = form.meetingDate.split('-').map(Number);
       const dateObj = new Date(y, m - 1, d);
       const dayName = days[dateObj.getDay()];
       
-      // Only set if not already set or if it's a new entry
-      if (!form.weekdays || !item) {
-        setForm(p => ({ ...p, weekdays: dayName }));
-      }
+      setForm(p => ({ ...p, weekdays: dayName }));
     }
-  }, [form.frequency, form.meetingDate, item]);
+  }, [form.frequency, form.meetingDate]);
 
   const handleSave = () => {
     const rules = [
@@ -233,19 +229,14 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
             {form.frequency === 'WEEKLY' && (
               <Grid item xs={12}>
                 <BOSTextField
-                  select
-                  label="Weekday"
+                  label="Weekday (Derived from Date)"
                   name="weekdays"
                   value={form.weekdays || ''}
-                  onChange={h}
-                  required
-                  error={!!errors.weekdays}
+                  InputProps={{ readOnly: true }}
+                  sx={{ bgcolor: 'grey.50' }}
                   fullWidth
-                >
-                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                    <MenuItem key={day} value={day}>{day}</MenuItem>
-                  ))}
-                </BOSTextField>
+                  helperText="Automatically derived from the meeting date"
+                />
               </Grid>
             )}
             <Grid item xs={12} sm={4}>
@@ -311,17 +302,17 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
                 <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <IconUsers size={18} /> SELECTED PARTICIPANTS ({form.participants.length})
                 </Typography>
-                <Grid container spacing={2}>
+                <Grid container spacing={1.5}>
                   {form.participants.map((emp, idx) => (
-                    <Grid item xs={12} md={6} key={emp.id || idx}>
+                    <Grid item xs={12} sm={6} md={4} key={emp.id || idx}>
                       <BOSPersonnelCard 
+                        variant="compact"
                         title={`Participant #${idx + 1}`}
                         name={emp.employeeName}
                         empCode={emp.empCode}
                         department={emp.department?.departmentName}
-                        photo={emp.photoPath}
+                        photo={emp.employeePhotoUpload}
                         color="primary.main"
-                        bgcolor="grey.50"
                       />
                     </Grid>
                   ))}
@@ -335,7 +326,7 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
               name={form.chairedBy?.employeeName}
               empCode={form.chairedBy?.empCode}
               department={form.chairedBy?.department?.departmentName}
-              photo={form.chairedBy?.photoPath}
+              photo={form.chairedBy?.employeePhotoUpload}
               color="primary.main"
               bgcolor="primary.lighter"
             />
@@ -345,7 +336,7 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
               name={form.hostBy?.employeeName}
               empCode={form.hostBy?.empCode}
               department={form.hostBy?.department?.departmentName}
-              photo={form.hostBy?.photoPath}
+              photo={form.hostBy?.employeePhotoUpload}
               color="secondary.main"
               bgcolor="secondary.lighter"
             />

@@ -38,7 +38,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_BASE } from 'utils/api-base';
 import getCroppedImg from 'utils/cropImage';
-import { autoUploadFile } from 'utils/upload-helper';
+import { autoUploadFile, getUserImageUrl } from 'utils/upload-helper';
 import useAuth from 'hooks/useAuth';
 
 export default function AddUserDialog({ open, onClose, editingUser, employees, fetchUsers }) {
@@ -214,13 +214,13 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                 <Tooltip
                   title={formData.imgName ? (
                     <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'white', borderRadius: 2 }}>
-                      <img src={`${API_BASE}/api/users/image/${formData.imgName}`} alt="Preview" style={{ maxWidth: 300, maxHeight: 300, borderRadius: 4, display: 'block' }} />
+                      <img src={getUserImageUrl(formData.imgName)} alt="Preview" style={{ maxWidth: 300, maxHeight: 300, borderRadius: 4, display: 'block' }} />
                     </Paper>
                   ) : null}
                   arrow placement="right"
                 >
                   <Avatar 
-                    src={formData.imgName ? `${API_BASE}/api/users/image/${formData.imgName}` : autonomaLogo} 
+                    src={formData.imgName ? getUserImageUrl(formData.imgName) : autonomaLogo} 
                     sx={{ width: 130, height: 130, border: '4px solid white', bgcolor: 'primary.light', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', cursor: formData.imgName ? 'pointer' : 'default' }}
                   >
                     <IconPhoto size={50} />

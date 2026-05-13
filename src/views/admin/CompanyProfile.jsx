@@ -12,8 +12,7 @@ import {
   IconUser, IconCalendar, IconDeviceFloppy
 } from '@tabler/icons-react';
 import useAuth from 'hooks/useAuth';
-import { autoUploadFile } from 'utils/upload-helper';
-import { API_BASE } from 'utils/api-base';
+import { autoUploadFile, getCompanyImageUrl } from 'utils/upload-helper';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
@@ -110,7 +109,7 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
           <Tooltip
             title={
               <img
-                src={`${API_BASE}/api/company-profile/image/${preview}`}
+                src={getCompanyImageUrl(preview)}
                 alt="Preview"
                 style={{ maxWidth: 300, maxHeight: 300, objectFit: 'contain', display: 'block', borderRadius: 4 }}
               />
@@ -119,7 +118,7 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
             arrow
           >
             <Avatar
-              src={`${API_BASE}/api/company-profile/image/${preview}`}
+              src={getCompanyImageUrl(preview)}
               variant="rounded"
               sx={{ width: '100%', height: 110, mx: 'auto', mb: 1, objectFit: 'cover' }}
             />

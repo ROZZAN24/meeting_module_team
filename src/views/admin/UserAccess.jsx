@@ -41,7 +41,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 
-import { API_BASE, getUserImageUrl } from 'utils/api-base';
+import { getUserImageUrl } from 'utils/upload-helper';
 
 const userAccessSearchConfig = [
   { id: 'module', label: 'Module', type: 'text', placeholder: 'Search Module...' },
@@ -207,7 +207,7 @@ const UserAccess = () => {
       }}>
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar
-            src={selectedUserInfo?.imgName ? `${API_BASE}/api/users/image/${selectedUserInfo.imgName}` : ''}
+            src={selectedUserInfo?.imgName ? getUserImageUrl(selectedUserInfo.imgName) : ''}
             sx={{ width: 50, height: 50, border: '1px solid #eee' }}
           >
             {!selectedUserInfo?.imgName && <IconUser size={26} color="#ccc" />}
@@ -237,7 +237,7 @@ const UserAccess = () => {
                 const u = users.find(u => u.userId === selected);
                 return (
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Avatar src={u?.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 22, height: 22, fontSize: '0.7rem' }}>
+                    <Avatar src={u?.imgName ? getUserImageUrl(u.imgName) : ''} sx={{ width: 22, height: 22, fontSize: '0.7rem' }}>
                       {selected.charAt(0).toUpperCase()}
                     </Avatar>
                     <Typography variant="body2" fontWeight={600}>{selected} ({u?.empId || 'N/A'})</Typography>
@@ -249,7 +249,7 @@ const UserAccess = () => {
             {users.map((u) => (
               <MenuItem key={u.userId} value={u.userId}>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar src={u.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 24, height: 24 }} />
+                  <Avatar src={u.imgName ? getUserImageUrl(u.imgName) : ''} sx={{ width: 24, height: 24 }} />
                   <Typography variant="body2">{u.userId}</Typography>
                 </Stack>
               </MenuItem>
@@ -272,7 +272,7 @@ const UserAccess = () => {
                 const u = users.find(u => u.userId === selected);
                 return (
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <Avatar src={u?.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 22, height: 22, fontSize: '0.7rem' }}>
+                    <Avatar src={u?.imgName ? getUserImageUrl(u.imgName) : ''} sx={{ width: 22, height: 22, fontSize: '0.7rem' }}>
                       {selected.charAt(0).toUpperCase()}
                     </Avatar>
                     <Typography variant="body2" fontWeight={600}>{selected}</Typography>
@@ -284,7 +284,7 @@ const UserAccess = () => {
             {users.filter(u => u.userId !== selectedUser).map((u) => (
               <MenuItem key={u.userId} value={u.userId}>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Avatar src={u.imgName ? `${API_BASE}/api/users/image/${u.imgName}` : ''} sx={{ width: 24, height: 24 }} />
+                  <Avatar src={u.imgName ? getUserImageUrl(u.imgName) : ''} sx={{ width: 24, height: 24 }} />
                   <Typography variant="body2">{u.userId}</Typography>
                 </Stack>
               </MenuItem>

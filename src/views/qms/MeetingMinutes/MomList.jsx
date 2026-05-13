@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Stack, Button, Tooltip, IconButton, Chip } from '@mui/material';
 import { IconPlus, IconFileText, IconRefresh, IconArrowsExchange } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { useNavigate } from 'react-router-dom';
 import MainCard from 'ui-component/cards/MainCard';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
@@ -11,7 +12,6 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
-import AddMomDialog from './AddMomDialog';
 import ReassignDialog from './ReassignDialog';
 
 const columns = [
@@ -34,6 +34,7 @@ const columns = [
 
 export default function MomList() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const lookups = useLookups(['DEPARTMENTS']);
@@ -184,12 +185,10 @@ export default function MomList() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   // ── HANDLERS ──
-  const handleAdd = () => { setSelectedItem(null); setDialogOpen(true); };
+  const handleAdd = () => { navigate('/qms/minutesofmeeting/add'); };
   const handleEdit = (item) => {
-    // Find the parent MOM to open for editing
-    const parentMom = item._mom || rows.find(m => m.id === item._momId);
-    setSelectedItem(parentMom);
-    setDialogOpen(true);
+    const momId = item._momId || item.id;
+    navigate(`/qms/minutesofmeeting/edit/${momId}`);
   };
   const handleDeleteClick = (row) => { setDeleteTarget(row); setDeleteDialogOpen(true); };
 
@@ -334,11 +333,6 @@ export default function MomList() {
         id="mom-list-table"
       />
 
-      <AddMomDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSave={handleSave}
-        item={selectedItem}
       />
 
       <ReassignDialog

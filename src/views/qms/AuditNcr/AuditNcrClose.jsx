@@ -72,7 +72,11 @@ export default function AuditNcrClose() {
     if (!input) return {};
     const parts = input.split(' - ');
     const emp = employees.find(e => e.employeeName === parts[0]?.trim() || e.empCode === input);
-    return emp || { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    if (!emp) return { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    return {
+      ...emp,
+      departmentName: emp.department?.departmentName || '-'
+    };
   };
 
   useEffect(() => {
@@ -271,6 +275,7 @@ export default function AuditNcrClose() {
                     name={selectedFinding?.auditor} 
                     empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
+                    photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}
                     color="primary.main"
                 />
                 <BOSPersonnelCard 
@@ -278,6 +283,7 @@ export default function AuditNcrClose() {
                     name={selectedFinding?.ncrApprovedBy} 
                     empCode={getEmployeeDetails(selectedFinding?.ncrApprovedBy).empCode}
                     department={getEmployeeDetails(selectedFinding?.ncrApprovedBy).departmentName}
+                    photo={getEmployeeDetails(selectedFinding?.ncrApprovedBy).employeePhotoUpload}
                     color="secondary.main"
                 />
               </Stack>

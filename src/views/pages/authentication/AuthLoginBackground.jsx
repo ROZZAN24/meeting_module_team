@@ -4,13 +4,14 @@ import Box from '@mui/material/Box';
 // assets
 import erpBg from 'assets/images/auth/auth-pattern.svg';
 
-import { API_BASE } from 'utils/api-base';
+import { getCompanyImageUrl } from 'utils/upload-helper';
 
 const AuthLoginBackground = () => {
   const [bgImage, setBgImage] = useState(erpBg);
 
   useEffect(() => {
     const token = localStorage.getItem('serviceToken') || '';
+    const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
     fetch(`${API_BASE}/api/company-profile/all`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -20,7 +21,7 @@ const AuthLoginBackground = () => {
       })
       .then(data => {
         if (data && data.length > 0 && data[0].logInBgFileName) {
-          const imgUrl = `${API_BASE}/api/company-profile/image/${data[0].logInBgFileName}`;
+          const imgUrl = getCompanyImageUrl(data[0].logInBgFileName);
           const img = new Image();
           img.onload = () => setBgImage(imgUrl);
           img.onerror = () => console.error('Failed to load dynamic login background image');
