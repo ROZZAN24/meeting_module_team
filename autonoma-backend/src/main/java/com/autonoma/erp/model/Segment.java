@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Entity
-@Table(name = "SM_SEGMENT")
+@Table(name = "sm_segment")
 public class Segment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
