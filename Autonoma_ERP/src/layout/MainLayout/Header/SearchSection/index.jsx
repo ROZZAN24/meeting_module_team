@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // material-ui
@@ -26,7 +26,7 @@ import { setQuery, setFilters, resetFilters, setFilterPreferences } from 'store/
 
 // assets
 import { IconSearch, IconX, IconApps, IconFileText, IconAdjustmentsHorizontal, IconCalendar, IconFilter, IconPlus } from '@tabler/icons-react';
-import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Chip } from '@mui/material';
+import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Chip, Badge } from '@mui/material';
 
 const SUGGESTIONS = [
   { label: 'Master Check List', path: '/qms/checklist/master', type: 'Module' },
@@ -188,6 +188,26 @@ export default function SearchSection() {
   // Dynamic Suggestions - Only show on Dashboard
   const currentSuggestions = isDashboard ? SUGGESTIONS : [];
 
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => {
+    if (!searchConfig || !filters) return 0;
+    let count = 0;
+    searchConfig.forEach((f) => {
+      if (f.type === 'dateRange') {
+        if (filters[`${f.id}Start`] || filters[`${f.id}End`]) count++;
+      } else if (f.type === 'select') {
+        const val = filters[f.id];
+        if (val && val !== 'All' && val !== f.defaultValue) count++;
+      } else if (f.type === 'autocomplete') {
+        const val = filters[f.id];
+        if (Array.isArray(val) ? val.length > 0 : val) count++;
+      } else {
+        if (filters[f.id]) count++;
+      }
+    });
+    return count;
+  }, [searchConfig, filters]);
+
   return (
     <>
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
@@ -241,7 +261,7 @@ export default function SearchSection() {
           freeSolo
           options={currentSuggestions}
           noOptionsText={isDashboard ? undefined : null}
-          open={isFocused && !isAdvancedOpen && (value.length > 0 || isDashboard)}
+          open={isFocused && !isAdvancedOpen && currentSuggestions.length > 0 && (value.length > 0 || isDashboard)}
           openOnFocus={false}
           getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
           inputValue={value}
@@ -299,44 +319,7 @@ export default function SearchSection() {
                 ...params.InputProps,
                 startAdornment: (
                   <InputAdornment position="start" sx={{ pl: 1, mr: 1 }}>
-                    <Stack 
-                      direction="row" 
-                      spacing={0.5} 
-                      alignItems="center" 
-                      sx={{ 
-                        maxWidth: isFocused ? 400 : 200, 
-                        overflowX: 'auto', 
-                        overflowY: 'hidden',
-                        pb: 0.2,
-                        '&::-webkit-scrollbar': { height: 0 }, // Hide scrollbar for cleaner look
-                        msOverflowStyle: 'none',
-                        scrollbarWidth: 'none'
-                      }}
-                    >
-                      <IconSearch stroke={1.5} size="18px" style={{ flexShrink: 0 }} />
-                      {searchConfig && searchConfig.filter(f => f.isConstant || visibleFilterIds.includes(f.id)).map(f => (
-                        <Chip
-                          key={f.id}
-                          label={
-                            f.type === 'dateRange'
-                              ? `${f.label}: ${filters[`${f.id}Start`] || filters[`${f.id}End`] ? `${filters[`${f.id}Start`] || 'Any'} to ${filters[`${f.id}End`] || 'Latest'}` : 'All'}`
-                              : `${f.label}: ${f.options?.find(o => o.value === (filters[f.id] || f.defaultValue))?.label || filters[f.id] || 'All'}`
-                          }
-                          size="small"
-                          onDelete={f.isConstant ? undefined : () => updateVisibleFilters(visibleFilterIds.filter(id => id !== f.id))}
-                          sx={{ 
-                            height: 22, 
-                            fontSize: '0.7rem', 
-                            bgcolor: 'secondary.light', 
-                            color: 'secondary.dark',
-                            fontWeight: 600,
-                            flexShrink: 0,
-                            borderRadius: '6px',
-                            '& .MuiChip-deleteIcon': { color: 'secondary.dark', fontSize: 14, '&:hover': { color: 'secondary.main' } }
-                          }}
-                        />
-                      ))}
-                    </Stack>
+                    <IconSearch stroke={1.5} size="18px" style={{ flexShrink: 0 }} />
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -348,21 +331,39 @@ export default function SearchSection() {
                         </IconButton>
                       )}
                       <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 20, alignSelf: 'center' }} />
-                      <IconButton
-                        size="small"
-                        ref={anchorRef}
-                        onClick={handleAdvancedClick}
-                        sx={{
-                          p: 0.5,
-                          opacity: isHovered || isFocused || isAdvancedOpen ? 1 : 0,
-                          visibility: isHovered || isFocused || isAdvancedOpen ? 'visible' : 'hidden',
-                          transition: 'all 0.2s ease-in-out',
-                          color: isAdvancedOpen ? 'primary.main' : 'text.secondary',
-                          '&:hover': { color: 'primary.main' }
-                        }}
-                      >
-                        <IconFilter stroke={1.5} size="20px" />
-                      </IconButton>
+                      {searchConfig && searchConfig.length > 0 ? (
+                        <IconButton
+                          size="small"
+                          ref={anchorRef}
+                          onClick={handleAdvancedClick}
+                          sx={{
+                            p: 0.5,
+                            transition: 'all 0.2s ease-in-out',
+                            color: isAdvancedOpen || activeFilterCount > 0 ? 'primary.main' : 'text.secondary',
+                            '&:hover': { color: 'primary.main' }
+                          }}
+                        >
+                          <Badge badgeContent={activeFilterCount} color="primary" sx={{ '& .MuiBadge-badge': { right: -2, top: 2 } }}>
+                            <IconFilter stroke={1.5} size="20px" />
+                          </Badge>
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          size="small"
+                          ref={anchorRef}
+                          onClick={handleAdvancedClick}
+                          sx={{
+                            p: 0.5,
+                            opacity: isHovered || isFocused || isAdvancedOpen ? 1 : 0,
+                            visibility: isHovered || isFocused || isAdvancedOpen ? 'visible' : 'hidden',
+                            transition: 'all 0.2s ease-in-out',
+                            color: isAdvancedOpen ? 'primary.main' : 'text.secondary',
+                            '&:hover': { color: 'primary.main' }
+                          }}
+                        >
+                          <IconFilter stroke={1.5} size="20px" />
+                        </IconButton>
+                      )}
                       <Popover
                         open={isAdvancedOpen}
                         anchorEl={advancedAnchorEl}
@@ -525,7 +526,7 @@ export default function SearchSection() {
                                     {...bindToggle(popupState)}
                                     sx={{ borderRadius: '10px', fontWeight: 700, px: 1.5, color: 'primary.main', '&:hover': { bgcolor: 'primary.light', color: 'primary.dark' } }}
                                   >
-                                    Add Column Criteria
+                                    Add Filter
                                   </Button>
                                   <Popper {...bindPopper(popupState)} transition sx={{ zIndex: 1300 }}>
                                     {({ TransitionProps }) => (

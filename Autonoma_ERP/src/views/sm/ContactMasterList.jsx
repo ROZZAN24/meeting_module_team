@@ -156,7 +156,7 @@ export default function ContactMasterList() {
             </IconButton>
           </Tooltip>
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export Excel
+            Export
           </Button>
           <Tooltip title={shortcutTooltip('Create New Contact', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>

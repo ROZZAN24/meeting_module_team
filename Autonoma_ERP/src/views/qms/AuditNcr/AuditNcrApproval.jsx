@@ -147,7 +147,7 @@ export default function AuditNcrApproval() {
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={() => exportToExcel(rows, 'NCR_Approval_Report')} sx={btnExport}>Export Excel</Button>
+          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={() => exportToExcel(rows, 'NCR_Approval_Report')} sx={btnExport}>Export</Button>
         </Stack>
       }
     >

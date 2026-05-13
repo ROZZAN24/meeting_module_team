@@ -223,7 +223,7 @@ export default function DivisionMaster() {
             onClick={handleExport}
             sx={btnExport}
           >
-            Export Excel
+            Export
           </Button>
           <Tooltip title={shortcutTooltip('Create New Division', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>

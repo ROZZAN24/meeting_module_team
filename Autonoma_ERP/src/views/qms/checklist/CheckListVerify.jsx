@@ -215,7 +215,7 @@ export default function CheckListVerify() {
             </IconButton>
           </Tooltip>
           <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export Excel
+            Export
           </Button>
         </Stack>
       }
