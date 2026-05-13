@@ -45,7 +45,7 @@ import axios from 'utils/axios';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 
-import { API_BASE, getUserImageUrl, getCompanyImageUrl } from 'utils/api-base';
+import { getUserImageUrl, getCompanyImageUrl } from 'utils/upload-helper';
 
 // Search Configuration
 const sessionSearchConfig = [
@@ -339,7 +339,7 @@ const SessionMonitoring = () => {
             <TableBody>
               {paginatedSessions.map((session, idx) => {
                 const userImg = userImageMap[session.userId];
-                const displayImg = userImg ? `${API_BASE}/api/users/image/${userImg}` : (companyLogo ? `${API_BASE}/api/company-profile/image/${companyLogo}` : '');
+                const displayImg = userImg ? getUserImageUrl(userImg) : (companyLogo ? getCompanyImageUrl(companyLogo) : '');
                 const isCompanyFallback = !userImg && companyLogo;
 
                 return (

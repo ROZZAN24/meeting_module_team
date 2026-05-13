@@ -22,6 +22,7 @@ import Box from '@mui/material/Box';
 import useAuth from 'hooks/useAuth';
 import Avatar from 'ui-component/extended/Avatar';
 import SubCard from 'ui-component/cards/SubCard';
+import { getUserImageUrl } from 'utils/upload-helper';
 
 import { gridSpacing } from 'store/constant';
 
@@ -32,7 +33,6 @@ import PinDropTwoToneIcon from '@mui/icons-material/PinDropTwoTone';
 import MailTwoToneIcon from '@mui/icons-material/MailTwoTone';
 
 import Avatar3 from 'assets/images/users/avatar-3.png';
-import { API_BASE } from 'utils/api-base';
 
 // progress
 function LinearProgressWithLabel({ value, ...others }) {
@@ -90,7 +90,7 @@ export default function Profile() {
           title={
             <Grid container spacing={2} sx={{ alignItems: 'center' }}>
               <Grid>
-                <Avatar alt="User 1" src={user?.imgName ? `${API_BASE}/api/users/image/${user.imgName}` : Avatar3} />
+                <Avatar alt="User 1" src={user?.imgName ? getUserImageUrl(user.imgName) : Avatar3} />
               </Grid>
               <Grid size="grow">
                 <Typography variant="subtitle1">{user?.name}</Typography>

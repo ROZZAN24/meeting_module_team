@@ -16,6 +16,10 @@ export const getModuleFromPath = () => {
     if (path.includes('/sm/enquiries')) return 'SALES_ENQUIRY';
     if (path.includes('/sm/quotations')) return 'SALES_QUOTATION';
     
+    // Check HRA modules
+    if (path.includes('/hra/employee/master')) return 'HRA_PROFILE';
+    if (path.includes('/hra/')) return 'HRA';
+    
     // Then general modules
     if (path.includes('/user-overview') || path.includes('/profile')) return 'USER_PROFILE';
     if (path.includes('/finance/')) return 'FINANCE';
@@ -90,12 +94,29 @@ export const getFileViewUrl = (serverFileName) => {
     if (!serverFileName) return '';
     const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
     const filesPath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
-    return `${baseUrl}${filesPath}/view/${encodeURIComponent(serverFileName)}`;
+    
+    // Use query parameter to avoid Tomcat path variable restrictions (spaces, slashes, etc.)
+    return `${baseUrl}${filesPath}/view?path=${encodeURIComponent(serverFileName)}`;
 };
 
 export const getFileDownloadUrl = (serverFileName) => {
     if (!serverFileName) return '';
     const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
     const filesPath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
-    return `${baseUrl}${filesPath}/download/${encodeURIComponent(serverFileName)}`;
+    
+    return `${baseUrl}${filesPath}/download?path=${encodeURIComponent(serverFileName)}`;
+};
+
+export const getUserImageUrl = (imgName) => {
+    if (!imgName) return '';
+    if (imgName.startsWith('http') || imgName.startsWith('blob:')) return imgName;
+    const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
+    return `${baseUrl}/api/users/image?fileNameParam=${encodeURIComponent(imgName)}`;
+};
+
+export const getCompanyImageUrl = (imgName) => {
+    if (!imgName) return '';
+    if (imgName.startsWith('http') || imgName.startsWith('blob:')) return imgName;
+    const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
+    return `${baseUrl}/api/company-profile/image?fileNameParam=${encodeURIComponent(imgName)}`;
 };

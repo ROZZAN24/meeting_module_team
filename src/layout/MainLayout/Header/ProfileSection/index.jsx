@@ -31,6 +31,7 @@ import UpgradePlanCard from './UpgradePlanCard';
 import MainCard from 'ui-component/cards/MainCard';
 import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
+import { getUserImageUrl } from 'utils/upload-helper';
 
 // assets
 import User1 from 'assets/images/users/avatar-1.png';
@@ -53,7 +54,6 @@ export default function ProfileSection() {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { logout, user } = useAuth();
   const [open, setOpen] = useState(false);
-  const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
   /**
    * anchorRef is used on different components and specifying one type leads to other components throwing an error
@@ -112,7 +112,7 @@ export default function ProfileSection() {
         }}
       >
         <Avatar
-          src={user?.imgName ? `${API_BASE}/api/users/image/${user.imgName}` : User1}
+          src={user?.imgName ? getUserImageUrl(user.imgName) : User1}
           alt="user-images"
           sx={{
             typography: 'mediumAvatar',

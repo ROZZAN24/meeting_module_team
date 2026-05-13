@@ -21,6 +21,7 @@ import { setFilterConfig, resetFilters } from 'store/slices/search';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import { API_BASE } from 'utils/api-base';
+import { getUserImageUrl } from 'utils/upload-helper';
 
 import AddUserDialog from './AddUserDialog';
 
@@ -161,7 +162,7 @@ export default function UserOverview() {
       render: (row) => (
         <Stack direction="row" spacing={2} alignItems="center">
           <Avatar 
-            src={row.imgName ? `${API_BASE}/api/users/image/${row.imgName}` : defaultLogo}
+            src={row.imgName ? getUserImageUrl(row.imgName) : defaultLogo}
             sx={{ width: 42, height: 42, border: '1px solid #eee', bgcolor: 'primary.light', color: 'primary.dark' }}
           >
             {row.userId?.charAt(0).toUpperCase()}

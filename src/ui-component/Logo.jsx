@@ -8,8 +8,7 @@ import Box from '@mui/material/Box';
 
 // project imports
 import autonomaLogo from 'assets/images/autonoma-logo.png';
-
-const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
+import { getCompanyImageUrl } from 'utils/upload-helper';
 
 // ==============================|| LOGO IMAGE ||============================== //
 
@@ -19,6 +18,7 @@ export default function Logo({ height = 45 }) {
   useEffect(() => {
     const fetchLogo = () => {
       const token = localStorage.getItem('serviceToken') || '';
+      const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
       console.log('[Logo] Fetching logo configuration...');
       fetch(`${API_BASE}/api/company-profile/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -29,7 +29,7 @@ export default function Logo({ height = 45 }) {
         })
         .then(data => {
           if (data && data.length > 0 && data[0].logoFileName) {
-            const logoUrl = `${API_BASE}/api/company-profile/image/${data[0].logoFileName}?t=${new Date().getTime()}`;
+            const logoUrl = getCompanyImageUrl(data[0].logoFileName);
             console.log('[Logo] Setting logo source:', logoUrl);
             setLogoSrc(logoUrl);
           } else {
