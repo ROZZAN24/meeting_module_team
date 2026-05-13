@@ -501,16 +501,36 @@ export default function AddMeetingMinutes() {
                             {att.employee?.employeeName?.toUpperCase()}
                             {att.employee?.id === form.schedule?.host?.id && " (HOST)"}
                           </TableCell>
-                          <TableCell><BOSTextField type="time" size="small" value={att.inTime} onChange={(e) => {
-                            const list = [...form.attendanceList];
-                            list[idx].inTime = e.target.value;
-                            setForm({...form, attendanceList: list});
-                          }} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} /></TableCell>
-                          <TableCell><BOSTextField type="time" size="small" value={att.outTime} onChange={(e) => {
-                            const list = [...form.attendanceList];
-                            list[idx].outTime = e.target.value;
-                            setForm({...form, attendanceList: list});
-                          }} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} /></TableCell>
+                          <TableCell>
+                            <BOSTextField 
+                              type={att.attendanceStatus === 'Absent' ? 'text' : 'time'} 
+                              size="small" 
+                              value={att.attendanceStatus === 'Absent' ? '' : att.inTime} 
+                              onChange={(e) => {
+                                const list = [...form.attendanceList];
+                                list[idx].inTime = e.target.value;
+                                setForm({...form, attendanceList: list});
+                              }} 
+                              placeholder="" 
+                              InputLabelProps={{ shrink: true }} 
+                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} 
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <BOSTextField 
+                              type={att.attendanceStatus === 'Absent' ? 'text' : 'time'} 
+                              size="small" 
+                              value={att.attendanceStatus === 'Absent' ? '' : att.outTime} 
+                              onChange={(e) => {
+                                const list = [...form.attendanceList];
+                                list[idx].outTime = e.target.value;
+                                setForm({...form, attendanceList: list});
+                              }} 
+                              placeholder="" 
+                              InputLabelProps={{ shrink: true }} 
+                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} 
+                            />
+                          </TableCell>
                           <TableCell>
                             <BOSTextField 
                               select 
