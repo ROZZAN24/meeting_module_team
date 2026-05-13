@@ -48,7 +48,9 @@ public class CompanyCredentialService {
         }
 
         // Fallback: Default uploads/company
-        return Paths.get(System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "company");
+        Path fallback = Paths.get(System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "company");
+        org.slf4j.LoggerFactory.getLogger(CompanyCredentialService.class).info("[UploadPath] Resolved directory: {}", fallback.toAbsolutePath());
+        return fallback;
     }
 
     public List<CompanyCredential> findAll() {

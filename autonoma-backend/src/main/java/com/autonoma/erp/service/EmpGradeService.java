@@ -27,14 +27,8 @@ public class EmpGradeService {
         if (gradeDetail.getCreatedDate() == null) {
             gradeDetail.setCreatedDate(new Date());
         }
-        if (gradeDetail.getCreatedBy() == null || gradeDetail.getCreatedBy().trim().isEmpty()) {
+        if (gradeDetail.getCreatedBy() == null) {
             gradeDetail.setCreatedBy("Admin");
-        }
-        if (gradeDetail.getUpdatedBy() == null || gradeDetail.getUpdatedBy().trim().isEmpty()) {
-            gradeDetail.setUpdatedBy(gradeDetail.getCreatedBy());
-        }
-        if (gradeDetail.getUpdatedDate() == null) {
-            gradeDetail.setUpdatedDate(new Date());
         }
         if (gradeDetail.getStatus() == null) {
             gradeDetail.setStatus("Active");
@@ -49,12 +43,15 @@ public class EmpGradeService {
             gradeDetail.setSequenceNo(gradeDetailDetails.getSequenceNo());
             gradeDetail.setGradeName(gradeDetailDetails.getGradeName());
             gradeDetail.setStatus(gradeDetailDetails.getStatus());
-            String updater = gradeDetailDetails.getUpdatedBy();
-            gradeDetail.setUpdatedBy((updater != null && !updater.trim().isEmpty()) ? updater : "Admin");
-            gradeDetail.setUpdatedDate(new Date());
+            gradeDetail.setUpdatedBy(gradeDetailDetails.getUpdatedBy() != null ? gradeDetailDetails.getUpdatedBy() : "Admin");
             return repository.save(gradeDetail);
         }
         return null;
+    }
+
+    public String getNextGradeNo() {
+        long count = repository.count();
+        return "GRD-" + String.format("%03d", count + 1);
     }
 
     public void deleteGradeDetail(Long id) {

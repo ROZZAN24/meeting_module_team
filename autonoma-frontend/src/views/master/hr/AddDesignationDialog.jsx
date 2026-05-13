@@ -1,25 +1,22 @@
-import { useState, useEffect } from 'react';
-import { MenuItem, Box, Stack } from '@mui/material';
-import { IconBriefcase, IconInfoCircle } from '@tabler/icons-react';
+import React, { useState, useEffect } from 'react';
+import { MenuItem, Box, Stack, Typography, Paper, useTheme } from '@mui/material';
+import { IconBriefcase, IconInfoCircle, IconAlertCircle } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
-import useBOSValidation from 'hooks/useBOSValidation';
+import { BOSFormDialog, BOSFormSection, BOSTextField, errorStyle } from 'ui-component/bos';
+import useBOSForm from 'hooks/useBOSForm';
 
-const VALIDATION_RULES = [
-  { field: 'designationName', label: 'Designation Name', required: true },
-  { field: 'subCategoryLevel', label: 'Sub Category Level', required: true }
-];
+// ==============================|| DESIGNATION - PROFESSIONAL TEMPLATE ||============================== //
 
 const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7'];
 
-export default function AddDesignationDialog({ open, handleClose, initialData }) {
+export default function AddDesignationDialog({ open, handleClose, initialData, readOnly = false }) {
+  const theme = useTheme();
   const dispatch = useDispatch();
-  const { errors, validate, clearErrors } = useBOSValidation();
-  const isEditing = Boolean(initialData);
+  const [isEditing, setIsEditing] = useState(!readOnly);
 
-  const [formData, setFormData] = useState({
+  const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
     designationCode: '',
     designationName: '',
     experience: '',
@@ -41,27 +38,16 @@ export default function AddDesignationDialog({ open, handleClose, initialData })
           budgetedPositions: initialData.budgetedPositions || '',
           orgSeqNo: initialData.orgSeqNo || ''
         });
+        setIsEditing(false);
       } else {
-        setFormData({
-          designationCode: '',
-          designationName: '',
-          experience: '',
-          appearInCompetency: 'YES',
-          displaySlNo: '',
-          qualification: '',
-          jobDescription: '',
-          subCategoryLevel: '',
-          budgetedPositions: '',
-          orgSeqNo: ''
-        });
+        resetForm();
+        setIsEditing(!readOnly);
         fetchNextCode();
       }
-      clearErrors();
     }
-  }, [open, initialData, clearErrors]);
+  }, [open, initialData, setFormData, resetForm, readOnly]);
 
   const fetchNextCode = async () => {
-    setFormData(prev => ({ ...prev, designationCode: 'Generating...', displaySlNo: '' }));
     try {
       const [codeRes, slRes] = await Promise.all([
         axios.get('/api/hrm/designations/next-code'),
@@ -69,99 +55,116 @@ export default function AddDesignationDialog({ open, handleClose, initialData })
       ]);
       setFormData(prev => ({ ...prev, designationCode: codeRes.data, displaySlNo: slRes.data }));
     } catch (e) {
-      console.error('Failed to fetch next code or serial number');
-      setFormData(prev => ({ ...prev, designationCode: '1', displaySlNo: '1' }));
+      setFormData(prev => ({ ...prev, designationCode: 'AUTO', displaySlNo: '0' }));
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
   const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
+    const { isValid, firstMissing } = validate([
+      { field: 'designationName', label: 'Designation Name' },
+      { field: 'subCategoryLevel', label: 'Sub Category Level' }
+    ]);
+
+    if (!isValid) {
+      dispatch(openSnackbar({
+        open: true,
+        message: `Field ${firstMissing} is mandatory.`,
+        variant: 'alert',
+        severity: 'error',
+        alert: { variant: 'filled' }
+      }));
+      return;
+    }
 
     try {
-      if (isEditing) {
+      if (initialData?.id) {
         await axios.put(`/api/hrm/designations/${initialData.id}`, formData);
       } else {
         await axios.post('/api/hrm/designations', formData);
       }
-      dispatch(openSnackbar({ open: true, message: `Designation ${isEditing ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
+      dispatch(openSnackbar({ open: true, message: `Designation ${initialData ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
       handleClose(true);
     } catch (error) {
       dispatch(openSnackbar({ open: true, message: 'Failed to save designation', severity: 'error', variant: 'alert' }));
     }
   };
 
-  const handleClear = () => {
-    setFormData({
-      designationCode: formData.designationCode, // keep generated code
-      designationName: '',
-      experience: '',
-      appearInCompetency: 'YES',
-      displaySlNo: formData.displaySlNo, // keep generated sl no
-      qualification: '',
-      jobDescription: '',
-      subCategoryLevel: '',
-      budgetedPositions: '',
-      orgSeqNo: ''
-    });
-    clearErrors();
-  };
+  const isViewOnly = readOnly && !isEditing;
 
   return (
     <BOSFormDialog
       open={open}
       onClose={() => handleClose(false)}
       onSave={handleSave}
-      onClear={handleClear}
-      title={isEditing ? 'Edit Designation' : 'Add New Designation'}
-      maxWidth="md"
+      onClear={isEditing ? resetForm : null}
+      onEditClick={() => setIsEditing(true)}
+      isViewOnly={isViewOnly}
+      title={initialData ? 'Edit Designation' : 'Add New Designation'}
+      maxWidth="lg"
+      sidebar={
+        <Stack spacing={3}>
+          <Paper sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light' }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <IconInfoCircle size={20} color={theme.palette.primary.main} />
+              <Typography variant="subtitle2" color="primary.main" fontWeight={700}>System Meta</Typography>
+            </Stack>
+            <Typography variant="caption" display="block">Code: {formData.designationCode}</Typography>
+            <Typography variant="caption" display="block">Serial: {formData.displaySlNo}</Typography>
+          </Paper>
+
+          <Paper sx={{ p: 2, bgcolor: 'warning.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'warning.light' }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <IconAlertCircle size={20} color={theme.palette.warning.main} />
+              <Typography variant="subtitle2" color="warning.main" fontWeight={700}>Compliance Info</Typography>
+            </Stack>
+            <Typography variant="caption" display="block">Competency mapping is required for all active designations as per SOP-HR-04.</Typography>
+          </Paper>
+        </Stack>
+      }
     >
       <Stack spacing={3}>
-        <BOSFormSection icon={<IconBriefcase size={20} />} title="Primary Information">
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
-            <BOSTextField label="Designation Code" name="designationCode" value={formData.designationCode} inputProps={{ readOnly: true }} />
+        <BOSFormSection icon={<IconBriefcase size={22} color={theme.palette.primary.main} />} title="Primary Information">
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3 }}>
+            <BOSTextField label="Designation Code" value={formData.designationCode} InputProps={{ readOnly: true }} sx={{ bgcolor: 'grey.50' }} />
             <BOSTextField
               required
               label="Designation Name"
               name="designationName"
               value={formData.designationName}
-              onChange={handleChange}
-              error={!!errors.designationName}
-              helperText={errors.designationName}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              error={errors.designationName}
+              sx={errorStyle(errors.designationName)}
             />
             <BOSTextField
               select
               required
-              label="Sub Category Level"
+              label="Grade Level"
               name="subCategoryLevel"
               value={formData.subCategoryLevel}
-              onChange={handleChange}
-              error={!!errors.subCategoryLevel}
-              helperText={errors.subCategoryLevel}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              error={errors.subCategoryLevel}
+              sx={errorStyle(errors.subCategoryLevel)}
             >
               {LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
             </BOSTextField>
-            <BOSTextField label="Experience" name="experience" value={formData.experience} onChange={handleChange} placeholder="e.g. 2-5 Years" />
           </Box>
         </BOSFormSection>
 
-        <BOSFormSection icon={<IconInfoCircle size={20} />} title="Additional Details">
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2.5 }}>
-            <BOSTextField select label="Appear in Competency" name="appearInCompetency" value={formData.appearInCompetency} onChange={handleChange}>
+        <BOSFormSection icon={<IconInfoCircle size={22} color={theme.palette.secondary.main} />} title="Operational Details">
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 3 }}>
+            <BOSTextField label="Experience" name="experience" value={formData.experience} onChange={handleFormChange} disabled={isViewOnly} placeholder="e.g. 2-5 Years" />
+            <BOSTextField select label="Competency Tracking" name="appearInCompetency" value={formData.appearInCompetency} onChange={handleFormChange} disabled={isViewOnly}>
               <MenuItem value="YES">YES</MenuItem>
               <MenuItem value="NO">NO</MenuItem>
             </BOSTextField>
-            <BOSTextField type="number" label="Display Serial Number" name="displaySlNo" value={formData.displaySlNo} onChange={handleChange} />
-            <BOSTextField type="number" label="Organization Sequence Number" name="orgSeqNo" value={formData.orgSeqNo} onChange={handleChange} />
-            <BOSTextField label="Qualification" name="qualification" value={formData.qualification} onChange={handleChange} />
-            <BOSTextField type="number" label="Number of Positions (Budget)" name="budgetedPositions" value={formData.budgetedPositions} onChange={handleChange} />
+            <BOSTextField type="number" label="Org Sequence" name="orgSeqNo" value={formData.orgSeqNo} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField label="Min Qualification" name="qualification" value={formData.qualification} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField type="number" label="Budgeted Vacancies" name="budgetedPositions" value={formData.budgetedPositions} onChange={handleFormChange} disabled={isViewOnly} />
           </Box>
-          <Box sx={{ mt: 2.5 }}>
-            <BOSTextField multiline rows={3} label="Job Description" name="jobDescription" value={formData.jobDescription} onChange={handleChange} fullWidth />
+          <Box sx={{ mt: 3 }}>
+            <BOSTextField multiline rows={4} label="Role Summary (JD)" name="jobDescription" value={formData.jobDescription} onChange={handleFormChange} disabled={isViewOnly} fullWidth />
           </Box>
         </BOSFormSection>
       </Stack>

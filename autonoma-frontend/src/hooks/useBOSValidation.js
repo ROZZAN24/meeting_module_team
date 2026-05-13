@@ -20,7 +20,17 @@ export default function useBOSValidation() {
   const dispatch = useDispatch();
   const [errors, setErrors] = useState({});
 
-  const clearErrors = useCallback(() => setErrors({}), []);
+  const clearErrors = useCallback((fieldName) => {
+    if (fieldName) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[fieldName];
+        return newErrors;
+      });
+    } else {
+      setErrors({});
+    }
+  }, []);
 
   const validate = useCallback(
     (formData, rules) => {

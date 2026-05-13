@@ -7,7 +7,7 @@ import { exportToExcel } from 'utils/excelExport';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, getStatusChipSx } from 'ui-component/bos';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -132,9 +132,16 @@ export default function AuditReport() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Audit_Summary_Report"
+            columns={[
+              { header: 'Audit Type', key: 'auditType' },
+              { header: 'Observation No', key: 'observationNo' },
+              { header: 'Date', key: 'observationDate' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
         </Stack>
       }
     >

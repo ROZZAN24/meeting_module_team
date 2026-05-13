@@ -18,10 +18,11 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, getStatusChipSx } from 'ui-component/bos';
 import useLookups from 'hooks/useLookups';
 import { API_PATHS } from 'utils/api-constants';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
+import { autoUploadFile } from 'utils/upload-helper';
 
 const columns = [
   { id: 'index', label: 'S.No', minWidth: 50 },
@@ -245,9 +246,16 @@ export default function CloseCheckListRenewal() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={rows}
+            filename="Close_Checklist_Renewal"
+            columns={[
+              { header: 'Seq.No', key: 'seqNo' },
+              { header: 'Checking Point', key: 'checkingPoint' },
+              { header: 'Category', key: 'category' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
         </Stack>
       }
     >
@@ -294,16 +302,12 @@ export default function CloseCheckListRenewal() {
           try {
             setLoading(true);
             
-            // Helper to upload files and return formatted string "filename|details"
+            // Helper to upload files using automated system
             const uploadFile = async (fileObj) => {
               if (fileObj.isServer) return fileObj.serverFileName; // Already on server
               
-              const formDataUpload = new FormData();
-              formDataUpload.append('file', fileObj.file);
-              const res = await axios.post(`${API_PATHS.FILES}/upload`, formDataUpload, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-              });
-              const serverName = res.data;
+              // autoUploadFile automatically detects 'QMS' from the URL
+              const serverName = await autoUploadFile(fileObj.file);
               return fileObj.docDetails ? `${serverName}|${fileObj.docDetails}` : serverName;
             };
 

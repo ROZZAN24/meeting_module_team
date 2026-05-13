@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| AUDIT AREA MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -156,9 +156,15 @@ export default function AuditAreaMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Audit_Area_Details"
+            columns={[
+              { header: 'Type', key: 'type' },
+              { header: 'Description', key: 'description' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Audit Area', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

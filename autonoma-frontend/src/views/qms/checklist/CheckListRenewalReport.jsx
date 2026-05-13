@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, getStatusChipSx } from 'ui-component/bos';
 import { AddCheckListDialog } from './AddCheckListDialog';
 
 const columns = [
@@ -150,9 +150,16 @@ export default function CheckListRenewalReport() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={rows}
+            filename="Checklist_Report"
+            columns={[
+              { header: 'Seq No', key: 'seqNo' },
+              { header: 'Checking Point', key: 'checkingPoint' },
+              { header: 'Category', key: 'category' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
         </Stack>
       }
     >

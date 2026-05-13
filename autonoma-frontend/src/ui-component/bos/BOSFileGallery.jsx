@@ -22,8 +22,7 @@ import {
 } from '@tabler/icons-react';
 import { API_PATHS } from 'utils/api-constants';
 import axios from 'utils/axios';
-import mammoth from 'mammoth';
-import * as XLSX from 'xlsx';
+import BOSFilePreview from './BOSFilePreview';
 
 /**
  * BOSFileGallery - Standardized Attachment Gallery for Autonoma ERP
@@ -40,53 +39,9 @@ export const BOSFileGallery = ({
   const [previewData, setPreviewData] = useState({ url: '', name: '', type: '', content: '' });
   const [loading, setLoading] = useState(false);
 
-  const handlePreview = async (file) => {
-    let url;
-    const name = file.name || file.fileName || 'document';
-    const ext = name.includes('.') ? name.split('.').pop()?.toLowerCase() : '';
-    
-    setLoading(true);
+  const handlePreview = (file) => {
+    setPreviewData(file);
     setPreviewOpen(true);
-    setPreviewData({ url: '', name, type: file.type || file.fileType, content: '' });
-
-    try {
-      if (file.isServer || file.serverFileName) {
-        const fileName = file.serverFileName || file.name;
-        const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
-        const filePath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
-        url = `${baseUrl}${filePath}/view/${encodeURIComponent(fileName)}`;
-      } else {
-        url = URL.createObjectURL(file instanceof File ? file : file.file);
-      }
-
-      let content = '';
-      if (['docx', 'doc', 'xlsx', 'xls'].includes(ext)) {
-        let arrayBuffer;
-        if (file.isServer || file.serverFileName) {
-          const response = await axios.get(url, { responseType: 'arraybuffer' });
-          arrayBuffer = response.data;
-        } else {
-          const actualFile = file instanceof File ? file : file.file;
-          arrayBuffer = await actualFile.arrayBuffer();
-        }
-
-        if (ext === 'docx' || ext === 'doc') {
-          const result = await mammoth.convertToHtml({ arrayBuffer });
-          content = result.value;
-        } else if (ext === 'xlsx' || ext === 'xls') {
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          content = XLSX.utils.sheet_to_html(firstSheet);
-        }
-      }
-
-      setPreviewData({ url, name, type: file.type || file.fileType, content });
-    } catch (error) {
-      console.error('Preview failed:', error);
-      setPreviewData(prev => ({ ...prev, content: '<div style="padding: 20px; color: red;">Failed to load preview. Please download the file to view.</div>' }));
-    } finally {
-      setLoading(false);
-    }
   };
 
   const isImage = (file) => {
@@ -183,51 +138,13 @@ export const BOSFileGallery = ({
       </Box>
 
       {/* Shared Preview Dialog */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle component="div" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>{previewData.name}</Typography>
-          <IconButton onClick={() => setPreviewOpen(false)}><IconX size={20} /></IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ textAlign: 'center', bgcolor: '#fafafa', p: 4, minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {loading ? (
-            <Typography variant="body2" color="text.secondary">Converting for preview...</Typography>
-          ) : (
-            <>
-              {previewData.content ? (
-                <Box 
-                  dangerouslySetInnerHTML={{ __html: previewData.content }} 
-                  sx={{ 
-                    width: '100%', 
-                    maxHeight: '70vh', 
-                    overflow: 'auto', 
-                    textAlign: 'left', 
-                    bgcolor: 'white', 
-                    p: 3, 
-                    borderRadius: 1, 
-                    boxShadow: 1,
-                    '& table': { borderCollapse: 'collapse', width: '100%' },
-                    '& th, & td': { border: '1px solid #ddd', p: 1 }
-                  }} 
-                />
-              ) : previewData.url && (
-                previewData.name.toLowerCase().endsWith('.pdf') ? (
-                  <iframe title="PDF Preview" src={previewData.url} style={{ width: '100%', height: '70vh', border: 'none' }} />
-                ) : (
-                  <Box 
-                    component="img" 
-                    src={previewData.url} 
-                    sx={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 2, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', objectFit: 'contain' }} 
-                  />
-                )
-              )}
-            </>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-          <Button startIcon={<IconDownload size={18} />} onClick={() => window.open(previewData.url, '_blank')}>Download</Button>
-          <Button variant="contained" onClick={() => setPreviewOpen(false)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+      <BOSFilePreview 
+        open={previewOpen} 
+        onClose={() => setPreviewOpen(false)} 
+        file={previewData}
+        allFiles={files}
+        onNavigate={(newFile) => setPreviewData(newFile)}
+      />
     </Box>
   );
 };

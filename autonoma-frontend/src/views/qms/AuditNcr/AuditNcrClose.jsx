@@ -10,6 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import { 
   BOSDataTable, 
+  BOSExportButton,
   BOSFormDialog, 
   BOSFormSection, 
   BOSTextField, 
@@ -71,7 +72,11 @@ export default function AuditNcrClose() {
     if (!input) return {};
     const parts = input.split(' - ');
     const emp = employees.find(e => e.employeeName === parts[0]?.trim() || e.empCode === input);
-    return emp || { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    if (!emp) return { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    return {
+      ...emp,
+      departmentName: emp.department?.departmentName || '-'
+    };
   };
 
   useEffect(() => {
@@ -204,7 +209,17 @@ export default function AuditNcrClose() {
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={() => exportToExcel(rows, 'NCR_Closure_List')} sx={btnExport}>Export</Button>
+          <BOSExportButton
+            data={rows}
+            filename="NCR_Closure_List"
+            columns={[
+              { header: 'OBSERVATION NO', key: 'observationNo' },
+              { header: 'OBSERVATION DATE', key: 'observationDate' },
+              { header: 'SCHEDULE NO', key: 'auditScheduleNo' },
+              { header: 'DEPARTMENT', key: 'departmentName' },
+              { header: 'APPROVAL STATUS', key: 'ncrStatus' }
+            ]}
+          />
         </Stack>
       }
     >
@@ -260,6 +275,7 @@ export default function AuditNcrClose() {
                     name={selectedFinding?.auditor} 
                     empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
+                    photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}
                     color="primary.main"
                 />
                 <BOSPersonnelCard 
@@ -267,6 +283,7 @@ export default function AuditNcrClose() {
                     name={selectedFinding?.ncrApprovedBy} 
                     empCode={getEmployeeDetails(selectedFinding?.ncrApprovedBy).empCode}
                     department={getEmployeeDetails(selectedFinding?.ncrApprovedBy).departmentName}
+                    photo={getEmployeeDetails(selectedFinding?.ncrApprovedBy).employeePhotoUpload}
                     color="secondary.main"
                 />
               </Stack>

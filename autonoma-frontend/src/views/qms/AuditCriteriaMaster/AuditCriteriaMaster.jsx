@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import { Chip } from '@mui/material';
 
@@ -207,9 +207,16 @@ export default function AuditCriteriaMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Audit_Criteria_Details"
+            columns={[
+              { header: 'Audit Type', key: 'auditType' },
+              { header: 'Clause', key: 'clause' },
+              { header: 'Criteria', key: 'criteriaText' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Criteria', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

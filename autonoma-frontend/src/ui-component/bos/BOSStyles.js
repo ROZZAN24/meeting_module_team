@@ -142,7 +142,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 2,
+    pt: 5,
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
     overflowX: 'hidden'
@@ -255,6 +255,35 @@ export const getStatusChipSx = (status) => {
   };
 };
 
+// ─── ANIMATION TOKENS (SOP #18) ─────────────────────────────
+
+export const shakeAnimation = {
+  '@keyframes bosShake': {
+    '0%, 100%': { transform: 'translateX(0)' },
+    '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-2px)' },
+    '20%, 40%, 60%, 80%': { transform: 'translateX(2px)' }
+  },
+  '@keyframes bosPulse': {
+    '0%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.4)' },
+    '70%': { boxShadow: '0 0 0 6px rgba(239, 68, 68, 0)' },
+    '100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0)' }
+  },
+  animation: 'bosShake 0.5s cubic-bezier(.36,.07,.19,.97) both'
+};
+
+export const errorStyle = (isError) => isError ? {
+  ...shakeAnimation,
+  '& .MuiOutlinedInput-root': {
+    '& fieldset': { 
+      borderColor: '#ef4444 !important', 
+      borderWidth: '2px',
+      boxShadow: '0 0 8px rgba(239, 68, 68, 0.2)'
+    },
+    bgcolor: '#fff5f5',
+    animation: 'bosPulse 1.5s infinite'
+  }
+} : {};
+
 // ─── COMBINED GETTER (convenience) ──────────────────────────
 
 export const getBOSStyles = (theme, isDark) => ({
@@ -272,5 +301,7 @@ export const getBOSStyles = (theme, isDark) => ({
   tableRow: getTableRowSx(isDark),
   tableActionEdit: tableActionEditSx,
   tableActionDelete: tableActionDeleteSx,
-  getStatusChip: getStatusChipSx
+  getStatusChip: getStatusChipSx,
+  shake: shakeAnimation,
+  error: errorStyle
 });

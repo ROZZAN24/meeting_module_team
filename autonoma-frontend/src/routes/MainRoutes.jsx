@@ -189,9 +189,6 @@ const AdminCompanyProfile = Loadable(lazy(() => import('views/admin/CompanyProfi
 const AdminUserAccess = Loadable(lazy(() => import('views/admin/UserAccess')));
 const AdminBusinessAuthorization = Loadable(lazy(() => import('views/admin/BusinessAuthorization')));
 const AdminSessionMonitoring = Loadable(lazy(() => import('views/admin/SessionMonitoring')));
-const AdminDivisionMaster = Loadable(lazy(() => import('views/admin/DivisionMaster')));
-const AdminAuditTrail = Loadable(lazy(() => import('views/admin/AuditTrailPage')));
-const AdminSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -217,6 +214,13 @@ const QmsAddAuditObservation = Loadable(lazy(() => import('views/qms/AuditObserv
 const QmsAuditNcrClose = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrClose')));
 const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/AuditNcrApproval')));
 const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
+const MeetingMaster = Loadable(lazy(() => import('views/qms/MeetingMaster/MeetingMasterList')));
+const MeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/MeetingScheduleList')));
+const MeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/MomList')));
+const AddMeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/AddMeetingMinutes')));
+const MeetingAttendance = Loadable(lazy(() => import('views/qms/MeetingAttendance/AttendanceList')));
+const CloseMom = Loadable(lazy(() => import('views/qms/MomActionReview/MomActionReviewList')));
+const MomApproval = Loadable(lazy(() => import('views/qms/MomApproval/MomApprovalList')));
 
 // sales & marketing routing
 const SmCustomerMasterList = Loadable(lazy(() => import('views/sm/CustomerMasterList')));
@@ -276,18 +280,6 @@ const MainRoutes = {
     {
       path: '/admin/session-monitoring',
       element: <AdminSessionMonitoring />
-    },
-    {
-      path: '/admin/division-master',
-      element: <AdminDivisionMaster />
-    },
-    {
-      path: '/admin/audit-trail',
-      element: <AdminAuditTrail />
-    },
-    {
-      path: '/admin/session-analytics',
-      element: <AdminSessionAnalytics />
     },
     {
       path: '/widget/statistics',
@@ -884,6 +876,43 @@ const MainRoutes = {
     {
       path: '/master/qms/audit/criteria',
       element: <QmsAuditCriteriaMaster />
+    },
+    {
+      path: '/master/qms/meeting/master',
+      element: <MeetingMaster />
+    },
+    {
+      path: '/qms/meeting-schedule',
+      element: <MeetingSchedule />
+    },
+    {
+      path: '/qms/minutesofmeeting',
+      children: [
+        {
+          path: '',
+          element: <MeetingMinutes />
+        },
+        {
+          path: 'add',
+          element: <AddMeetingMinutes />
+        },
+        {
+          path: 'edit/:id',
+          element: <AddMeetingMinutes />
+        }
+      ]
+    },
+    {
+      path: '/qms/meeting-attendance',
+      element: <MeetingAttendance />
+    },
+    {
+      path: '/qms/close-mom',
+      element: <CloseMom />
+    },
+    {
+      path: '/qms/mom-approval',
+      element: <MomApproval />
     },
     {
       path: '/qms/audit/schedule',

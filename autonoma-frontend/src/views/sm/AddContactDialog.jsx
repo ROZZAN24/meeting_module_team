@@ -7,6 +7,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import { autoUploadFile } from 'utils/upload-helper';
 
 // ==============================|| SM - ADD/EDIT CONTACT DIALOG ||============================== //
 
@@ -44,7 +45,7 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const response = await axios.get('/api/sm/customers');
+        const response = await axios.get(API_PATHS.SM.CUSTOMERS);
         setCustomers(response.data);
       } catch (error) {
         console.error('Failed to fetch customers:', error);
@@ -125,14 +126,11 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
       for (let i = 0; i < updatedAttachments.length; i++) {
         const att = updatedAttachments[i];
         if (!att.isLoaded && att.file) {
-          const fileData = new FormData();
-          fileData.append('file', att.file);
-          const uploadRes = await axios.post(`${API_PATHS.FILES}/upload`, fileData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
+          // autoUploadFile automatically detects 'Sales' (SM) from the URL
+          const uploadedPath = await autoUploadFile(att.file);
           updatedAttachments[i] = {
             ...att,
-            serverFileName: uploadRes.data,
+            serverFileName: uploadedPath,
             isLoaded: true
           };
         }
@@ -144,9 +142,9 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
       };
 
       if (isEdit) {
-        await axios.put(`/api/sm/contacts/${initialData.id}`, finalFormData);
+        await axios.put(`${API_PATHS.SM.CONTACTS}/${initialData.id}`, finalFormData);
       } else {
-        await axios.post('/api/sm/contacts', finalFormData);
+        await axios.post(API_PATHS.SM.CONTACTS, finalFormData);
       }
       dispatch(openSnackbar({ open: true, message: `Contact ${isEdit ? 'updated' : 'created'} successfully!`, variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       handleClose(true);
@@ -263,7 +261,7 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
             disabled={readOnly}
             sx={{ borderRadius: '8px', textTransform: 'none' }}
           >
-            Add
+            Upload
           </Button>
         }
       >
@@ -298,7 +296,7 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
                   onClick={() => fileInputRef.current?.click()}
                   sx={{ borderRadius: '8px' }}
                 >
-                  Upload Files
+                  Upload
                 </Button>
               </Box>
             )}

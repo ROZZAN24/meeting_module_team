@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 // material-ui
@@ -179,9 +179,8 @@ export default function SearchSection() {
         if (starred.length > 0) {
           setVisibleFilterIds(starred);
         } else {
-          // Systemic Fix: Default to empty if constant filters are present, otherwise slice first 2
-          const hasConstants = searchConfig.some(f => f.isConstant);
-          const defaultIds = hasConstants ? [] : searchConfig.slice(0, 2).map(f => f.id);
+          // Systemic Fix: Default to the first 2 filters if nothing is starred/pref'd
+          const defaultIds = searchConfig.slice(0, 2).map(f => f.id);
           setVisibleFilterIds(defaultIds);
         }
       }
@@ -207,26 +206,6 @@ export default function SearchSection() {
 
   // Dynamic Suggestions - Only show on Dashboard
   const currentSuggestions = isDashboard ? SUGGESTIONS : [];
-
-  // Calculate active filter count
-  const activeFilterCount = useMemo(() => {
-    if (!searchConfig || !filters) return 0;
-    let count = 0;
-    searchConfig.forEach((f) => {
-      if (f.type === 'dateRange') {
-        if (filters[`${f.id}Start`] || filters[`${f.id}End`]) count++;
-      } else if (f.type === 'select') {
-        const val = filters[f.id];
-        if (val && val !== 'All' && val !== f.defaultValue) count++;
-      } else if (f.type === 'autocomplete') {
-        const val = filters[f.id];
-        if (Array.isArray(val) ? val.length > 0 : val) count++;
-      } else {
-        if (filters[f.id]) count++;
-      }
-    });
-    return count;
-  }, [searchConfig, filters]);
 
   return (
     <>
@@ -281,7 +260,7 @@ export default function SearchSection() {
           freeSolo
           options={currentSuggestions}
           noOptionsText={isDashboard ? undefined : null}
-          open={isFocused && !isAdvancedOpen && currentSuggestions.length > 0 && (value.length > 0 || isDashboard)}
+          open={isFocused && !isAdvancedOpen && (value.length > 0 || isDashboard)}
           openOnFocus={false}
           getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
           inputValue={value}
@@ -339,7 +318,40 @@ export default function SearchSection() {
                 ...params.InputProps,
                 startAdornment: (
                   <InputAdornment position="start" sx={{ pl: 1, mr: 1 }}>
-                    <IconSearch stroke={1.5} size="18px" style={{ flexShrink: 0 }} />
+                    <Stack 
+                      direction="row" 
+                      spacing={0.5} 
+                      alignItems="center" 
+                      sx={{ 
+                        maxWidth: isFocused ? 400 : 200, 
+                        overflowX: 'auto', 
+                        overflowY: 'hidden',
+                        pb: 0.2,
+                        '&::-webkit-scrollbar': { height: 0 }, // Hide scrollbar for cleaner look
+                        msOverflowStyle: 'none',
+                        scrollbarWidth: 'none'
+                      }}
+                    >
+                      <IconSearch stroke={1.5} size="18px" style={{ flexShrink: 0 }} />
+                      {searchConfig && searchConfig.filter(f => visibleFilterIds.includes(f.id)).map(f => (
+                        <Chip
+                          key={f.id}
+                          label={`${f.label}: ${f.options?.find(o => o.value === (filters[f.id] || f.defaultValue))?.label || filters[f.id] || 'All'}`}
+                          size="small"
+                          onDelete={() => updateVisibleFilters(visibleFilterIds.filter(id => id !== f.id))}
+                          sx={{ 
+                            height: 22, 
+                            fontSize: '0.7rem', 
+                            bgcolor: 'secondary.light', 
+                            color: 'secondary.dark',
+                            fontWeight: 600,
+                            flexShrink: 0,
+                            borderRadius: '6px',
+                            '& .MuiChip-deleteIcon': { color: 'secondary.dark', fontSize: 14, '&:hover': { color: 'secondary.main' } }
+                          }}
+                        />
+                      ))}
+                    </Stack>
                   </InputAdornment>
                 ),
                 endAdornment: (
@@ -351,39 +363,21 @@ export default function SearchSection() {
                         </IconButton>
                       )}
                       <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 20, alignSelf: 'center' }} />
-                      {searchConfig && searchConfig.length > 0 ? (
-                        <IconButton
-                          size="small"
-                          ref={anchorRef}
-                          onClick={handleAdvancedClick}
-                          sx={{
-                            p: 0.5,
-                            transition: 'all 0.2s ease-in-out',
-                            color: isAdvancedOpen || activeFilterCount > 0 ? 'primary.main' : 'text.secondary',
-                            '&:hover': { color: 'primary.main' }
-                          }}
-                        >
-                          <Badge badgeContent={activeFilterCount} color="primary" sx={{ '& .MuiBadge-badge': { right: -2, top: 2 } }}>
-                            <IconFilter stroke={1.5} size="20px" />
-                          </Badge>
-                        </IconButton>
-                      ) : (
-                        <IconButton
-                          size="small"
-                          ref={anchorRef}
-                          onClick={handleAdvancedClick}
-                          sx={{
-                            p: 0.5,
-                            opacity: isHovered || isFocused || isAdvancedOpen ? 1 : 0,
-                            visibility: isHovered || isFocused || isAdvancedOpen ? 'visible' : 'hidden',
-                            transition: 'all 0.2s ease-in-out',
-                            color: isAdvancedOpen ? 'primary.main' : 'text.secondary',
-                            '&:hover': { color: 'primary.main' }
-                          }}
-                        >
-                          <IconFilter stroke={1.5} size="20px" />
-                        </IconButton>
-                      )}
+                      <IconButton
+                        size="small"
+                        ref={anchorRef}
+                        onClick={handleAdvancedClick}
+                        sx={{
+                          p: 0.5,
+                          opacity: isHovered || isFocused || isAdvancedOpen ? 1 : 0,
+                          visibility: isHovered || isFocused || isAdvancedOpen ? 'visible' : 'hidden',
+                          transition: 'all 0.2s ease-in-out',
+                          color: isAdvancedOpen ? 'primary.main' : 'text.secondary',
+                          '&:hover': { color: 'primary.main' }
+                        }}
+                      >
+                        <IconFilter stroke={1.5} size="20px" />
+                      </IconButton>
                       <Popover
                         open={isAdvancedOpen}
                         anchorEl={advancedAnchorEl}
@@ -393,18 +387,9 @@ export default function SearchSection() {
                         slotProps={{
                           paper: {
                             sx: {
-                              mt: 1.5,
-                              width: 440,
-                              maxHeight: '82vh',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              boxShadow: (theme) => `0 20px 50px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.12)'}`,
-                              borderRadius: '20px',
-                              border: '1px solid',
-                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                              overflow: 'hidden',
-                              backdropFilter: 'blur(20px)',
-                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 24, 30, 0.88)' : 'rgba(255, 255, 255, 0.92)'
+                              mt: 1.2, width: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                              borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden'
                             }
                           }
                         }}

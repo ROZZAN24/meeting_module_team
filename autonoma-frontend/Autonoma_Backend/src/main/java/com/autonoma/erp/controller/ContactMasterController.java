@@ -1,0 +1,63 @@
+package com.autonoma.erp.controller;
+
+import com.autonoma.erp.model.ContactMaster;
+import com.autonoma.erp.service.ContactMasterService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/sm/contacts")
+@RequiredArgsConstructor
+@Tag(name = "Contact Master", description = "Contact Master Management APIs")
+public class ContactMasterController {
+
+    private final ContactMasterService service;
+
+    @GetMapping
+    public List<ContactMaster> getAllContacts() {
+        return service.getAllContacts();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ContactMaster> getContactById(@PathVariable Long id) {
+        return service.getContactById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ContactMaster createContact(@RequestBody ContactMaster contact) {
+        return service.saveContact(contact);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ContactMaster> updateContact(@PathVariable Long id, @RequestBody ContactMaster contactDetails) {
+        return service.getContactById(id)
+                .map(contact -> {
+                    contact.setGroupName(contactDetails.getGroupName());
+                    contact.setTitle(contactDetails.getTitle());
+                    contact.setContactName(contactDetails.getContactName());
+                    contact.setDesignation(contactDetails.getDesignation());
+                    contact.setDepartment(contactDetails.getDepartment());
+                    contact.setEmailId(contactDetails.getEmailId());
+                    contact.setLandlineNo(contactDetails.getLandlineNo());
+                    contact.setMobileNo(contactDetails.getMobileNo());
+                    contact.setWhatsAppNo(contactDetails.getWhatsAppNo());
+                    contact.setFileUpload(contactDetails.getFileUpload());
+                    contact.setStatus(contactDetails.getStatus());
+                    contact.setUpdatedBy(contactDetails.getUpdatedBy());
+                    return ResponseEntity.ok(service.saveContact(contact));
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteContact(@PathVariable Long id) {
+        service.deleteContact(id);
+        return ResponseEntity.ok().build();
+    }
+}

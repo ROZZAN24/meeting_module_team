@@ -18,24 +18,29 @@ import {
  */
 export default function BOSDataTable({
   columns,
-  rows,
-  page,
-  size,
-  totalCount,
+  data,
+  rows: rowsProp,
   loading,
-  onPageChange,
-  onSizeChange,
-  onDoubleClickRow,
-  onClickRow,
-  selectedRowId,
   onEditRow,
   onDeleteRow,
+  onDoubleClickRow,
   showActions = true,
-  renderCell,
+  selectable = false,
+  onSelectionChange,
+  totalCount,
+  page = 0,
+  size = 10,
+  onPageChange,
+  onSizeChange,
   footerActions,
+  onClickRow,
+  selectedRowId,
+  renderCell,
   sx = {},
   id
 }) {
+  const rows = data || rowsProp || [];
+  console.log('[BOSDataTable] Rendering with rows:', rows.length);
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -47,10 +52,12 @@ export default function BOSDataTable({
   };
 
   const defaultRenderCell = (col, row, idx) => {
+    if (col.render) return col.render(row, idx);
     const val = row[col.id];
     if (col.id === 'index') return page * size + idx + 1;
-    if (col.id === 'status') {
-      return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
+    if (col.id === 'status' || col.id === 'accountStatus') {
+      const statusText = val === 1 || val === 'Active' ? 'Active' : 'Suspended';
+      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText)} />;
     }
     if (col.id.toLowerCase().includes('date')) return formatDate(val);
     if (typeof val === 'object' && val !== null) {
@@ -91,14 +98,14 @@ export default function BOSDataTable({
                   <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>Loading data...</Typography>
                 </TableCell>
               </TableRow>
-            ) : rows.length === 0 ? (
+            ) : (rows?.length || 0) === 0 ? (
               <TableRow>
                 <TableCell colSpan={columns.length + (showActions ? 1 : 0)} align="center" sx={{ py: 3 }}>
                   <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>No records found.</Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              rows.map((row, idx) => {
+              rows?.map((row, idx) => {
                 const isSelected = selectedRowId === row.id;
                 const rowSx = {
                   ...baseRowSx,
@@ -176,7 +183,7 @@ export default function BOSDataTable({
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={totalCount ?? rows.length}
+          count={totalCount ?? (rows?.length || 0)}
           rowsPerPage={size}
           page={page}
           onPageChange={(e, p) => onPageChange(p)}

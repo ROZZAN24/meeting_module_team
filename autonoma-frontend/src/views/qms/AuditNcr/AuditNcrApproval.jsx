@@ -10,6 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import { 
   BOSDataTable, 
+  BOSExportButton,
   BOSFormDialog, 
   BOSFormSection, 
   BOSTextField, 
@@ -19,6 +20,7 @@ import {
   btnExport, 
   getStatusChipSx 
 } from 'ui-component/bos';
+import { getFileViewUrl } from 'utils/upload-helper';
 
 // ==============================|| AUDIT NCR / OFI APPROVAL (REFACTORED WITH PATTERNS) ||============================== //
 
@@ -62,7 +64,11 @@ export default function AuditNcrApproval() {
     if (!input) return {};
     const parts = input.split(' - ');
     const emp = employees.find(e => e.employeeName === parts[0]?.trim() || e.empCode === input);
-    return emp || { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    if (!emp) return { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    return {
+      ...emp,
+      departmentName: emp.department?.departmentName || '-'
+    };
   };
 
   useEffect(() => {
@@ -147,7 +153,16 @@ export default function AuditNcrApproval() {
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={() => exportToExcel(rows, 'NCR_Approval_Report')} sx={btnExport}>Export</Button>
+          <BOSExportButton
+            data={rows}
+            filename="NCR_Approval_Report"
+            columns={[
+              { header: 'NCR No', key: 'ncrNo' },
+              { header: 'Department', key: 'departmentName' },
+              { header: 'Observation No', key: 'observationNo' },
+              { header: 'Status', key: 'ncrStatus' }
+            ]}
+          />
         </Stack>
       }
     >
@@ -198,7 +213,7 @@ export default function AuditNcrApproval() {
                       </Card>
                       {getAttachment(a.key) && (
                         <Tooltip title="Preview Proof">
-                          <IconButton size="small" color="secondary" onClick={() => window.open(`/api/files/view/${getAttachment(a.key).fileName}`, '_blank')} sx={{ mt: 1, border: '1px solid', borderColor: 'divider', p: 1.5 }}>
+                          <IconButton size="small" color="secondary" onClick={() => window.open(getFileViewUrl(getAttachment(a.key).fileName), '_blank')} sx={{ mt: 1, border: '1px solid', borderColor: 'divider', p: 1.5 }}>
                             <IconEye size={20} />
                           </IconButton>
                         </Tooltip>
@@ -222,6 +237,7 @@ export default function AuditNcrApproval() {
                     name={selectedFinding?.auditee} 
                     empCode={getEmployeeDetails(selectedFinding?.auditee).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditee).departmentName}
+                    photo={getEmployeeDetails(selectedFinding?.auditee).employeePhotoUpload}
                     color="primary.main"
                 />
                 <BOSPersonnelCard 
@@ -229,6 +245,7 @@ export default function AuditNcrApproval() {
                     name={selectedFinding?.auditor} 
                     empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
+                    photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}
                     color="secondary.main"
                 />
               </Stack>

@@ -54,6 +54,11 @@ public class GradeController {
         return ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/next-no")
+    public String getNextNo() {
+        return gradeDetailsService.getNextGradeNo();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteGradeDetail(@PathVariable Long id) {
         gradeDetailsService.deleteGradeDetail(id);

@@ -31,6 +31,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import {
   BOSDataTable,
+  BOSExportButton,
   btnExport,
   getStatusChipSx
 } from 'ui-component/bos';
@@ -214,9 +215,16 @@ export default function CheckListVerify() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={rows}
+            filename="Checklist_Verify"
+            columns={[
+              { header: 'Seq No', key: 'seqNo' },
+              { header: 'Checking Point', key: 'checkingPoint' },
+              { header: 'Category', key: 'category' },
+              { header: 'Verify Status', key: 'verifyStatus' }
+            ]}
+          />
         </Stack>
       }
     >

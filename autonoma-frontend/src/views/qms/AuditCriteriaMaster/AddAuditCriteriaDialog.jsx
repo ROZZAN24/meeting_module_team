@@ -22,6 +22,7 @@ import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery } from 'ui-
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 import useAuth from 'hooks/useAuth';
+import { autoUploadFile } from 'utils/upload-helper';
 
 // ==============================|| AUDIT CRITERIA - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
@@ -174,17 +175,14 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
     if (!currentFile) return;
     
     try {
-      const fileData = new FormData();
-      fileData.append('file', currentFile);
-      const uploadRes = await axios.post(`${API_PATHS.FILES}/upload`, fileData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // autoUploadFile automatically detects 'QMS' from the URL
+      const uploadedPath = await autoUploadFile(currentFile);
 
       const newAttachment = {
         id: Date.now() + Math.random(),
         fileName: currentFile.name,
         fileType: currentFile.type.split('/')[1]?.toUpperCase() || 'FILE',
-        serverFileName: uploadRes.data,
+        serverFileName: uploadedPath,
         docDetails: docDetails,
         isLoaded: true
       };
@@ -327,11 +325,11 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
                   disabled={isViewOnly}
                 />
                 <Button variant="contained" color="primary" onClick={handleAddFile} disabled={isViewOnly || !currentFile} sx={{ height: 40 }}>
-                  Add
+                  Upload
                 </Button>
               </Box>
               <Button component="label" variant="outlined" startIcon={<IconPaperclip size={18} />} disabled={isViewOnly} fullWidth sx={{ mb: 3 }}>
-                {currentFile ? currentFile.name : 'Choose File'}
+                {currentFile ? currentFile.name : 'Select File'}
                 <input type="file" hidden onChange={(e) => setCurrentFile(e.target.files[0])} />
               </Button>
               <BOSFileGallery files={attachments} onRemove={(idx) => handleRemoveAttachment(attachments[idx].id)} isEditing={!isViewOnly} />

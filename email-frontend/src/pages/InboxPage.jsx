@@ -199,6 +199,7 @@ export default function InboxPage() {
             sx={{ width: 250 }}
           />
         </Box>
+        </MainCard>
       </Box>
 
       {/* Main Content Area: Split View */}

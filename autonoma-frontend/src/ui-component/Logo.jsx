@@ -8,8 +8,7 @@ import Box from '@mui/material/Box';
 
 // project imports
 import autonomaLogo from 'assets/images/autonoma-logo.png';
-
-const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
+import { getCompanyImageUrl } from 'utils/upload-helper';
 
 // ==============================|| LOGO IMAGE ||============================== //
 
@@ -19,17 +18,28 @@ export default function Logo({ height = 45 }) {
   useEffect(() => {
     const fetchLogo = () => {
       const token = localStorage.getItem('serviceToken') || '';
+      const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
+      console.log('[Logo] Fetching logo configuration...');
       fetch(`${API_BASE}/api/company-profile/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          return res.json();
+        })
         .then(data => {
           if (data && data.length > 0 && data[0].logoFileName) {
-            // Append timestamp to bust cache
-            setLogoSrc(`${API_BASE}/api/company-profile/image/${data[0].logoFileName}?t=${new Date().getTime()}`);
+            const logoUrl = getCompanyImageUrl(data[0].logoFileName);
+            console.log('[Logo] Setting logo source:', logoUrl);
+            setLogoSrc(logoUrl);
+          } else {
+            console.warn('[Logo] No custom logo found in backend, using default.');
           }
         })
-        .catch(err => console.error('Logo sync error:', err));
+        .catch(err => {
+          console.error('[Logo] Sync error:', err.message);
+          // Fallback is already set to autonomaLogo by useState
+        });
     };
 
     fetchLogo();

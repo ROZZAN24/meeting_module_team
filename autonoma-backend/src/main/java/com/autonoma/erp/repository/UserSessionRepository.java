@@ -9,6 +9,5 @@ import java.util.Optional;
 @Repository
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
     List<UserSession> findByUserIdOrderByLoginTimeDesc(String userId);
-    List<UserSession> findAllByUserIdAndStatus(String userId, String status);
     Optional<UserSession> findTopByUserIdAndStatusOrderByLoginTimeDesc(String userId, String status);
 }

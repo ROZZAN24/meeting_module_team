@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -10,7 +11,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
 // ==============================|| SM - SUPPLIER LIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -59,7 +60,7 @@ export default function SupplierList() {
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/sm/suppliers');
+      const response = await axios.get(API_PATHS.SM.SUPPLIERS);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch suppliers:', error);
@@ -90,7 +91,7 @@ export default function SupplierList() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/sm/suppliers/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.SM.SUPPLIERS}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Supplier deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchSuppliers();
     } catch (error) {
@@ -170,9 +171,16 @@ export default function SupplierList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Supplier_Master"
+            columns={[
+              { header: 'Code', key: 'supplierCode' },
+              { header: 'Supplier Name', key: 'supplierName' },
+              { header: 'Email', key: 'email' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Supplier', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

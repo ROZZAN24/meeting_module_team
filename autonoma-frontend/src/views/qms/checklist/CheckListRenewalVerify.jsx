@@ -14,7 +14,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, btnExport, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, getStatusChipSx } from 'ui-component/bos';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
 import { AddCheckListDialog } from './AddCheckListDialog';
@@ -22,6 +22,7 @@ import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { Tabs, Tab, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { API_PATHS } from 'utils/api-constants';
 import { BOSFileGallery } from 'ui-component/bos';
+import { autoUploadFile } from 'utils/upload-helper';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -156,10 +157,9 @@ export default function CheckListRenewalVerify() {
       // First, handle file uploads if any new files are present
       const uploadFile = async (fileObj) => {
         if (fileObj.isServer) return fileObj.name + (fileObj.docDetails ? `|${fileObj.docDetails}` : '');
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', fileObj.file);
-        const res = await axios.post(`${API_PATHS.FILES}/upload`, formDataUpload);
-        return res.data + (fileObj.docDetails ? `|${fileObj.docDetails}` : '');
+        // autoUploadFile automatically detects 'QMS' from the URL
+        const serverName = await autoUploadFile(fileObj.file);
+        return serverName + (fileObj.docDetails ? `|${fileObj.docDetails}` : '');
       };
 
       const actualFiles = await Promise.all((executionData.actualFiles || []).map(uploadFile));
@@ -334,9 +334,15 @@ export default function CheckListRenewalVerify() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={rows}
+            filename="Checklist_Renewal_Verify"
+            columns={[
+              { header: 'Category', key: 'category' },
+              { header: 'Check Point', key: 'checkingPoint' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
         </Stack>
       }
     >

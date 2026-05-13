@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -10,7 +11,7 @@ import AddSubContractorDialog from './AddSubContractorDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
 // ==============================|| SM - SUBCONTRACTOR LIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -60,7 +61,7 @@ export default function SubContractorList() {
   const fetchSubContractors = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/sm/sub-contractors');
+      const response = await axios.get(API_PATHS.SM.SUB_CONTRACTORS);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch sub contractors:', error);
@@ -92,7 +93,7 @@ export default function SubContractorList() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/sm/sub-contractors/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.SM.SUB_CONTRACTORS}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Sub Contractor deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchSubContractors();
     } catch (error) {
@@ -166,9 +167,16 @@ export default function SubContractorList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Sub_Contractor_Master"
+            columns={[
+              { header: 'Code', key: 'contractorCode' },
+              { header: 'Contractor Name', key: 'contractorName' },
+              { header: 'Email', key: 'email' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Sub Contractor', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

@@ -2,18 +2,19 @@ package com.autonoma.erp.controller;
 
 import com.autonoma.erp.model.CompanyCredential;
 import com.autonoma.erp.service.CompanyCredentialService;
+import com.autonoma.erp.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import AppUtil.BosDocConstants;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import AppUtil.BosDocConstants;
 
 @RestController
 @RequestMapping("/api/company-profile")
@@ -22,6 +23,9 @@ public class CompanyCredentialController {
 
     @Autowired
     private CompanyCredentialService service;
+
+    @Autowired
+    private FileService fileService;
 
     private String getCurrentUserId() {
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
@@ -32,17 +36,11 @@ public class CompanyCredentialController {
         return "SYSTEM";
     }
 
-    // -----------------------------------------------------------------------
-    // GET – Fetch all records (typically just one row for a company)
-    // -----------------------------------------------------------------------
     @GetMapping("/all")
     public ResponseEntity<List<CompanyCredential>> getAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
-    // -----------------------------------------------------------------------
-    // GET – Fetch by ID
-    // -----------------------------------------------------------------------
     @GetMapping("/{id}")
     public ResponseEntity<CompanyCredential> getById(@PathVariable Integer id) {
         Optional<CompanyCredential> result = service.findById(id);
@@ -50,28 +48,21 @@ public class CompanyCredentialController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    // -----------------------------------------------------------------------
-    // POST – Create new company profile
-    // -----------------------------------------------------------------------
     @PostMapping("/create")
     public ResponseEntity<CompanyCredential> create(@RequestBody CompanyCredential company) {
         company.setCreatedDate(new Date());
         if (company.getCreatedBy() == null || company.getCreatedBy().isEmpty()) {
             company.setCreatedBy(getCurrentUserId());
         }
-        CompanyCredential saved = service.save(company);
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(service.save(company));
     }
 
-    // -----------------------------------------------------------------------
-    // PUT – Update existing company profile
-    // -----------------------------------------------------------------------
     @PutMapping("/update/{id}")
-    public ResponseEntity<CompanyCredential> update(@PathVariable Integer id,
-            @RequestBody CompanyCredential details) {
+    public ResponseEntity<CompanyCredential> update(@PathVariable Integer id, @RequestBody CompanyCredential details) {
         Optional<CompanyCredential> optional = service.findById(id);
         if (optional.isPresent()) {
             CompanyCredential existing = optional.get();
+            // ... copy fields logic simplified for brevity but maintaining essential updates
             existing.setCompanyName(details.getCompanyName());
             existing.setShortName(details.getShortName());
             existing.setAddress(details.getAddress());
@@ -86,94 +77,67 @@ public class CompanyCredentialController {
             existing.setLicExpiryDate(details.getLicExpiryDate());
             existing.setDirectoryPath(details.getDirectoryPath());
             existing.setLicExpRemainderDays(details.getLicExpRemainderDays());
-            // Only overwrite image names if the caller provides them
-            if (details.getLogoFileName() != null && !details.getLogoFileName().isEmpty()) {
-                existing.setLogoFileName(details.getLogoFileName());
-            }
-            if (details.getLogInBgFileName() != null && !details.getLogInBgFileName().isEmpty()) {
-                existing.setLogInBgFileName(details.getLogInBgFileName());
-            }
-            if (details.getUpdatedBy() != null && !details.getUpdatedBy().isEmpty()) {
-                existing.setUpdatedBy(details.getUpdatedBy());
-            } else {
-                existing.setUpdatedBy(getCurrentUserId());
-            }
+            
+            if (details.getLogoFileName() != null) existing.setLogoFileName(details.getLogoFileName());
+            if (details.getLogInBgFileName() != null) existing.setLogInBgFileName(details.getLogInBgFileName());
+            
+            existing.setUpdatedBy(getCurrentUserId());
             existing.setUpdatedDate(new Date());
             return ResponseEntity.ok(service.save(existing));
         }
         return ResponseEntity.notFound().build();
     }
 
-    // -----------------------------------------------------------------------
-    // POST – Upload Logo image
-    // -----------------------------------------------------------------------
     @PostMapping(value = "/upload-logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadLogo(@RequestParam("file") MultipartFile file) {
-        try {
-            String filename = service.saveUploadedFile(file, BosDocConstants.COMPANY_PROFILE_PATH);
-            Map<String, String> response = new HashMap<>();
-            response.put("fileName", filename);
-            response.put("message", "Logo uploaded successfully");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("message", "Logo upload failed: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(error);
-        }
+        return handleImageUpload(file, "Logo uploaded successfully");
     }
 
-    // -----------------------------------------------------------------------
-    // POST – Upload Login Background image
-    // -----------------------------------------------------------------------
     @PostMapping(value = "/upload-bg", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> uploadBackground(@RequestParam("file") MultipartFile file) {
+        return handleImageUpload(file, "Login background uploaded successfully");
+    }
+
+    private ResponseEntity<Map<String, String>> handleImageUpload(MultipartFile file, String successMsg) {
         try {
-            String filename = service.saveUploadedFile(file, BosDocConstants.COMPANY_PROFILE_PATH);
+            // Standardize: use unified FileService to save in "Company Profile" folder
+            String fullPath = fileService.saveFile(file, "COMPANY_PROFILE");
             Map<String, String> response = new HashMap<>();
-            response.put("fileName", filename);
-            response.put("message", "Login background uploaded successfully");
+            response.put("fileName", fullPath);
+            response.put("message", successMsg);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             Map<String, String> error = new HashMap<>();
-            error.put("message", "Background upload failed: " + e.getMessage());
+            error.put("message", "Upload failed: " + e.getMessage());
             return ResponseEntity.internalServerError().body(error);
         }
     }
 
-    // -----------------------------------------------------------------------
-    // GET – Retrieve image
-    // -----------------------------------------------------------------------
-    @GetMapping("/image/{filename:.+}")
-    public ResponseEntity<org.springframework.core.io.Resource> getImage(@PathVariable String filename) {
+    @GetMapping({"/image/{*filename}", "/image"})
+    public ResponseEntity<org.springframework.core.io.Resource> getImage(
+            @PathVariable(required = false) String filename,
+            @RequestParam(required = false) String fileNameParam) {
         try {
-            org.springframework.core.io.Resource resource = service.loadFileAsResource(filename, BosDocConstants.COMPANY_PROFILE_PATH);
-            String contentType = "application/octet-stream";
-            try {
-                contentType = java.nio.file.Files.probeContentType(resource.getFile().toPath());
-            } catch (Exception ex) {
-                // Ignore and fallback
+            String targetFile = filename != null ? filename : fileNameParam;
+            if (targetFile == null || targetFile.isEmpty()) {
+                return ResponseEntity.badRequest().build();
             }
+            if (targetFile.startsWith("/")) targetFile = targetFile.substring(1);
+            
+            org.springframework.core.io.Resource resource = fileService.loadFile(targetFile);
+            String contentType = java.nio.file.Files.probeContentType(resource.getFile().toPath());
             return ResponseEntity.ok()
-                    .contentType(
-                            MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
-                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
-                            "inline; filename=\"" + resource.getFilename() + "\"")
+                    .contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))
+                    .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    // -----------------------------------------------------------------------
-    // DELETE
-    // -----------------------------------------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
-        Optional<CompanyCredential> optional = service.findById(id);
-        if (optional.isPresent()) {
-            service.deleteById(id);
-            return ResponseEntity.ok().build();
-        }
-        return ResponseEntity.notFound().build();
+        service.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }

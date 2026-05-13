@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconFileDollar } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -11,7 +12,7 @@ import AddPriceMasterDialog from './AddPriceMasterDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
 // ==============================|| SM - PRICE MASTER LIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -64,7 +65,7 @@ export default function PriceMasterList() {
   const fetchMasters = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/sm/price-master');
+      const response = await axios.get(API_PATHS.SM.PRICE_MASTER);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch price masters:', error);
@@ -88,7 +89,7 @@ export default function PriceMasterList() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/sm/price-master/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.SM.PRICE_MASTER}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Price Master deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchMasters();
     } catch (error) {
@@ -151,9 +152,18 @@ export default function PriceMasterList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="SM_PriceMasters"
+            columns={[
+              { header: 'Master No', key: 'masterNo' },
+              { header: 'Date', key: 'entryDate' },
+              { header: 'Customer', key: 'customerName' },
+              { header: 'Product', key: 'productName' },
+              { header: 'Unit Price', key: 'unitPrice' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Price Master', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

@@ -7,7 +7,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationLevelDialog from './AddDesignationLevelDialog';
@@ -136,9 +136,16 @@ export default function DesignationLevelMaster() {
                             <IconRefresh size={20} />
                         </IconButton>
                     </Tooltip>
-                    <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-                        Export
-                    </Button>
+                    <BOSExportButton
+                        data={filteredRows}
+                        filename="Designation_Level"
+                        columns={[
+                            { header: 'Level', key: 'level' },
+                            { header: 'Basic', key: 'basic' },
+                            { header: 'DA', key: 'da' },
+                            { header: 'HRA', key: 'hra' }
+                        ]}
+                    />
                     <Tooltip title={shortcutTooltip('Create Designation Level', 'Ctrl + N')}>
                         <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
                             + New

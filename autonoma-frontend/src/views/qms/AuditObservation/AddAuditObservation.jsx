@@ -12,7 +12,10 @@ import {
   Card,
   CardContent,
   Avatar,
-  IconButton
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent
 } from '@mui/material';
 import {
   IconCheck,
@@ -23,9 +26,12 @@ import {
   IconListCheck,
   IconReportAnalytics,
   IconArrowLeft,
-  IconPlus
+  IconPlus,
+  IconUpload,
+  IconEye
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { sanitizeHTML } from 'utils/sanitize';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
@@ -42,6 +48,10 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import { format } from 'date-fns';
 import { API_PATHS } from 'utils/api-constants';
 import { useLookups } from 'hooks/useLookups';
+import { autoUploadFile } from 'utils/upload-helper';
+import mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
+import { IconX, IconDownload } from '@tabler/icons-react';
 
 const VALIDATION_RULES = [
   { field: 'observationDate', label: 'Observation Date', required: true },
@@ -76,6 +86,9 @@ export default function AddAuditObservation() {
 
   const [details, setDetails] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [previewData, setPreviewData] = useState({ url: '', name: '', type: '', content: '' });
   const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
   useEffect(() => {
@@ -180,14 +193,67 @@ export default function AddAuditObservation() {
     // SOP: Supporting document upload for Compliance/OFI
     const input = document.createElement('input');
     input.type = 'file';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (file) {
-        updateDetail(idx, 'attachmentPath', file.name); // In real app, this would be an upload call
-        dispatch(openSnackbar({ open: true, message: `Evidence '${file.name}' attached to row ${idx + 1}`, severity: 'success' }));
+        try {
+          // autoUploadFile automatically detects the 'QMS' module from the URL path
+          const uploadedPath = await autoUploadFile(file);
+          
+          updateDetail(idx, 'attachmentPath', uploadedPath);
+          dispatch(openSnackbar({ 
+            open: true, 
+            message: `Evidence '${file.name}' uploaded successfully.`, 
+            severity: 'success' 
+          }));
+        } catch (err) {
+          console.error('Upload failed:', err);
+          dispatch(openSnackbar({ 
+            open: true, 
+            message: 'Failed to upload evidence.', 
+            severity: 'error' 
+          }));
+        }
       }
     };
     input.click();
+  };
+
+  const handlePreview = async (fileName) => {
+    if (!fileName) return;
+    const ext = fileName.includes('.') ? fileName.split('.').pop()?.toLowerCase() : '';
+    
+    setLoading(true);
+    setPreviewOpen(true);
+    setPreviewData({ url: '', name: fileName, type: '', content: '' });
+
+    try {
+      const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
+      const filePath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
+      const url = `${baseUrl}${filePath}/view/${encodeURIComponent(fileName)}`;
+
+      let content = '';
+      if (['docx', 'doc', 'xlsx', 'xls'].includes(ext)) {
+        const response = await axios.get(url, { responseType: 'arraybuffer' });
+        const arrayBuffer = response.data;
+
+        if (ext === 'docx' || ext === 'doc') {
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+          content = result.value;
+        } else if (ext === 'xlsx' || ext === 'xls') {
+          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          content = XLSX.utils.sheet_to_html(firstSheet);
+        }
+      }
+
+      setPreviewData({ url, name: fileName, type: ext, content });
+    } catch (error) {
+      console.error('Preview failed:', error);
+      setPreviewData(prev => ({ ...prev, content: '<div style="padding: 20px; color: red;">Failed to load preview. Please download the file to view.</div>' }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -340,11 +406,20 @@ export default function AddAuditObservation() {
               }
               if (col.id === 'attachment') {
                 return (
-                  <Tooltip title={row.attachmentPath || "Upload Evidence"}>
-                    <IconButton size="small" color={row.attachmentPath ? "success" : "primary"} onClick={() => handleFileUpload(idx)}>
-                      {row.attachmentPath ? <IconCheck size={18} /> : <IconPlus size={18} />}
-                    </IconButton>
-                  </Tooltip>
+                  <Stack direction="row" spacing={0.5}>
+                    <Tooltip title="Upload Evidence">
+                      <IconButton size="small" color="primary" onClick={() => handleFileUpload(idx)}>
+                        <IconUpload size={18} />
+                      </IconButton>
+                    </Tooltip>
+                    {row.attachmentPath && (
+                      <Tooltip title="Preview Evidence">
+                        <IconButton size="small" color="secondary" onClick={() => handlePreview(row.attachmentPath)}>
+                          <IconEye size={18} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Stack>
                 );
               }
               if (col.id === 'comments') {
@@ -355,6 +430,53 @@ export default function AddAuditObservation() {
           />
         </BOSFormSection>
       </Stack>
+
+      {/* --- Evidence Preview Dialog --- */}
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
+        <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'grey.50', borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="h4" fontWeight={700}>{previewData.name}</Typography>
+          <IconButton onClick={() => setPreviewOpen(false)} size="small" sx={{ color: 'grey.500' }}>
+            <IconX size={20} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, height: '80vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', bgcolor: '#fafafa', alignItems: 'center', justifyContent: 'center' }}>
+          {loading ? (
+            <Typography variant="body2" color="text.secondary">Converting for preview...</Typography>
+          ) : (
+            <>
+              {previewData.content ? (
+                <Box 
+                  dangerouslySetInnerHTML={{ __html: sanitizeHTML(previewData.content) }} 
+                  sx={{ 
+                    width: '100%', 
+                    height: '100%',
+                    overflow: 'auto', 
+                    textAlign: 'left', 
+                    bgcolor: 'white', 
+                    p: 3, 
+                    '& table': { borderCollapse: 'collapse', width: '100%' },
+                    '& th, & td': { border: '1px solid #ddd', p: 1 }
+                  }} 
+                />
+              ) : previewData.url && (
+                previewData.name.toLowerCase().endsWith('.pdf') ? (
+                  <iframe title="PDF Preview" src={previewData.url} style={{ width: '100%', height: '100%', border: 'none' }} />
+                ) : (
+                  <Box 
+                    component="img" 
+                    src={previewData.url} 
+                    sx={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 2, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', objectFit: 'contain' }} 
+                  />
+                )
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Button startIcon={<IconDownload size={18} />} onClick={() => window.open(previewData.url, '_blank')}>Download</Button>
+          <Button variant="contained" onClick={() => setPreviewOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </MainCard>
   );
 }

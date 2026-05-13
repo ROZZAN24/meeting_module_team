@@ -14,16 +14,16 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       strictPort: false,
       host: true,
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost'
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:8081',
           changeOrigin: true,
           secure: false
         }
-      },
-      hmr: {
-        protocol: 'ws',
-        host: 'localhost'
       }
     },
     build: {
@@ -48,20 +48,22 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        // { find: '', replacement: path.resolve(__dirname, 'src') },
-        // {
-        //   find: /^~(.+)/,
-        //   replacement: path.join(process.cwd(), 'node_modules/$1')
-        // },
-        // {
-        //   find: /^src(.+)/,
-        //   replacement: path.join(process.cwd(), 'src/$1')
-        // }
-        // {
-        //   find: 'assets',
-        //   replacement: path.join(process.cwd(), 'src/assets')
-        // },
+        App: path.resolve(__dirname, 'src/App'),
+        store: path.resolve(__dirname, 'src/store'),
+        serviceWorker: path.resolve(__dirname, 'src/serviceWorker'),
         '@assets': path.resolve(__dirname, 'src/assets'),
+        assets: path.resolve(__dirname, 'src/assets'),
+        'ui-component': path.resolve(__dirname, 'src/ui-component'),
+        'hooks': path.resolve(__dirname, 'src/hooks'),
+        'views': path.resolve(__dirname, 'src/views'),
+        'layout': path.resolve(__dirname, 'src/layout'),
+        'utils': path.resolve(__dirname, 'src/utils'),
+        'contexts': path.resolve(__dirname, 'src/contexts'),
+        'menu-items': path.resolve(__dirname, 'src/menu-items'),
+        'themes': path.resolve(__dirname, 'src/themes'),
+        'config': path.resolve(__dirname, 'src/config'),
+        'routes': path.resolve(__dirname, 'src/routes'),
+        'metrics': path.resolve(__dirname, 'src/metrics'),
         '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs'
       }
     },

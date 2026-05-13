@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { MenuItem, useTheme } from '@mui/material';
 import { IconSettings, IconScan } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
@@ -47,7 +48,7 @@ const AddEnquiryDialog = ({ open, handleClose, initialData, initialGroupName, re
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await axios.get('/api/sm/customers');
+        const res = await axios.get(API_PATHS.SM.CUSTOMERS);
         setCustomers(res.data);
       } catch (err) {
         console.error('Failed to fetch customers:', err);
@@ -127,10 +128,10 @@ const AddEnquiryDialog = ({ open, handleClose, initialData, initialGroupName, re
     };
     try {
       if (formData.id) {
-        await axios.put(`/api/sm/enquiry/${formData.id}`, submissionData);
+        await axios.put(`${API_PATHS.SM.ENQUIRIES}/${formData.id}`, submissionData);
         dispatch(openSnackbar({ open: true, message: 'Enquiry updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        await axios.post('/api/sm/enquiry', submissionData);
+        await axios.post(API_PATHS.SM.ENQUIRIES, submissionData);
         dispatch(openSnackbar({ open: true, message: 'Enquiry created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       }
       handleClose(true);
@@ -143,7 +144,7 @@ const AddEnquiryDialog = ({ open, handleClose, initialData, initialGroupName, re
   const handleDeleteConfirm = async () => {
     setDeleteOpen(false);
     try {
-      await axios.delete(`/api/sm/enquiry/${formData.id}`);
+      await axios.delete(`${API_PATHS.SM.ENQUIRIES}/${formData.id}`);
       dispatch(openSnackbar({ open: true, message: 'Enquiry deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       handleClose(true);
     } catch (error) {

@@ -7,6 +7,7 @@ import Alert from '@mui/material/Alert';
 
 export default function ErrorBoundary() {
   const error = useRouteError();
+  console.error('ErrorBoundary caught an error:', error);
 
   if (isRouteErrorResponse(error)) {
     if (error.status === 404) {

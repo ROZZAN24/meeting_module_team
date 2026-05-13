@@ -7,6 +7,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import { autoUploadFile } from 'utils/upload-helper';
 
 // ==============================|| SM - ADD/EDIT SUPPLIER DIALOG ||============================== //
 
@@ -22,11 +23,12 @@ const fieldConfigs = [
 export default function AddSupplierDialog({ open, handleClose, initialData, readOnly }) {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const isEdit = !!initialData;
-  const { errors, validate, clearErrors } = useBOSValidation();
   const fileInputRef = useRef(null);
+  const [isEditing, setIsEditing] = useState(!readOnly);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
-  const [formData, setFormData] = useState({
+  const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
     gstin: '',
     supplierName: '',
     invoiceName: '',
@@ -110,29 +112,13 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
     }
   }, [open, initialData?.id, clearErrors]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async () => {
-    if (!validate(formData, fieldConfigs)) return;
     try {
-      // Handle File Uploads
       const updatedAttachments = [...attachments];
       for (let i = 0; i < updatedAttachments.length; i++) {
         const att = updatedAttachments[i];
         if (!att.isLoaded && att.file) {
-          const fileData = new FormData();
-          fileData.append('file', att.file);
-          const uploadRes = await axios.post(`${API_PATHS.FILES}/upload`, fileData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          updatedAttachments[i] = {
-            ...att,
-            serverFileName: uploadRes.data,
-            isLoaded: true
-          };
+          const uploadedPath = await autoUploadFile(att.file);
+          updatedAttachments[i] = { ...att, serverFileName: uploadedPath, isLoaded: true };
         }
       }
 
@@ -167,10 +153,7 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
     e.target.value = null;
   };
 
-  const handleRemoveAttachment = (id) => {
-    setAttachments(attachments.filter((a) => a.id !== id));
-  };
-
+  const isViewOnly = readOnly && !isEditing;
 
   return (
     <BOSFormDialog
@@ -206,35 +189,20 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
             </BOSTextField>
-          </Grid>
-        </Grid>
-      </BOSFormSection>
+          </Box>
+        </BOSFormSection>
 
-      <BOSFormSection icon={<IconMapPin size={20} color={theme.palette.primary.main} />} title="Location Details">
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={8}>
-            <BOSTextField name="address" label="Address" value={formData.address} onChange={handleChange} disabled={readOnly} multiline rows={2} />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <BOSTextField name="pincode" label="PinCode" value={formData.pincode} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <BOSTextField name="city" label="City" value={formData.city} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <BOSTextField name="state" label="State" value={formData.state} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <BOSTextField name="stateCode" label="State Code" value={formData.stateCode} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <BOSTextField name="country" label="Country" value={formData.country} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <BOSTextField name="distance" label="Distance (KM)" value={formData.distance} onChange={handleChange} disabled={readOnly} type="number" />
-          </Grid>
-        </Grid>
-      </BOSFormSection>
+        <BOSFormSection icon={<IconMapPin size={22} color={theme.palette.secondary.main} />} title="Location Details">
+          <Box sx={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 3 }}>
+            <BOSTextField multiline rows={2} label="Registered Office Address" name="address" value={formData.address} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField label="PinCode" name="pincode" value={formData.pincode} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField label="City" name="city" value={formData.city} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField label="State" name="state" value={formData.state} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField label="State Code" name="stateCode" value={formData.stateCode} onChange={handleFormChange} disabled={isViewOnly} />
+            <BOSTextField label="Distance (KM)" name="distance" value={formData.distance} onChange={handleFormChange} disabled={isViewOnly} type="number" />
+            <BOSTextField label="Country" name="country" value={formData.country} onChange={handleFormChange} disabled={isViewOnly} />
+          </Box>
+        </BOSFormSection>
 
       <BOSFormSection icon={<IconMail size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
         <Grid container spacing={2}>
@@ -383,10 +351,36 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
                   Upload Files
                 </Button>
               </Box>
-            )}
-          </Grid>
-        </Grid>
-      </BOSFormSection>
+              <BOSTextField required select label="Delivery Terms" name="deliveryTerms" value={formData.deliveryTerms} onChange={handleFormChange} disabled={isViewOnly} error={errors.deliveryTerms} sx={errorStyle(errors.deliveryTerms)}>
+                <MenuItem value="-Select-">-Select-</MenuItem>
+                <MenuItem value="EXW">EXW</MenuItem>
+                <MenuItem value="CIF">CIF</MenuItem>
+                <MenuItem value="FOB">FOB</MenuItem>
+              </BOSTextField>
+            </Stack>
+          </BOSFormSection>
+
+          <BOSFormSection icon={<IconTruck size={22} color={theme.palette.warning.main} />} title="Business Compliance">
+            <Stack spacing={2.5}>
+              <BOSTextField label="GSTIN Number" name="gstin" value={formData.gstin} onChange={handleFormChange} disabled={isViewOnly} placeholder="Enter 15-digit GSTIN" />
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                <BOSTextField label="Vendor Code" name="vendorCode" value={formData.vendorCode} onChange={handleFormChange} disabled={isViewOnly} />
+                <BOSTextField select label="NDA Required" name="ndaRequired" value={formData.ndaRequired} onChange={handleFormChange} disabled={isViewOnly}>
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </BOSTextField>
+              </Box>
+            </Stack>
+          </BOSFormSection>
+        </Box>
+      </Stack>
     </BOSFormDialog>
   );
 }
+
+AddCustomerDialog.propTypes = {
+  open: PropTypes.bool,
+  handleClose: PropTypes.func,
+  initialData: PropTypes.object,
+  readOnly: PropTypes.bool
+};

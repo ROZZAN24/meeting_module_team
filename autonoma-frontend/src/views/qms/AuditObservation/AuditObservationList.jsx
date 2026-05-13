@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -173,9 +173,17 @@ export default function AuditObservationList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Audit_Observations"
+            columns={[
+              { header: 'Observation No', key: 'observationNo' },
+              { header: 'Date', key: 'observationDate' },
+              { header: 'Schedule No', key: 'auditScheduleNo' },
+              { header: 'Dept Name', key: 'departmentName' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Observation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

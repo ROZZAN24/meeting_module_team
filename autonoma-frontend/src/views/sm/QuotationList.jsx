@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconFileInvoice } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -11,7 +12,7 @@ import AddQuotationDialog from './AddQuotationDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
 // ==============================|| SM - QUOTATION MANAGEMENT (BOS SOP COMPLIANT) ||============================== //
 
@@ -66,7 +67,7 @@ export default function QuotationList() {
   const fetchQuotations = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/sm/quotation');
+      const response = await axios.get(API_PATHS.SM.QUOTATIONS);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch quotations:', error);
@@ -90,7 +91,7 @@ export default function QuotationList() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/sm/quotation/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.SM.QUOTATIONS}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Quotation deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchQuotations();
     } catch (error) {
@@ -155,9 +156,17 @@ export default function QuotationList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="SM_Quotations"
+            columns={[
+              { header: 'Quotation No', key: 'quotationNo' },
+              { header: 'Date', key: 'quotationDate' },
+              { header: 'Customer', key: 'customerName' },
+              { header: 'Amount', key: 'totalAmount' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Quotation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

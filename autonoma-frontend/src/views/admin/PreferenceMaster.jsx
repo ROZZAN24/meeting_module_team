@@ -36,6 +36,7 @@ import { Formik } from 'formik';
 // project imports
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useAuth from 'hooks/useAuth';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 
@@ -68,6 +69,9 @@ const PreferenceMaster = () => {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteTargetName, setDeleteTargetName] = useState('');
 
   const { user } = useAuth();
   const searchQuery = useSelector((state) => state.search.query);
@@ -112,16 +116,21 @@ const PreferenceMaster = () => {
     );
   }, [preferences, searchQuery]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this preference?')) {
-      try {
-        await axios.delete(`/api/preferences/${id}`);
-        dispatch(openSnackbar({ open: true, message: 'Preference deleted successfully', variant: 'alert', severity: 'success' }));
-        fetchPreferences();
-      } catch (err) {
-        console.error('Delete failed:', err);
-        dispatch(openSnackbar({ open: true, message: getErrorMessage(err) || 'Delete failed', variant: 'alert', severity: 'error' }));
-      }
+  const handleDeleteClick = (row) => {
+    setDeleteTargetId(row.rowId);
+    setDeleteTargetName(row.prefName || 'this preference');
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialogOpen(false);
+    try {
+      await axios.delete(`/api/preferences/${deleteTargetId}`);
+      dispatch(openSnackbar({ open: true, message: 'Preference deleted successfully', variant: 'alert', severity: 'success' }));
+      fetchPreferences();
+    } catch (err) {
+      console.error('Delete failed:', err);
+      dispatch(openSnackbar({ open: true, message: getErrorMessage(err) || 'Delete failed', variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -281,7 +290,7 @@ const PreferenceMaster = () => {
                         {user?.isBosAdmin === 1 && (
                           <Tooltip title="Delete Preference" arrow>
                             <IconButton
-                              onClick={() => handleDelete(row.rowId)}
+                              onClick={() => handleDeleteClick(row)}
                               sx={{
                                 bgcolor: alpha('#f44336', 0.1),
                                 color: '#f44336',
@@ -319,7 +328,7 @@ const PreferenceMaster = () => {
                 <IconSettings size={24} color="white" />
               </Box>
               <Box>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: 'inherit', lineHeight: 1.1, fontSize: '1.1rem' }}>Preference Configuration Editor</Typography>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'inherit', lineHeight: 1.1, fontSize: '1.1rem' }}>Prefence Configuration Editor</Typography>
                 <Typography variant="caption" sx={{ opacity: 0.5, fontWeight: 700, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>ADVANCED SYSTEM PREFERENCES</Typography>
               </Box>
             </Stack>
@@ -505,6 +514,15 @@ const PreferenceMaster = () => {
           )}
         </Formik>
       </Dialog>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Preference"
+        message="Are you sure you want to delete this preference? This action cannot be undone."
+        itemName={deleteTargetName}
+      />
     </Box>
   );
 };

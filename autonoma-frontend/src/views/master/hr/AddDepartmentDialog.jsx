@@ -1,59 +1,49 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { MenuItem, useTheme } from '@mui/material';
-import { useColorScheme } from '@mui/material/styles';
-import { IconSettings } from '@tabler/icons-react';
+import { MenuItem, Stack, Box, Typography, Paper, useTheme } from '@mui/material';
+import { IconSettings, IconInfoCircle, IconAlertCircle } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, errorStyle } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import useBOSValidation from 'hooks/useBOSValidation';
+import useBOSForm from 'hooks/useBOSForm';
 
-// ==============================|| DEPARTMENT - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
-
-const VALIDATION_RULES = [
-  { field: 'departmentName', label: 'Department Name', required: true, maxLength: 100 },
-  { field: 'departmentNo', label: 'Department Number', required: true, type: 'number' }
-];
-
-const INITIAL_STATE = {
-  departmentName: '',
-  departmentNo: 0,
-  ndaCertificate: 'No',
-  sequenceNo: 0,
-  status: 'Active'
-};
+// ==============================|| DEPARTMENT - PROFESSIONAL TEMPLATE ||============================== //
 
 const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false }) => {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const { errors, validate, clearErrors } = useBOSValidation();
-
-  const [formData, setFormData] = useState(INITIAL_STATE);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!readOnly);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
+    departmentName: '',
+    departmentNo: 0,
+    ndaCertificate: 'No',
+    sequenceNo: 0,
+    status: 'Active'
+  });
+
   useEffect(() => {
-    clearErrors();
-    if (initialData) {
-      setFormData({
-        id: initialData.id,
-        departmentName: initialData.departmentName || '',
-        departmentNo: initialData.departmentNo || 0,
-        ndaCertificate: initialData.ndaCertificate || 'No',
-        sequenceNo: initialData.sequenceNo || 0,
-        status: initialData.status || 'Active'
-      });
-      setIsEditing(false);
-    } else {
-      setFormData(INITIAL_STATE);
-      setIsEditing(!readOnly);
-      if (!readOnly) fetchNextValues();
+    if (open) {
+      if (initialData) {
+        setFormData({
+          id: initialData.id,
+          departmentName: initialData.departmentName || '',
+          departmentNo: initialData.departmentNo || 0,
+          ndaCertificate: initialData.ndaCertificate || 'No',
+          sequenceNo: initialData.sequenceNo || 0,
+          status: initialData.status || 'Active'
+        });
+        setIsEditing(false);
+      } else {
+        resetForm();
+        setIsEditing(!readOnly);
+        fetchNextValues();
+      }
     }
-  }, [initialData, open, readOnly, clearErrors]);
+  }, [initialData, open, readOnly, setFormData, resetForm]);
 
   const fetchNextValues = async () => {
     try {
@@ -67,31 +57,34 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleClear = () => {
-    setFormData(INITIAL_STATE);
-    clearErrors();
-  };
-
   const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
+    const { isValid, firstMissing } = validate([
+      { field: 'departmentName', label: 'Department Name' },
+      { field: 'departmentNo', label: 'Department Number' }
+    ]);
+
+    if (!isValid) {
+      dispatch(openSnackbar({
+        open: true,
+        message: `Field ${firstMissing} is mandatory.`,
+        variant: 'alert',
+        severity: 'error',
+        alert: { variant: 'filled' }
+      }));
+      return;
+    }
 
     try {
       if (formData.id) {
         await axios.put(`/api/hrm/departments/${formData.id}`, formData);
-        dispatch(openSnackbar({ open: true, message: 'Department updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+        dispatch(openSnackbar({ open: true, message: 'Department updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
         await axios.post('/api/hrm/departments', formData);
-        dispatch(openSnackbar({ open: true, message: 'Department created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+        dispatch(openSnackbar({ open: true, message: 'Department created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
       handleClose(true);
     } catch (error) {
-      console.error('Failed to save department:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to save department.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to save department.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
@@ -99,11 +92,10 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
     setDeleteOpen(false);
     try {
       await axios.delete(`/api/hrm/departments/${formData.id}`);
-      dispatch(openSnackbar({ open: true, message: 'Department deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Department deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       handleClose(true);
     } catch (error) {
-      console.error('Failed to delete department:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
@@ -116,66 +108,92 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
         onClose={() => handleClose()}
         onSave={handleSave}
         onDelete={() => setDeleteOpen(true)}
-        onClear={handleClear}
+        onClear={isEditing ? resetForm : null}
         onEditClick={() => setIsEditing(true)}
         title={initialData ? 'Edit Department' : 'New Department'}
         isViewOnly={isViewOnly}
         hasId={!!formData.id}
-        maxWidth="md"
+        maxWidth="lg"
+        sidebar={
+          <Stack spacing={3}>
+            <Paper sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light' }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <IconInfoCircle size={20} color={theme.palette.primary.main} />
+                <Typography variant="subtitle2" color="primary.main" fontWeight={700}>Audit Log</Typography>
+              </Stack>
+              <Typography variant="caption" display="block">System ID: {formData.id || 'Draft'}</Typography>
+              <Typography variant="caption" display="block">Status: {formData.status}</Typography>
+              {initialData?.updatedAt && (
+                <Typography variant="caption" display="block">Last Sync: {new Date(initialData.updatedAt).toLocaleDateString()}</Typography>
+              )}
+            </Paper>
+
+            <Paper sx={{ p: 2, bgcolor: 'secondary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'secondary.light' }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <IconAlertCircle size={20} color={theme.palette.secondary.main} />
+                <Typography variant="subtitle2" color="secondary.main" fontWeight={700}>SOP Reminder</Typography>
+              </Stack>
+              <Typography variant="caption" display="block">Ensure department codes follow the standard alphanumeric pattern (e.g., DEPT-001).</Typography>
+            </Paper>
+          </Stack>
+        }
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Department Details">
-          <BOSTextField
-            name="departmentName"
-            label="Department Name"
-            value={formData.departmentName}
-            onChange={handleChange}
-            disabled={isViewOnly}
-            required
-            maxLength={100}
-            error={!!errors.departmentName}
-            helperText={errors.departmentName}
-          />
-          <BOSTextField
-            name="departmentNo"
-            label="Department Number"
-            type="number"
-            value={formData.departmentNo}
-            onChange={handleChange}
-            disabled={isViewOnly}
-            required
-            error={!!errors.departmentNo}
-            helperText={errors.departmentNo}
-          />
-          <BOSTextField
-            select
-            name="ndaCertificate"
-            label="NDA Certificate"
-            value={formData.ndaCertificate}
-            onChange={handleChange}
-            disabled={isViewOnly}
-          >
-            <MenuItem value="Yes">Yes</MenuItem>
-            <MenuItem value="No">No</MenuItem>
-          </BOSTextField>
-          <BOSTextField
-            name="sequenceNo"
-            label="Organization Sequence Number"
-            type="number"
-            value={formData.sequenceNo}
-            onChange={handleChange}
-            disabled={isViewOnly}
-          />
-          <BOSTextField
-            select
-            name="status"
-            label="Status"
-            value={formData.status}
-            onChange={handleChange}
-            disabled={isViewOnly}
-          >
-            <MenuItem value="Active">Active</MenuItem>
-            <MenuItem value="In Active">In Active</MenuItem>
-          </BOSTextField>
+        <BOSFormSection icon={<IconSettings size={22} color={theme.palette.primary.main} />} title="Core Configuration">
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+            <BOSTextField
+              name="departmentName"
+              label="Department Name"
+              value={formData.departmentName}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              required
+              error={errors.departmentName}
+              sx={errorStyle(errors.departmentName)}
+            />
+            <BOSTextField
+              name="departmentNo"
+              label="Department Number"
+              type="number"
+              value={formData.departmentNo}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              required
+              error={errors.departmentNo}
+              sx={errorStyle(errors.departmentNo)}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, mt: 3 }}>
+            <BOSTextField
+              select
+              name="ndaCertificate"
+              label="NDA Required"
+              value={formData.ndaCertificate}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+            >
+              <MenuItem value="Yes">Yes</MenuItem>
+              <MenuItem value="No">No</MenuItem>
+            </BOSTextField>
+            <BOSTextField
+              name="sequenceNo"
+              label="Org Sequence"
+              type="number"
+              value={formData.sequenceNo}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+            />
+            <BOSTextField
+              select
+              name="status"
+              label="Status"
+              value={formData.status}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+            >
+              <MenuItem value="Active">Active</MenuItem>
+              <MenuItem value="In Active">In Active</MenuItem>
+            </BOSTextField>
+          </Box>
         </BOSFormSection>
       </BOSFormDialog>
 

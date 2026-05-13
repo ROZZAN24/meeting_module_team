@@ -11,7 +11,7 @@ import AddGradeDialog from './AddGradeDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
 // ==============================|| GRADE MASTER ||============================== //
 
@@ -120,8 +120,7 @@ export default function GradeDetails() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || 
-        (row.status && row.status.toLowerCase().replace(/\s+/g, '') === statusFilter.toLowerCase().replace(/\s+/g, ''));
+      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const nameFilter = globalFilters.gradeName || '';
       const matchesName = !nameFilter || (row.gradeName && row.gradeName.toLowerCase().includes(nameFilter.toLowerCase()));
       const matchesSearch = !globalQuery ||
@@ -151,9 +150,15 @@ export default function GradeDetails() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Grade_Details"
+            columns={[
+              { header: 'Grade Code', key: 'gradeCode' },
+              { header: 'Grade Name', key: 'gradeName' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Grade', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

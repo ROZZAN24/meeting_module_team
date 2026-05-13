@@ -20,34 +20,31 @@ public class EmployeeContact {
     @Column(name = "employee_id", nullable = false)
     private Long employeeId;
 
-    // Permanent Address
-    @Column(name = "perm_address1", length = 255)
-    private String permAddress1;
+    @Column(name = "mobile", length = 20)
+    private String mobile;
 
-    @Column(name = "perm_address2", length = 255)
-    private String permAddress2;
+    @Column(name = "alternate_mobile", length = 20)
+    private String alternateMobile;
+
+    // Permanent Address
+    @Column(name = "perm_address1", length = 500)
+    private String address;
 
     @Column(name = "perm_city", length = 100)
-    private String permCity;
+    private String city;
 
     @Column(name = "perm_state", length = 100)
-    private String permState;
+    private String state;
+
+    @Column(name = "perm_country", length = 100)
+    private String country;
 
     @Column(name = "perm_pin_code", length = 20)
-    private String permPinCode;
-
-    @Column(name = "perm_phone", length = 20)
-    private String permPhone;
-
-    @Column(name = "perm_mobile", length = 20)
-    private String permMobile;
+    private String pincode;
 
     // Communication Address
-    @Column(name = "comm_address1", length = 255)
-    private String commAddress1;
-
-    @Column(name = "comm_address2", length = 255)
-    private String commAddress2;
+    @Column(name = "comm_address1", length = 500)
+    private String commAddress;
 
     @Column(name = "comm_city", length = 100)
     private String commCity;
@@ -55,14 +52,11 @@ public class EmployeeContact {
     @Column(name = "comm_state", length = 100)
     private String commState;
 
+    @Column(name = "comm_country", length = 100)
+    private String commCountry;
+
     @Column(name = "comm_pin_code", length = 20)
-    private String commPinCode;
-
-    @Column(name = "comm_phone", length = 20)
-    private String commPhone;
-
-    @Column(name = "comm_mobile", length = 20)
-    private String commMobile;
+    private String commPincode;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;

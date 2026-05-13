@@ -1,7 +1,7 @@
 // assets
 import {
   IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper
-  , IconAccessPoint, IconHistory, IconFingerprint, IconActivity, IconTimeline
+  , IconAccessPoint, IconHistory
 } from '@tabler/icons-react';
 
 // constant
@@ -12,10 +12,7 @@ const icons = {
   IconSettings,
   IconBuildingSkyscraper,
   IconAccessPoint,
-  IconHistory,
-  IconFingerprint,
-  IconActivity,
-  IconTimeline
+  IconHistory
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -32,14 +29,6 @@ const admin = {
       type: 'item',
       url: '/admin/company-profile',
       icon: icons.IconBuildingSkyscraper,
-      breadcrumbs: true
-    },
-    {
-      id: 'division-master',
-      title: 'Division Master',
-      type: 'item',
-      url: '/admin/division-master',
-      icon: icons.IconLayoutColumns,
       breadcrumbs: true
     },
     {
@@ -71,31 +60,15 @@ const admin = {
       title: 'User Access',
       type: 'item',
       url: '/admin/user-access',
-      icon: icons.IconFingerprint,
+      icon: icons.IconAccessPoint,
       breadcrumbs: true
     },
     {
       id: 'session-monitoring',
-      title: 'Session Audit Control',
+      title: 'Session Monitoring',
       type: 'item',
       url: '/admin/session-monitoring',
-      icon: icons.IconActivity,
-      breadcrumbs: true
-    },
-    {
-      id: 'audit-trail',
-      title: 'Audit Trail',
-      type: 'item',
-      url: '/admin/audit-trail',
       icon: icons.IconHistory,
-      breadcrumbs: true
-    },
-    {
-      id: 'session-analytics',
-      title: 'User Session Analytics',
-      type: 'item',
-      url: '/admin/session-analytics',
-      icon: icons.IconTimeline,
       breadcrumbs: true
     }
   ]

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 /**
  * useBOSForm - A standardized hook to handle form state and validation.
@@ -8,13 +8,15 @@ import { useState, useCallback } from 'react';
  * @returns {Object} { formData, setFormData, handleFormChange, resetForm }
  */
 export default function useBOSForm(initialValues = {}) {
-    // Ensure all initial values are at least an empty string to avoid "uncontrolled" warnings
-    const sanitizedInitial = Object.keys(initialValues).reduce((acc, key) => {
-        acc[key] = initialValues[key] ?? '';
-        return acc;
-    }, {});
+    const sanitizedInitial = useMemo(() => {
+        return Object.keys(initialValues).reduce((acc, key) => {
+            acc[key] = initialValues[key] ?? '';
+            return acc;
+        }, {});
+    }, [JSON.stringify(initialValues)]);
 
     const [formData, setFormData] = useState(sanitizedInitial);
+    const [errors, setErrors] = useState({});
 
     const handleFormChange = useCallback((e) => {
         const { name, value } = e.target;
@@ -22,10 +24,15 @@ export default function useBOSForm(initialValues = {}) {
             ...prev,
             [name]: value ?? ''
         }));
-    }, []);
+        // Clear error when user types
+        if (errors[name]) {
+            setErrors(prev => ({ ...prev, [name]: false }));
+        }
+    }, [errors]);
 
     const resetForm = useCallback(() => {
         setFormData(sanitizedInitial);
+        setErrors({});
     }, [sanitizedInitial]);
 
     const updateForm = useCallback((newData) => {
@@ -38,5 +45,27 @@ export default function useBOSForm(initialValues = {}) {
         }));
     }, []);
 
-    return { formData, setFormData, handleFormChange, resetForm, updateForm };
+    /**
+     * validate - Checks mandatory fields and triggers shake animation
+     * @param {Array} fields - Array of { field, label } objects
+     * @returns {boolean} - True if valid
+     */
+    const validate = useCallback((fields = []) => {
+        const newErrors = {};
+        let isValid = true;
+        let firstMissing = null;
+
+        fields.forEach(f => {
+            if (!formData[f.field]) {
+                newErrors[f.field] = true;
+                isValid = false;
+                if (!firstMissing) firstMissing = f.label;
+            }
+        });
+
+        setErrors(newErrors);
+        return { isValid, firstMissing, newErrors };
+    }, [formData]);
+
+    return { formData, setFormData, errors, setErrors, handleFormChange, resetForm, updateForm, validate };
 }

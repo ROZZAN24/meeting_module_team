@@ -8,47 +8,50 @@ import {
   Box,
   Typography,
   IconButton,
-  Button
+  Button,
+  Divider,
+  Paper,
+  Tooltip,
+  useTheme
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
 import {
   IconSettings,
   IconCalendarEvent,
   IconListDetails,
   IconFileText,
   IconCloudUpload,
-  IconCamera,
-  IconFileDescription,
-  IconMicrophone,
-  IconMicrophoneOff,
   IconEye,
   IconTrash,
-  IconRefresh,
   IconChecks,
-  IconBan
+  IconBan,
+  IconMicrophone,
+  IconMicrophoneOff,
+  IconFiles,
+  IconInfoCircle,
+  IconAlertCircle
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
 import {
   BOSFormDialog,
   BOSFormSection,
   BOSTextField,
-  BOSDataTable,
-  btnClear,
-  btnSave,
-  btnCancel,
   getStatusChipSx,
   formatBOSFiles,
-  BOSFileGallery
+  BOSFileGallery,
+  BOSFileUpload,
+  errorStyle
 } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
-
-// Departments are now fetched dynamically from API
+import { autoUploadFile } from 'utils/upload-helper';
 
 const CATEGORIES = ['SAFETY', 'QUALITY', 'MAINTENANCE', 'PRODUCTION', 'HR/ADMIN', 'AUDIT', 'RENEWAL', 'CHECK LIST'];
 const FREQUENCIES = ['DAILY', 'WEEKLY', 'FORTNIGHTLY', 'MONTHLY', 'QUARTERLY', 'HALF YEARLY', 'YEARLY'];
 
 export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, readOnly, onVerify, onReject }) => {
+  const dispatch = useDispatch();
   const theme = useTheme();
   const [isEditing, setIsEditing] = useState(!readOnly);
 
@@ -76,36 +79,35 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
     levelIds: ''
   });
 
-  const [docDetails, setDocDetails] = useState('');
-  const [currentFile, setCurrentFile] = useState(null);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
+  const [errors, setErrors] = useState({});
+  const speechRef = useRef(null);
+
   const lookups = useLookups(['ACTIVE_DEPARTMENTS', 'EMPLOYEES']);
-  const departmentList = (lookups.activeDepartments || [])
-    .map(d => {
-      if (!d) return null;
-      const name = d.departmentName || d.deptName || d.dept_name || d.name || (typeof d === 'string' ? d : null);
-      return name ? String(name).toUpperCase() : null;
-    })
-    .filter(Boolean);
+  
+  const departmentList = useMemo(() => 
+    (lookups.activeDepartments || [])
+      .map(d => (d.departmentName || d.deptName || d.name || d).toUpperCase())
+      .filter(Boolean),
+    [lookups.activeDepartments]
+  );
 
   const filteredEmployees = useMemo(() => {
     if (!lookups.employees) return [];
     if (!formData.department || formData.department.length === 0) return lookups.employees;
-
-    // 1. Get IDs of selected departments
     const selectedDeptIds = (lookups.activeDepartments || [])
-      .filter(d => formData.department.includes((d.departmentName || d.deptName || d.dept_name || '').toUpperCase()))
+      .filter(d => formData.department.includes((d.departmentName || d.deptName || '').toUpperCase()))
       .map(d => d.id);
-
-    // 2. Filter employees by those IDs
     return lookups.employees.filter(e => selectedDeptIds.includes(e.departmentId));
   }, [lookups.activeDepartments, formData.department, lookups.employees]);
 
-  const employeeList = filteredEmployees.map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
-  const speechRef = useRef(null);
+  const employeeList = useMemo(() => 
+    filteredEmployees.map(e => e.employeeName || `${e.firstName} ${e.lastName}`),
+    [filteredEmployees]
+  );
 
   useEffect(() => {
     if (formData.assignTo && !employeeList.includes(formData.assignTo)) {
@@ -117,11 +119,8 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
     setIsEditing(!readOnly);
   }, [readOnly, open]);
 
-
-
   useEffect(() => {
     if (open) {
-      console.log('BOS Checklist initialData:', initialData);
       if (initialData) {
         setFormData({
           seqNo: initialData.seqNo || '',
@@ -146,13 +145,10 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
           amendmentReason: '',
           levelIds: initialData.levelIds || ''
         });
-
-        // Use standardized BOS utility for robust file loading
         setUploadedFiles(formatBOSFiles(initialData.uploadedFiles || initialData.uploaded_files));
         setScannedFiles(formatBOSFiles(initialData.scannedFiles || initialData.scanned_files));
       } else {
         resetForm();
-        fetchNextSeq();
       }
     }
   }, [open, initialData]);
@@ -190,88 +186,77 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
       amendmentReason: '',
       levelIds: ''
     });
-    setDocDetails('');
-    setCurrentFile(null);
     setUploadedFiles([]);
     setScannedFiles([]);
-    if (!initialData) {
-      fetchNextSeq();
-    }
+    setErrors({});
+    if (!initialData) fetchNextSeq();
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => {
       const newData = { ...prev, [name]: value };
-
-      // Case 1: Change Expiry or Days -> Update Date
       if (name === 'expiryDate' || name === 'reminderDays') {
         const expiry = name === 'expiryDate' ? value : prev.expiryDate;
-        const days = name === 'reminderDays' ? value : prev.reminderDays;
-
-        if (expiry && days) {
+        const days = parseInt(name === 'reminderDays' ? value : prev.reminderDays);
+        if (expiry && !isNaN(days)) {
           const date = new Date(expiry);
-          const dayCount = parseInt(days);
-          if (!isNaN(dayCount)) {
-            date.setDate(date.getDate() - dayCount);
-            newData.reminderDate = date.toISOString().split('T')[0];
-          }
+          date.setDate(date.getDate() - days);
+          newData.reminderDate = date.toISOString().split('T')[0];
         }
       }
-
-      // Case 2: Change Reminder Date -> Update Days
-      if (name === 'reminderDate' && value && prev.expiryDate) {
-        const expiry = new Date(prev.expiryDate);
-        const reminder = new Date(value);
-        const diffTime = expiry - reminder;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (!isNaN(diffDays)) {
-          newData.reminderDays = diffDays >= 0 ? diffDays : 0;
-        }
-      }
-
       return newData;
     });
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: false }));
   };
 
   const handleSave = async () => {
-    if (!formData.category || !formData.frequency || !formData.checkingPoint || !formData.description || !formData.reminderDays ||
-      !formData.photoRequired || !formData.stockLink || !formData.dualCheck || !formData.carryForward || !formData.effectiveFrom) {
-      alert('Please fill all mandatory fields including Effective From, Photo Required, Stock Link, Dual Check and Carry Forward');
+    const mandatoryFields = [
+      { field: 'category', label: 'Category' },
+      { field: 'frequency', label: 'Frequency' },
+      { field: 'checkingPoint', label: 'Checking Point' },
+      { field: 'description', label: 'SOP Description' },
+      { field: 'effectiveFrom', label: 'Effective From' }
+    ];
+
+    const newErrors = {};
+    mandatoryFields.forEach(f => { if (!formData[f.field]) newErrors[f.field] = true; });
+    
+    // SOP Check: Stock Link
+    if (formData.stockLink === 'YES') {
+      if (!formData.itemCode) newErrors.itemCode = true;
+      if (!formData.qty) newErrors.qty = true;
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Please fill all highlighted mandatory fields.',
+        variant: 'alert',
+        severity: 'error',
+        alert: { variant: 'filled' }
+      }));
       return;
     }
 
-    // SOP Logic: Effective From should be today or future
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (new Date(formData.effectiveFrom) < today) {
-      alert('Effective From date cannot be in the past.');
-      return;
-    }
-
-    // SOP Logic: Stock Link requires Item Code and Qty
-    if (formData.stockLink === 'YES' && (!formData.itemCode || !formData.qty)) {
-      alert('Item Code and Quantity are mandatory when Stock Link is enabled.');
+      setErrors(prev => ({ ...prev, effectiveFrom: true }));
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Effective From date cannot be in the past.',
+        variant: 'alert',
+        severity: 'error',
+        alert: { variant: 'filled' }
+      }));
       return;
     }
 
     try {
-      const uploadFile = async (fileObj) => {
-        let serverName = '';
-        if (fileObj.isServer) {
-          serverName = fileObj.name;
-        } else {
-          const formDataUpload = new FormData();
-          formDataUpload.append('file', fileObj.file);
-          const res = await axios.post(`${API_PATHS.FILES}/upload`, formDataUpload, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-          serverName = res.data; // Server filename
-        }
-
-        // Append docDetails metadata using pipe separator
-        return fileObj.docDetails ? `${serverName}|${fileObj.docDetails}` : serverName;
-      };
+      const uploadFile = async (f) => f.isServer ? (f.docDetails ? `${f.name}|${f.docDetails}` : f.name) : 
+        `${await autoUploadFile(f.file)}${f.docDetails ? '|' + f.docDetails : ''}`;
 
       const finalUploaded = await Promise.all(uploadedFiles.map(uploadFile));
       const finalScanned = await Promise.all(scannedFiles.map(uploadFile));
@@ -280,45 +265,22 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
         ...formData,
         id: initialData?.id,
         status: formData.status === 'INACTIVE' ? 'In Active' : 'Active',
-        amendmentReason: formData.amendmentReason,
-        levelIds: formData.levelIds, // Need to add levelIds to formData state
         description: formData.amendmentReason ? formData.description + '\n[Amendment]: ' + formData.amendmentReason : formData.description,
         uploadedFiles: finalUploaded,
         scannedFiles: finalScanned
       });
-
       handleClose();
     } catch (error) {
-      console.error('Save failed:', error);
-      const msg = error.response?.data?.details || error.response?.data?.message || 'Failed to save record or upload files.';
-      alert(msg);
+      dispatch(openSnackbar({
+        open: true,
+        message: error.response?.data?.message || 'Failed to save record.',
+        variant: 'alert',
+        severity: 'error',
+        alert: { variant: 'filled' }
+      }));
     }
   };
 
-  const handleAddFile = () => {
-    if (!currentFile) {
-      alert('Please choose a file'); // Using native alert as a fallback, but should use snackbar normally.
-      return;
-    }
-    const newFile = {
-      id: Date.now(),
-      docDetails: docDetails || 'N/A',
-      file: currentFile,
-      name: currentFile.name
-    };
-    setUploadedFiles(prev => [...prev, newFile]);
-    setDocDetails('');
-    setCurrentFile(null);
-  };
-
-  const handleFileDelete = (id) => {
-    setUploadedFiles(prev => prev.filter(f => f.id !== id));
-  };
-
-  // Speech Recognition Logic
-  const removeFile = (list, setList, index) => {
-    setList(prev => prev.filter((_, i) => i !== index));
-  };
 
   return (
     <BOSFormDialog
@@ -330,312 +292,174 @@ export const AddCheckListDialog = ({ open, handleClose, onSave, initialData, rea
       onEditClick={readOnly ? null : () => setIsEditing(true)}
       secondaryActions={
         (onVerify || onReject) && !isEditing && (
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Stack direction="row" spacing={1.5}>
             {onReject && (
-              <Button
-                variant="contained"
-                color="error"
-                onClick={onReject}
-                startIcon={<IconBan size={20} />}
-                sx={{ borderRadius: '8px', fontWeight: 600 }}
-              >
+              <Button variant="contained" color="error" onClick={onReject} startIcon={<IconBan size={20} />} sx={{ borderRadius: '12px' }}>
                 Reject
               </Button>
             )}
             {onVerify && (
-              <Button
-                variant="contained"
-                color="success"
-                onClick={onVerify}
-                startIcon={<IconChecks size={20} />}
-                sx={{ borderRadius: '8px', fontWeight: 600 }}
-              >
+              <Button variant="contained" color="success" onClick={onVerify} startIcon={<IconChecks size={20} />} sx={{ borderRadius: '12px' }}>
                 Verify
               </Button>
             )}
-          </Box>
+          </Stack>
         )
       }
-      title={
-        initialData?.id
-          ? (initialData?.verifyStatus === 'Verified' ? `Amend Checklist - ${initialData.seqNo}` : `Edit Checklist - ${initialData.seqNo}`)
-          : 'Add New Check List'
-      }
+      title={initialData?.id ? `Checklist Management - ${initialData.seqNo}` : 'Create New Checklist'}
       maxWidth="lg"
-    >
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 3 }}>
-        {/* Left Column */}
+      sidebar={
         <Stack spacing={3}>
-          <BOSFormSection title="Core Settings" icon={<IconSettings size={20} color={theme.palette.primary.main} />}>
-            <Stack spacing={2.5}>
-              <BOSTextField label="Sequence No" value={formData.seqNo} InputProps={{ readOnly: true }} />
+          <BOSFormSection title="Standard Attachments" icon={<IconFiles size={22} color={theme.palette.primary.main} />}>
+            <BOSFileUpload 
+              files={uploadedFiles} 
+              onChange={setUploadedFiles} 
+              module="QMS_CHECKLIST"
+              disabled={!isEditing}
+              label="Upload SOP Documents"
+              helperText="PDFs, Images, or Excel sheets"
+            />
+          </BOSFormSection>
 
+          {initialData?.rejReason && (
+            <Paper sx={{ p: 2, bgcolor: 'error.lighter', border: '1px solid', borderColor: 'error.light', borderRadius: '12px' }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <IconAlertCircle size={20} color={theme.palette.error.main} />
+                <Typography variant="subtitle2" color="error.main" fontWeight={700}>Rejection Note</Typography>
+              </Stack>
+              <Typography variant="body2" color="error.dark">{initialData.rejReason}</Typography>
+            </Paper>
+          )}
+
+          <Paper sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light' }}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+              <IconInfoCircle size={20} color={theme.palette.primary.main} />
+              <Typography variant="subtitle2" color="primary.main" fontWeight={700}>Audit Info</Typography>
+            </Stack>
+            <Typography variant="caption" display="block">System ID: {initialData?.id || 'New'}</Typography>
+            <Typography variant="caption" display="block">Verify Status: {initialData?.verifyStatus || 'Pending'}</Typography>
+          </Paper>
+        </Stack>
+      }
+    >
+      <Stack spacing={3}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+          <BOSFormSection title="Configuration" icon={<IconSettings size={22} color={theme.palette.primary.main} />}>
+            <Stack spacing={2.5}>
+              <BOSTextField label="Sequence Number" value={formData.seqNo} InputProps={{ readOnly: true, sx: { fontWeight: 700, color: 'primary.main' } }} />
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                <BOSTextField select label="Category" name="category" value={formData.category} onChange={handleChange} disabled={!isEditing} required>
+                <BOSTextField select label="Category" name="category" value={formData.category} onChange={handleChange} disabled={!isEditing} required error={errors.category} sx={errorStyle(errors.category)}>
                   {CATEGORIES.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
                 </BOSTextField>
-                <BOSTextField select label="Frequency" name="frequency" value={formData.frequency} onChange={handleChange} disabled={!isEditing} required>
+                <BOSTextField select label="Frequency" name="frequency" value={formData.frequency} onChange={handleChange} disabled={!isEditing} required error={errors.frequency} sx={errorStyle(errors.frequency)}>
                   {FREQUENCIES.map(f => <MenuItem key={f} value={f}>{f}</MenuItem>)}
                 </BOSTextField>
               </Box>
-
-              {/* Solves "long select" issue using Autocomplete with Chips */}
               <Autocomplete
                 multiple
                 options={departmentList}
                 value={formData.department}
                 disabled={!isEditing}
-                onChange={(e, val) => setFormData(p => ({ ...p, department: val }))}
-                renderTags={(value, getTagProps) =>
-                  value.map((option, index) => {
-                    const { key, ...tagProps } = getTagProps({ index });
-                    return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
-                  })
-                }
-                renderInput={(params) => (
-                  <BOSTextField {...params} label="Departments" placeholder={departmentList.length > 0 ? "Select Departments" : "Loading departments..."} />
-                )}
+                onChange={(e, val) => {
+                  setFormData(p => ({ ...p, department: val }));
+                  if (errors.department) setErrors(prev => ({ ...prev, department: false }));
+                }}
+                renderTags={(value, getTagProps) => value.map((option, index) => <Chip key={index} variant="filled" color="primary" label={option} size="small" {...getTagProps({ index })} />)}
+                renderInput={(params) => <BOSTextField {...params} label="Assigned Departments" placeholder="Select..." error={errors.department} sx={errorStyle(errors.department)} />}
               />
+            </Stack>
+          </BOSFormSection>
 
-              <BOSTextField
-                select
-                label="Assign To (Executor)"
-                name="assignTo"
-                value={formData.assignTo}
-                onChange={handleChange}
-                disabled={!isEditing}
-              >
-                <MenuItem value="">-Select-</MenuItem>
-                {employeeList.map(emp => (
-                  <MenuItem key={emp} value={emp}>{emp}</MenuItem>
-                ))}
+          <BOSFormSection title="Scheduling" icon={<IconCalendarEvent size={22} color={theme.palette.secondary.main} />}>
+            <Stack spacing={2.5}>
+              <BOSTextField type="date" label="Effective From" name="effectiveFrom" value={formData.effectiveFrom} onChange={handleChange} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} disabled={!isEditing} required error={errors.effectiveFrom} sx={errorStyle(errors.effectiveFrom)} />
+              {formData.category === 'RENEWAL' && (
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                  <BOSTextField type="date" label="Expiry Date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} InputLabelProps={{ shrink: true }} disabled={!isEditing} />
+                  <BOSTextField type="number" label="Days Reminder" name="reminderDays" value={formData.reminderDays} onChange={handleChange} disabled={!isEditing} />
+                </Box>
+              )}
+              <BOSTextField select label="Executor (Assignee)" name="assignTo" value={formData.assignTo} onChange={handleChange} disabled={!isEditing}>
+                <MenuItem value=""><em>Automatic / All</em></MenuItem>
+                {employeeList.map(emp => <MenuItem key={emp} value={emp}>{emp}</MenuItem>)}
               </BOSTextField>
             </Stack>
           </BOSFormSection>
-          <BOSFormSection title="Description / SOP" icon={<IconFileText size={20} color={theme.palette.success.main} />}>
-            <Box sx={{ position: 'relative' }}>
-              <BOSTextField
-                fullWidth
-                multiline
-                rows={4}
-                label="Standard Operating Procedure"
-                required
-                name="description"
-                value={isListening ? formData.description + ' ' + interimText : formData.description}
-                onChange={handleChange}
-                disabled={!isEditing}
-                helperText={
-                  <Box component="span" sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography component="span" variant="caption" color={formData.description.length < 500 ? 'warning.main' : 'success.main'}>
-                      {formData.description.length < 500 ? 'Min 500 characters recommended' : 'SOP length sufficient'}
-                    </Typography>
-                    <Typography component="span" variant="caption">{formData.description.length} characters</Typography>
-                  </Box>
-                }
-                InputProps={{
-                  endAdornment: isEditing && (
-                    <IconButton
-                      onClick={() => {
-                        if (isListening) {
-                          speechRef.current?.stop();
-                          setIsListening(false);
-                        } else {
-                          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                          if (!SR) return;
-                          const rec = new SR();
-                          rec.lang = 'en-US';
-                          rec.continuous = true;
-                          rec.interimResults = true;
-                          rec.onresult = (e) => {
-                            let interim = '';
-                            let final = '';
-                            for (let i = e.resultIndex; i < e.results.length; i++) {
-                              if (e.results[i].isFinal) final += e.results[i][0].transcript;
-                              else interim += e.results[i][0].transcript;
-                            }
-                            if (final) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + final.trim() }));
-                            setInterimText(interim);
-                          };
-                          rec.start();
-                          speechRef.current = rec;
-                          setIsListening(true);
-                        }
-                      }}
-                      size="small"
-                      color={isListening ? 'error' : 'default'}
-                    >
-                      {isListening ? <IconMicrophone size={20} /> : <IconMicrophoneOff size={20} />}
-                    </IconButton>
-                  )
-                }}
-              />
-            </Box>
-          </BOSFormSection>
+        </Box>
 
-          <BOSFormSection title="Timeline & Schedule" icon={<IconCalendarEvent size={20} color={theme.palette.secondary.main} />}>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
-              <BOSTextField 
-                type="date" 
-                label="Effective From" 
-                name="effectiveFrom" 
-                value={formData.effectiveFrom} 
-                onChange={handleChange} 
-                InputLabelProps={{ shrink: true }} 
-                inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                disabled={!isEditing} 
-                required 
-              />
-              {formData.frequency === 'WEEKLY' && (
-                <BOSTextField 
-                  label="Repeating Every" 
-                  value={formData.effectiveFrom ? new Date(formData.effectiveFrom).toLocaleDateString('en-US', { weekday: 'long' }) : 'Select Date'} 
-                  InputProps={{ readOnly: true }} 
-                  disabled 
-                  helperText="Automatically detected from Effective From date"
-                />
-              )}
-              {formData.category === 'RENEWAL' && (
-                <>
-                  <BOSTextField type="date" label="Expiry Date" name="expiryDate" value={formData.expiryDate} onChange={handleChange} InputLabelProps={{ shrink: true }} disabled={!isEditing} />
-                  <BOSTextField type="number" label="Reminder Days" name="reminderDays" value={formData.reminderDays} onChange={handleChange} disabled={!isEditing} />
-                </>
-              )}
-            </Box>
-          </BOSFormSection>
+        <BOSFormSection title="Standard Operating Procedure (SOP)" icon={<IconFileText size={22} color={theme.palette.success.main} />}>
+          <Stack spacing={2}>
+            <BOSTextField label="Checking Point / Title" name="checkingPoint" value={formData.checkingPoint} onChange={handleChange} required disabled={!isEditing} error={errors.checkingPoint} sx={errorStyle(errors.checkingPoint)} />
+            <BOSTextField
+              fullWidth
+              multiline
+              rows={5}
+              label="Step-by-Step Instructions"
+              required
+              name="description"
+              value={isListening ? formData.description + ' ' + interimText : formData.description}
+              onChange={handleChange}
+              disabled={!isEditing}
+              error={errors.description}
+              sx={errorStyle(errors.description)}
+              InputProps={{
+                endAdornment: isEditing && (
+                  <Tooltip title={isListening ? "Stop Listening" : "Voice Dictation"}>
+                    <IconButton onClick={() => {
+                      if (isListening) { speechRef.current?.stop(); setIsListening(false); }
+                      else {
+                        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                        if (!SR) return;
+                        const rec = new SR(); rec.continuous = true; rec.interimResults = true;
+                        rec.onresult = (e) => {
+                          let fin = '', int = '';
+                          for (let i = e.resultIndex; i < e.results.length; i++) {
+                            if (e.results[i].isFinal) fin += e.results[i][0].transcript;
+                            else int += e.results[i][0].transcript;
+                          }
+                          if (fin) setFormData(p => ({ ...p, description: (p.description ? p.description + ' ' : '') + fin.trim() }));
+                          setInterimText(int);
+                        };
+                        rec.start(); speechRef.current = rec; setIsListening(true);
+                      }
+                    }} color={isListening ? 'error' : 'primary'}><IconMicrophone /></IconButton>
+                  </Tooltip>
+                )
+              }}
+            />
+          </Stack>
+        </BOSFormSection>
 
-          <BOSFormSection title="Execution Details" icon={<IconListDetails size={20} color={theme.palette.warning.main} />}>
-            <Stack spacing={2.5}>
-              <BOSTextField label="Checking Point" name="checkingPoint" value={formData.checkingPoint} onChange={handleChange} required disabled={!isEditing} />
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                <BOSTextField select label="Photo Required" name="photoRequired" value={formData.photoRequired} onChange={handleChange} disabled={!isEditing} required>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-                <BOSTextField select label="Stock Link" name="stockLink" value={formData.stockLink} onChange={handleChange} disabled={!isEditing} required>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-                <BOSTextField label="Item Code" name="itemCode" value={formData.itemCode} onChange={handleChange} disabled={!isEditing} />
-                <Autocomplete
-                  multiple
-                  options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
-                  value={formData.levelIds ? formData.levelIds.split(',') : []}
-                  disabled={!isEditing}
-                  onChange={(e, val) => setFormData(p => ({ ...p, levelIds: val.join(',') }))}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => {
-                      const { key, ...tagProps } = getTagProps({ index });
-                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
-                    })
-                  }
-                  renderInput={(params) => (
-                    <BOSTextField {...params} label="Levels" placeholder="Select Levels" />
-                  )}
-                />
-              </Box>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                <BOSTextField select label="Dual Check" name="dualCheck" value={formData.dualCheck} onChange={handleChange} disabled={!isEditing} required>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-                <BOSTextField select label="Carry Forward" name="carryForward" value={formData.carryForward} onChange={handleChange} disabled={!isEditing} required>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-                <BOSTextField select label="Verification Required" name="verificationRequired" value={formData.verificationRequired} onChange={handleChange} disabled={!isEditing} required>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-                <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} />
-              </Box>
+        <BOSFormSection title="Execution & Control" icon={<IconListDetails size={22} color={theme.palette.warning.main} />}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
+            <BOSTextField select label="Photo Required" name="photoRequired" value={formData.photoRequired} onChange={handleChange} disabled={!isEditing}>
+              <MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem>
+            </BOSTextField>
+            <BOSTextField select label="Dual Check" name="dualCheck" value={formData.dualCheck} onChange={handleChange} disabled={!isEditing}>
+              <MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem>
+            </BOSTextField>
+            <BOSTextField select label="Carry Forward" name="carryForward" value={formData.carryForward} onChange={handleChange} disabled={!isEditing}>
+              <MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem>
+            </BOSTextField>
+            
+            <BOSTextField select label="Stock Linkage" name="stockLink" value={formData.stockLink} onChange={handleChange} disabled={!isEditing}>
+              <MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem>
+            </BOSTextField>
+            <BOSTextField label="Item Code" name="itemCode" value={formData.itemCode} onChange={handleChange} disabled={!isEditing} required={formData.stockLink === 'YES'} error={errors.itemCode} sx={errorStyle(errors.itemCode)} />
+            <BOSTextField type="number" label="Qty" name="qty" value={formData.qty} onChange={handleChange} disabled={!isEditing} required={formData.stockLink === 'YES'} error={errors.qty} sx={errorStyle(errors.qty)} />
 
-              {isEditing && initialData?.id && initialData?.verifyStatus === 'Verified' && (
-                <Box sx={{ mt: 1, p: 2, border: '1px solid', borderColor: 'warning.light', borderRadius: 1, bgcolor: 'warning.lighter' }}>
-                  <Typography variant="subtitle2" color="warning.dark" sx={{ mb: 1, fontWeight: 'bold' }}>
-                    Amendment Required: This checklist is already verified. Any changes will create a new version.
-                  </Typography>
-                  <BOSTextField
-                    fullWidth
-                    label="Amendment Reason"
-                    name="amendmentReason"
-                    value={formData.amendmentReason}
-                    onChange={handleChange}
-                    required
-                    placeholder="Describe why you are amending this checklist..."
-                    color="warning"
-                  />
-                </Box>
-              )}
-              {isEditing && initialData?.id && (
-                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 1 }}>
-                  <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} required>
-                    <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-                    <MenuItem value="INACTIVE">IN ACTIVE</MenuItem>
-                  </BOSTextField>
-                </Box>
-              )}
-              {initialData?.rejReason && (
-                <BOSTextField
-                  label="Rejection Reason"
-                  value={initialData.rejReason}
-                  multiline
-                  rows={2}
-                  disabled
-                  color="error"
-                  sx={{ mt: 1, '& .MuiOutlinedInput-root': { bgcolor: 'error.lighter', color: 'error.main' } }}
-                />
-              )}
-            </Stack>
-          </BOSFormSection>
-
-        </Stack>
-
-        {/* Right Column: Attachments */}
-        <Stack spacing={3}>
-          <BOSFormSection title="Attachments" icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />}>
-            <Box sx={{ mt: 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 2, alignItems: 'center', mb: 3 }}>
-                <BOSTextField
-                  label="Doc Details"
-                  value={docDetails}
-                  onChange={(e) => setDocDetails(e.target.value)}
-                  disabled={!isEditing}
-                />
-                <Button component="label" variant="outlined" startIcon={<IconCloudUpload size={18} />} disabled={!isEditing} sx={{ height: 40 }}>
-                  {currentFile ? currentFile.name : 'Choose File'}
-                  <input type="file" hidden onChange={(e) => setCurrentFile(e.target.files[0])} />
-                </Button>
-                <Button variant="contained" color="primary" onClick={handleAddFile} disabled={!isEditing} sx={{ height: 40 }}>
-                  Add
-                </Button>
-              </Box>
-
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>Uploaded Files</Typography>
-              <BOSFileGallery
-                files={uploadedFiles}
-                onRemove={(idx) => setUploadedFiles(prev => prev.filter((_, i) => i !== idx))}
-                isEditing={isEditing}
-                maxHeight={200}
-              />
-
-              {scannedFiles.length > 0 && (
-                <>
-                  <Typography variant="subtitle1" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>Scanned Files</Typography>
-                  <BOSFileGallery
-                    files={scannedFiles}
-                    onRemove={(idx) => setScannedFiles(prev => prev.filter((_, i) => i !== idx))}
-                    isEditing={isEditing}
-                    maxHeight={200}
-                  />
-                </>
-              )}
-            </Box>
-          </BOSFormSection>
-        </Stack>
-      </Box>
+            <BOSTextField select label="Verification Needed" name="verificationRequired" value={formData.verificationRequired} onChange={handleChange} disabled={!isEditing}>
+              <MenuItem value="YES">YES</MenuItem><MenuItem value="NO">NO</MenuItem>
+            </BOSTextField>
+            <BOSTextField select label="Current Status" name="status" value={formData.status} onChange={handleChange} disabled={!isEditing}>
+              <MenuItem value="ACTIVE">ACTIVE</MenuItem><MenuItem value="INACTIVE">IN ACTIVE</MenuItem>
+            </BOSTextField>
+          </Box>
+        </BOSFormSection>
+      </Stack>
     </BOSFormDialog>
   );
-}
+};
 
 AddCheckListDialog.propTypes = {
   open: PropTypes.bool,

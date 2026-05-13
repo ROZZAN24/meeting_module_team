@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
-import { IconFileDownload, IconRefresh, IconUsers } from '@tabler/icons-react';
+import { IconFileDownload, IconRefresh, IconUsers, IconUser } from '@tabler/icons-react';
+import { Avatar } from '@mui/material';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
@@ -11,7 +12,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getPhotoUrl } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import { useLookups } from 'hooks/useLookups';
 
@@ -19,23 +20,16 @@ import { useLookups } from 'hooks/useLookups';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'oldEmpCode', label: 'OLD EMP CODE', minWidth: 110 },
-  { id: 'firstName', label: 'FIRST NAME', minWidth: 140, bold: true },
-  { id: 'lastName', label: 'LAST NAME', minWidth: 140 },
+  { id: 'photo', label: 'PHOTO', minWidth: 80 },
+  { id: 'employeeName', label: 'EMPLOYEE NAME', minWidth: 200, bold: true },
   { id: 'empCode', label: 'EMP CODE', minWidth: 110 },
-  { id: 'designationId', label: 'DESIGNATION', minWidth: 120 },
+  { id: 'designationId', label: 'DESIGNATION', minWidth: 150 },
+  { id: 'departmentId', label: 'DEPARTMENT', minWidth: 150 },
   { id: 'gradeCode', label: 'GRADE', minWidth: 80 },
-  { id: 'departmentId', label: 'DEPARTMENT', minWidth: 120 },
   { id: 'empLevelId', label: 'LEVEL', minWidth: 100 },
-  { id: 'unitId', label: 'UNIT NAME', minWidth: 100 },
-  { id: 'homeManager', label: 'HOME MANAGER', minWidth: 130 },
-  { id: 'businessManager', label: 'BUSINESS MANAGER', minWidth: 140 },
-  { id: 'supplierName', label: 'SUPPLIER NAME', minWidth: 130 },
-  { id: 'createdBy', label: 'CREATED BY', minWidth: 110 },
-  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
-  { id: 'updatedBy', label: 'MODIFIED BY', minWidth: 110 },
-  { id: 'updatedAt', label: 'MODIFIED DATE', minWidth: 140 },
-  { id: 'status', label: 'STATUS', minWidth: 90 }
+  { id: 'unitId', label: 'UNIT NAME', minWidth: 120 },
+  { id: 'homeManager', label: 'MANAGER', minWidth: 150 },
+  { id: 'status', label: 'STATUS', minWidth: 100 }
 ];
 
 export default function EmployeeList() {
@@ -60,15 +54,15 @@ export default function EmployeeList() {
     users = []
   } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS']);
 
-  const getDeptName = (id) => departments.find(d => String(d.id) === String(id))?.departmentName || id || '-';
-  const getDesigName = (id) => designations.find(d => String(d.id) === String(id))?.designationName || id || '-';
-  const getLevelName = (id) => levels.find(l => String(l.rowId) === String(id))?.level || id || '-';
-  const getUnitName = (id) => [{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-';
+  const getDeptName = (id) => String(departments.find(d => String(d.id) === String(id))?.departmentName || id || '-');
+  const getDesigName = (id) => String(designations.find(d => String(d.id) === String(id))?.designationName || id || '-');
+  const getLevelName = (id) => String(levels.find(l => String(l.rowId) === String(id))?.level || id || '-');
+  const getUnitName = (id) => String([{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-');
   const getUserName = (id) => {
     if (!id) return '-';
     if (id === 'SYSTEM') return 'SYSTEM';
     const u = users.find(u => String(u.userId) === String(id));
-    return u ? u.userId : id;
+    return String(u ? u.userId : id);
   };
 
   const safeDateFormat = (dateStr) => {
@@ -174,33 +168,40 @@ export default function EmployeeList() {
 
   // SOP #16 — Global search + filters
   const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) {
+      console.warn('EmployeeList: rows is not an array', rows);
+      return [];
+    }
+    console.debug(`EmployeeList: Filtering ${rows.length} rows. Query: "${globalQuery}", Filters:`, globalFilters);
+
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
+      if (!row) return false;
+      const statusFilter = globalFilters?.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
 
-      const deptFilter = globalFilters.departmentId || '';
-      const matchesDept = !deptFilter || getDeptName(row.departmentId).toLowerCase().includes(deptFilter.toLowerCase());
+      const deptFilter = globalFilters?.departmentId || '';
+      const matchesDept = !deptFilter || getDeptName(row.departmentId).toLowerCase().includes(String(deptFilter).toLowerCase());
 
-      const desigFilter = globalFilters.designationId || '';
-      const matchesDesig = !desigFilter || getDesigName(row.designationId).toLowerCase().includes(desigFilter.toLowerCase());
+      const desigFilter = globalFilters?.designationId || '';
+      const matchesDesig = !desigFilter || getDesigName(row.designationId).toLowerCase().includes(String(desigFilter).toLowerCase());
 
       const matchesSearch = !globalQuery || [
         row.firstName, row.lastName, row.empCode,
         row.homeManager, row.businessManager, row.supplierName, row.vendorName
-      ].some((val) => val && String(val).toLowerCase().includes(globalQuery.toLowerCase()));
+      ].some((val) => val && String(val).toLowerCase().includes(String(globalQuery).toLowerCase()));
 
       return matchesStatus && matchesDept && matchesDesig && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters, departments, designations]);
 
   const paginatedRows = useMemo(() => {
-    if (rows.length > 0 && page === 0) {
-       console.log('DEBUG: First Row Keys:', Object.keys(rows[0]));
-       console.log('DEBUG: First Row Dates:', { createdAt: rows[0].createdAt, updatedAt: rows[0].updatedAt });
-    }
+    if (!Array.isArray(filteredRows)) return [];
+    console.debug(`EmployeeList: Paginating ${filteredRows.length} filtered rows (page ${page}, size ${size})`);
     return filteredRows.slice(page * size, page * size + size).map((row, i) => ({
       ...row,
       index: page * size + i + 1,
+      photo: row.employeePhotoUpload,
+      employeeName: row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '-',
       departmentId: getDeptName(row.departmentId),
       designationId: getDesigName(row.designationId),
       empLevelId: getLevelName(row.empLevelId),
@@ -213,6 +214,22 @@ export default function EmployeeList() {
       status: row.status || 'Active'
     }));
   }, [filteredRows, page, size, departments, designations, levels, users]);
+
+  const renderCell = (col, row) => {
+    if (col.id === 'index') return row.index;
+    if (col.id === 'photo') {
+      return (
+        <Avatar
+          src={getPhotoUrl(row.photo)}
+          variant="rounded"
+          sx={{ width: 32, height: 40, bgcolor: 'grey.100', border: '1px solid', borderColor: 'divider' }}
+        >
+          <IconUser size={18} color="#ccc" />
+        </Avatar>
+      );
+    }
+    return String(row[col.id] || '-');
+  };
 
   return (
     <MainCard
@@ -232,9 +249,16 @@ export default function EmployeeList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Employee_Master"
+            columns={[
+              { header: 'Emp Code', key: 'empCode' },
+              { header: 'First Name', key: 'firstName' },
+              { header: 'Last Name', key: 'lastName' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Employee', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
@@ -255,6 +279,7 @@ export default function EmployeeList() {
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
+        renderCell={renderCell}
       />
 
       <ConfirmDeleteDialog

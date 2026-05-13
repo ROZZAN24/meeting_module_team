@@ -22,7 +22,6 @@ import Customization from '../Customization';
 import Loader from 'ui-component/Loader';
 import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
-import useNavigationTracker from 'hooks/useNavigationTracker';
 import Alert from '@mui/material/Alert';
 
 import { MenuOrientation } from 'config';
@@ -47,19 +46,18 @@ function MainLayoutInner() {
   const { licenseStatus, logoutCountdown } = useAuth();
   const [showLicenseAlert, setShowLicenseAlert] = useState(false);
 
-  // Initialize navigation tracking
-  useNavigationTracker();
-
   useEffect(() => {
-    const isDismissed = sessionStorage.getItem('license_alert_acknowledged') === 'true';
+    const isDismissed = sessionStorage.getItem('licenseAlertDismissed');
     if (licenseStatus?.isWarningPeriod && !isDismissed) {
       setShowLicenseAlert(true);
+    } else {
+      setShowLicenseAlert(false);
     }
   }, [licenseStatus]);
 
-  const handleDismissLicenseAlert = () => {
+  const handleDismissAlert = () => {
+    sessionStorage.setItem('licenseAlertDismissed', 'true');
     setShowLicenseAlert(false);
-    sessionStorage.setItem('license_alert_acknowledged', 'true');
   };
 
   useEffect(() => {
@@ -126,7 +124,7 @@ function MainLayoutInner() {
         </Box>
       )}
 
-      <Grow in={showLicenseAlert} unmountOnExit>
+      <Grow in={showLicenseAlert && !!licenseStatus} unmountOnExit>
         <Box
           sx={{
             position: 'fixed',
@@ -153,7 +151,7 @@ function MainLayoutInner() {
               License Expiry Alert
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.9, fontWeight: 500 }}>
-              Your plan expires in <strong>{licenseStatus.daysLeft} days</strong>. Renew soon to continue uninterrupted access.
+              Your plan expires in <strong>{licenseStatus?.daysLeft || 0} days</strong>. Renew soon to continue uninterrupted access.
             </Typography>
           </Box>
           <Button
@@ -167,7 +165,7 @@ function MainLayoutInner() {
               px: 2,
               '&:hover': { bgcolor: 'grey.100' }
             }}
-            onClick={handleDismissLicenseAlert}
+            onClick={handleDismissAlert}
           >
             Got it
           </Button>

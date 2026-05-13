@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { MenuItem, useTheme } from '@mui/material';
 import { IconSettings, IconScan } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
@@ -47,7 +48,7 @@ const AddPriceMasterDialog = ({ open, handleClose, initialData, initialGroupName
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const res = await axios.get('/api/sm/customers');
+        const res = await axios.get(API_PATHS.SM.CUSTOMERS);
         setCustomers(res.data);
       } catch (err) {
         console.error('Failed to fetch customers:', err);
@@ -121,10 +122,10 @@ const AddPriceMasterDialog = ({ open, handleClose, initialData, initialGroupName
     };
     try {
       if (formData.id) {
-        await axios.put(`/api/sm/price-master/${formData.id}`, submissionData);
+        await axios.put(`${API_PATHS.SM.PRICE_MASTER}/${formData.id}`, submissionData);
         dispatch(openSnackbar({ open: true, message: 'Price Master updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        await axios.post('/api/sm/price-master', submissionData);
+        await axios.post(API_PATHS.SM.PRICE_MASTER, submissionData);
         dispatch(openSnackbar({ open: true, message: 'Price Master created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       }
       handleClose(true);
@@ -137,7 +138,7 @@ const AddPriceMasterDialog = ({ open, handleClose, initialData, initialGroupName
   const handleDeleteConfirm = async () => {
     setDeleteOpen(false);
     try {
-      await axios.delete(`/api/sm/price-master/${formData.id}`);
+      await axios.delete(`${API_PATHS.SM.PRICE_MASTER}/${formData.id}`);
       dispatch(openSnackbar({ open: true, message: 'Price Master deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       handleClose(true);
     } catch (error) {

@@ -1,93 +1,85 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { MenuItem, useTheme } from '@mui/material';
-import { useColorScheme } from '@mui/material/styles';
-import { IconSettings } from '@tabler/icons-react';
+import { MenuItem, Stack, Box, Typography, Paper, useTheme } from '@mui/material';
+import { IconSettings, IconInfoCircle, IconAlertCircle } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, errorStyle } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import useBOSValidation from 'hooks/useBOSValidation';
-import useAuth from 'hooks/useAuth';
+import useBOSForm from 'hooks/useBOSForm';
 
-// ==============================|| GRADE - ADD/EDIT DIALOG ||============================== //
-
-const VALIDATION_RULES = [
-  { field: 'gradeCode', label: 'Grade Code', required: true, maxLength: 20 },
-  { field: 'gradeName', label: 'Grade Name', required: true, maxLength: 100 }
-];
-
-const INITIAL_STATE = {
-  gradeCode: '',
-  gradeName: '',
-  sequenceNo: '',
-  status: 'Active'
-};
+// ==============================|| GRADE - PROFESSIONAL TEMPLATE ||============================== //
 
 const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) => {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === 'dark';
-  const { errors, validate, clearErrors } = useBOSValidation();
-  const { user } = useAuth();
-
-  const [formData, setFormData] = useState(INITIAL_STATE);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(!readOnly);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
+    gradeCode: '',
+    gradeName: '',
+    sequenceNo: 0,
+    status: 'Active'
+  });
+
   useEffect(() => {
-    clearErrors();
-    if (initialData) {
-      setFormData({
-        id: initialData.id,
-        gradeCode: initialData.gradeCode || '',
-        gradeName: initialData.gradeName || '',
-        sequenceNo: initialData.sequenceNo || 0,
-        status: initialData.status || 'Active',
-        createdBy: initialData.createdBy
-      });
-      setIsEditing(false);
-    } else {
-      setFormData(INITIAL_STATE);
-      setIsEditing(!readOnly);
+    const fetchNextCode = async () => {
+      try {
+        const { data } = await axios.get('/api/master/hr/grade/next-no');
+        setFormData(prev => ({ ...prev, gradeCode: data }));
+      } catch (e) {
+        setFormData(prev => ({ ...prev, gradeCode: 'GRD-001' }));
+      }
+    };
+
+    if (open) {
+      if (initialData) {
+        setFormData({
+          id: initialData.id,
+          gradeCode: initialData.gradeCode || '',
+          gradeName: initialData.gradeName || '',
+          sequenceNo: initialData.sequenceNo || 0,
+          status: initialData.status || 'Active'
+        });
+        setIsEditing(false);
+      } else {
+        resetForm();
+        fetchNextCode();
+        setIsEditing(!readOnly);
+      }
     }
-  }, [initialData, open, readOnly, clearErrors]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleClear = () => {
-    setFormData(INITIAL_STATE);
-    clearErrors();
-  };
+  }, [initialData, open, readOnly, setFormData, resetForm]);
 
   const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
+    const { isValid, firstMissing } = validate([
+      { field: 'gradeCode', label: 'Grade Code' },
+      { field: 'gradeName', label: 'Grade Name' }
+    ]);
+
+    if (!isValid) {
+      dispatch(openSnackbar({
+        open: true,
+        message: `Field ${firstMissing} is mandatory.`,
+        variant: 'alert',
+        severity: 'error',
+        alert: { variant: 'filled' }
+      }));
+      return;
+    }
 
     try {
-      const currentUserName = user?.id ? String(user.id) : (user?.name ? String(user.name) : 'Admin');
-
-      const payload = {
-        ...formData,
-        createdBy: formData.id ? formData.createdBy : currentUserName,
-        updatedBy: currentUserName
-      };
-
       if (formData.id) {
-        await axios.put(`/api/master/hr/grade/${formData.id}`, payload);
-        dispatch(openSnackbar({ open: true, message: 'Grade updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+        await axios.put(`/api/master/hr/grade/${formData.id}`, formData);
+        dispatch(openSnackbar({ open: true, message: 'Grade updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
-        await axios.post('/api/master/hr/grade', payload);
-        dispatch(openSnackbar({ open: true, message: 'Grade created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+        await axios.post('/api/master/hr/grade', formData);
+        dispatch(openSnackbar({ open: true, message: 'Grade created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
       handleClose(true);
     } catch (error) {
-      console.error('Failed to save grade:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to save grade.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to save grade.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
@@ -95,15 +87,24 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
     setDeleteOpen(false);
     try {
       await axios.delete(`/api/master/hr/grade/${formData.id}`);
-      dispatch(openSnackbar({ open: true, message: 'Grade deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Grade deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       handleClose(true);
     } catch (error) {
-      console.error('Failed to delete grade:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
   const isViewOnly = readOnly && !isEditing;
+
+  const handleClear = async () => {
+    resetForm();
+    try {
+      const { data } = await axios.get('/api/master/hr/grade/next-no');
+      setFormData(prev => ({ ...prev, gradeCode: data }));
+    } catch (e) {
+      setFormData(prev => ({ ...prev, gradeCode: 'GRD-001' }));
+    }
+  };
 
   return (
     <>
@@ -112,55 +113,77 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
         onClose={() => handleClose()}
         onSave={handleSave}
         onDelete={() => setDeleteOpen(true)}
-        onClear={handleClear}
+        onClear={isEditing ? handleClear : null}
         onEditClick={() => setIsEditing(true)}
         title={initialData ? 'Edit Grade' : 'New Grade'}
         isViewOnly={isViewOnly}
         hasId={!!formData.id}
-        maxWidth="sm"
+        maxWidth="md"
+        sidebar={
+          <Stack spacing={3}>
+            <Paper sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light' }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <IconInfoCircle size={20} color={theme.palette.primary.main} />
+                <Typography variant="subtitle2" color="primary.main" fontWeight={700}>Audit Info</Typography>
+              </Stack>
+              <Typography variant="caption" display="block">System ID: {formData.id || 'New'}</Typography>
+              <Typography variant="caption" display="block">Status: {formData.status}</Typography>
+            </Paper>
+
+            <Paper sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'info.light' }}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+                <IconAlertCircle size={20} color={theme.palette.info.main} />
+                <Typography variant="subtitle2" color="info.main" fontWeight={700}>HR SOP</Typography>
+              </Stack>
+              <Typography variant="caption" display="block">Grades determine the compensation hierarchy and eligibility rules for the organization.</Typography>
+            </Paper>
+          </Stack>
+        }
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Grade Details">
-          <BOSTextField
-            name="gradeCode"
-            label="Grade Code"
-            value={formData.gradeCode}
-            onChange={handleChange}
-            disabled={isViewOnly}
-            required
-            maxLength={20}
-            error={!!errors.gradeCode}
-            helperText={errors.gradeCode}
-          />
-          <BOSTextField
-            name="gradeName"
-            label="Grade Name"
-            value={formData.gradeName}
-            onChange={handleChange}
-            disabled={isViewOnly}
-            required
-            maxLength={100}
-            error={!!errors.gradeName}
-            helperText={errors.gradeName}
-          />
-          <BOSTextField
-            name="sequenceNo"
-            label="Seq.No"
-            type="number"
-            value={formData.sequenceNo}
-            onChange={handleChange}
-            disabled={isViewOnly}
-          />
-          <BOSTextField
-            select
-            name="status"
-            label="Status"
-            value={formData.status}
-            onChange={handleChange}
-            disabled={isViewOnly}
-          >
-            <MenuItem value="Active">Active</MenuItem>
-            <MenuItem value="In Active">In Active</MenuItem>
-          </BOSTextField>
+        <BOSFormSection icon={<IconSettings size={22} color={theme.palette.primary.main} />} title="Grade Configuration">
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
+            <BOSTextField
+              name="gradeCode"
+              label="Grade Code"
+              value={formData.gradeCode}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              required
+              error={errors.gradeCode}
+              sx={errorStyle(errors.gradeCode)}
+            />
+            <BOSTextField
+              name="gradeName"
+              label="Grade Name"
+              value={formData.gradeName}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+              required
+              error={errors.gradeName}
+              sx={errorStyle(errors.gradeName)}
+            />
+          </Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3, mt: 3 }}>
+            <BOSTextField
+              name="sequenceNo"
+              label="Hierarchy Sequence"
+              type="number"
+              value={formData.sequenceNo}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+            />
+            <BOSTextField
+              select
+              name="status"
+              label="Operational Status"
+              value={formData.status}
+              onChange={handleFormChange}
+              disabled={isViewOnly}
+            >
+              <MenuItem value="Active">Active</MenuItem>
+              <MenuItem value="In Active">In Active</MenuItem>
+            </BOSTextField>
+          </Box>
         </BOSFormSection>
       </BOSFormDialog>
 

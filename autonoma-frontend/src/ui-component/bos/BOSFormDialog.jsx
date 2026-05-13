@@ -45,6 +45,7 @@ const Transition = React.forwardRef(function Transition(props, ref) {
  * @param {string}   maxWidth      - MUI Dialog maxWidth (default "md")
  * @param {boolean}  hideFooter    - If true, hides the action footer
  * @param {node}     secondaryActions - Additional buttons to show in the footer
+ * @param {node}     sidebar       - Optional sidebar content (shown in 300px right column on large screens)
  * @param {node}     children      - Form content
  */
 export default function BOSFormDialog({
@@ -60,6 +61,7 @@ export default function BOSFormDialog({
   maxWidth = 'md',
   hideFooter = false,
   secondaryActions,
+  sidebar,
   children
 }) {
   const theme = useTheme();
@@ -84,7 +86,7 @@ export default function BOSFormDialog({
       TransitionComponent={Transition}
       keepMounted
       onClose={() => onClose()}
-      maxWidth={maxWidth}
+      maxWidth={sidebar ? 'lg' : maxWidth}
       fullWidth
       slotProps={{ backdrop: { sx: ds.backdrop } }}
       PaperProps={{ sx: ds.paper }}
@@ -103,9 +105,20 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       <DialogContent sx={ds.content}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%', alignItems: 'start' }}>
-          {children}
-        </Box>
+        {sidebar ? (
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' }, gap: 4, width: '100%', alignItems: 'start' }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%' }}>
+              {children}
+            </Box>
+            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%', position: 'sticky', top: 0 }}>
+              {sidebar}
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%', alignItems: 'start' }}>
+            {children}
+          </Box>
+        )}
       </DialogContent>
 
       {/* ── FOOTER ACTION BUTTONS (SOP #1, #12) ── */}

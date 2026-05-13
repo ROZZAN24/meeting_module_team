@@ -14,12 +14,13 @@ import {
 } from '@tabler/icons-react';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import axios from 'utils/axios';
+import { sanitizeHTML } from 'utils/sanitize';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import { CircularProgress } from '@mui/material';
@@ -261,7 +262,7 @@ export default function MasterCheckList() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconListCheck size={24} />
-          <Typography variant="h3">Master Check List</Typography>
+          <Typography variant="h3">QMS Checklist Master</Typography>
         </Stack>
       }
       secondary={
@@ -277,9 +278,17 @@ export default function MasterCheckList() {
           <Button variant="contained" color="secondary" size="medium" startIcon={<IconFileDots size={18} />} disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'} onClick={() => handleOpenEdit(selectedRow)} sx={{ borderRadius: '8px' }}>
             Amendment
           </Button>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={rows}
+            filename="Checklist_Master"
+            columns={[
+              { header: 'Seq No', key: 'seqNo' },
+              { header: 'Checking Point', key: 'checkingPoint' },
+              { header: 'Category', key: 'category' },
+              { header: 'Frequency', key: 'frequency' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Check List', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
@@ -349,8 +358,8 @@ export default function MasterCheckList() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Check List"
-        message="Are you sure you want to delete this check list item?"
+        title="Delete Checklist"
+        message="Are you sure you want to delete this checklist item?"
         itemName={selectedRow?.seqNo + ' - ' + selectedRow?.checkingPoint}
       />
 
@@ -373,7 +382,7 @@ export default function MasterCheckList() {
           {previewData.loading ? (
             <CircularProgress />
           ) : previewData.content ? (
-            <Box sx={{ width: '100%', height: '70vh', overflow: 'auto', textAlign: 'left', bgcolor: '#fff', p: 2, borderRadius: 1, border: '1px solid #ddd' }} dangerouslySetInnerHTML={{ __html: previewData.content }} />
+            <Box sx={{ width: '100%', height: '70vh', overflow: 'auto', textAlign: 'left', bgcolor: '#fff', p: 2, borderRadius: 1, border: '1px solid #ddd' }} dangerouslySetInnerHTML={{ __html: sanitizeHTML(previewData.content) }} />
           ) : (
             <Box component="img" src={`${(axios.defaults.baseURL || '').replace(/\/+$/, '')}${API_PATHS.FILES}/view/${previewData.name}`} sx={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 2, boxShadow: 3 }} />
           )}

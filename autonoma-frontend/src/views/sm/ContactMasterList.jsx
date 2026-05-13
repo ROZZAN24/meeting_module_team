@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconAddressBook } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -10,7 +11,7 @@ import AddContactDialog from './AddContactDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
 // ==============================|| SM - CONTACT MASTER ||============================== //
 
@@ -58,7 +59,7 @@ export default function ContactMasterList() {
   const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/sm/contacts');
+      const response = await axios.get(API_PATHS.SM.CONTACTS);
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch contacts:', error);
@@ -82,7 +83,7 @@ export default function ContactMasterList() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/sm/contacts/${deleteTargetId}`);
+      await axios.delete(`${API_PATHS.SM.CONTACTS}/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Contact deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchContacts();
     } catch (error) {
@@ -155,9 +156,16 @@ export default function ContactMasterList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
+          <BOSExportButton
+            data={filteredRows}
+            filename="Contact_Master"
+            columns={[
+              { header: 'Contact Name', key: 'contactName' },
+              { header: 'Email ID', key: 'emailId' },
+              { header: 'Group Name', key: 'groupName' },
+              { header: 'Status', key: 'status' }
+            ]}
+          />
           <Tooltip title={shortcutTooltip('Create New Contact', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
