@@ -225,9 +225,16 @@ const SmEnquiryDashboard = Loadable(lazy(() => import('views/sm/EnquiryDashboard
 const SmWorkItems = Loadable(lazy(() => import('views/sm/WorkItems')));
 const SmPriceMasterList = Loadable(lazy(() => import('views/sm/PriceMasterList')));
 const SmSupplierList = Loadable(lazy(() => import('views/sm/SupplierList')));
+const SmSupplierMaster = Loadable(lazy(() => import('views/sm/SupplierMaster')));
 const SmSubContractorList = Loadable(lazy(() => import('views/sm/SubContractorList')));
 const SmQuotationList = Loadable(lazy(() => import('views/sm/QuotationList')));
 const SmEnquiryList = Loadable(lazy(() => import('views/sm/EnquiryList')));
+
+// OCR Masters
+const SmCurrencyMaster = Loadable(lazy(() => import('views/sm/ocr/CurrencyMaster')));
+const SmDeliveryTerms = Loadable(lazy(() => import('views/sm/ocr/DeliveryTerms')));
+const SmPaymentTerms = Loadable(lazy(() => import('views/sm/ocr/PaymentTerms')));
+const SmTypeOfService = Loadable(lazy(() => import('views/sm/ocr/TypeOfService')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -940,6 +947,14 @@ const MainRoutes = {
       element: <SmSupplierList />
     },
     {
+      path: '/sm/suppliers/create',
+      element: <SmSupplierMaster />
+    },
+    {
+      path: '/sm/suppliers/edit/:id',
+      element: <SmSupplierMaster />
+    },
+    {
       path: '/sm/sub-contractors',
       element: <SmSubContractorList />
     },
@@ -950,6 +965,22 @@ const MainRoutes = {
     {
       path: '/sm/enquiries',
       element: <SmEnquiryList />
+    },
+    {
+      path: '/sm/ocr/currency-master',
+      element: <SmCurrencyMaster />
+    },
+    {
+      path: '/sm/ocr/delivery-terms',
+      element: <SmDeliveryTerms />
+    },
+    {
+      path: '/sm/ocr/payment-terms',
+      element: <SmPaymentTerms />
+    },
+    {
+      path: '/sm/ocr/type-of-service',
+      element: <SmTypeOfService />
     },
     {
       path: '*',
