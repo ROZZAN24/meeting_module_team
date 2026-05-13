@@ -200,6 +200,15 @@ export default function MeetingScheduleList() {
 
   useKeyboardShortcuts({ 'ctrl+n': handleAdd });
 
+  const formatTime12h = (time24) => {
+    if (!time24) return '-';
+    const [hours, minutes] = time24.split(':');
+    const h = parseInt(hours, 10);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+  };
+
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
@@ -216,7 +225,9 @@ export default function MeetingScheduleList() {
     if (col.id === 'meetingDateTime') {
       const d = row.meetingDate || '';
       const t = row.startTime || '';
-      return d ? `${d} ${t}` : '-';
+      if (!d) return '-';
+      const formattedDate = d.split('-').reverse().join('/');
+      return `${formattedDate} ${formatTime12h(t)}`;
     }
     if (col.id === 'departments') return (row.departments || []).map(d => d.department?.departmentName).filter(Boolean).join(',');
     if (col.id === 'chairedByName') return row.chairedBy?.employeeName || '-';
@@ -230,7 +241,7 @@ export default function MeetingScheduleList() {
     if (col.id === 'createdAt') {
       if (!row.createdAt) return '-';
       const dt = new Date(row.createdAt);
-      return `${dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      return `${dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
     }
     return row[col.id] || '-';
   };
