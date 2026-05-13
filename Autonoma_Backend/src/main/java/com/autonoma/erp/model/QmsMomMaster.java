@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Table(name = "qms_mom_master")
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class QmsMomMaster {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

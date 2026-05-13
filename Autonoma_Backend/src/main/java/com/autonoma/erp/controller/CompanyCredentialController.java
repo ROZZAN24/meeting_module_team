@@ -113,11 +113,18 @@ public class CompanyCredentialController {
         }
     }
 
-    @GetMapping("/image/{*filename}")
-    public ResponseEntity<org.springframework.core.io.Resource> getImage(@PathVariable String filename) {
+    @GetMapping({"/image/{*filename}", "/image"})
+    public ResponseEntity<org.springframework.core.io.Resource> getImage(
+            @PathVariable(required = false) String filename,
+            @RequestParam(required = false) String fileNameParam) {
         try {
-            if (filename.startsWith("/")) filename = filename.substring(1);
-            org.springframework.core.io.Resource resource = fileService.loadFile(filename);
+            String targetFile = filename != null ? filename : fileNameParam;
+            if (targetFile == null || targetFile.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+            if (targetFile.startsWith("/")) targetFile = targetFile.substring(1);
+            
+            org.springframework.core.io.Resource resource = fileService.loadFile(targetFile);
             String contentType = java.nio.file.Files.probeContentType(resource.getFile().toPath());
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType != null ? contentType : "application/octet-stream"))

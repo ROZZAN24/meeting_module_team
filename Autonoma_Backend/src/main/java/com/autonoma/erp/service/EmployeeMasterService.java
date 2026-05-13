@@ -165,14 +165,37 @@ public class EmployeeMasterService {
     @Transactional
     public EmployeePersonalDetail savePersonalDetail(Long employeeId, EmployeePersonalDetail detail) {
         if (!employeeRepo.existsById(employeeId)) throw new RuntimeException("Employee not found with ID: " + employeeId);
-        detail.setEmployeeId(employeeId);
-        EmployeePersonalDetail existing = personalRepo.findByEmployeeId(employeeId).orElse(null);
-        if (existing != null) {
-            detail.setId(existing.getId());
-            detail.setCreatedBy(existing.getCreatedBy());
-            detail.setCreatedDate(existing.getCreatedDate());
+        
+        EmployeePersonalDetail existing = personalRepo.findByEmployeeId(employeeId).orElse(new EmployeePersonalDetail());
+        if (existing.getId() == null) {
+            existing.setEmployeeId(employeeId);
+            existing.setCreatedBy(detail.getUpdatedBy());
         }
-        return personalRepo.save(detail);
+
+        // Merge fields (Personal Details + ID Details)
+        if (detail.getGender() != null) existing.setGender(detail.getGender());
+        if (detail.getMaritalStatus() != null) existing.setMaritalStatus(detail.getMaritalStatus());
+        if (detail.getMarriageDate() != null) existing.setMarriageDate(detail.getMarriageDate());
+        if (detail.getBirthDate() != null) existing.setBirthDate(detail.getBirthDate());
+        if (detail.getNationality() != null) existing.setNationality(detail.getNationality());
+        if (detail.getPersonalEmail() != null) existing.setPersonalEmail(detail.getPersonalEmail());
+        if (detail.getBloodGroup() != null) existing.setBloodGroup(detail.getBloodGroup());
+        if (detail.getRegion() != null) existing.setRegion(detail.getRegion());
+        if (detail.getShirtSize() != null) existing.setShirtSize(detail.getShirtSize());
+        if (detail.getPantSize() != null) existing.setPantSize(detail.getPantSize());
+        if (detail.getShoeSize() != null) existing.setShoeSize(detail.getShoeSize());
+        if (detail.getHeight() != null) existing.setHeight(detail.getHeight());
+        if (detail.getWeight() != null) existing.setWeight(detail.getWeight());
+        
+        // ID Details
+        if (detail.getAadharNumber() != null) existing.setAadharNumber(detail.getAadharNumber());
+        if (detail.getDrivingLicenseNumber() != null) existing.setDrivingLicenseNumber(detail.getDrivingLicenseNumber());
+        if (detail.getPassportNumber() != null) existing.setPassportNumber(detail.getPassportNumber());
+        if (detail.getPassportIssueCity() != null) existing.setPassportIssueCity(detail.getPassportIssueCity());
+        if (detail.getLicenseExpiryDate() != null) existing.setLicenseExpiryDate(detail.getLicenseExpiryDate());
+
+        existing.setUpdatedBy(detail.getUpdatedBy());
+        return personalRepo.save(existing);
     }
 
     // ======================== CONTACT ========================
@@ -184,14 +207,23 @@ public class EmployeeMasterService {
     @Transactional
     public EmployeeContact saveContact(Long employeeId, EmployeeContact contact) {
         if (!employeeRepo.existsById(employeeId)) throw new RuntimeException("Employee not found");
-        contact.setEmployeeId(employeeId);
-        EmployeeContact existing = contactRepo.findByEmployeeId(employeeId).orElse(null);
-        if (existing != null) {
-            contact.setId(existing.getId());
-            contact.setCreatedBy(existing.getCreatedBy());
-            contact.setCreatedDate(existing.getCreatedDate());
+        
+        EmployeeContact existing = contactRepo.findByEmployeeId(employeeId).orElse(new EmployeeContact());
+        if (existing.getId() == null) {
+            existing.setEmployeeId(employeeId);
+            existing.setCreatedBy(contact.getUpdatedBy());
         }
-        return contactRepo.save(contact);
+
+        if (contact.getAddress() != null) existing.setAddress(contact.getAddress());
+        if (contact.getCity() != null) existing.setCity(contact.getCity());
+        if (contact.getState() != null) existing.setState(contact.getState());
+        if (contact.getCountry() != null) existing.setCountry(contact.getCountry());
+        if (contact.getPincode() != null) existing.setPincode(contact.getPincode());
+        if (contact.getMobile() != null) existing.setMobile(contact.getMobile());
+        if (contact.getAlternateMobile() != null) existing.setAlternateMobile(contact.getAlternateMobile());
+
+        existing.setUpdatedBy(contact.getUpdatedBy());
+        return contactRepo.save(existing);
     }
 
     // ======================== JOB PROFILE ========================
@@ -203,14 +235,61 @@ public class EmployeeMasterService {
     @Transactional
     public EmployeeJobProfile saveJobProfile(Long employeeId, EmployeeJobProfile profile) {
         if (!employeeRepo.existsById(employeeId)) throw new RuntimeException("Employee not found");
-        profile.setEmployeeId(employeeId);
-        EmployeeJobProfile existing = jobProfileRepo.findByEmployeeId(employeeId).orElse(null);
-        if (existing != null) {
-            profile.setId(existing.getId());
-            profile.setCreatedBy(existing.getCreatedBy());
-            profile.setCreatedDate(existing.getCreatedDate());
+        
+        EmployeeJobProfile existing = jobProfileRepo.findByEmployeeId(employeeId).orElse(new EmployeeJobProfile());
+        if (existing.getId() == null) {
+            existing.setEmployeeId(employeeId);
+            existing.setCreatedBy(profile.getUpdatedBy());
         }
-        return jobProfileRepo.save(profile);
+
+        // Merge Bank Details
+        if (profile.getSalaryAccountNumber() != null) existing.setSalaryAccountNumber(profile.getSalaryAccountNumber());
+        if (profile.getAccountName() != null) existing.setAccountName(profile.getAccountName());
+        if (profile.getBankAccountType() != null) existing.setBankAccountType(profile.getBankAccountType());
+        if (profile.getBankName() != null) existing.setBankName(profile.getBankName());
+        if (profile.getIfscCode() != null) existing.setIfscCode(profile.getIfscCode());
+        if (profile.getBranchName() != null) existing.setBranchName(profile.getBranchName());
+
+        // Merge Pay Components
+        if (profile.getGrossSalary() != null) existing.setGrossSalary(profile.getGrossSalary());
+        if (profile.getNetSalary() != null) existing.setNetSalary(profile.getNetSalary());
+        if (profile.getBasicSalary() != null) existing.setBasicSalary(profile.getBasicSalary());
+        if (profile.getDa() != null) existing.setDa(profile.getDa());
+        if (profile.getHra() != null) existing.setHra(profile.getHra());
+        if (profile.getSpecialAllowance() != null) existing.setSpecialAllowance(profile.getSpecialAllowance());
+        if (profile.getPerformanceIncentive() != null) existing.setPerformanceIncentive(profile.getPerformanceIncentive());
+        if (profile.getCanteenDeduction() != null) existing.setCanteenDeduction(profile.getCanteenDeduction());
+        if (profile.getPfType() != null) existing.setPfType(profile.getPfType());
+        if (profile.getPfEmployee() != null) existing.setPfEmployee(profile.getPfEmployee());
+        if (profile.getEsiEmployee() != null) existing.setEsiEmployee(profile.getEsiEmployee());
+        if (profile.getProfessionalTaxAmount() != null) existing.setProfessionalTaxAmount(profile.getProfessionalTaxAmount());
+        if (profile.getPfDocument() != null) existing.setPfDocument(profile.getPfDocument());
+
+        // Merge CTC Details
+        if (profile.getMonthlyCtc() != null) existing.setMonthlyCtc(profile.getMonthlyCtc());
+        if (profile.getBasicSalaryCtc() != null) existing.setBasicSalaryCtc(profile.getBasicSalaryCtc());
+        if (profile.getDaCtc() != null) existing.setDaCtc(profile.getDaCtc());
+        if (profile.getSpecialAllowanceCtc() != null) existing.setSpecialAllowanceCtc(profile.getSpecialAllowanceCtc());
+        if (profile.getCanteenAllowance() != null) existing.setCanteenAllowance(profile.getCanteenAllowance());
+        if (profile.getPerformanceIncentiveCtc() != null) existing.setPerformanceIncentiveCtc(profile.getPerformanceIncentiveCtc());
+        if (profile.getEsiCtc() != null) existing.setEsiCtc(profile.getEsiCtc());
+        if (profile.getPfCtc() != null) existing.setPfCtc(profile.getPfCtc());
+        if (profile.getGrossCtc() != null) existing.setGrossCtc(profile.getGrossCtc());
+        if (profile.getEmployerPf() != null) existing.setEmployerPf(profile.getEmployerPf());
+        if (profile.getEmployerEsi() != null) existing.setEmployerEsi(profile.getEmployerEsi());
+        if (profile.getUniformAllowance() != null) existing.setUniformAllowance(profile.getUniformAllowance());
+        if (profile.getShoeAllowance() != null) existing.setShoeAllowance(profile.getShoeAllowance());
+        if (profile.getMobileAllowanceCug() != null) existing.setMobileAllowanceCug(profile.getMobileAllowanceCug());
+        if (profile.getAnnualCtc() != null) existing.setAnnualCtc(profile.getAnnualCtc());
+        if (profile.getSalaryCtc() != null) existing.setSalaryCtc(profile.getSalaryCtc());
+        if (profile.getGratuity() != null) existing.setGratuity(profile.getGratuity());
+        if (profile.getBonus() != null) existing.setBonus(profile.getBonus());
+        if (profile.getSpecialIncentive() != null) existing.setSpecialIncentive(profile.getSpecialIncentive());
+        if (profile.getPerformanceLinkedIncentive() != null) existing.setPerformanceLinkedIncentive(profile.getPerformanceLinkedIncentive());
+        if (profile.getHealthInsurance() != null) existing.setHealthInsurance(profile.getHealthInsurance());
+
+        existing.setUpdatedBy(profile.getUpdatedBy());
+        return jobProfileRepo.save(existing);
     }
 
     // ======================== EDUCATION (1:N) ========================

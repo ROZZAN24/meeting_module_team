@@ -65,14 +65,20 @@ public class FileService {
             }
         }
 
-        // Default Fallback or Cross-Platform Override
-        if (resolvedPath == null || (!os.contains("win") && resolvedPath.toString().contains(":\\"))) {
-            if (os.contains("win")) {
-                resolvedPath = Paths.get("C:\\BOS_DOCUMENTS");
-            } else {
-                // Mac/Linux: Always use user home for reliability
-                resolvedPath = Paths.get(System.getProperty("user.home"), "BOS_DOCUMENTS");
+        // Explicitly map to the exact folder named "D:\BOS_DOCUMENTS" inside the backend root
+        // as requested by the user to align all uploads with this path
+        if (resolvedPath == null || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
+            resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
+        }
+
+        // Ensure root directory exists
+        try {
+            if (!Files.exists(resolvedPath)) {
+                Files.createDirectories(resolvedPath);
             }
+        } catch (IOException e) {
+            // Fallback to a guaranteed temp dir if creation fails
+            resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
         }
 
         return resolvedPath;

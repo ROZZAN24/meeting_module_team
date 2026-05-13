@@ -39,13 +39,19 @@ public class FileController {
     }
 
     @GetMapping("/download/{*filename}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename) {
-        return serveFile(filename, false);
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable(required = false) String filename,
+            @RequestParam(value = "path", required = false) String path) {
+        String finalPath = (path != null) ? path : filename;
+        return serveFile(finalPath, false);
     }
 
     @GetMapping("/view/{*filename}")
-    public ResponseEntity<Resource> viewFile(@PathVariable String filename) {
-        return serveFile(filename, true);
+    public ResponseEntity<Resource> viewFile(
+            @PathVariable(required = false) String filename,
+            @RequestParam(value = "path", required = false) String path) {
+        String finalPath = (path != null) ? path : filename;
+        return serveFile(finalPath, true);
     }
 
     private ResponseEntity<Resource> serveFile(String filename, boolean inline) {

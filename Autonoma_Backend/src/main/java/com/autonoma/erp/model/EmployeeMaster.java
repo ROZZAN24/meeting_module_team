@@ -56,8 +56,16 @@ public class EmployeeMaster {
     @Column(name = "department_id")
     private Long departmentId;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id", insertable = false, updatable = false)
+    private Department department;
+
     @Column(name = "designation_id")
     private Long designationId;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "designation_id", insertable = false, updatable = false)
+    private Designation designation;
 
     // === Uploads ===
     @Column(name = "employee_photo_upload", columnDefinition = "NVARCHAR(MAX)")

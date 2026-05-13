@@ -80,9 +80,10 @@ public class MeetingSchedulerService {
 
             if (nextDate != null) {
                 // Check if already exists to prevent duplicates
+                final LocalDate finalNextDate = nextDate;
                 String sourceNo = base.getRevSourceScheduleNo() != null ? base.getRevSourceScheduleNo() : base.getScheduleNo();
                 boolean exists = scheduleRepository.findAll().stream().anyMatch(s -> 
-                    sourceNo.equals(s.getRevSourceScheduleNo()) && nextDate.equals(s.getMeetingDate())
+                    sourceNo.equals(s.getRevSourceScheduleNo()) && finalNextDate.equals(s.getMeetingDate())
                 );
 
                 if (!exists) {

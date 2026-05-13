@@ -8,11 +8,14 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "qms_mom_detail")
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class QmsMomDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,8 +28,12 @@ public class QmsMomDetail {
     @Column(name = "discussed_point", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String discussedPoint;
 
+    @JsonProperty("type")
     @Column(name = "point_type")
     private String pointType;
+
+    @Column(name = "material_list", columnDefinition = "NVARCHAR(MAX)")
+    private String materialList;
 
     @Column(name = "process_type")
     private String processType; // INFO / ACTION

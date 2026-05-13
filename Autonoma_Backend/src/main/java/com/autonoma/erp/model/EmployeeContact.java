@@ -20,6 +20,12 @@ public class EmployeeContact {
     @Column(name = "employee_id", nullable = false)
     private Long employeeId;
 
+    @Column(name = "mobile", length = 20)
+    private String mobile;
+
+    @Column(name = "alternate_mobile", length = 20)
+    private String alternateMobile;
+
     // Permanent Address
     @Column(name = "perm_address1", length = 500)
     private String address;
