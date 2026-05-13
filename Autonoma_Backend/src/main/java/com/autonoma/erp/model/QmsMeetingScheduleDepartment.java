@@ -15,6 +15,8 @@ public class QmsMeetingScheduleDepartment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "schedule_id", nullable = false)
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     private QmsMeetingSchedule schedule;
 
     @ManyToOne(fetch = FetchType.EAGER)

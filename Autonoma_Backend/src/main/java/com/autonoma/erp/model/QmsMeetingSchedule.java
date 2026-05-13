@@ -110,9 +110,13 @@ public class QmsMeetingSchedule {
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("schedule")
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     private List<QmsMeetingScheduleDepartment> departments;
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("schedule")
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     private List<QmsMeetingScheduleParticipant> participants;
 }
