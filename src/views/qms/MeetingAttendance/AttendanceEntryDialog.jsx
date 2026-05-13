@@ -9,6 +9,15 @@ import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 
+const formatTo12h = (time24) => {
+  if (!time24) return '-';
+  const [hours, minutes] = time24.split(':');
+  const h = parseInt(hours, 10);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+};
+
 const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
   const dispatch = useDispatch();
   const { employees = [] } = useLookups(['EMPLOYEES']);
@@ -48,6 +57,7 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
       loadSchedules();
       setSelectedSchedule(null);
       setInTime('');
+      setInTimeRaw('');
       setAttendanceStatus('PRESENT');
     }
   }, [open]);
@@ -59,7 +69,9 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
       const [h, m] = selectedSchedule.startTime.split(':').map(Number);
       const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
       setAttendanceStatus(now > startTime ? 'LATE' : 'PRESENT');
-      setInTime(now.toTimeString().slice(0, 5));
+      const timeStr = now.toTimeString().slice(0, 5);
+      setInTimeRaw(timeStr);
+      setInTime(formatTo12h(timeStr));
     }
   }, [selectedSchedule]);
 
@@ -71,7 +83,7 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
     try {
       await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
         scheduleId: selectedSchedule.id,
-        inTime,
+        inTime: inTimeRaw,
         status: attendanceStatus
       });
       dispatch(openSnackbar({ open: true, message: 'Attendance marked successfully', variant: 'alert', severity: 'success' }));
@@ -134,7 +146,7 @@ const AttendanceEntryDialog = ({ open, onClose, onSave }) => {
               <Typography variant="subtitle2" color="primary" gutterBottom>Schedule Details</Typography>
               <Typography variant="body2"><strong>Meeting Type:</strong> {selectedSchedule.meetingType?.meetingName || '-'}</Typography>
               <Typography variant="body2"><strong>Date:</strong> {selectedSchedule.meetingDate || '-'}</Typography>
-              <Typography variant="body2"><strong>Time:</strong> {selectedSchedule.startTime} - {selectedSchedule.endTime}</Typography>
+              <Typography variant="body2"><strong>Time:</strong> {formatTo12h(selectedSchedule.startTime)} - {formatTo12h(selectedSchedule.endTime)}</Typography>
             </Box>
           )}
         </Stack>

@@ -36,8 +36,6 @@ export default function JWTLogin({ ...others }) {
   const scriptedRef = useScriptRef();
   const [loginError, setLoginError] = useState(null);
 
-  const [checked, setChecked] = useState(true);
-
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
@@ -47,9 +45,6 @@ export default function JWTLogin({ ...others }) {
     event.preventDefault();
   };
 
-  const [searchParams] = useSearchParams();
-  const authParam = searchParams.get('auth');
-
   return (
     <Formik
       initialValues={{
@@ -58,17 +53,12 @@ export default function JWTLogin({ ...others }) {
         submit: null
       }}
       validationSchema={Yup.object().shape({
-        email: Yup.string().max(255).required('User ID is required'),
-        password: Yup.string()
-          .required('Password is required')
-          .test('no-leading-trailing-whitespace', 'Password can not start or end with spaces', (value) => value === value.trim())
-          .max(10, 'Password must be less than 10 characters')
+        email: Yup.string().max(255).required('User ID / Email is required'),
+        password: Yup.string().required('Password is required').max(20)
       })}
       onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
         try {
-          const trimmedEmail = values.email.trim();
-          await login?.(trimmedEmail, values.password);
-
+          await login?.(values.email.trim(), values.password);
           if (scriptedRef.current) {
             setStatus({ success: true });
             setSubmitting(false);
@@ -77,14 +67,7 @@ export default function JWTLogin({ ...others }) {
           console.error('Login error:', err);
           if (scriptedRef.current) {
             setStatus({ success: false });
-            // Extract error message from response if available
-            let errorMessage = 'Login failed. Please check your credentials.';
-            if (typeof err === 'string') {
-              errorMessage = err;
-            } else if (err && typeof err === 'object') {
-              errorMessage = err.message || err.error || errorMessage;
-            }
-            setLoginError(errorMessage);
+            setLoginError(err.message || 'Login failed. Please check your credentials.');
             setSubmitting(false);
           }
         }
@@ -104,6 +87,7 @@ export default function JWTLogin({ ...others }) {
                 handleChange(e);
                 if (loginError) setLoginError(null);
               }}
+              label="Email Address / Username"
             />
             {touched.email && errors.email && (
               <FormHelperText error id="standard-weight-helper-text-email-login">
@@ -133,7 +117,7 @@ export default function JWTLogin({ ...others }) {
                     edge="end"
                     size="large"
                   >
-                    {showPassword ? <Visibility /> : <VisibilityOff />}
+                    {showPassword ? <Visibility size={20} /> : <VisibilityOff size={20} />}
                   </IconButton>
                 </InputAdornment>
               }
@@ -147,16 +131,17 @@ export default function JWTLogin({ ...others }) {
           </CustomFormControl>
 
           {loginError && (
-            <Box sx={{ mt: 3 }}>
-              <Alert severity="error" variant="filled" sx={{ borderRadius: '8px' }}>
+            <Box sx={{ mt: 2 }}>
+              <Alert severity="error" variant="filled" sx={{ borderRadius: '12px', fontWeight: 600 }}>
                 {loginError}
               </Alert>
             </Box>
           )}
-          <Box sx={{ mt: 2 }}>
+
+          <Box sx={{ mt: 3 }}>
             <AnimateButton>
-              <Button color="primary" disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained">
-                Sign In
+              <Button color="primary" disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" sx={{ py: 1.5, borderRadius: '12px', fontWeight: 800 }}>
+                Sign In to ERP
               </Button>
             </AnimateButton>
           </Box>
