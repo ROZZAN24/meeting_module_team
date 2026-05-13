@@ -157,7 +157,7 @@ export const hra = {
 
 export const sm = {
   id: 'sm',
-  title: 'Sales & Marketing',
+  title: 'Sales',
   caption: 'Sales & Marketing SM0000',
   type: 'group',
   icon: icons.IconBriefcase,
@@ -238,6 +238,42 @@ export const sm = {
           type: 'item',
           url: '/sm/work-items',
           icon: icons.IconRocket
+        },
+        {
+          id: 'sm-masters',
+          title: 'Masters',
+          type: 'collapse',
+          icon: icons.IconServerCog,
+          children: [
+            {
+              id: 'sm-payment-terms',
+              title: 'Payment Terms',
+              type: 'item',
+              url: '/sm/ocr/payment-terms',
+              icon: icons.IconReceiptTax
+            },
+            {
+              id: 'sm-delivery-terms',
+              title: 'Delivery Terms',
+              type: 'item',
+              url: '/sm/ocr/delivery-terms',
+              icon: icons.IconTruckDelivery
+            },
+            {
+              id: 'sm-type-of-service',
+              title: 'Type of Service',
+              type: 'item',
+              url: '/sm/ocr/type-of-service',
+              icon: icons.IconTool
+            },
+            {
+              id: 'sm-currency-master',
+              title: 'Currency Master',
+              type: 'item',
+              url: '/sm/ocr/currency-master',
+              icon: icons.IconBriefcase
+            }
+          ]
         }
       ]
     }
