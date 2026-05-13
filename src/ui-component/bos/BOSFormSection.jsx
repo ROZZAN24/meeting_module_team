@@ -5,7 +5,7 @@ import { IconChevronDown, IconChevronUp } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
 import { getDialogStyles } from './BOSStyles';
 
-export default function BOSFormSection({ icon, title, children, defaultOpen = true }) {
+export default function BOSFormSection({ icon, title, children, defaultOpen = true, sx = {}, contentSx = {} }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -13,7 +13,7 @@ export default function BOSFormSection({ icon, title, children, defaultOpen = tr
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
   return (
-    <Box sx={ds.sectionCard}>
+    <Box sx={{ ...ds.sectionCard, ...sx }}>
       <Box 
         sx={{ 
           ...ds.sectionHeader, 
@@ -36,7 +36,7 @@ export default function BOSFormSection({ icon, title, children, defaultOpen = tr
         </IconButton>
       </Box>
       <Collapse in={isOpen}>
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, ...contentSx }}>
           <Stack spacing={2.5} sx={{ width: '100%' }}>
             {children}
           </Stack>
@@ -50,5 +50,7 @@ BOSFormSection.propTypes = {
   icon: PropTypes.node,
   title: PropTypes.string.isRequired,
   children: PropTypes.node.isRequired,
-  defaultOpen: PropTypes.bool
+  defaultOpen: PropTypes.bool,
+  sx: PropTypes.object,
+  contentSx: PropTypes.object
 };

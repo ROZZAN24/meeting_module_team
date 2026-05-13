@@ -217,6 +217,7 @@ const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditRepor
 const MeetingMaster = Loadable(lazy(() => import('views/qms/MeetingMaster/MeetingMasterList')));
 const MeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/MeetingScheduleList')));
 const MeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/MomList')));
+const AddMeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/AddMeetingMinutes')));
 const MeetingAttendance = Loadable(lazy(() => import('views/qms/MeetingAttendance/AttendanceList')));
 const CloseMom = Loadable(lazy(() => import('views/qms/CloseMom/CloseMomList')));
 const MomApproval = Loadable(lazy(() => import('views/qms/MomApproval/MomApprovalList')));
@@ -876,7 +877,20 @@ const MainRoutes = {
     },
     {
       path: '/qms/minutesofmeeting',
-      element: <MeetingMinutes />
+      children: [
+        {
+          path: '',
+          element: <MeetingMinutes />
+        },
+        {
+          path: 'add',
+          element: <AddMeetingMinutes />
+        },
+        {
+          path: 'edit/:id',
+          element: <AddMeetingMinutes />
+        }
+      ]
     },
     {
       path: '/qms/meeting-attendance',
