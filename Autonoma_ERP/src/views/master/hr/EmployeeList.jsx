@@ -54,15 +54,15 @@ export default function EmployeeList() {
     users = []
   } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS']);
 
-  const getDeptName = (id) => departments.find(d => String(d.id) === String(id))?.departmentName || id || '-';
-  const getDesigName = (id) => designations.find(d => String(d.id) === String(id))?.designationName || id || '-';
-  const getLevelName = (id) => levels.find(l => String(l.rowId) === String(id))?.level || id || '-';
-  const getUnitName = (id) => [{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-';
+  const getDeptName = (id) => String(departments.find(d => String(d.id) === String(id))?.departmentName || id || '-');
+  const getDesigName = (id) => String(designations.find(d => String(d.id) === String(id))?.designationName || id || '-');
+  const getLevelName = (id) => String(levels.find(l => String(l.rowId) === String(id))?.level || id || '-');
+  const getUnitName = (id) => String([{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-');
   const getUserName = (id) => {
     if (!id) return '-';
     if (id === 'SYSTEM') return 'SYSTEM';
     const u = users.find(u => String(u.userId) === String(id));
-    return u ? u.userId : id;
+    return String(u ? u.userId : id);
   };
 
   const safeDateFormat = (dateStr) => {
