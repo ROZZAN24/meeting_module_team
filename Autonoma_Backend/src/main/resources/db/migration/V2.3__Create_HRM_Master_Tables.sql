@@ -1,60 +1,60 @@
 -- Sync HRM Core Master Tables
 -- This migration creates the core HRM tables referenced by child expansion tables
 
--- 1. HRM_DEPARTMENT_MASTER
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[HRM_DEPARTMENT_MASTER]') AND type in (N'U'))
+-- 1. hrm_department_master
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hrm_department_master]') AND type in (N'U'))
 BEGIN
-CREATE TABLE [dbo].[HRM_DEPARTMENT_MASTER] (
+CREATE TABLE [dbo].[hrm_department_master] (
     [id] BIGINT IDENTITY(1,1) PRIMARY KEY,
-    [DEPT_NO] INT NOT NULL DEFAULT 0,
-    [DEPT_NAME] NVARCHAR(100) NOT NULL,
-    [NDA_CERTIFICATE] NVARCHAR(10) DEFAULT 'No',
-    [SEQ_NO] INT DEFAULT 0,
-    [STATUS] NVARCHAR(50) DEFAULT 'Active',
-    [CREATED_BY] NVARCHAR(100),
-    [CREATED_DATE] DATETIME,
-    [UPDATED_BY] NVARCHAR(100),
-    [UPDATED_DATE] DATETIME
+    [dept_no] INT NOT NULL DEFAULT 0,
+    [dept_name] NVARCHAR(100) NOT NULL,
+    [nda_certificate] NVARCHAR(10) DEFAULT 'No',
+    [seq_no] INT DEFAULT 0,
+    [status] NVARCHAR(50) DEFAULT 'Active',
+    [created_by] NVARCHAR(100),
+    [created_at] DATETIME,
+    [updated_by] NVARCHAR(100),
+    [updated_at] DATETIME
 );
 END
 
--- 2. HRM_DESIG_LEVEL
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[HRM_DESIG_LEVEL]') AND type in (N'U'))
+-- 2. hrm_designation_level
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hrm_designation_level]') AND type in (N'U'))
 BEGIN
-CREATE TABLE [dbo].[HRM_DESIG_LEVEL] (
-    [ROW_ID] BIGINT IDENTITY(1,1) PRIMARY KEY,
-    [LEVEL] NVARCHAR(10),
-    [BASIC] FLOAT,
-    [DA] FLOAT,
-    [HRA] FLOAT,
-    [SCREENING_LEVEL] INT,
-    [CREATED_BY] NVARCHAR(100) NOT NULL,
-    [CREATED_DATE] DATETIME,
-    [UPDATED_BY] NVARCHAR(100),
-    [UPDATED_DATE] DATETIME
+CREATE TABLE [dbo].[hrm_designation_level] (
+    [row_id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [level] NVARCHAR(10),
+    [basic] FLOAT,
+    [da] FLOAT,
+    [hra] FLOAT,
+    [screening_level] INT,
+    [created_by] NVARCHAR(100) NOT NULL,
+    [created_at] DATETIME,
+    [updated_by] NVARCHAR(100),
+    [updated_at] DATETIME
 );
 END
 
--- 3. HRM_GRADE_DETAILS
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[HRM_GRADE_DETAILS]') AND type in (N'U'))
+-- 3. hrm_grade_detail
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hrm_grade_detail]') AND type in (N'U'))
 BEGIN
-CREATE TABLE [dbo].[HRM_GRADE_DETAILS] (
-    [ID] BIGINT IDENTITY(1,1) PRIMARY KEY,
-    [GRADE_CODE] NVARCHAR(50),
-    [SEQ_NO] NVARCHAR(50),
-    [GRADE_NAME] NVARCHAR(100),
-    [STATUS] NVARCHAR(20) DEFAULT 'Active',
-    [CREATED_BY] NVARCHAR(100),
-    [CREATED_DATE] DATETIME,
-    [UPDATED_BY] NVARCHAR(100),
-    [UPDATED_DATE] DATETIME
+CREATE TABLE [dbo].[hrm_grade_detail] (
+    [id] BIGINT IDENTITY(1,1) PRIMARY KEY,
+    [grade_code] NVARCHAR(50),
+    [seq_no] NVARCHAR(50),
+    [grade_name] NVARCHAR(100),
+    [status] NVARCHAR(20) DEFAULT 'Active',
+    [created_by] NVARCHAR(100),
+    [created_at] DATETIME,
+    [updated_by] NVARCHAR(100),
+    [updated_at] DATETIME
 );
 END
 
--- 4. HRM_EMPLOYEE_MASTER
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[HRM_EMPLOYEE_MASTER]') AND type in (N'U'))
+-- 4. hrm_employee_master
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[hrm_employee_master]') AND type in (N'U'))
 BEGIN
-CREATE TABLE [dbo].[HRM_EMPLOYEE_MASTER] (
+CREATE TABLE [dbo].[hrm_employee_master] (
     [id] BIGINT IDENTITY(1,1) PRIMARY KEY,
     [category_id] BIGINT,
     [sub_category_id] NVARCHAR(100),
@@ -100,8 +100,8 @@ CREATE TABLE [dbo].[HRM_EMPLOYEE_MASTER] (
     [fitness_certificate_upload] NVARCHAR(500),
     [status] NVARCHAR(50) DEFAULT 'Active',
     [created_by] NVARCHAR(100),
-    [created_date] DATETIME,
+    [created_at] DATETIME,
     [updated_by] NVARCHAR(100),
-    [updated_date] DATETIME
+    [updated_at] DATETIME
 );
 END
