@@ -26,8 +26,8 @@ const TIME_OPTIONS = Array.from({ length: 96 }).map((_, i) => {
   const m = ((i % 4) * 15).toString().padStart(2, '0');
   const ampm = hour24 >= 12 ? 'PM' : 'AM';
   const hour12 = (hour24 % 12 || 12).toString().padStart(2, '0');
-  return `${hour12}:${m} ${ampm}`;
-});
+  return { label: `${hour12}:${m} ${ampm}`, hour24 };
+}).filter(t => t.hour24 >= 4).map(t => t.label);
 
 const to24h = (time12h) => {
   if (!time12h) return null;

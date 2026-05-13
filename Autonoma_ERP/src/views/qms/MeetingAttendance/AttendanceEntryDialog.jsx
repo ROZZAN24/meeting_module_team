@@ -58,6 +58,8 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
               const [h, m] = s.startTime.split(':').map(Number);
               const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
               
+              // ── STRICT END TIME CHECK ──
+              // If the meeting has a defined end time and current time is past it, hide the schedule
               if (s.endTime) {
                 const [eh, em] = s.endTime.split(':').map(Number);
                 const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
