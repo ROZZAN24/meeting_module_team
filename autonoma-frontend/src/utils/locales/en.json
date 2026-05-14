@@ -327,5 +327,9 @@
   "qms-minutes-of-meeting": "Minutes of Meeting",
   "qms-meeting-attendance": "Meeting User Attendance",
   "qms-close-mom": "Close MOM",
-  "qms-mom-approval": "MOM Approval"
+  "qms-mom-approval": "MOM Approval",
+  "Vendor Master": "Vendor Master",
+  "Accounts": "Accounts",
+  "Common Master": "Common Master",
+  "Sales": "Sales"
 }

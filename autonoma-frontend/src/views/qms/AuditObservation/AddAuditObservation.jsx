@@ -15,7 +15,8 @@ import {
   IconButton,
   Dialog,
   DialogTitle,
-  DialogContent
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   IconCheck,

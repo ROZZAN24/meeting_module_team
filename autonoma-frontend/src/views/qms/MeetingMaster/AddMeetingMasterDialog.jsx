@@ -16,7 +16,7 @@ const INITIAL_FORM = {
 
 const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
   const { employees = [], users = [] } = useLookups(['EMPLOYEES', 'USERS']);
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
   const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
     }
   }, [open, item, clearErrors]);
 
-  const h = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  const h = (e) => handleInputChange(e, setForm);
 
   const handleSave = () => {
     const rules = [
@@ -105,9 +105,10 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
         multiple
         options={employees.filter(emp => users.some(u => u.empId === emp.id))}
         getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
-        value={employees.filter(emp => form.employeeName?.some(val => val.split(';')[0] === emp.empCode))}
+        value={employees.filter(emp => form.employeeName?.some(val => val.split(' - ')[0] === emp.empCode))}
         onChange={(e, newValue) => {
-          setForm(p => ({ ...p, employeeName: newValue.map(v => `${v.empCode};${v.employeeName}`) }));
+          setForm(p => ({ ...p, employeeName: newValue.map(v => `${v.empCode} - ${v.employeeName}`) }));
+          if (errors.employeeName) clearErrors('employeeName');
         }}
         renderTags={(value, getTagProps) =>
           value.map((option, index) => {

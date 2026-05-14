@@ -29,6 +29,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
   const [inTimeRaw, setInTimeRaw] = useState('');
   const [outTime, setOutTime] = useState('');
   const [outTimeRaw, setOutTimeRaw] = useState('');
+  const [existingAttendance, setExistingAttendance] = useState([]);
 
   const isEdit = !!item;
 
@@ -96,6 +97,12 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
       const timeStr = now.toTimeString().slice(0, 5);
       setInTimeRaw(timeStr);
       setInTime(formatTo12h(timeStr));
+
+      // Fetch existing attendance to filter out already marked users
+      axios.get(API_PATHS.QMS.MEETING_ATTENDANCE).then(res => {
+        const filtered = (res.data || []).filter(a => a.schedule?.id === selectedSchedule.id);
+        setExistingAttendance(filtered);
+      }).catch(err => console.error('Failed to fetch attendance for filter', err));
     }
   }, [selectedSchedule, isEdit]);
 
@@ -175,13 +182,18 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             />
           ) : (
             <Autocomplete
-              options={employees}
+              options={employees.filter(emp => 
+                // Only show participants assigned to this schedule who haven't marked attendance yet
+                (!selectedSchedule || selectedSchedule.participants?.some(p => p.employee?.id === emp.id)) &&
+                !existingAttendance.some(att => att.employee?.id === emp.id)
+              )}
               getOptionLabel={(option) => option.employeeName || ''}
               value={employees.find(e => e.employeeName === attendeeName) || null}
               onChange={(e, val) => setAttendeeName(val ? val.employeeName : 'Current User')}
               renderInput={(params) => (
-                <BOSTextField {...params} label="Select Attendee (Testing Mode)" required fullWidth />
+                <BOSTextField {...params} label="Select Attendee" required fullWidth />
               )}
+              noOptionsText={selectedSchedule ? "All assigned participants have marked attendance" : "Select a schedule first"}
             />
           )}
 

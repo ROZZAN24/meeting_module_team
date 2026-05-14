@@ -40,11 +40,30 @@ export default function DesignationMaster() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const globalQuery = useSelector((state) => state.search.query);
+  const globalFilters = useSelector((state) => state.search.filters);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'designationName', label: 'Designation Name', type: 'text', placeholder: 'Search name...' }
-    ]));
+    const config = [
+      {
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
+        options: [
+          { value: 'All', label: 'ALL' },
+          { value: 'Active', label: 'ACTIVE' },
+          { value: 'In Active', label: 'INACTIVE' }
+        ],
+        defaultValue: 'Active'
+      },
+      {
+        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
+        options: [
+          { value: 'designationName', label: 'Designation Name' },
+          { value: 'designationCode', label: 'Designation Code' }
+        ],
+        defaultValue: 'designationName'
+      },
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
+    ];
+    dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -93,12 +112,27 @@ export default function DesignationMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const matchesSearch = !globalQuery || 
-        (row.designationName && row.designationName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.designationCode && row.designationCode.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesSearch;
+      // 1. Status Filter
+      const statusFilter = globalFilters.status || 'Active';
+      if (statusFilter !== 'All' && row.status !== statusFilter) return false;
+
+      // 2. Advanced Search
+      const searchText = (globalFilters.searchText || '').toLowerCase();
+      const searchBy = globalFilters.searchBy || 'designationName';
+      if (searchText) {
+        const val = (row[searchBy] || '').toString().toLowerCase();
+        if (!val.includes(searchText)) return false;
+      }
+
+      // 3. Global Query
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.designationName && row.designationName.toLowerCase().includes(q)) ||
+               (row.designationCode && row.designationCode.toLowerCase().includes(q));
+      }
+      return true;
     });
-  }, [rows, globalQuery]);
+  }, [rows, globalQuery, globalFilters]);
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 

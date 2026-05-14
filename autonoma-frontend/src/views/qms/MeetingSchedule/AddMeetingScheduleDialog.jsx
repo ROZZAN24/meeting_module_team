@@ -8,26 +8,31 @@ import {
   Autocomplete,
   Chip,
   Divider,
-  Grid
+  Grid,
+  Card,
+  CardContent,
+  Avatar
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import {
   BOSFormDialog,
   BOSTextField,
   BOSFormSection,
-  BOSPersonnelCard
+  BOSPersonnelCard,
+  getPhotoUrl
 } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { useLookups } from 'hooks/useLookups';
 import { IconSettings, IconCalendarEvent, IconUsers, IconFileText } from '@tabler/icons-react';
 
 const FREQUENCIES = ['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL'];
-const TIME_OPTIONS = Array.from({ length: 96 }).map((_, i) => {
+const ALL_TIME_OPTIONS = Array.from({ length: 96 }).map((_, i) => {
   const hour24 = Math.floor(i / 4);
   const m = ((i % 4) * 15).toString().padStart(2, '0');
   const ampm = hour24 >= 12 ? 'PM' : 'AM';
   const hour12 = (hour24 % 12 || 12).toString().padStart(2, '0');
-  return { label: `${hour12}:${m} ${ampm}`, hour24 };
-}).filter(t => t.hour24 >= 4).map(t => t.label);
+  return { label: `${hour12}:${m} ${ampm}`, hour24, minutes: parseInt(m, 10) };
+});
 
 const to24h = (time12h) => {
   if (!time12h) return null;
@@ -71,11 +76,25 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
   const { 
     meetings = [], 
     activeDepartments = [], 
-    employees = [] 
-  } = useLookups(['MEETINGS', 'ACTIVE_DEPARTMENTS', 'EMPLOYEES']);
+    employees = [],
+    levels = [],
+    designations = []
+  } = useLookups(['MEETINGS', 'ACTIVE_DEPARTMENTS', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS']);
   
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
   const [form, setForm] = useState(INITIAL_FORM);
+
+  const filteredTimeOptions = useMemo(() => {
+    // Restricted: 9:00 AM to 11:00 PM for scheduling, up to 9:00 PM for modifications
+    const limit = item ? 21 : 23;
+    return ALL_TIME_OPTIONS.filter((t) => {
+      const isAfter9AM = t.hour24 >= 9;
+      const isBeforeLimit = t.hour24 < limit || (t.hour24 === limit && t.minutes === 0);
+      return isAfter9AM && isBeforeLimit;
+    }).map((t) => t.label);
+  }, [item]);
 
   useEffect(() => {
     if (open) {
@@ -95,7 +114,7 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
     }
   }, [open, item, clearErrors]);
 
-  const h = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
+  const h = (e) => handleInputChange(e, setForm);
 
   // Auto-populate based on Meeting Type
   useEffect(() => {
@@ -105,8 +124,10 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
       
       const matchedParticipants = employees.filter(emp => 
         masterEmpEntries.some(entry => {
-          if (entry.includes(';')) {
-            const [code] = entry.split(';');
+          // Check for new hyphen standard or legacy semicolon
+          const separator = entry.includes(' - ') ? ' - ' : entry.includes(';') ? ';' : null;
+          if (separator) {
+            const [code] = entry.split(separator);
             return emp.empCode === code;
           }
           return emp.employeeName === entry; // Fallback for old records
@@ -193,7 +214,10 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
               options={meetings}
               getOptionLabel={(option) => option.meetingName || ''}
               value={form.meetingType}
-              onChange={(e, val) => setForm(p => ({ ...p, meetingType: val }))}
+              onChange={(e, val) => {
+                setForm(p => ({ ...p, meetingType: val }));
+                if (errors.meetingType) clearErrors('meetingType');
+              }}
               renderInput={(params) => (
                 <BOSTextField {...params} label="Meeting Type" required error={!!errors.meetingType} helperText={errors.meetingType} fullWidth />
               )}
@@ -241,17 +265,17 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
             )}
             <Grid item xs={12} sm={4}>
               <BOSTextField select label="Start Time" name="startTime" value={form.startTime} onChange={h} required fullWidth>
-                {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
             <Grid item xs={12} sm={4}>
               <BOSTextField select label="Interval Time" name="intervalTime" value={form.intervalTime} onChange={h} fullWidth>
-                {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
             <Grid item xs={12} sm={4}>
               <BOSTextField select label="End Time" name="endTime" value={form.endTime} onChange={h} required fullWidth>
-                {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
           </Grid>
@@ -265,81 +289,170 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
               options={activeDepartments}
               getOptionLabel={(option) => option.departmentName || ''}
               value={form.departments}
-              onChange={(e, val) => setForm(p => ({ ...p, departments: val }))}
+              onChange={(e, val) => {
+                setForm(p => ({ ...p, departments: val }));
+                if (errors.departments) clearErrors('departments');
+              }}
               renderInput={(params) => <BOSTextField {...params} label="Target Department(s)" required error={!!errors.departments} fullWidth />}
             />
-            
-            <Autocomplete
-              fullWidth
-              options={employees.filter(e => e.isChaired === 'YES')}
-              getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
-              value={form.chairedBy}
-              onChange={(e, val) => setForm(p => ({ ...p, chairedBy: val }))}
-              renderInput={(params) => <BOSTextField {...params} label="Chaired By" required error={!!errors.chairedBy} fullWidth />}
-            />
 
-            <Autocomplete
-              fullWidth
-              options={employees.filter(e => e.isHost === 'YES')}
-              getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
-              value={form.hostBy}
-              onChange={(e, val) => setForm(p => ({ ...p, hostBy: val }))}
-              renderInput={(params) => <BOSTextField {...params} label="Host By" required error={!!errors.hostBy} fullWidth />}
-            />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3, mt: 1 }}>
+              {[
+                { role: 'CHAIRED BY', field: 'chairedBy', label: 'Chaired By', filter: (e) => e.isChaired === 'YES' },
+                { role: 'HOST BY', field: 'hostBy', label: 'Host By', filter: (e) => e.isHost === 'YES' }
+              ].map((person) => {
+                const selectedEmp = form[person.field];
+                const name = selectedEmp ? selectedEmp.employeeName : 'Not Selected';
+                const code = selectedEmp ? selectedEmp.empCode : 'No Code';
+                const dept = selectedEmp ? (activeDepartments.find(d => String(d.id) === String(selectedEmp.departmentId))?.departmentName || '-') : '-';
+
+                // Resolution for Level
+                let level = '-';
+                if (selectedEmp) {
+                  const levelMatch = levels.find(l => String(l.rowId || l.id) === String(selectedEmp.empLevelId));
+                  const desigMatch = designations.find(d => String(d.id) === String(selectedEmp.designationId));
+                  level = levelMatch?.level || desigMatch?.designationName || '-';
+                }
+
+                const filteredEmployees = employees.filter(emp => emp.status === 'Active' && person.filter(emp));
+
+                return (
+                  <Card key={person.role} sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '16px',
+                    boxShadow: 2,
+                    bgcolor: isDark ? 'background.default' : '#fff',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    height: '100%',
+                    width: '100%'
+                  }}>
+                    <Box sx={{ height: 60, bgcolor: isDark ? 'primary.dark' : 'primary.light', width: '100%', position: 'absolute', top: 0, left: 0, opacity: isDark ? 0.3 : 0.6 }} />
+                      <CardContent sx={{ p: 3, pt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, flexGrow: 1 }}>
+                        <Avatar
+                          src={selectedEmp ? getPhotoUrl(selectedEmp.employeePhotoUpload) : null}
+                          sx={{
+                            width: 100, height: 100, borderRadius: '50%', bgcolor: isDark ? '#1c2128' : '#fff', border: '4px solid',
+                            borderColor: isDark ? 'background.default' : '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                            color: 'primary.main', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', mb: 2
+                          }}
+                        >
+                          {!selectedEmp || !selectedEmp.employeePhotoUpload ? <IconUsers size={48} /> : null}
+                        </Avatar>
+                      <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, mb: 0.5, fontSize: '0.75rem' }}>{person.role}</Typography>
+                      <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ width: '100%', textAlign: 'center', mb: 0.5 }}>{name}</Typography>
+                      
+                      <Stack spacing={0.5} alignItems="center" sx={{ mb: 2, width: '100%' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>Dept: {dept}</Typography>
+                        <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>Level: {level}</Typography>
+                      </Stack>
+
+                      <Box sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.100', px: 2.5, py: 0.5, borderRadius: '16px', mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap>{code}</Typography>
+                      </Box>
+                      
+                      <Autocomplete
+                        fullWidth
+                        options={filteredEmployees}
+                        getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+                        value={selectedEmp}
+                        onChange={(e, val) => {
+                          setForm(p => ({ ...p, [person.field]: val }));
+                          if (errors[person.field]) clearErrors(person.field);
+                        }}
+                        renderInput={(params) => <BOSTextField {...params} label={`Select ${person.label}`} required error={!!errors[person.field]} fullWidth />}
+                      />
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </Box>
+
+            <Divider sx={{ my: 1 }} />
 
             <Autocomplete
               multiple
               options={employees.filter(e => e.isParticipants === 'YES')}
               getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
               value={form.participants}
-              onChange={(e, val) => setForm(p => ({ ...p, participants: val }))}
+              onChange={(e, val) => {
+                setForm(p => ({ ...p, participants: val }));
+                if (errors.participants) clearErrors('participants');
+              }}
               renderInput={(params) => <BOSTextField {...params} label="Participants" required error={!!errors.participants} fullWidth />}
             />
 
             {/* PARTICIPANTS PREVIEW GALLERY */}
             {form.participants.length > 0 && (
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle2" color="primary" sx={{ mb: 1, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ mt: 1, width: '100%' }}>
+                <Typography variant="subtitle2" color="primary" sx={{ mb: 1.5, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <IconUsers size={18} /> SELECTED PARTICIPANTS ({form.participants.length})
                 </Typography>
-                <Grid container spacing={1.5}>
-                  {form.participants.map((emp, idx) => (
-                    <Grid item xs={12} sm={6} md={4} key={emp.id || idx}>
-                      <BOSPersonnelCard 
-                        variant="compact"
-                        title={`Participant #${idx + 1}`}
-                        name={emp.employeeName}
-                        empCode={emp.empCode}
-                        department={emp.department?.departmentName}
-                        photo={emp.employeePhotoUpload}
-                        color="primary.main"
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
+                
+                {form.participants.length <= 4 ? (
+                  <Grid container spacing={1.5}>
+                    {form.participants.map((emp, idx) => (
+                      <Grid item xs={12} sm={6} md={3} key={emp.id || idx}>
+                        <BOSPersonnelCard 
+                          variant="compact"
+                          title={`Participant #${idx + 1}`}
+                          name={emp.employeeName}
+                          empCode={emp.empCode}
+                          department={emp.department?.departmentName}
+                          photo={emp.employeePhotoUpload}
+                          color="primary.main"
+                        />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box sx={{ 
+                    overflow: 'hidden', 
+                    width: '100%', 
+                    position: 'relative',
+                    bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'grey.50',
+                    py: 1.5,
+                    px: 1,
+                    borderRadius: '12px',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    '&:hover .marquee-inner': { animationPlayState: 'paused' }
+                  }}>
+                    <Box 
+                      className="marquee-inner"
+                      sx={{ 
+                        display: 'flex', 
+                        gap: 2, 
+                        width: 'max-content',
+                        animation: `marquee ${form.participants.length * 3}s linear infinite`,
+                        '@keyframes marquee': {
+                          '0%': { transform: 'translateX(0)' },
+                          '100%': { transform: 'translateX(-50%)' }
+                        }
+                      }}
+                    >
+                      {/* Original + Duplicate for seamless scroll */}
+                      {[...form.participants, ...form.participants].map((emp, idx) => (
+                        <Box key={`${emp.id}-${idx}`} sx={{ width: 280, flexShrink: 0 }}>
+                          <BOSPersonnelCard 
+                            variant="compact"
+                            title={`Participant #${(idx % form.participants.length) + 1}`}
+                            name={emp.employeeName}
+                            empCode={emp.empCode}
+                            department={emp.department?.departmentName}
+                            photo={emp.employeePhotoUpload}
+                            color="primary.main"
+                          />
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             )}
-
-            {/* QUICK PREVIEW PANEL (CHAIRED & HOST) */}
-            <BOSPersonnelCard 
-              title="Chaired By"
-              name={form.chairedBy?.employeeName}
-              empCode={form.chairedBy?.empCode}
-              department={form.chairedBy?.department?.departmentName}
-              photo={form.chairedBy?.employeePhotoUpload}
-              color="primary.main"
-              bgcolor="primary.lighter"
-            />
-            
-            <BOSPersonnelCard 
-              title="Host By"
-              name={form.hostBy?.employeeName}
-              empCode={form.hostBy?.empCode}
-              department={form.hostBy?.department?.departmentName}
-              photo={form.hostBy?.employeePhotoUpload}
-              color="secondary.main"
-              bgcolor="secondary.lighter"
-            />
           </Stack>
         </BOSFormSection>
 

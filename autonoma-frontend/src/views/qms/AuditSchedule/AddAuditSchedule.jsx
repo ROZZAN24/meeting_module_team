@@ -11,9 +11,9 @@ import {
   Checkbox,
   Autocomplete,
   useTheme,
-  Tooltip,
-  Paper,
-  Chip
+  Chip,
+  Avatar,
+  Tooltip
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import {
@@ -35,8 +35,8 @@ import {
   BOSTextField,
   BOSDataTable,
   btnSave,
-  btnClear,
-  getStatusChipSx
+  getStatusChipSx,
+  getPhotoUrl
 } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -533,13 +533,16 @@ export default function AddAuditSchedule() {
                   }}>
                     <Box sx={{ height: 60, bgcolor: isDark ? 'primary.dark' : 'primary.light', width: '100%', position: 'absolute', top: 0, left: 0, opacity: isDark ? 0.3 : 0.6 }} />
                     <CardContent sx={{ p: 3, pt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, flexGrow: 1 }}>
-                      <Box sx={{
-                        width: 100, height: 100, borderRadius: '50%', bgcolor: isDark ? '#1c2128' : '#fff', border: '4px solid',
-                        borderColor: isDark ? 'background.default' : '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center',
-                        color: 'primary.main', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', mb: 2
-                      }}>
-                        <IconUsers size={48} />
-                      </Box>
+                      <Avatar
+                        src={selectedEmp ? getPhotoUrl(selectedEmp.employeePhotoUpload) : null}
+                        sx={{
+                          width: 100, height: 100, borderRadius: '50%', bgcolor: isDark ? '#1c2128' : '#fff', border: '4px solid',
+                          borderColor: isDark ? 'background.default' : '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                          color: 'primary.main', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', mb: 2
+                        }}
+                      >
+                        {!selectedEmp || !selectedEmp.employeePhotoUpload ? <IconUsers size={48} /> : null}
+                      </Avatar>
                       <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, mb: 0.5, fontSize: '0.8rem' }}>{person.role}</Typography>
                       <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ width: '100%', textAlign: 'center', mb: 0.5 }}>{name !== '-' ? name : 'Not Selected'}</Typography>
                       

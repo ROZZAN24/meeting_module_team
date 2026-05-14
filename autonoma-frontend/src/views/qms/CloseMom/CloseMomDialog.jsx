@@ -7,9 +7,11 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import useAuth from 'hooks/useAuth';
 
 const CloseMomDialog = ({ open, onClose, item, onSave }) => {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [actionTaken, setActionTaken] = useState('');
   const [actionObservation, setActionObservation] = useState('');
   const [isEditable, setIsEditable] = useState(true);
@@ -54,12 +56,13 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
   if (!item) return null;
 
   const delayDays = getDelayDays();
+  const isAssignedToMe = user && item && (user.name === (item.assignedTo?.employeeName || item.assignedTo));
 
   return (
     <BOSFormDialog
       open={open}
       onClose={onClose}
-      onSave={isEditable ? handleSave : undefined}
+      onSave={isEditable && isAssignedToMe ? handleSave : undefined}
       title="Close MOM Action"
       maxWidth="md"
       isViewOnly={!isEditable}
@@ -98,6 +101,14 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
       </Box>
 
       <Divider sx={{ my: 1 }} />
+
+      {!isAssignedToMe && item && isEditable && (
+        <Box sx={{ p: 1.5, bgcolor: 'error.lighter', borderRadius: 2, border: '1px solid', borderColor: 'error.main', mb: 2 }}>
+          <Typography variant="body2" color="error.dark" fontWeight={700}>
+            🚨 Access Restricted: This action is assigned to <b>{item.assignedTo?.employeeName || item.assignedTo}</b>. Only they can submit for closure.
+          </Typography>
+        </Box>
+      )}
 
       <BOSFormSection title="Action Details" icon={<IconCircleCheck size={22} />}>
         <Stack spacing={2.5} sx={{ mt: 1 }}>

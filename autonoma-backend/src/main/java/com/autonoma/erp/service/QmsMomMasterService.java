@@ -70,6 +70,13 @@ public class QmsMomMasterService {
         if (mom.getDetails() != null) {
             mom.getDetails().forEach(detail -> {
                 detail.setMom(mom);
+                
+                // Prefix discussedPoint with momNo if not already present (Request #8)
+                String prefix = "[" + mom.getMomNo() + "] ";
+                if (detail.getDiscussedPoint() != null && !detail.getDiscussedPoint().startsWith("[")) {
+                    detail.setDiscussedPoint(prefix + detail.getDiscussedPoint());
+                }
+
                 if ("INFO".equalsIgnoreCase(detail.getProcessType())) {
                     detail.setStatus("CLOSED");
                 } else if ("ACTION".equalsIgnoreCase(detail.getProcessType())) {
@@ -189,6 +196,6 @@ public class QmsMomMasterService {
         int year = LocalDate.now().getYear();
         String yearRange = year + "-" + (year + 1);
         Long nextId = repository.findMaxId().orElse(0L) + 1;
-        return String.format("MM/%s/%s/%d", typePrefix, yearRange, nextId);
+        return String.format("MM/%s/%s/%03d", typePrefix, yearRange, nextId);
     }
 }

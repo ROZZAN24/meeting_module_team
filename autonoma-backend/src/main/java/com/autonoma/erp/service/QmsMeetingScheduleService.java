@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class QmsMeetingScheduleService {
     private final QmsMeetingScheduleRepository repository;
+    private final NotificationService notificationService;
 
     public List<QmsMeetingSchedule> getAllSchedules() {
         return repository.findAll();
@@ -36,7 +37,26 @@ public class QmsMeetingScheduleService {
             schedule.getParticipants().forEach(p -> p.setSchedule(schedule));
         }
         
-        return repository.save(schedule);
+        QmsMeetingSchedule saved = repository.save(schedule);
+
+        // Trigger notifications for participants
+        if (saved.getParticipants() != null) {
+            List<String> emails = saved.getParticipants().stream()
+                .filter(p -> p.getEmployee() != null && p.getEmployee().getContact() != null)
+                .map(p -> p.getEmployee().getContact().getPersonalEmail())
+                .filter(e -> e != null && !e.isEmpty())
+                .collect(Collectors.toList());
+
+            notificationService.notifyParticipants(
+                saved.getScheduleNo(),
+                saved.getMeetingName(),
+                saved.getMeetingDate() != null ? saved.getMeetingDate().toString() : "TBD",
+                saved.getStartTime() != null ? saved.getStartTime().toString() : "TBD",
+                emails
+            );
+        }
+
+        return saved;
     }
 
     @Transactional

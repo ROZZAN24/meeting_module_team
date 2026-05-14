@@ -54,12 +54,12 @@ import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import MaterialSelectionDialog from './MaterialSelectionDialog';
 
-// Format: MM/CCRM/2026-2027/016
-const DEFAULT_MOM_NO = 'MM/CCRM/2026-2027/016';
+// Format: MM/CCRM/2026-2027/001
+const DEFAULT_MOM_NO = 'MM/CCRM/2026-2027/001';
 const TODAY = new Date().toISOString().split('T')[0];
 
 const INITIAL_FORM = {
-  momNo: DEFAULT_MOM_NO,
+  momNo: 'AUTO-GENERATE',
   momDate: TODAY,
   schedule: null,
   agenda: '',
@@ -95,7 +95,7 @@ export default function AddMeetingMinutes() {
   const editId = id || searchParams.get('id');
 
   const { meetingSchedules = [], employees = [] } = useLookups(['MEETING_SCHEDULES', 'EMPLOYEES']);
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [materialDialog, setMaterialDialog] = useState({ open: false, rowIdx: null, type: 'RM' });
@@ -109,8 +109,11 @@ export default function AddMeetingMinutes() {
 
   // Helper to re-index all meet numbers and amendments in the table
   const syncMeetNumbers = useCallback((momNo, details) => {
+    const total = details.length;
     return details.map((idx_d, idx) => {
-      const meetNo = `${momNo}/${String(idx + 1).padStart(3, '0')}`;
+      // Descending sequence: top row (idx=0) gets highest number
+      const sequenceNum = total - idx;
+      const meetNo = `${momNo}/${String(sequenceNum).padStart(3, '0')}`;
       return {
         ...idx_d,
         meetNo,
@@ -199,14 +202,21 @@ export default function AddMeetingMinutes() {
         }
       });
 
+      const typePrefix = val.meetingType?.meetingPrefix || 'MEET';
+      const year = new Date().getFullYear();
+      const yearRange = `${year}-${year + 1}`;
+      const dynamicMomNo = `MM/${typePrefix}/${yearRange}/AUTO`;
+
       setForm(p => ({
         ...p,
+        momNo: dynamicMomNo,
         schedule: val,
         agenda: val.agenda || '',
         chairedBy: val.chairedBy,
         startTime: val.startTime || '09:00',
         endTime: val.endTime || '10:00',
-        attendanceList: participants
+        attendanceList: participants,
+        details: syncMeetNumbers(dynamicMomNo, p.details)
       }));
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
@@ -235,7 +245,7 @@ export default function AddMeetingMinutes() {
   };
 
   const addDetailRow = () => {
-    const newDetails = [...form.details, { ...INITIAL_FORM.details[0] }];
+    const newDetails = [{ ...INITIAL_FORM.details[0] }, ...form.details];
     setForm(p => ({
       ...p,
       details: syncMeetNumbers(p.momNo, newDetails)
@@ -396,14 +406,14 @@ export default function AddMeetingMinutes() {
       }
       secondary={
         <Stack direction="row" spacing={1.5}>
-          <Tooltip title={shortcutTooltip('Save Master', 'Ctrl + S')}>
-            <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save Master</Button>
+          <Tooltip title={shortcutTooltip('Back', 'Esc')}>
+            <Button variant="outlined" color="error" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/qms/minutesofmeeting')} sx={btnCancel}>Back</Button>
           </Tooltip>
           <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
             <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={() => setForm(INITIAL_FORM)} sx={btnClear}>Clear</Button>
           </Tooltip>
-          <Tooltip title={shortcutTooltip('Back', 'Esc')}>
-            <Button variant="outlined" color="error" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/qms/minutesofmeeting')} sx={btnCancel}>Back</Button>
+          <Tooltip title={shortcutTooltip('Save Master', 'Ctrl + S')}>
+            <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save Master</Button>
           </Tooltip>
         </Stack>
       }
@@ -432,18 +442,24 @@ export default function AddMeetingMinutes() {
                         options={meetingSchedules.filter(s => s.status === 'OPEN' || (editId && s.id === form.schedule?.id))}
                         getOptionLabel={(option) => option.scheduleNo || ''}
                         value={form.schedule}
-                        onChange={handleScheduleChange}
+                        onChange={(e, val) => {
+                          handleScheduleChange(e, val);
+                          if (errors.schedule) clearErrors('schedule');
+                        }}
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Schedule" required error={!!errors.schedule} sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
-                    { label: 'Meeting Agenda', component: <BOSTextField fullWidth value={form.agenda} onChange={(e) => setForm({...form, agenda: e.target.value})} multiline rows={2} placeholder="Enter Agenda..." sx={{ '& .MuiInputBase-root': { py: 0.5 } }} /> },
+                    { label: 'Meeting Agenda', component: <BOSTextField fullWidth name="agenda" value={form.agenda} onChange={(e) => handleInputChange(e, setForm)} multiline rows={2} placeholder="Enter Agenda..." sx={{ '& .MuiInputBase-root': { py: 0.5 } }} /> },
                     { label: 'Chaired By', component: (
                       <Autocomplete
                         fullWidth
                         options={employees}
                         getOptionLabel={(option) => option.employeeName || ''}
                         value={form.chairedBy}
-                        onChange={(e, val) => setForm({...form, chairedBy: val})}
+                        onChange={(e, val) => {
+                          setForm({...form, chairedBy: val});
+                          if (errors.chairedBy) clearErrors('chairedBy');
+                        }}
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Chaired By" sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
@@ -506,14 +522,10 @@ export default function AddMeetingMinutes() {
                               type={att.attendanceStatus === 'Absent' ? 'text' : 'time'} 
                               size="small" 
                               value={att.attendanceStatus === 'Absent' ? '' : att.inTime} 
-                              onChange={(e) => {
-                                const list = [...form.attendanceList];
-                                list[idx].inTime = e.target.value;
-                                setForm({...form, attendanceList: list});
-                              }} 
+                              InputProps={{ readOnly: true }}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
-                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} 
+                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' }, bgcolor: 'grey.50' }} 
                             />
                           </TableCell>
                           <TableCell>
@@ -526,9 +538,13 @@ export default function AddMeetingMinutes() {
                                 list[idx].outTime = e.target.value;
                                 setForm({...form, attendanceList: list});
                               }} 
+                              disabled={att.employee?.id !== form.schedule?.host?.id}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
-                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} 
+                              sx={{ 
+                                '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' },
+                                bgcolor: att.employee?.id === form.schedule?.host?.id ? 'inherit' : 'grey.50'
+                              }} 
                             />
                           </TableCell>
                           <TableCell>
@@ -536,11 +552,7 @@ export default function AddMeetingMinutes() {
                               select 
                               size="small" 
                               value={att.attendanceStatus} 
-                              onChange={(e) => {
-                                const list = [...form.attendanceList];
-                                list[idx].attendanceStatus = e.target.value;
-                                setForm({...form, attendanceList: list});
-                              }}
+                              disabled
                               sx={{ 
                                 '& .MuiSelect-select': { 
                                   bgcolor: att.attendanceStatus === 'LATE' ? 'warning.lighter' : (att.attendanceStatus === 'Present' ? 'success.lighter' : 'error.lighter'),
@@ -596,14 +608,14 @@ export default function AddMeetingMinutes() {
                   <TableRow>
                     {/* Sticky Sl No Header */}
                     <TableCell sx={{ ...headerSx, width: 50, textAlign: 'center', zIndex: 12, left: 0, position: 'sticky' }}>Sl No</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 160 }}>Meet No</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 160 }}>Amend Meet No</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 160 }}>Min No</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 160 }}>Amend Min No</TableCell>
                     <TableCell sx={{ ...headerSx, width: 450 }}>Discussed Point</TableCell>
                     <TableCell sx={{ ...headerSx, width: 130 }}>Type</TableCell>
                     <TableCell sx={{ ...headerSx, width: 250 }}>Material List</TableCell>
                     <TableCell sx={{ ...headerSx, width: 120 }}>Process</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 200 }}>Assigned By</TableCell>
                     <TableCell sx={{ ...headerSx, width: 200 }}>Assigned To</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 200 }}>Assigned By</TableCell>
                     <TableCell sx={{ ...headerSx, width: 130 }}>Target Date</TableCell>
                     <TableCell sx={{ ...headerSx, width: 130 }}>Review Date</TableCell>
                     <TableCell sx={{ ...headerSx, width: 120 }}>Attachment Req</TableCell>
@@ -616,7 +628,7 @@ export default function AddMeetingMinutes() {
                     <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { bgcolor: 'grey.50' }, '&:hover': { bgcolor: 'primary.lighter' } }}>
                       {/* Sticky Sl No Body */}
                       <TableCell align="center" sx={{ position: 'sticky', left: 0, bgcolor: 'inherit', zIndex: 10, fontSize: '0.75rem', fontWeight: 800, pt: 1.5 }}>
-                        {idx + 1}
+                        {form.details.length - idx}
                       </TableCell>
                       
                       {/* References (AUTO GENERATED) */}
@@ -686,10 +698,10 @@ export default function AddMeetingMinutes() {
                           options={meetingUsers}
                           getOptionLabel={(option) => option.employeeName || ''}
                           isOptionEqualToValue={(opt, val) => opt.id === val?.id}
-                          value={det.assignedBy}
-                          onChange={(e, val) => handleDetailChange(idx, 'assignedBy', val)}
+                          value={det.assignedTo}
+                          onChange={(e, val) => handleDetailChange(idx, 'assignedTo', val)}
                           disabled={det.processType === 'INFO'}
-                          renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignor"} sx={seamlessInputSx} />}
+                          renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignee"} sx={seamlessInputSx} />}
                         />
                       </TableCell>
                       <TableCell sx={{ p: 0, pt: 0.5 }}>
@@ -697,10 +709,10 @@ export default function AddMeetingMinutes() {
                           options={meetingUsers}
                           getOptionLabel={(option) => option.employeeName || ''}
                           isOptionEqualToValue={(opt, val) => opt.id === val?.id}
-                          value={det.assignedTo}
-                          onChange={(e, val) => handleDetailChange(idx, 'assignedTo', val)}
+                          value={det.assignedBy}
+                          onChange={(e, val) => handleDetailChange(idx, 'assignedBy', val)}
                           disabled={det.processType === 'INFO'}
-                          renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignee"} sx={seamlessInputSx} />}
+                          renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignor"} sx={seamlessInputSx} />}
                         />
                       </TableCell>
                       
@@ -779,7 +791,15 @@ export default function AddMeetingMinutes() {
             );
             })()}
             <Box sx={{ mt: 1.5, mb: 1.5, mr: 2, display: 'flex', justifyContent: 'flex-end' }}>
-               <Button variant="contained" color="secondary" startIcon={<IconPlus />} onClick={addDetailRow} sx={{ px: 3, fontWeight: 800 }}>+ Add</Button>
+               <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<IconPlus size={18} />} 
+                onClick={addDetailRow} 
+                sx={{ px: 3, fontWeight: 800, borderRadius: '8px' }}
+               >
+                 Add Row
+               </Button>
             </Box>
           </BOSFormSection>
         </Box>

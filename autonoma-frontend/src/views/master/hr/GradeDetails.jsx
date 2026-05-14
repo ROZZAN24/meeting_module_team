@@ -46,16 +46,23 @@ export default function GradeDetails() {
   useEffect(() => {
     const config = [
       {
-        id: 'status', label: 'Status', type: 'select',
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'Active', label: 'ACTIVE' },
           { value: 'In Active', label: 'INACTIVE' }
         ],
-        defaultValue: 'Active',
-        isConstant: true
+        defaultValue: 'Active'
       },
-      { id: 'gradeName', label: 'Grade Name', type: 'text', placeholder: 'Search by Name...', isConstant: true }
+      {
+        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
+        options: [
+          { value: 'gradeName', label: 'Grade Name' },
+          { value: 'gradeCode', label: 'Grade Code' }
+        ],
+        defaultValue: 'gradeName'
+      },
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -119,14 +126,25 @@ export default function GradeDetails() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      const nameFilter = globalFilters.gradeName || '';
-      const matchesName = !nameFilter || (row.gradeName && row.gradeName.toLowerCase().includes(nameFilter.toLowerCase()));
-      const matchesSearch = !globalQuery ||
-        (row.gradeName && row.gradeName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.gradeCode && row.gradeCode.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesName && matchesSearch;
+      // 1. Status Filter
+      const statusFilter = globalFilters.status || 'Active';
+      if (statusFilter !== 'All' && row.status !== statusFilter) return false;
+
+      // 2. Advanced Search
+      const searchText = (globalFilters.searchText || '').toLowerCase();
+      const searchBy = globalFilters.searchBy || 'gradeName';
+      if (searchText) {
+        const val = (row[searchBy] || '').toString().toLowerCase();
+        if (!val.includes(searchText)) return false;
+      }
+
+      // 3. Global Query
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.gradeName && row.gradeName.toLowerCase().includes(q)) ||
+               (row.gradeCode && row.gradeCode.toLowerCase().includes(q));
+      }
+      return true;
     });
   }, [rows, globalQuery, globalFilters]);
 

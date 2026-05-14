@@ -107,7 +107,9 @@ export default function BOSExportButton({
             <IconFileExport size={24} color="#2196f3" />
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>Export Designer</Typography>
-              <Typography variant="caption" color="text.secondary">{filename} ({data.length} records)</Typography>
+              <Typography variant="caption" color="text.secondary">
+                {filename.replace(/_/g, ' ')} ({data.length} records) • {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Typography>
             </Box>
           </Stack>
           <IconButton onClick={handleClosePreview} size="small"><IconX size={20} /></IconButton>
@@ -241,7 +243,12 @@ export default function BOSExportButton({
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>{filename.replace(/_/g, ' ')}</Typography>
-                    <Typography variant="body2" color="text.secondary">Generated on: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      Generated on: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </Typography>
+                    <Typography variant="caption" color="text.disabled" sx={{ display: 'block', fontWeight: 700 }}>
+                      Time: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </Typography>
                   </Box>
                 </Stack>
 

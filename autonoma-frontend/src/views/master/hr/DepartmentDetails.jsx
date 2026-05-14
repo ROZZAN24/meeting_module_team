@@ -47,7 +47,7 @@ export default function DepartmentDetails() {
   useEffect(() => {
     const config = [
       {
-        id: 'status', label: 'Status', type: 'select',
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'Active', label: 'ACTIVE' },
@@ -55,7 +55,15 @@ export default function DepartmentDetails() {
         ],
         defaultValue: 'Active'
       },
-      { id: 'departmentName', label: 'Dept Name', type: 'text', placeholder: 'Search by Name...' }
+      {
+        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
+        options: [
+          { value: 'departmentName', label: 'Dept Name' },
+          { value: 'departmentNo', label: 'Dept Number' }
+        ],
+        defaultValue: 'departmentName'
+      },
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -120,14 +128,26 @@ export default function DepartmentDetails() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      const nameFilter = globalFilters.departmentName || '';
-      const matchesName = !nameFilter || (row.departmentName && row.departmentName.toLowerCase().includes(nameFilter.toLowerCase()));
-      const matchesSearch = !globalQuery ||
-        (row.departmentName && row.departmentName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.departmentNo && row.departmentNo.toString().includes(globalQuery));
-      return matchesStatus && matchesName && matchesSearch;
+      // 1. Status Filter
+      const statusFilter = globalFilters.status || 'Active';
+      if (statusFilter !== 'All' && row.status !== statusFilter) return false;
+
+      // 2. Advanced Search (Search By + Search Text)
+      const searchText = (globalFilters.searchText || '').toLowerCase();
+      const searchBy = globalFilters.searchBy || 'departmentName';
+      if (searchText) {
+        const val = (row[searchBy] || '').toString().toLowerCase();
+        if (!val.includes(searchText)) return false;
+      }
+
+      // 3. Global Query (Quick search across all fields)
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.departmentName && row.departmentName.toLowerCase().includes(q)) ||
+               (row.departmentNo && row.departmentNo.toString().toLowerCase().includes(q));
+      }
+
+      return true;
     });
   }, [rows, globalQuery, globalFilters]);
 

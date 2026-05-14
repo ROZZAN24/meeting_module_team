@@ -35,6 +35,9 @@ public class AuthController {
     @Autowired
     private UserSessionService userSessionService;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeMasterRepository employeeMasterRepository;
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         // Find user by userId
@@ -82,7 +85,15 @@ public class AuthController {
                 Map<String, Object> userMap = new HashMap<>();
                 userMap.put("id", user.getUserId());
                 userMap.put("email", user.getUserId());
-                userMap.put("name", "Employee " + user.getEmpId());
+                userMap.put("empId", user.getEmpId());
+                
+                String empName = "Employee " + user.getEmpId();
+                if (user.getEmpId() != null) {
+                    empName = employeeMasterRepository.findById(user.getEmpId())
+                        .map(e -> e.getEmployeeName())
+                        .orElse(empName);
+                }
+                userMap.put("name", empName);
                 userMap.put("role", "ADMIN");
                 userMap.put("imgName", user.getImgName());
                 userMap.put("isBosAdmin", user.getIsBosAdmin());
@@ -116,7 +127,15 @@ public class AuthController {
                         Map<String, Object> userMap = new HashMap<>();
                         userMap.put("id", user.getUserId());
                         userMap.put("email", user.getUserId());
-                        userMap.put("name", user.getEmpId());
+                        userMap.put("empId", user.getEmpId());
+                        
+                        String empName = "Employee " + user.getEmpId();
+                        if (user.getEmpId() != null) {
+                            empName = employeeMasterRepository.findById(user.getEmpId())
+                                .map(e -> e.getEmployeeName())
+                                .orElse(empName);
+                        }
+                        userMap.put("name", empName);
                         userMap.put("role", "ADMIN");
                         userMap.put("imgName", user.getImgName());
                         userMap.put("isBosAdmin", user.getIsBosAdmin());

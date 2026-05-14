@@ -83,17 +83,24 @@ export default function EmployeeList() {
   useEffect(() => {
     const config = [
       {
-        id: 'status', label: 'Status', type: 'select',
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'Active', label: 'ACTIVE' },
           { value: 'In Active', label: 'INACTIVE' }
         ],
-        defaultValue: 'Active',
-        isConstant: true
+        defaultValue: 'Active'
       },
-      { id: 'departmentId', label: 'Department', type: 'text', placeholder: 'Filter by Department...', isConstant: true },
-      { id: 'designationId', label: 'Designation', type: 'text', placeholder: 'Filter by Designation...' }
+      {
+        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
+        options: [
+          { value: 'employeeName', label: 'Employee Name' },
+          { value: 'empCode', label: 'Employee Code' },
+          { value: 'homeManager', label: 'Home Manager' }
+        ],
+        defaultValue: 'employeeName'
+      },
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -168,31 +175,40 @@ export default function EmployeeList() {
 
   // SOP #16 — Global search + filters
   const filteredRows = useMemo(() => {
-    if (!Array.isArray(rows)) {
-      console.warn('EmployeeList: rows is not an array', rows);
-      return [];
-    }
-    console.debug(`EmployeeList: Filtering ${rows.length} rows. Query: "${globalQuery}", Filters:`, globalFilters);
+    if (!Array.isArray(rows)) return [];
 
     return rows.filter((row) => {
       if (!row) return false;
-      const statusFilter = globalFilters?.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
 
-      const deptFilter = globalFilters?.departmentId || '';
-      const matchesDept = !deptFilter || getDeptName(row.departmentId).toLowerCase().includes(String(deptFilter).toLowerCase());
+      // 1. Status Filter
+      const statusFilter = globalFilters?.status || 'Active';
+      if (statusFilter !== 'All' && (row.status || 'Active') !== statusFilter) return false;
 
-      const desigFilter = globalFilters?.designationId || '';
-      const matchesDesig = !desigFilter || getDesigName(row.designationId).toLowerCase().includes(String(desigFilter).toLowerCase());
+      // 2. Advanced Search (Search By + Search Text)
+      const searchText = (globalFilters?.searchText || '').toLowerCase();
+      const searchBy = globalFilters?.searchBy || 'employeeName';
+      if (searchText) {
+        let val = '';
+        if (searchBy === 'employeeName') {
+          val = row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim();
+        } else {
+          val = row[searchBy];
+        }
+        if (!String(val || '').toLowerCase().includes(searchText)) return false;
+      }
 
-      const matchesSearch = !globalQuery || [
-        row.firstName, row.lastName, row.empCode,
-        row.homeManager, row.businessManager, row.supplierName, row.vendorName
-      ].some((val) => val && String(val).toLowerCase().includes(String(globalQuery).toLowerCase()));
+      // 3. Global Query (Quick search across all fields)
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.firstName && row.firstName.toLowerCase().includes(q)) ||
+               (row.lastName && row.lastName.toLowerCase().includes(q)) ||
+               (row.empCode && row.empCode.toLowerCase().includes(q)) ||
+               (row.homeManager && row.homeManager.toLowerCase().includes(q));
+      }
 
-      return matchesStatus && matchesDept && matchesDesig && matchesSearch;
+      return true;
     });
-  }, [rows, globalQuery, globalFilters, departments, designations]);
+  }, [rows, globalQuery, globalFilters]);
 
   const paginatedRows = useMemo(() => {
     if (!Array.isArray(filteredRows)) return [];

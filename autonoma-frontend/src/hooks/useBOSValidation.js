@@ -108,5 +108,15 @@ export default function useBOSValidation() {
     [dispatch]
   );
 
-  return { errors, validate, clearErrors, setErrors };
+  const handleInputChange = useCallback((e, setter) => {
+    const { name, value } = e.target;
+    if (setter) {
+      setter(prev => ({ ...prev, [name]: value }));
+    }
+    if (errors[name]) {
+      clearErrors(name);
+    }
+  }, [errors, clearErrors]);
+
+  return { errors, validate, clearErrors, setErrors, handleInputChange };
 }

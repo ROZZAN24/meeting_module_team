@@ -90,6 +90,7 @@ export default function CloseMomList() {
     try {
       const response = await axios.get(API_PATHS.QMS.MOMS);
       const momsRaw = Array.isArray(response.data) ? response.data : [];
+      momsRaw.sort((a, b) => b.id - a.id);
       // Flatten: only ACTION process details
       const flat = [];
       momsRaw.forEach(mom => {

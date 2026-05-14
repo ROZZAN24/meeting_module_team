@@ -111,6 +111,7 @@ export default function MomList() {
     try {
       const response = await axios.get(API_PATHS.QMS.MOMS);
       const momsRaw = Array.isArray(response.data) ? response.data : [];
+      momsRaw.sort((a, b) => b.id - a.id);
       setRows(momsRaw);
       // Flatten: each MOM detail becomes a row, grouped under parent MOM
       const flat = [];
@@ -308,7 +309,7 @@ export default function MomList() {
             </Button>
           </Tooltip>
           <Tooltip title={shortcutTooltip('Create New MOM', 'Ctrl + N')}>
-            <Button variant="contained" color="secondary" size="medium" onClick={handleAdd} sx={btnNew}>
+            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
             </Button>
           </Tooltip>

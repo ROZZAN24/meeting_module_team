@@ -94,7 +94,8 @@ export default function MeetingScheduleList() {
     setLoading(true);
     try {
       const response = await axios.get(API_PATHS.QMS.MEETING_SCHEDULES);
-      setRows(Array.isArray(response.data) ? response.data : []);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setRows(data.sort((a, b) => b.id - a.id));
     } catch (error) {
       console.error('Failed to fetch schedules:', error);
       setRows([]);
@@ -235,8 +236,8 @@ export default function MeetingScheduleList() {
     if (col.id === 'participantsBy') {
       return (row.participants || []).map(pr => {
         const e = pr.employee;
-        return e ? `${e.id};${e.employeeName} - ${e.empCode}` : '';
-      }).filter(Boolean).join(',');
+        return e ? `${e.employeeName} - ${e.empCode}` : '';
+      }).filter(Boolean).join(', ');
     }
     if (col.id === 'createdAt') {
       if (!row.createdAt) return '-';
@@ -292,7 +293,7 @@ export default function MeetingScheduleList() {
             </Button>
           </Tooltip>
           <Tooltip title={shortcutTooltip('Create New Schedule', 'Ctrl + N')}>
-            <Button variant="contained" color="secondary" size="medium" onClick={handleAdd} sx={btnNew}>
+            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
             </Button>
           </Tooltip>

@@ -65,7 +65,8 @@ export default function AttendanceList() {
     setLoading(true);
     try {
       const response = await axios.get(API_PATHS.QMS.MEETING_ATTENDANCE);
-      setRows(Array.isArray(response.data) ? response.data : []);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setRows(data.sort((a, b) => b.id - a.id));
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
       setRows([]);
@@ -102,11 +103,20 @@ export default function AttendanceList() {
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
+    const format12h = (time24) => {
+      if (!time24) return '-';
+      const [h, m] = time24.split(':');
+      const hour = parseInt(h, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const h12 = hour % 12 || 12;
+      return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
+    };
+
     if (col.id === 'index') return idx + 1 + page * size;
     if (col.id === 'scheduleNo') return row.schedule?.scheduleNo || '-';
     if (col.id === 'participantName') return row.employee?.employeeName || '-';
-    if (col.id === 'inTime') return row.inTime || '-';
-    if (col.id === 'outTime') return row.outTime || '-';
+    if (col.id === 'inTime') return format12h(row.inTime);
+    if (col.id === 'outTime') return format12h(row.outTime);
     if (col.id === 'status') {
       const s = row.status || 'PRESENT';
       let chipStatus = 'ACTIVE';
@@ -143,13 +153,27 @@ export default function AttendanceList() {
             columns={[
               { header: 'Meeting Sch No', key: r => r.schedule?.scheduleNo || '' },
               { header: 'Participant', key: r => r.employee?.employeeName || '' },
-              { header: 'In Time', key: 'inTime' },
-              { header: 'Out Time', key: 'outTime' },
+              { header: 'In Time', key: r => {
+                if (!r.inTime) return '-';
+                const [h, m] = r.inTime.split(':');
+                const hour = parseInt(h, 10);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const h12 = hour % 12 || 12;
+                return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
+              }},
+              { header: 'Out Time', key: r => {
+                if (!r.outTime) return '-';
+                const [h, m] = r.outTime.split(':');
+                const hour = parseInt(h, 10);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const h12 = hour % 12 || 12;
+                return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
+              }},
               { header: 'Status', key: 'status' }
             ]}
           />
           <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
-            <Button variant="contained" color="secondary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
+            <Button variant="contained" color="primary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
               + New
             </Button>
           </Tooltip>
