@@ -242,6 +242,8 @@ const SubSegmentMaster = Loadable(lazy(() => import('views/sm/masters/SubSegment
 const PaymentTerms = Loadable(lazy(() => import('views/sm/masters/PaymentTerms')));
 const DeliveryTerms = Loadable(lazy(() => import('views/sm/masters/DeliveryTerms')));
 const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService')));
+const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMaster')));
+const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -1007,6 +1009,10 @@ const MainRoutes = {
       element: <CurrencyMaster />
     },
     {
+      path: '/master/accounts/currency',
+      element: <CurrencyMaster />
+    },
+    {
       path: '/sm/ocr/segment-master',
       element: <SegmentMaster />
     },
@@ -1021,6 +1027,22 @@ const MainRoutes = {
     {
       path: '/sm/ocr/delivery-terms',
       element: <DeliveryTerms />
+    },
+    {
+      path: '/master/common/delivery-terms',
+      element: <DeliveryTerms />
+    },
+    {
+      path: '/master/common/payment-terms',
+      element: <PaymentTerms />
+    },
+    {
+      path: '/master/common/country',
+      element: <CountryMasterPage />
+    },
+    {
+      path: '/master/common/state',
+      element: <StateMasterPage />
     },
     {
       path: '/sm/ocr/type-of-service',

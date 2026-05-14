@@ -66,7 +66,16 @@ public class FileController {
             Path filePath = resource.getFile().toPath();
             String contentType = Files.probeContentType(filePath);
             if (contentType == null) {
-                contentType = "application/octet-stream";
+                String name = filePath.getFileName().toString().toLowerCase();
+                if (name.endsWith(".pdf")) contentType = "application/pdf";
+                else if (name.endsWith(".png")) contentType = "image/png";
+                else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) contentType = "image/jpeg";
+                else if (name.endsWith(".gif")) contentType = "image/gif";
+                else if (name.endsWith(".xlsx")) contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                else if (name.endsWith(".xls")) contentType = "application/vnd.ms-excel";
+                else if (name.endsWith(".docx")) contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                else if (name.endsWith(".doc")) contentType = "application/msword";
+                else contentType = "application/octet-stream";
             }
 
             return ResponseEntity.ok()

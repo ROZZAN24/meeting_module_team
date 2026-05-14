@@ -6,15 +6,14 @@ import {
 import { IconCreditCard, IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { BOSDataTable } from 'ui-component/bos';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'termCode', label: 'Term Code', minWidth: 120, bold: true },
-  { id: 'termName', label: 'Term Name', minWidth: 250 },
-  { id: 'dueDays', label: 'Due Days', minWidth: 100 },
-  { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'actions', label: 'Actions', minWidth: 100, align: 'right' }
+  { id: 'termName', label: 'Payment Term', minWidth: 200, bold: true },
+  { id: 'description', label: 'Payment Term Description', minWidth: 300 },
+  { id: 'status', label: 'Status', minWidth: 100 }
 ];
 
 export default function PaymentTerms() {
@@ -23,6 +22,9 @@ export default function PaymentTerms() {
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState('');
   const [formData, setFormData] = useState({
     termCode: '',
     termName: '',
@@ -83,35 +85,23 @@ export default function PaymentTerms() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this term?')) {
-      try {
-        await axios.delete(`/api/payment-terms/${id}`);
-        fetchRows();
-      } catch (err) {
-        console.error(err);
-      }
-    }
+  const handleDeleteClick = (row) => {
+    setDeleteId(row.id);
+    setDeleteName(row.termName);
+    setDeleteOpen(true);
   };
 
-  const formattedRows = rows.map((row, index) => ({
-    ...row,
-    index: index + 1,
-    actions: (
-      <Stack direction="row" spacing={1} justifyContent="flex-end">
-        <Tooltip title="Edit">
-          <IconButton size="small" color="primary" onClick={() => handleOpen(row)}>
-            <IconEdit size={18} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Delete">
-          <IconButton size="small" color="error" onClick={() => handleDelete(row.id)}>
-            <IconTrash size={18} />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-    )
-  }));
+  const handleDeleteConfirm = async () => {
+    try {
+      await axios.delete(`/api/payment-terms/${deleteId}`);
+      setDeleteOpen(false);
+      setDeleteId(null);
+      setDeleteName('');
+      fetchRows();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <MainCard
@@ -119,7 +109,7 @@ export default function PaymentTerms() {
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <IconCreditCard size={24} />
-            <Typography variant="h3">Payment Terms</Typography>
+            <Typography variant="h3">Payment Terms Master</Typography>
           </Stack>
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
             New Term
@@ -129,12 +119,14 @@ export default function PaymentTerms() {
     >
       <BOSDataTable
         columns={columns}
-        rows={formattedRows}
+        rows={rows}
         page={page}
         size={size}
         totalCount={rows.length}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onEditRow={(row) => handleOpen(row)}
+        onDeleteRow={handleDeleteClick}
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -142,26 +134,13 @@ export default function PaymentTerms() {
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Term Code"
-              fullWidth
-              value={formData.termCode}
-              onChange={(e) => setFormData({ ...formData, termCode: e.target.value })}
-            />
-            <TextField
-              label="Term Name"
+              label="Payment Term"
               fullWidth
               value={formData.termName}
               onChange={(e) => setFormData({ ...formData, termName: e.target.value })}
             />
             <TextField
-              label="Due Days"
-              fullWidth
-              type="number"
-              value={formData.dueDays}
-              onChange={(e) => setFormData({ ...formData, dueDays: e.target.value })}
-            />
-            <TextField
-              label="Description"
+              label="Payment Term Description"
               fullWidth
               multiline
               rows={3}
@@ -187,6 +166,15 @@ export default function PaymentTerms() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmDeleteDialog 
+        open={deleteOpen} 
+        onClose={() => setDeleteOpen(false)} 
+        onConfirm={handleDeleteConfirm} 
+        title="Delete Payment Term" 
+        message="Are you sure you want to delete this payment term?" 
+        itemName={deleteName} 
+      />
     </MainCard>
   );
 }

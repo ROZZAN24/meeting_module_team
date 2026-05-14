@@ -17,16 +17,24 @@ public class CustomerMasterController {
 
     private final CustomerMasterService service;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getCustomerById(@PathVariable String id) {
+        if ("next-code".equals(id)) {
+            return ResponseEntity.ok(service.getNextCustomerCode());
+        }
+        try {
+            Long numericId = Long.parseLong(id);
+            return service.getCustomerById(numericId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid ID format");
+        }
+    }
+
     @GetMapping
     public List<CustomerMaster> getAllCustomers() {
         return service.getAllCustomers();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<CustomerMaster> getCustomerById(@PathVariable Long id) {
-        return service.getCustomerById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping

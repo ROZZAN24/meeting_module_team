@@ -18,7 +18,8 @@ import {
   IconChartBar,
   IconChartPie,
   IconCreditCard,
-  IconSettings
+  IconSettings,
+  IconWorld
 } from '@tabler/icons-react';
 
 const icons = {
@@ -41,7 +42,8 @@ const icons = {
   IconChartBar,
   IconChartPie,
   IconCreditCard,
-  IconSettings
+  IconSettings,
+  IconWorld
 };
 
 export const masters = {
@@ -141,99 +143,86 @@ export const masters = {
       ]
     },
     {
-      id: 'sam',
-      title: 'Sales',
+      id: 'master-vendor',
+      title: 'Vendor Master',
       type: 'collapse',
-      icon: icons.IconBriefcase,
+      icon: icons.IconTruckDelivery,
       children: [
         {
-          id: 'sam-ocr',
-          title: 'OCR',
-          type: 'collapse',
-          icon: icons.IconServerCog,
-          children: [
-            {
-              id: 'sm-customer-master',
-              title: 'Customer Master',
-              type: 'item',
-              url: '/sm/customers',
-              icon: icons.IconUsers
-            },
-            {
-              id: 'sm-vendor',
-              title: 'Vendor',
-              type: 'collapse',
-              icon: icons.IconTruckDelivery,
-              children: [
-                {
-                  id: 'sm-supplier-master',
-                  title: 'Supplier Master',
-                  type: 'item',
-                  url: '/sm/suppliers',
-                  icon: icons.IconTruckDelivery
-                },
-                {
-                  id: 'sm-subcontractor',
-                  title: 'Sub Contractor',
-                  type: 'item',
-                  url: '/sm/sub-contractors',
-                  icon: icons.IconTool
-                }
-              ]
-            },
-            {
-              id: 'sm-contact-master',
-              title: 'Contact Master',
-              type: 'item',
-              url: '/sm/contacts',
-              icon: icons.IconUsers
-            },
-            {
-              id: 'sm-customer-address',
-              title: 'Customer Address',
-              type: 'item',
-              url: '/sm/customer-address',
-              icon: icons.IconMapPin
-            },
-            {
-              id: 'sm-currency-master',
-              title: 'Currency Master',
-              type: 'item',
-              url: '/sm/ocr/currency-master',
-              icon: icons.IconCoins
-            },
-            {
-              id: 'sm-segment-master',
-              title: 'Segment Master',
-              type: 'item',
-              url: '/sm/ocr/segment-master',
-              icon: icons.IconChartBar
-            },
-            {
-              id: 'sm-sub-segment-master',
-              title: 'Sub Segment Master',
-              type: 'item',
-              url: '/sm/ocr/sub-segment-master',
-              icon: icons.IconChartPie
-            },
-            {
-              id: 'sm-payment-terms',
-              title: 'Payment Terms',
-              type: 'item',
-              url: '/sm/ocr/payment-terms',
-              icon: icons.IconCreditCard
-            },
-            {
-              id: 'sm-delivery-terms',
-              title: 'Delivery Terms',
-              type: 'item',
-              url: '/sm/ocr/delivery-terms',
-              icon: icons.IconTruckDelivery
-            }
-          ]
+          id: 'sm-supplier-master',
+          title: 'Supplier Master',
+          type: 'item',
+          url: '/sm/suppliers',
+          icon: icons.IconTruckDelivery
+        },
+        {
+          id: 'sm-subcontractor',
+          title: 'Sub Contractor',
+          type: 'item',
+          url: '/sm/sub-contractors',
+          icon: icons.IconTool
         }
       ]
     },
+    {
+      id: 'master-accounts',
+      title: 'Accounts',
+      type: 'collapse',
+      icon: icons.IconReceiptTax,
+      children: [
+        {
+          id: 'sm-customer-master',
+          title: 'Customer Master',
+          type: 'item',
+          url: '/sm/customers',
+          icon: icons.IconUsers
+        },
+        {
+          id: 'master-accounts-currency',
+          title: 'Currency',
+          type: 'item',
+          url: '/master/accounts/currency',
+          icon: icons.IconCoins
+        }
+      ]
+    },
+    {
+      id: 'master-common',
+      title: 'Common Master',
+      type: 'collapse',
+      icon: icons.IconSettings,
+      children: [
+        {
+          id: 'master-common-delivery-terms',
+          title: 'Delivery Terms Master',
+          type: 'item',
+          url: '/master/common/delivery-terms',
+          icon: icons.IconTruckDelivery
+        },
+        {
+          id: 'master-common-payment-terms',
+          title: 'Payment Terms Master',
+          type: 'item',
+          url: '/master/common/payment-terms',
+          icon: icons.IconCreditCard
+        },
+        {
+          id: 'master-common-state',
+          title: 'State Master',
+          type: 'item',
+          url: '/master/common/state',
+          icon: icons.IconMapPin
+        },
+        {
+          id: 'master-common-country',
+          title: 'Country Master',
+          type: 'item',
+          url: '/master/common/country',
+          icon: icons.IconWorld
+        }
+      ]
+    },
+
     {
       id: 'sam',
       title: 'Sales',
@@ -246,35 +235,8 @@ export const masters = {
           type: 'collapse',
           icon: icons.IconServerCog,
           children: [
-            {
-              id: 'sm-customer-master',
-              title: 'Customer Master',
-              type: 'item',
-              url: '/sm/customers',
-              icon: icons.IconUsers
-            },
-            {
-              id: 'sm-vendor',
-              title: 'Vendor',
-              type: 'collapse',
-              icon: icons.IconTruckDelivery,
-              children: [
-                {
-                  id: 'sm-supplier-master',
-                  title: 'Supplier Master',
-                  type: 'item',
-                  url: '/sm/suppliers',
-                  icon: icons.IconTruckDelivery
-                },
-                {
-                  id: 'sm-subcontractor',
-                  title: 'Sub Contractor',
-                  type: 'item',
-                  url: '/sm/sub-contractors',
-                  icon: icons.IconTool
-                }
-              ]
-            },
+
+
             {
               id: 'sm-contact-master',
               title: 'Contact Master',
@@ -290,13 +252,6 @@ export const masters = {
               icon: icons.IconMapPin
             },
             {
-              id: 'sm-currency-master',
-              title: 'Currency Master',
-              type: 'item',
-              url: '/sm/ocr/currency-master',
-              icon: icons.IconCoins
-            },
-            {
               id: 'sm-segment-master',
               title: 'Segment Master',
               type: 'item',
@@ -309,20 +264,6 @@ export const masters = {
               type: 'item',
               url: '/sm/ocr/sub-segment-master',
               icon: icons.IconChartPie
-            },
-            {
-              id: 'sm-payment-terms',
-              title: 'Payment Terms',
-              type: 'item',
-              url: '/sm/ocr/payment-terms',
-              icon: icons.IconCreditCard
-            },
-            {
-              id: 'sm-delivery-terms',
-              title: 'Delivery Terms',
-              type: 'item',
-              url: '/sm/ocr/delivery-terms',
-              icon: icons.IconTruckDelivery
             },
             {
               id: 'sm-type-of-service',

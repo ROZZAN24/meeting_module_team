@@ -9,6 +9,7 @@ export { default as BOSTextField } from './BOSTextField';
 export * from './BOSFileGallery';
 export { default as BOSFileUpload } from './BOSFileUpload';
 export { default as BOSFilePreview } from './BOSFilePreview';
+export { BOSDocumentPreviewDialog } from './BOSDocumentPreviewDialog';
 export { default as BOSExportButton } from './BOSExportButton';
 export {
   getBOSStyles,

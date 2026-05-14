@@ -4,15 +4,26 @@ import { Grid, Box, Button, Typography, Stack, MenuItem, useTheme, Tooltip } fro
 import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconMapPin, IconBusinessplan, IconTruckDelivery } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSFormSection, BOSTextField, btnSave, btnDelete, btnCancel, btnClear } from 'ui-component/bos';
+import { 
+  BOSFormSection, 
+  BOSTextField, 
+  btnSave, 
+  btnDelete, 
+  btnCancel, 
+  btnClear, 
+  BOSDocumentPreviewDialog,
+  BOSFileUpload,
+  formatBOSFiles
+} from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+import { autoUploadFile } from 'utils/upload-helper';
+import { IconFiles } from '@tabler/icons-react';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'axios';
 import { STATES_INDIA, COUNTRIES, YES_NO_OPTIONS, STATUS_OPTIONS } from 'utils/constants';
-import { IconPlus } from '@tabler/icons-react';
 
 const INITIAL = {
   customerCode: '',
@@ -35,18 +46,19 @@ const INITIAL = {
   isoNumber: '',
   isoExpiry: '',
   ndaRequired: 'No',
-  currency: 'INR',
+  currency: '',
   segment: '',
   subSegment: '',
-  paymentTerms: 'Immediate',
-  deliveryTerms: '-Select-',
+  paymentTerms: '',
+  deliveryTerms: '',
   freight: '',
   domainName: '',
   distance: '',
   location: '',
   ldApplicable: 'No',
   negotiateCustomer: 'No',
-  status: 'Active'
+  status: 'Active',
+  fileUpload: ''
 };
 
 const RULES = [
@@ -67,6 +79,9 @@ export default function CustomerMaster() {
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState({ url: '', name: '', type: 'pdf' });
+  const [uploadedFiles, setUploadedFiles] = useState([]);
 
   // Master Data
   const [deliveryTerms, setDeliveryTerms] = useState([]);
@@ -100,6 +115,7 @@ export default function CustomerMaster() {
       Object.keys(d).forEach((k) => { if (data[k] !== undefined && data[k] !== null) d[k] = data[k]; });
       if (d.isoExpiry && typeof d.isoExpiry === 'string') d.isoExpiry = d.isoExpiry.split('T')[0];
       setForm(d);
+      setUploadedFiles(formatBOSFiles(data.fileUpload));
     } catch (e) { console.error(e); }
   }, [customerId]);
 
@@ -125,15 +141,22 @@ export default function CustomerMaster() {
 
   const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
 
+  const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+
   const handleSave = async () => {
     if (!validate(form, RULES)) return;
     setLoading(true);
     try {
+      // Handle file uploads
+      const uploadFile = async (f) => f.isServer ? f.name : await autoUploadFile(f.file, 'SALES_CUSTOMER');
+      const finalFiles = await Promise.all(uploadedFiles.map(uploadFile));
+      const updatedForm = { ...form, fileUpload: finalFiles.join(',') };
+
       if (customerId) {
-        await axios.put(`/api/sm/customers/${customerId}`, form);
+        await axios.put(`/api/sm/customers/${customerId}`, updatedForm);
         dispatch(openSnackbar({ open: true, message: 'Customer updated!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       } else {
-        const { data } = await axios.post('/api/sm/customers', form);
+        const { data } = await axios.post('/api/sm/customers', updatedForm);
         dispatch(openSnackbar({ open: true, message: 'Customer created!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
         navigate(`/sm/customers/create?id=${data.id}`, { replace: true });
       }
@@ -185,7 +208,7 @@ export default function CustomerMaster() {
 
         <BOSFormSection icon={<IconMapPin size={20} color={theme.palette.primary.main} />} title="Location Details">
           <Grid container spacing={2.5}>
-            <R lg={6}><BOSTextField name="address" label="Address" value={form.address} onChange={h} multiline rows={2} /></R>
+            <Grid item xs={12}><BOSTextField name="address" label="Address" value={form.address} onChange={h} multiline rows={4} /></Grid>
             <R><BOSTextField name="city" label="City" value={form.city} onChange={h} /></R>
             <R><BOSTextField name="state" label="State" value={form.state} onChange={h} select>
                 <MenuItem value="">-Select-</MenuItem>
@@ -230,7 +253,7 @@ export default function CustomerMaster() {
             <R>
               <BOSTextField name="currency" label="Currency" value={form.currency} onChange={h} select required>
                 <MenuItem value="">-Select-</MenuItem>
-                {currencies.map(c => (
+                {currencies.filter(c => c.status === 'Active').map(c => (
                   <MenuItem key={c.id} value={c.currencyCode}>{c.currencyCode} - {c.currencyName}</MenuItem>
                 ))}
               </BOSTextField>
@@ -250,13 +273,13 @@ export default function CustomerMaster() {
             <R>
               <BOSTextField name="paymentTerms" label="Payment Terms" value={form.paymentTerms} onChange={h} select>
                 <MenuItem value="">-Select-</MenuItem>
-                {paymentTerms.map(p => <MenuItem key={p.id} value={p.termName}>{p.termName}</MenuItem>)}
+                {paymentTerms.filter(p => p.status === 'Active').map(p => <MenuItem key={p.id} value={p.termName}>{p.termName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
               <BOSTextField name="deliveryTerms" label="Delivery Terms" value={form.deliveryTerms} onChange={h} select>
                 <MenuItem value="">-Select-</MenuItem>
-                {deliveryTerms.map(t => <MenuItem key={t.id} value={t.termName}>{t.termName}</MenuItem>)}
+                {deliveryTerms.filter(t => t.status === 'Active').map(t => <MenuItem key={t.id} value={t.termName}>{t.termName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R><BOSTextField name="freight" label="Freight" value={form.freight} onChange={h} /></R>
@@ -277,9 +300,29 @@ export default function CustomerMaster() {
             </R>
           </Grid>
         </BOSFormSection>
+
+        <BOSFormSection icon={<IconFiles size={22} color={theme.palette.primary.main} />} title="Standard Attachments">
+          <BOSFileUpload 
+            files={uploadedFiles} 
+            onChange={setUploadedFiles} 
+            module="SALES_CUSTOMER"
+            label="Upload Customer Documents"
+            helperText="PDFs, Images, or Excel sheets"
+          />
+        </BOSFormSection>
       </Stack>
 
+
       <ConfirmDeleteDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} title="Delete Customer" message="Are you sure you want to delete this customer?" itemName={form.customerName} />
+      
+      <BOSDocumentPreviewDialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        fileUrl={previewData.url}
+        fileName={previewData.name}
+        type={previewData.type}
+        onDownload={() => window.open(previewData.url.replace('/view/', '/download/'), '_blank')}
+      />
     </MainCard>
   );
 }

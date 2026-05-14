@@ -120,7 +120,7 @@ public class EmailInboxController {
             byte[] content = fileAtt.getContentBytes();
             
             return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileAtt.getName() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileAtt.getName() + "\"")
                     .contentType(MediaType.parseMediaType(fileAtt.getContentType()))
                     .body(content);
         }

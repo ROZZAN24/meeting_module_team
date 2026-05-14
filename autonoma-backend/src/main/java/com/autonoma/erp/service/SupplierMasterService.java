@@ -32,16 +32,31 @@ public class SupplierMasterService {
         repository.deleteById(id);
     }
 
+    public String getNextSupplierCode() {
+        return generateSupplierCode();
+    }
+
     private String generateSupplierCode() {
-        String lastCode = repository.findMaxSupplierCode();
-        if (lastCode == null || lastCode.isEmpty()) {
-            return "SUP-00001";
-        }
         try {
-            int lastNum = Integer.parseInt(lastCode.substring(4));
-            return String.format("SUP-%05d", lastNum + 1);
+            String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
+            String prefix = "S-" + year + "-";
+            
+            Optional<SupplierMaster> lastSupplier = repository.findTopBySupplierCodeStartingWithOrderBySupplierCodeDesc(prefix);
+            
+            if (lastSupplier.isEmpty()) {
+                return prefix + "00001";
+            }
+            
+            String lastCode = lastSupplier.get().getSupplierCode();
+            String[] parts = lastCode.split("-");
+            if (parts.length < 3) return prefix + "00001";
+            
+            int lastNum = Integer.parseInt(parts[2]);
+            return String.format("%s%05d", prefix, lastNum + 1);
         } catch (Exception e) {
-            return "SUP-" + System.currentTimeMillis();
+            e.printStackTrace(); // Minimal logging to stdout
+            String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
+            return "S-" + year + "-00001";
         }
     }
 }

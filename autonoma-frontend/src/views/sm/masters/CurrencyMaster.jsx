@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Typography, Stack, MenuItem, useTheme, Button, Tooltip, Grid } from '@mui/material';
+import { Typography, Stack, MenuItem, useTheme, Button, Tooltip, Grid, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { IconCoins, IconDeviceFloppy, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { BOSDataTable, BOSTextField, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -25,6 +26,11 @@ export default function CurrencyMaster() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(INITIAL);
   const [selectedId, setSelectedId] = useState(null);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -54,11 +60,19 @@ export default function CurrencyMaster() {
     } catch (e) { console.error(e); }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this currency?')) return;
+  const handleDeleteClick = (row) => {
+    setDeleteId(row.id);
+    setDeleteName(row.currencyName);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`/api/currency/${id}`);
+      await axios.delete(`/api/currency/${deleteId}`);
       dispatch(openSnackbar({ open: true, message: 'Currency deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      setDeleteOpen(false);
+      setDeleteId(null);
+      setDeleteName('');
       fetchData();
     } catch (e) { console.error(e); }
   };
@@ -72,45 +86,62 @@ export default function CurrencyMaster() {
         </Stack>
       }
       secondary={
-        !showForm && (
-          <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)} sx={btnSave}>
-            Add New
-          </Button>
-        )
+        <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
+          Add New
+        </Button>
       }
     >
-      {showForm ? (
-        <Stack spacing={3}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6} md={3}>
-              <BOSTextField name="currencyCode" label="Currency Code" value={form.currencyCode} onChange={h} required placeholder="e.g. USD" />
+      <BOSDataTable
+        columns={columns}
+        rows={rows}
+        page={page}
+        size={size}
+        totalCount={rows.length}
+        onPageChange={(p) => setPage(p)}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onEditRow={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
+        onDeleteRow={handleDeleteClick}
+      />
+
+      <Dialog open={showForm} onClose={() => { setShowForm(false); setForm(INITIAL); setSelectedId(null); }} fullWidth maxWidth="sm">
+        <DialogTitle>{selectedId ? 'Edit Currency' : 'New Currency'}</DialogTitle>
+        <DialogContent sx={{ pt: 2 }}>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <BOSTextField name="currencyCode" label="Currency Code" value={form.currencyCode} onChange={h} required placeholder="e.g. USD" />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <BOSTextField name="currencyName" label="Currency Name" value={form.currencyName} onChange={h} required placeholder="e.g. US Dollar" />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <BOSTextField name="symbol" label="Symbol" value={form.symbol} onChange={h} placeholder="e.g. $" />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <BOSTextField name="status" label="Status" value={form.status} onChange={h} select>
+                  <MenuItem value="Active">Active</MenuItem>
+                  <MenuItem value="Inactive">Inactive</MenuItem>
+                </BOSTextField>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <BOSTextField name="currencyName" label="Currency Name" value={form.currencyName} onChange={h} required placeholder="e.g. US Dollar" />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <BOSTextField name="symbol" label="Symbol" value={form.symbol} onChange={h} placeholder="e.g. $" />
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
-              <BOSTextField name="status" label="Status" value={form.status} onChange={h} select>
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
-              </BOSTextField>
-            </Grid>
-          </Grid>
-          <Stack direction="row" spacing={1.5} justifyContent="flex-end">
-            <Button variant="contained" startIcon={<IconX size={18} />} onClick={() => { setShowForm(false); setForm(INITIAL); setSelectedId(null); }} sx={btnCancel}>Cancel</Button>
-            <Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save</Button>
           </Stack>
-        </Stack>
-      ) : (
-        <BOSDataTable
-          columns={columns}
-          rows={rows}
-          onEdit={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
-          onDelete={(row) => handleDelete(row.id)}
-        />
-      )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setShowForm(false); setForm(INITIAL); setSelectedId(null); }}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      <ConfirmDeleteDialog 
+        open={deleteOpen} 
+        onClose={() => setDeleteOpen(false)} 
+        onConfirm={handleDeleteConfirm} 
+        title="Delete Currency" 
+        message="Are you sure you want to delete this currency?" 
+        itemName={deleteName} 
+      />
     </MainCard>
   );
 }

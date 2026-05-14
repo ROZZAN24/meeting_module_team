@@ -15,16 +15,24 @@ public class SupplierMasterController {
     @Autowired
     private SupplierMasterService service;
 
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getSupplierById(@PathVariable String id) {
+        if ("next-code".equals(id)) {
+            return ResponseEntity.ok(service.getNextSupplierCode());
+        }
+        try {
+            Long numericId = Long.parseLong(id);
+            return service.getSupplierById(numericId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid ID format");
+        }
+    }
+
     @GetMapping
     public List<SupplierMaster> getAllSuppliers() {
         return service.getAllSuppliers();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<SupplierMaster> getSupplierById(@PathVariable Long id) {
-        return service.getSupplierById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping

@@ -60,6 +60,9 @@ public class ProcessingRequest {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    @Column(length = 500)
+    private String uploadFiles;
+
     @Builder.Default
     private Integer attachmentCount = 0;
 

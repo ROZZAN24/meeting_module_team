@@ -3,7 +3,7 @@ import {
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
   DialogActions, TextField, MenuItem, IconButton, Tooltip 
 } from '@mui/material';
-import { IconTruckDelivery, IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
+import { IconWorld, IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { BOSDataTable } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -11,12 +11,11 @@ import axios from 'axios';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'termName', label: 'Delivery Term', minWidth: 200, bold: true },
-  { id: 'description', label: 'Delivery Term Description', minWidth: 300 },
+  { id: 'country', label: 'Country', minWidth: 300, bold: true },
   { id: 'status', label: 'Status', minWidth: 100 }
 ];
 
-export default function DeliveryTerms() {
+export default function CountryMaster() {
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -26,15 +25,13 @@ export default function DeliveryTerms() {
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState('');
   const [formData, setFormData] = useState({
-    termCode: '',
-    termName: '',
-    description: '',
+    country: '',
     status: 'Active'
   });
 
   const fetchRows = async () => {
     try {
-      const res = await axios.get('/api/delivery-terms');
+      const res = await axios.get('/api/master/countries');
       setRows(res.data);
     } catch (err) {
       console.error(err);
@@ -49,17 +46,13 @@ export default function DeliveryTerms() {
     if (row) {
       setEditId(row.id);
       setFormData({
-        termCode: row.termCode,
-        termName: row.termName,
-        description: row.description || '',
+        country: row.country || '',
         status: row.status
       });
     } else {
       setEditId(null);
       setFormData({
-        termCode: '',
-        termName: '',
-        description: '',
+        country: '',
         status: 'Active'
       });
     }
@@ -71,9 +64,9 @@ export default function DeliveryTerms() {
   const handleSubmit = async () => {
     try {
       if (editId) {
-        await axios.put(`/api/delivery-terms/${editId}`, formData);
+        await axios.put(`/api/master/countries/${editId}`, formData);
       } else {
-        await axios.post('/api/delivery-terms', formData);
+        await axios.post('/api/master/countries', formData);
       }
       handleClose();
       fetchRows();
@@ -84,13 +77,13 @@ export default function DeliveryTerms() {
 
   const handleDeleteClick = (row) => {
     setDeleteId(row.id);
-    setDeleteName(row.termName);
+    setDeleteName(row.country);
     setDeleteOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`/api/delivery-terms/${deleteId}`);
+      await axios.delete(`/api/master/countries/${deleteId}`);
       setDeleteOpen(false);
       setDeleteId(null);
       setDeleteName('');
@@ -105,11 +98,11 @@ export default function DeliveryTerms() {
       title={
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <IconTruckDelivery size={24} />
-            <Typography variant="h3">Delivery Terms Master</Typography>
+            <IconWorld size={24} />
+            <Typography variant="h3">Country Master</Typography>
           </Stack>
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
-            New Term
+            New Country
           </Button>
         </Stack>
       }
@@ -127,22 +120,14 @@ export default function DeliveryTerms() {
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>{editId ? 'Edit Delivery Term' : 'New Delivery Term'}</DialogTitle>
+        <DialogTitle>{editId ? 'Edit Country' : 'New Country'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Delivery Term"
+              label="Country"
               fullWidth
-              value={formData.termName}
-              onChange={(e) => setFormData({ ...formData, termName: e.target.value })}
-            />
-            <TextField
-              label="Delivery Term Description"
-              fullWidth
-              multiline
-              rows={3}
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              value={formData.country}
+              onChange={(e) => setFormData({ ...formData, country: e.target.value })}
             />
             <TextField
               select
@@ -168,8 +153,8 @@ export default function DeliveryTerms() {
         open={deleteOpen} 
         onClose={() => setDeleteOpen(false)} 
         onConfirm={handleDeleteConfirm} 
-        title="Delete Delivery Term" 
-        message="Are you sure you want to delete this delivery term?" 
+        title="Delete Country" 
+        message="Are you sure you want to delete this country?" 
         itemName={deleteName} 
       />
     </MainCard>

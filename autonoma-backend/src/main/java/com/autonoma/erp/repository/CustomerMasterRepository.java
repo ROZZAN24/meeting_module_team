@@ -11,6 +11,5 @@ import java.util.Optional;
 public interface CustomerMasterRepository extends JpaRepository<CustomerMaster, Long> {
     Optional<CustomerMaster> findByCustomerCode(String customerCode);
     
-    @Query("SELECT MAX(c.customerCode) FROM CustomerMaster c")
-    String findMaxCustomerCode();
+    Optional<CustomerMaster> findTopByCustomerCodeStartingWithOrderByCustomerCodeDesc(String prefix);
 }

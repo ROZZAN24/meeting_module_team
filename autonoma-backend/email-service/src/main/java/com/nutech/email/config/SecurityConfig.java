@@ -26,7 +26,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
-            );
+            )
+            .headers(headers -> headers.frameOptions(frame -> frame.disable()));
 
         return http.build();
     }

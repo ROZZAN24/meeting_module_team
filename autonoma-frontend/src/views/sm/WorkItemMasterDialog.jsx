@@ -11,8 +11,9 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { BOSFormDialog, btnDelete, btnEdit } from 'ui-component/bos';
 import { format } from 'date-fns';
-import { IconTrash, IconUpload, IconMailForward } from '@tabler/icons-react';
-import UploadFileDialog from './UploadFileDialog';
+import { IconTrash, IconUpload, IconMailForward, IconCloudUpload, IconFileCheck, IconX } from '@tabler/icons-react';
+import { useRef } from 'react';
+import { BOSFormSection } from 'ui-component/bos';
 import ForwardMailDialog from './ForwardMailDialog';
 
 const fieldConfigs = [
@@ -54,7 +55,8 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     emailReceivedAt: '',
     category: 'Others',
     status: 'Abandoned',
-    emailMessageId: ''
+    emailMessageId: '',
+    uploadFiles: ''
   });
 
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -65,14 +67,16 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
   const [previewData, setPreviewData] = useState({ url: '', name: '', type: '', content: '' });
   const [previewLoading, setPreviewLoading] = useState(false);
   const [customers, setCustomers] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
-  const handlePreview = async (emailId, attachmentId, fileName) => {
+  const handlePreview = async (emailId, attachmentId, fileName, contentType = '') => {
     const url = `http://localhost:9090/api/inbox/${emailId}/attachments/${attachmentId}`;
     const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
     
     setPreviewLoading(true);
     setPreviewOpen(true);
-    setPreviewData({ url, name: fileName, type: ext, content: '' });
+    setPreviewData({ id: attachmentId, url, name: fileName, type: ext, contentType, content: '' });
 
     try {
       if (['docx', 'doc', 'xlsx', 'xls'].includes(ext)) {
@@ -128,6 +132,47 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     window.open(url, '_blank');
   };
 
+  const handleManualUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const upFormData = new FormData();
+    upFormData.append('file', file);
+
+    setUploading(true);
+    try {
+      // Manual uploads go to the main backend file service
+      const res = await axios.post('/api/files/upload', upFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setFormData(p => ({ ...p, uploadFiles: res.data }));
+      dispatch(openSnackbar({ open: true, message: 'File uploaded successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+    } catch (err) {
+      console.error('Manual upload failed:', err);
+      dispatch(openSnackbar({ open: true, message: 'File upload failed.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleViewManualUpload = () => {
+    if (!formData.uploadFiles) return;
+    // Manual files are served from the main backend (usually proxied or same origin)
+    const url = `/api/files/view/${formData.uploadFiles}`;
+    const fileName = formData.uploadFiles.split('/').pop();
+    const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
+    
+    setPreviewData({ 
+      id: 'manual', 
+      url, 
+      name: fileName, 
+      type: ext, 
+      contentType: ext === 'pdf' ? 'application/pdf' : (['png', 'jpg', 'jpeg', 'gif'].includes(ext) ? `image/${ext}` : ''),
+      content: '' 
+    });
+    setPreviewOpen(true);
+  };
+
   useEffect(() => {
     clearErrors();
     if (open) fetchCustomers();
@@ -142,7 +187,8 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                   initialData.intent === 'QUOTATION_REQUEST' ? 'Order' : 
                   initialData.intent === 'UNCLASSIFIED' ? 'Others' : (initialData.intent || 'Others'),
         emailReceivedAt: initialData.emailReceivedAt || '',
-        emailMessageId: initialData.emailMessageId || ''
+        emailMessageId: initialData.emailMessageId || '',
+        uploadFiles: initialData.uploadFiles || ''
       });
       if (initialData.emailMessageId) {
         fetchAttachments(initialData.emailMessageId);
@@ -160,7 +206,8 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
         emailReceivedAt: '',
         category: 'Others',
         status: 'Abandoned',
-        emailMessageId: ''
+        emailMessageId: '',
+        uploadFiles: ''
       });
       setAttachments([]);
     }
@@ -200,14 +247,6 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
         startIcon={<IconTrash size={18} />}
       >
         Delete
-      </Button>
-      <Button
-        variant="contained"
-        sx={{ ...btnEdit(theme), bgcolor: '#2196f3', '&:hover': { bgcolor: '#1976d2' } }}
-        startIcon={<IconUpload size={18} />}
-        onClick={() => setUploadDialogOpen(true)}
-      >
-        Upload File
       </Button>
       <Button
         variant="contained"
@@ -444,7 +483,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                           <Chip
                             label={att.name}
                             icon={<AttachFileRoundedIcon sx={{ fontSize: '14px !important' }} />}
-                            onClick={() => handlePreview(formData.emailMessageId, att.id, att.name)}
+                            onClick={() => handlePreview(formData.emailMessageId, att.id, att.name, att.contentType)}
                             size="small"
                             variant="outlined"
                             sx={{ 
@@ -458,7 +497,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                           />
                           <IconButton 
                             size="small" 
-                            onClick={() => handlePreview(formData.emailMessageId, att.id, att.name)}
+                            onClick={() => handlePreview(formData.emailMessageId, att.id, att.name, att.contentType)}
                             sx={{ color: 'primary.main', p: 0.5 }}
                           >
                             <VisibilityRoundedIcon sx={{ fontSize: 18 }} />
@@ -506,13 +545,57 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
               </Grid>
             </Grid>
           </Grid>
+          <Grid size={{ xs: 12 }}>
+            <BOSFormSection icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />} title="Document Upload">
+              <Grid container spacing={2.5}>
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Stack spacing={1}>
+                    <Typography variant="caption" color="textSecondary">Upload Files</Typography>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={handleManualUpload}
+                      />
+                      <Button
+                        variant="outlined"
+                        startIcon={uploading ? <IconCloudUpload size={18} className="animate-bounce" /> : <IconCloudUpload size={18} />}
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading || readOnly}
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        {uploading ? 'Uploading...' : 'Click To Upload Document'}
+                      </Button>
+                      {formData.uploadFiles && (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Tooltip title="View Uploaded File">
+                            <Button 
+                              variant="contained" 
+                              color="secondary"
+                              size="small" 
+                              startIcon={<IconFileCheck size={18} />}
+                              onClick={handleViewManualUpload}
+                              sx={{ borderRadius: '8px', bgcolor: 'secondary.main' }}
+                            >
+                              View Uploaded File
+                            </Button>
+                          </Tooltip>
+                          {!readOnly && (
+                            <IconButton size="small" color="error" onClick={() => setFormData(p => ({ ...p, uploadFiles: '' }))}>
+                              <IconX size={20} />
+                            </IconButton>
+                          )}
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Stack>
+                </Grid>
+              </Grid>
+            </BOSFormSection>
+          </Grid>
         </Grid>
       </Box>
-      <UploadFileDialog 
-        open={uploadDialogOpen} 
-        handleClose={() => setUploadDialogOpen(false)} 
-        workItemData={formData}
-      />
       <ForwardMailDialog open={forwardDialogOpen} handleClose={() => setForwardDialogOpen(false)} />
 
       {/* File Preview Dialog */}
@@ -547,19 +630,16 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                 />
               ) : (
                 <>
-                  {previewData.name.toLowerCase().endsWith('.pdf') ? (
+                  {previewData.name.toLowerCase().endsWith('.pdf') || previewData.contentType === 'application/pdf' ? (
                     <iframe title="PDF Preview" src={previewData.url} style={{ width: '100%', height: '70vh', border: 'none' }} />
-                  ) : (previewData.type.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(previewData.name)) ? (
+                  ) : (previewData.type.startsWith('image') || (previewData.contentType && previewData.contentType.startsWith('image/')) || /\.(jpg|jpeg|png|gif|webp)$/i.test(previewData.name)) ? (
                     <Box 
                       component="img" 
                       src={previewData.url} 
                       sx={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 2, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', objectFit: 'contain' }} 
                     />
                   ) : (
-                    <Box sx={{ p: 4 }}>
-                      <Typography variant="h5" color="text.secondary" gutterBottom>Preview not available for this format</Typography>
-                      <Typography variant="body2" color="text.disabled">Please download the file to view its content.</Typography>
-                    </Box>
+                    <iframe title="Document Preview" src={previewData.url} style={{ width: '100%', height: '70vh', border: 'none' }} />
                   )}
                 </>
               )}
