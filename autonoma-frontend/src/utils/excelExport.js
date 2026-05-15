@@ -1,8 +1,8 @@
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx-js-style';
 import { saveAs } from 'file-saver';
 
 /**
- * Standard BOS Excel Export with Header Metadata
+ * Standard BOS Excel Export with Header Metadata and Styling
  * @param {Array} data - Array of objects to export
  * @param {String} fileName - Name of the file
  * @param {Object} headerInfo - Optional metadata { userName: string }
@@ -17,7 +17,30 @@ export const exportToExcel = (data, fileName, headerInfo = {}) => {
   // 1. Create a worksheet from the JSON data
   const worksheet = XLSX.utils.json_to_sheet([]);
 
-  // 2. Add Header Information at the top
+  // 2. Define Styles
+  const headerStyle = {
+    fill: { fgColor: { rgb: "FFCC99" } }, // Light Orange
+    font: { bold: true, name: "Calibri", sz: 12 },
+    alignment: { vertical: "center", horizontal: "left" },
+    border: {
+      top: { style: "thin", color: { rgb: "000000" } },
+      bottom: { style: "thin", color: { rgb: "000000" } },
+      left: { style: "thin", color: { rgb: "000000" } },
+      right: { style: "thin", color: { rgb: "000000" } }
+    }
+  };
+
+  const titleStyle = {
+    font: { bold: true, name: "Calibri", sz: 14, color: { rgb: "000080" } },
+    alignment: { horizontal: "left" }
+  };
+
+  const metaStyle = {
+    font: { italic: true, name: "Calibri", sz: 11, color: { rgb: "666666" } },
+    alignment: { horizontal: "left" }
+  };
+
+  // 3. Add Header Information at the top
   XLSX.utils.sheet_add_aoa(worksheet, [
     ['AUTONOMA BUSINESS OPERATING SYSTEM'],
     [`Report Name: ${fileName.replace(/_/g, ' ')}`],
@@ -26,25 +49,71 @@ export const exportToExcel = (data, fileName, headerInfo = {}) => {
     [] // Empty row spacer
   ], { origin: 'A1' });
 
-  // 3. Add the main data starting from row 6
+  // Apply Styles to Header Metadata
+  worksheet['A1'].s = titleStyle;
+  worksheet['A2'].s = metaStyle;
+  worksheet['A3'].s = metaStyle;
+  worksheet['A4'].s = metaStyle;
+
+  // 4. Add the main data starting from row 6
   XLSX.utils.sheet_add_json(worksheet, data, { origin: 'A6', skipHeader: false });
 
-  // 4. Auto-calculate column widths
+  // 5. Apply Styles (Advanced Enhancement)
+  const range = XLSX.utils.decode_range(worksheet['!ref']);
+  
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!worksheet[address]) continue;
+
+      // Base style for all data cells
+      const baseStyle = {
+        font: { name: "Calibri", sz: 11 },
+        border: {
+          top: { style: "thin", color: { rgb: "E2E2E2" } },
+          bottom: { style: "thin", color: { rgb: "E2E2E2" } },
+          left: { style: "thin", color: { rgb: "E2E2E2" } },
+          right: { style: "thin", color: { rgb: "E2E2E2" } }
+        },
+        alignment: { vertical: "center", horizontal: "left", wrapText: true }
+      };
+
+      if (R === 5) {
+        // Table Headers (Row 6)
+        worksheet[address].s = headerStyle;
+      } else if (R > 5) {
+        // Data Rows - Zebra Striping
+        if (R % 2 === 0) {
+          baseStyle.fill = { fgColor: { rgb: "F9F9F9" } };
+        }
+        worksheet[address].s = baseStyle;
+      }
+    }
+  }
+
+  // 6. Freeze Top 6 Rows (Headers + Metadata)
+  worksheet['!views'] = [{ state: 'frozen', ySplit: 6 }];
+
+  // 7. Auto-calculate column widths (Aggressive padding)
   const colWidths = Object.keys(data[0] || {}).map(key => {
     const headerLen = key.length;
     const maxDataLen = data.reduce((max, row) => {
       const val = row[key] ? String(row[key]).length : 0;
       return Math.max(max, val);
     }, 0);
-    return { wch: Math.max(headerLen, maxDataLen, 10) + 2 };
+    const finalWidth = Math.max(headerLen, maxDataLen, 12) + 6;
+    return { wch: finalWidth };
   });
+
+  if (colWidths[0]) {
+    colWidths[0].wch = Math.max(colWidths[0].wch, 42);
+  }
+
   worksheet['!cols'] = colWidths;
 
-  // 5. Stylize the header (basic XLSX style support is limited in community version, so we focus on structure)
+  // 8. Finalize and Save
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-
-  // 6. Finalize and Save
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
   const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
   saveAs(dataBlob, `${fileName}.xlsx`);
