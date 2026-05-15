@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
-    Optional<Department> findByDepartmentNo(Integer departmentNo);
+    Optional<Department> findByDepartmentNo(String departmentNo);
     @org.springframework.data.jpa.repository.Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM hrm_department_master WHERE LOWER(LTRIM(RTRIM(dept_name))) = LOWER(LTRIM(RTRIM(:name)))", nativeQuery = true)
     int existsByNameNative(@org.springframework.data.repository.query.Param("name") String name);
 
@@ -16,10 +16,10 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     int existsByNameNativeWithId(@org.springframework.data.repository.query.Param("name") String name, @org.springframework.data.repository.query.Param("id") Long id);
 
     @org.springframework.data.jpa.repository.Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM hrm_department_master WHERE dept_no = :deptNo", nativeQuery = true)
-    int existsByDeptNoNative(@org.springframework.data.repository.query.Param("deptNo") Integer deptNo);
+    int existsByDeptNoNative(@org.springframework.data.repository.query.Param("deptNo") String deptNo);
 
     @org.springframework.data.jpa.repository.Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM hrm_department_master WHERE dept_no = :deptNo AND id != :id", nativeQuery = true)
-    int existsByDeptNoNativeWithId(@org.springframework.data.repository.query.Param("deptNo") Integer deptNo, @org.springframework.data.repository.query.Param("id") Long id);
+    int existsByDeptNoNativeWithId(@org.springframework.data.repository.query.Param("deptNo") String deptNo, @org.springframework.data.repository.query.Param("id") Long id);
 
     @org.springframework.data.jpa.repository.Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM hrm_department_master WHERE seq_no = :seqNo", nativeQuery = true)
     int existsBySeqNoNative(@org.springframework.data.repository.query.Param("seqNo") Integer seqNo);
@@ -30,8 +30,8 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     @org.springframework.data.jpa.repository.Query("SELECT MAX(d.sequenceNo) FROM Department d")
     java.util.Optional<Integer> findMaxSequenceNo();
 
-    @org.springframework.data.jpa.repository.Query("SELECT MAX(d.departmentNo) FROM Department d")
-    java.util.Optional<Integer> findMaxDepartmentNo();
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(d) FROM Department d")
+    Long countDepartments();
     
     @org.springframework.data.jpa.repository.Query(value = "SELECT * FROM hrm_department_master WHERE status = :status", nativeQuery = true)
     java.util.List<Department> findByStatus(@org.springframework.data.repository.query.Param("status") String status);

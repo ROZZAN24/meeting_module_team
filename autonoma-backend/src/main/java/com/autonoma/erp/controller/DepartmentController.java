@@ -24,8 +24,10 @@ public class DepartmentController {
 
     @Operation(summary = "Get next available Department Number")
     @GetMapping("/next-code")
-    public ResponseEntity<Integer> getNextCode() {
-        return ResponseEntity.ok(departmentRepository.findMaxDepartmentNo().orElse(0) + 1);
+    public ResponseEntity<String> getNextCode() {
+        long count = departmentRepository.countDepartments();
+        String professionalCode = String.format("DEPT-%03d", count + 1);
+        return ResponseEntity.ok(professionalCode);
     }
 
     @GetMapping("/next-seq")

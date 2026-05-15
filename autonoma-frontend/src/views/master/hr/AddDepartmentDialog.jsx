@@ -19,7 +19,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
 
   const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
     departmentName: '',
-    departmentNo: 0,
+    departmentNo: '',
     ndaCertificate: 'No',
     sequenceNo: 0,
     status: 'Active'
@@ -31,7 +31,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
         setFormData({
           id: initialData.id,
           departmentName: initialData.departmentName || '',
-          departmentNo: initialData.departmentNo || 0,
+          departmentNo: initialData.departmentNo || '',
           ndaCertificate: initialData.ndaCertificate || 'No',
           sequenceNo: initialData.sequenceNo || 0,
           status: initialData.status || 'Active'
@@ -160,7 +160,6 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
             <BOSTextField
               name="departmentNo"
               label="Department Number"
-              type="number"
               value={formData.departmentNo}
               InputProps={{ readOnly: true }}
               sx={{ bgcolor: 'grey.50' }}
