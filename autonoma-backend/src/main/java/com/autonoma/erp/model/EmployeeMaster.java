@@ -23,6 +23,9 @@ public class EmployeeMaster {
     @Column(name = "emp_code", unique = true, nullable = false)
     private String empCode;
 
+    @Column(name = "old_emp_code", length = 50)
+    private String oldEmpCode;
+
     @Column(name = "title", length = 10)
     private String title;
 

@@ -25,6 +25,7 @@ import EmployeeSubSections from './EmployeeSubSections';
 const INITIAL = {
   // 1. Classification & Identity
   empCode: '', 
+  oldEmpCode: '',
   categoryId: '', 
   empLevelId: '', 
   employeeTypeId: '', 
@@ -85,11 +86,16 @@ const INITIAL = {
   isNcrApprover: 'NO', ncrApproverType: '', ncrApproverFileInfo: '',
   isChaired: 'NO', chairedType: '', chairedFileInfo: '',
   isHost: 'NO', hostType: '', hostFileInfo: '',
-  isParticipants: 'NO', participantsType: '', participantsFileInfo: '',
+  isParticipants: 'YES', participantsType: '', participantsFileInfo: '',
+  segment: '', subSegment: '',
   isFirstAid: 'NO', firstAidFileInfo: '',
   isFireFighter: 'NO', fireFighterFileInfo: '',
   isTwoWheeler: 'NO', twoWheelerFileInfo: '',
   isFourWheeler: 'NO', fourWheelerFileInfo: '',
+  isInductionEligible: 'NO',
+  isInterviewer: 'NO',
+  isEnquiryAssignee: 'NO',
+  isPrAssignee: 'NO',
 
   // System
   createdBy: null, createdAt: null, updatedBy: null, updatedAt: null
@@ -137,8 +143,10 @@ export default function EmployeeMaster() {
     meetings = [],
     employees = [],
     grades = [],
-    divisions = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS']);
+    divisions = [],
+    segments = [],
+    subSegments = []
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS', 'SEGMENTS', 'SUB_SEGMENTS']);
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
@@ -269,26 +277,25 @@ export default function EmployeeMaster() {
     const selectedTypes = form[typeName] ? form[typeName].split(',').map(t => t.trim()).filter(t => t) : [];
 
     return (
-      <Paper sx={{ mb: 3, p: 2, borderRadius: 3, border: '1px solid', borderColor: isEnabled ? 'primary.light' : 'divider', bgcolor: isEnabled ? (isDark ? 'rgba(33, 150, 243, 0.05)' : 'rgba(33, 150, 243, 0.02)') : 'transparent', transition: 'all 0.3s ease' }}>
-        <Grid container spacing={2} alignItems="center">
-          {/* Left: Icon & Label */}
-          <Grid item xs={12} md={4} lg={3}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Box sx={{ minWidth: 42, height: 42, borderRadius: 1.5, bgcolor: isEnabled ? 'primary.main' : 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isEnabled ? 'white' : 'grey.500' }}>
-                <IconShieldCheck size={22} />
-              </Box>
-              <Box>
-                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isEnabled ? 'text.primary' : 'text.secondary', lineHeight: 1.2 }}>{label}</Typography>
-                <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 80, mt: 0.5 }}>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-              </Box>
-            </Stack>
-          </Grid>
+      <Paper sx={{ mb: 2.5, p: 2.5, borderRadius: 3, border: '1px solid', borderColor: isEnabled ? 'primary.light' : 'divider', bgcolor: isEnabled ? (isDark ? 'rgba(33, 150, 243, 0.05)' : 'rgba(33, 150, 243, 0.02)') : 'transparent', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, gap: 4 }}>
+          
+          {/* Left Side: Icon, Label & Status Toggle */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, width: { xs: '100%', md: '280px' }, flexShrink: 0 }}>
+            <Box sx={{ minWidth: 48, width: 48, height: 48, borderRadius: 2, bgcolor: isEnabled ? 'primary.main' : 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isEnabled ? 'white' : 'grey.500', boxShadow: isEnabled ? theme.customShadows.primary : 'none' }}>
+              <IconShieldCheck size={24} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isEnabled ? 'text.primary' : 'text.secondary', mb: 0.5 }}>{label}</Typography>
+              <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 90 }}>
+                <MenuItem value="YES">YES</MenuItem>
+                <MenuItem value="NO">NO</MenuItem>
+              </BOSTextField>
+            </Box>
+          </Box>
 
-          {/* Right: Content or Disabled Message */}
-          <Grid item xs={12} md={8} lg={9}>
+          {/* Right Side: Content Area */}
+          <Box sx={{ flex: 1, width: '100%' }}>
             {isEnabled ? (
               <Stack spacing={2}>
                 {hasType && (
@@ -335,12 +342,12 @@ export default function EmployeeMaster() {
                 )}
               </Stack>
             ) : (
-              <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.1)' : 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+              <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.1)' : 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider', width: '100%' }}>
                 <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>This eligibility is currently disabled for this employee.</Typography>
               </Box>
             )}
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Paper>
     );
   };
@@ -362,6 +369,7 @@ export default function EmployeeMaster() {
         <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Classification & Identity">
           <Grid container spacing={2.5}>
             <R><BOSTextField name="empCode" label="Employee Code *" value={form.empCode} inputProps={{ readOnly: true }} /></R>
+            <R><BOSTextField name="oldEmpCode" label="Old Emp. Code" value={form.oldEmpCode} onChange={h} /></R>
             <R>
               <BOSTextField select name="categoryId" label="Category *" value={form.categoryId} onChange={h} error={!!errors.categoryId} helperText={errors.categoryId}>
                 {CATEGORIES.map((c) => <MenuItem key={c.id} value={c.id}>{c.categoryName}</MenuItem>)}
@@ -536,7 +544,14 @@ export default function EmployeeMaster() {
             <R><BOSDatePicker name="dateOfJoining" label="Date Of Joining" value={form.dateOfJoining} onChange={h} error={!!errors.dateOfJoining} helperText={errors.dateOfJoining} required /></R>
             <R><BOSTextField name="probationPeriod" label="Probation (Months)" value={form.probationPeriod} onChange={h} type="number" /></R>
             <R><BOSDatePicker name="confirmationDate" label="Confirmation Date" value={form.confirmationDate} onChange={h} /></R>
-            <R><BOSTextField select name="inductionStatus" label="Induction Status" value={form.inductionStatus} onChange={h}><MenuItem value="PENDING">PENDING</MenuItem><MenuItem value="COMPLETED">COMPLETED</MenuItem></BOSTextField></R>
+            <R>
+              <BOSTextField 
+                name="inductionStatus" 
+                label="Induction Status" 
+                value={form.inductionStatus || 'PENDING'} 
+                inputProps={{ readOnly: true }}
+              />
+            </R>
             <R><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
             <R>
               <BOSTextField select name="exitReason" label="Exit Reason" value={form.exitReason} onChange={h} disabled={!form.exitDate}>
@@ -565,42 +580,109 @@ export default function EmployeeMaster() {
 
         <EmployeeSubSections employeeId={employeeId} />
 
-        {/* ═══ SECTION 16: ABILITY (Restored Original) ═══ */}
+        {/* ═══ SECTION 16: ABILITY ═══ */}
         <BOSFormSection icon={<IconShieldCheck size={20} color={theme.palette.secondary.main} />} title="Ability">
           <Stack spacing={4}>
+            
+            {/* Group 1: Audit & Compliance */}
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 700 }}>Compliance & Auditing</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  {renderAbilityRow('Auditor', 'isAuditor', 'auditorType', 'auditorFileInfo')}
-                  {renderAbilityRow('Auditee', 'isAuditee', 'auditeeType', 'auditeeFileInfo')}
-                  {renderAbilityRow('NCR Approved by', 'isNcrApprover', 'ncrApproverType', 'ncrApproverFileInfo')}
-                </Grid>
-              </Grid>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconShieldCheck size={20} /> Audit & Compliance
+              </Typography>
+              <Stack spacing={1}>
+                {renderAbilityRow('Auditor', 'isAuditor', 'auditorType', 'auditorFileInfo')}
+                {renderAbilityRow('Auditee', 'isAuditee', 'auditeeType', 'auditeeFileInfo')}
+                {renderAbilityRow('NCR approved by', 'isNcrApprover', 'ncrApproverType', 'ncrApproverFileInfo')}
+              </Stack>
             </Box>
+
             <Divider />
+
+            {/* Group 2: Meeting & Governance */}
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 700 }}>Roles & Governance</Typography>
-              <Grid item xs={12}>
-                {renderAbilityRow('Chaired', 'isChaired', 'chairedType', 'chairedFileInfo', true, true, meetings.map(m => m.meetingName))}
-                {renderAbilityRow('Host', 'isHost', 'hostType', 'hostFileInfo', true, true, meetings.map(m => m.meetingName))}
-                {renderAbilityRow('Participants', 'isParticipants', 'participantsType', 'participantsFileInfo', true, true, meetings.map(m => m.meetingName))}
-              </Grid>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconSettings size={20} /> Meeting & Governance
+              </Typography>
+              <Stack spacing={1}>
+                {renderAbilityRow('Chaired', 'isChaired', 'chairedType', '', true, false, meetings.map(m => m.meetingName))}
+                {renderAbilityRow('Host', 'isHost', 'hostType', '', true, false, meetings.map(m => m.meetingName))}
+                {renderAbilityRow('Participants', 'isParticipants', 'participantsType', '', true, false, meetings.map(m => m.meetingName))}
+              </Stack>
             </Box>
+
             <Divider />
+
+            {/* Group 3: Strategic Mapping */}
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 700 }}>Safety & Specialized Skills</Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
-                  {renderAbilityRow('First Aid', 'isFirstAid', '', 'firstAidFileInfo', false, true)}
-                  {renderAbilityRow('Fire Fighter', 'isFireFighter', '', 'fireFighterFileInfo', false, true)}
+              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconBriefcase size={20} /> Strategic Mapping
+              </Typography>
+              <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50' }}>
+                <Grid container spacing={2}>
+                  <R lg={6}>
+                    <BOSTextField select name="segment" label="Segment" value={form.segment} onChange={h}>
+                      <MenuItem value="">-Select Segment-</MenuItem>
+                      {segments.map(s => <MenuItem key={s.id} value={s.segmentName}>{s.segmentName}</MenuItem>)}
+                    </BOSTextField>
+                  </R>
+                  <R lg={6}>
+                    <BOSTextField select name="subSegment" label="Sub Segment" value={form.subSegment} onChange={h}>
+                      <MenuItem value="">-Select Sub Segment-</MenuItem>
+                      {subSegments.map(s => <MenuItem key={s.id} value={s.subSegmentName}>{s.subSegmentName}</MenuItem>)}
+                    </BOSTextField>
+                  </R>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  {renderAbilityRow('Two Wheeler', 'isTwoWheeler', '', 'twoWheelerFileInfo', false, true)}
-                  {renderAbilityRow('Four Wheeler', 'isFourWheeler', '', 'fourWheelerFileInfo', false, true)}
-                </Grid>
-              </Grid>
+              </Paper>
             </Box>
+
+            <Divider />
+
+            {/* Group 4: Safety & Specialized Skills */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconFileCertificate size={20} /> Safety & Specialized Skills
+              </Typography>
+              <Stack spacing={1}>
+                {renderAbilityRow('First Aid', 'isFirstAid', '', 'firstAidFileInfo', false, true)}
+                {renderAbilityRow('Fire Fighter', 'isFireFighter', '', 'fireFighterFileInfo', false, true)}
+                {renderAbilityRow('Two Wheeler Driving', 'isTwoWheeler', '', 'twoWheelerFileInfo', false, true)}
+                {renderAbilityRow('Four Wheeler Driving', 'isFourWheeler', '', 'fourWheelerFileInfo', false, true)}
+              </Stack>
+            </Box>
+
+            <Divider />
+
+            {/* Group 5: Internal Assignments */}
+            <Box>
+              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <IconUser size={20} /> Internal Assignments
+              </Typography>
+              <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50' }}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <BOSTextField select name="isInductionEligible" label="Induction" value={form.isInductionEligible} onChange={h} fullWidth>
+                      {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                    </BOSTextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <BOSTextField select name="isInterviewer" label="Interviewer" value={form.isInterviewer} onChange={h} fullWidth>
+                      {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                    </BOSTextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <BOSTextField select name="isEnquiryAssignee" label="Enquiry Assign" value={form.isEnquiryAssignee} onChange={h} fullWidth>
+                      {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                    </BOSTextField>
+                  </Grid>
+                  <Grid item xs={12} sm={6} md={3}>
+                    <BOSTextField select name="isPrAssignee" label="PR Assign" value={form.isPrAssignee} onChange={h} fullWidth>
+                      {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                    </BOSTextField>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Box>
+
           </Stack>
         </BOSFormSection>
 

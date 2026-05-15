@@ -54,6 +54,8 @@ export const API_PATHS = {
     SUPPLIERS: `${API_BASE}/sm/suppliers`,
     SUB_CONTRACTORS: `${API_BASE}/sm/sub-contractors`,
     QUOTATIONS: `${API_BASE}/sm/quotation`,
+    SEGMENTS: `${API_BASE}/sm/segments`,
+    SUB_SEGMENTS: `${API_BASE}/sm/sub-segments`,
   },
 
   // OCR Module (proxied through Spring Boot)

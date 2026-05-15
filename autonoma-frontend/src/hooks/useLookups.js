@@ -20,7 +20,7 @@ export const useLookups = (lookupTypes = []) => {
     try {
       const settledResults = await Promise.allSettled(
         lookupTypes.map(async (type) => {
-          const path = API_PATHS.HRM[type] || API_PATHS.QMS[type];
+          const path = API_PATHS.HRM[type] || API_PATHS.QMS[type] || API_PATHS.SM[type];
           if (!path) {
             console.warn(`Lookup type "${type}" not found in API_PATHS`);
             return null;

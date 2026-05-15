@@ -204,6 +204,9 @@ const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/Designat
 const MasterHrGrade = Loadable(lazy(() => import('views/master/hr/GradeDetails')));
 const MasterHrDesignationLevel = Loadable(lazy(() => import('views/master/hr/DesignationLevelMaster')));
 const InductionCriteria = Loadable(lazy(() => import('views/master/hr/ats/InductionCriteria')));
+const InductionAssignment = Loadable(lazy(() => import('views/master/hr/ats/InductionAssignment')));
+const InductionTraining = Loadable(lazy(() => import('views/master/hr/ats/InductionTraining')));
+const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/InductionTrainee')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -800,6 +803,18 @@ const MainRoutes = {
     {
       path: '/master/hr/ats/induction-criteria',
       element: <InductionCriteria />
+    },
+    {
+      path: '/master/hr/ats/induction-assignment',
+      element: <InductionAssignment />
+    },
+    {
+      path: '/master/hr/ats/induction-training',
+      element: <InductionTraining />
+    },
+    {
+      path: '/master/hr/ats/induction-trainee',
+      element: <InductionTrainee />
     },
     {
       path: '/utils/util-animation',

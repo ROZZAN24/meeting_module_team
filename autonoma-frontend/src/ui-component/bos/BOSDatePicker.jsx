@@ -1,54 +1,68 @@
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useTheme } from '@mui/material/styles';
 import { useColorScheme } from '@mui/material/styles';
 import { getInputStyles } from './BOSStyles';
+import { parseISO, format, isValid } from 'date-fns';
 
 /**
  * BOS DatePicker — SOP #9, #10
  * Wraps MUI DatePicker with standardized BOS styles and dd/MM/yyyy format.
  */
-export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon, ...rest }) {
+export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon = false, ...rest }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
+  const [open, setOpen] = React.useState(false);
+
+  // Convert string value to Date object for MUI DatePicker
+  const dateValue = useMemo(() => {
+    if (!value) return null;
+    const date = parseISO(value);
+    return isValid(date) ? date : null;
+  }, [value]);
 
   return (
     <DatePicker
       label={`${label}${required ? ' *' : ''}`}
-      value={value ? new Date(value) : null}
-      slots={!showIcon ? { 
-        openPickerIcon: () => null,
-        openPickerButton: () => null 
-      } : undefined}
+      value={dateValue}
+      disabled={disabled}
+      format="dd/MM/yyyy"
+      open={open}
+      onOpen={() => setOpen(true)}
+      onClose={() => setOpen(false)}
       onChange={(newValue) => {
-        if (newValue) {
-          const date = new Date(newValue);
-          if (!isNaN(date.getTime())) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const formatted = `${year}-${month}-${day}`;
-            onChange({ target: { name: rest.name, value: formatted } });
-          }
-        } else {
+        if (newValue && isValid(newValue)) {
+          const formatted = format(newValue, 'yyyy-MM-dd');
+          onChange({ target: { name: rest.name, value: formatted } });
+        } else if (newValue === null) {
           onChange({ target: { name: rest.name, value: '' } });
         }
       }}
-      disabled={disabled}
-      format="dd/MM/yyyy"
+      slots={{
+        openPickerIcon: () => null,
+      }}
       slotProps={{
         textField: {
           fullWidth: true,
           size: 'small',
           error: !!error,
           helperText: helperText,
-          sx: bosInput,
+          sx: { 
+            ...bosInput,
+            '& .MuiInputBase-input': { cursor: 'pointer' }
+          },
+          name: rest.name,
+          autoComplete: 'off',
+          onClick: () => !disabled && setOpen(true),
           ...rest
+        },
+        openPickerButton: {
+          sx: { display: 'none' }
         }
       }}
-      {...rest}
     />
   );
 }
@@ -61,5 +75,6 @@ BOSDatePicker.propTypes = {
   required: PropTypes.bool,
   error: PropTypes.bool,
   helperText: PropTypes.string,
-  name: PropTypes.string
+  name: PropTypes.string,
+  showIcon: PropTypes.bool
 };

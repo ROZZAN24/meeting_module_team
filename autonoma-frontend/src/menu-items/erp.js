@@ -142,8 +142,29 @@ export const masters = {
               id: 'master-hr-ats-induction',
               title: 'Induction Criteria',
               type: 'item',
-              url: '/master/hr/ats/induction',
+              url: '/master/hr/ats/induction-criteria',
               icon: icons.IconUserPlus
+            },
+            {
+              id: 'master-hr-ats-induction-assignment',
+              title: 'Induction Pending',
+              type: 'item',
+              url: '/master/hr/ats/induction-assignment',
+              icon: icons.IconCalendarEvent
+            },
+            {
+              id: 'master-hr-ats-induction-training',
+              title: 'Induction Training',
+              type: 'item',
+              url: '/master/hr/ats/induction-training',
+              icon: icons.IconClipboardCheck
+            },
+            {
+              id: 'master-hr-ats-induction-trainee',
+              title: 'Induction Trainee',
+              type: 'item',
+              url: '/master/hr/ats/induction-trainee',
+              icon: icons.IconUserCheck
             }
           ]
         },

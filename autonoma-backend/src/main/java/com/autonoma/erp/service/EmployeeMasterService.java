@@ -31,6 +31,10 @@ public class EmployeeMasterService {
         return employeeRepo.findAll();
     }
 
+    public List<EmployeeMaster> getActiveEmployees() {
+        return employeeRepo.findByStatus("Active");
+    }
+
     public EmployeeMaster getEmployeeById(Long id) {
         return employeeRepo.findById(id).orElse(null);
     }
