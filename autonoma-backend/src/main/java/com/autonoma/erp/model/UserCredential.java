@@ -36,10 +36,24 @@ public class UserCredential {
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-	private Date updatedDate;
+    private Date updatedDate;
 
     @Column(name = "status")
     private Integer status;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new Date();
+        if (createdBy == null) {
+            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new Date();
+        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+    }
 
     @Column(name = "img_name", columnDefinition = "NVARCHAR(255)")
     private String imgName;

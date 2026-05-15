@@ -62,26 +62,26 @@ public class AuditObservation {
     
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt = new Date();
+    private Date createdDate = new Date();
 
     @Column(name = "updated_by")
     private String updatedBy;
     
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
 
     @OneToMany(mappedBy = "auditObservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditObservationDetail> details = new ArrayList<>();
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        createdDate = new Date();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = new Date();
+        updatedDate = new Date();
     }
 
     @com.fasterxml.jackson.annotation.JsonProperty("auditType")

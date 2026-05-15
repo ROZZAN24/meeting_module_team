@@ -301,18 +301,18 @@ public class EmployeeMaster {
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        createdDate = new Date();
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
         } else if (firstName != null) {
@@ -322,7 +322,7 @@ public class EmployeeMaster {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = new Date();
+        updatedDate = new Date();
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
         } else if (firstName != null) {

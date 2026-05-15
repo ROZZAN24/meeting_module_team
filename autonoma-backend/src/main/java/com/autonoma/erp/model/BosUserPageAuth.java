@@ -59,6 +59,34 @@ public class BosUserPageAuth {
     @Column(name = "additional2")
     private Integer additional2;
 
+    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)")
+    private String createdBy;
+
+    @Column(name = "created_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private java.util.Date createdDate;
+
+    @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private java.util.Date updatedDate;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new java.util.Date();
+        if (createdBy == null) {
+            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new java.util.Date();
+        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+    }
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", insertable = false, updatable = false)
     private UserCredential user;
