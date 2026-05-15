@@ -39,6 +39,7 @@ public class InductionAssignment {
 
     @Column(name = "induction_date", nullable = false)
     @Temporal(TemporalType.DATE)
+    @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
     private Date inductionDate;
 
     @Column(name = "induction_time", nullable = false)

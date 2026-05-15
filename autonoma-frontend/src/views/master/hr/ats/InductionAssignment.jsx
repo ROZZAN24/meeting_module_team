@@ -291,7 +291,6 @@ const InductionAssignment = () => {
     
     // Clean payload to match backend model exactly
     const payload = {
-      id: formData.id,
       empCode: formData.empCode,
       empName: formData.empName,
       oldEmpCode: formData.oldEmpCode,
@@ -307,6 +306,16 @@ const InductionAssignment = () => {
       inductionStatus: formData.inductionStatus,
       remarks: formData.remarks
     };
+
+    if (formData.id) {
+      payload.id = formData.id;
+    }
+
+    // Additional validation for default values
+    if (formData.screeningLevel === '-' || formData.inductionRound === '-') {
+      dispatch(openSnackbar({ open: true, message: 'Please select a valid Level and Round', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      return;
+    }
 
     try {
       if (formData.id) {
