@@ -174,7 +174,7 @@ const InductionAssignment = () => {
       cleanData.empName = row.empName || row.employeeName || '';
       cleanData.empCode = row.empCode || '';
       cleanData.oldEmpCode = row.oldEmpCode || '';
-      cleanData.department = row.department || (typeof row.department === 'object' ? row.department?.deptName : row.department) || '';
+      cleanData.department = row.department || (typeof row.department === 'object' ? row.department?.departmentName : row.department) || '';
       cleanData.designation = row.designation || (typeof row.designation === 'object' ? row.designation?.designationName : row.designation) || '';
 
       setFormData(cleanData);
@@ -256,7 +256,7 @@ const InductionAssignment = () => {
           finalRows.push({ 
             ...emp, 
             empName: emp.employeeName,
-            department: typeof emp.department === 'object' ? emp.department?.deptName : emp.department,
+            department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
             designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
             isVirtual: true, 
             currentStatus: 'PENDING', 
@@ -285,17 +285,47 @@ const InductionAssignment = () => {
 
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
+    
+    // Find trainer emp code
+    const selectedTrainer = employees.find(e => e.employeeName === formData.trainerName);
+    
+    // Clean payload to match backend model exactly
+    const payload = {
+      id: formData.id,
+      empCode: formData.empCode,
+      empName: formData.empName,
+      oldEmpCode: formData.oldEmpCode,
+      department: formData.department,
+      designation: formData.designation,
+      inductionRound: formData.inductionRound,
+      screeningLevel: formData.screeningLevel,
+      inductionDate: formData.inductionDate,
+      inductionTime: formData.inductionTime,
+      trainerName: formData.trainerName,
+      trainerEmpCode: selectedTrainer?.empCode || '',
+      currentStatus: formData.currentStatus,
+      inductionStatus: formData.inductionStatus,
+      remarks: formData.remarks
+    };
+
     try {
       if (formData.id) {
-        await axios.put(`/api/hr/induction-assignment/${formData.id}`, formData);
+        await axios.put(`/api/hr/induction-assignment/${formData.id}`, payload);
       } else {
-        await axios.post('/api/hr/induction-assignment', formData);
+        await axios.post('/api/hr/induction-assignment', payload);
       }
       dispatch(openSnackbar({ open: true, message: 'Assignment saved!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      console.error('Save error:', error.response?.data || error.message);
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: error.response?.data || 'Failed to save', 
+        variant: 'alert', 
+        alert: { variant: 'filled' }, 
+        severity: 'error' 
+      }));
     }
   };
 
@@ -325,7 +355,7 @@ const InductionAssignment = () => {
             <MenuItem value="PENDING">PENDING</MenuItem>
             <MenuItem value="COMPLETED">COMPLETED</MenuItem>
           </BOSTextField>
-
+ 
           <BOSTextField
             select
             size="small"
@@ -473,7 +503,7 @@ const InductionAssignment = () => {
                 <MenuItem value="">-Select-</MenuItem>
                 {employees
                   .filter(emp => {
-                    const empDept = typeof emp.department === 'object' ? emp.department?.deptName : emp.department;
+                    const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
                     return emp.isInductionEligible === 'YES' && empDept === formData.inductionRound;
                   })
                   .map(emp => (
