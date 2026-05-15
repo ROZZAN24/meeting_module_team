@@ -19,7 +19,11 @@ const columns = [
   { id: 'name', label: 'Name', minWidth: 200 },
   { id: 'inTime', label: 'In Time', minWidth: 100 },
   { id: 'outTime', label: 'Out Time', minWidth: 100 },
-  { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 }
+  { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 const TIME_OPTIONS = [
@@ -250,7 +254,7 @@ export default function AuditAttendance() {
         onSizeChange={setSize}
         onEditRow={handleOpenEdit}
         onDeleteRow={(r) => { setDeleteTarget(r); setDeleteDialogOpen(true); }}
-        renderCell={renderCell}
+        renderCell={null}
       />
 
       <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'}>

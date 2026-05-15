@@ -30,7 +30,10 @@ const columns = [
   { id: 'targetDate', label: 'Target Date', minWidth: 120 },
   { id: 'reviewDate', label: 'Review Date', minWidth: 120 },
   { id: 'pdf', label: 'PDF', minWidth: 80, align: 'center' },
-  { id: 'createdBy', label: 'Create User', minWidth: 120 }
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function MomList() {
