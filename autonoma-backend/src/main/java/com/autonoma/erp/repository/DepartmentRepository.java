@@ -30,8 +30,8 @@ public interface DepartmentRepository extends JpaRepository<Department, Long> {
     @org.springframework.data.jpa.repository.Query("SELECT MAX(d.sequenceNo) FROM Department d")
     java.util.Optional<Integer> findMaxSequenceNo();
 
-    @org.springframework.data.jpa.repository.Query("SELECT COUNT(d) FROM Department d")
-    Long countDepartments();
+    @org.springframework.data.jpa.repository.Query(value = "SELECT COALESCE(MAX(CAST(SUBSTRING(dept_no, 6, LEN(dept_no)) AS INT)), 0) FROM hrm_department_master WHERE dept_no LIKE 'DEPT-%'", nativeQuery = true)
+    Long findMaxDeptNumeric();
     
     @org.springframework.data.jpa.repository.Query(value = "SELECT * FROM hrm_department_master WHERE status = :status", nativeQuery = true)
     java.util.List<Department> findByStatus(@org.springframework.data.repository.query.Param("status") String status);
