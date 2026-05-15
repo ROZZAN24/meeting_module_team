@@ -469,13 +469,12 @@ const InductionAssignment = () => {
                 required
                 error={!!errors.trainerName}
                 sx={errorStyle(!!errors.trainerName)}
-                disabled={!formData.department}
               >
                 <MenuItem value="">-Select-</MenuItem>
                 {employees
                   .filter(emp => {
                     const empDept = typeof emp.department === 'object' ? emp.department?.deptName : emp.department;
-                    return emp.isInductionEligible === 'YES' && empDept === formData.department;
+                    return emp.isInductionEligible === 'YES' && empDept === formData.inductionRound;
                   })
                   .map(emp => (
                     <MenuItem key={emp.id} value={emp.employeeName}>
