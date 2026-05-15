@@ -114,14 +114,14 @@ public class EmployeeMaster {
     @Column(name = "lom_deduction", length = 10)
     private String lomDeduction = "NO";
 
-    @Column(name = "lom_allow", length = 10)
-    private String lomAllow = "NO";
+    @Column(name = "lom_allow", precision = 10, scale = 2)
+    private BigDecimal lomAllow;
 
     @Column(name = "lta_eligible", length = 10)
     private String ltaEligible = "NO";
 
-    @Column(name = "pf_restriction", length = 10)
-    private String pfRestriction = "NO";
+    @Column(name = "pf_restriction", precision = 10, scale = 2)
+    private BigDecimal pfRestriction;
 
     @Column(name = "permission_toggle", length = 10)
     private String permissionToggle = "NO";

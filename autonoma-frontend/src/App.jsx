@@ -20,6 +20,9 @@ import { JWTProvider as AuthProvider } from 'contexts/JWTContext';
 // import { AWSCognitoProvider as AuthProvider } from 'contexts/AWSCognitoContext';
 // import { SupabseProvider as AuthProvider } from 'contexts/SupabaseContext';
 
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+
 // ==============================|| APP ||============================== //
 
 export default function App() {
@@ -28,16 +31,18 @@ export default function App() {
       <ThemeCustomization>
         <RTLLayout>
           <Locales>
-            <NavigationScroll>
-              <AuthProvider>
-                <>
-                  <Notistack>
-                    <RouterProvider router={router} />
-                    <Snackbar />
-                  </Notistack>
-                </>
-              </AuthProvider>
-            </NavigationScroll>
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <NavigationScroll>
+                <AuthProvider>
+                  <>
+                    <Notistack>
+                      <RouterProvider router={router} />
+                      <Snackbar />
+                    </Notistack>
+                  </>
+                </AuthProvider>
+              </NavigationScroll>
+            </LocalizationProvider>
           </Locales>
         </RTLLayout>
       </ThemeCustomization>

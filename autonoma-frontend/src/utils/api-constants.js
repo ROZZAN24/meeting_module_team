@@ -19,6 +19,7 @@ export const API_PATHS = {
     EMPLOYEES: `${API_BASE}/master/employee`,
     GRADES: `${API_BASE}/master/hr/grade`,
     USERS: `${API_BASE}/users/all`,
+    DIVISIONS: `${API_BASE}/admin/divisions`,
   },
   
   // QMS Module

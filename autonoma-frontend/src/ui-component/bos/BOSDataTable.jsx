@@ -196,7 +196,7 @@ export default function BOSDataTable({
                     ...(!showActions && ci === columns.length - 1 ? { borderTopRightRadius: '16px' } : {})
                   }}
                 >
-                  {col.label}
+                  {col.id === 'index' ? 'No' : col.label}
                 </TableCell>
               ))}
               {showActions && (
@@ -245,10 +245,11 @@ export default function BOSDataTable({
                           cursor: (onDoubleClickRow || onClickRow) ? 'pointer' : 'default',
                           ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
                           ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
-                          // SOP: 30-char wrap rule (Increased from 15 to prevent excessive splitting)
-                          whiteSpace: (String(row[col.id] || '').length > 30) ? 'normal' : 'nowrap',
+                          // SOP: Prevent column split issue by keeping text on one line unless explicitly long
+                          whiteSpace: (String(row[col.id] || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
                           ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
-                          minWidth: col.minWidth || 80
+                          minWidth: col.id === 'index' ? 60 : (col.minWidth || 100),
+                          paddingX: 1.5
                         }}
                       >
                         {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}

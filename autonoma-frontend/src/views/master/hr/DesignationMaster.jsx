@@ -14,16 +14,16 @@ import AddDesignationDialog from './AddDesignationDialog';
 import { format } from 'date-fns';
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 50 },
-  { id: 'designationCode', label: 'Designation Code', minWidth: 150, bold: true, required: true },
-  { id: 'designationName', label: 'Designation Name', minWidth: 200, required: true },
-  { id: 'subCategoryLevel', label: 'Sub Category Level', minWidth: 150 },
+  { id: 'index', label: 'No', minWidth: 60 },
+  { id: 'designationCode', label: 'Designation Code', minWidth: 160, bold: true, required: true },
+  { id: 'designationName', label: 'Designation Name', minWidth: 250, required: true },
+  { id: 'subCategoryLevel', label: 'Sub Category Level', minWidth: 160 },
   { id: 'experience', label: 'Experience', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+  { id: 'createdBy', label: 'Created By', minWidth: 130 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 160 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 130 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 160 }
 ];
 
 export default function DesignationMaster() {
@@ -113,7 +113,11 @@ export default function DesignationMaster() {
               { header: 'Code', key: 'designationCode' },
               { header: 'Name', key: 'designationName' },
               { header: 'Level', key: 'subCategoryLevel' },
-              { header: 'Status', key: 'status' }
+              { header: 'Status', key: 'status' },
+              { header: 'Created By', key: 'createdBy' },
+              { header: 'Created Date', key: 'createdDate' },
+              { header: 'Updated By', key: 'updatedBy' },
+              { header: 'Updated Date', key: 'updatedDate' }
             ]}
           />
           <Tooltip title={shortcutTooltip('Create New Designation', 'Ctrl + N')}>

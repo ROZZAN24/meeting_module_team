@@ -7,7 +7,7 @@ import {
 import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings, IconShieldCheck, IconCloudUpload, IconFileDescription, IconEye, IconX, IconSignature, IconFileCertificate, IconLock, IconMail, IconFileUpload, IconPlus } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSFormSection, BOSTextField, BOSFileUpload, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSDatePicker, BOSFileUpload, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -40,7 +40,7 @@ const INITIAL = {
   // 2. Organization
   departmentId: '', 
   designationId: '', 
-  unitName: '', 
+  unitId: '', 
   verticalHead: '', 
   hrManager: '', 
   officeMail: '', 
@@ -50,15 +50,15 @@ const INITIAL = {
   pTaxToggle: 'NO', 
   bonusToggle: 'NO', 
   otToggle: 'NO', 
-  otFactorial: '1.0', 
+  otFactorial: '', 
   lomDeduction: 'NO', 
-  lomAllow: 'NO', 
+  lomAllow: '', 
   ltaEligible: 'NO', 
-  pfRestriction: 'NO',
+  pfRestriction: '',
   permissionToggle: 'NO', 
-  permissionLimit: '0',
+  permissionLimit: '',
   vendorName: '', 
-  referMode: 'INTERNAL', 
+  referMode: '', 
   referenceComments: '', 
 
   // 3. Date & Scheduling
@@ -96,8 +96,7 @@ const INITIAL = {
 };
 
 const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
-const UNIT_NAMES = [{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }];
-const REF_MODES = ['INTERNAL', 'EXTERNAL', 'CONSULTANT'];
+const REF_MODES = ['EMPLOYEE', 'LINKED IN', 'NEWS PAPER', 'POSTER', 'WEBSITE', 'WHATS APP', 'OTHERS'];
 const CATEGORIES = [{id: 1, categoryName: 'EMPLOYEE'}, {id: 2, categoryName: 'CONTRACTOR'}, {id: 3, categoryName: 'CONSULTANT'}];
 const TYPES = [{id: 1, typeName: 'PERMANENT'}, {id: 2, typeName: 'TEMPORARY'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'PROBATION'}];
 const YES_NO = ['YES', 'NO'];
@@ -130,9 +129,6 @@ export default function EmployeeMaster() {
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [previewFile, setPreviewFile] = useState(null);
-  
   const { 
     departments = [], 
     designations = [], 
@@ -140,8 +136,12 @@ export default function EmployeeMaster() {
     auditTypes = [],
     meetings = [],
     employees = [],
-    grades = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES']);
+    grades = [],
+    divisions = []
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS']);
+
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
 
   const fetchEmployee = useCallback(async () => {
     if (!employeeId) return;
@@ -160,7 +160,12 @@ export default function EmployeeMaster() {
 
   const h = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    setForm((p) => {
+      const next = { ...p, [name]: value };
+      if (name === 'exitReason' && value !== 'OTHER') next.exitComments = '';
+      if (name === 'exitDate' && !value) { next.exitReason = ''; next.exitComments = ''; }
+      return next;
+    });
     if (errors[name]) clearErrors(name);
   };
 
@@ -184,6 +189,14 @@ export default function EmployeeMaster() {
     // Custom Validations from Plan
     if (form.maritalStatus === 'MARRIED' && !form.marriedDate) {
       dispatch(openSnackbar({ open: true, message: 'Married Date is mandatory for Marital Status: MARRIED', severity: 'error' }));
+      return;
+    }
+    if (form.referMode === 'EMPLOYEE' && !form.referenceComments) {
+      dispatch(openSnackbar({ open: true, message: 'Referring Employee is mandatory when Reference Mode is EMPLOYEE', severity: 'error' }));
+      return;
+    }
+    if (form.referMode === 'OTHERS' && !form.referenceComments) {
+      dispatch(openSnackbar({ open: true, message: 'Reference Comments are mandatory when Reference Mode is OTHERS', severity: 'error' }));
       return;
     }
     if (form.exitDate && !form.exitReason) {
@@ -455,8 +468,9 @@ export default function EmployeeMaster() {
               </BOSTextField>
             </R>
             <R>
-              <BOSTextField select name="unitName" label="Unit Name" value={form.unitName} onChange={h}>
-                {UNIT_NAMES.map((u) => <MenuItem key={u.id} value={u.name}>{u.name}</MenuItem>)}
+              <BOSTextField select name="unitId" label="Unit Name" value={form.unitId} onChange={h}>
+                <MenuItem value="">-Select Unit-</MenuItem>
+                {divisions.map((d) => <MenuItem key={d.id} value={d.id}>{d.divisionName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
@@ -472,64 +486,50 @@ export default function EmployeeMaster() {
               </BOSTextField>
             </R>
             <R><BOSTextField name="officeMail" label="Office Mail" value={form.officeMail} onChange={h} InputProps={{ startAdornment: <InputAdornment position="start"><IconMail size={18} /></InputAdornment> }} /></R>
-            <R><BOSTextField name="officeMailPassword" label="Office Mail Password" value={form.officeMailPassword} onChange={h} type="password" InputProps={{ startAdornment: <InputAdornment position="start"><IconLock size={18} /></InputAdornment> }} /></R>
+            <R><BOSTextField name="officeMailPassword" label="Office Mail password" value={form.officeMailPassword} onChange={h} type="password" InputProps={{ startAdornment: <InputAdornment position="start"><IconLock size={18} /></InputAdornment> }} /></R>
             
-            {/* Toggles Group 1 */}
-            <R>
-              <Stack direction="row" spacing={2}>
-                <BOSTextField select name="pfToggle" label="PF" value={form.pfToggle} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-                <BOSTextField select name="esiToggle" label="ESI" value={form.esiToggle} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-              </Stack>
-            </R>
-            <R>
-              <Stack direction="row" spacing={2}>
-                <BOSTextField select name="pTaxToggle" label="P.Tax" value={form.pTaxToggle} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-                <BOSTextField select name="bonusToggle" label="Bonus" value={form.bonusToggle} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-              </Stack>
-            </R>
-            <R>
-              <Stack direction="row" spacing={2}>
-                <BOSTextField select name="otToggle" label="OT" value={form.otToggle} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-                <BOSTextField name="otFactorial" label="OT Factorial" value={form.otFactorial} onChange={h} disabled={form.otToggle !== 'YES'} size="small" sx={{ flex: 1 }} type="number" />
-              </Stack>
-            </R>
+            <R><BOSTextField select name="pfToggle" label="PF" value={form.pfToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="esiToggle" label="ESI" value={form.esiToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="pTaxToggle" label="P.Tax" value={form.pTaxToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField select name="bonusToggle" label="Bonus" value={form.bonusToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            
+            <R><BOSTextField select name="otToggle" label="OT" value={form.otToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField name="otFactorial" label="OT Factorial" value={form.otFactorial} onChange={h} disabled={form.otToggle !== 'YES'} type="number" /></R>
+            <R><BOSTextField select name="lomDeduction" label="LOM Deduction" value={form.lomDeduction} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField name="lomAllow" label="LOM Allow" value={form.lomAllow} onChange={h} type="number" /></R>
+            
+            <R><BOSTextField select name="ltaEligible" label="LTA Eligible" value={form.ltaEligible} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField name="pfRestriction" label="PF Restriction" value={form.pfRestriction} onChange={h} type="number" /></R>
+            <R><BOSTextField select name="permissionToggle" label="Permission" value={form.permissionToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R><BOSTextField name="permissionLimit" label="Permission Limit" value={form.permissionLimit} onChange={h} disabled={form.permissionToggle !== 'YES'} type="number" /></R>
 
-            {/* Toggles Group 2 */}
             <R>
-              <Stack direction="row" spacing={2}>
-                <BOSTextField select name="lomDeduction" label="LOM Deduction" value={form.lomDeduction} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-                <BOSTextField select name="lomAllow" label="LOM Allow" value={form.lomAllow} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-              </Stack>
+              {form.categoryId !== 1 && (
+                <BOSTextField name="vendorName" label="Vendor Name" value={form.vendorName} onChange={h} placeholder="Enter Vendor" />
+              )}
             </R>
-            <R>
-              <Stack direction="row" spacing={2}>
-                <BOSTextField select name="ltaEligible" label="LTA Eligible" value={form.ltaEligible} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-                <BOSTextField select name="pfRestriction" label="PF Restriction" value={form.pfRestriction} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-              </Stack>
-            </R>
-            <R>
-              <Stack direction="row" spacing={2}>
-                <BOSTextField select name="permissionToggle" label="Permission" value={form.permissionToggle} onChange={h} size="small" sx={{ flex: 1 }}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField>
-                <BOSTextField name="permissionLimit" label="Limit (Hrs)" value={form.permissionLimit} onChange={h} disabled={form.permissionToggle !== 'YES'} size="small" sx={{ flex: 1 }} type="number" />
-              </Stack>
-            </R>
-
-            <R><BOSTextField name="vendorName" label="Vendor Name" value={form.vendorName} onChange={h} disabled={form.categoryId === 1} placeholder={form.categoryId === 1 ? 'Enabled for Contractor/Consultant' : 'Enter Vendor'} /></R>
             <R>
               <BOSTextField select name="referMode" label="Reference Mode" value={form.referMode} onChange={h}>
+                <MenuItem value="">-Select-</MenuItem>
                 {REF_MODES.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
-              {form.referMode === 'INTERNAL' && form.categoryId === 1 ? (
-                <BOSTextField select name="referenceComments" label="Referral Employee" value={form.referenceComments} onChange={h}>
+              {form.referMode === 'EMPLOYEE' ? (
+                <BOSTextField select name="referenceComments" label="Referring Employee *" value={form.referenceComments} onChange={h}>
                   <MenuItem value="">-Select-</MenuItem>
                   {employees.filter(e => e.status === 'Active').map(e => (
                     <MenuItem key={e.id} value={e.employeeName}>{e.employeeName} ({e.empCode})</MenuItem>
                   ))}
                 </BOSTextField>
               ) : (
-                <BOSTextField name="referenceComments" label="Reference Comments" value={form.referenceComments} onChange={h} placeholder="Enter details..." />
+                <BOSTextField 
+                  name="referenceComments" 
+                  label={`Reference Comments ${form.referMode === 'OTHERS' ? '*' : ''}`} 
+                  value={form.referenceComments} 
+                  onChange={h} 
+                  placeholder="Enter details..." 
+                />
               )}
             </R>
           </Grid>
@@ -538,12 +538,12 @@ export default function EmployeeMaster() {
         {/* --- SECTION 3: DATES & SCHEDULING --- */}
         <BOSFormSection icon={<IconCalendar size={20} color={theme.palette.primary.main} />} title="Date & Scheduling">
           <Grid container spacing={2.5}>
-            <R><BOSTextField name="dateOfJoining" label="Date Of Joining *" type="date" value={form.dateOfJoining} onChange={h} InputLabelProps={{ shrink: true }} error={!!errors.dateOfJoining} helperText={errors.dateOfJoining} /></R>
-            <R><BOSTextField name="probationPeriod" label="Probation (Months)" value={form.probationPeriod} onChange={h} type="number" /></R>
-            <R><BOSTextField name="confirmationDate" label="Confirmation Date" type="date" value={form.confirmationDate} onChange={h} InputLabelProps={{ shrink: true }} /></R>
-            <R><BOSTextField select name="inductionStatus" label="Induction Status" value={form.inductionStatus} onChange={h}><MenuItem value="PENDING">PENDING</MenuItem><MenuItem value="COMPLETED">COMPLETED</MenuItem></BOSTextField></R>
-            <R><BOSTextField name="exitDate" label="Exit Date" type="date" value={form.exitDate} onChange={h} InputLabelProps={{ shrink: true }} /></R>
-            <R>
+            <R lg={3}><BOSDatePicker name="dateOfJoining" label="Date Of Joining" value={form.dateOfJoining} onChange={h} error={!!errors.dateOfJoining} helperText={errors.dateOfJoining} required /></R>
+            <R lg={3}><BOSTextField name="probationPeriod" label="Probation (Months)" value={form.probationPeriod} onChange={h} type="number" /></R>
+            <R lg={3}><BOSDatePicker name="confirmationDate" label="Confirmation Date" value={form.confirmationDate} onChange={h} /></R>
+            <R lg={3}><BOSTextField select name="inductionStatus" label="Induction Status" value={form.inductionStatus} onChange={h}><MenuItem value="PENDING">PENDING</MenuItem><MenuItem value="COMPLETED">COMPLETED</MenuItem></BOSTextField></R>
+            <R lg={3}><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
+            <R lg={3}>
               <BOSTextField select name="exitReason" label="Exit Reason" value={form.exitReason} onChange={h} disabled={!form.exitDate}>
                 <MenuItem value="RESIGNED">RESIGNED</MenuItem>
                 <MenuItem value="TERMINATED">TERMINATED</MenuItem>
@@ -551,8 +551,10 @@ export default function EmployeeMaster() {
                 <MenuItem value="OTHER">OTHER</MenuItem>
               </BOSTextField>
             </R>
-            <R><BOSTextField name="exitComments" label="Exit Comments" value={form.exitComments} onChange={h} disabled={form.exitReason !== 'OTHER'} placeholder={form.exitReason === 'OTHER' ? 'Explain...' : 'Disabled'} /></R>
-            <R><BOSTextField name="rejoiningDate" label="Rejoining Date" type="date" value={form.rejoiningDate} onChange={h} InputLabelProps={{ shrink: true }} /></R>
+            {form.exitReason === 'OTHER' && (
+              <R lg={3}><BOSTextField name="exitComments" label="Exit Comments" value={form.exitComments} onChange={h} required placeholder="Please explain..." /></R>
+            )}
+            <R lg={3}><BOSDatePicker name="rejoiningDate" label="Rejoining Date" value={form.rejoiningDate} onChange={h} /></R>
           </Grid>
         </BOSFormSection>
 

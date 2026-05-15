@@ -54,24 +54,27 @@ public class Designation {
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdDate;
+    @Column(name = "created_date")
+    private java.util.Date createdDate;
 
-    @Nationalized
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedDate;
+    @Column(name = "updated_date")
+    private java.util.Date updatedDate;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = LocalDateTime.now();
+        createdDate = new java.util.Date();
+        if (createdBy == null) {
+            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = LocalDateTime.now();
+        updatedDate = new java.util.Date();
+        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
 
     // Manual Getters and Setters for stability

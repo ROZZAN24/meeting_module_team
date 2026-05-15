@@ -17,4 +17,8 @@ public interface DesignationRepository extends JpaRepository<Designation, Long> 
 
     boolean existsByDesignationName(String designationName);
     boolean existsByDesignationNameAndIdNot(String designationName, Long id);
+    boolean existsByDesignationCode(String designationCode);
+    boolean existsByDesignationCodeAndIdNot(String designationCode, Long id);
+    boolean existsByOrgSeqNo(Integer orgSeqNo);
+    boolean existsByOrgSeqNoAndIdNot(Integer orgSeqNo, Long id);
 }

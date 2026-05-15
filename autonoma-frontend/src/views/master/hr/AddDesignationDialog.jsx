@@ -9,12 +9,11 @@ import useBOSForm from 'hooks/useBOSForm';
 
 // ==============================|| DESIGNATION - PROFESSIONAL TEMPLATE ||============================== //
 
-const LEVELS = ['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7'];
-
 export default function AddDesignationDialog({ open, handleClose, initialData, readOnly = false }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const [isEditing, setIsEditing] = useState(!readOnly);
+  const [levels, setLevels] = useState([]);
 
   const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
     designationCode: '',
@@ -29,8 +28,18 @@ export default function AddDesignationDialog({ open, handleClose, initialData, r
     orgSeqNo: ''
   });
 
+  const fetchLevels = async () => {
+    try {
+      const response = await axios.get('/api/master/hr/designationlevel');
+      setLevels(response.data || []);
+    } catch (e) {
+      console.error('Failed to fetch levels:', e);
+    }
+  };
+
   useEffect(() => {
     if (open) {
+      fetchLevels();
       if (initialData) {
         setFormData({
           ...initialData,
@@ -153,7 +162,7 @@ export default function AddDesignationDialog({ open, handleClose, initialData, r
               error={errors.subCategoryLevel}
               sx={errorStyle(errors.subCategoryLevel)}
             >
-              {LEVELS.map(l => <MenuItem key={l} value={l}>{l}</MenuItem>)}
+              {levels.map(l => <MenuItem key={l.rowId || l.id} value={l.level}>{l.level}</MenuItem>)}
             </BOSTextField>
           </Box>
         </BOSFormSection>

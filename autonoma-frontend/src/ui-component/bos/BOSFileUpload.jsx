@@ -153,15 +153,20 @@ export default function BOSFileUpload({
         setUploadProgress(progress);
       });
 
-      const newEntries = uploaded.map((serverPath, i) => ({
-        id: `${Date.now()}_${i}`,
-        fileName: filesToUpload[i].name,
-        serverFileName: serverPath,
-        fileSize: filesToUpload[i].size,
-        fileType: filesToUpload[i].type,
-        isServer: true,
-        uploadedAt: new Date().toISOString()
-      }));
+      const newEntries = uploaded.map((serverPath, i) => {
+        const f = filesToUpload[i];
+        const isImage = f.type.startsWith('image/');
+        return {
+          id: `${Date.now()}_${i}`,
+          fileName: f.name,
+          serverFileName: serverPath,
+          fileSize: f.size,
+          fileType: f.type,
+          isServer: true,
+          uploadedAt: new Date().toISOString(),
+          preview: isImage ? URL.createObjectURL(f) : null
+        };
+      });
 
       if (multiple) {
         onChange([...files, ...newEntries]);
@@ -318,14 +323,30 @@ export default function BOSFileUpload({
                   }} />
                 )}
 
-                {/* File Icon */}
+                {/* File Icon or Image Thumbnail */}
                 <Box sx={{
                   width: 38, height: 38, borderRadius: 1.5,
                   bgcolor: alpha(theme.palette.primary.main, 0.06),
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: alpha(theme.palette.primary.main, 0.1)
                 }}>
-                  <FileIcon size={20} color={theme.palette.primary.main} />
+                  {['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'].includes(name.split('.').pop()?.toLowerCase()) ? (
+                    <Box
+                      component="img"
+                      src={file.preview || getFileViewUrl(file.serverFileName)}
+                      sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                  ) : (
+                    <FileIcon size={20} color={theme.palette.primary.main} />
+                  )}
+                  {/* Fallback icon if image fails to load */}
+                  <Box sx={{ display: 'none', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                    <FileIcon size={20} color={theme.palette.primary.main} />
+                  </Box>
                 </Box>
 
                 {/* File Info */}

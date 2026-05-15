@@ -154,6 +154,13 @@ export const masters = {
           icon: icons.IconUsers,
           children: [
             {
+              id: 'master-hr-employee-master',
+              title: 'Employee Master',
+              type: 'item',
+              url: '/hra/employee/master',
+              icon: icons.IconUserPlus
+            },
+            {
               id: 'master-hr-employee-type',
               title: 'Employee Type',
               type: 'item',
@@ -187,13 +194,6 @@ export const masters = {
               type: 'item',
               url: '/master/hr/satisfaction',
               icon: icons.IconAward
-            },
-            {
-              id: 'master-hr-employee-master',
-              title: 'Employee Master',
-              type: 'item',
-              url: '/hra/employee/master',
-              icon: icons.IconUserPlus
             }
           ]
         },

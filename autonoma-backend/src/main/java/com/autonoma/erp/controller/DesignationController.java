@@ -56,8 +56,11 @@ public class DesignationController {
         if (designationRepository.existsByDesignationName(designation.getDesignationName())) {
             return ResponseEntity.badRequest().body("Designation Name already exists!");
         }
-        if (designation.getCreatedBy() == null) {
-            designation.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        if (designationRepository.existsByDesignationCode(designation.getDesignationCode())) {
+            return ResponseEntity.badRequest().body("Designation Code already exists!");
+        }
+        if (designation.getOrgSeqNo() != null && designationRepository.existsByOrgSeqNo(designation.getOrgSeqNo())) {
+            return ResponseEntity.badRequest().body("Organization Sequence Number already exists!");
         }
         return ResponseEntity.ok(designationRepository.save(designation));
     }
@@ -67,8 +70,15 @@ public class DesignationController {
         if (designationRepository.existsByDesignationNameAndIdNot(designationDetails.getDesignationName(), id)) {
             return ResponseEntity.badRequest().body("Designation Name already exists!");
         }
+        if (designationRepository.existsByDesignationCodeAndIdNot(designationDetails.getDesignationCode(), id)) {
+            return ResponseEntity.badRequest().body("Designation Code already exists!");
+        }
+        if (designationDetails.getOrgSeqNo() != null && designationRepository.existsByOrgSeqNoAndIdNot(designationDetails.getOrgSeqNo(), id)) {
+            return ResponseEntity.badRequest().body("Organization Sequence Number already exists!");
+        }
         return designationRepository.findById(id)
                 .map(designation -> {
+                    designation.setDesignationCode(designationDetails.getDesignationCode());
                     designation.setDesignationName(designationDetails.getDesignationName());
                     designation.setSubCategoryLevel(designationDetails.getSubCategoryLevel());
                     designation.setExperience(designationDetails.getExperience());
@@ -78,8 +88,6 @@ public class DesignationController {
                     designation.setJobDescription(designationDetails.getJobDescription());
                     designation.setOrgSeqNo(designationDetails.getOrgSeqNo());
                     designation.setBudgetedPositions(designationDetails.getBudgetedPositions());
-                    designation.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-                    designation.setUpdatedDate(java.time.LocalDateTime.now());
                     return ResponseEntity.ok(designationRepository.save(designation));
                 }).orElse(ResponseEntity.notFound().build());
     }
