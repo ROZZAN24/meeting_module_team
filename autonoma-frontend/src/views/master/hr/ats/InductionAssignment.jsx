@@ -318,8 +318,8 @@ const InductionAssignment = () => {
     }
 
     try {
-      if (formData.id) {
-        await axios.put(`/api/hr/induction-assignment/${formData.id}`, payload);
+      if (payload.id) {
+        await axios.put(`/api/hr/induction-assignment/${payload.id}`, payload);
       } else {
         await axios.post('/api/hr/induction-assignment', payload);
       }
@@ -327,10 +327,13 @@ const InductionAssignment = () => {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      console.error('Save error:', error.response?.data || error.message);
+      console.error('Save error details:', error.response?.data);
+      const serverMsg = error.response?.data;
+      const message = typeof serverMsg === 'string' ? serverMsg : (serverMsg?.message || 'Failed to save');
+      
       dispatch(openSnackbar({ 
         open: true, 
-        message: error.response?.data || 'Failed to save', 
+        message: message, 
         variant: 'alert', 
         alert: { variant: 'filled' }, 
         severity: 'error' 
