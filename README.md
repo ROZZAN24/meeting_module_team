@@ -48,9 +48,6 @@ npm run dev
 ---
 
 ## 📂 Project Structure
-*   `autonoma-backend/`: Spring Boot service, JPA entities, and Flyway migrations.
-*   `autonoma-frontend/`: React application using the BOS component library.
-*   `docs/`: Centralized project documentation and architecture guides.
-
----
-**Maintained by**: Autonoma Core Engineering Team
+*   `Autonoma_Backend/`: Spring Boot 3.x, JPA, Hibernate, JWT Security.
+*   `Autonoma_ERP/`: React 18, Material UI, Vite.
+*   `Autonoma_Backend/sql/`: Database schema and migration scripts.
