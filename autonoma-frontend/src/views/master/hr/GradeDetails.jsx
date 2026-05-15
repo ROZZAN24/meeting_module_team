@@ -17,20 +17,18 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'gradeCode', label: 'Grade Code', minWidth: 150, bold: true },
-  { id: 'sequenceNo', label: 'Seq.No', minWidth: 100 },
-  { id: 'gradeName', label: 'Grade Name', minWidth: 200 },
+  { id: 'gradeCode', label: 'Grade Code', minWidth: 150, bold: true, required: true },
+  { id: 'sequenceNo', label: 'Seq No.', minWidth: 100 },
+  { id: 'gradeName', label: 'Grade Name', minWidth: 200, required: true },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function GradeDetails() {
   const dispatch = useDispatch();
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -43,30 +41,16 @@ export default function GradeDetails() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select', isStarred: true,
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Active', label: 'ACTIVE' },
-          { value: 'In Active', label: 'INACTIVE' }
-        ],
-        defaultValue: 'Active'
-      },
-      {
-        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
-        options: [
-          { value: 'gradeName', label: 'Grade Name' },
-          { value: 'gradeCode', label: 'Grade Code' }
-        ],
-        defaultValue: 'gradeName'
-      },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      createdDate: row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-',
+      updatedDate: row.updatedDate ? format(new Date(row.updatedDate), 'dd-MM-yyyy HH:mm') : '-',
+      status: row.status || 'Active'
+    }));
+  }, [rows]);
 
   const fetchGrades = useCallback(async () => {
     setLoading(true);
@@ -96,11 +80,11 @@ export default function GradeDetails() {
     setDeleteDialogOpen(false);
     try {
       await axios.delete(`/api/master/hr/grade/${deleteTargetId}`);
-      dispatch(openSnackbar({ open: true, message: 'Grade deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Grade deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchGrades();
     } catch (error) {
       console.error('Failed to delete grade:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete grade.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete grade.', variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -108,47 +92,6 @@ export default function GradeDetails() {
     'ctrl+n': handleOpenAdd,
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
-
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'Grade Code': r.gradeCode,
-      'Seq.No': r.sequenceNo,
-      'Grade Name': r.gradeName,
-      'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
-      'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
-      Status: r.status
-    }));
-    exportToExcel(exportData, 'Grade_Details');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      // 1. Status Filter
-      const statusFilter = globalFilters.status || 'Active';
-      if (statusFilter !== 'All' && row.status !== statusFilter) return false;
-
-      // 2. Advanced Search
-      const searchText = (globalFilters.searchText || '').toLowerCase();
-      const searchBy = globalFilters.searchBy || 'gradeName';
-      if (searchText) {
-        const val = (row[searchBy] || '').toString().toLowerCase();
-        if (!val.includes(searchText)) return false;
-      }
-
-      // 3. Global Query
-      if (globalQuery) {
-        const q = globalQuery.toLowerCase();
-        return (row.gradeName && row.gradeName.toLowerCase().includes(q)) ||
-               (row.gradeCode && row.gradeCode.toLowerCase().includes(q));
-      }
-      return true;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
     <MainCard
@@ -169,11 +112,12 @@ export default function GradeDetails() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="Grade_Details"
             columns={[
               { header: 'Grade Code', key: 'gradeCode' },
               { header: 'Grade Name', key: 'gradeName' },
+              { header: 'Sequence No', key: 'sequenceNo' },
               { header: 'Status', key: 'status' }
             ]}
           />
@@ -187,10 +131,9 @@ export default function GradeDetails() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

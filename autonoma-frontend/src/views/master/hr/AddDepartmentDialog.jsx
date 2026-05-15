@@ -84,7 +84,14 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
       }
       handleClose(true);
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save department.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      const msg = error.response?.data || 'Failed to save department.';
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: typeof msg === 'string' ? msg : 'Failed to save department.', 
+        variant: 'alert', 
+        alert: { variant: 'filled' }, 
+        severity: 'error' 
+      }));
     }
   };
 

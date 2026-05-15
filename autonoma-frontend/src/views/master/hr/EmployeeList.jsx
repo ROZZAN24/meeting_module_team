@@ -20,16 +20,17 @@ import { useLookups } from 'hooks/useLookups';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'photo', label: 'PHOTO', minWidth: 80 },
-  { id: 'employeeName', label: 'EMPLOYEE NAME', minWidth: 200, bold: true },
-  { id: 'empCode', label: 'EMP CODE', minWidth: 110 },
-  { id: 'designationId', label: 'DESIGNATION', minWidth: 150 },
-  { id: 'departmentId', label: 'DEPARTMENT', minWidth: 150 },
-  { id: 'gradeCode', label: 'GRADE', minWidth: 80 },
-  { id: 'empLevelId', label: 'LEVEL', minWidth: 100 },
-  { id: 'unitId', label: 'UNIT NAME', minWidth: 120 },
-  { id: 'homeManager', label: 'MANAGER', minWidth: 150 },
-  { id: 'status', label: 'STATUS', minWidth: 100 }
+  { id: 'photo', label: 'Photo', minWidth: 80 },
+  { id: 'employeeName', label: 'Employee Name', required: true, bold: true, minWidth: 180 },
+  { id: 'empCode', label: 'Emp Code', required: true, minWidth: 120 },
+  { id: 'designationId', label: 'Designation', minWidth: 150 },
+  { id: 'departmentId', label: 'Department', required: true, minWidth: 150 },
+  { id: 'gradeCode', label: 'Grade', required: true, minWidth: 100 },
+  { id: 'status', label: 'Status', required: true, minWidth: 100 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function EmployeeList() {
@@ -51,8 +52,9 @@ export default function EmployeeList() {
     departments = [], 
     designations = [], 
     levels = [],
-    users = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS']);
+    users = [],
+    grades = []
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS', 'GRADES']);
 
   const getDeptName = (id) => String(departments.find(d => String(d.id) === String(id))?.departmentName || id || '-');
   const getDesigName = (id) => String(designations.find(d => String(d.id) === String(id))?.designationName || id || '-');
@@ -79,30 +81,9 @@ export default function EmployeeList() {
     }
   };
 
-  // SOP #16 — Global filter config
+  // SOP #16 — Global filter config handled automatically by Rule 1 & Rule 2
   useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select', isStarred: true,
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Active', label: 'ACTIVE' },
-          { value: 'In Active', label: 'INACTIVE' }
-        ],
-        defaultValue: 'Active'
-      },
-      {
-        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
-        options: [
-          { value: 'employeeName', label: 'Employee Name' },
-          { value: 'empCode', label: 'Employee Code' },
-          { value: 'homeManager', label: 'Home Manager' }
-        ],
-        defaultValue: 'employeeName'
-      },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
-    ];
-    dispatch(setFilterConfig(config));
+    // We no longer need manual config here as BOSDataTable now auto-extracts options from rows
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -153,69 +134,13 @@ export default function EmployeeList() {
     'escape': () => {}
   });
 
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'First Name': r.firstName,
-      'Last Name': r.lastName,
-      'Emp Code': r.empCode,
-      'Designation': getDesigName(r.designationId),
-      'Grade': r.gradeCode,
-      'Department': getDeptName(r.departmentId),
-      'Level': getLevelName(r.empLevelId),
-      'Home Manager': r.homeManager,
-      'Business Manager': r.businessManager,
-      'Supplier Name': r.supplierName || r.vendorName,
-      'Created By': r.createdBy,
-      'Created Date': r.createdAt ? format(new Date(r.createdAt), 'dd-MM-yyyy HH:mm') : '',
-      'Status': r.status
-    }));
-    exportToExcel(exportData, 'Employee_Master');
-  };
-
-  // SOP #16 — Global search + filters
-  const filteredRows = useMemo(() => {
+  // SOP #16 — Global search + filters are now handled internally by BOSDataTable.
+  // We just need to provide the resolved data for display.
+  const resolvedRows = useMemo(() => {
     if (!Array.isArray(rows)) return [];
-
-    return rows.filter((row) => {
-      if (!row) return false;
-
-      // 1. Status Filter
-      const statusFilter = globalFilters?.status || 'Active';
-      if (statusFilter !== 'All' && (row.status || 'Active') !== statusFilter) return false;
-
-      // 2. Advanced Search (Search By + Search Text)
-      const searchText = (globalFilters?.searchText || '').toLowerCase();
-      const searchBy = globalFilters?.searchBy || 'employeeName';
-      if (searchText) {
-        let val = '';
-        if (searchBy === 'employeeName') {
-          val = row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim();
-        } else {
-          val = row[searchBy];
-        }
-        if (!String(val || '').toLowerCase().includes(searchText)) return false;
-      }
-
-      // 3. Global Query (Quick search across all fields)
-      if (globalQuery) {
-        const q = globalQuery.toLowerCase();
-        return (row.firstName && row.firstName.toLowerCase().includes(q)) ||
-               (row.lastName && row.lastName.toLowerCase().includes(q)) ||
-               (row.empCode && row.empCode.toLowerCase().includes(q)) ||
-               (row.homeManager && row.homeManager.toLowerCase().includes(q));
-      }
-
-      return true;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => {
-    if (!Array.isArray(filteredRows)) return [];
-    console.debug(`EmployeeList: Paginating ${filteredRows.length} filtered rows (page ${page}, size ${size})`);
-    return filteredRows.slice(page * size, page * size + size).map((row, i) => ({
+    console.debug(`EmployeeList: Resolving ${rows.length} rows for display`);
+    return rows.map((row) => ({
       ...row,
-      index: page * size + i + 1,
       photo: row.employeePhotoUpload,
       employeeName: row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '-',
       departmentId: getDeptName(row.departmentId),
@@ -229,7 +154,27 @@ export default function EmployeeList() {
       updatedAt: safeDateFormat(row.updatedAt || row.updated_at),
       status: row.status || 'Active'
     }));
-  }, [filteredRows, page, size, departments, designations, levels, users]);
+  }, [rows, departments, designations, levels, users]);
+
+  const handleExport = () => {
+    const exportData = resolvedRows.map((r, i) => ({
+      '#': i + 1,
+      'First Name': r.firstName,
+      'Last Name': r.lastName,
+      'Emp Code': r.empCode,
+      'Designation': r.designationId,
+      'Grade': r.gradeCode,
+      'Department': r.departmentId,
+      'Level': r.empLevelId,
+      'Home Manager': r.homeManager,
+      'Business Manager': r.businessManager,
+      'Supplier Name': r.supplierName || r.vendorName,
+      'Created By': r.createdBy,
+      'Created Date': r.createdAt,
+      'Status': r.status
+    }));
+    exportToExcel(exportData, 'Employee_Master');
+  };
 
   const renderCell = (col, row) => {
     if (col.id === 'index') return row.index;
@@ -266,7 +211,7 @@ export default function EmployeeList() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="Employee_Master"
             columns={[
               { header: 'Emp Code', key: 'empCode' },
@@ -285,10 +230,9 @@ export default function EmployeeList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

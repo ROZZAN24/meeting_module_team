@@ -211,7 +211,11 @@ export default function UserOverview() {
           />
         );
       }
-    }
+    },
+    { id: 'createdBy', label: 'Created By' },
+    { id: 'createdDate', label: 'Created Date', type: 'datetime' },
+    { id: 'updatedBy', label: 'Updated By' },
+    { id: 'updatedDate', label: 'Updated Date', type: 'datetime' }
   ];
 
   return (

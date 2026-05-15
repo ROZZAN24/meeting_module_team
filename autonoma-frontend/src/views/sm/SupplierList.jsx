@@ -17,25 +17,19 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'gstNo', label: 'GST No', minWidth: 150 },
-  { id: 'supplierCode', label: 'Supplier Code', minWidth: 120 },
-  { id: 'supplierName', label: 'Supplier Name', minWidth: 200, bold: true },
-  { id: 'supplierPrintName', label: 'Print Name', minWidth: 200 },
-  { id: 'shortName', label: 'Short Name', minWidth: 120 },
-  { id: 'contactPerson', label: 'Contact Person', minWidth: 150 },
-  { id: 'mobileNo', label: 'Mobile No', minWidth: 120 },
-  { id: 'city', label: 'City', minWidth: 120 },
-  { id: 'state', label: 'State', minWidth: 120 },
-  { id: 'isoNo', label: 'ISO No', minWidth: 120 },
-  { id: 'approvedSupplier', label: 'Approved', minWidth: 100 },
-  { id: 'status', label: 'Status', minWidth: 100 }
+  { id: 'gstNo', label: 'GST No', minWidth: 150, required: true },
+  { id: 'supplierCode', label: 'Supplier Code', minWidth: 120, required: true },
+  { id: 'supplierName', label: 'Supplier Name', minWidth: 200, bold: true, required: true },
+  { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function SupplierList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
 
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -45,17 +39,15 @@ export default function SupplierList() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
   const [selectedListRow, setSelectedListRow] = useState(null);
-  const theme = useTheme();
 
-  useEffect(() => {
-    const config = [
-      { id: 'supplierName', label: 'Supplier Name', type: 'text', placeholder: 'Search by Name...' },
-      { id: 'gstNo', label: 'GST No', type: 'text', placeholder: 'Search by GST No...' },
-      { id: 'supplierPrintName', label: 'Print Name', type: 'text', placeholder: 'Search by Print Name...' }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      status: row.status || 'Active'
+    }));
+  }, [rows]);
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true);
@@ -92,66 +84,15 @@ export default function SupplierList() {
     setDeleteDialogOpen(false);
     try {
       await axios.delete(`${API_PATHS.SM.SUPPLIERS}/${deleteTargetId}`);
-      dispatch(openSnackbar({ open: true, message: 'Supplier deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Supplier deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchSuppliers();
     } catch (error) {
       console.error('Failed to delete supplier:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete supplier.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete supplier.', variant: 'alert', severity: 'error' }));
     }
   };
 
-  useKeyboardShortcuts({
-    'ctrl+n': handleOpenAdd
-  });
-
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'GST No': r.gstNo,
-      'Supplier Code': r.supplierCode,
-      'Supplier Name': r.supplierName,
-      'Print Name': r.supplierPrintName,
-      'Short Name': r.shortName,
-      'Contact Person': r.contactPerson,
-      'Mobile No': r.mobileNo,
-      'Email': r.emailId,
-      'City': r.city,
-      'State': r.state,
-      'Country': r.country,
-      'ISO No': r.isoNo,
-      'ISO Expiry': r.isoExpiryDate,
-      'Approved': r.approvedSupplier,
-      'NDA Required': r.ndaRequired,
-      'Currency': r.currency,
-      'Payment Terms': r.paymentTerms,
-      'Delivery Terms': r.deliveryTerms,
-      'Status': r.status
-    }));
-    exportToExcel(exportData, 'Supplier_Master');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const nameFilter = (globalFilters.supplierName || '').toLowerCase();
-      const gstFilter = (globalFilters.gstNo || '').toLowerCase();
-      const printFilter = (globalFilters.supplierPrintName || '').toLowerCase();
-      
-      const matchesName = !nameFilter || (row.supplierName && row.supplierName.toLowerCase().includes(nameFilter));
-      const matchesGst = !gstFilter || (row.gstNo && row.gstNo.toLowerCase().includes(gstFilter));
-      const matchesPrint = !printFilter || (row.supplierPrintName && row.supplierPrintName.toLowerCase().includes(printFilter));
-      
-      const q = (globalQuery || '').toLowerCase();
-      const matchesSearch = !q ||
-        (row.supplierName && row.supplierName.toLowerCase().includes(q)) ||
-        (row.gstNo && row.gstNo.toLowerCase().includes(q)) ||
-        (row.supplierPrintName && row.supplierPrintName.toLowerCase().includes(q)) ||
-        (row.shortName && row.shortName.toLowerCase().includes(q));
-
-      return matchesName && matchesGst && matchesPrint && matchesSearch;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
+  useKeyboardShortcuts({ 'ctrl+n': handleOpenAdd });
 
   return (
     <MainCard
@@ -172,12 +113,12 @@ export default function SupplierList() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="Supplier_Master"
             columns={[
               { header: 'Code', key: 'supplierCode' },
               { header: 'Supplier Name', key: 'supplierName' },
-              { header: 'Email', key: 'email' },
+              { header: 'GST No', key: 'gstNo' },
               { header: 'Status', key: 'status' }
             ]}
           />
@@ -191,10 +132,9 @@ export default function SupplierList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

@@ -17,21 +17,19 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'departmentNo', label: 'Department Number', minWidth: 150, bold: true },
-  { id: 'departmentName', label: 'Department Name', minWidth: 180 },
+  { id: 'departmentNo', label: 'Dept No.', minWidth: 120, bold: true, required: true },
+  { id: 'departmentName', label: 'Department Name', minWidth: 180, required: true },
   { id: 'ndaCertificate', label: 'NDA', minWidth: 80 },
-  { id: 'sequenceNo', label: 'Organization Sequence Number', minWidth: 200 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
+  { id: 'sequenceNo', label: 'Seq No.', minWidth: 100 },
+  { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 },
-  { id: 'status', label: 'Status', minWidth: 100 }
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function DepartmentDetails() {
   const dispatch = useDispatch();
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -44,30 +42,14 @@ export default function DepartmentDetails() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select', isStarred: true,
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Active', label: 'ACTIVE' },
-          { value: 'In Active', label: 'INACTIVE' }
-        ],
-        defaultValue: 'Active'
-      },
-      {
-        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
-        options: [
-          { value: 'departmentName', label: 'Dept Name' },
-          { value: 'departmentNo', label: 'Dept Number' }
-        ],
-        defaultValue: 'departmentName'
-      },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      status: row.status || 'Active'
+    }));
+  }, [rows]);
 
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
@@ -97,11 +79,11 @@ export default function DepartmentDetails() {
     setDeleteDialogOpen(false);
     try {
       await axios.delete(`/api/hrm/departments/${deleteTargetId}`);
-      dispatch(openSnackbar({ open: true, message: 'Department deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Department deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchDepartments();
     } catch (error) {
       console.error('Failed to delete department:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete department.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete department.', variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -109,49 +91,6 @@ export default function DepartmentDetails() {
     'ctrl+n': handleOpenAdd,
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
-
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'Department Number': r.departmentNo,
-      'Department Name': r.departmentName,
-      'NDA Certificate': r.ndaCertificate,
-      'Organization Sequence Number': r.sequenceNo,
-      'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
-      'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
-      Status: r.status
-    }));
-    exportToExcel(exportData, 'Department_Details');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      // 1. Status Filter
-      const statusFilter = globalFilters.status || 'Active';
-      if (statusFilter !== 'All' && row.status !== statusFilter) return false;
-
-      // 2. Advanced Search (Search By + Search Text)
-      const searchText = (globalFilters.searchText || '').toLowerCase();
-      const searchBy = globalFilters.searchBy || 'departmentName';
-      if (searchText) {
-        const val = (row[searchBy] || '').toString().toLowerCase();
-        if (!val.includes(searchText)) return false;
-      }
-
-      // 3. Global Query (Quick search across all fields)
-      if (globalQuery) {
-        const q = globalQuery.toLowerCase();
-        return (row.departmentName && row.departmentName.toLowerCase().includes(q)) ||
-               (row.departmentNo && row.departmentNo.toString().toLowerCase().includes(q));
-      }
-
-      return true;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
     <MainCard
@@ -172,10 +111,10 @@ export default function DepartmentDetails() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="Department_Details"
             columns={[
-              { header: 'Department Number', key: 'departmentNo' },
+              { header: 'Dept No', key: 'departmentNo' },
               { header: 'Department Name', key: 'departmentName' },
               { header: 'Status', key: 'status' }
             ]}
@@ -190,10 +129,9 @@ export default function DepartmentDetails() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

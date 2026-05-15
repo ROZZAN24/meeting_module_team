@@ -18,9 +18,9 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'enquiryNo', label: 'Enquiry No', minWidth: 130, bold: true },
+  { id: 'enquiryNo', label: 'Enquiry No', minWidth: 130, bold: true, required: true },
   { id: 'enquiryDate', label: 'Date', minWidth: 110 },
-  { id: 'customerName', label: 'Customer', minWidth: 180 },
+  { id: 'customerName', label: 'Customer', minWidth: 180, required: true },
   { id: 'contactPerson', label: 'Contact', minWidth: 140 },
   { id: 'subject', label: 'Subject', minWidth: 200 },
   { id: 'source', label: 'Source', minWidth: 100 },
@@ -30,8 +30,6 @@ const columns = [
 
 export default function EnquiryList() {
   const dispatch = useDispatch();
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -44,24 +42,15 @@ export default function EnquiryList() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Open', label: 'OPEN' },
-          { value: 'In Progress', label: 'IN PROGRESS' },
-          { value: 'Closed', label: 'CLOSED' },
-          { value: 'Cancelled', label: 'CANCELLED' }
-        ],
-        defaultValue: 'All'
-      },
-      { id: 'customerName', label: 'Customer', type: 'text', placeholder: 'Search by Customer...' }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      enquiryDate: row.enquiryDate ? format(new Date(row.enquiryDate), 'dd-MM-yyyy') : '-',
+      status: row.status || 'Open'
+    }));
+  }, [rows]);
 
   const fetchEnquiries = useCallback(async () => {
     setLoading(true);
@@ -91,11 +80,11 @@ export default function EnquiryList() {
     setDeleteDialogOpen(false);
     try {
       await axios.delete(`${API_PATHS.SM.ENQUIRIES}/${deleteTargetId}`);
-      dispatch(openSnackbar({ open: true, message: 'Enquiry deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Enquiry deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchEnquiries();
     } catch (error) {
       console.error('Failed to delete enquiry:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete enquiry.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete enquiry.', variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -103,39 +92,6 @@ export default function EnquiryList() {
     'ctrl+n': handleOpenAdd,
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
-
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'Enquiry No': r.enquiryNo,
-      'Date': r.enquiryDate ? format(new Date(r.enquiryDate), 'dd-MM-yyyy') : '',
-      'Customer': r.customerName,
-      'Contact Person': r.contactPerson,
-      'Email': r.email,
-      'Phone': r.phone,
-      'Subject': r.subject,
-      'Source': r.source,
-      'Priority': r.priority,
-      'Status': r.status
-    }));
-    exportToExcel(exportData, 'SM_Enquiries');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      const nameFilter = globalFilters.customerName || '';
-      const matchesName = !nameFilter || (row.customerName && row.customerName.toLowerCase().includes(nameFilter.toLowerCase()));
-      const matchesSearch = !globalQuery ||
-        (row.customerName && row.customerName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.enquiryNo && row.enquiryNo.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.subject && row.subject.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesName && matchesSearch;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
     <MainCard
@@ -156,7 +112,7 @@ export default function EnquiryList() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="SM_Enquiries"
             columns={[
               { header: 'Enquiry No', key: 'enquiryNo' },
@@ -176,10 +132,9 @@ export default function EnquiryList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

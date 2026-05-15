@@ -15,18 +15,15 @@ import { format } from 'date-fns';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'designationCode', label: 'Designation Code', minWidth: 150, bold: true },
-  { id: 'designationName', label: 'Designation Name', minWidth: 200 },
+  { id: 'designationCode', label: 'Designation Code', minWidth: 150, bold: true, required: true },
+  { id: 'designationName', label: 'Designation Name', minWidth: 200, required: true },
   { id: 'subCategoryLevel', label: 'Sub Category Level', minWidth: 150 },
   { id: 'experience', label: 'Experience', minWidth: 120 },
-  { id: 'appearInCompetency', label: 'Appear in Competency', minWidth: 150 },
-  { id: 'displaySlNo', label: 'Display Serial Number', minWidth: 150 },
-  { id: 'qualification', label: 'Qualification', minWidth: 120 },
-  { id: 'jobDescription', label: 'Job Description', minWidth: 250 },
-  { id: 'orgSeqNo', label: 'Organization Sequence Number', minWidth: 200 },
-  { id: 'budgetedPositions', label: 'Number of Positions (Budget)', minWidth: 180 },
+  { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 }
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function DesignationMaster() {
@@ -39,33 +36,14 @@ export default function DesignationMaster() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
-
-  useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select', isStarred: true,
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Active', label: 'ACTIVE' },
-          { value: 'In Active', label: 'INACTIVE' }
-        ],
-        defaultValue: 'Active'
-      },
-      {
-        id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
-        options: [
-          { value: 'designationName', label: 'Designation Name' },
-          { value: 'designationCode', label: 'Designation Code' }
-        ],
-        defaultValue: 'designationName'
-      },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Type to filter...', isStarred: true }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      status: row.status || 'Active'
+    }));
+  }, [rows]);
 
   const fetchDesignations = useCallback(async () => {
     setLoading(true);
@@ -96,56 +74,10 @@ export default function DesignationMaster() {
     }
   };
 
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      Code: r.designationCode,
-      Name: r.designationName,
-      Level: r.subCategoryLevel,
-      Experience: r.experience,
-      Qualification: r.qualification,
-      'Job Description': r.jobDescription,
-      Status: r.status
-    }));
-    exportToExcel(exportData, 'Designation_Master');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      // 1. Status Filter
-      const statusFilter = globalFilters.status || 'Active';
-      if (statusFilter !== 'All' && row.status !== statusFilter) return false;
-
-      // 2. Advanced Search
-      const searchText = (globalFilters.searchText || '').toLowerCase();
-      const searchBy = globalFilters.searchBy || 'designationName';
-      if (searchText) {
-        const val = (row[searchBy] || '').toString().toLowerCase();
-        if (!val.includes(searchText)) return false;
-      }
-
-      // 3. Global Query
-      if (globalQuery) {
-        const q = globalQuery.toLowerCase();
-        return (row.designationName && row.designationName.toLowerCase().includes(q)) ||
-               (row.designationCode && row.designationCode.toLowerCase().includes(q));
-      }
-      return true;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
-
   useKeyboardShortcuts({
     'ctrl+n': handleOpenAdd,
     'escape': () => setDialogOpen(false)
   });
-
-  const renderCell = (col, row, idx) => {
-    if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'createdDate') return row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-';
-    return row[col.id] || '-';
-  };
 
   return (
     <MainCard
@@ -175,7 +107,7 @@ export default function DesignationMaster() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="Designation_Master"
             columns={[
               { header: 'Code', key: 'designationCode' },
@@ -194,17 +126,15 @@ export default function DesignationMaster() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={(row) => { setSelectedRow(row); setDeleteDialogOpen(true); }}
-        renderCell={renderCell}
       />
 
       <AddDesignationDialog

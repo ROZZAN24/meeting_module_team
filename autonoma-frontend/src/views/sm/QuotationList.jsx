@@ -18,20 +18,19 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'quotationNo', label: 'Quotation No', minWidth: 130, bold: true },
+  { id: 'quotationNo', label: 'Quotation No', minWidth: 130, bold: true, required: true },
   { id: 'quotationDate', label: 'Date', minWidth: 110 },
-  { id: 'enquiryRef', label: 'Enquiry Ref', minWidth: 120 },
-  { id: 'customerName', label: 'Customer', minWidth: 180 },
-  { id: 'productName', label: 'Product', minWidth: 160 },
+  { id: 'customerName', label: 'Customer', minWidth: 180, required: true },
   { id: 'totalAmount', label: 'Amount', minWidth: 100 },
-  { id: 'currency', label: 'Currency', minWidth: 80 },
-  { id: 'status', label: 'Status', minWidth: 100 }
+  { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function QuotationList() {
   const dispatch = useDispatch();
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -44,25 +43,14 @@ export default function QuotationList() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Draft', label: 'DRAFT' },
-          { value: 'Sent', label: 'SENT' },
-          { value: 'Accepted', label: 'ACCEPTED' },
-          { value: 'Rejected', label: 'REJECTED' },
-          { value: 'Expired', label: 'EXPIRED' }
-        ],
-        defaultValue: 'All'
-      },
-      { id: 'customerName', label: 'Customer', type: 'text', placeholder: 'Search by Customer...' }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      status: row.status || 'Draft'
+    }));
+  }, [rows]);
 
   const fetchQuotations = useCallback(async () => {
     setLoading(true);
@@ -92,11 +80,11 @@ export default function QuotationList() {
     setDeleteDialogOpen(false);
     try {
       await axios.delete(`${API_PATHS.SM.QUOTATIONS}/${deleteTargetId}`);
-      dispatch(openSnackbar({ open: true, message: 'Quotation deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Quotation deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchQuotations();
     } catch (error) {
       console.error('Failed to delete quotation:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete quotation.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete quotation.', variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -104,39 +92,6 @@ export default function QuotationList() {
     'ctrl+n': handleOpenAdd,
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
-
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'Quotation No': r.quotationNo,
-      'Date': r.quotationDate ? format(new Date(r.quotationDate), 'dd-MM-yyyy') : '',
-      'Enquiry Ref': r.enquiryRef,
-      'Customer': r.customerName,
-      'Product': r.productName,
-      'Quantity': r.quantity,
-      'Unit Price': r.unitPrice,
-      'Total Amount': r.totalAmount,
-      'Currency': r.currency,
-      'Status': r.status
-    }));
-    exportToExcel(exportData, 'SM_Quotations');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      const nameFilter = globalFilters.customerName || '';
-      const matchesName = !nameFilter || (row.customerName && row.customerName.toLowerCase().includes(nameFilter.toLowerCase()));
-      const matchesSearch = !globalQuery ||
-        (row.customerName && row.customerName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.quotationNo && row.quotationNo.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.productName && row.productName.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesName && matchesSearch;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
     <MainCard
@@ -157,7 +112,7 @@ export default function QuotationList() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-            data={filteredRows}
+            data={resolvedRows}
             filename="SM_Quotations"
             columns={[
               { header: 'Quotation No', key: 'quotationNo' },
@@ -177,10 +132,9 @@ export default function QuotationList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={resolvedRows}
         page={page}
         size={size}
-        totalCount={filteredRows.length}
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

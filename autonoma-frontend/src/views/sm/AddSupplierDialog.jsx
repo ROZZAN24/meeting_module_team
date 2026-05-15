@@ -135,8 +135,15 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
       dispatch(openSnackbar({ open: true, message: `Supplier ${isEdit ? 'updated' : 'created'} successfully!`, variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       handleClose(true);
     } catch (error) {
-      console.error('Failed to save supplier:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to save supplier.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      const msg = error.response?.data?.message || error.response?.data || 'Failed to save supplier.';
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: typeof msg === 'string' ? msg : 'Failed to save supplier.', 
+        variant: 'alert', 
+        alert: { variant: 'filled' }, 
+        severity: 'error', 
+        close: false 
+      }));
     }
   };
 

@@ -350,6 +350,8 @@ const UserAccess = () => {
                   <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>MODULE / SUBMODULE</TableCell>
                   <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>PAGE NAME</TableCell>
                   {permissionHeaders.map(h => <PermissionHeaderCell key={h.id} header={h} />)}
+                  <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>UPDATED BY</TableCell>
+                  <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>UPDATED DATE</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.65rem', py: 2 }}>ACTION</TableCell>
                 </TableRow>
               </TableHead>
@@ -385,6 +387,12 @@ const UserAccess = () => {
                           />
                         </TableCell>
                       ))}
+                      <TableCell sx={{ borderLeft: '1px solid #f1f5f9', fontWeight: 700, color: '#475569', fontSize: '0.7rem' }}>
+                        {row.updatedBy || '-'}
+                      </TableCell>
+                      <TableCell sx={{ borderLeft: '1px solid #f1f5f9', color: '#64748b', fontSize: '0.65rem', whiteSpace: 'nowrap' }}>
+                        {row.updatedDate ? new Date(row.updatedDate).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
+                      </TableCell>
                       <TableCell align="center" sx={{ borderLeft: '1px solid #f1f5f9' }}>
                         <Tooltip title="Save Permissions" arrow>
                           <IconButton onClick={() => handleSaveRow(row)} sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}>
