@@ -17,7 +17,7 @@ public class AuditTrailController {
 
     @GetMapping
     public List<AuditTrail> getAllLogs() {
-        return auditTrailRepository.findAllByOrderByCreatedAtDesc();
+        return auditTrailRepository.findAllByOrderByCreatedDateDesc();
     }
 
     @Autowired

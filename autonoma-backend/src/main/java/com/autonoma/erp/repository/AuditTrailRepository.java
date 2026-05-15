@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface AuditTrailRepository extends JpaRepository<AuditTrail, Long> {
-    List<AuditTrail> findAllByOrderByCreatedAtDesc();
+    List<AuditTrail> findAllByOrderByCreatedDateDesc();
 }

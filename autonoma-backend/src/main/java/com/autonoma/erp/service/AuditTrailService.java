@@ -73,7 +73,7 @@ public class AuditTrailService {
         if (!companies.isEmpty()) {
             Integer days = companies.get(0).getRestoreEnableDays();
             if (days != null && days > 0) {
-                long diff = new Date().getTime() - log.getCreatedAt().getTime();
+                long diff = new Date().getTime() - log.getCreatedDate().getTime();
                 long diffDays = diff / (24 * 60 * 60 * 1000);
                 if (diffDays > days) {
                     throw new RuntimeException("Restoration period has expired (" + days + " days)");

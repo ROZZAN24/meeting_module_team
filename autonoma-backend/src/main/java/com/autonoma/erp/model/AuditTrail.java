@@ -49,7 +49,7 @@ public class AuditTrail {
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
     @Builder.Default
     @Column(name = "is_restored")
@@ -69,6 +69,6 @@ public class AuditTrail {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        createdDate = new Date();
     }
 }
