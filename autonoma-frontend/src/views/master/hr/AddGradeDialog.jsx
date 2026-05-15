@@ -146,11 +146,10 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
               name="gradeCode"
               label="Grade Code"
               value={formData.gradeCode}
-              onChange={handleFormChange}
-              disabled={isViewOnly}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: 'grey.50' }}
               required
               error={errors.gradeCode}
-              sx={errorStyle(errors.gradeCode)}
             />
             <BOSTextField
               name="gradeName"

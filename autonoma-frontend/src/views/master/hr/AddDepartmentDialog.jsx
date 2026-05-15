@@ -162,11 +162,10 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
               label="Department Number"
               type="number"
               value={formData.departmentNo}
-              onChange={handleFormChange}
-              disabled={isViewOnly}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: 'grey.50' }}
               required
               error={errors.departmentNo}
-              sx={errorStyle(errors.departmentNo)}
             />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, mt: 3 }}>
