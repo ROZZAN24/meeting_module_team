@@ -33,6 +33,7 @@ import {
   BOSFormDialog,
   BOSFormSection,
   BOSTextField,
+  BOSDatePicker,
   BOSDataTable,
   btnSave,
   getStatusChipSx,
@@ -319,14 +320,12 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconFileDescription size={20} color={theme.palette.primary.main} />} title="General Information">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
               <BOSTextField label="Schedule No" value={formData.scheduleNo} inputProps={{ readOnly: true }} />
-              <BOSTextField
+              <BOSDatePicker
                 required
                 label="Schedule Date"
-                type="date"
                 name="scheduleDate"
                 value={formData.scheduleDate}
                 onChange={handleChange}
-                InputLabelProps={{ shrink: true }}
                 error={!!errors.scheduleDate}
                 helperText={errors.scheduleDate}
               />
@@ -424,14 +423,12 @@ export default function AddAuditSchedule() {
                 error={!!errors.auditArea}
                 helperText={errors.auditArea}
               />
-              <BOSTextField
+              <BOSDatePicker
                 required
                 label="Audit Date"
-                type="date"
                 name="auditDate"
                 value={formData.auditDate}
                 onChange={handleChange}
-                InputLabelProps={{ shrink: true }}
                 error={!!errors.auditDate}
                 helperText={errors.auditDate}
               />

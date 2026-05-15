@@ -46,8 +46,8 @@ export default function GradeDetails() {
     if (!Array.isArray(rows)) return [];
     return rows.map(row => ({
       ...row,
-      createdDate: row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-',
-      updatedDate: row.updatedDate ? format(new Date(row.updatedDate), 'dd-MM-yyyy HH:mm') : '-',
+      createdDate: row.createdDate ? format(new Date(row.createdDate), 'dd/MM/yyyy HH:mm') : '-',
+      updatedDate: row.updatedDate ? format(new Date(row.updatedDate), 'dd/MM/yyyy HH:mm') : '-',
       status: row.status || 'Active'
     }));
   }, [rows]);

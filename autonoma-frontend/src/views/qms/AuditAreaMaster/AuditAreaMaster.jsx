@@ -118,9 +118,9 @@ export default function AuditAreaMaster() {
       Type: r.type,
       Description: r.description,
       'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
+      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
       'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
+      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Audit_Area_Details');

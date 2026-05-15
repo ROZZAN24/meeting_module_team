@@ -134,9 +134,9 @@ export default function AuditTypeMaster() {
       Standard: r.standard,
       Description: r.description,
       'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
+      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
       'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
+      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Audit_Type_Details');
@@ -220,7 +220,7 @@ export default function AuditTypeMaster() {
           if (col.id === 'createdBy' || col.id === 'updatedBy') return val || 'Admin';
           if (col.id.toLowerCase().includes('date')) {
             if (!val) return '-';
-            try { return format(new Date(val), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }
+            try { return format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch { return '-'; }
           }
           if (col.id === 'status') return <Chip label={val} size="small" sx={{ bgcolor: val === 'ACTIVE' ? 'success.light' : 'error.light', color: val === 'ACTIVE' ? 'success.dark' : 'error.dark', fontWeight: 700 }} />;
           return val ?? '-';

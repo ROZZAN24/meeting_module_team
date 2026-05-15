@@ -156,9 +156,9 @@ export default function DivisionMaster() {
       'Description': r.description || '',
       'Seq No': r.sequenceNo,
       'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
+      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
       'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
+      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       'Status': r.status ? 'Active' : 'Inactive'
     }));
     setExportPreviewData(exportData);

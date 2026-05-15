@@ -107,7 +107,7 @@ export default function PriceMasterList() {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Master No': r.masterNo,
-      'Date': r.entryDate ? format(new Date(r.entryDate), 'dd-MM-yyyy') : '',
+      'Date': r.entryDate ? format(new Date(r.entryDate), 'dd/MM/yyyy') : '',
       'Customer': r.customerName,
       'Product': r.productName,
       'Unit Price': r.unitPrice,

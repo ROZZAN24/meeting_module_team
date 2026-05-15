@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useTheme } from '@mui/material/styles';
@@ -9,20 +8,20 @@ import { getInputStyles } from './BOSStyles';
  * BOS DatePicker — SOP #9, #10
  * Wraps MUI DatePicker with standardized BOS styles and dd/MM/yyyy format.
  */
-export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, ...rest }) {
+export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon, ...rest }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
-  const [open, setOpen] = useState(false);
   const bosInput = getInputStyles(theme, isDark);
 
   return (
     <DatePicker
       label={`${label}${required ? ' *' : ''}`}
       value={value ? new Date(value) : null}
-      open={open}
-      onOpen={() => setOpen(true)}
-      onClose={() => setOpen(false)}
+      slots={!showIcon ? { 
+        openPickerIcon: () => null,
+        openPickerButton: () => null 
+      } : undefined}
       onChange={(newValue) => {
         if (newValue) {
           const date = new Date(newValue);
@@ -39,18 +38,13 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
       }}
       disabled={disabled}
       format="dd/MM/yyyy"
-      sx={{ width: '100%' }}
-      slots={{
-        openPickerIcon: () => null
-      }}
       slotProps={{
         textField: {
           fullWidth: true,
           size: 'small',
           error: !!error,
           helperText: helperText,
-          sx: { ...bosInput, '& .MuiOutlinedInput-root': { ...bosInput['& .MuiOutlinedInput-root'], cursor: 'pointer' }, '& input': { cursor: 'pointer' } },
-          onClick: () => !disabled && setOpen(true),
+          sx: bosInput,
           ...rest
         }
       }}

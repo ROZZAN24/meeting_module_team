@@ -82,7 +82,7 @@ export default function DesignationLevelMaster() {
             HRA: r.hra,
             'Screening Level': r.screeningLevel,
             'Created By': r.createdBy,
-            'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '-'
+            'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '-'
         }));
         exportToExcel(exportData, 'Designation_Level');
     };
@@ -104,7 +104,7 @@ export default function DesignationLevelMaster() {
 
     const renderCell = (col, row, idx) => {
         if (col.id === 'index') return idx + 1 + page * size;
-        if (col.id === 'createdDate') return row.createdDate ? format(new Date(row.createdDate), 'dd-MM-yyyy HH:mm') : '-';
+        if (col.id === 'createdDate') return row.createdDate ? format(new Date(row.createdDate), 'dd/MM/yyyy HH:mm') : '-';
         const value = row[col.id];
         return (value !== undefined && value !== null && value !== '') ? value : '-';
     };

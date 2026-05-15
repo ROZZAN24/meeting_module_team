@@ -21,7 +21,14 @@ export default function BOSTextField({ error, helperText, maxLength, sx, inputPr
       error={error}
       helperText={helperText}
       inputProps={{ maxLength, ...inputProps }}
-      sx={{ ...bosInput, ...sx }}
+      sx={{ 
+        ...bosInput, 
+        '& input::-webkit-calendar-picker-indicator': {
+          display: 'none',
+          webkitAppearance: 'none'
+        },
+        ...sx 
+      }}
       {...rest}
     />
   );

@@ -132,9 +132,9 @@ export default function AuditCriteriaMaster() {
       'Criteria': r.criteriaText,
       'Department': r.department,
       'Created User': r.createdBy || 'Admin',
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
+      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
       'Updated User': r.updatedBy || 'Admin',
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
+      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Audit_Criteria_Details');
@@ -187,7 +187,7 @@ export default function AuditCriteriaMaster() {
     if (col.id === 'createdBy' || col.id === 'updatedBy') return val || 'Admin';
     if (col.id.toLowerCase().includes('date')) {
       if (!val) return '-';
-      try { return format(new Date(val), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }
+      try { return format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch { return '-'; }
     }
     return val ?? '-';
   };

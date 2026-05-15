@@ -118,10 +118,9 @@ export default function BOSDataTable({
   const formatDate = (d) => {
     if (!d) return '-';
     try { 
-      // Handle cases where d might be a string with +00:00 or other offsets
       const dateObj = new Date(d);
       if (isNaN(dateObj.getTime())) return String(d);
-      return format(dateObj, 'dd-MM-yyyy HH:mm'); 
+      return format(dateObj, 'dd/MM/yyyy HH:mm'); 
     } catch { 
       return '-'; 
     }
@@ -139,11 +138,11 @@ export default function BOSDataTable({
       val = row[snakeCaseId];
       
       // 2. Audit-Specific Fallbacks (The "Big 4")
-      if (val === undefined || val === null) {
+      if (val === undefined || val === null || val === '') {
         if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
-        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
+        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'] || row['createdDate'] || row['createdAt'] || row['created_at'];
         if (col.id === 'createdBy') val = row['created_by'];
-        if (col.id === 'updatedBy') val = row['updated_by'];
+        if (col.id === 'updatedBy') val = row['updated_by'] || row['createdBy'] || row['created_by'];
       }
     }
 

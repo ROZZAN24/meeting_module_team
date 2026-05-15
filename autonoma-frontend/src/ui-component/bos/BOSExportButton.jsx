@@ -54,7 +54,7 @@ export default function BOSExportButton({
           try {
             const d = new Date(val);
             if (!isNaN(d.getTime())) {
-              val = format(d, 'dd-MM-yyyy HH:mm');
+              val = format(d, 'dd/MM/yyyy HH:mm');
             }
           } catch (e) { /* ignore */ }
         }
@@ -73,7 +73,7 @@ export default function BOSExportButton({
         let val = row[field.key];
         if (val) {
           if (field.key.includes('Date')) {
-            try { val = format(new Date(val), 'dd-MM-yyyy HH:mm'); } catch (e) { /* ignore */ }
+            try { val = format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch (e) { /* ignore */ }
           }
           mappedRow[field.label] = val;
         }
@@ -84,7 +84,7 @@ export default function BOSExportButton({
   };
 
   const getFormattedFilename = () => {
-    const ts = format(new Date(), 'dd-MM-yyyy_HHmm');
+    const ts = format(new Date(), 'dd/MM/yyyy_HHmm');
     return `${filename}_${ts}`;
   };
 

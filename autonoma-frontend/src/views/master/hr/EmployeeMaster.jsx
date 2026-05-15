@@ -160,12 +160,7 @@ export default function EmployeeMaster() {
 
   const h = (e) => {
     const { name, value } = e.target;
-    setForm((p) => {
-      const next = { ...p, [name]: value };
-      if (name === 'exitReason' && value !== 'OTHER') next.exitComments = '';
-      if (name === 'exitDate' && !value) { next.exitReason = ''; next.exitComments = ''; }
-      return next;
-    });
+    setForm((p) => ({ ...p, [name]: value }));
     if (errors[name]) clearErrors(name);
   };
 
@@ -485,8 +480,8 @@ export default function EmployeeMaster() {
                 {employees.map(e => <MenuItem key={e.id} value={e.employeeName}>{e.employeeName}</MenuItem>)}
               </BOSTextField>
             </R>
-            <R><BOSTextField name="officeMail" label="Office Mail" value={form.officeMail} onChange={h} InputProps={{ startAdornment: <InputAdornment position="start"><IconMail size={18} /></InputAdornment> }} /></R>
-            <R><BOSTextField name="officeMailPassword" label="Office Mail password" value={form.officeMailPassword} onChange={h} type="password" InputProps={{ startAdornment: <InputAdornment position="start"><IconLock size={18} /></InputAdornment> }} /></R>
+            <R><BOSTextField name="officeMail" label="Office Mail" value={form.officeMail} onChange={h} /></R>
+            <R><BOSTextField name="officeMailPassword" label="Office Mail password" value={form.officeMailPassword} onChange={h} type="password" /></R>
             
             <R><BOSTextField select name="pfToggle" label="PF" value={form.pfToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField select name="esiToggle" label="ESI" value={form.esiToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
@@ -538,12 +533,12 @@ export default function EmployeeMaster() {
         {/* --- SECTION 3: DATES & SCHEDULING --- */}
         <BOSFormSection icon={<IconCalendar size={20} color={theme.palette.primary.main} />} title="Date & Scheduling">
           <Grid container spacing={2.5}>
-            <R lg={3}><BOSDatePicker name="dateOfJoining" label="Date Of Joining" value={form.dateOfJoining} onChange={h} error={!!errors.dateOfJoining} helperText={errors.dateOfJoining} required /></R>
-            <R lg={3}><BOSTextField name="probationPeriod" label="Probation (Months)" value={form.probationPeriod} onChange={h} type="number" /></R>
-            <R lg={3}><BOSDatePicker name="confirmationDate" label="Confirmation Date" value={form.confirmationDate} onChange={h} /></R>
-            <R lg={3}><BOSTextField select name="inductionStatus" label="Induction Status" value={form.inductionStatus} onChange={h}><MenuItem value="PENDING">PENDING</MenuItem><MenuItem value="COMPLETED">COMPLETED</MenuItem></BOSTextField></R>
-            <R lg={3}><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
-            <R lg={3}>
+            <R><BOSDatePicker name="dateOfJoining" label="Date Of Joining" value={form.dateOfJoining} onChange={h} error={!!errors.dateOfJoining} helperText={errors.dateOfJoining} required /></R>
+            <R><BOSTextField name="probationPeriod" label="Probation (Months)" value={form.probationPeriod} onChange={h} type="number" /></R>
+            <R><BOSDatePicker name="confirmationDate" label="Confirmation Date" value={form.confirmationDate} onChange={h} /></R>
+            <R><BOSTextField select name="inductionStatus" label="Induction Status" value={form.inductionStatus} onChange={h}><MenuItem value="PENDING">PENDING</MenuItem><MenuItem value="COMPLETED">COMPLETED</MenuItem></BOSTextField></R>
+            <R><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
+            <R>
               <BOSTextField select name="exitReason" label="Exit Reason" value={form.exitReason} onChange={h} disabled={!form.exitDate}>
                 <MenuItem value="RESIGNED">RESIGNED</MenuItem>
                 <MenuItem value="TERMINATED">TERMINATED</MenuItem>
@@ -551,10 +546,8 @@ export default function EmployeeMaster() {
                 <MenuItem value="OTHER">OTHER</MenuItem>
               </BOSTextField>
             </R>
-            {form.exitReason === 'OTHER' && (
-              <R lg={3}><BOSTextField name="exitComments" label="Exit Comments" value={form.exitComments} onChange={h} required placeholder="Please explain..." /></R>
-            )}
-            <R lg={3}><BOSDatePicker name="rejoiningDate" label="Rejoining Date" value={form.rejoiningDate} onChange={h} /></R>
+            <R><BOSTextField name="exitComments" label="Exit Comments" value={form.exitComments} onChange={h} disabled={form.exitReason !== 'OTHER'} placeholder={form.exitReason === 'OTHER' ? 'Explain...' : 'Disabled'} /></R>
+            <R><BOSDatePicker name="rejoiningDate" label="Rejoining Date" value={form.rejoiningDate} onChange={h} /></R>
           </Grid>
         </BOSFormSection>
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Grid, Button, Stack, MenuItem, Typography, useTheme, Box, Divider, IconButton } from '@mui/material';
 import { IconPlus, IconDeviceFloppy, IconTrash, IconHeart, IconFileText, IconMapPin, IconCertificate, IconCar, IconActivity, IconGavel, IconCamera, IconDeviceLaptop, IconUsers, IconAmbulance, IconAlertTriangle, IconEPassport, IconShieldCheck, IconBuildingBank, IconSchool, IconReceipt2, IconBriefcase, IconDevices } from '@tabler/icons-react';
-import { BOSFormSection, BOSTextField, BOSDataTable, btnSave, btnDelete, BOSFileUpload } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSDatePicker, BOSDataTable, btnSave, btnDelete, BOSFileUpload } from 'ui-component/bos';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -87,6 +87,15 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
                 label={f.label}
                 disabled={disabled || f.disabled}
               />
+            ) : f.type === 'date' ? (
+              <BOSDatePicker
+                name={f.name}
+                label={f.label}
+                value={form[f.name] || ''}
+                onChange={h}
+                disabled={disabled || f.disabled}
+                required={f.required}
+              />
             ) : (
               <BOSTextField 
                 name={f.name} 
@@ -95,7 +104,6 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
                 onChange={h} 
                 type={f.type || 'text'} 
                 maxLength={f.max} 
-                InputLabelProps={f.type === 'date' ? { shrink: true } : undefined} 
                 disabled={disabled || f.disabled} 
                 multiline={f.multiline} 
                 rows={f.rows}
@@ -197,8 +205,10 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
               <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled}>
                 {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </BOSTextField>
+            ) : f.type === 'date' ? (
+              <BOSDatePicker name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled} required={f.required} />
             ) : (
-              <BOSTextField name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} type={f.type || 'text'} disabled={disabled} InputLabelProps={f.type === 'date' ? { shrink: true } : undefined} />
+              <BOSTextField name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} type={f.type || 'text'} disabled={disabled} />
             )}
           </R>
         ))}

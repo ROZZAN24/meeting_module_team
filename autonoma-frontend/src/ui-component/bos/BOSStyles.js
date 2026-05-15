@@ -187,9 +187,7 @@ export const getInputStyles = (theme, isDark) => ({
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
     '& input': { py: 1.2, fontSize: '0.9rem' },
-    '& .MuiSelect-select': { py: 1.1, fontSize: '0.9rem', width: '100%', minWidth: '150px', display: 'flex', alignItems: 'center' },
-    '& .MuiPickersInputBase-root': { height: '38px' },
-    '& .MuiPickersInputBase-sectionsContainer': { py: 0, px: 1, fontSize: '0.9rem', height: '100%', display: 'flex', alignItems: 'center' }
+    '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px' }
   },
   '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
   '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },

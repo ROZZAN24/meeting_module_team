@@ -24,6 +24,7 @@ import {
 import {
   BOSFormDialog,
   BOSTextField,
+  BOSDatePicker,
   BOSFormSection
 } from 'ui-component/bos';
 import { IconPlus, IconTrash, IconSettings, IconUsers, IconMessageDots } from '@tabler/icons-react';
@@ -245,7 +246,7 @@ const AddMomDialog = ({ open, onClose, onSave, item }) => {
                         />
                       </Grid>
                       <Grid item xs={3}>
-                        <BOSTextField type="date" label="Target Date" size="small" value={det.targetDate} onChange={(e) => handleDetailChange(idx, 'targetDate', e.target.value)} />
+                        <BOSDatePicker label="Target Date" size="small" value={det.targetDate} onChange={(e) => handleDetailChange(idx, 'targetDate', e.target.value)} name="targetDate" />
                       </Grid>
                       <Grid item xs={3}>
                         <BOSTextField select label="Attach Required?" size="small" value={det.attachmentRequired} onChange={(e) => handleDetailChange(idx, 'attachmentRequired', e.target.value)}>

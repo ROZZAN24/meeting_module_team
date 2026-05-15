@@ -115,7 +115,7 @@ export default function AuditScheduleList() {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Schedule No': r.scheduleNo,
-      'Date': r.scheduleDate ? format(new Date(r.scheduleDate), 'dd-MM-yyyy') : '',
+      'Date': r.scheduleDate ? format(new Date(r.scheduleDate), 'dd/MM/yyyy') : '',
       'Audit Type': r.auditType,
       'Audit Area': r.auditArea,
       'Auditee': r.auditee,
@@ -165,7 +165,7 @@ export default function AuditScheduleList() {
       const statusText = typeof val === 'object' ? val?.name : val;
       return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
     }
-    if (col.id === 'auditDate' || col.id === 'createdDate') return val ? format(new Date(val), 'dd-MM-yyyy') : '-';
+    if (col.id === 'auditDate' || col.id === 'createdDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
     
     if (typeof val === 'object' && val !== null) {
       return val.name || val.label || val.id || '-';

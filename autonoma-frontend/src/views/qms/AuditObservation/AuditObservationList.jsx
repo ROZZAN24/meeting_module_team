@@ -116,7 +116,7 @@ export default function AuditObservationList() {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Observation No': r.observationNo,
-      'Date': r.observationDate ? format(new Date(r.observationDate), 'dd-MM-yyyy') : '',
+      'Date': r.observationDate ? format(new Date(r.observationDate), 'dd/MM/yyyy') : '',
       'Schedule No': r.auditScheduleNo,
       'Dept': r.departmentName,
       'Auditor': r.auditor,
@@ -147,7 +147,7 @@ export default function AuditObservationList() {
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
     const val = row[col.id];
-    if (col.id === 'observationDate') return val ? format(new Date(val), 'dd-MM-yyyy') : '-';
+    if (col.id === 'observationDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
     if (col.id === 'status') {
       const statusText = typeof val === 'object' ? val?.name : val;
       return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'APPROVED' ? 'ACTIVE' : (statusText === 'PENDING' ? 'PENDING' : 'INACTIVE'))} />;
