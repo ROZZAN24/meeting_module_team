@@ -73,10 +73,10 @@ public class EmployeeMasterService {
             }
         }
         
-        if (employee.getCreatedDate() == null) {
-            employee.setCreatedDate(new Date());
+        if (employee.getCreatedAt() == null) {
+            employee.setCreatedAt(new Date());
         }
-        employee.setUpdatedDate(new Date());
+        employee.setUpdatedAt(new Date());
         
         if (employee.getCreatedBy() == null) {
             employee.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
@@ -108,10 +108,10 @@ public class EmployeeMasterService {
         // Copy all fields from details, preserving id and audit trail
         details.setId(id);
         if (details.getCreatedBy() == null) details.setCreatedBy(emp.getCreatedBy());
-        if (details.getCreatedDate() == null) details.setCreatedDate(emp.getCreatedDate());
+        if (details.getCreatedAt() == null) details.setCreatedAt(emp.getCreatedAt());
         
         details.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-        details.setUpdatedDate(new Date());
+        details.setUpdatedAt(new Date());
         
         sanitizeEmployee(details);
         return employeeRepo.save(details);

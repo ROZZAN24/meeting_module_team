@@ -54,7 +54,7 @@ public class UserController {
             return ResponseEntity.badRequest().body("User ID already exists");
         }
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setCreatedDate(new Date());
+        user.setCreatedAt(new Date());
         user.setCreatedBy(getCurrentUserId());
         return ResponseEntity.ok(userRepository.save(user));
     }
@@ -76,7 +76,7 @@ public class UserController {
             }
             
             user.setUpdatedBy(getCurrentUserId());
-            user.setUpdatedDate(new Date());
+            user.setUpdatedAt(new Date());
             return ResponseEntity.ok(userRepository.save(user));
         }).orElse(ResponseEntity.notFound().build());
     }

@@ -33,7 +33,7 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUserId("admin");
             admin.setEmpId(1L);
             admin.setCreatedBy("SYSTEM");
-            admin.setCreatedDate(new Date());
+            admin.setCreatedAt(new Date());
             System.out.println("Creating new admin user...");
         } else {
             admin = existingAdmin.get();

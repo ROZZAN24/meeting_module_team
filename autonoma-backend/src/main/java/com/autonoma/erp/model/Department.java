@@ -34,20 +34,20 @@ public class Department {
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private Date createdAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
         if (createdBy == null) {
             createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         }
@@ -55,7 +55,7 @@ public class Department {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
         updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
 }

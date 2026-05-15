@@ -37,7 +37,7 @@ public class DepartmentService {
         departmentRepository.deleteById(id);
     }
 
-    public Optional<Department> getDepartmentByNo(Integer no) {
+    public Optional<Department> getDepartmentByNo(String no) {
         return departmentRepository.findByDepartmentNo(no);
     }
 }

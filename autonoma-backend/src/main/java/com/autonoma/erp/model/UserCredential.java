@@ -29,21 +29,21 @@ public class UserCredential {
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private Date createdAt;
 
     @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
     private String updatedBy;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date updatedAt;
 
     @Column(name = "status")
     private Integer status;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
         if (createdBy == null) {
             createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         }
@@ -51,7 +51,7 @@ public class UserCredential {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
         updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
 
@@ -93,12 +93,12 @@ public class UserCredential {
         this.createdBy = createdBy;
     }
 
-    public Date getCreatedDate() {
-        return createdDate;
+    public Date getCreatedAt() {
+        return createdAt;
     }
 
-    public void setCreatedDate(Date createdDate) {
-        this.createdDate = createdDate;
+    public void setCreatedAt(Date createdAt) {
+        this.createdAt = createdAt;
     }
 
     public String getUpdatedBy() {
@@ -109,12 +109,12 @@ public class UserCredential {
         this.updatedBy = updatedBy;
     }
 
-    public Date getUpdatedDate() {
-        return updatedDate;
+    public Date getUpdatedAt() {
+        return updatedAt;
     }
 
-    public void setUpdatedDate(Date updatedDate) {
-        this.updatedDate = updatedDate;
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public Integer getStatus() {

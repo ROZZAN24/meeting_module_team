@@ -115,13 +115,13 @@ public class EmployeeMaster {
     private String lomDeduction = "NO";
 
     @Column(name = "lom_allow", precision = 10, scale = 2)
-    private BigDecimal lomAllow;
+    private String lomAllow;
 
     @Column(name = "lta_eligible", length = 10)
     private String ltaEligible = "NO";
 
     @Column(name = "pf_restriction", precision = 10, scale = 2)
-    private BigDecimal pfRestriction;
+    private String pfRestriction;
 
     @Column(name = "permission_toggle", length = 10)
     private String permissionToggle = "NO";
@@ -301,18 +301,18 @@ public class EmployeeMaster {
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private Date createdAt;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
         } else if (firstName != null) {
@@ -322,7 +322,7 @@ public class EmployeeMaster {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
         } else if (firstName != null) {

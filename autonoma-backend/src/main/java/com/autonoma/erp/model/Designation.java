@@ -54,18 +54,18 @@ public class Designation {
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "created_date")
-    private java.util.Date createdDate;
+    @Column(name = "created_at")
+    private java.util.Date createdAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updated_date")
-    private java.util.Date updatedDate;
+    @Column(name = "updated_at")
+    private java.util.Date updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new java.util.Date();
+        createdAt = new java.util.Date();
         if (createdBy == null) {
             createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         }
@@ -73,7 +73,7 @@ public class Designation {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new java.util.Date();
+        updatedAt = new java.util.Date();
         updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
 
@@ -102,10 +102,10 @@ public class Designation {
     public void setBudgetedPositions(Integer budgetedPositions) { this.budgetedPositions = budgetedPositions; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public LocalDateTime getCreatedDate() { return createdDate; }
-    public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+    public java.util.Date getCreatedAt() { return createdAt; }
+    public void setCreatedAt(java.util.Date createdAt) { this.createdAt = createdAt; }
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public LocalDateTime getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(LocalDateTime updatedDate) { this.updatedDate = updatedDate; }
+    public java.util.Date getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(java.util.Date updatedAt) { this.updatedAt = updatedAt; }
 }
