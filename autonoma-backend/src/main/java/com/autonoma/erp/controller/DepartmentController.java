@@ -45,20 +45,33 @@ public class DepartmentController {
     }
 
     @PostMapping
-    public ResponseEntity<Department> saveDepartment(@RequestBody Department department) {
+    public ResponseEntity<?> saveDepartment(@RequestBody Department department) {
+        String name = department.getDepartmentName() != null ? department.getDepartmentName() : "";
+        // Deep Sanitize: Replace non-breaking spaces and all types of whitespace with standard space
+        String sanitizedName = name.replaceAll("\\s+", " ").trim();
+        
+        if (departmentRepository.existsByNameNative(sanitizedName) > 0) {
+            return ResponseEntity.badRequest().body("Department Name already exists!");
+        }
+        department.setDepartmentName(sanitizedName);
         return ResponseEntity.ok(departmentService.saveDepartment(department));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Department> updateDepartment(@PathVariable Long id, @RequestBody Department departmentDetails) {
+    public ResponseEntity<?> updateDepartment(@PathVariable Long id, @RequestBody Department departmentDetails) {
+        String name = departmentDetails.getDepartmentName() != null ? departmentDetails.getDepartmentName() : "";
+        String sanitizedName = name.replaceAll("\\s+", " ").trim();
+
+        if (departmentRepository.existsByNameNativeWithId(sanitizedName, id) > 0) {
+            return ResponseEntity.badRequest().body("Department Name already exists!");
+        }
         return departmentRepository.findById(id)
                 .map(department -> {
-                    department.setDepartmentName(departmentDetails.getDepartmentName());
+                    department.setDepartmentName(sanitizedName);
                     department.setDepartmentNo(departmentDetails.getDepartmentNo());
                     department.setNdaCertificate(departmentDetails.getNdaCertificate());
                     department.setSequenceNo(departmentDetails.getSequenceNo());
                     department.setStatus(departmentDetails.getStatus());
-                    department.setUpdatedBy("admin");
                     return ResponseEntity.ok(departmentRepository.save(department));
                 }).orElse(ResponseEntity.notFound().build());
     }

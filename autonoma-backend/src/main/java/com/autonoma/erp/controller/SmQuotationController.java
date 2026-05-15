@@ -39,13 +39,19 @@ public class SmQuotationController {
 
     @Operation(summary = "Create a new quotation")
     @PostMapping
-    public ResponseEntity<SmQuotation> createQuotation(@RequestBody SmQuotation quotation) {
+    public ResponseEntity<?> createQuotation(@RequestBody SmQuotation quotation) {
+        if (quotationRepository.existsByQuotationNo(quotation.getQuotationNo())) {
+            return ResponseEntity.badRequest().body("Quotation Number already exists!");
+        }
         return ResponseEntity.ok(quotationService.saveQuotation(quotation));
     }
 
     @Operation(summary = "Update an existing quotation")
     @PutMapping("/{id}")
-    public ResponseEntity<SmQuotation> updateQuotation(@PathVariable Long id, @RequestBody SmQuotation quotationDetails) {
+    public ResponseEntity<?> updateQuotation(@PathVariable Long id, @RequestBody SmQuotation quotationDetails) {
+        if (quotationRepository.existsByQuotationNoAndIdNot(quotationDetails.getQuotationNo(), id)) {
+            return ResponseEntity.badRequest().body("Quotation Number already exists!");
+        }
         return quotationRepository.findById(id)
                 .map(quotation -> {
                     quotation.setQuotationNo(quotationDetails.getQuotationNo());
@@ -67,7 +73,8 @@ public class SmQuotationController {
                     quotation.setOcrConfidence(quotationDetails.getOcrConfidence());
                     quotation.setStatus(quotationDetails.getStatus());
                     quotation.setRemarks(quotationDetails.getRemarks());
-                    quotation.setUpdatedBy("admin");
+                    quotation.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                    quotation.setUpdatedDate(new java.util.Date());
                     return ResponseEntity.ok(quotationRepository.save(quotation));
                 }).orElse(ResponseEntity.notFound().build());
     }

@@ -42,8 +42,8 @@ public class QmsMeetingScheduleService {
         // Trigger notifications for participants
         if (saved.getParticipants() != null) {
             List<String> emails = saved.getParticipants().stream()
-                .filter(p -> p.getEmployee() != null && p.getEmployee().getContact() != null)
-                .map(p -> p.getEmployee().getContact().getPersonalEmail())
+                .filter(p -> p.getEmployee() != null && p.getEmployee().getOfficeMail() != null)
+                .map(p -> p.getEmployee().getOfficeMail())
                 .filter(e -> e != null && !e.isEmpty())
                 .collect(Collectors.toList());
 

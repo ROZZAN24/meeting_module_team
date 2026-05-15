@@ -52,13 +52,21 @@ public class DesignationController {
     }
 
     @PostMapping
-    public Designation create(@RequestBody Designation designation) {
-        if (designation.getCreatedBy() == null) designation.setCreatedBy("Admin");
-        return designationRepository.save(designation);
+    public ResponseEntity<?> create(@RequestBody Designation designation) {
+        if (designationRepository.existsByDesignationName(designation.getDesignationName())) {
+            return ResponseEntity.badRequest().body("Designation Name already exists!");
+        }
+        if (designation.getCreatedBy() == null) {
+            designation.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        }
+        return ResponseEntity.ok(designationRepository.save(designation));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Designation> update(@PathVariable Long id, @RequestBody Designation designationDetails) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Designation designationDetails) {
+        if (designationRepository.existsByDesignationNameAndIdNot(designationDetails.getDesignationName(), id)) {
+            return ResponseEntity.badRequest().body("Designation Name already exists!");
+        }
         return designationRepository.findById(id)
                 .map(designation -> {
                     designation.setDesignationName(designationDetails.getDesignationName());
@@ -70,7 +78,8 @@ public class DesignationController {
                     designation.setJobDescription(designationDetails.getJobDescription());
                     designation.setOrgSeqNo(designationDetails.getOrgSeqNo());
                     designation.setBudgetedPositions(designationDetails.getBudgetedPositions());
-                    designation.setUpdatedBy("Admin");
+                    designation.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                    designation.setUpdatedDate(java.time.LocalDateTime.now());
                     return ResponseEntity.ok(designationRepository.save(designation));
                 }).orElse(ResponseEntity.notFound().build());
     }

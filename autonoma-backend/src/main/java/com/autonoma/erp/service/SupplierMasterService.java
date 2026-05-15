@@ -22,6 +22,29 @@ public class SupplierMasterService {
     }
 
     public SupplierMaster saveSupplier(SupplierMaster supplier) {
+        // Uniqueness checks
+        if (supplier.getId() == null) {
+            // New record
+            if (repository.existsBySupplierName(supplier.getSupplierName())) {
+                throw new RuntimeException("Supplier Name already exists!");
+            }
+            if (supplier.getSupplierCode() != null && !supplier.getSupplierCode().isEmpty()) {
+                if (repository.existsBySupplierCode(supplier.getSupplierCode())) {
+                    throw new RuntimeException("Supplier Code already exists!");
+                }
+            }
+        } else {
+            // Update
+            if (repository.existsBySupplierNameAndIdNot(supplier.getSupplierName(), supplier.getId())) {
+                throw new RuntimeException("Supplier Name already exists!");
+            }
+            if (supplier.getSupplierCode() != null && !supplier.getSupplierCode().isEmpty()) {
+                if (repository.existsBySupplierCodeAndIdNot(supplier.getSupplierCode(), supplier.getId())) {
+                    throw new RuntimeException("Supplier Code already exists!");
+                }
+            }
+        }
+
         if (supplier.getSupplierCode() == null || supplier.getSupplierCode().isEmpty()) {
             supplier.setSupplierCode(generateSupplierCode());
         }

@@ -67,10 +67,21 @@ public class EmployeeMasterService {
     }
 
     public EmployeeMaster createEmployee(EmployeeMaster employee) {
-        if (employee.getCreatedAt() == null) {
-            employee.setCreatedAt(new Date());
+        if (employee.getEmpCode() != null && !employee.getEmpCode().trim().isEmpty()) {
+            if (employeeRepo.existsByEmpCode(employee.getEmpCode())) {
+                throw new RuntimeException("Employee Code already exists!");
+            }
         }
-        employee.setUpdatedAt(new Date());
+        
+        if (employee.getCreatedDate() == null) {
+            employee.setCreatedDate(new Date());
+        }
+        employee.setUpdatedDate(new Date());
+        
+        if (employee.getCreatedBy() == null) {
+            employee.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        }
+        employee.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         
         // Auto-generate empCode if missing
         if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
@@ -85,13 +96,22 @@ public class EmployeeMasterService {
     }
 
     public EmployeeMaster updateEmployee(Long id, EmployeeMaster details) {
+        if (details.getEmpCode() != null && !details.getEmpCode().trim().isEmpty()) {
+            if (employeeRepo.existsByEmpCodeAndIdNot(details.getEmpCode(), id)) {
+                throw new RuntimeException("Employee Code already exists!");
+            }
+        }
+
         EmployeeMaster emp = employeeRepo.findById(id).orElse(null);
         if (emp == null) return null;
 
         // Copy all fields from details, preserving id and audit trail
         details.setId(id);
         if (details.getCreatedBy() == null) details.setCreatedBy(emp.getCreatedBy());
-        if (details.getCreatedAt() == null) details.setCreatedAt(emp.getCreatedAt());
+        if (details.getCreatedDate() == null) details.setCreatedDate(emp.getCreatedDate());
+        
+        details.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        details.setUpdatedDate(new Date());
         
         sanitizeEmployee(details);
         return employeeRepo.save(details);
@@ -169,7 +189,7 @@ public class EmployeeMasterService {
         EmployeePersonalDetail existing = personalRepo.findByEmployeeId(employeeId).orElse(new EmployeePersonalDetail());
         if (existing.getId() == null) {
             existing.setEmployeeId(employeeId);
-            existing.setCreatedBy(detail.getUpdatedBy());
+            existing.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
 
         // Merge fields (Personal Details + ID Details)
@@ -194,7 +214,8 @@ public class EmployeeMasterService {
         if (detail.getPassportIssueCity() != null) existing.setPassportIssueCity(detail.getPassportIssueCity());
         if (detail.getLicenseExpiryDate() != null) existing.setLicenseExpiryDate(detail.getLicenseExpiryDate());
 
-        existing.setUpdatedBy(detail.getUpdatedBy());
+        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        existing.setUpdatedDate(new Date());
         return personalRepo.save(existing);
     }
 
@@ -211,7 +232,7 @@ public class EmployeeMasterService {
         EmployeeContact existing = contactRepo.findByEmployeeId(employeeId).orElse(new EmployeeContact());
         if (existing.getId() == null) {
             existing.setEmployeeId(employeeId);
-            existing.setCreatedBy(contact.getUpdatedBy());
+            existing.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
 
         if (contact.getAddress() != null) existing.setAddress(contact.getAddress());
@@ -222,7 +243,8 @@ public class EmployeeMasterService {
         if (contact.getMobile() != null) existing.setMobile(contact.getMobile());
         if (contact.getAlternateMobile() != null) existing.setAlternateMobile(contact.getAlternateMobile());
 
-        existing.setUpdatedBy(contact.getUpdatedBy());
+        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        existing.setUpdatedDate(new Date());
         return contactRepo.save(existing);
     }
 
@@ -239,7 +261,7 @@ public class EmployeeMasterService {
         EmployeeJobProfile existing = jobProfileRepo.findByEmployeeId(employeeId).orElse(new EmployeeJobProfile());
         if (existing.getId() == null) {
             existing.setEmployeeId(employeeId);
-            existing.setCreatedBy(profile.getUpdatedBy());
+            existing.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
 
         // Merge Bank Details
@@ -288,7 +310,8 @@ public class EmployeeMasterService {
         if (profile.getPerformanceLinkedIncentive() != null) existing.setPerformanceLinkedIncentive(profile.getPerformanceLinkedIncentive());
         if (profile.getHealthInsurance() != null) existing.setHealthInsurance(profile.getHealthInsurance());
 
-        existing.setUpdatedBy(profile.getUpdatedBy());
+        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        existing.setUpdatedDate(new Date());
         return jobProfileRepo.save(existing);
     }
 

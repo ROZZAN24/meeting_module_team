@@ -63,7 +63,7 @@ public class AuditObservationController {
         dto.setObservationId(detail.getAuditObservation() != null ? detail.getAuditObservation().getId().intValue() : null);
         dto.setObservationNo(detail.getAuditObservation() != null ? detail.getAuditObservation().getObservationNo() : null);
         dto.setObservationDate(detail.getAuditObservation() != null ? detail.getAuditObservation().getObservationDate() : null);
-        dto.setCreatedDate(detail.getAuditObservation() != null ? detail.getAuditObservation().getCreatedAt() : null);
+        dto.setCreatedDate(detail.getAuditObservation() != null ? detail.getAuditObservation().getCreatedDate() : null);
         dto.setAuditScheduleNo(detail.getAuditObservation() != null ? detail.getAuditObservation().getAuditScheduleNo() : null);
         dto.setAuditType(detail.getAuditObservation() != null ? detail.getAuditObservation().getAuditType() : null);
         dto.setDepartmentName(detail.getAuditObservation() != null ? detail.getAuditObservation().getDepartmentName() : null);

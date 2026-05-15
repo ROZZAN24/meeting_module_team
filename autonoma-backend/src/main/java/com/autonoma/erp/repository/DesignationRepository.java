@@ -14,4 +14,7 @@ public interface DesignationRepository extends JpaRepository<Designation, Long> 
 
     @Query("SELECT MAX(d.displaySlNo) FROM Designation d")
     Optional<Integer> findMaxDisplaySlNo();
+
+    boolean existsByDesignationName(String designationName);
+    boolean existsByDesignationNameAndIdNot(String designationName, Long id);
 }
