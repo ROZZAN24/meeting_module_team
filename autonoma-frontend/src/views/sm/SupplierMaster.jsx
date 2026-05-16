@@ -9,7 +9,7 @@ import {
 import MainCard from 'ui-component/cards/MainCard';
 import { 
   BOSFormSection, 
-  BOSTextField, 
+  BOSTextField, BOSAutocomplete, 
   btnSave, 
   btnDelete, 
   btnCancel, 
@@ -256,7 +256,7 @@ export default function SupplierMaster() {
   const filteredStates = useMemo(() => {
     return form.country 
       ? allStates.filter(s => s.countryName === form.country)
-      : allStates;
+      : [];
   }, [form.country, allStates]);
 
   const acSx = {
@@ -306,9 +306,9 @@ export default function SupplierMaster() {
             <Grid item xs={12} lg={6}>
               <Grid container spacing={2}>
                 <R lg={6} md={6}><BOSTextField fullWidth name="city" label="City" value={form.city} onChange={h} /></R>
-                <R lg={6} md={6}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></R>
-                <R lg={6} md={6}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" /></R>
+                <R lg={6} md={6}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />} /></R>
+                <R lg={6} md={6}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} disabled={!form.country} /></R>
+                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" InputLabelProps={{ shrink: true }} /></R>
                 <R lg={12} md={12}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
               </Grid>
             </Grid>
@@ -395,7 +395,15 @@ export default function SupplierMaster() {
             <R lg={4} md={6}><Autocomplete fullWidth value={form.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTerms.map(t => t.termName)} renderInput={(params) => <BOSTextField {...params} label="Delivery Terms" sx={acSx} />} /></R>
             <R lg={4} md={4}><BOSTextField fullWidth name="freightRequired" label="Freight Required" value={form.freightRequired} onChange={h} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
             <R lg={4} md={4}><BOSTextField fullWidth name="dueDays" label="Due Days" value={form.dueDays} onChange={h} type="number" /></R>
-            <R lg={12} md={12}><BOSTextField fullWidth name="status" label="Status" value={form.status} onChange={h} select><MenuItem value="Active">Active</MenuItem><MenuItem value="Inactive">Inactive</MenuItem></BOSTextField></R>
+            <R lg={12} md={12}>
+              <Autocomplete
+                fullWidth
+                value={form.status || null}
+                onChange={handleAC('status')}
+                options={['Active', 'Inactive']}
+                renderInput={(params) => <BOSTextField {...params} label="Status" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />}
+              />
+            </R>
           </Grid>
         </BOSFormSection>
 

@@ -8,11 +8,14 @@ import { getInputStyles } from './BOSStyles';
  * Wraps MUI TextField with standardized BOS styles.
  * Handles mandatory (*) indicator, maxLength enforcement, and UTF-8 display.
  */
-export default function BOSTextField({ error, helperText, maxLength, sx, inputProps, ...rest }) {
+export default function BOSTextField({ error, helperText, maxLength, sx, inputProps, InputLabelProps, value, ...rest }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
+
+  // Auto-shrink label if value exists, or if explicitly told to shrink
+  const shouldShrink = value !== undefined && value !== null && value !== '' ? true : undefined;
 
   return (
     <TextField
@@ -20,7 +23,12 @@ export default function BOSTextField({ error, helperText, maxLength, sx, inputPr
       size="small"
       error={error}
       helperText={helperText}
+      value={value}
       inputProps={{ maxLength, ...inputProps }}
+      InputLabelProps={{ 
+        shrink: shouldShrink !== undefined ? shouldShrink : InputLabelProps?.shrink, 
+        ...InputLabelProps 
+      }}
       sx={{ 
         ...bosInput, 
         '& input::-webkit-calendar-picker-indicator': {

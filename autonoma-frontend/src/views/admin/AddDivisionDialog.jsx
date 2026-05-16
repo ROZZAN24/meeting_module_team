@@ -5,7 +5,7 @@ import { IconLayoutColumns, IconBuilding, IconMapPin } from '@tabler/icons-react
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 

@@ -6,7 +6,7 @@ import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
 import {
   BOSFormSection,
-  BOSTextField,
+  BOSTextField, BOSAutocomplete,
   btnSave,
   btnDelete,
   btnCancel,
@@ -161,7 +161,12 @@ export default function CustomerMaster() {
     else fetchNextCode();
   }, [customerId, fetchCustomer, fetchNextCode, fetchMasterData]);
 
-  const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const h = (e) => {
+    setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+    if (e.target.name === 'ndaRequired' && e.target.value === 'No') {
+      setUploadedFiles([]);
+    }
+  };
 
   // Autocomplete Handlers
   const handleAC = (field) => (event, newValue) => {
@@ -336,20 +341,21 @@ export default function CustomerMaster() {
                 <MenuItem value="No">No</MenuItem>
               </BOSTextField>
             </R>
-            <Grid item xs={12} lg={6}>
-              <Box sx={{ border: '1px dashed', borderColor: form.ndaRequired === 'Yes' ? 'primary.main' : 'divider', borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
-                <BOSFileUpload
-                  files={uploadedFiles}
-                  onChange={setUploadedFiles}
-                  module="SALES_CUSTOMER"
-                  label="Upload NDA Document"
-                  compact
-                  multiple={true}
-                  disabled={form.ndaRequired === 'No'}
-                  helperText="Upload signed NDA agreement."
-                />
-              </Box>
-            </Grid>
+            {form.ndaRequired === 'Yes' && (
+              <Grid item xs={12} lg={6}>
+                <Box sx={{ border: '1px dashed', borderColor: 'primary.main', borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
+                  <BOSFileUpload
+                    files={uploadedFiles}
+                    onChange={setUploadedFiles}
+                    module="SALES_CUSTOMER"
+                    label="Upload NDA Document"
+                    compact
+                    multiple={true}
+                    helperText="Upload signed NDA agreement."
+                  />
+                </Box>
+              </Grid>
+            )}
           </Grid>
         </BOSFormSection>
 
@@ -368,7 +374,13 @@ export default function CustomerMaster() {
             <R lg={4} md={6}><BOSTextField fullWidth name="ldApplicable" label="LD Applicable" value={form.ldApplicable} onChange={h} select>{YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
             <R lg={4} md={6}><BOSTextField fullWidth name="negotiateCustomer" label="Is Negotiate Customer" value={form.negotiateCustomer} onChange={h} select>{YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
             <R lg={4} md={6}><BOSTextField fullWidth name="dailyDispatchMail" label="Daily Dispatch Mail Req?" value={form.dailyDispatchMail} onChange={h} select>{YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
-            <R lg={4} md={6}><BOSTextField fullWidth name="status" label="Status" value={form.status} onChange={h} select>{STATUS_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
+            <R lg={4} md={6}><BOSAutocomplete
+  label="Status"
+  name="status"
+  value={form.status}
+  options={STATUS_OPTIONS}
+  onChange={(val) => setForm(p => ({ ...p, status: val || 'Active' }))}
+/></R>
           </Grid>
         </BOSFormSection>
 

@@ -38,7 +38,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import {
   BOSFormSection,
-  BOSTextField,
+  BOSTextField, BOSAutocomplete,
   BOSDataTable,
   btnSave,
   btnClear,

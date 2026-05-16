@@ -32,7 +32,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Cropper from 'react-easy-crop';
 
 import autonomaLogo from 'assets/images/logo.png';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';

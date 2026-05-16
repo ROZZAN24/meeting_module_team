@@ -17,6 +17,9 @@ public class Segment {
     @Column(name = "SEGMENT_NAME")
     private String segmentName;
 
+    @Column(name = "segment_description", length = 1000)
+    private String segmentDescription;
+
     @Column(name = "STATUS")
     private String status = "Active";
 

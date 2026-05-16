@@ -5,7 +5,7 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery, BOSFileUpload } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery, BOSFileUpload } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 
 const fieldConfigs = [

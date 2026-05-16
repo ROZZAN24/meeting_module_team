@@ -146,6 +146,8 @@ export default function BOSDataTable({
       }
     }
 
+    if (col.renderCell) return col.renderCell(val, row);
+
     if (col.id === 'index') return (page * size) + (filteredRows.indexOf(row) + 1);
 
     // Standard Photo Rendering (SOP Compliance)
@@ -241,52 +243,51 @@ export default function BOSDataTable({
                 };
 
                 return (
-                  <Tooltip key={row.id ?? idx} title="Double-tap" placement="top" followCursor>
-                    <TableRow 
-                      hover 
-                      sx={rowSx} 
-                      onClick={() => onClickRow?.(row)}
-                      onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
+                  <TableRow 
+                    key={row.id ?? idx}
+                    hover 
+                    sx={rowSx} 
+                    onClick={() => onClickRow?.(row)}
+                    onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
+                  >
+                  {columns.map((col) => (
+                    <TableCell
+                      key={col.id}
+                      sx={{
+                        cursor: (onDoubleClickRow || onClickRow || onEditRow) ? 'pointer' : 'default',
+                        ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
+                        ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
+                        // SOP: Prevent column split issue by keeping text on one line unless explicitly long
+                        whiteSpace: (String(row[col.id] || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
+                        ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
+                        minWidth: col.id === 'index' ? 60 : (col.minWidth || 100),
+                        paddingX: 1.5
+                      }}
                     >
-                    {columns.map((col) => (
-                      <TableCell
-                        key={col.id}
-                        sx={{
-                          cursor: (onDoubleClickRow || onClickRow) ? 'pointer' : 'default',
-                          ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
-                          ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
-                          // SOP: Prevent column split issue by keeping text on one line unless explicitly long
-                          whiteSpace: (String(row[col.id] || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
-                          ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
-                          minWidth: col.id === 'index' ? 60 : (col.minWidth || 100),
-                          paddingX: 1.5
-                        }}
-                      >
-                        {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}
-                      </TableCell>
-                    ))}
-                    {showActions && (
-                      <TableCell align="center" sx={{ minWidth: 100 }}>
-                        <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-                          {onEditRow && (
-                            <Tooltip title="Edit">
-                              <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
-                                <IconEdit size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {onDeleteRow && (
-                            <Tooltip title="Delete">
-                              <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
-                                <IconTrash size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    )}
-                  </TableRow>
-                  </Tooltip>
+                      {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}
+                    </TableCell>
+                  ))}
+                  {showActions && (
+                    <TableCell align="center" sx={{ minWidth: 100 }}>
+                      <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
+                        {onEditRow && (
+                          <Tooltip title="Edit">
+                            <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
+                              <IconEdit size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onDeleteRow && (
+                          <Tooltip title="Delete">
+                            <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
+                              <IconTrash size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    </TableCell>
+                  )}
+                </TableRow>
                 );
               })
             )}

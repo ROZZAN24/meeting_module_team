@@ -119,6 +119,43 @@ export default function MomList() {
     setReassignOpen(true);
   };
 
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(API_PATHS.QMS.MOMS);
+      const data = Array.isArray(response.data) ? response.data : [];
+      setRows(data);
+      
+      // Flatten detail rows for the list view
+      const details = [];
+      data.forEach((mom) => {
+        if (Array.isArray(mom.details)) {
+          mom.details.forEach((det) => {
+            details.push({
+              ...det,
+              _momId: mom.id,
+              _momNo: mom.momNo,
+              _meetingType: mom.meetingType?.meetingName || '-',
+              _momDate: mom.momDate,
+              _scheduleNo: mom.scheduleNo,
+              _createdBy: mom.createdBy
+            });
+          });
+        }
+      });
+      setFlatRows(details);
+    } catch (error) {
+      console.error('Failed to fetch MOMs:', error);
+      dispatch(openSnackbar({ open: true, message: 'Failed to fetch MOM records', variant: 'alert', severity: 'error' }));
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
@@ -127,7 +164,7 @@ export default function MomList() {
       dispatch(openSnackbar({ open: true, message: 'Record deleted', variant: 'alert', severity: 'success' }));
       fetchData();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Cannot delete closed records', variant: 'alert', severity: 'error' }));
+      dispatch(openSnackbar({ open: true, message: 'Cannot delete records', variant: 'alert', severity: 'error' }));
     }
   };
 

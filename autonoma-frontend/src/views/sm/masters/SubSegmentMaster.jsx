@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { Typography, Stack, MenuItem, useTheme, Button, Grid } from '@mui/material';
 import { IconChartPie, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSDataTable, BOSExportButton, BOSTextField, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import { setFilterConfig } from 'store/slices/search';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
+import { useSelector, useDispatch } from 'react-redux';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -64,7 +65,26 @@ export default function SubSegmentMaster() {
     } catch (e) { console.error(e); }
   };
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'subSegmentCode', label: 'Sub Segment Code', type: 'text' },
+      { id: 'subSegmentName', label: 'Sub Segment Name', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.subSegmentCode && row.subSegmentCode.toString().toLowerCase().includes(q)) ||
+      (row.subSegmentName && row.subSegmentName.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -101,10 +121,13 @@ export default function SubSegmentMaster() {
               <BOSTextField name="subSegmentName" label="Sub Segment Name" value={form.subSegmentName} onChange={h} required />
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <BOSTextField name="status" label="Status" value={form.status} onChange={h} select>
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
-              </BOSTextField>
+              <BOSAutocomplete
+  label="Status"
+  name="status"
+  value={form.status}
+  options={['Active', 'Inactive']}
+  onChange={(val) => setForm(p => ({ ...p, status: val || 'Active' }))}
+/>
             </Grid>
           </Grid>
           <Stack direction="row" spacing={1.5} justifyContent="flex-end">
@@ -113,9 +136,8 @@ export default function SubSegmentMaster() {
           </Stack>
         </Stack>
       ) : (
-        <BOSDataTable
-          columns={columns}
-          rows={rows}
+        <BOSDataTable columns={columns}
+          rows={filteredRows}
           onEdit={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
           onDelete={(row) => handleDelete(row.id)}
         />

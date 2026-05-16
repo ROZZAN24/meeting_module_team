@@ -7,7 +7,7 @@ import {
 import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings, IconShieldCheck, IconCloudUpload, IconFileDescription, IconEye, IconX, IconSignature, IconFileCertificate, IconLock, IconMail, IconFileUpload, IconPlus } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSFormSection, BOSTextField, BOSDatePicker, BOSFileUpload, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSAutocomplete, BOSDatePicker, BOSFileUpload, btnSave, btnDelete, btnCancel, btnClear, getDialogStyles } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';

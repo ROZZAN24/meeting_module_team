@@ -177,6 +177,18 @@ export const getDialogStyles = (theme, isDark) => ({
 
 // ─── INPUT STYLE TOKENS (SOP #9, #10) ──────────────────────
 
+
+export const getAutocompleteStyles = (theme) => ({
+  width: '100%',
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '12px',
+    backgroundColor: theme.palette.mode === 'dark' ? theme.palette.dark[800] : theme.palette.grey[50],
+    '&:hover': {
+      backgroundColor: theme.palette.mode === 'dark' ? theme.palette.dark[700] : theme.palette.grey[100]
+    }
+  }
+});
+
 export const getInputStyles = (theme, isDark) => ({
   width: '100% !important',
   '& .MuiOutlinedInput-root': {

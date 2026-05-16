@@ -14,7 +14,7 @@
 	<name>Autonoma ERP Backend</name>
 	<description>Backend for Autonoma ERP System</description>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>17</java.version>
 		<lombok.version>1.18.38</lombok.version>
 	</properties>
 	<dependencies>

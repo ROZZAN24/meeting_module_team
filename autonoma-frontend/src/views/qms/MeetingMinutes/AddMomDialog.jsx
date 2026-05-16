@@ -23,7 +23,7 @@ import {
 } from '@mui/material';
 import {
   BOSFormDialog,
-  BOSTextField,
+  BOSTextField, BOSAutocomplete,
   BOSDatePicker,
   BOSFormSection
 } from 'ui-component/bos';

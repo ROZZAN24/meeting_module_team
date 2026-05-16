@@ -16,7 +16,7 @@ import {
 import { useColorScheme } from '@mui/material/styles';
 import {
   BOSFormDialog,
-  BOSTextField,
+  BOSTextField, BOSAutocomplete,
   BOSFormSection,
   BOSPersonnelCard,
   getPhotoUrl

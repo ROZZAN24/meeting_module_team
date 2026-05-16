@@ -3,7 +3,6 @@ import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconMail } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
-import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import { format } from 'date-fns';
@@ -13,6 +12,7 @@ import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { useSelector, useDispatch } from 'react-redux';
 
 // ==============================|| SM - ENQUIRY MANAGEMENT (BOS SOP COMPLIANT) ||============================== //
 
@@ -96,7 +96,36 @@ export default function EnquiryList() {
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'enquiryNo', label: 'Enquiry No', type: 'text' },
+      { id: 'enquiryDate', label: 'Date', type: 'text' },
+      { id: 'customerName', label: 'Customer', type: 'text' },
+      { id: 'contactPerson', label: 'Contact', type: 'text' },
+      { id: 'subject', label: 'Subject', type: 'text' },
+      { id: 'source', label: 'Source', type: 'text' },
+      { id: 'priority', label: 'Priority', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.enquiryNo && row.enquiryNo.toString().toLowerCase().includes(q)) ||
+      (row.enquiryDate && row.enquiryDate.toString().toLowerCase().includes(q)) ||
+      (row.customerName && row.customerName.toString().toLowerCase().includes(q)) ||
+      (row.contactPerson && row.contactPerson.toString().toLowerCase().includes(q)) ||
+      (row.subject && row.subject.toString().toLowerCase().includes(q)) ||
+      (row.source && row.source.toString().toLowerCase().includes(q)) ||
+      (row.priority && row.priority.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery, resolvedRows]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -133,9 +162,8 @@ export default function EnquiryList() {
         </Stack>
       }
     >
-      <BOSDataTable
-        columns={columns}
-        rows={resolvedRows}
+      <BOSDataTable columns={columns}
+        rows={filteredRows}
         page={page}
         size={size}
         loading={loading}

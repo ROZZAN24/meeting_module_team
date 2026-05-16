@@ -4,7 +4,6 @@ import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/m
 import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
-import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
@@ -12,6 +11,7 @@ import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { useSelector, useDispatch } from 'react-redux';
 
 // ==============================|| SM - SUPPLIER LIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -94,7 +94,28 @@ export default function SupplierList() {
 
   useKeyboardShortcuts({ 'ctrl+n': handleOpenAdd });
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'gstNo', label: 'GST No', type: 'text' },
+      { id: 'supplierCode', label: 'Supplier Code', type: 'text' },
+      { id: 'supplierName', label: 'Supplier Name', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.gstNo && row.gstNo.toString().toLowerCase().includes(q)) ||
+      (row.supplierCode && row.supplierCode.toString().toLowerCase().includes(q)) ||
+      (row.supplierName && row.supplierName.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery, resolvedRows]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -130,9 +151,8 @@ export default function SupplierList() {
         </Stack>
       }
     >
-      <BOSDataTable
-        columns={columns}
-        rows={resolvedRows}
+      <BOSDataTable columns={columns}
+        rows={filteredRows}
         page={page}
         size={size}
         loading={loading}

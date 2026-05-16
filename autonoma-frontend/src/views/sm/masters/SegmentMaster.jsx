@@ -2,15 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Typography, Stack, MenuItem, useTheme, Button, Grid } from '@mui/material';
 import { IconChartBar, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSDataTable, BOSExportButton, BOSTextField, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import { setFilterConfig } from 'store/slices/search';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
+import { useSelector, useDispatch } from 'react-redux';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'segmentCode', label: 'Segment Code', minWidth: 120, bold: true },
   { id: 'segmentName', label: 'Segment Name', minWidth: 200 },
+  { id: 'segmentDescription', label: 'Segment Description', minWidth: 300 },
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
@@ -18,7 +20,7 @@ const columns = [
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
-const INITIAL = { segmentCode: '', segmentName: '', status: 'Active' };
+const INITIAL = { segmentCode: '', segmentName: '', segmentDescription: '', status: 'Active' };
 
 export default function SegmentMaster() {
   const dispatch = useDispatch();
@@ -64,7 +66,26 @@ export default function SegmentMaster() {
     } catch (e) { console.error(e); }
   };
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'segmentCode', label: 'Segment Code', type: 'text' },
+      { id: 'segmentName', label: 'Segment Name', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.segmentCode && row.segmentCode.toString().toLowerCase().includes(q)) ||
+      (row.segmentName && row.segmentName.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -81,6 +102,7 @@ export default function SegmentMaster() {
               columns={[
                 { header: 'Segment Code', key: 'segmentCode' },
                 { header: 'Segment Name', key: 'segmentName' },
+                { header: 'Segment Description', key: 'segmentDescription' },
                 { header: 'Status', key: 'status' }
               ]}
             />
@@ -100,11 +122,25 @@ export default function SegmentMaster() {
             <Grid item xs={12} sm={6} md={4}>
               <BOSTextField name="segmentName" label="Segment Name" value={form.segmentName} onChange={h} required />
             </Grid>
+            <Grid item xs={12} sm={12} md={8}>
+              <BOSTextField 
+                name="segmentDescription" 
+                label="Segment Description" 
+                value={form.segmentDescription} 
+                onChange={h} 
+                multiline 
+                rows={3}
+                placeholder="Brief description of this market segment"
+              />
+            </Grid>
             <Grid item xs={12} sm={6} md={4}>
-              <BOSTextField name="status" label="Status" value={form.status} onChange={h} select>
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
-              </BOSTextField>
+              <BOSAutocomplete
+  label="Status"
+  name="status"
+  value={form.status}
+  options={['Active', 'Inactive']}
+  onChange={(val) => setForm(p => ({ ...p, status: val || 'Active' }))}
+/>
             </Grid>
           </Grid>
           <Stack direction="row" spacing={1.5} justifyContent="flex-end">
@@ -113,9 +149,8 @@ export default function SegmentMaster() {
           </Stack>
         </Stack>
       ) : (
-        <BOSDataTable
-          columns={columns}
-          rows={rows}
+        <BOSDataTable columns={columns}
+          rows={filteredRows}
           onEdit={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
           onDelete={(row) => handleDelete(row.id)}
         />

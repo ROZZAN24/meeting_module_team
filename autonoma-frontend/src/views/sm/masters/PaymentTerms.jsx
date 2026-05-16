@@ -5,9 +5,11 @@ import {
 } from '@mui/material';
 import { IconCreditCard, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
+import { setFilterConfig } from 'store/slices/search';
 import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
+import { useSelector, useDispatch } from 'react-redux';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -107,7 +109,26 @@ export default function PaymentTerms() {
     }
   };
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'termName', label: 'Payment Term', type: 'text' },
+      { id: 'description', label: 'Payment Term Description', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.termName && row.termName.toString().toLowerCase().includes(q)) ||
+      (row.description && row.description.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -132,9 +153,8 @@ export default function PaymentTerms() {
         </Stack>
       }
     >
-      <BOSDataTable
-        columns={columns}
-        rows={rows}
+      <BOSDataTable columns={columns}
+        rows={filteredRows}
         page={page}
         size={size}
         totalCount={rows.length}

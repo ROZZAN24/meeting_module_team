@@ -5,9 +5,11 @@ import {
 } from '@mui/material';
 import { IconSettings, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
+import { setFilterConfig } from 'store/slices/search';
 import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
+import { useSelector, useDispatch } from 'react-redux';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -109,7 +111,26 @@ export default function TypeOfService() {
     index: index + 1
   }));
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'serviceCode', label: 'Service Code', type: 'text' },
+      { id: 'serviceName', label: 'Service Name', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.serviceCode && row.serviceCode.toString().toLowerCase().includes(q)) ||
+      (row.serviceName && row.serviceName.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -134,9 +155,8 @@ export default function TypeOfService() {
         </Stack>
       }
     >
-      <BOSDataTable
-        columns={columns}
-        rows={formattedRows}
+      <BOSDataTable columns={columns}
+        rows={filteredRows}
         page={page}
         size={size}
         totalCount={rows.length}

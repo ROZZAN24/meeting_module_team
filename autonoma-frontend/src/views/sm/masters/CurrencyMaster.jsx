@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { Typography, Stack, MenuItem, useTheme, Button, Tooltip, Grid, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { IconCoins, IconDeviceFloppy, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSDataTable, BOSExportButton, BOSTextField, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import { setFilterConfig } from 'store/slices/search';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
-import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
+import { useSelector, useDispatch } from 'react-redux';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -81,7 +82,28 @@ export default function CurrencyMaster() {
     } catch (e) { console.error(e); }
   };
 
-  return (
+  
+  useEffect(() => {
+    const config = [
+      { id: 'currencyCode', label: 'Currency Code', type: 'text' },
+      { id: 'currencyName', label: 'Currency Name', type: 'text' },
+      { id: 'symbol', label: 'Symbol', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.currencyCode && row.currencyCode.toString().toLowerCase().includes(q)) ||
+      (row.currencyName && row.currencyName.toString().toLowerCase().includes(q)) ||
+      (row.symbol && row.symbol.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery]);
+return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -107,9 +129,8 @@ export default function CurrencyMaster() {
         </Stack>
       }
     >
-      <BOSDataTable
-        columns={columns}
-        rows={rows}
+      <BOSDataTable columns={columns}
+        rows={filteredRows}
         page={page}
         size={size}
         totalCount={rows.length}
@@ -134,10 +155,13 @@ export default function CurrencyMaster() {
                 <BOSTextField name="symbol" label="Symbol" value={form.symbol} onChange={h} placeholder="e.g. $" />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <BOSTextField name="status" label="Status" value={form.status} onChange={h} select>
-                  <MenuItem value="Active">Active</MenuItem>
-                  <MenuItem value="Inactive">Inactive</MenuItem>
-                </BOSTextField>
+                <BOSAutocomplete
+  label="Status"
+  name="status"
+  value={form.status}
+  options={['Active', 'Inactive']}
+  onChange={(val) => setForm(p => ({ ...p, status: val || 'Active' }))}
+/>
               </Grid>
             </Grid>
           </Stack>
