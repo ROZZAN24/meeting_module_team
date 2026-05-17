@@ -1,7 +1,5 @@
 package com.autonoma.erp.controller;
 
-
-import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.PaymentTerm;
 import com.autonoma.erp.repository.PaymentTermRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,30 +21,30 @@ public class PaymentTermController {
     }
 
     @PostMapping
-
-
-    @RequirePagePermission(pageCode = "M5210", action = "write")
-    public PaymentTerm create(@RequestBody PaymentTerm item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody PaymentTerm item) {
+        if (repository.existsByTermNameIgnoreCase(item.getTermName())) {
+            return ResponseEntity.badRequest().body("Payment Term Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-
-
-    @RequirePagePermission(pageCode = "M5210", action = "write")
-    public ResponseEntity<PaymentTerm> update(@PathVariable Long id, @RequestBody PaymentTerm item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PaymentTerm item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getTermName().equalsIgnoreCase(item.getTermName()) && repository.existsByTermNameIgnoreCase(item.getTermName())) {
+                        return ResponseEntity.badRequest().body("Payment Term Name already exists");
+                    }
+                    existing.setTermName(item.getTermName());
+                    existing.setDescription(item.getDescription());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-
-
-    @RequirePagePermission(pageCode = "M5210", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();

@@ -154,10 +154,12 @@ public class CustomerMaster {
     @PrePersist
     protected void onCreate() {
         createdDate = new Date();
+        if (createdBy == null) createdBy = "Admin";
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedDate = new Date();
+        if (updatedBy == null) updatedBy = "Admin";
     }
 }

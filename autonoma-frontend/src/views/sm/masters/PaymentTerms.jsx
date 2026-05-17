@@ -92,6 +92,8 @@ export default function PaymentTerms() {
       fetchRows();
     } catch (err) {
       console.error(err);
+      const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
+      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
     }
   };
 
