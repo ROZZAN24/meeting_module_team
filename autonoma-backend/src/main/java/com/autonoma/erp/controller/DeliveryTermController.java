@@ -21,16 +21,25 @@ public class DeliveryTermController {
     }
 
     @PostMapping
-    public DeliveryTerm create(@RequestBody DeliveryTerm item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody DeliveryTerm item) {
+        if (repository.existsByTermNameIgnoreCase(item.getTermName())) {
+            return ResponseEntity.badRequest().body("Delivery Term Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<DeliveryTerm> update(@PathVariable Long id, @RequestBody DeliveryTerm item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody DeliveryTerm item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getTermName().equalsIgnoreCase(item.getTermName()) && repository.existsByTermNameIgnoreCase(item.getTermName())) {
+                        return ResponseEntity.badRequest().body("Delivery Term Name already exists");
+                    }
+                    existing.setTermName(item.getTermName());
+                    existing.setDescription(item.getDescription());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

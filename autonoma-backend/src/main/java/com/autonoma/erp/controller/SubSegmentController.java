@@ -21,16 +21,33 @@ public class SubSegmentController {
     }
 
     @PostMapping
-    public SubSegment create(@RequestBody SubSegment item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody SubSegment item) {
+        if (repository.existsBySubSegmentCodeIgnoreCase(item.getSubSegmentCode())) {
+            return ResponseEntity.badRequest().body("Sub Segment Code already exists");
+        }
+        if (repository.existsBySubSegmentNameIgnoreCase(item.getSubSegmentName())) {
+            return ResponseEntity.badRequest().body("Sub Segment Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<SubSegment> update(@PathVariable Long id, @RequestBody SubSegment item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SubSegment item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getSubSegmentCode().equalsIgnoreCase(item.getSubSegmentCode()) && repository.existsBySubSegmentCodeIgnoreCase(item.getSubSegmentCode())) {
+                        return ResponseEntity.badRequest().body("Sub Segment Code already exists");
+                    }
+                    if (!existing.getSubSegmentName().equalsIgnoreCase(item.getSubSegmentName()) && repository.existsBySubSegmentNameIgnoreCase(item.getSubSegmentName())) {
+                        return ResponseEntity.badRequest().body("Sub Segment Name already exists");
+                    }
+                    existing.setSegmentName(item.getSegmentName());
+                    existing.setSubSegmentCode(item.getSubSegmentCode());
+                    existing.setSubSegmentName(item.getSubSegmentName());
+                    existing.setSubSegmentDescription(item.getSubSegmentDescription());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

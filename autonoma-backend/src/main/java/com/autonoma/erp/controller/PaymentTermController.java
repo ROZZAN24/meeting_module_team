@@ -21,16 +21,25 @@ public class PaymentTermController {
     }
 
     @PostMapping
-    public PaymentTerm create(@RequestBody PaymentTerm item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody PaymentTerm item) {
+        if (repository.existsByTermNameIgnoreCase(item.getTermName())) {
+            return ResponseEntity.badRequest().body("Payment Term Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PaymentTerm> update(@PathVariable Long id, @RequestBody PaymentTerm item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PaymentTerm item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getTermName().equalsIgnoreCase(item.getTermName()) && repository.existsByTermNameIgnoreCase(item.getTermName())) {
+                        return ResponseEntity.badRequest().body("Payment Term Name already exists");
+                    }
+                    existing.setTermName(item.getTermName());
+                    existing.setDescription(item.getDescription());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

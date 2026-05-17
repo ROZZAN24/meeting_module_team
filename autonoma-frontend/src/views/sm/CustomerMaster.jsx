@@ -299,18 +299,18 @@ export default function CustomerMaster() {
         </BOSFormSection>
 
         <BOSFormSection icon={<IconMapPin size={20} color={theme.palette.primary.main} />} title="Location Details">
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
             <Grid item xs={12} lg={6}>
-              <BOSTextField fullWidth name="address" label="Address" value={form.address} onChange={h} multiline rows={5} placeholder="Enter detailed address..." />
+              <BOSTextField fullWidth name="address" label="Address" value={form.address} onChange={h} multiline rows={7} placeholder="Enter detailed address..." />
             </Grid>
             <Grid item xs={12} lg={6}>
-              <Grid container spacing={2}>
-                <R lg={6} md={6}><BOSTextField fullWidth name="city" label="City" value={form.city} onChange={h} /></R>
-                <R lg={6} md={6}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></R>
-                <R lg={6} md={6}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="distance" label="Distance (KM)" value={form.distance} onChange={h} type="number" /></R>
+              <Grid container spacing={2.5}>
+                <Grid item xs={12}><BOSTextField fullWidth name="city" label="City" value={form.city} onChange={h} /></Grid>
+                <Grid item xs={12}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></Grid>
+                <Grid item xs={12}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} /></Grid>
+                <Grid item xs={12} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" /></Grid>
+                <Grid item xs={12} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></Grid>
+                <Grid item xs={12}><BOSTextField fullWidth name="distance" label="Distance (KM)" value={form.distance} onChange={h} type="number" /></Grid>
                 <Grid item xs={12}><BOSTextField fullWidth name="location" label="Location" value={form.location} onChange={h} placeholder="Google Maps link or landmarks" /></Grid>
               </Grid>
             </Grid>
@@ -360,17 +360,15 @@ export default function CustomerMaster() {
         </BOSFormSection>
 
         <BOSFormSection icon={<IconTruckDelivery size={20} color={theme.palette.primary.main} />} title="Terms & Logistics">
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
             <R lg={4} md={6}>
               <Autocomplete fullWidth value={form.currency || null} onChange={handleAC('currency')} options={currencies.map(c => c.currencyCode)} renderOption={(props, option) => { const { key, ...optionProps } = props; const c = currencies.find(x => x.currencyCode === option); return (<li key={key} {...optionProps}><Typography variant="body2"><b>{option}</b> - {c?.currencyName}</Typography></li>); }} renderInput={(params) => <BOSTextField {...params} label="Currency" sx={acSx} required />} />
             </R>
             <R lg={4} md={6}><Autocomplete fullWidth value={form.segment || null} onChange={handleAC('segment')} options={segments.map(s => s.segmentName)} renderInput={(params) => <BOSTextField {...params} label="Segment" sx={acSx} />} /></R>
             <R lg={4} md={6}><Autocomplete fullWidth value={form.subSegment || null} onChange={handleAC('subSegment')} options={subSegments.map(s => s.subSegmentName)} renderInput={(params) => <BOSTextField {...params} label="Sub Segment" sx={acSx} />} /></R>
             <R lg={4} md={6}><BOSTextField fullWidth name="freight" label="Freight" value={form.freight} onChange={h} /></R>
-            
             <R lg={4} md={6}><Autocomplete fullWidth value={form.paymentTerms || null} onChange={handleAC('paymentTerms')} options={paymentTerms.map(p => p.termName)} renderInput={(params) => <BOSTextField {...params} label="Payment Terms" sx={acSx} />} /></R>
             <R lg={4} md={6}><Autocomplete fullWidth value={form.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTerms.map(t => t.termName)} renderInput={(params) => <BOSTextField {...params} label="Delivery Terms" sx={acSx} />} /></R>
-            
             <R lg={4} md={6}><BOSTextField fullWidth name="ldApplicable" label="LD Applicable" value={form.ldApplicable} onChange={h} select>{YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
             <R lg={4} md={6}><BOSTextField fullWidth name="negotiateCustomer" label="Is Negotiate Customer" value={form.negotiateCustomer} onChange={h} select>{YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
             <R lg={4} md={6}><BOSTextField fullWidth name="dailyDispatchMail" label="Daily Dispatch Mail Req?" value={form.dailyDispatchMail} onChange={h} select>{YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>

@@ -62,7 +62,11 @@ export default function CurrencyMaster() {
       setForm(INITIAL);
       setSelectedId(null);
       fetchData();
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error(e); 
+      const errorMsg = e.response?.data?.message || e.response?.data || 'An error occurred while saving.';
+      dispatch(openSnackbar({ open: true, message: typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+    }
   };
 
   const handleDeleteClick = (row) => {

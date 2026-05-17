@@ -21,16 +21,32 @@ public class CurrencyController {
     }
 
     @PostMapping
-    public Currency create(@RequestBody Currency item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody Currency item) {
+        if (repository.existsByCurrencyCodeIgnoreCase(item.getCurrencyCode())) {
+            return ResponseEntity.badRequest().body("Currency Code already exists");
+        }
+        if (repository.existsByCurrencyNameIgnoreCase(item.getCurrencyName())) {
+            return ResponseEntity.badRequest().body("Currency Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Currency> update(@PathVariable Long id, @RequestBody Currency item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Currency item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getCurrencyCode().equalsIgnoreCase(item.getCurrencyCode()) && repository.existsByCurrencyCodeIgnoreCase(item.getCurrencyCode())) {
+                        return ResponseEntity.badRequest().body("Currency Code already exists");
+                    }
+                    if (!existing.getCurrencyName().equalsIgnoreCase(item.getCurrencyName()) && repository.existsByCurrencyNameIgnoreCase(item.getCurrencyName())) {
+                        return ResponseEntity.badRequest().body("Currency Name already exists");
+                    }
+                    existing.setCurrencyCode(item.getCurrencyCode());
+                    existing.setCurrencyName(item.getCurrencyName());
+                    existing.setSymbol(item.getSymbol());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }

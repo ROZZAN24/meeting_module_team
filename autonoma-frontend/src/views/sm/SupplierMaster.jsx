@@ -4,7 +4,7 @@ import { Grid, Box, Button, Typography, Stack, MenuItem, useTheme, Tooltip, Auto
 import { 
   IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, 
   IconUser, IconMapPin, IconBusinessplan, IconBuildingBank, IconTruckDelivery, 
-  IconFiles
+  IconFiles, IconPhone
 } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { 
@@ -233,8 +233,16 @@ export default function SupplierMaster() {
         dispatch(openSnackbar({ open: true, message: 'Supplier created!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
         navigate(`/sm/suppliers/create?id=${data.id}`, { replace: true });
       }
-    } catch (e) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save supplier.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+    } catch (error) {
+      const msg = error.response?.data?.message || error.response?.data || 'Failed to save supplier.';
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: typeof msg === 'string' ? msg : 'Failed to save supplier.', 
+        variant: 'alert', 
+        alert: { variant: 'filled' }, 
+        severity: 'error', 
+        close: false 
+      }));
     } finally { setLoading(false); }
   };
 
@@ -304,12 +312,13 @@ export default function SupplierMaster() {
               <BOSTextField fullWidth name="address" label="Address" value={form.address} onChange={h} multiline rows={5} placeholder="Enter supplier address..." />
             </Grid>
             <Grid item xs={12} lg={6}>
-              <Grid container spacing={2}>
-                <R lg={6} md={6}><BOSTextField fullWidth name="city" label="City" value={form.city} onChange={h} /></R>
-                <R lg={6} md={6}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />} /></R>
-                <R lg={6} md={6}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} disabled={!form.country} /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" InputLabelProps={{ shrink: true }} /></R>
-                <R lg={12} md={12}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
+              <Grid container spacing={2.5}>
+                <R lg={12} md={12}><BOSTextField fullWidth name="city" label="City" value={form.city} onChange={h} /></R>
+                <R lg={12} md={12}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></R>
+                <R lg={12} md={12}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} disabled={!form.country} /></R>
+                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" /></R>
+                <R lg={6} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
+              </Grid>
               </Grid>
             </Grid>
           </Grid>
@@ -385,25 +394,17 @@ export default function SupplierMaster() {
           </Grid>
         </BOSFormSection>
 
-        <BOSFormSection icon={<IconTruckDelivery size={20} color={theme.palette.primary.main} />} title="Terms & Status">
-          <Grid container spacing={3}>
+        <BOSFormSection icon={<IconTruckDelivery size={20} color={theme.palette.primary.main} />} title="Terms & Logistics">
+          <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
             <R lg={4} md={6}>
               <Autocomplete fullWidth value={form.currency || null} onChange={handleAC('currency')} options={currencies.map(c => c.currencyCode)} renderOption={(props, option) => { const { key, ...optionProps } = props; const c = currencies.find(x => x.currencyCode === option); return (<li key={key} {...optionProps}><Typography variant="body2"><b>{option}</b> - {c?.currencyName}</Typography></li>); }} renderInput={(params) => <BOSTextField {...params} label="Currency" sx={acSx} required />} />
             </R>
             <R lg={4} md={6}><Autocomplete fullWidth value={form.typeOfService || null} onChange={handleAC('typeOfService')} options={typesOfService.map(s => s.serviceName)} renderInput={(params) => <BOSTextField {...params} label="Type Of Service" sx={acSx} />} /></R>
             <R lg={4} md={6}><Autocomplete fullWidth value={form.paymentTerms || null} onChange={handleAC('paymentTerms')} options={paymentTerms.map(p => p.termName)} renderInput={(params) => <BOSTextField {...params} label="Payment Terms" sx={acSx} />} /></R>
             <R lg={4} md={6}><Autocomplete fullWidth value={form.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTerms.map(t => t.termName)} renderInput={(params) => <BOSTextField {...params} label="Delivery Terms" sx={acSx} />} /></R>
-            <R lg={4} md={4}><BOSTextField fullWidth name="freightRequired" label="Freight Required" value={form.freightRequired} onChange={h} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
-            <R lg={4} md={4}><BOSTextField fullWidth name="dueDays" label="Due Days" value={form.dueDays} onChange={h} type="number" /></R>
-            <R lg={12} md={12}>
-              <Autocomplete
-                fullWidth
-                value={form.status || null}
-                onChange={handleAC('status')}
-                options={['Active', 'Inactive']}
-                renderInput={(params) => <BOSTextField {...params} label="Status" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />}
-              />
-            </R>
+            <R lg={4} md={6}><BOSTextField fullWidth name="freightRequired" label="Freight Required" value={form.freightRequired} onChange={h} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
+            <R lg={4} md={6}><BOSTextField fullWidth name="dueDays" label="Due Days" value={form.dueDays} onChange={h} type="number" /></R>
+            <R lg={4} md={6}><BOSTextField fullWidth name="status" label="Status" value={form.status} onChange={h} select><MenuItem value="Active">Active</MenuItem><MenuItem value="Inactive">Inactive</MenuItem></BOSTextField></R>
           </Grid>
         </BOSFormSection>
 

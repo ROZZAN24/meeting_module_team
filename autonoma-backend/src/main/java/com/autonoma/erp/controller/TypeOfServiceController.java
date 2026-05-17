@@ -21,16 +21,25 @@ public class TypeOfServiceController {
     }
 
     @PostMapping
-    public TypeOfService create(@RequestBody TypeOfService item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody TypeOfService item) {
+        if (repository.existsByServiceNameIgnoreCase(item.getServiceName())) {
+            return ResponseEntity.badRequest().body("Type of Service Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<TypeOfService> update(@PathVariable Long id, @RequestBody TypeOfService item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody TypeOfService item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getServiceName().equalsIgnoreCase(item.getServiceName()) && repository.existsByServiceNameIgnoreCase(item.getServiceName())) {
+                        return ResponseEntity.badRequest().body("Type of Service Name already exists");
+                    }
+                    existing.setServiceName(item.getServiceName());
+                    existing.setDescription(item.getDescription());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
