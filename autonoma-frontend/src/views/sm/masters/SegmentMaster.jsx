@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useEffect, useCallback } from 'react';
 import { Typography, Stack, MenuItem, useTheme, Button, Grid } from '@mui/material';
 import { IconChartBar, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
@@ -8,19 +7,11 @@ import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, 
 import axios from 'axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
-=======
-import { useState, useMemo } from 'react';
-import { Typography, Stack } from '@mui/material';
-import { IconChartBar } from '@tabler/icons-react';
-import MainCard from 'ui-component/cards/MainCard';
-import { BOSDataTable } from 'ui-component/bos';
->>>>>>> origin/chore/repo-cleanup
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'segmentCode', label: 'Segment Code', minWidth: 120, bold: true },
   { id: 'segmentName', label: 'Segment Name', minWidth: 200 },
-<<<<<<< HEAD
   { id: 'segmentDescription', label: 'Segment Description', minWidth: 300 },
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
@@ -95,17 +86,6 @@ export default function SegmentMaster() {
     ).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalQuery]);
 return (
-=======
-  { id: 'status', label: 'Status', minWidth: 100 }
-];
-
-export default function SegmentMaster() {
-  const [rows] = useState([]);
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
-
-  return (
->>>>>>> origin/chore/repo-cleanup
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -113,7 +93,6 @@ export default function SegmentMaster() {
           <Typography variant="h3">Segment Master</Typography>
         </Stack>
       }
-<<<<<<< HEAD
       secondary={
         !showForm && (
           <Stack direction="row" spacing={1.5} alignItems="center">
@@ -176,18 +155,6 @@ export default function SegmentMaster() {
           onDelete={(row) => handleDelete(row.id)}
         />
       )}
-=======
-    >
-      <BOSDataTable
-        columns={columns}
-        rows={rows}
-        page={page}
-        size={size}
-        totalCount={rows.length}
-        onPageChange={(p) => setPage(p)}
-        onSizeChange={(s) => { setSize(s); setPage(0); }}
-      />
->>>>>>> origin/chore/repo-cleanup
     </MainCard>
   );
 }

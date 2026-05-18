@@ -108,7 +108,6 @@ export default function useBOSValidation() {
     [dispatch]
   );
 
-<<<<<<< HEAD
   const handleInputChange = useCallback((e, setter) => {
     const { name, value } = e.target;
     if (setter) {
@@ -120,7 +119,4 @@ export default function useBOSValidation() {
   }, [errors, clearErrors]);
 
   return { errors, validate, clearErrors, setErrors, handleInputChange };
-=======
-  return { errors, validate, clearErrors, setErrors };
->>>>>>> origin/chore/repo-cleanup
 }

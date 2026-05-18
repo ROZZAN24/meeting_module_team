@@ -177,17 +177,6 @@ export default function MeetingScheduleList() {
 
   useKeyboardShortcuts({ 'ctrl+n': handleAdd });
 
-<<<<<<< HEAD
-=======
-  const formatTime12h = (time24) => {
-    if (!time24) return '-';
-    const [hours, minutes] = time24.split(':');
-    const h = parseInt(hours, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
-  };
->>>>>>> origin/chore/repo-cleanup
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
@@ -199,27 +188,6 @@ export default function MeetingScheduleList() {
       if (s === 'CANCELLED') chipStatus = 'INACTIVE';
       return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
     }
-<<<<<<< HEAD
-=======
-    if (col.id === 'scheduleDate') return row.createdAt ? row.createdAt.split('T')[0].split('-').reverse().join('/') : '-';
-    if (col.id === 'meetingTypeName') return row.meetingType?.meetingName || '-';
-    if (col.id === 'meetingDateTime') {
-      const d = row.meetingDate || '';
-      const t = row.startTime || '';
-      if (!d) return '-';
-      const formattedDate = d.split('-').reverse().join('/');
-      return `${formattedDate} ${formatTime12h(t)}`;
-    }
-    if (col.id === 'departments') return (row.departments || []).map(d => d.department?.departmentName).filter(Boolean).join(',');
-    if (col.id === 'chairedByName') return row.chairedBy?.employeeName || '-';
-    if (col.id === 'hostByName') return row.hostBy?.employeeName || '-';
-    if (col.id === 'participantsBy') {
-      return (row.participants || []).map(pr => {
-        const e = pr.employee;
-        return e ? `${e.id};${e.employeeName} - ${e.empCode}` : '';
-      }).filter(Boolean).join(',');
-    }
->>>>>>> origin/chore/repo-cleanup
     if (col.id === 'createdAt') {
       if (!row.createdAt) return '-';
       const dt = new Date(row.createdAt);

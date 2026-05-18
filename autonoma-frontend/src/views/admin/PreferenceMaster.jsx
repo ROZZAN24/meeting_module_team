@@ -217,19 +217,11 @@ const PreferenceMaster = () => {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#ccc', fontSize: '0.7rem', py: 2.5, width: 50 }}>#</TableCell>
-<<<<<<< HEAD
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Preference Name</TableCell>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Value</TableCell>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Type</TableCell>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Last Updated</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5, width: 100 }}>Action</TableCell>
-=======
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>PREFERENCE NAME</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>VALUE</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>TYPE</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>LAST UPDATED</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5, width: 100 }}>ACTION</TableCell>
->>>>>>> origin/chore/repo-cleanup
               </TableRow>
             </TableHead>
             <TableBody>

@@ -146,18 +146,10 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
               name="gradeCode"
               label="Grade Code"
               value={formData.gradeCode}
-<<<<<<< HEAD
               InputProps={{ readOnly: true }}
               sx={{ bgcolor: 'grey.50' }}
               required
               error={errors.gradeCode}
-=======
-              onChange={handleFormChange}
-              disabled={isViewOnly}
-              required
-              error={errors.gradeCode}
-              sx={errorStyle(errors.gradeCode)}
->>>>>>> origin/chore/repo-cleanup
             />
             <BOSTextField
               name="gradeName"

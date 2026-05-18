@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { Grid, Box, Button, Typography, Stack, MenuItem, useTheme, Tooltip, Autocomplete, TextField as MuiTextField, alpha } from '@mui/material';
@@ -19,34 +18,18 @@ import {
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import { autoUploadFile } from 'utils/upload-helper';
 import { IconFiles } from '@tabler/icons-react';
-=======
-import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Grid, Box, Button, Typography, Stack, MenuItem, useTheme, Tooltip } from '@mui/material';
-import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconMapPin, IconBusinessplan, IconTruckDelivery } from '@tabler/icons-react';
-import { useColorScheme } from '@mui/material/styles';
-import MainCard from 'ui-component/cards/MainCard';
-import { BOSFormSection, BOSTextField, btnSave, btnDelete, btnCancel, btnClear } from 'ui-component/bos';
-import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
->>>>>>> origin/chore/repo-cleanup
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
-<<<<<<< HEAD
 import { YES_NO_OPTIONS, STATUS_OPTIONS } from 'utils/constants';
-=======
->>>>>>> origin/chore/repo-cleanup
 
 const INITIAL = {
   customerCode: '',
   gstin: '',
   customerName: '',
-<<<<<<< HEAD
   customerPrintName: '',
-=======
->>>>>>> origin/chore/repo-cleanup
   accountsLedger: '',
   groupName: '',
   shortName: '',
@@ -54,11 +37,7 @@ const INITIAL = {
   city: '',
   state: '',
   stateCode: '',
-<<<<<<< HEAD
   country: '',
-=======
-  country: 'India',
->>>>>>> origin/chore/repo-cleanup
   pincode: '',
   primeCustomer: 'No',
   panNo: '',
@@ -68,26 +47,17 @@ const INITIAL = {
   isoNumber: '',
   isoExpiry: '',
   ndaRequired: 'No',
-<<<<<<< HEAD
   currency: '',
   segment: '',
   subSegment: '',
   paymentTerms: '',
   deliveryTerms: '',
-=======
-  currency: 'INR',
-  segment: '',
-  subSegment: '',
-  paymentTerms: 'Immediate',
-  deliveryTerms: '-Select-',
->>>>>>> origin/chore/repo-cleanup
   freight: '',
   domainName: '',
   distance: '',
   location: '',
   ldApplicable: 'No',
   negotiateCustomer: 'No',
-<<<<<<< HEAD
   dailyDispatchMail: 'No',
   status: 'Active',
   fileUpload: '',
@@ -96,22 +66,14 @@ const INITIAL = {
   createdDate: '',
   updatedBy: '',
   updatedDate: ''
-=======
-  status: 'Active'
->>>>>>> origin/chore/repo-cleanup
 };
 
 const RULES = [
   { field: 'customerName', label: 'Customer Name', required: true, maxLength: 200 }
 ];
 
-<<<<<<< HEAD
 // Shared field renderer using Grid for consistent layout
 const R = ({ children, lg = 3, md = 4, sm = 6 }) => <Grid item xs={12} sm={sm} md={md} lg={lg}>{children}</Grid>;
-=======
-// Shared field renderer using Grid for consistent layout - standardized to 4 columns for even spacing
-const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
->>>>>>> origin/chore/repo-cleanup
 
 export default function CustomerMaster() {
   const theme = useTheme();
@@ -119,17 +81,12 @@ export default function CustomerMaster() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
-<<<<<<< HEAD
   const { id: pathId } = useParams();
   const customerId = pathId || searchParams.get('id');
-=======
-  const customerId = searchParams.get('id');
->>>>>>> origin/chore/repo-cleanup
   const { errors, validate, clearErrors } = useBOSValidation();
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-<<<<<<< HEAD
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewData, setPreviewData] = useState({ url: '', name: '', type: 'pdf' });
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -164,8 +121,6 @@ export default function CustomerMaster() {
       setAllStates(stateRes.data.filter(s => s.status === 'Active'));
     } catch (e) { console.error('Error fetching master data:', e); }
   }, []);
-=======
->>>>>>> origin/chore/repo-cleanup
 
   const fetchCustomer = useCallback(async () => {
     if (!customerId) return;
@@ -175,11 +130,8 @@ export default function CustomerMaster() {
       Object.keys(d).forEach((k) => { if (data[k] !== undefined && data[k] !== null) d[k] = data[k]; });
       if (d.isoExpiry && typeof d.isoExpiry === 'string') d.isoExpiry = d.isoExpiry.split('T')[0];
       setForm(d);
-<<<<<<< HEAD
       setUploadedFiles(formatBOSFiles(data.fileUpload));
       setPanFile(formatBOSFiles(data.panFileInfo));
-=======
->>>>>>> origin/chore/repo-cleanup
     } catch (e) { console.error(e); }
   }, [customerId]);
 
@@ -188,20 +140,13 @@ export default function CustomerMaster() {
     try {
       const { data } = await axios.get('/api/sm/customers/next-code');
       setForm(p => ({ ...p, customerCode: data }));
-<<<<<<< HEAD
     } catch (e) {
       console.error(e);
-=======
-    } catch (e) { 
-      console.error(e);
-      // Fallback in case of error
->>>>>>> origin/chore/repo-cleanup
       const year = new Date().getFullYear().toString().slice(-2);
       setForm(p => ({ ...p, customerCode: `C-${year}-00001` }));
     }
   }, [customerId]);
 
-<<<<<<< HEAD
   useEffect(() => {
     if (!customerId) {
       setPanFile([]);
@@ -291,30 +236,6 @@ export default function CustomerMaster() {
         severity: 'error', 
         close: false 
       }));
-=======
-
-  useEffect(() => { 
-    if (customerId) fetchCustomer(); 
-    else fetchNextCode();
-  }, [customerId, fetchCustomer, fetchNextCode]);
-
-  const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
-
-  const handleSave = async () => {
-    if (!validate(form, RULES)) return;
-    setLoading(true);
-    try {
-      if (customerId) {
-        await axios.put(`/api/sm/customers/${customerId}`, form);
-        dispatch(openSnackbar({ open: true, message: 'Customer updated!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
-      } else {
-        const { data } = await axios.post('/api/sm/customers', form);
-        dispatch(openSnackbar({ open: true, message: 'Customer created!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
-        navigate(`/sm/customers/create?id=${data.id}`, { replace: true });
-      }
-    } catch (e) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save customer.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
->>>>>>> origin/chore/repo-cleanup
     } finally { setLoading(false); }
   };
 
@@ -333,7 +254,6 @@ export default function CustomerMaster() {
 
   useKeyboardShortcuts({ 'ctrl+s': handleSave, 'escape': () => navigate('/sm/customers') });
 
-<<<<<<< HEAD
   const filteredStates = useMemo(() => {
     return form.country 
       ? allStates.filter(s => s.countryName === form.country)
@@ -351,8 +271,6 @@ export default function CustomerMaster() {
     }
   };
 
-=======
->>>>>>> origin/chore/repo-cleanup
   return (
     <MainCard
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{customerId ? 'Edit Customer' : 'New Customer'}</Typography></Stack>}
@@ -371,10 +289,7 @@ export default function CustomerMaster() {
             <R><BOSTextField name="customerCode" label="Customer Code" value={form.customerCode} onChange={h} disabled inputProps={{ readOnly: true }} sx={{ '& .MuiInputBase-input': { fontWeight: 700, color: 'primary.main' } }} /></R>
             <R><BOSTextField name="gstin" label="GSTIN No" value={form.gstin} onChange={h} /></R>
             <R><BOSTextField name="customerName" label="Customer Name" value={form.customerName} onChange={h} required error={!!errors.customerName} helperText={errors.customerName} /></R>
-<<<<<<< HEAD
             <R><BOSTextField name="customerPrintName" label="Customer Print Name" value={form.customerPrintName} onChange={h} /></R>
-=======
->>>>>>> origin/chore/repo-cleanup
             <R><BOSTextField name="accountsLedger" label="Accounts Ledger" value={form.accountsLedger} onChange={h} /></R>
             <R><BOSTextField name="groupName" label="Group Name" value={form.groupName} onChange={h} /></R>
             <R><BOSTextField name="shortName" label="Short Name" value={form.shortName} onChange={h} /></R>
@@ -384,7 +299,6 @@ export default function CustomerMaster() {
         </BOSFormSection>
 
         <BOSFormSection icon={<IconMapPin size={20} color={theme.palette.primary.main} />} title="Location Details">
-<<<<<<< HEAD
           <Grid container spacing={3}>
             <Grid item xs={12} lg={6}>
               <BOSTextField fullWidth name="address" label="Address" value={form.address} onChange={h} multiline rows={5} placeholder="Enter detailed address..." />
@@ -400,17 +314,6 @@ export default function CustomerMaster() {
                 <Grid item xs={12}><BOSTextField fullWidth name="location" label="Location" value={form.location} onChange={h} placeholder="Google Maps link or landmarks" /></Grid>
               </Grid>
             </Grid>
-=======
-          <Grid container spacing={2.5}>
-            <R lg={6}><BOSTextField name="address" label="Address" value={form.address} onChange={h} multiline rows={2} /></R>
-            <R><BOSTextField name="city" label="City" value={form.city} onChange={h} /></R>
-            <R><BOSTextField name="state" label="State" value={form.state} onChange={h} /></R>
-            <R><BOSTextField name="stateCode" label="State Code" value={form.stateCode} onChange={h} /></R>
-            <R><BOSTextField name="country" label="Country" value={form.country} onChange={h} /></R>
-            <R><BOSTextField name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
-            <R><BOSTextField name="distance" label="Distance (KM)" value={form.distance} onChange={h} type="number" /></R>
-            <R><BOSTextField name="location" label="Location" value={form.location} onChange={h} /></R>
->>>>>>> origin/chore/repo-cleanup
           </Grid>
         </BOSFormSection>
 
@@ -422,16 +325,12 @@ export default function CustomerMaster() {
                 <MenuItem value="No">No</MenuItem>
               </BOSTextField>
             </R>
-<<<<<<< HEAD
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <BOSTextField name="panNo" label="PAN No" value={form.panNo} onChange={h} fullWidth />
                 <BOSFileUpload files={panFile} onChange={setPanFile} module="SALES_CUSTOMER" label="PAN" compact multiple={false} />
               </Stack>
             </Grid>
-=======
-            <R><BOSTextField name="panNo" label="PAN No" value={form.panNo} onChange={h} /></R>
->>>>>>> origin/chore/repo-cleanup
             <R><BOSTextField name="registerNo" label="Register No" value={form.registerNo} onChange={h} /></R>
             <R><BOSTextField name="cinNo" label="CIN No" value={form.cinNo} onChange={h} /></R>
             <R><BOSTextField name="isoNumber" label="ISO No" value={form.isoNumber} onChange={h} /></R>
@@ -442,7 +341,6 @@ export default function CustomerMaster() {
                 <MenuItem value="No">No</MenuItem>
               </BOSTextField>
             </R>
-<<<<<<< HEAD
             {form.ndaRequired === 'Yes' && (
               <Grid item xs={12} lg={6}>
                 <Box sx={{ border: '1px dashed', borderColor: 'primary.main', borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.02) }}>
@@ -458,13 +356,10 @@ export default function CustomerMaster() {
                 </Box>
               </Grid>
             )}
-=======
->>>>>>> origin/chore/repo-cleanup
           </Grid>
         </BOSFormSection>
 
         <BOSFormSection icon={<IconTruckDelivery size={20} color={theme.palette.primary.main} />} title="Terms & Logistics">
-<<<<<<< HEAD
           <Grid container spacing={3}>
             <R lg={4} md={6}>
               <Autocomplete fullWidth value={form.currency || null} onChange={handleAC('currency')} options={currencies.map(c => c.currencyCode)} renderOption={(props, option) => { const { key, ...optionProps } = props; const c = currencies.find(x => x.currencyCode === option); return (<li key={key} {...optionProps}><Typography variant="body2"><b>{option}</b> - {c?.currencyName}</Typography></li>); }} renderInput={(params) => <BOSTextField {...params} label="Currency" sx={acSx} required />} />
@@ -522,44 +417,6 @@ export default function CustomerMaster() {
         type={previewData.type}
         onDownload={() => window.open(previewData.url.replace('/view/', '/download/'), '_blank')}
       />
-=======
-          <Grid container spacing={2.5}>
-            <R>
-              <BOSTextField name="currency" label="Currency" value={form.currency} onChange={h} select required>
-                <MenuItem value="INR">INR</MenuItem>
-                <MenuItem value="USD">USD</MenuItem>
-                <MenuItem value="EUR">EUR</MenuItem>
-              </BOSTextField>
-            </R>
-            <R><BOSTextField name="segment" label="Segment" value={form.segment} onChange={h} /></R>
-            <R><BOSTextField name="subSegment" label="Sub Segment" value={form.subSegment} onChange={h} /></R>
-            <R><BOSTextField name="paymentTerms" label="Payment Terms" value={form.paymentTerms} onChange={h} /></R>
-            <R><BOSTextField name="deliveryTerms" label="Delivery Terms" value={form.deliveryTerms} onChange={h} /></R>
-            <R><BOSTextField name="freight" label="Freight" value={form.freight} onChange={h} /></R>
-            <R>
-              <BOSTextField name="ldApplicable" label="LD Applicable" value={form.ldApplicable} onChange={h} select>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </BOSTextField>
-            </R>
-            <R>
-              <BOSTextField name="negotiateCustomer" label="Is Negotiate Customer" value={form.negotiateCustomer} onChange={h} select>
-                <MenuItem value="Yes">Yes</MenuItem>
-                <MenuItem value="No">No</MenuItem>
-              </BOSTextField>
-            </R>
-            <R>
-              <BOSTextField name="status" label="Status" value={form.status} onChange={h} select>
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
-              </BOSTextField>
-            </R>
-          </Grid>
-        </BOSFormSection>
-      </Stack>
-
-      <ConfirmDeleteDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDelete} title="Delete Customer" message="Are you sure you want to delete this customer?" itemName={form.customerName} />
->>>>>>> origin/chore/repo-cleanup
     </MainCard>
   );
 }

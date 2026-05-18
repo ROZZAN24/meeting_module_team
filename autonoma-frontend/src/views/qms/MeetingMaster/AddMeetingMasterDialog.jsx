@@ -16,11 +16,7 @@ const INITIAL_FORM = {
 
 const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
   const { employees = [], users = [] } = useLookups(['EMPLOYEES', 'USERS']);
-<<<<<<< HEAD
   const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
-=======
-  const { errors, validate, clearErrors } = useBOSValidation();
->>>>>>> origin/chore/repo-cleanup
   const [form, setForm] = useState(INITIAL_FORM);
 
   useEffect(() => {
@@ -37,11 +33,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
     }
   }, [open, item, clearErrors]);
 
-<<<<<<< HEAD
   const h = (e) => handleInputChange(e, setForm);
-=======
-  const h = (e) => setForm(p => ({ ...p, [e.target.name]: e.target.value }));
->>>>>>> origin/chore/repo-cleanup
 
   const handleSave = () => {
     const rules = [
@@ -113,16 +105,10 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
         multiple
         options={employees.filter(emp => users.some(u => u.empId === emp.id))}
         getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
-<<<<<<< HEAD
         value={employees.filter(emp => form.employeeName?.some(val => val.split(' - ')[0] === emp.empCode))}
         onChange={(e, newValue) => {
           setForm(p => ({ ...p, employeeName: newValue.map(v => `${v.empCode} - ${v.employeeName}`) }));
           if (errors.employeeName) clearErrors('employeeName');
-=======
-        value={employees.filter(emp => form.employeeName?.some(val => val.split(';')[0] === emp.empCode))}
-        onChange={(e, newValue) => {
-          setForm(p => ({ ...p, employeeName: newValue.map(v => `${v.empCode};${v.employeeName}`) }));
->>>>>>> origin/chore/repo-cleanup
         }}
         renderTags={(value, getTagProps) =>
           value.map((option, index) => {

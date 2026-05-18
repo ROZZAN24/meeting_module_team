@@ -31,7 +31,6 @@ export const parseBOSFiles = (files) => {
 };
 
 /**
-<<<<<<< HEAD
  * Resolves the employee photo URL from the uploaded file path.
  */
 export const getPhotoUrl = (photoPath) => {
@@ -43,8 +42,6 @@ export const getPhotoUrl = (photoPath) => {
 };
 
 /**
-=======
->>>>>>> origin/chore/repo-cleanup
  * Maps a list of filenames to the internal BOS file object format
  * @param {Array<string>} fileNames - List of filenames from server
  * @returns {Array<Object>} - Formatted file objects for BOSFileGallery

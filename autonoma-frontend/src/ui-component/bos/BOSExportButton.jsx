@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import {
@@ -14,21 +13,6 @@ import { exportToExcel } from 'utils/excelExport';
 import useAuth from 'hooks/useAuth';
 import BOSDataTable from './BOSDataTable';
 import { format } from 'date-fns';
-=======
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
-import { 
-  Button, Tooltip, CircularProgress, Box, Typography, 
-  Dialog, DialogTitle, DialogContent, DialogActions, 
-  IconButton, Stack, Divider, Tabs, Tab, Paper, useTheme
-} from '@mui/material';
-import { 
-  IconFileExport, IconFileSpreadsheet, IconFileTypePdf, 
-  IconX, IconEye, IconFunction, IconPlus, IconSearch 
-} from '@tabler/icons-react';
-import { exportToExcel } from 'utils/excelExport';
-import BOSDataTable from './BOSDataTable';
->>>>>>> origin/chore/repo-cleanup
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -36,15 +20,9 @@ import BOSDataTable from './BOSDataTable';
  * ═══════════════════════════════════════════════════════════════
  */
 
-<<<<<<< HEAD
 export default function BOSExportButton({
   data = [],
   filename = 'Export',
-=======
-export default function BOSExportButton({ 
-  data = [], 
-  filename = 'Export', 
->>>>>>> origin/chore/repo-cleanup
   columns = null,
   disabled = false,
   loading = false,
@@ -53,10 +31,7 @@ export default function BOSExportButton({
   size = 'medium'
 }) {
   const theme = useTheme();
-<<<<<<< HEAD
   const { user } = useAuth();
-=======
->>>>>>> origin/chore/repo-cleanup
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0); // 0: Excel, 1: PDF
   const [page, setPage] = useState(0);
@@ -73,7 +48,6 @@ export default function BOSExportButton({
     return data.map(row => {
       const mappedRow = {};
       columns.forEach(col => {
-<<<<<<< HEAD
         let val = typeof col.key === 'function' ? col.key(row) : row[col.key];
         // Format dates for Excel readability
         const keyName = typeof col.key === 'string' ? col.key.toLowerCase() : '';
@@ -106,15 +80,10 @@ export default function BOSExportButton({
         }
       });
 
-=======
-        mappedRow[col.header] = row[col.key] || '-';
-      });
->>>>>>> origin/chore/repo-cleanup
       return mappedRow;
     });
   };
 
-<<<<<<< HEAD
   const getFormattedFilename = () => {
     const ts = format(new Date(), 'dd/MM/yyyy_HHmm');
     return `${filename}_${ts}`;
@@ -123,17 +92,11 @@ export default function BOSExportButton({
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
     exportToExcel(prepareData(), getFormattedFilename(), { userName: user?.name });
-=======
-  const handleExportExcel = () => {
-    if (!data || data.length === 0) return;
-    exportToExcel(prepareData(), filename);
->>>>>>> origin/chore/repo-cleanup
     handleClosePreview();
   };
 
   const handleExportPDF = () => {
     if (!data || data.length === 0) return;
-<<<<<<< HEAD
     const originalTitle = document.title;
     document.title = getFormattedFilename();
     window.print();
@@ -162,16 +125,6 @@ export default function BOSExportButton({
 
     return [...headerRows, ...baseData];
   }, [data, columns, user, filename, previewColumns]);
-=======
-    window.print();
-    handleClosePreview();
-  };
-
-  const previewColumns = columns ? columns.map(c => ({ id: c.header, label: c.header })) : 
-    (data.length > 0 ? Object.keys(data[0]).map(k => ({ id: k, label: k })) : []);
-
-  const previewRows = prepareData();
->>>>>>> origin/chore/repo-cleanup
 
   // Excel simulation helpers
   const getColumnLetter = (n) => String.fromCharCode(65 + n);
@@ -200,17 +153,10 @@ export default function BOSExportButton({
         </span>
       </Tooltip>
 
-<<<<<<< HEAD
       <Dialog
         open={previewOpen}
         onClose={handleClosePreview}
         maxWidth="lg"
-=======
-      <Dialog 
-        open={previewOpen} 
-        onClose={handleClosePreview} 
-        maxWidth="lg" 
->>>>>>> origin/chore/repo-cleanup
         fullWidth
         PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden', height: '90vh' } }}
       >
@@ -219,13 +165,9 @@ export default function BOSExportButton({
             <IconFileExport size={24} color="#2196f3" />
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700 }}>Export Designer</Typography>
-<<<<<<< HEAD
               <Typography variant="caption" color="text.secondary">
                 {filename.replace(/_/g, ' ')} ({data.length} records) • {new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </Typography>
-=======
-              <Typography variant="caption" color="text.secondary">{filename} ({data.length} records)</Typography>
->>>>>>> origin/chore/repo-cleanup
             </Box>
           </Stack>
           <IconButton onClick={handleClosePreview} size="small"><IconX size={20} /></IconButton>
@@ -237,11 +179,7 @@ export default function BOSExportButton({
             <Tab icon={<IconFileTypePdf size={20} />} iconPosition="start" label="PDF Document" sx={{ fontWeight: 600 }} />
           </Tabs>
         </Box>
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/chore/repo-cleanup
         <DialogContent sx={{ p: 0, bgcolor: 'grey.100', display: 'flex', flexDirection: 'column' }}>
           {activeTab === 0 ? (
             <Box sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -254,28 +192,16 @@ export default function BOSExportButton({
                   <IconFunction size={16} color="#aaa" />
                   <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
                   <Typography variant="body2" sx={{ color: 'text.primary', fontSize: '13px' }}>
-<<<<<<< HEAD
                     {previewRows[0] ? previewRows[0][previewColumns[0]?.id] : ''}
-=======
-                    {previewRows[0] ? previewRows[0][previewColumns[0].id] : ''}
->>>>>>> origin/chore/repo-cleanup
                   </Typography>
                 </Box>
               </Paper>
 
-<<<<<<< HEAD
               <Paper sx={{
                 flexGrow: 1,
                 borderRadius: '4px',
                 overflow: 'hidden',
                 border: '1px solid',
-=======
-              <Paper sx={{ 
-                flexGrow: 1,
-                borderRadius: '4px', 
-                overflow: 'hidden', 
-                border: '1px solid', 
->>>>>>> origin/chore/repo-cleanup
                 borderColor: '#bbb',
                 display: 'flex',
                 flexDirection: 'column',
@@ -283,7 +209,6 @@ export default function BOSExportButton({
               }}>
                 {/* COLUMN HEADERS (A, B, C...) */}
                 <Box sx={{ bgcolor: '#f8f9fa', borderBottom: '1px solid #bbb', display: 'flex', position: 'sticky', top: 0, zIndex: 3 }}>
-<<<<<<< HEAD
                   <Box sx={{ width: 40, borderRight: '1px solid #bbb', bgcolor: '#e9ecef' }} />
                   {previewColumns.map((col, i) => (
                     <Box key={i} sx={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#444', py: 0.5, borderRight: '1px solid #bbb' }}>
@@ -303,27 +228,6 @@ export default function BOSExportButton({
                   </Box>
 
                   <Box sx={{ flexGrow: 1 }}>
-=======
-                   <Box sx={{ width: 40, borderRight: '1px solid #bbb', bgcolor: '#e9ecef' }} />
-                   {previewColumns.map((col, i) => (
-                     <Box key={i} sx={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#444', py: 0.5, borderRight: '1px solid #bbb' }}>
-                       {getColumnLetter(i)}
-                     </Box>
-                   ))}
-                </Box>
-
-                <Box sx={{ flexGrow: 1, overflow: 'auto', display: 'flex' }}>
-                   {/* ROW NUMBERS (1, 2, 3...) */}
-                   <Box sx={{ width: 40, bgcolor: '#f8f9fa', borderRight: '1px solid #bbb', position: 'sticky', left: 0, zIndex: 2 }}>
-                      {Array.from({ length: sizePerPage }).map((_, i) => (
-                        <Box key={i} sx={{ height: 40, borderBottom: '1px solid #bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#666' }}>
-                          {page * sizePerPage + i + 1}
-                        </Box>
-                      ))}
-                   </Box>
-
-                   <Box sx={{ flexGrow: 1 }}>
->>>>>>> origin/chore/repo-cleanup
                     <BOSDataTable
                       columns={previewColumns}
                       rows={previewRows.slice(page * sizePerPage, page * sizePerPage + sizePerPage)}
@@ -333,31 +237,18 @@ export default function BOSExportButton({
                       onPageChange={setPage}
                       onSizeChange={setSizePerPage}
                       showActions={false}
-<<<<<<< HEAD
                       sx={{
                         '& th': {
                           bgcolor: '#fff !important',
                           color: '#000',
                           fontWeight: 700,
-=======
-                      sx={{ 
-                        '& th': { 
-                          bgcolor: '#fff !important', 
-                          color: '#000', 
-                          fontWeight: 700, 
->>>>>>> origin/chore/repo-cleanup
                           borderRight: '1px solid #bbb',
                           borderBottom: '2px solid #bbb',
                           height: 40,
                           fontSize: '12px'
                         },
-<<<<<<< HEAD
                         '& td': {
                           borderRight: '1px solid #ccc',
-=======
-                        '& td': { 
-                          borderRight: '1px solid #ccc', 
->>>>>>> origin/chore/repo-cleanup
                           borderBottom: '1px solid #ccc',
                           fontSize: '13px',
                           height: 40,
@@ -369,24 +260,15 @@ export default function BOSExportButton({
                           outlineOffset: '-2px',
                           bgcolor: '#e7f1ec'
                         },
-<<<<<<< HEAD
                         border: 'none',
                         boxShadow: 'none'
                       }}
                     />
                   </Box>
-=======
-                        border: 'none', 
-                        boxShadow: 'none' 
-                      }}
-                    />
-                   </Box>
->>>>>>> origin/chore/repo-cleanup
                 </Box>
 
                 {/* EXCEL BOTTOM BAR (Sheet Tabs) */}
                 <Box sx={{ bgcolor: '#f8f9fa', borderTop: '1px solid #bbb', p: 0.5, display: 'flex', alignItems: 'center', gap: 2 }}>
-<<<<<<< HEAD
                   <Stack direction="row" spacing={0.5} sx={{ px: 1 }}>
                     <Box sx={{ bgcolor: 'white', px: 2, py: 0.5, border: '1px solid #bbb', borderBottom: 'none', borderRadius: '4px 4px 0 0', fontSize: '11px', fontWeight: 700, color: '#217346' }}>
                       Sheet1
@@ -395,34 +277,16 @@ export default function BOSExportButton({
                   </Stack>
                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
                   <Typography variant="caption" sx={{ fontSize: '10px', color: 'grey.600' }}>Ready</Typography>
-=======
-                   <Stack direction="row" spacing={0.5} sx={{ px: 1 }}>
-                      <Box sx={{ bgcolor: 'white', px: 2, py: 0.5, border: '1px solid #bbb', borderBottom: 'none', borderRadius: '4px 4px 0 0', fontSize: '11px', fontWeight: 700, color: '#217346' }}>
-                        Sheet1
-                      </Box>
-                      <IconButton size="small"><IconPlus size={14} /></IconButton>
-                   </Stack>
-                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                   <Typography variant="caption" sx={{ fontSize: '10px', color: 'grey.600' }}>Ready</Typography>
->>>>>>> origin/chore/repo-cleanup
                 </Box>
               </Paper>
             </Box>
           ) : (
             <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', overflow: 'auto' }}>
-<<<<<<< HEAD
               <Paper sx={{
                 width: '210mm',
                 minHeight: '297mm',
                 p: '25mm',
                 bgcolor: 'white',
-=======
-              <Paper sx={{ 
-                width: '210mm', 
-                minHeight: '297mm', 
-                p: '25mm', 
-                bgcolor: 'white', 
->>>>>>> origin/chore/repo-cleanup
                 boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
                 fontFamily: theme.typography.fontFamily
               }}>
@@ -437,7 +301,6 @@ export default function BOSExportButton({
                   </Box>
                   <Box sx={{ textAlign: 'right' }}>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>{filename.replace(/_/g, ' ')}</Typography>
-<<<<<<< HEAD
                     <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                       Generated By: {user?.name || 'System User'}
                     </Typography>
@@ -447,9 +310,6 @@ export default function BOSExportButton({
                     <Typography variant="caption" color="text.disabled" sx={{ display: 'block', fontWeight: 700 }}>
                       Time: {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </Typography>
-=======
-                    <Typography variant="body2" color="text.secondary">Generated on: {new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}</Typography>
->>>>>>> origin/chore/repo-cleanup
                   </Box>
                 </Stack>
 
@@ -484,11 +344,7 @@ export default function BOSExportButton({
                     ))}
                   </tbody>
                 </table>
-<<<<<<< HEAD
 
-=======
-                
->>>>>>> origin/chore/repo-cleanup
                 {previewRows.length > 15 && (
                   <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '4px' }}>
                     <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
@@ -508,18 +364,13 @@ export default function BOSExportButton({
         </DialogContent>
 
         <Divider />
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/chore/repo-cleanup
         <DialogActions sx={{ p: 2.5, bgcolor: 'grey.50' }}>
           <Button variant="outlined" color="secondary" onClick={handleClosePreview} startIcon={<IconX size={18} />}>
             Cancel
           </Button>
           <Box sx={{ flexGrow: 1 }} />
           <Stack direction="row" spacing={1.5}>
-<<<<<<< HEAD
             <Button
               variant="contained"
               color="primary"
@@ -528,16 +379,6 @@ export default function BOSExportButton({
               startIcon={<IconFileSpreadsheet size={18} />}
               sx={{
                 bgcolor: '#107c41',
-=======
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleExportExcel} 
-              disabled={activeTab !== 0}
-              startIcon={<IconFileSpreadsheet size={18} />}
-              sx={{ 
-                bgcolor: '#107c41', 
->>>>>>> origin/chore/repo-cleanup
                 '&:hover': { bgcolor: '#0a5c31' },
                 opacity: activeTab === 0 ? 1 : 0.5,
                 fontWeight: 700
@@ -545,17 +386,10 @@ export default function BOSExportButton({
             >
               Download Excel
             </Button>
-<<<<<<< HEAD
             <Button
               variant="contained"
               color="error"
               onClick={handleExportPDF}
-=======
-            <Button 
-              variant="contained" 
-              color="error" 
-              onClick={handleExportPDF} 
->>>>>>> origin/chore/repo-cleanup
               disabled={activeTab !== 1}
               startIcon={<IconFileTypePdf size={18} />}
               sx={{

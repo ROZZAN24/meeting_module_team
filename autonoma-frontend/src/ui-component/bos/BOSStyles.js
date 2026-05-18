@@ -177,7 +177,6 @@ export const getDialogStyles = (theme, isDark) => ({
 
 // ─── INPUT STYLE TOKENS (SOP #9, #10) ──────────────────────
 
-<<<<<<< HEAD
 
 export const getAutocompleteStyles = (theme) => ({
   width: '100%',
@@ -190,8 +189,6 @@ export const getAutocompleteStyles = (theme) => ({
   }
 });
 
-=======
->>>>>>> origin/chore/repo-cleanup
 export const getInputStyles = (theme, isDark) => ({
   width: '100% !important',
   '& .MuiOutlinedInput-root': {

@@ -17,7 +17,6 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-<<<<<<< HEAD
   { id: 'departmentNo', label: 'Dept No.', minWidth: 120, bold: true, required: true },
   { id: 'departmentName', label: 'Department Name', minWidth: 180, required: true },
   { id: 'ndaCertificate', label: 'NDA', minWidth: 80 },
@@ -27,26 +26,10 @@ const columns = [
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
-=======
-  { id: 'departmentNo', label: 'Department Number', minWidth: 150, bold: true },
-  { id: 'departmentName', label: 'Department Name', minWidth: 180 },
-  { id: 'ndaCertificate', label: 'NDA', minWidth: 80 },
-  { id: 'sequenceNo', label: 'Organization Sequence Number', minWidth: 200 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 },
-  { id: 'status', label: 'Status', minWidth: 100 }
->>>>>>> origin/chore/repo-cleanup
 ];
 
 export default function DepartmentDetails() {
   const dispatch = useDispatch();
-<<<<<<< HEAD
-=======
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
->>>>>>> origin/chore/repo-cleanup
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -59,7 +42,6 @@ export default function DepartmentDetails() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-<<<<<<< HEAD
   // ── RESOLVED ROWS (SOP #16 Standard) ──
   const resolvedRows = useMemo(() => {
     if (!Array.isArray(rows)) return [];
@@ -68,24 +50,6 @@ export default function DepartmentDetails() {
       status: row.status || 'Active'
     }));
   }, [rows]);
-=======
-  useEffect(() => {
-    const config = [
-      {
-        id: 'status', label: 'Status', type: 'select',
-        options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'Active', label: 'ACTIVE' },
-          { value: 'In Active', label: 'INACTIVE' }
-        ],
-        defaultValue: 'Active'
-      },
-      { id: 'departmentName', label: 'Dept Name', type: 'text', placeholder: 'Search by Name...' }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
->>>>>>> origin/chore/repo-cleanup
 
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
@@ -115,19 +79,11 @@ export default function DepartmentDetails() {
     setDeleteDialogOpen(false);
     try {
       await axios.delete(`/api/hrm/departments/${deleteTargetId}`);
-<<<<<<< HEAD
       dispatch(openSnackbar({ open: true, message: 'Department deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchDepartments();
     } catch (error) {
       console.error('Failed to delete department:', error);
       dispatch(openSnackbar({ open: true, message: 'Failed to delete department.', variant: 'alert', severity: 'error' }));
-=======
-      dispatch(openSnackbar({ open: true, message: 'Department deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
-      fetchDepartments();
-    } catch (error) {
-      console.error('Failed to delete department:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete department.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
->>>>>>> origin/chore/repo-cleanup
     }
   };
 
@@ -136,40 +92,6 @@ export default function DepartmentDetails() {
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
 
-<<<<<<< HEAD
-=======
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'Department Number': r.departmentNo,
-      'Department Name': r.departmentName,
-      'NDA Certificate': r.ndaCertificate,
-      'Organization Sequence Number': r.sequenceNo,
-      'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd-MM-yyyy HH:mm') : '',
-      'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd-MM-yyyy HH:mm') : '',
-      Status: r.status
-    }));
-    exportToExcel(exportData, 'Department_Details');
-  };
-
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      const nameFilter = globalFilters.departmentName || '';
-      const matchesName = !nameFilter || (row.departmentName && row.departmentName.toLowerCase().includes(nameFilter.toLowerCase()));
-      const matchesSearch = !globalQuery ||
-        (row.departmentName && row.departmentName.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.departmentNo && row.departmentNo.toString().includes(globalQuery));
-      return matchesStatus && matchesName && matchesSearch;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
-
->>>>>>> origin/chore/repo-cleanup
   return (
     <MainCard
       title={
@@ -189,17 +111,10 @@ export default function DepartmentDetails() {
             </IconButton>
           </Tooltip>
           <BOSExportButton
-<<<<<<< HEAD
             data={resolvedRows}
             filename="Department_Details"
             columns={[
               { header: 'Dept No', key: 'departmentNo' },
-=======
-            data={filteredRows}
-            filename="Department_Details"
-            columns={[
-              { header: 'Department Number', key: 'departmentNo' },
->>>>>>> origin/chore/repo-cleanup
               { header: 'Department Name', key: 'departmentName' },
               { header: 'Status', key: 'status' }
             ]}
@@ -214,16 +129,9 @@ export default function DepartmentDetails() {
     >
       <BOSDataTable
         columns={columns}
-<<<<<<< HEAD
         rows={resolvedRows}
         page={page}
         size={size}
-=======
-        rows={paginatedRows}
-        page={page}
-        size={size}
-        totalCount={filteredRows.length}
->>>>>>> origin/chore/repo-cleanup
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}

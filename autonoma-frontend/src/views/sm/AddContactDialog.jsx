@@ -5,11 +5,7 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
-<<<<<<< HEAD
 import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery } from 'ui-component/bos';
-=======
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery } from 'ui-component/bos';
->>>>>>> origin/chore/repo-cleanup
 import { API_PATHS } from 'utils/api-constants';
 import { autoUploadFile } from 'utils/upload-helper';
 

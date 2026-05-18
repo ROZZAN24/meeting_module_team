@@ -6,11 +6,7 @@ import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-<<<<<<< HEAD
 import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
-=======
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
->>>>>>> origin/chore/repo-cleanup
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 

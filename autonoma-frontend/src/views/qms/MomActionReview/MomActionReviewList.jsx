@@ -109,10 +109,7 @@ export default function MomActionReviewList() {
     try {
       const response = await axios.get(`${API_PATHS.QMS.MOMS}/actions`);
       let data = Array.isArray(response.data) ? response.data : [];
-<<<<<<< HEAD
       data.sort((a, b) => b.id - a.id);
-=======
->>>>>>> origin/chore/repo-cleanup
       
       // Calculate OVERDUE dynamically based on SOP
       const today = new Date().toISOString().split('T')[0];

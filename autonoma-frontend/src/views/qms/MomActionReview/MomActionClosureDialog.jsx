@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-<<<<<<< HEAD
 import { Stack, Box, Typography, Grid, MenuItem, Button, Tooltip } from '@mui/material';
-=======
-import { Stack, Box, Typography, Grid, MenuItem, Button } from '@mui/material';
->>>>>>> origin/chore/repo-cleanup
 import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
 import { IconChecklist, IconClock, IconMessageReport } from '@tabler/icons-react';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -12,10 +8,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
-<<<<<<< HEAD
 import useAuth from 'hooks/useAuth';
-=======
->>>>>>> origin/chore/repo-cleanup
 
 const INITIAL_FORM = {
   actionTaken: '',
@@ -26,10 +19,7 @@ const INITIAL_FORM = {
 const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
   const dispatch = useDispatch();
   const { errors, validate, clearErrors } = useBOSValidation();
-<<<<<<< HEAD
   const { user } = useAuth();
-=======
->>>>>>> origin/chore/repo-cleanup
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
 
@@ -47,10 +37,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
 
   const delayDays = getDelayDays();
   const isReadonly = item && !['OPEN', 'REJECTED', 'CREATED'].includes(item.status);
-<<<<<<< HEAD
   const isAssignedToMe = user && item && user.name === item.assignedTo;
-=======
->>>>>>> origin/chore/repo-cleanup
 
   useEffect(() => {
     if (open) {
@@ -115,7 +102,6 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
     return (
       <Stack direction="row" spacing={1.5}>
         {['OPEN', 'REJECTED'].includes(item.status) && (
-<<<<<<< HEAD
           <Tooltip title={!isAssignedToMe ? `This action is assigned to ${item.assignedTo}. Only they can submit for closure.` : ''}>
             <span>
               <Button variant="contained" color="secondary" onClick={() => handleAction('CLOSE')} disabled={loading || !isAssignedToMe}>
@@ -123,11 +109,6 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
               </Button>
             </span>
           </Tooltip>
-=======
-          <Button variant="contained" color="secondary" onClick={() => handleAction('CLOSE')} disabled={loading}>
-            Submit For Closure
-          </Button>
->>>>>>> origin/chore/repo-cleanup
         )}
         {item.status === 'PENDING FOR APPROVAL' && (
           <>
@@ -149,7 +130,6 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
       onClose={onClose}
       title="Action Details"
       maxWidth="md"
-<<<<<<< HEAD
       secondaryActions={renderCustomActions()}
     >
       <Stack spacing={4}>
@@ -160,12 +140,6 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
             </Typography>
           </Box>
         )}
-=======
-      hideSaveButton // We use custom action buttons
-      customActions={renderCustomActions()}
-    >
-      <Stack spacing={4}>
->>>>>>> origin/chore/repo-cleanup
         {/* HEADER */}
         <Grid container spacing={2} sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.light' }}>
           <Grid item xs={3}>

@@ -19,11 +19,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
 
   const { formData, setFormData, handleFormChange, errors, validate, resetForm } = useBOSForm({
     departmentName: '',
-<<<<<<< HEAD
     departmentNo: '',
-=======
-    departmentNo: 0,
->>>>>>> origin/chore/repo-cleanup
     ndaCertificate: 'No',
     sequenceNo: 0,
     status: 'Active'
@@ -35,11 +31,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
         setFormData({
           id: initialData.id,
           departmentName: initialData.departmentName || '',
-<<<<<<< HEAD
           departmentNo: initialData.departmentNo || '',
-=======
-          departmentNo: initialData.departmentNo || 0,
->>>>>>> origin/chore/repo-cleanup
           ndaCertificate: initialData.ndaCertificate || 'No',
           sequenceNo: initialData.sequenceNo || 0,
           status: initialData.status || 'Active'
@@ -92,7 +84,6 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
       }
       handleClose(true);
     } catch (error) {
-<<<<<<< HEAD
       const msg = error.response?.data || 'Failed to save department.';
       dispatch(openSnackbar({ 
         open: true, 
@@ -101,9 +92,6 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
         alert: { variant: 'filled' }, 
         severity: 'error' 
       }));
-=======
-      dispatch(openSnackbar({ open: true, message: 'Failed to save department.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
->>>>>>> origin/chore/repo-cleanup
     }
   };
 
@@ -172,21 +160,11 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
             <BOSTextField
               name="departmentNo"
               label="Department Number"
-<<<<<<< HEAD
               value={formData.departmentNo}
               InputProps={{ readOnly: true }}
               sx={{ bgcolor: 'grey.50' }}
               required
               error={errors.departmentNo}
-=======
-              type="number"
-              value={formData.departmentNo}
-              onChange={handleFormChange}
-              disabled={isViewOnly}
-              required
-              error={errors.departmentNo}
-              sx={errorStyle(errors.departmentNo)}
->>>>>>> origin/chore/repo-cleanup
             />
           </Box>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, mt: 3 }}>

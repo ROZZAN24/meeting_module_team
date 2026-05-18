@@ -202,7 +202,6 @@ export default function AddMeetingMinutes() {
         }
       });
 
-<<<<<<< HEAD
       const typePrefix = val.meetingType?.meetingPrefix || 'MEET';
       const year = new Date().getFullYear();
       const yearRange = `${year}-${year + 1}`;
@@ -211,21 +210,13 @@ export default function AddMeetingMinutes() {
       setForm(p => ({
         ...p,
         momNo: dynamicMomNo,
-=======
-      setForm(p => ({
-        ...p,
->>>>>>> origin/chore/repo-cleanup
         schedule: val,
         agenda: val.agenda || '',
         chairedBy: val.chairedBy,
         startTime: val.startTime || '09:00',
         endTime: val.endTime || '10:00',
-<<<<<<< HEAD
         attendanceList: participants,
         details: syncMeetNumbers(dynamicMomNo, p.details)
-=======
-        attendanceList: participants
->>>>>>> origin/chore/repo-cleanup
       }));
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
@@ -531,21 +522,10 @@ export default function AddMeetingMinutes() {
                               type={att.attendanceStatus === 'Absent' ? 'text' : 'time'} 
                               size="small" 
                               value={att.attendanceStatus === 'Absent' ? '' : att.inTime} 
-<<<<<<< HEAD
                               InputProps={{ readOnly: true }}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
                               sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' }, bgcolor: 'grey.50' }} 
-=======
-                              onChange={(e) => {
-                                const list = [...form.attendanceList];
-                                list[idx].inTime = e.target.value;
-                                setForm({...form, attendanceList: list});
-                              }} 
-                              placeholder="" 
-                              InputLabelProps={{ shrink: true }} 
-                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} 
->>>>>>> origin/chore/repo-cleanup
                             />
                           </TableCell>
                           <TableCell>
@@ -558,7 +538,6 @@ export default function AddMeetingMinutes() {
                                 list[idx].outTime = e.target.value;
                                 setForm({...form, attendanceList: list});
                               }} 
-<<<<<<< HEAD
                               disabled={att.employee?.id !== form.schedule?.host?.id}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
@@ -566,11 +545,6 @@ export default function AddMeetingMinutes() {
                                 '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' },
                                 bgcolor: att.employee?.id === form.schedule?.host?.id ? 'inherit' : 'grey.50'
                               }} 
-=======
-                              placeholder="" 
-                              InputLabelProps={{ shrink: true }} 
-                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' } }} 
->>>>>>> origin/chore/repo-cleanup
                             />
                           </TableCell>
                           <TableCell>

@@ -1,10 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Stack, Tooltip, IconButton, Button } from '@mui/material';
-<<<<<<< HEAD
 import { IconRefresh, IconMail, IconPlus } from '@tabler/icons-react';
-=======
-import { IconFileDownload, IconRefresh, IconMail, IconPlus } from '@tabler/icons-react';
->>>>>>> origin/chore/repo-cleanup
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
@@ -13,12 +9,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { format } from 'date-fns';
 
 import MainCard from 'ui-component/cards/MainCard';
-<<<<<<< HEAD
 import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
-=======
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
-import { exportToExcel } from 'utils/excelExport';
->>>>>>> origin/chore/repo-cleanup
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import WorkItemMasterDialog from './WorkItemMasterDialog';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -138,34 +129,7 @@ export default function EnquiryDashboard() {
     }
   };
 
-<<<<<<< HEAD
 
-=======
-  const handleExport = () => {
-    const exportData = filteredRows.map((r) => ({
-      'WI NO': r.wiNo,
-      'DATE & TIME': r.dateTime,
-      'CATEGORY': r.category,
-      'CUST CODE': r.custCode,
-      'CUST NAME': r.custName,
-      'FROM': r.from,
-      'TO': r.to,
-      'SUBJECT': r.subject,
-      'NO OF ITEMS': r.noOfItems,
-      'Enquiry No': r.enquiryNo,
-      'Enq Entry': r.enqEntry,
-      'Quote No': r.quoteNo,
-      'Quote Entry': r.quoteEntry,
-      'Sale Order No': r.saleOrderNo,
-      'Sale Order Entr': r.saleOrderEntr,
-      'Att': r.att,
-      'Mode': r.mode,
-      'Updated User Id': r.updatedUserId,
-      'Updated Date Tim': r.updatedDateTime
-    }));
-    exportToExcel(exportData, 'Enquiry_Dashboard');
-  };
->>>>>>> origin/chore/repo-cleanup
 
   const filteredRows = useMemo(() => {
     return data
@@ -238,7 +202,6 @@ export default function EnquiryDashboard() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-<<<<<<< HEAD
           <BOSExportButton
             data={filteredRows}
             filename="Enquiry_Dashboard"
@@ -255,11 +218,6 @@ export default function EnquiryDashboard() {
               { header: 'Mode', key: 'mode' }
             ]}
           />
-=======
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export
-          </Button>
->>>>>>> origin/chore/repo-cleanup
           <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

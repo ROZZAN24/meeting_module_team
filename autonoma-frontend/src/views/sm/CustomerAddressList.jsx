@@ -1,25 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/material';
-<<<<<<< HEAD
 import { IconRefresh, IconPlus, IconMapPin } from '@tabler/icons-react';
-=======
-import { IconFileDownload, IconRefresh, IconPlus, IconMapPin } from '@tabler/icons-react';
->>>>>>> origin/chore/repo-cleanup
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
-<<<<<<< HEAD
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
-=======
-import { exportToExcel } from 'utils/excelExport';
-import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnExport, btnNew } from 'ui-component/bos';
->>>>>>> origin/chore/repo-cleanup
 import AddCustomerDetailsDialog from './AddCustomerDetailsDialog';
 
 // ==============================|| SM - CUSTOMER ADDRESS LIST ||============================== //
@@ -36,15 +25,11 @@ const columns = [
   { id: 'pincode', label: 'Pincode', minWidth: 100 },
   { id: 'contactName', label: 'Contact Name', minWidth: 120 },
   { id: 'contactNo', label: 'Contact No', minWidth: 120 },
-<<<<<<< HEAD
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
-=======
-  { id: 'status', label: 'Status', minWidth: 100 }
->>>>>>> origin/chore/repo-cleanup
 ];
 
 export default function CustomerAddressList() {
@@ -117,27 +102,7 @@ export default function CustomerAddressList() {
     'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
 
-<<<<<<< HEAD
 
-=======
-  const handleExport = () => {
-    const exportData = filteredRows.map((r, i) => ({
-      '#': i + 1,
-      'Customer Name (I)': r.invoiceName,
-      'Shipment': r.shipment,
-      'Address': r.address,
-      'City': r.city,
-      'District': r.district,
-      'State': r.state,
-      'Country': r.country,
-      'Pincode': r.pincode,
-      'Contact Name': r.contactName,
-      'Contact No': r.contactNo,
-      'Status': r.status
-    }));
-    exportToExcel(exportData, 'Customer_Addresses');
-  };
->>>>>>> origin/chore/repo-cleanup
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
@@ -180,7 +145,6 @@ export default function CustomerAddressList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-<<<<<<< HEAD
           <BOSExportButton
             data={filteredRows}
             filename="Customer_Addresses"
@@ -198,11 +162,6 @@ export default function CustomerAddressList() {
               { header: 'Status', key: 'status' }
             ]}
           />
-=======
-          <Button variant="outlined" color="primary" size="medium" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={btnExport}>
-            Export Excel
-          </Button>
->>>>>>> origin/chore/repo-cleanup
           <Tooltip title={shortcutTooltip('Add New Address', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

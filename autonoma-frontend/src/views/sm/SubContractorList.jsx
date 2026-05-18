@@ -27,15 +27,11 @@ const columns = [
   { id: 'city', label: 'City', minWidth: 120 },
   { id: 'state', label: 'State', minWidth: 120 },
   { id: 'isoNo', label: 'ISO No', minWidth: 120 },
-<<<<<<< HEAD
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
-=======
-  { id: 'status', label: 'Status', minWidth: 100 }
->>>>>>> origin/chore/repo-cleanup
 ];
 
 export default function SubContractorList() {
