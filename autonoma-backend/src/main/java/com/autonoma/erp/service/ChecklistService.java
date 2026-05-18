@@ -75,7 +75,6 @@ public class ChecklistService {
      * @return A paginated result set of MasterChecklist entities.
      */
     public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy,
-<<<<<<< HEAD
             String searchValue, String dualCheck, String verifyStatus,
             String seqNo, String frequency, String checkingPoint, String description,
             String stockLink, String photoRequired, String carryForward, Pageable pageable) {
@@ -83,13 +82,6 @@ public class ChecklistService {
             List<Predicate> predicates = new ArrayList<>();
 
             if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
-=======
-            String searchValue, String dualCheck, String verifyStatus, Pageable pageable) {
-        return masterRepo.findAll((root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            if (dualCheck != null && !dualCheck.isEmpty()) {
->>>>>>> origin/main
                 predicates.add(cb.equal(root.get("dualCheck"), dualCheck));
             }
 
@@ -110,7 +102,6 @@ public class ChecklistService {
                 predicates.add(cb.equal(deptJoin.get("departmentName"), department));
             }
 
-<<<<<<< HEAD
             if (seqNo != null && !seqNo.isEmpty()) {
                 predicates.add(cb.like(cb.lower(root.get("seqNo")), "%" + seqNo.toLowerCase() + "%"));
             }
@@ -139,8 +130,6 @@ public class ChecklistService {
                 predicates.add(cb.equal(root.get("carryForward"), carryForward));
             }
 
-=======
->>>>>>> origin/main
             if (searchValue != null && !searchValue.isEmpty()) {
                 String searchTerm = "%" + searchValue.toLowerCase() + "%";
                 if (searchBy != null && !searchBy.isEmpty()) {
@@ -237,11 +226,8 @@ public class ChecklistService {
             existing.setStockLink(checklist.getStockLink());
             existing.setPhotoRequired(checklist.getPhotoRequired());
             existing.setVerificationRequired(checklist.getVerificationRequired());
-<<<<<<< HEAD
             existing.setDualCheck(checklist.getDualCheck());
             existing.setCarryForward(checklist.getCarryForward());
-=======
->>>>>>> origin/main
             existing.setStatus(checklist.getStatus());
             existing.setVerifyStatus(checklist.getVerifyStatus());
 

@@ -174,7 +174,6 @@ export default function SearchSection() {
 
   const currentPrefs = useSelector((state) => state.search.preferences[location.pathname]);
 
-<<<<<<< HEAD
   // Track the current filterConfig signature to detect page-level changes
   const configSignature = useMemo(
     () => combinedConfig.filter(f => f.isStarred).map(f => f.id).join(','),
@@ -195,31 +194,13 @@ export default function SearchSection() {
         if (starredDefaults.length > 0) {
           setVisibleFilterIds(starredDefaults);
         } else {
-=======
-  useEffect(() => {
-    if (combinedConfig && combinedConfig.length > 0) {
-      if (currentPrefs !== undefined) {
-        setVisibleFilterIds(currentPrefs);
-      } else {
-        // Rule 2: Only fields with isStarred OR isRequired (from * fields) are selected by default
-        const defaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
-        
-        if (defaults.length > 0) {
-          setVisibleFilterIds(defaults);
-        } else {
-          // Fallback if nothing is marked required
->>>>>>> origin/main
           const firstTwo = combinedConfig.slice(0, 2).map(f => f.id);
           setVisibleFilterIds(firstTwo);
         }
       }
     }
-<<<<<<< HEAD
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configSignature, location.pathname]);
-=======
-  }, [combinedConfig, location.pathname, currentPrefs]);
->>>>>>> origin/main
 
   const updateVisibleFilters = (newIds) => {
     setVisibleFilterIds(newIds);
@@ -430,10 +411,7 @@ export default function SearchSection() {
                                     value={filters[`${field.id}Start`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-<<<<<<< HEAD
                                     inputProps={{ min: new Date().toISOString().split('T')[0] }}
-=======
->>>>>>> origin/main
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
@@ -444,10 +422,7 @@ export default function SearchSection() {
                                     value={filters[`${field.id}End`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-<<<<<<< HEAD
                                     inputProps={{ min: new Date().toISOString().split('T')[0] }}
-=======
->>>>>>> origin/main
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                 </Stack>
@@ -459,10 +434,7 @@ export default function SearchSection() {
                                   value={filters[field.id] || ''}
                                   onChange={(e) => handleFilterChange(field.id, e.target.value)}
                                   slotProps={{ inputLabel: { shrink: true } }}
-<<<<<<< HEAD
                                   inputProps={{ min: new Date().toISOString().split('T')[0] }}
-=======
->>>>>>> origin/main
                                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                 />
                               ) : (
@@ -599,7 +571,6 @@ export default function SearchSection() {
                             color="inherit"
                             size="small"
                             startIcon={<IconRefresh size={15} />}
-<<<<<<< HEAD
                             onClick={() => {
                               dispatch(resetFilters());
                               if (combinedConfig && combinedConfig.length > 0) {
@@ -608,9 +579,6 @@ export default function SearchSection() {
                                 updateVisibleFilters(defaultIds);
                               }
                             }}
-=======
-                            onClick={() => dispatch(resetFilters())}
->>>>>>> origin/main
                             sx={{ borderRadius: '10px', fontWeight: 600, border: '1.5px solid', borderColor: 'text.secondary', px: 2, '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' } }}
                           >
                             Reset

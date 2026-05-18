@@ -165,11 +165,8 @@ const DEPARTMENTS = [
   'QUALITY', 'PURCHASE', 'LOGISTICS', 'MARKETING', 'IT', 'MANAGEMENT'
 ];
 
-<<<<<<< HEAD
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-=======
->>>>>>> origin/main
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="down" ref={ref} {...props} />;
 });
@@ -187,30 +184,20 @@ const LabelInput = ({ label, required, children }) => (
 );
 LabelInput.propTypes = { label: PropTypes.string, required: PropTypes.bool, children: PropTypes.node };
 
-<<<<<<< HEAD
 export default function AddCheckListDialog({ open, handleClose, onSave, initialData, isAmendment }) {
-=======
-export default function AddCheckListDialog({ open, handleClose, onSave, initialData }) {
->>>>>>> origin/main
   const theme = useTheme();
 
   const [seqNo, setSeqNo] = useState('');
   const [category, setCategory] = useState('');
-<<<<<<< HEAD
   const [effectiveFrom, setEffectiveFrom] = useState('');
-=======
->>>>>>> origin/main
   const [expiryDate, setExpiryDate] = useState('');
   const [reminderDays, setReminderDays] = useState('');
   const [reminderDate, setReminderDate] = useState('');
   const [renewalPoint, setRenewalPoint] = useState('');
   const [frequency, setFrequency] = useState('');
-<<<<<<< HEAD
   const [weekDays, setWeekDays] = useState([]);
   const [repeatEveryValue, setRepeatEveryValue] = useState('');
   const [repeatEveryUnit, setRepeatEveryUnit] = useState('');
-=======
->>>>>>> origin/main
   const [description, setDescription] = useState('');
   const [department, setDepartment] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
@@ -219,10 +206,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [photoRequired, setPhotoRequired] = useState('');
   const [dualCheck, setDualCheck] = useState('');
   const [carryForward, setCarryForward] = useState('');
-<<<<<<< HEAD
   const [amendmentReason, setAmendmentReason] = useState('');
-=======
->>>>>>> origin/main
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const speechRef = useRef(null);
@@ -289,28 +273,21 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       if (initialData) {
         setSeqNo(initialData.seqNo || '');
         setCategory(initialData.category || '');
-<<<<<<< HEAD
         setEffectiveFrom(initialData.effectiveFrom || '');
-=======
->>>>>>> origin/main
         setExpiryDate(initialData.expiryDate || '');
         setReminderDays(initialData.reminderDays || '');
         setReminderDate(initialData.reminderDate || '');
         setRenewalPoint(initialData.checkingPoint || '');
         setFrequency(initialData.frequency || '');
-<<<<<<< HEAD
         setWeekDays(initialData.weekDays ? (Array.isArray(initialData.weekDays) ? initialData.weekDays : initialData.weekDays.split(',')) : []);
         setRepeatEveryValue(initialData.repeatEveryValue || '');
         setRepeatEveryUnit(initialData.repeatEveryUnit || '');
-=======
->>>>>>> origin/main
         setDescription(initialData.description || '');
         setDepartment((initialData.departments || []).map(d => d.departmentName));
         setStockLink(initialData.stockLink || '');
         setPhotoRequired(initialData.photoRequired || '');
         setDualCheck(initialData.dualCheck || '');
         setCarryForward(initialData.carryForward || '');
-<<<<<<< HEAD
         setAmendmentReason(initialData.amendmentReason || '');
         setUploadedFiles([]);
         setScannedFiles([]);
@@ -321,15 +298,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
         setWeekDays([]); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
-=======
-        setUploadedFiles([]);
-        setScannedFiles([]);
-      } else {
-        setSeqNo(''); setCategory(''); setExpiryDate(''); setReminderDays('');
-        setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
-        setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-        setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
->>>>>>> origin/main
         axios.get('/api/qms/checklist/next-sequence')
           .then(res => setSeqNo(String(res.data.nextSeqNo).padStart(3, '0')))
           .catch(() => {});
@@ -344,7 +312,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     if (e.target.files?.length) setScannedFiles(prev => [...prev, ...Array.from(e.target.files)]);
   };
   const handleClear = () => {
-<<<<<<< HEAD
     setSeqNo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
     setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
@@ -379,23 +346,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       reminderDate: reminderDate || null,
       reminderDays: reminderDays ? Number(reminderDays) : null,
       amendmentReason: amendmentReason || null,
-=======
-    setSeqNo(''); setCategory(''); setExpiryDate(''); setReminderDays('');
-    setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
-    setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-    setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
-  };
-  const handleSave = () => {
-    if (!category || !frequency || !renewalPoint || !description || department.length === 0) {
-      alert('Please fill in all required fields'); return;
-    }
-    if (onSave) onSave({
-      seqNo, category, expiryDate, reminderDays, reminderDate,
-      checkingPoint: renewalPoint, frequency, description, department,
-      stockLink, photoRequired, dualCheck, carryForward,
-      uploadedFiles: uploadedFiles.map(f => f.name),
-      scannedFiles: scannedFiles.map(f => f.name)
->>>>>>> origin/main
     });
     handleClose();
   };
@@ -432,16 +382,11 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               <LabelInput label="Frequency" required>
                 <Select fullWidth size="small" value={frequency} onChange={e => setFrequency(e.target.value)} displayEmpty>
                   <MenuItem value=""><em>-Select-</em></MenuItem>
-<<<<<<< HEAD
                   {['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY', 'CUSTOM'].map(f => (
-=======
-                  {['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY'].map(f => (
->>>>>>> origin/main
                     <MenuItem key={f} value={f}>{f}</MenuItem>
                   ))}
                 </Select>
               </LabelInput>
-<<<<<<< HEAD
               
               {frequency === 'WEEKLY' && (
                 <LabelInput label="Week Days" required>
@@ -489,20 +434,12 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               </LabelInput>
               <LabelInput label="Expiry Date">
                 <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
-=======
-              <LabelInput label="Expiry Date">
-                <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} />
->>>>>>> origin/main
               </LabelInput>
               <LabelInput label="Reminder Days">
                 <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => setReminderDays(e.target.value)} />
               </LabelInput>
               <LabelInput label="Reminder Date">
-<<<<<<< HEAD
                 <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
-=======
-                <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} />
->>>>>>> origin/main
               </LabelInput>
               <LabelInput label="Renewal Point" required>
                 <TextField fullWidth size="small" value={renewalPoint} onChange={e => setRenewalPoint(e.target.value)} />
@@ -543,7 +480,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               <LabelInput label="Department" required>
                 <Select
                   multiple fullWidth size="small" value={department}
-<<<<<<< HEAD
                   onChange={e => {
                     const val = e.target.value;
                     if (val.includes('Select All')) {
@@ -567,11 +503,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     <ListItemText primary="Select All" primaryTypographyProps={{ fontWeight: 700 }} />
                   </MenuItem>
                   <Divider />
-=======
-                  onChange={e => setDepartment(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                  renderValue={sel => sel.length === 0 ? <em>-Select-</em> : sel.join(', ')}
-                >
->>>>>>> origin/main
                   {DEPARTMENTS.map(dept => (
                     <MenuItem key={dept} value={dept}>
                       <Checkbox checked={department.includes(dept)} size="small" />
@@ -596,7 +527,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                   </LabelInput>
                 ))
               }
-<<<<<<< HEAD
 
               {isAmendment && (
                 <LabelInput label="Amendment Reason" required>
@@ -611,8 +541,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                   />
                 </LabelInput>
               )}
-=======
->>>>>>> origin/main
             </Grid>
 
             {/* ── RIGHT: Upload + Scan boxes (fill remaining space) ── */}

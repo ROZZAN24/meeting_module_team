@@ -21,21 +21,10 @@ public interface InductionAssignmentRepository extends JpaRepository<InductionAs
     @Query("SELECT a FROM InductionAssignment a WHERE a.trainerEmpCode = :trainerEmpCode AND a.inductionStatus = 'ACTIVE'")
     List<InductionAssignment> findByTrainerEmpCode(@org.springframework.data.repository.query.Param("trainerEmpCode") String trainerEmpCode);
 
-<<<<<<< HEAD
     // === Trainee page: only assignments for the current employee with TRAINING GIVEN status ===
     @Query("SELECT a FROM InductionAssignment a WHERE a.empCode = :empCode AND a.currentStatus = 'TRAINING GIVEN' AND a.inductionStatus = 'ACTIVE'")
     List<InductionAssignment> findTraineeRecords(@org.springframework.data.repository.query.Param("empCode") String empCode);
 
-=======
-    // === Trainee page: only assignments for the current employee with TRAINING GIVEN or COMPLETED status ===
-    @Query("SELECT a FROM InductionAssignment a WHERE a.empCode = :empCode AND a.currentStatus IN ('TRAINING GIVEN', 'COMPLETED') AND a.inductionStatus = 'ACTIVE'")
-    List<InductionAssignment> findTraineeRecords(@org.springframework.data.repository.query.Param("empCode") String empCode);
-
-    // === Admin view for all trainee records ===
-    @Query("SELECT a FROM InductionAssignment a WHERE a.currentStatus IN ('TRAINING GIVEN', 'COMPLETED') AND a.inductionStatus = 'ACTIVE'")
-    List<InductionAssignment> findAllTraineeRecordsForAdmin();
-
->>>>>>> origin/main
     // === Check if all rounds are completed for an employee ===
     @Query("SELECT COUNT(a) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus != 'COMPLETED'")
     long countIncompleteByEmpCode(@org.springframework.data.repository.query.Param("empCode") String empCode);

@@ -71,14 +71,6 @@ public class InductionAssignment {
     @Temporal(TemporalType.TIMESTAMP)
     private Date trainingCompletedAt;
 
-<<<<<<< HEAD
-=======
-    @Transient
-    private Integer totalQuestions;
-
-    @Transient
-    private Integer completedQuestions;
->>>>>>> origin/main
 
     @Column(name = "created_by")
     private String createdBy;

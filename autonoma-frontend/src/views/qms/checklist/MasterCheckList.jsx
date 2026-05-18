@@ -24,7 +24,6 @@ import FormControl from '@mui/material/FormControl';
 import FormLabel from '@mui/material/FormLabel';
 import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
-<<<<<<< HEAD
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import axios from 'utils/axios';
@@ -40,16 +39,6 @@ import {
   IconUserPlus, IconEdit, IconPlus, IconFileDots, 
   IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX 
 } from '@tabler/icons-react';
-=======
-import axios from 'utils/axios';
-
-import { useSelector } from 'react-redux';
-
-import MainCard from 'ui-component/cards/MainCard';
-import AddCheckListDialog from './AddCheckListDialog';
-
-import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
->>>>>>> origin/main
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -69,11 +58,8 @@ const columns = [
   { id: 'itemCode', label: 'Item Code', minWidth: 120 },
   { id: 'qty', label: 'Qty', minWidth: 80 },
   { id: 'photoRequired', label: 'Photo Required', minWidth: 100 },
-<<<<<<< HEAD
   { id: 'dualCheck', label: 'Dual Check', minWidth: 100 },
   { id: 'carryForward', label: 'Carry Forward', minWidth: 100 },
-=======
->>>>>>> origin/main
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 120 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
@@ -95,7 +81,6 @@ const DEPARTMENTS = [
 ];
 
 const DEFAULT_FILTERS = {
-<<<<<<< HEAD
   seqNo: '',
   category: 'All',
   frequency: 'All',
@@ -193,17 +178,6 @@ const filterConfig = [
   ]},
 ];
 
-=======
-  status: 'All',
-  taskStatus: 'All',
-  recordStatus: 'All',
-  category: 'All',
-  departments: [],
-  employeeName: '',
-  leftCompany: 'All'
-};
-
->>>>>>> origin/main
 // Collapsible filter section
 function FilterSection({ title, open, onToggle, children }) {
   return (
@@ -218,14 +192,10 @@ function FilterSection({ title, open, onToggle, children }) {
 }
 
 export default function MasterCheckList() {
-<<<<<<< HEAD
   const dispatch = useDispatch();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isAmendment, setIsAmendment] = useState(false);
-=======
-  const [dialogOpen, setDialogOpen] = useState(false);
->>>>>>> origin/main
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -233,16 +203,12 @@ export default function MasterCheckList() {
   const [loading, setLoading] = useState(false);
   
   const [selectedRowId, setSelectedRowId] = useState(null);
-<<<<<<< HEAD
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDoubleTap, setShowDoubleTap] = useState(false);
-=======
->>>>>>> origin/main
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-<<<<<<< HEAD
   const [anchorEl, setAnchorEl] = useState(null);
 
   // Dynamic filter visibility — now all are starred by default, no extra toggles needed
@@ -263,8 +229,6 @@ export default function MasterCheckList() {
       dispatch(setTableConfig(null));
     };
   }, [dispatch]);
-=======
->>>>>>> origin/main
 
   // Sync global search filters with local filters
   useEffect(() => {
@@ -273,7 +237,6 @@ export default function MasterCheckList() {
         const newFilters = { ...prev };
         let hasChanges = false;
         
-<<<<<<< HEAD
         const filterKeys = [
           'category', 'status', 'taskStatus', 'recordStatus', 'seqNo', 'frequency',
           'checkingPoint', 'description', 'departments', 'stockLink',
@@ -295,20 +258,6 @@ export default function MasterCheckList() {
             }
           }
         });
-=======
-        if (globalFilters.category && globalFilters.category !== prev.category) {
-          newFilters.category = globalFilters.category;
-          hasChanges = true;
-        }
-        if (globalFilters.status && globalFilters.status !== prev.status) {
-          newFilters.status = globalFilters.status;
-          hasChanges = true;
-        }
-        if (globalFilters.recordStatus && globalFilters.recordStatus !== prev.recordStatus) {
-          newFilters.recordStatus = globalFilters.recordStatus;
-          hasChanges = true;
-        }
->>>>>>> origin/main
         
         return hasChanges ? newFilters : prev;
       });
@@ -316,7 +265,6 @@ export default function MasterCheckList() {
   }, [globalFilters]);
 
   // Section toggles
-<<<<<<< HEAD
   const [openSections, setOpenSections] = useState({
     seqNo: true,
     category: true,
@@ -330,9 +278,6 @@ export default function MasterCheckList() {
     carryForward: false
   });
 
-=======
-  const [openSections, setOpenSections] = useState({ status:true, taskStatus:true, recordStatus:true, category:true, department:false, employee:false, leftCompany:false });
->>>>>>> origin/main
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   const fetchChecklists = useCallback(async () => {
@@ -342,7 +287,6 @@ export default function MasterCheckList() {
         page,
         size,
         category: filters.category !== 'All' ? filters.category : undefined,
-<<<<<<< HEAD
         department: filters.departments.length > 0 ? filters.departments[0] : undefined,
         seqNo: filters.seqNo || undefined,
         frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
@@ -357,11 +301,6 @@ export default function MasterCheckList() {
         taskStatus: filters.taskStatus !== 'All' ? filters.taskStatus : undefined,
         searchValue: searchQuery || undefined,
         searchBy: (searchQuery && filters.searchBy) ? filters.searchBy : undefined
-=======
-        department: filters.departments.length > 0 ? filters.departments[0] : undefined, // Simplification for now
-        searchValue: searchQuery || undefined,
-        searchBy: undefined
->>>>>>> origin/main
       };
       const response = await axios.get('/api/qms/checklist', { params });
       setRows(response.data.content);
@@ -371,11 +310,7 @@ export default function MasterCheckList() {
     } finally {
       setLoading(false);
     }
-<<<<<<< HEAD
   }, [page, size, filters, visibleExtraFilters, searchQuery]);
-=======
-  }, [page, size, filters, searchQuery]);
->>>>>>> origin/main
 
   useEffect(() => {
     fetchChecklists();
@@ -394,7 +329,6 @@ export default function MasterCheckList() {
     setPage(0);
   };
 
-<<<<<<< HEAD
   const addExtraFilter = (key) => {
     setVisibleExtraFilters((p) => ({ ...p, [key]: true }));
   };
@@ -455,25 +389,10 @@ export default function MasterCheckList() {
       departments.forEach((d) => qs.append('departments', d));
 
       await axios.post(`/api/qms/checklist?${qs.toString()}`, body);
-=======
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
-    setPage(0);
-  };
-
-  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.taskStatus !== 'All' ? 1 : 0) + (filters.recordStatus !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.employeeName ? 1 : 0) + (filters.leftCompany !== 'All' ? 1 : 0);
-
-  const handleSaveData = async (data) => {
-    try {
-      await axios.post('/api/qms/checklist', data, {
-        params: { departments: (data.department || []).join(',') }
-      });
->>>>>>> origin/main
       fetchChecklists();
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to save checklist:', error);
-<<<<<<< HEAD
       const msg = error?.message || error?.error || 'Unknown error';
       alert(`Failed to save: ${msg}`);
     }
@@ -504,11 +423,6 @@ export default function MasterCheckList() {
     }
     setAssignDialogOpen(true);
   };
-=======
-    }
-  };
-  const handleEditClick = () => { if (!selectedRowId) { alert('Please select a row first!'); return; } setDialogOpen(true); };
->>>>>>> origin/main
 
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
 
@@ -517,17 +431,10 @@ export default function MasterCheckList() {
       title="Master Check List"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
-<<<<<<< HEAD
           <Button variant="contained" color="secondary" size="small" startIcon={<IconUserPlus size={18}/>} onClick={handleAssignClick}>Assign To</Button>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>} onClick={handleAmendmentClick}>Amendment</Button>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
           <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setIsAmendment(false); setDialogOpen(true); }}>Add</Button>
-=======
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconUserPlus size={18}/>}>Assign To</Button>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>}>Amendment</Button>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setDialogOpen(true); }}>Add</Button>
->>>>>>> origin/main
           <IconButton size="small" onClick={() => setDrawerOpen(true)}
             sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
             <IconAdjustmentsHorizontal size={20}/>
@@ -537,7 +444,6 @@ export default function MasterCheckList() {
       }
     >
       <Box sx={{ p: 0.5, pb: 0 }}>
-<<<<<<< HEAD
         {activeCount > 0 && (
           <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
             <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
@@ -586,33 +492,11 @@ export default function MasterCheckList() {
               ))}
             </TableRow>
           </TableHead>
-=======
-      {activeCount > 0 && (
-        <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
-          <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
-          {filters.taskStatus !== 'All' && <Chip label={`Task: ${filters.taskStatus}`} size="small" color="primary" onDelete={() => setFilter('taskStatus','All')}/>}
-          {filters.recordStatus !== 'All' && <Chip label={`Record: ${filters.recordStatus}`} size="small" color="primary" onDelete={() => setFilter('recordStatus','All')}/>}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
-          {filters.departments.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
-          {filters.employeeName && <Chip label={`Employee: ${filters.employeeName}`} size="small" color="warning" onDelete={() => setFilter('employeeName','')}/>}
-          {filters.leftCompany !== 'All' && <Chip label={`Left: ${filters.leftCompany}`} size="small" color="error" onDelete={() => setFilter('leftCompany','All')}/>}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
-        </Box>
-      )}
-
-      </Box>
-
-      <TableContainer component={Paper} sx={{ maxHeight:'calc(100vh - 380px)', borderTop:'1px solid', borderColor:'divider', borderRadius: 0, '&::-webkit-scrollbar':{width:10,height:10}, '&::-webkit-scrollbar-track':{backgroundColor:'background.paper'}, '&::-webkit-scrollbar-thumb':{backgroundColor:'grey.400',borderRadius:2} }}>
-        <Table stickyHeader sx={{ minWidth: 4000 }} aria-label="checklist table">
-          <TableHead><TableRow>{columns.map((col,i) => <TableCell key={i} sx={{ minWidth: col.minWidth || 200, bgcolor:'primary.dark', color:'white', fontWeight:'bold', whiteSpace:'nowrap', borderRight:'1px solid rgba(255,255,255,0.2)' }}>{col.label}</TableCell>)}</TableRow></TableHead>
->>>>>>> origin/main
           <TableBody>
             {loading ? (
               <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
             ) : rows.length === 0 ? (
               <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-<<<<<<< HEAD
             ) : rows.map((row, idx) => (
               <TableRow
                 key={row.id}
@@ -655,36 +539,6 @@ export default function MasterCheckList() {
                 <TableCell sx={{ minWidth: 200 }}>{row.rejReason}</TableCell>
                 <TableCell sx={{ minWidth: 80, align:'center' }}>-</TableCell>
                 </TableRow>
-=======
-            ) : rows.map((row,idx) => (
-              <TableRow key={row.id} hover onClick={() => setSelectedRowId(row.id)} sx={{ cursor:'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}>
-                <TableCell sx={{ minWidth: 200 }}>{page * size + idx + 1}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.seqNo}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.checkingPoint}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.category}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.frequency}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.effectiveFrom}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.reminderDays}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.expiryDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.reminderDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.stockLink}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.assignTo}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.assignDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.itemCode}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.qty}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.photoRequired}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.createdBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.updatedBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.status}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.taskStatus}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifyStatus}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifiedBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifiedDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.rejReason}</TableCell>
-              </TableRow>
->>>>>>> origin/main
             ))}
           </TableBody>
         </Table>
@@ -699,7 +553,6 @@ export default function MasterCheckList() {
         onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
         rowsPerPageOptions={[5, 10, 25, 50]}
         sx={{
-<<<<<<< HEAD
           '& .MuiTablePagination-toolbar': { 
             justifyContent: 'center', 
             flexWrap: 'nowrap',
@@ -725,14 +578,6 @@ export default function MasterCheckList() {
         }}
       />
 
-=======
-          '& .MuiTablePagination-toolbar': { justifyContent: 'center' },
-          '& .MuiTablePagination-spacer': { display: 'none' }
-        }}
-      />
-
-
->>>>>>> origin/main
       {/* ===== FILTER DRAWER ===== */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx:{ width:320 } }}>
         <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', p:2, borderBottom:'1px solid', borderColor:'divider' }}>
@@ -740,48 +585,21 @@ export default function MasterCheckList() {
           <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20}/></IconButton>
         </Box>
 
-<<<<<<< HEAD
         <Box sx={{ overflowY:'auto', flex:1, py:1 }}>
           
           {/* ================= DEFAULT FILTERS ================= */}
           <FilterSection title="Sequence No" open={openSections.seqNo} onToggle={() => toggleSection('seqNo')}>
             <TextField size="small" fullWidth placeholder="Search sequence no..." value={filters.seqNo} onChange={(e) => setFilter('seqNo', e.target.value)}/>
-=======
-        <Box sx={{ overflowY:'auto', flex:1 }}>
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              {['All','Pending for Verify','Verified','Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Task Status" open={openSections.taskStatus} onToggle={() => toggleSection('taskStatus')}>
-            <FormControl><RadioGroup value={filters.taskStatus} onChange={(e) => setFilter('taskStatus', e.target.value)}>
-              {['All','Not Assigned','Assigned'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Record Status" open={openSections.recordStatus} onToggle={() => toggleSection('recordStatus')}>
-            <FormControl><RadioGroup value={filters.recordStatus} onChange={(e) => setFilter('recordStatus', e.target.value)}>
-              {['All','Active','In Active'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
->>>>>>> origin/main
           </FilterSection>
           <Divider/>
 
           <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
             <FormControl><RadioGroup value={filters.category} onChange={(e) => setFilter('category', e.target.value)}>
-<<<<<<< HEAD
               {['All','RENEWAL','CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-=======
-              {['All','RENEWAL','CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>}/>)}
->>>>>>> origin/main
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
 
-<<<<<<< HEAD
           <FilterSection title="Frequency" open={openSections.frequency} onToggle={() => toggleSection('frequency')}>
             <FormControl><RadioGroup value={filters.frequency} onChange={(e) => setFilter('frequency', e.target.value)}>
               {['All','DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
@@ -801,16 +619,11 @@ export default function MasterCheckList() {
 
           <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
             <Box sx={{ maxHeight:150, overflowY:'auto' }}>
-=======
-          <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
-            <Box sx={{ maxHeight:250, overflowY:'auto' }}>
->>>>>>> origin/main
               {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
             </Box>
           </FilterSection>
           <Divider/>
 
-<<<<<<< HEAD
           <FilterSection title="Stock Link" open={openSections.stockLink} onToggle={() => toggleSection('stockLink')}>
             <FormControl><RadioGroup value={filters.stockLink} onChange={(e) => setFilter('stockLink', e.target.value)}>
               {['All','YES','NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
@@ -902,18 +715,6 @@ export default function MasterCheckList() {
             </Box>
           )}
 
-=======
-          <FilterSection title="Employee Name" open={openSections.employee} onToggle={() => toggleSection('employee')}>
-            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.employeeName} onChange={(e) => setFilter('employeeName', e.target.value)}/>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Left Company" open={openSections.leftCompany} onToggle={() => toggleSection('leftCompany')}>
-            <FormControl><RadioGroup value={filters.leftCompany} onChange={(e) => setFilter('leftCompany', e.target.value)}>
-              {['All','No','Yes'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
->>>>>>> origin/main
         </Box>
 
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
@@ -922,12 +723,8 @@ export default function MasterCheckList() {
         </Box>
       </Drawer>
 
-<<<<<<< HEAD
       <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow} isAmendment={isAmendment}/>
       <ChecklistAssignDialog open={assignDialogOpen} onClose={() => { setAssignDialogOpen(false); fetchChecklists(); }} checklistId={selectedRowId} initialData={activeRow}/>
-=======
-      <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow}/>
->>>>>>> origin/main
     </MainCard>
   );
 }

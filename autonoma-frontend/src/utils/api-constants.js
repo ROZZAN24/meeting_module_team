@@ -35,13 +35,7 @@ export const API_PATHS = {
     MEETINGS: `${API_BASE}/qms/meetings`,
     MEETING_SCHEDULES: `${API_BASE}/qms/meeting-schedules`,
     MEETING_ATTENDANCE: `${API_BASE}/qms/meeting-attendance`,
-<<<<<<< HEAD
     MOMS: `${API_BASE}/qms/moms`
-=======
-    MOMS: `${API_BASE}/qms/moms`,
-    MODEL_NAME: `${API_BASE}/master/qms/model-name`,
-    UOM: `${API_BASE}/master/qms/uom`
->>>>>>> origin/main
   },
 
   // Admin Module
@@ -72,20 +66,6 @@ export const API_PATHS = {
     PROCESSING_BY_ID: (id) => `${API_BASE}/ocr/processing-requests/${id}`,
   },
 
-<<<<<<< HEAD
-=======
-  NPD: {
-    ITEM_GROUP: `${API_BASE}/master/npd/item-group`,
-    ITEM_TYPE: `${API_BASE}/master/npd/item-type`,
-    ITEM_SUBTYPE: `${API_BASE}/master/npd/item-subtype`,
-    ITEM_OEM: `${API_BASE}/master/npd/oem`,
-    ITEM_OEM_MAPPING: `${API_BASE}/master/npd/oem-mapping`,
-    ITEM_MODEL: `${API_BASE}/master/npd/model`,
-    ITEM_CAPACITY: `${API_BASE}/master/npd/capacity`,
-    WIND_FARMS: `${API_BASE}/master/npd/wind-farm`
-  },
-
->>>>>>> origin/main
   // Common/Infrastructure
   FILES: `${API_BASE}/files`
 };

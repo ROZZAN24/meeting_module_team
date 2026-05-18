@@ -28,11 +28,7 @@ public class BosDocConstants {
     public static final String HRA_EMPLOYEE_SIGNATURE_PATH = "HRA/Employee Signature";
 
     // ─── QMS Sub-Paths ──────────────────────────────────────────────────
-<<<<<<< HEAD
     public static final String QMS_CHECKLIST_PATH = "QMS/Checklist";
-=======
-    public static final String QMS_CHECKLIST_PATH = "checklist/checklist master";
->>>>>>> origin/main
     public static final String QMS_AUDIT_PATH = "QMS/Audit";
     public static final String QMS_NCR_PATH = "QMS/NCR";
 
