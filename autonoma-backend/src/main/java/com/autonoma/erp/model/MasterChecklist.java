@@ -7,12 +7,15 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "qms_checklist_master")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, ignoreUnknown = true)
 public class MasterChecklist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,6 +35,15 @@ public class MasterChecklist {
 
     @Column(name = "FREQUENCY")
     private String frequency;
+
+    @Column(name = "WEEK_DAYS")
+    private String weekDays;
+
+    @Column(name = "REPEAT_EVERY_VALUE")
+    private Integer repeatEveryValue;
+
+    @Column(name = "REPEAT_EVERY_UNIT")
+    private String repeatEveryUnit;
 
     @Column(name = "EFFECTIVE_FROM")
     @Temporal(TemporalType.DATE)
@@ -87,6 +99,9 @@ public class MasterChecklist {
     @Column(name = "DUAL_CHECK")
     private String dualCheck;
 
+    @Column(name = "CARRY_FORWARD")
+    private String carryForward;
+
     @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
     private String amendmentReason;
 
@@ -134,6 +149,9 @@ public class MasterChecklist {
     private String qty;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"checklist", "hibernateLazyInitializer"})
+    @lombok.EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
     private List<ChecklistDepartment> departments;
 
     // Getters and Setters
@@ -211,4 +229,6 @@ public class MasterChecklist {
     public void setQty(String qty) { this.qty = qty; }
     public List<ChecklistDepartment> getDepartments() { return departments; }
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
+    public String getCarryForward() { return carryForward; }
+    public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
 }

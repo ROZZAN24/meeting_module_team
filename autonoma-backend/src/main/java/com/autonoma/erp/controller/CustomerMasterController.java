@@ -36,6 +36,10 @@ public class CustomerMasterController {
     public List<CustomerMaster> getAllCustomers() {
         return service.getAllCustomers();
     }
+    @GetMapping("/next-code")
+    public String getNextCode() {
+        return service.getNextCustomerCode();
+    }
 
     @PostMapping
     public CustomerMaster createCustomer(@RequestBody CustomerMaster customer) {

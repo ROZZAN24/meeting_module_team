@@ -35,7 +35,9 @@ export const API_PATHS = {
     MEETINGS: `${API_BASE}/qms/meetings`,
     MEETING_SCHEDULES: `${API_BASE}/qms/meeting-schedules`,
     MEETING_ATTENDANCE: `${API_BASE}/qms/meeting-attendance`,
-    MOMS: `${API_BASE}/qms/moms`
+    MOMS: `${API_BASE}/qms/moms`,
+    MODEL_NAME: `${API_BASE}/master/qms/model-name`,
+    UOM: `${API_BASE}/master/qms/uom`
   },
 
   // Admin Module
@@ -56,6 +58,7 @@ export const API_PATHS = {
     QUOTATIONS: `${API_BASE}/sm/quotation`,
     SEGMENTS: `${API_BASE}/sm/segments`,
     SUB_SEGMENTS: `${API_BASE}/sm/sub-segments`,
+    POTENTIAL: `${API_BASE}/master/sales/crm/potential`,
   },
 
   // OCR Module (proxied through Spring Boot)
@@ -64,6 +67,17 @@ export const API_PATHS = {
     MARK_READ: (id) => `${API_BASE}/ocr/inbox/${id}/mark-read`,
     PROCESSING: `${API_BASE}/ocr/processing-requests`,
     PROCESSING_BY_ID: (id) => `${API_BASE}/ocr/processing-requests/${id}`,
+  },
+
+  NPD: {
+    ITEM_GROUP: `${API_BASE}/master/npd/item-group`,
+    ITEM_TYPE: `${API_BASE}/master/npd/item-type`,
+    ITEM_SUBTYPE: `${API_BASE}/master/npd/item-subtype`,
+    ITEM_OEM: `${API_BASE}/master/npd/oem`,
+    ITEM_OEM_MAPPING: `${API_BASE}/master/npd/oem-mapping`,
+    ITEM_MODEL: `${API_BASE}/master/npd/model`,
+    ITEM_CAPACITY: `${API_BASE}/master/npd/capacity`,
+    WIND_FARMS: `${API_BASE}/master/npd/wind-farm`
   },
 
   // Common/Infrastructure

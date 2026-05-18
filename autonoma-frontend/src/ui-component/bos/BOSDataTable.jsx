@@ -30,7 +30,8 @@ export default function BOSDataTable({
   onEditRow,
   onDeleteRow,
   onDoubleClickRow,
-  showActions = true,
+  showActions: showActionsProp = true,
+  actionColumn,
   selectable = false,
   onSelectionChange,
   totalCount,
@@ -71,6 +72,11 @@ export default function BOSDataTable({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const baseRowSx = getTableRowSx(isDark);
+
+  const showActions = useMemo(() => {
+    if (showActionsProp === false) return false;
+    return Boolean(onEditRow || onDeleteRow || actionColumn);
+  }, [showActionsProp, onEditRow, onDeleteRow, actionColumn]);
 
   const searchQuery = useSelector((state) => state.search?.query || '');
   const globalFilters = useSelector((state) => state.search?.filters || {});
@@ -244,7 +250,7 @@ export default function BOSDataTable({
 
                 return (
                   <TableRow 
-                    key={row.id ?? idx}
+                    key={row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`}
                     hover 
                     sx={rowSx} 
                     onClick={() => onClickRow?.(row)}
@@ -264,7 +270,13 @@ export default function BOSDataTable({
                         paddingX: 1.5
                       }}
                     >
-                      {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}
+                      {(() => {
+                        if (renderCell) {
+                          const customVal = renderCell(col, row, idx);
+                          if (customVal !== null && customVal !== undefined) return customVal;
+                        }
+                        return defaultRenderCell(col, row, idx);
+                      })()}
                     </TableCell>
                   ))}
                   {showActions && (
@@ -295,7 +307,8 @@ export default function BOSDataTable({
         </Table>
       </TableContainer>
       <Box sx={{ 
-        p: 1.5, 
+        py: 0.5, 
+        px: 1.5, 
         display: 'flex', 
         alignItems: 'center',
         justifyContent: 'space-between', 
@@ -316,7 +329,31 @@ export default function BOSDataTable({
           page={page}
           onPageChange={(e, p) => onPageChange(p)}
           onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
-          sx={{ border: 'none' }}
+          sx={{
+            border: 'none',
+            '& .MuiTablePagination-toolbar': { 
+              justifyContent: 'center', 
+              flexWrap: 'nowrap',
+              minHeight: '36px !important',
+              height: '36px',
+              p: '0px !important',
+              gap: 1
+            },
+            '& .MuiTablePagination-spacer': { display: 'none' },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              margin: 0,
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-select': {
+              py: '2px',
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-actions': {
+              margin: 0
+            }
+          }}
         />
       </Box>
     </>

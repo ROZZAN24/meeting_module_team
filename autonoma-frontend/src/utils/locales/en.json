@@ -348,5 +348,21 @@
   "Induction Pending / Assignment": "Induction Pending / Assignment",
   "Induction Pending": "Induction Pending",
   "Induction Training": "Induction Training",
-  "Induction Trainee": "Induction Trainee"
+  "Induction Trainee": "Induction Trainee",
+  "Admin Hub": "Admin Hub",
+  "BOS(S) Admin": "BOS(S) Admin",
+  "Product": "Product",
+  "Product Item Group": "Product Item Group",
+  "Product Item Type": "Product Item Type",
+  "Product Item Sub Type": "Product Item Sub Type",
+  "Product OEM Master": "Product OEM Master",
+  "Product OEM Mapping": "Product OEM Mapping",
+  "Product Model Master": "Product Model Master",
+  "Product Capacity Master": "Product Capacity Master",
+  "Model Name": "Model Name",
+  "UOM": "UOM",
+  "Wind Farm": "Wind Farm",
+  "Wind Farm Master": "Wind Farm Master",
+  "Customer Potential": "Customer Potential",
+  "Customer Potential Master": "Customer Potential Master"
 }

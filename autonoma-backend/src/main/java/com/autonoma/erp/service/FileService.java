@@ -68,12 +68,19 @@ public class FileService {
         }
 
         // Standardize the document root path based on OS
-        if (resolvedPath == null || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
-            if (os.contains("win")) {
+        if (os.contains("win")) {
+            if (resolvedPath == null || !resolvedPath.isAbsolute() || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
                 resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
             } else {
                 // On Mac/Linux, we use a clean folder name without Windows drive letters
                 resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath();
+            }
+        } else {
+            // On Mac/Linux, ignore Windows paths completely and place BOS_DOCUMENTS inside the autonoma-backend folder
+            if (Files.exists(Paths.get("autonoma-backend"))) {
+                resolvedPath = Paths.get("autonoma-backend/BOS_DOCUMENTS").toAbsolutePath().normalize();
+            } else {
+                resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath().normalize();
             }
         }
 
@@ -83,6 +90,16 @@ public class FileService {
                 Files.createDirectories(resolvedPath);
             }
         } catch (IOException e) {
+            if (os.contains("win")) {
+                resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
+            } else {
+                resolvedPath = Paths.get(System.getProperty("user.home"), "BOS_DOCUMENTS");
+                try {
+                    Files.createDirectories(resolvedPath);
+                } catch (IOException ex) {
+                    resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
+                }
+            }
             // Fallback to a guaranteed temp dir if creation fails
             resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
         }
@@ -125,9 +142,34 @@ public class FileService {
 
         if (resource.exists() || resource.isReadable()) {
             return resource;
-        } else {
-            throw new RuntimeException("File not found: " + relativePath);
         }
+
+        // Fuzzy space and encoding resolution
+        try {
+            Path parentDir = file.getParent();
+            if (parentDir != null && Files.exists(parentDir)) {
+                String targetNameNormalized = file.getFileName().toString().replaceAll("[\\s\\u202f\\u00a0?]+", " ");
+                try (java.util.stream.Stream<Path> stream = Files.list(parentDir)) {
+                    java.util.Optional<Path> found = stream
+                        .filter(p -> {
+                            String name = p.getFileName().toString().replaceAll("[\\s\\u202f\\u00a0?]+", " ");
+                            return name.equalsIgnoreCase(targetNameNormalized);
+                        })
+                        .findFirst();
+                    if (found.isPresent()) {
+                        file = found.get();
+                        resource = new UrlResource(file.toUri());
+                        if (resource.exists() || resource.isReadable()) {
+                            return resource;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fallback to throw exception
+        }
+
+        throw new RuntimeException("File not found: " + relativePath);
     }
 
     /**

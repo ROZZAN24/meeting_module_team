@@ -1,18 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { 
-  Button, Tooltip, CircularProgress, Box, Typography, 
-  Dialog, DialogTitle, DialogContent, DialogActions, 
+import {
+  Button, Tooltip, CircularProgress, Box, Typography,
+  Dialog, DialogTitle, DialogContent, DialogActions,
   IconButton, Stack, Divider, Tabs, Tab, Paper, useTheme
 } from '@mui/material';
-import { 
-  IconFileExport, IconFileSpreadsheet, IconFileTypePdf, 
-  IconX, IconEye, IconFunction, IconPlus, IconSearch 
+import {
+  IconFileExport, IconFileSpreadsheet, IconFileTypePdf,
+  IconX, IconEye, IconFunction, IconPlus, IconSearch
 } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
 import useAuth from 'hooks/useAuth';
 import BOSDataTable from './BOSDataTable';
 import { format } from 'date-fns';
+import axios from 'utils/axios';
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -20,9 +21,9 @@ import { format } from 'date-fns';
  * ═══════════════════════════════════════════════════════════════
  */
 
-export default function BOSExportButton({ 
-  data = [], 
-  filename = 'Export', 
+export default function BOSExportButton({
+  data = [],
+  filename = 'Export',
   columns = null,
   disabled = false,
   loading = false,
@@ -48,9 +49,10 @@ export default function BOSExportButton({
     return data.map(row => {
       const mappedRow = {};
       columns.forEach(col => {
-        let val = row[col.key];
+        let val = typeof col.key === 'function' ? col.key(row) : row[col.key];
         // Format dates for Excel readability
-        if (col.key.toLowerCase().includes('date') || col.key.toLowerCase().includes('at')) {
+        const keyName = typeof col.key === 'string' ? col.key.toLowerCase() : '';
+        if (keyName.includes('date') || keyName.includes('at')) {
           try {
             const d = new Date(val);
             if (!isNaN(d.getTime())) {
@@ -60,7 +62,7 @@ export default function BOSExportButton({
         }
         mappedRow[col.header] = val || '-';
       });
-      
+
       // Auto-append Audit Columns if they exist in the row data (SOP Standard)
       const auditFields = [
         { key: 'createdBy', label: 'Created By' },
@@ -68,7 +70,7 @@ export default function BOSExportButton({
         { key: 'updatedBy', label: 'Updated By' },
         { key: 'updatedDate', label: 'Updated Date' }
       ];
-      
+
       auditFields.forEach(field => {
         let val = row[field.key];
         if (val) {
@@ -78,7 +80,7 @@ export default function BOSExportButton({
           mappedRow[field.label] = val;
         }
       });
-      
+
       return mappedRow;
     });
   };
@@ -88,14 +90,38 @@ export default function BOSExportButton({
     return `${filename}_${ts}`;
   };
 
+  const logExport = async (formatType) => {
+    try {
+      const pageTitle = filename.replace(/_/g, ' ');
+      await axios.post('/api/audit-trail/log', {
+        userId: user?.username || user?.email || user?.name || 'SYSTEM',
+        pageName: `${pageTitle} Master`,
+        actionType: 'EXPORT',
+        tableName: filename,
+        recordId: formatType,
+        previousValue: JSON.stringify({
+          recordCount: data.length,
+          filename: getFormattedFilename(),
+          format: formatType
+        }),
+        currentValue: null,
+        comments: `Exported ${data.length} records of ${pageTitle} in ${formatType} format.`
+      });
+    } catch (err) {
+      console.error('Failed to log export audit:', err);
+    }
+  };
+
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
+    logExport('Excel');
     exportToExcel(prepareData(), getFormattedFilename(), { userName: user?.name });
     handleClosePreview();
   };
 
   const handleExportPDF = () => {
     if (!data || data.length === 0) return;
+    logExport('PDF');
     const originalTitle = document.title;
     document.title = getFormattedFilename();
     window.print();
@@ -103,14 +129,14 @@ export default function BOSExportButton({
     handleClosePreview();
   };
 
-  const previewColumns = columns ? columns.map(c => ({ id: c.header, label: c.header })) : 
+  const previewColumns = columns ? columns.map(c => ({ id: c.header, label: c.header })) :
     (data.length > 0 ? Object.keys(data[0]).map(k => ({ id: k, label: k })) : []);
 
   const previewRows = useMemo(() => {
     const baseData = prepareData();
-    const timestamp = new Date().toLocaleString('en-GB', { 
-      day: '2-digit', month: 'short', year: 'numeric', 
-      hour: '2-digit', minute: '2-digit' 
+    const timestamp = new Date().toLocaleString('en-GB', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
     });
 
     // For the UI Preview, we insert the header rows as "pseudo-rows" at the top
@@ -152,10 +178,10 @@ export default function BOSExportButton({
         </span>
       </Tooltip>
 
-      <Dialog 
-        open={previewOpen} 
-        onClose={handleClosePreview} 
-        maxWidth="lg" 
+      <Dialog
+        open={previewOpen}
+        onClose={handleClosePreview}
+        maxWidth="lg"
         fullWidth
         PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden', height: '90vh' } }}
       >
@@ -178,7 +204,7 @@ export default function BOSExportButton({
             <Tab icon={<IconFileTypePdf size={20} />} iconPosition="start" label="PDF Document" sx={{ fontWeight: 600 }} />
           </Tabs>
         </Box>
-        
+
         <DialogContent sx={{ p: 0, bgcolor: 'grey.100', display: 'flex', flexDirection: 'column' }}>
           {activeTab === 0 ? (
             <Box sx={{ p: 2, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
@@ -196,11 +222,11 @@ export default function BOSExportButton({
                 </Box>
               </Paper>
 
-              <Paper sx={{ 
+              <Paper sx={{
                 flexGrow: 1,
-                borderRadius: '4px', 
-                overflow: 'hidden', 
-                border: '1px solid', 
+                borderRadius: '4px',
+                overflow: 'hidden',
+                border: '1px solid',
                 borderColor: '#bbb',
                 display: 'flex',
                 flexDirection: 'column',
@@ -208,25 +234,25 @@ export default function BOSExportButton({
               }}>
                 {/* COLUMN HEADERS (A, B, C...) */}
                 <Box sx={{ bgcolor: '#f8f9fa', borderBottom: '1px solid #bbb', display: 'flex', position: 'sticky', top: 0, zIndex: 3 }}>
-                   <Box sx={{ width: 40, borderRight: '1px solid #bbb', bgcolor: '#e9ecef' }} />
-                   {previewColumns.map((col, i) => (
-                     <Box key={i} sx={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#444', py: 0.5, borderRight: '1px solid #bbb' }}>
-                       {getColumnLetter(i)}
-                     </Box>
-                   ))}
+                  <Box sx={{ width: 40, borderRight: '1px solid #bbb', bgcolor: '#e9ecef' }} />
+                  {previewColumns.map((col, i) => (
+                    <Box key={i} sx={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#444', py: 0.5, borderRight: '1px solid #bbb' }}>
+                      {getColumnLetter(i)}
+                    </Box>
+                  ))}
                 </Box>
 
                 <Box sx={{ flexGrow: 1, overflow: 'auto', display: 'flex' }}>
-                   {/* ROW NUMBERS (1, 2, 3...) */}
-                   <Box sx={{ width: 40, bgcolor: '#f8f9fa', borderRight: '1px solid #bbb', position: 'sticky', left: 0, zIndex: 2 }}>
-                      {Array.from({ length: sizePerPage }).map((_, i) => (
-                        <Box key={i} sx={{ height: 40, borderBottom: '1px solid #bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#666' }}>
-                          {page * sizePerPage + i + 1}
-                        </Box>
-                      ))}
-                   </Box>
+                  {/* ROW NUMBERS (1, 2, 3...) */}
+                  <Box sx={{ width: 40, bgcolor: '#f8f9fa', borderRight: '1px solid #bbb', position: 'sticky', left: 0, zIndex: 2 }}>
+                    {Array.from({ length: sizePerPage }).map((_, i) => (
+                      <Box key={i} sx={{ height: 40, borderBottom: '1px solid #bbb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: '#666' }}>
+                        {page * sizePerPage + i + 1}
+                      </Box>
+                    ))}
+                  </Box>
 
-                   <Box sx={{ flexGrow: 1 }}>
+                  <Box sx={{ flexGrow: 1 }}>
                     <BOSDataTable
                       columns={previewColumns}
                       rows={previewRows.slice(page * sizePerPage, page * sizePerPage + sizePerPage)}
@@ -236,18 +262,18 @@ export default function BOSExportButton({
                       onPageChange={setPage}
                       onSizeChange={setSizePerPage}
                       showActions={false}
-                      sx={{ 
-                        '& th': { 
-                          bgcolor: '#fff !important', 
-                          color: '#000', 
-                          fontWeight: 700, 
+                      sx={{
+                        '& th': {
+                          bgcolor: '#fff !important',
+                          color: '#000',
+                          fontWeight: 700,
                           borderRight: '1px solid #bbb',
                           borderBottom: '2px solid #bbb',
                           height: 40,
                           fontSize: '12px'
                         },
-                        '& td': { 
-                          borderRight: '1px solid #ccc', 
+                        '& td': {
+                          borderRight: '1px solid #ccc',
                           borderBottom: '1px solid #ccc',
                           fontSize: '13px',
                           height: 40,
@@ -259,33 +285,33 @@ export default function BOSExportButton({
                           outlineOffset: '-2px',
                           bgcolor: '#e7f1ec'
                         },
-                        border: 'none', 
-                        boxShadow: 'none' 
+                        border: 'none',
+                        boxShadow: 'none'
                       }}
                     />
-                   </Box>
+                  </Box>
                 </Box>
 
                 {/* EXCEL BOTTOM BAR (Sheet Tabs) */}
                 <Box sx={{ bgcolor: '#f8f9fa', borderTop: '1px solid #bbb', p: 0.5, display: 'flex', alignItems: 'center', gap: 2 }}>
-                   <Stack direction="row" spacing={0.5} sx={{ px: 1 }}>
-                      <Box sx={{ bgcolor: 'white', px: 2, py: 0.5, border: '1px solid #bbb', borderBottom: 'none', borderRadius: '4px 4px 0 0', fontSize: '11px', fontWeight: 700, color: '#217346' }}>
-                        Sheet1
-                      </Box>
-                      <IconButton size="small"><IconPlus size={14} /></IconButton>
-                   </Stack>
-                   <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                   <Typography variant="caption" sx={{ fontSize: '10px', color: 'grey.600' }}>Ready</Typography>
+                  <Stack direction="row" spacing={0.5} sx={{ px: 1 }}>
+                    <Box sx={{ bgcolor: 'white', px: 2, py: 0.5, border: '1px solid #bbb', borderBottom: 'none', borderRadius: '4px 4px 0 0', fontSize: '11px', fontWeight: 700, color: '#217346' }}>
+                      Sheet1
+                    </Box>
+                    <IconButton size="small"><IconPlus size={14} /></IconButton>
+                  </Stack>
+                  <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
+                  <Typography variant="caption" sx={{ fontSize: '10px', color: 'grey.600' }}>Ready</Typography>
                 </Box>
               </Paper>
             </Box>
           ) : (
             <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', overflow: 'auto' }}>
-              <Paper sx={{ 
-                width: '210mm', 
-                minHeight: '297mm', 
-                p: '25mm', 
-                bgcolor: 'white', 
+              <Paper sx={{
+                width: '210mm',
+                minHeight: '297mm',
+                p: '25mm',
+                bgcolor: 'white',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
                 fontFamily: theme.typography.fontFamily
               }}>
@@ -343,7 +369,7 @@ export default function BOSExportButton({
                     ))}
                   </tbody>
                 </table>
-                
+
                 {previewRows.length > 15 && (
                   <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '4px' }}>
                     <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
@@ -363,21 +389,21 @@ export default function BOSExportButton({
         </DialogContent>
 
         <Divider />
-        
+
         <DialogActions sx={{ p: 2.5, bgcolor: 'grey.50' }}>
           <Button variant="outlined" color="secondary" onClick={handleClosePreview} startIcon={<IconX size={18} />}>
             Cancel
           </Button>
           <Box sx={{ flexGrow: 1 }} />
           <Stack direction="row" spacing={1.5}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              onClick={handleExportExcel} 
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleExportExcel}
               disabled={activeTab !== 0}
               startIcon={<IconFileSpreadsheet size={18} />}
-              sx={{ 
-                bgcolor: '#107c41', 
+              sx={{
+                bgcolor: '#107c41',
                 '&:hover': { bgcolor: '#0a5c31' },
                 opacity: activeTab === 0 ? 1 : 0.5,
                 fontWeight: 700
@@ -385,10 +411,10 @@ export default function BOSExportButton({
             >
               Download Excel
             </Button>
-            <Button 
-              variant="contained" 
-              color="error" 
-              onClick={handleExportPDF} 
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleExportPDF}
               disabled={activeTab !== 1}
               startIcon={<IconFileTypePdf size={18} />}
               sx={{

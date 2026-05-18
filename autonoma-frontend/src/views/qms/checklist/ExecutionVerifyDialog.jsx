@@ -34,13 +34,14 @@ import {
  * 2. Assignment Execution verification (Auditor)
  * 3. Assignment Execution reporting (Executor - Editable mode)
  */
-const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, onSave, isExecution = false }) => {
+const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, onNotAccept, onSave, isExecution = false }) => {
   const theme = useTheme();
   const [formData, setFormData] = useState({
     status: '',
     remarks: '',
     actualFiles: []
   });
+  const [verifyRemarks, setVerifyRemarks] = useState('');
 
   useEffect(() => {
     if (data) {
@@ -69,6 +70,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
           return f;
         })
       });
+      setVerifyRemarks('');
     }
   }, [data, open]);
 
@@ -124,16 +126,26 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
             <Button
               variant="contained"
               color="error"
-              onClick={onReject}
+              onClick={() => onReject(verifyRemarks)}
               startIcon={<IconBan size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
-              {isAssignment ? 'Not Accept' : 'Reject'}
+              Reject
             </Button>
+            {onNotAccept && (
+              <Button
+                variant="contained"
+                color="warning"
+                onClick={() => onNotAccept(verifyRemarks)}
+                sx={{ borderRadius: '8px', fontWeight: 600 }}
+              >
+                Not Accepted
+              </Button>
+            )}
             <Button
               variant="contained"
               color="success"
-              onClick={onVerify}
+              onClick={() => onVerify(verifyRemarks)}
               startIcon={<IconChecks size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
@@ -152,9 +164,10 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               <BOSTextField label="Date" value={data.checklistDate ? new Date(data.checklistDate).toLocaleDateString() : 'N/A'} disabled />
               <BOSTextField label="Assign Type" value={data.assignType || 'PRIMARY'} disabled />
             </Box>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 2.5 }}>
               <BOSTextField label="Frequency" value={master.frequency || '-'} disabled />
               <BOSTextField label="Seq No" value={master.seqNo} disabled />
+              <BOSTextField label="Dual Check" value={master.dualCheck || 'NO'} disabled />
             </Box>
             {master.stockLink === 'YES' && (
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5, mt: 2.5 }}>
@@ -201,13 +214,25 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
                   />
                 </>
               ) : (
-                <BOSTextField 
-                  label="Execution Comments" 
-                  value={data.comments || 'No comments provided.'} 
-                  multiline 
-                  rows={2} 
-                  disabled 
-                />
+                <>
+                  <BOSTextField 
+                    label="Execution Comments" 
+                    value={data.remarks || 'No comments provided.'} 
+                    multiline 
+                    rows={2} 
+                    disabled 
+                  />
+                  {!isExecution && (formData.status?.name === 'Pending for Verified' || formData.status === 'Pending for Verified' || formData.status?.name === 'Completed' || formData.status === 'Completed') && (
+                    <BOSTextField 
+                      label="Verification Remarks" 
+                      value={verifyRemarks} 
+                      onChange={(e) => setVerifyRemarks(e.target.value)}
+                      multiline 
+                      rows={2} 
+                      placeholder="Enter verification comments..."
+                    />
+                  )}
+                </>
               )}
               
               {data.rejReason && (
