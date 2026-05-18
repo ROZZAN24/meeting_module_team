@@ -13,6 +13,7 @@ import { exportToExcel } from 'utils/excelExport';
 import useAuth from 'hooks/useAuth';
 import BOSDataTable from './BOSDataTable';
 import { format } from 'date-fns';
+import axios from 'utils/axios';
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -89,14 +90,38 @@ export default function BOSExportButton({
     return `${filename}_${ts}`;
   };
 
+  const logExport = async (formatType) => {
+    try {
+      const pageTitle = filename.replace(/_/g, ' ');
+      await axios.post('/api/audit-trail/log', {
+        userId: user?.username || user?.email || user?.name || 'SYSTEM',
+        pageName: `${pageTitle} Master`,
+        actionType: 'EXPORT',
+        tableName: filename,
+        recordId: formatType,
+        previousValue: JSON.stringify({
+          recordCount: data.length,
+          filename: getFormattedFilename(),
+          format: formatType
+        }),
+        currentValue: null,
+        comments: `Exported ${data.length} records of ${pageTitle} in ${formatType} format.`
+      });
+    } catch (err) {
+      console.error('Failed to log export audit:', err);
+    }
+  };
+
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
+    logExport('Excel');
     exportToExcel(prepareData(), getFormattedFilename(), { userName: user?.name });
     handleClosePreview();
   };
 
   const handleExportPDF = () => {
     if (!data || data.length === 0) return;
+    logExport('PDF');
     const originalTitle = document.title;
     document.title = getFormattedFilename();
     window.print();
