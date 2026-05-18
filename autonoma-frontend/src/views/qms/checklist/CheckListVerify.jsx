@@ -27,9 +27,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
+import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
-import { exportToExcel } from 'utils/excelExport';
 
 const columns = [
   '#', 'Seq No', 'Checking Point', 'Category', 'Frequency', 'Department',
@@ -68,6 +68,23 @@ const tableCols = [
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
   { id: 'verifiedDate', label: 'Verified Date' }
+];
+
+const exportColumns = [
+  { header: 'Seq No', key: 'seqNo' },
+  { header: 'Checking Point', key: 'checkingPoint' },
+  { header: 'Category', key: 'category' },
+  { header: 'Frequency', key: 'frequency' },
+  { header: 'Department', key: (r) => (r.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Effective From', key: 'effectiveFrom' },
+  { header: 'Days', key: 'reminderDays' },
+  { header: 'Expire Date', key: 'expiryDate' },
+  { header: 'Stock Link', key: 'stockLink' },
+  { header: 'Created Date', key: 'createdDate' },
+  { header: 'Created By', key: 'createdBy' },
+  { header: 'Verify Status', key: 'status' },
+  { header: 'Verified By', key: 'verifiedBy' },
+  { header: 'Verified Date', key: 'verifiedDate' }
 ];
 
 const filterConfig = [
@@ -255,27 +272,6 @@ export default function CheckListVerify() {
     }
   };
 
-  const handleExport = () => {
-    const exportData = rows.map((r, i) => ({
-      '#': i + 1,
-      'Seq No': r.seqNo,
-      'Checking Point': r.checkingPoint,
-      'Category': r.category,
-      'Frequency': r.frequency,
-      'Department': (r.departments || []).map(d => d.departmentName).join(', '),
-      'Effective From': r.effectiveFrom,
-      'Days': r.reminderDays,
-      'Expire Date': r.expiryDate,
-      'Stock Link': r.stockLink,
-      'Created Date': r.createdDate,
-      'Created By': r.createdBy,
-      'Verify Status': r.status,
-      'Verified By': r.verifiedBy,
-      'Verified Date': r.verifiedDate
-    }));
-    exportToExcel(exportData, 'Checklist_Verify');
-  };
-
   const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.searchBy && filters.searchByValue ? 1 : 0);
 
   return (
@@ -283,7 +279,7 @@ export default function CheckListVerify() {
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
+          <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />
           <IconButton size="small" onClick={() => setDrawerOpen(true)}
             sx={{ border: '1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius: 1.5, p: 0.8, position: 'relative' }}>
             <IconAdjustmentsHorizontal size={20} />

@@ -31,6 +31,7 @@ import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
+import { BOSExportButton } from 'ui-component/bos';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
 const columns = [
@@ -65,6 +66,35 @@ const columns = [
   { id: 'verifiedDate', label: 'Verified Date', minWidth: 120 },
   { id: 'rejReason', label: 'Rej Reason', minWidth: 200 },
   { id: 'attachments', label: 'Docs', minWidth: 80, align: 'center' }
+];
+
+const exportColumns = [
+  { header: 'Seq No', key: 'seqNo' },
+  { header: 'Checking Point', key: 'checkingPoint' },
+  { header: 'Category', key: 'category' },
+  { header: 'Frequency', key: 'frequency' },
+  { header: 'Level', key: 'levelIds' },
+  { header: 'Department', key: (r) => (r.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Effective From', key: 'effectiveFrom' },
+  { header: 'Days', key: 'reminderDays' },
+  { header: 'Expire Date', key: 'expiryDate' },
+  { header: 'Reminder Date', key: 'reminderDate' },
+  { header: 'Stock Link', key: 'stockLink' },
+  { header: 'Assign To', key: 'assignTo' },
+  { header: 'Assign Date', key: 'assignDate' },
+  { header: 'Item Code', key: 'itemCode' },
+  { header: 'Qty', key: 'qty' },
+  { header: 'Photo Required', key: 'photoRequired' },
+  { header: 'Dual Check', key: 'dualCheck' },
+  { header: 'Carry Forward', key: 'carryForward' },
+  { header: 'Created By', key: 'createdBy' },
+  { header: 'Created Date', key: 'createdDate' },
+  { header: 'Status', key: 'status' },
+  { header: 'Task Status', key: 'taskStatus' },
+  { header: 'Verify Status', key: 'verifyStatus' },
+  { header: 'Verified By', key: 'verifiedBy' },
+  { header: 'Verified Date', key: 'verifiedDate' },
+  { header: 'Rej Reason', key: 'rejReason' }
 ];
 
 const DEPARTMENTS = [
@@ -429,6 +459,7 @@ export default function MasterCheckList() {
           <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>} onClick={handleAmendmentClick}>Amendment</Button>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
           <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setIsAmendment(false); setDialogOpen(true); }}>Add</Button>
+          <BOSExportButton data={rows} filename="Master_Check_List" columns={exportColumns} size="small" />
           <IconButton size="small" onClick={() => setDrawerOpen(true)}
             sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
             <IconAdjustmentsHorizontal size={20}/>
