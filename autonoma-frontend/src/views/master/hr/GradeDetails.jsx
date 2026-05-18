@@ -41,23 +41,24 @@ export default function GradeDetails() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-        defaultValue: 'ACTIVE',
-        isStarred: true
-      }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      createdDate: row.createdDate ? format(new Date(row.createdDate), 'dd/MM/yyyy HH:mm') : '-',
+      updatedDate: row.updatedDate ? format(new Date(row.updatedDate), 'dd/MM/yyyy HH:mm') : '-',
+      status: row.status || 'Active'
+    }));
+  }, [rows]);
 
-  const fetchModels = useCallback(async () => {
+  const fetchGrades = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_PATHS.NPD.ITEM_MODEL);
+      const response = await axios.get('/api/master/hr/grade');
       setRows(response.data);
     } catch (error) {
-      console.error('Failed to fetch Models:', error);
-      setRows([]);
->>>>>>> origin/chore/repo-cleanup
+      console.error('Failed to fetch grades:', error);
     } finally {
       setLoading(false);
     }

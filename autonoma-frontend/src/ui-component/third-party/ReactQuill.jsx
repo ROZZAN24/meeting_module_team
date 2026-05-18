@@ -31,7 +31,6 @@ export default function ReactQuillDemo({ value, editorMinHeight = 125, onChange 
             borderColor: 'primary.light',
             borderTopLeftRadius: '12px',
             borderTopRightRadius: '12px',
-            borderTopRightRadius: '12px',
             '& .ql-picker-options': {
               backgroundColor: 'background.paper',
               borderColor: `${theme.vars.palette.divider} !important`,

@@ -130,9 +130,6 @@ export default function BOSDataTable({
     } catch { 
       return '-'; 
     }
-  const formatDate = (d) => {
-    if (!d) return '-';
-    try { return format(new Date(d), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }
   };
 
   const defaultRenderCell = (col, row, idx) => {
@@ -254,7 +251,6 @@ export default function BOSDataTable({
                 return (
                   <TableRow 
                     key={row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`}
-                    key={row.id ?? idx}
                     hover 
                     sx={rowSx} 
                     onClick={() => onClickRow?.(row)}

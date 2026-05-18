@@ -1,37 +1,35 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
-import { IconSettings, IconRefresh } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/material';
+import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
-import MainCard from 'ui-component/cards/MainCard';
-import AddCapacityDialog from './AddCapacityDialog';
-import { format } from 'date-fns';
+import { API_PATHS } from 'utils/api-constants';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
+import MainCard from 'ui-component/cards/MainCard';
+import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
-import { API_PATHS } from 'utils/api-constants';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 
-// ==============================|| PRODUCT CAPACITY MASTER (BOS SOP COMPLIANT) ||============================== //
+// ==============================|| SM - SUPPLIER LIST (BOS SOP COMPLIANT) ||============================== //
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 70 },
-  { id: 'uom', label: 'UOM', minWidth: 120, bold: true },
-  { id: 'capacityVal', label: 'Capacity', minWidth: 150, bold: true },
-  { id: 'model.modelNo', label: 'Model Name', minWidth: 180 },
-  { id: 'createdBy', label: 'CREATED USER', minWidth: 140 },
-  { id: 'createdAt', label: 'CREATED DATE', minWidth: 160 },
-  { id: 'updatedBy', label: 'UPDATED USER', minWidth: 140 },
-  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 160 }
+  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'gstNo', label: 'GST No', minWidth: 150, required: true },
+  { id: 'supplierCode', label: 'Supplier Code', minWidth: 120, required: true },
+  { id: 'supplierName', label: 'Supplier Name', minWidth: 200, bold: true, required: true },
+  { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
+  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
-export default function CapacityMaster() {
+export default function SupplierList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const globalQuery = useSelector((state) => state.search.query);
-  const globalFilters = useSelector((state) => state.search.filters);
->>>>>>> origin/chore/repo-cleanup
 
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -41,35 +39,30 @@ export default function CapacityMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
   const [selectedListRow, setSelectedListRow] = useState(null);
-      {
-        id: 'capacityValueContains',
-        label: 'Capacity Contains',
-        type: 'text',
-        defaultValue: '',
-        isStarred: true
-      }
-    ];
-    dispatch(setFilterConfig(config));
-    return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
 
-  const fetchCapacities = useCallback(async () => {
+  // ── RESOLVED ROWS (SOP #16 Standard) ──
+  const resolvedRows = useMemo(() => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(row => ({
+      ...row,
+      status: row.status || 'Active'
+    }));
+  }, [rows]);
+
+  const fetchSuppliers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_PATHS.NPD.ITEM_CAPACITY);
+      const response = await axios.get(API_PATHS.SM.SUPPLIERS);
       setRows(response.data);
     } catch (error) {
-      console.error('Failed to fetch Capacities:', error);
-      setRows([]);
->>>>>>> origin/chore/repo-cleanup
+      console.error('Failed to fetch suppliers:', error);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  const handleOpenAdd = () => { setSelectedRow(null); setIsReadOnly(false); setDialogOpen(true); };
-  const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };
-  const handleCloseDialog = (refresh) => { setDialogOpen(false); if (refresh === true) fetchCapacities(); };
+  useEffect(() => { fetchSuppliers(); }, [fetchSuppliers]);
+
   const handleOpenAdd = () => { navigate('/sm/suppliers/create'); };
   const handleOpenEdit = (row) => { navigate(`/sm/suppliers/edit/${row.id}`); };
 
@@ -84,44 +77,29 @@ export default function CapacityMaster() {
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.id);
     setDeleteTargetName(row.supplierName);
-
-  const handleDeleteClick = (row) => {
-    setDeleteTargetId(row.id);
-    setDeleteTargetName(row.capacityVal ? `${row.capacityVal} ${row.uom}` : 'Capacity');
->>>>>>> origin/chore/repo-cleanup
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-  const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
-      // 1. Capacity Contains Text Filter
-      const capacityValueContains = globalFilters.capacityValueContains || '';
-      const matchesCapacityValueContains = !capacityValueContains ||
-        (row.capacityVal && String(row.capacityVal).includes(capacityValueContains)) ||
-        (row.uom && row.uom.toLowerCase().includes(capacityValueContains.toLowerCase()));
+      await axios.delete(`${API_PATHS.SM.SUPPLIERS}/${deleteTargetId}`);
+      dispatch(openSnackbar({ open: true, message: 'Supplier deleted successfully!', variant: 'alert', severity: 'success' }));
+      fetchSuppliers();
+    } catch (error) {
+      console.error('Failed to delete supplier:', error);
+      dispatch(openSnackbar({ open: true, message: 'Failed to delete supplier.', variant: 'alert', severity: 'error' }));
+    }
+  };
 
-      // 2. Search query
-      const matchesSearch = !globalQuery ||
-        (row.capacityVal && String(row.capacityVal).includes(globalQuery)) ||
-        (row.uom && row.uom.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.model && row.model.modelNo && row.model.modelNo.toLowerCase().includes(globalQuery.toLowerCase()));
-
-      return matchesCapacityValueContains && matchesSearch;
-    });
-  }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
+  useKeyboardShortcuts({ 'ctrl+n': handleOpenAdd });
 
   return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconSettings size={24} />
-          <Typography variant="h3">Product Capacity Master</Typography>
->>>>>>> origin/chore/repo-cleanup
+          <IconUserPlus size={24} />
+          <Typography variant="h3">Supplier Master</Typography>
         </Stack>
       }
       secondary={
@@ -152,8 +130,9 @@ export default function CapacityMaster() {
         </Stack>
       }
     >
-      <BOSDataTable columns={columns}
-        rows={filteredRows}
+      <BOSDataTable
+        columns={columns}
+        rows={resolvedRows}
         page={page}
         size={size}
         loading={loading}
@@ -165,9 +144,7 @@ export default function CapacityMaster() {
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
       />
-
-      <AddCapacityDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />
->>>>>>> origin/chore/repo-cleanup
+      
       <ConfirmDeleteDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
