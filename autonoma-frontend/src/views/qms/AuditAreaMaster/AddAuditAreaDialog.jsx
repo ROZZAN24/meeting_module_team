@@ -67,7 +67,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
       const payload = {
         ...formData,
         createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        ...(formData.id ? { updatedBy: user?.name || 'Admin' } : {})
       };
 
       if (formData.id) {
