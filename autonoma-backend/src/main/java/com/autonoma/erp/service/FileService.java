@@ -77,7 +77,11 @@ public class FileService {
             }
         } else {
             // On Mac/Linux, ignore Windows paths completely and place BOS_DOCUMENTS inside the autonoma-backend folder
-            resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath().normalize();
+            if (Files.exists(Paths.get("autonoma-backend"))) {
+                resolvedPath = Paths.get("autonoma-backend/BOS_DOCUMENTS").toAbsolutePath().normalize();
+            } else {
+                resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath().normalize();
+            }
         }
 
         // Ensure root directory exists
