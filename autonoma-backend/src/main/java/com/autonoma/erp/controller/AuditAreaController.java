@@ -32,6 +32,10 @@ public class AuditAreaController {
     @Operation(summary = "Create/Update Audit Area", description = "Creates a new audit area or updates an existing one")
     public AuditArea createAuditArea(@RequestBody AuditArea auditArea) {
         log.info("Saving audit area: {}", auditArea);
+        if (auditArea.getId() == null) {
+            auditArea.setUpdatedBy(null);
+            auditArea.setUpdatedDate(null);
+        }
         return auditAreaRepository.save(auditArea);
     }
 
