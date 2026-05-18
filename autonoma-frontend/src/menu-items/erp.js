@@ -45,11 +45,13 @@ import {
   IconPlaneTilt,
   IconTractor,
   IconMoodSmile,
-  IconSearch
+  IconSearch,
+  IconCategory
 } from '@tabler/icons-react';
 
 const icons = {
   IconDashboard,
+  IconCategory,
   IconUsers,
   IconBriefcase,
   IconBuildingFactory,

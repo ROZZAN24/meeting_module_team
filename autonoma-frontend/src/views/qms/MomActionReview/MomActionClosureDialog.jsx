@@ -37,8 +37,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
 
   const delayDays = getDelayDays();
   const isReadonly = item && !['OPEN', 'REJECTED', 'CREATED'].includes(item.status);
-  // Temporarily bypass strict assigned-to checks so Admins can test the workflow
-  const isAssignedToMe = user && item ? true : false;
+  const isAssignedToMe = user && item && user.name === item.assignedTo;
 
   useEffect(() => {
     if (open) {

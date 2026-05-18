@@ -15,7 +15,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Chip } from '@mui/material';
+import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel } from '@mui/material';
 
 // third party
 import PopupState, { bindPopper, bindToggle } from 'material-ui-popup-state';
@@ -103,8 +103,6 @@ function MobileSearch({ value, setValue, popupState, placeholder }) {
   );
 }
 
-const EMPTY_ARRAY = [];
-
 // ==============================|| SEARCH INPUT ||============================== //
 
 export default function SearchSection() {
@@ -174,12 +172,6 @@ export default function SearchSection() {
 
   const currentPrefs = useSelector((state) => state.search.preferences[location.pathname]);
 
-  // Track the current filterConfig signature to detect page-level changes
-  const configSignature = useMemo(
-    () => combinedConfig.filter(f => f.isStarred).map(f => f.id).join(','),
-    [combinedConfig]
-  );
-
   useEffect(() => {
     if (combinedConfig && combinedConfig.length > 0) {
       // Always start from the starred defaults for this filterConfig
@@ -200,7 +192,7 @@ export default function SearchSection() {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [configSignature, location.pathname]);
+  }, [combinedConfig, location.pathname, currentPrefs]);
 
   const updateVisibleFilters = (newIds) => {
     setVisibleFilterIds(newIds);

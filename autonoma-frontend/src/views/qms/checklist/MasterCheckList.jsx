@@ -9,9 +9,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -21,7 +19,6 @@ import Chip from '@mui/material/Chip';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
 import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
 import Menu from '@mui/material/Menu';
@@ -35,11 +32,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
 
-import { 
-  IconUserPlus, IconEdit, IconPlus, IconFileDots, 
-  IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX 
-} from '@tabler/icons-react';
-
+import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
@@ -58,12 +51,13 @@ const columns = [
   { id: 'itemCode', label: 'Item Code', minWidth: 120 },
   { id: 'qty', label: 'Qty', minWidth: 80 },
   { id: 'photoRequired', label: 'Photo Required', minWidth: 100 },
-  { id: 'dualCheck', label: 'Dual Check', minWidth: 100 },
-  { id: 'carryForward', label: 'Carry Forward', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 120 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'updatedBy', label: 'Modified By', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'taskStatus', label: 'Task Status', minWidth: 120 },
   { id: 'verifyStatus', label: 'Verify Status', minWidth: 150 },
@@ -310,7 +304,7 @@ export default function MasterCheckList() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, visibleExtraFilters, searchQuery]);
+  }, [page, size, filters, searchQuery]);
 
   useEffect(() => {
     fetchChecklists();

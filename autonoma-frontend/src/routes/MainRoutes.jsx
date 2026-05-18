@@ -253,6 +253,14 @@ const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService
 const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMaster')));
 const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
 
+// npd routing
+const NpdItemTypeMaster = Loadable(lazy(() => import('views/npd/ItemType/ItemTypeMaster')));
+const NpdItemSubtypeMaster = Loadable(lazy(() => import('views/npd/ItemSubtype/ItemSubtypeMaster')));
+const NpdOemMaster = Loadable(lazy(() => import('views/npd/Oem/OemMaster')));
+const NpdOemMappingMaster = Loadable(lazy(() => import('views/npd/OemMapping/OemMappingMaster')));
+const NpdModelMaster = Loadable(lazy(() => import('views/npd/Model/ModelMaster')));
+const NpdCapacityMaster = Loadable(lazy(() => import('views/npd/Capacity/CapacityMaster')));
+
 // ==============================|| MAIN ROUTING ||============================== //
 
 const MainRoutes = {
@@ -920,6 +928,46 @@ const MainRoutes = {
       element: <QmsAuditCriteriaMaster />
     },
     {
+      path: '/master/npd/product-group',
+      element: <NpdItemGroupMaster />
+    },
+    {
+      path: '/master/npd/product-type',
+      element: <NpdItemTypeMaster />
+    },
+    {
+      path: '/master/npd/product-subtype',
+      element: <NpdItemSubtypeMaster />
+    },
+    {
+      path: '/master/npd/product-oem',
+      element: <NpdOemMaster />
+    },
+    {
+      path: '/master/npd/product-oem-mapping',
+      element: <NpdOemMappingMaster />
+    },
+    {
+      path: '/master/npd/product-model',
+      element: <NpdModelMaster />
+    },
+    {
+      path: '/master/npd/product-capacity',
+      element: <NpdCapacityMaster />
+    },
+    {
+      path: '/master/npd/wind-farm',
+      element: <NpdWindFarmMaster />
+    },
+    {
+      path: '/master/npd/model-name',
+      element: <NpdModelNameMaster />
+    },
+    {
+      path: '/master/npd/uom',
+      element: <NpdUomMaster />
+    },
+    {
       path: '/master/qms/meeting/master',
       element: <MeetingMaster />
     },
@@ -1083,6 +1131,30 @@ const MainRoutes = {
     {
       path: '/master/common/state',
       element: <StateMasterPage />
+    },
+    {
+      path: '/master/npd/product-type',
+      element: <NpdItemTypeMaster />
+    },
+    {
+      path: '/master/npd/product-subtype',
+      element: <NpdItemSubtypeMaster />
+    },
+    {
+      path: '/master/npd/product-oem',
+      element: <NpdOemMaster />
+    },
+    {
+      path: '/master/npd/product-oem-mapping',
+      element: <NpdOemMappingMaster />
+    },
+    {
+      path: '/master/npd/product-model',
+      element: <NpdModelMaster />
+    },
+    {
+      path: '/master/npd/product-capacity',
+      element: <NpdCapacityMaster />
     },
     {
       path: '/sm/ocr/type-of-service',
