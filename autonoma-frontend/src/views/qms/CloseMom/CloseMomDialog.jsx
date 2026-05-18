@@ -7,17 +7,11 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
-<<<<<<< HEAD
 import useAuth from 'hooks/useAuth';
 
 const CloseMomDialog = ({ open, onClose, item, onSave }) => {
   const dispatch = useDispatch();
   const { user } = useAuth();
-=======
-
-const CloseMomDialog = ({ open, onClose, item, onSave }) => {
-  const dispatch = useDispatch();
->>>>>>> origin/chore/repo-cleanup
   const [actionTaken, setActionTaken] = useState('');
   const [actionObservation, setActionObservation] = useState('');
   const [isEditable, setIsEditable] = useState(true);
@@ -54,7 +48,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
       });
       dispatch(openSnackbar({ open: true, message: 'Action submitted for approval', variant: 'alert', severity: 'success' }));
       onSave();
-    } catch (error) {
+    } catch {
       dispatch(openSnackbar({ open: true, message: 'Failed to save action', variant: 'alert', severity: 'error' }));
     }
   };
@@ -62,20 +56,13 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
   if (!item) return null;
 
   const delayDays = getDelayDays();
-<<<<<<< HEAD
   const isAssignedToMe = user && item && (user.name === (item.assignedTo?.employeeName || item.assignedTo));
-=======
->>>>>>> origin/chore/repo-cleanup
 
   return (
     <BOSFormDialog
       open={open}
       onClose={onClose}
-<<<<<<< HEAD
       onSave={isEditable && isAssignedToMe ? handleSave : undefined}
-=======
-      onSave={isEditable ? handleSave : undefined}
->>>>>>> origin/chore/repo-cleanup
       title="Close MOM Action"
       maxWidth="md"
       isViewOnly={!isEditable}
@@ -115,7 +102,6 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
 
       <Divider sx={{ my: 1 }} />
 
-<<<<<<< HEAD
       {!isAssignedToMe && item && isEditable && (
         <Box sx={{ p: 1.5, bgcolor: 'error.lighter', borderRadius: 2, border: '1px solid', borderColor: 'error.main', mb: 2 }}>
           <Typography variant="body2" color="error.dark" fontWeight={700}>
@@ -124,8 +110,6 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
         </Box>
       )}
 
-=======
->>>>>>> origin/chore/repo-cleanup
       <BOSFormSection title="Action Details" icon={<IconCircleCheck size={22} />}>
         <Stack spacing={2.5} sx={{ mt: 1 }}>
           <BOSTextField
@@ -190,7 +174,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
         <Stack spacing={2} sx={{ mt: 1 }}>
           <Box sx={{ p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              Samples & Documents section — Upload corrective action files here
+              Samples &amp; Documents section — Upload corrective action files here
             </Typography>
           </Box>
         </Stack>
