@@ -139,16 +139,6 @@ export default function BOSFormDialog({
                   </Button>
                 </Tooltip>
               )}
-              <Tooltip title={shortcutTooltip('Edit Details', 'Ctrl + E')}>
-                <Button
-                  onClick={onEditClick}
-                  variant="contained"
-                  sx={btnEdit(theme)}
-                  startIcon={<IconEdit size={20} />}
-                >
-                  Edit
-                </Button>
-              </Tooltip>
               <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
                 <Button
                   onClick={() => onClose()}

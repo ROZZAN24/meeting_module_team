@@ -27,6 +27,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
+import useAuth from 'hooks/useAuth';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
@@ -49,7 +50,7 @@ const SEARCH_BY_OPTIONS = [
 ];
 
 const DEFAULT_FILTERS = {
-  taskType: 'All',
+  taskType: 'Mine',
   fromDate: '',
   toDate: '',
   considerDate: 'No',
@@ -161,6 +162,7 @@ function StatusChip({ status }) {
 }
 
 export default function CloseCheckListRenewal() {
+  const { user } = useAuth();
   const dispatch = useDispatch();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -228,6 +230,10 @@ export default function CloseCheckListRenewal() {
         searchValue: searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
 
+        // Task Filtering
+        taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
+        currentUser: user?.name || user?.id || undefined,
+
         // Add-on filters
         seqNo: filters.seqNo || undefined,
         checkingPoint: filters.checkingPoint || undefined,
@@ -243,7 +249,7 @@ export default function CloseCheckListRenewal() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery]);
+  }, [page, size, filters, searchQuery, user]);
 
   useEffect(() => {
     fetchAssignments();
@@ -306,7 +312,7 @@ export default function CloseCheckListRenewal() {
     exportToExcel(exportData, 'Close_Checklist');
   };
 
-  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
+  const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
 
   return (
     <MainCard
@@ -326,7 +332,7 @@ export default function CloseCheckListRenewal() {
       {activeCount > 0 && (
         <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>Filters:</Typography>
-          {filters.taskType !== 'All' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType', 'All')} />}
+          {filters.taskType !== 'Mine' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType', 'Mine')} />}
           {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate', '')} />}
           {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate', '')} />}
           {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate', 'All')} />}

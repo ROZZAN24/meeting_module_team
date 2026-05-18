@@ -43,7 +43,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request) {
         // Find user by userId
-        Optional<UserCredential> userOpt = userRepository.findByUserId(loginRequest.getUsername());
+        String usernameInput = loginRequest.getUsername();
+        Optional<UserCredential> userOpt = userRepository.findByUserId(usernameInput);
+        if (!userOpt.isPresent()) {
+            // Case-insensitive fallback
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getUserId().equalsIgnoreCase(usernameInput))
+                    .findFirst();
+        }
 
         if (userOpt.isPresent()) {
             UserCredential user = userOpt.get();

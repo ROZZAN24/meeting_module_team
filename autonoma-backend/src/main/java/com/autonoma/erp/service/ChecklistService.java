@@ -298,18 +298,27 @@ public class ChecklistService {
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate,
             String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType,
-            String currentUser, boolean excludeCompleted, Pageable pageable) {
+            String currentUser, boolean excludeCompleted, String dualCheck, Pageable pageable) {
 
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            Join<ChecklistAssignment, MasterChecklist> masterJoin = null;
+
             if (masterVerifyStatus != null && !masterVerifyStatus.isEmpty()) {
-                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                masterJoin = root.join("checklist");
                 if ("Verified".equals(masterVerifyStatus)) {
                     predicates.add(masterJoin.get("verifyStatus").in("Verified", "Accepted"));
                 } else {
                     predicates.add(cb.equal(masterJoin.get("verifyStatus"), masterVerifyStatus));
                 }
+            }
+
+            if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
+                if (masterJoin == null) {
+                    masterJoin = root.join("checklist");
+                }
+                predicates.add(cb.equal(masterJoin.get("dualCheck"), dualCheck));
             }
 
             // Task Type Logic (SOP Item 8)
@@ -353,7 +362,9 @@ public class ChecklistService {
             }
 
             if (category != null && !category.equals("All")) {
-                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                if (masterJoin == null) {
+                    masterJoin = root.join("checklist");
+                }
                 predicates.add(cb.equal(masterJoin.get("category"), category));
             }
 

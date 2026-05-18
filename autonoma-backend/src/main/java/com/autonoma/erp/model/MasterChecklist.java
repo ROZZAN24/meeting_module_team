@@ -15,7 +15,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, ignoreUnknown = true)
 public class MasterChecklist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -150,6 +150,8 @@ public class MasterChecklist {
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({"checklist", "hibernateLazyInitializer"})
+    @lombok.EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
     private List<ChecklistDepartment> departments;
 
     // Getters and Setters

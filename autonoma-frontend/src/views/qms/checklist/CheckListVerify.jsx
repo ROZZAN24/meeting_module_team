@@ -239,19 +239,17 @@ export default function CheckListVerify() {
     setPage(0);
   };
 
-  const handleVerify = async (status) => {
+  const handleVerify = async (status, remarks = '') => {
     if (!selectedRowId) return;
     try {
-      // In a real scenario, we might need a specific verification ID if it was an assignment,
-      // but here we are verifying the master record's creation/amendment.
-      // We'll use a generic verification endpoint or update the master.
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRowId,
         status: status,
         verifiedBy: 'Current User',
-        remarks: status === 'Rejected' ? 'Rejected by verifier' : 'Verified'
+        remarks: remarks || (status === 'Rejected' ? 'Rejected by verifier' : 'Verified')
       });
       fetchChecklists();
+      setDialogOpen(false);
     } catch (error) {
       console.error('Verification failed:', error);
     }
@@ -285,8 +283,6 @@ export default function CheckListVerify() {
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="contained" color="error" size="small" startIcon={<IconBan size={18} />} onClick={() => handleVerify('Rejected')} disabled={!selectedRowId}>Reject</Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleVerify('Verified')} disabled={!selectedRowId}>Verify</Button>
           <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
           <IconButton size="small" onClick={() => setDrawerOpen(true)}
             sx={{ border: '1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius: 1.5, p: 0.8, position: 'relative' }}>
@@ -453,6 +449,8 @@ export default function CheckListVerify() {
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}
         data={activeRow}
+        onVerify={(remarks) => handleVerify('Verified', remarks)}
+        onReject={(remarks) => handleVerify('Rejected', remarks)}
         isExecution={false}
       />
     </MainCard>
