@@ -9,9 +9,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -21,7 +19,6 @@ import Chip from '@mui/material/Chip';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
 import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
 import Menu from '@mui/material/Menu';
@@ -36,11 +33,6 @@ import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
-import { 
-  IconUserPlus, IconEdit, IconPlus, IconFileDots, 
-  IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX 
-} from '@tabler/icons-react';
-
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
@@ -725,7 +717,6 @@ export default function MasterCheckList() {
         </Box>
       </Drawer>
 
-      <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow}/>
       <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow} isAmendment={isAmendment}/>
       <ChecklistAssignDialog open={assignDialogOpen} onClose={() => { setAssignDialogOpen(false); fetchChecklists(); }} checklistId={selectedRowId} initialData={activeRow}/>
     </MainCard>

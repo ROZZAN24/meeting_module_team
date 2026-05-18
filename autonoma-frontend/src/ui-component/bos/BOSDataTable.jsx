@@ -32,7 +32,6 @@ export default function BOSDataTable({
   onDoubleClickRow,
   showActions: showActionsProp = true,
   actionColumn,
-  showActions = true,
   selectable = false,
   onSelectionChange,
   totalCount,

@@ -10,7 +10,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -161,8 +160,6 @@ export default function CheckListRenewalReport() {
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ dateRange:true, considerDate:false, status:true });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
-  const [openSections, setOpenSections] = useState({ dateRange: true, considerDate: false, status: true });
-  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   // Configure global search bar filters on mount
   useEffect(() => {

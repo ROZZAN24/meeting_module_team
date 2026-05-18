@@ -47,7 +47,6 @@ import {
   IconMoodSmile,
   IconSearch,
   IconCategory
-  IconSearch
 } from '@tabler/icons-react';
 
 const icons = {
