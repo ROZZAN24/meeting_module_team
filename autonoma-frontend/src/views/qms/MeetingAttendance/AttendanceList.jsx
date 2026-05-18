@@ -187,7 +187,11 @@ export default function AttendanceList() {
             ]}
           />
           <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
+<<<<<<< HEAD
             <Button variant="contained" color="primary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
+=======
+            <Button variant="contained" color="secondary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
+>>>>>>> origin/chore/repo-cleanup
               + New
             </Button>
           </Tooltip>

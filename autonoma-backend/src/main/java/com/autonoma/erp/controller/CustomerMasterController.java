@@ -17,6 +17,7 @@ public class CustomerMasterController {
 
     private final CustomerMasterService service;
 
+<<<<<<< HEAD
     @GetMapping("/{id}")
     public ResponseEntity<?> getCustomerById(@PathVariable String id) {
         if ("next-code".equals(id)) {
@@ -32,9 +33,24 @@ public class CustomerMasterController {
         }
     }
 
+=======
+>>>>>>> origin/chore/repo-cleanup
     @GetMapping
     public List<CustomerMaster> getAllCustomers() {
         return service.getAllCustomers();
+    }
+<<<<<<< HEAD
+    @GetMapping("/next-code")
+    public String getNextCode() {
+        return service.getNextCode();
+=======
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CustomerMaster> getCustomerById(@PathVariable Long id) {
+        return service.getCustomerById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+>>>>>>> origin/chore/repo-cleanup
     }
 
     @PostMapping
@@ -48,7 +64,10 @@ public class CustomerMasterController {
                 .map(customer -> {
                     customer.setCustomerCode(customerDetails.getCustomerCode());
                     customer.setCustomerName(customerDetails.getCustomerName());
+<<<<<<< HEAD
                     customer.setCustomerPrintName(customerDetails.getCustomerPrintName());
+=======
+>>>>>>> origin/chore/repo-cleanup
                     customer.setAccountsLedger(customerDetails.getAccountsLedger());
                     customer.setGroupName(customerDetails.getGroupName());
                     customer.setShortName(customerDetails.getShortName());

@@ -14,6 +14,7 @@ public interface DesignationRepository extends JpaRepository<Designation, Long> 
 
     @Query("SELECT MAX(d.displaySlNo) FROM Designation d")
     Optional<Integer> findMaxDisplaySlNo();
+<<<<<<< HEAD
 
     boolean existsByDesignationName(String designationName);
     boolean existsByDesignationNameAndIdNot(String designationName, Long id);
@@ -21,4 +22,6 @@ public interface DesignationRepository extends JpaRepository<Designation, Long> 
     boolean existsByDesignationCodeAndIdNot(String designationCode, Long id);
     boolean existsByOrgSeqNo(Integer orgSeqNo);
     boolean existsByOrgSeqNoAndIdNot(Integer orgSeqNo, Long id);
+=======
+>>>>>>> origin/chore/repo-cleanup
 }

@@ -1,10 +1,17 @@
 package com.autonoma.erp.config;
 
+<<<<<<< HEAD
 import com.autonoma.erp.model.CustomerMaster;
 import com.autonoma.erp.model.admin.UserCredential;
 import com.autonoma.erp.repository.CustomerMasterRepository;
 import com.autonoma.erp.repository.admin.UserRepository;
 
+=======
+import com.autonoma.erp.model.UserCredential;
+import com.autonoma.erp.model.CustomerMaster;
+import com.autonoma.erp.repository.UserRepository;
+import com.autonoma.erp.repository.CustomerMasterRepository;
+>>>>>>> origin/chore/repo-cleanup
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,11 +34,19 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+<<<<<<< HEAD
         Optional<UserCredential> existingAdmin = userRepository.findByUserId("Admin");
         UserCredential admin;
         if (existingAdmin.isEmpty()) {
             admin = new UserCredential();
             admin.setUserId("Admin");
+=======
+        Optional<UserCredential> existingAdmin = userRepository.findByUserId("admin");
+        UserCredential admin;
+        if (existingAdmin.isEmpty()) {
+            admin = new UserCredential();
+            admin.setUserId("admin");
+>>>>>>> origin/chore/repo-cleanup
             admin.setEmpId(1L);
             admin.setCreatedBy("SYSTEM");
             admin.setCreatedDate(new Date());
@@ -40,7 +55,11 @@ public class DataInitializer implements CommandLineRunner {
             admin = existingAdmin.get();
             System.out.println("Updating existing admin user...");
         }
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> origin/chore/repo-cleanup
         // Use the new reversible encoder
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setStatus(1);

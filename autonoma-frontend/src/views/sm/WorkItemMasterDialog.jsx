@@ -11,9 +11,14 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { BOSFormDialog, btnDelete, btnEdit } from 'ui-component/bos';
 import { format } from 'date-fns';
+<<<<<<< HEAD
 import { IconTrash, IconUpload, IconMailForward, IconCloudUpload, IconFileCheck, IconX } from '@tabler/icons-react';
 import { useRef } from 'react';
 import { BOSFormSection } from 'ui-component/bos';
+=======
+import { IconTrash, IconUpload, IconMailForward } from '@tabler/icons-react';
+import UploadFileDialog from './UploadFileDialog';
+>>>>>>> origin/chore/repo-cleanup
 import ForwardMailDialog from './ForwardMailDialog';
 
 const fieldConfigs = [
@@ -55,8 +60,12 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     emailReceivedAt: '',
     category: 'Others',
     status: 'Abandoned',
+<<<<<<< HEAD
     emailMessageId: '',
     uploadFiles: ''
+=======
+    emailMessageId: ''
+>>>>>>> origin/chore/repo-cleanup
   });
 
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -67,16 +76,25 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
   const [previewData, setPreviewData] = useState({ url: '', name: '', type: '', content: '' });
   const [previewLoading, setPreviewLoading] = useState(false);
   const [customers, setCustomers] = useState([]);
+<<<<<<< HEAD
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
   const handlePreview = async (emailId, attachmentId, fileName, contentType = '') => {
+=======
+
+  const handlePreview = async (emailId, attachmentId, fileName) => {
+>>>>>>> origin/chore/repo-cleanup
     const url = `http://localhost:9090/api/inbox/${emailId}/attachments/${attachmentId}`;
     const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
     
     setPreviewLoading(true);
     setPreviewOpen(true);
+<<<<<<< HEAD
     setPreviewData({ id: attachmentId, url, name: fileName, type: ext, contentType, content: '' });
+=======
+    setPreviewData({ url, name: fileName, type: ext, content: '' });
+>>>>>>> origin/chore/repo-cleanup
 
     try {
       if (['docx', 'doc', 'xlsx', 'xls'].includes(ext)) {
@@ -132,6 +150,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     window.open(url, '_blank');
   };
 
+<<<<<<< HEAD
   const handleManualUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -173,6 +192,8 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     setPreviewOpen(true);
   };
 
+=======
+>>>>>>> origin/chore/repo-cleanup
   useEffect(() => {
     clearErrors();
     if (open) fetchCustomers();
@@ -187,8 +208,12 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                   initialData.intent === 'QUOTATION_REQUEST' ? 'Order' : 
                   initialData.intent === 'UNCLASSIFIED' ? 'Others' : (initialData.intent || 'Others'),
         emailReceivedAt: initialData.emailReceivedAt || '',
+<<<<<<< HEAD
         emailMessageId: initialData.emailMessageId || '',
         uploadFiles: initialData.uploadFiles || ''
+=======
+        emailMessageId: initialData.emailMessageId || ''
+>>>>>>> origin/chore/repo-cleanup
       });
       if (initialData.emailMessageId) {
         fetchAttachments(initialData.emailMessageId);
@@ -206,8 +231,12 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
         emailReceivedAt: '',
         category: 'Others',
         status: 'Abandoned',
+<<<<<<< HEAD
         emailMessageId: '',
         uploadFiles: ''
+=======
+        emailMessageId: ''
+>>>>>>> origin/chore/repo-cleanup
       });
       setAttachments([]);
     }
@@ -251,6 +280,17 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
       <Button
         variant="contained"
         sx={{ ...btnEdit(theme), bgcolor: '#2196f3', '&:hover': { bgcolor: '#1976d2' } }}
+<<<<<<< HEAD
+=======
+        startIcon={<IconUpload size={18} />}
+        onClick={() => setUploadDialogOpen(true)}
+      >
+        Upload File
+      </Button>
+      <Button
+        variant="contained"
+        sx={{ ...btnEdit(theme), bgcolor: '#2196f3', '&:hover': { bgcolor: '#1976d2' } }}
+>>>>>>> origin/chore/repo-cleanup
         startIcon={<IconMailForward size={18} />}
         onClick={() => setForwardDialogOpen(true)}
       >
@@ -483,7 +523,11 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                           <Chip
                             label={att.name}
                             icon={<AttachFileRoundedIcon sx={{ fontSize: '14px !important' }} />}
+<<<<<<< HEAD
                             onClick={() => handlePreview(formData.emailMessageId, att.id, att.name, att.contentType)}
+=======
+                            onClick={() => handlePreview(formData.emailMessageId, att.id, att.name)}
+>>>>>>> origin/chore/repo-cleanup
                             size="small"
                             variant="outlined"
                             sx={{ 
@@ -497,7 +541,11 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                           />
                           <IconButton 
                             size="small" 
+<<<<<<< HEAD
                             onClick={() => handlePreview(formData.emailMessageId, att.id, att.name, att.contentType)}
+=======
+                            onClick={() => handlePreview(formData.emailMessageId, att.id, att.name)}
+>>>>>>> origin/chore/repo-cleanup
                             sx={{ color: 'primary.main', p: 0.5 }}
                           >
                             <VisibilityRoundedIcon sx={{ fontSize: 18 }} />
@@ -545,6 +593,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
               </Grid>
             </Grid>
           </Grid>
+<<<<<<< HEAD
           <Grid size={{ xs: 12 }}>
             <BOSFormSection icon={<IconCloudUpload size={20} color={theme.palette.primary.main} />} title="Document Upload">
               <Grid container spacing={2.5}>
@@ -596,6 +645,15 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
           </Grid>
         </Grid>
       </Box>
+=======
+        </Grid>
+      </Box>
+      <UploadFileDialog 
+        open={uploadDialogOpen} 
+        handleClose={() => setUploadDialogOpen(false)} 
+        workItemData={formData}
+      />
+>>>>>>> origin/chore/repo-cleanup
       <ForwardMailDialog open={forwardDialogOpen} handleClose={() => setForwardDialogOpen(false)} />
 
       {/* File Preview Dialog */}
@@ -630,16 +688,29 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
                 />
               ) : (
                 <>
+<<<<<<< HEAD
                   {previewData.name.toLowerCase().endsWith('.pdf') || previewData.contentType === 'application/pdf' ? (
                     <iframe title="PDF Preview" src={previewData.url} style={{ width: '100%', height: '70vh', border: 'none' }} />
                   ) : (previewData.type.startsWith('image') || (previewData.contentType && previewData.contentType.startsWith('image/')) || /\.(jpg|jpeg|png|gif|webp)$/i.test(previewData.name)) ? (
+=======
+                  {previewData.name.toLowerCase().endsWith('.pdf') ? (
+                    <iframe title="PDF Preview" src={previewData.url} style={{ width: '100%', height: '70vh', border: 'none' }} />
+                  ) : (previewData.type.startsWith('image') || /\.(jpg|jpeg|png|gif|webp)$/i.test(previewData.name)) ? (
+>>>>>>> origin/chore/repo-cleanup
                     <Box 
                       component="img" 
                       src={previewData.url} 
                       sx={{ maxWidth: '100%', maxHeight: '70vh', borderRadius: 2, boxShadow: '0 10px 30px rgba(0,0,0,0.1)', objectFit: 'contain' }} 
                     />
                   ) : (
+<<<<<<< HEAD
                     <iframe title="Document Preview" src={previewData.url} style={{ width: '100%', height: '70vh', border: 'none' }} />
+=======
+                    <Box sx={{ p: 4 }}>
+                      <Typography variant="h5" color="text.secondary" gutterBottom>Preview not available for this format</Typography>
+                      <Typography variant="body2" color="text.disabled">Please download the file to view its content.</Typography>
+                    </Box>
+>>>>>>> origin/chore/repo-cleanup
                   )}
                 </>
               )}

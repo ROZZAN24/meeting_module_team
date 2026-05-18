@@ -11,9 +11,15 @@ import {
   Checkbox,
   Autocomplete,
   useTheme,
+<<<<<<< HEAD
   Chip,
   Avatar,
   Tooltip
+=======
+  Tooltip,
+  Paper,
+  Chip
+>>>>>>> origin/chore/repo-cleanup
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import {
@@ -33,11 +39,18 @@ import {
   BOSFormDialog,
   BOSFormSection,
   BOSTextField,
+<<<<<<< HEAD
   BOSDatePicker,
   BOSDataTable,
   btnSave,
   getStatusChipSx,
   getPhotoUrl
+=======
+  BOSDataTable,
+  btnSave,
+  btnClear,
+  getStatusChipSx
+>>>>>>> origin/chore/repo-cleanup
 } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -320,12 +333,23 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconFileDescription size={20} color={theme.palette.primary.main} />} title="General Information">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
               <BOSTextField label="Schedule No" value={formData.scheduleNo} inputProps={{ readOnly: true }} />
+<<<<<<< HEAD
               <BOSDatePicker
                 required
                 label="Schedule Date"
                 name="scheduleDate"
                 value={formData.scheduleDate}
                 onChange={handleChange}
+=======
+              <BOSTextField
+                required
+                label="Schedule Date"
+                type="date"
+                name="scheduleDate"
+                value={formData.scheduleDate}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true }}
+>>>>>>> origin/chore/repo-cleanup
                 error={!!errors.scheduleDate}
                 helperText={errors.scheduleDate}
               />
@@ -423,12 +447,23 @@ export default function AddAuditSchedule() {
                 error={!!errors.auditArea}
                 helperText={errors.auditArea}
               />
+<<<<<<< HEAD
               <BOSDatePicker
                 required
                 label="Audit Date"
                 name="auditDate"
                 value={formData.auditDate}
                 onChange={handleChange}
+=======
+              <BOSTextField
+                required
+                label="Audit Date"
+                type="date"
+                name="auditDate"
+                value={formData.auditDate}
+                onChange={handleChange}
+                InputLabelProps={{ shrink: true }}
+>>>>>>> origin/chore/repo-cleanup
                 error={!!errors.auditDate}
                 helperText={errors.auditDate}
               />
@@ -530,6 +565,7 @@ export default function AddAuditSchedule() {
                   }}>
                     <Box sx={{ height: 60, bgcolor: isDark ? 'primary.dark' : 'primary.light', width: '100%', position: 'absolute', top: 0, left: 0, opacity: isDark ? 0.3 : 0.6 }} />
                     <CardContent sx={{ p: 3, pt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 1, flexGrow: 1 }}>
+<<<<<<< HEAD
                       <Avatar
                         src={selectedEmp ? getPhotoUrl(selectedEmp.employeePhotoUpload) : null}
                         sx={{
@@ -540,6 +576,15 @@ export default function AddAuditSchedule() {
                       >
                         {!selectedEmp || !selectedEmp.employeePhotoUpload ? <IconUsers size={48} /> : null}
                       </Avatar>
+=======
+                      <Box sx={{
+                        width: 100, height: 100, borderRadius: '50%', bgcolor: isDark ? '#1c2128' : '#fff', border: '4px solid',
+                        borderColor: isDark ? 'background.default' : '#fff', display: 'flex', justifyContent: 'center', alignItems: 'center',
+                        color: 'primary.main', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', mb: 2
+                      }}>
+                        <IconUsers size={48} />
+                      </Box>
+>>>>>>> origin/chore/repo-cleanup
                       <Typography variant="overline" color="primary.main" sx={{ fontWeight: 800, mb: 0.5, fontSize: '0.8rem' }}>{person.role}</Typography>
                       <Typography variant="h6" fontWeight={700} color="text.primary" noWrap sx={{ width: '100%', textAlign: 'center', mb: 0.5 }}>{name !== '-' ? name : 'Not Selected'}</Typography>
                       

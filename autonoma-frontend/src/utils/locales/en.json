@@ -327,6 +327,7 @@
   "qms-minutes-of-meeting": "Minutes of Meeting",
   "qms-meeting-attendance": "Meeting User Attendance",
   "qms-close-mom": "Close MOM",
+<<<<<<< HEAD
   "qms-mom-approval": "MOM Approval",
   "Vendor Master": "Vendor Master",
   "Accounts": "Accounts",
@@ -361,4 +362,7 @@
   "Model Name": "Model Name",
   "UOM": "UOM",
   "Wind Farm": "Wind Farm"
+=======
+  "qms-mom-approval": "MOM Approval"
+>>>>>>> origin/chore/repo-cleanup
 }

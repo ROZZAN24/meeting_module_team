@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
+<<<<<<< HEAD
   DialogActions, TextField, MenuItem
 } from '@mui/material';
 import { IconTruckDelivery, IconPlus } from '@tabler/icons-react';
@@ -20,6 +21,21 @@ const columns = [
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+=======
+  DialogActions, TextField, MenuItem, IconButton, Tooltip 
+} from '@mui/material';
+import { IconTruckDelivery, IconPlus, IconEdit, IconTrash } from '@tabler/icons-react';
+import MainCard from 'ui-component/cards/MainCard';
+import { BOSDataTable } from 'ui-component/bos';
+import axios from 'axios';
+
+const columns = [
+  { id: 'index', label: '#', minWidth: 50 },
+  { id: 'termCode', label: 'Term Code', minWidth: 120, bold: true },
+  { id: 'termName', label: 'Term Name', minWidth: 250 },
+  { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'actions', label: 'Actions', minWidth: 100, align: 'right' }
+>>>>>>> origin/chore/repo-cleanup
 ];
 
 export default function DeliveryTerms() {
@@ -28,9 +44,12 @@ export default function DeliveryTerms() {
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
+<<<<<<< HEAD
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState('');
+=======
+>>>>>>> origin/chore/repo-cleanup
   const [formData, setFormData] = useState({
     termCode: '',
     termName: '',
@@ -40,7 +59,11 @@ export default function DeliveryTerms() {
 
   const fetchRows = async () => {
     try {
+<<<<<<< HEAD
       const res = await axios.get('/api/delivery-terms');
+=======
+      const res = await axios.get('http://localhost:8081/api/delivery-terms');
+>>>>>>> origin/chore/repo-cleanup
       setRows(res.data);
     } catch (err) {
       console.error(err);
@@ -77,9 +100,15 @@ export default function DeliveryTerms() {
   const handleSubmit = async () => {
     try {
       if (editId) {
+<<<<<<< HEAD
         await axios.put(`/api/delivery-terms/${editId}`, formData);
       } else {
         await axios.post('/api/delivery-terms', formData);
+=======
+        await axios.put(`http://localhost:8081/api/delivery-terms/${editId}`, formData);
+      } else {
+        await axios.post('http://localhost:8081/api/delivery-terms', formData);
+>>>>>>> origin/chore/repo-cleanup
       }
       handleClose();
       fetchRows();
@@ -88,6 +117,7 @@ export default function DeliveryTerms() {
     }
   };
 
+<<<<<<< HEAD
   const handleDeleteClick = (row) => {
     setDeleteId(row.id);
     setDeleteName(row.termName);
@@ -144,21 +174,70 @@ return (
               { header: 'Status', key: 'status' }
             ]}
           />
+=======
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this term?')) {
+      try {
+        await axios.delete(`http://localhost:8081/api/delivery-terms/${id}`);
+        fetchRows();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const formattedRows = rows.map((row, index) => ({
+    ...row,
+    index: index + 1,
+    actions: (
+      <Stack direction="row" spacing={1} justifyContent="flex-end">
+        <Tooltip title="Edit">
+          <IconButton size="small" color="primary" onClick={() => handleOpen(row)}>
+            <IconEdit size={18} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete">
+          <IconButton size="small" color="error" onClick={() => handleDelete(row.id)}>
+            <IconTrash size={18} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    )
+  }));
+
+  return (
+    <MainCard
+      title={
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <IconTruckDelivery size={24} />
+            <Typography variant="h3">Delivery Terms</Typography>
+          </Stack>
+>>>>>>> origin/chore/repo-cleanup
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
             New Term
           </Button>
         </Stack>
       }
     >
+<<<<<<< HEAD
       <BOSDataTable columns={columns}
         rows={filteredRows}
+=======
+      <BOSDataTable
+        columns={columns}
+        rows={formattedRows}
+>>>>>>> origin/chore/repo-cleanup
         page={page}
         size={size}
         totalCount={rows.length}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
+<<<<<<< HEAD
         onEditRow={(row) => handleOpen(row)}
         onDeleteRow={handleDeleteClick}
+=======
+>>>>>>> origin/chore/repo-cleanup
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
@@ -166,13 +245,27 @@ return (
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
+<<<<<<< HEAD
               label="Delivery Term"
+=======
+              label="Term Code"
+              fullWidth
+              value={formData.termCode}
+              onChange={(e) => setFormData({ ...formData, termCode: e.target.value })}
+            />
+            <TextField
+              label="Term Name"
+>>>>>>> origin/chore/repo-cleanup
               fullWidth
               value={formData.termName}
               onChange={(e) => setFormData({ ...formData, termName: e.target.value })}
             />
             <TextField
+<<<<<<< HEAD
               label="Delivery Term Description"
+=======
+              label="Description"
+>>>>>>> origin/chore/repo-cleanup
               fullWidth
               multiline
               rows={3}
@@ -198,6 +291,7 @@ return (
           </Button>
         </DialogActions>
       </Dialog>
+<<<<<<< HEAD
 
       <ConfirmDeleteDialog 
         open={deleteOpen} 
@@ -207,6 +301,8 @@ return (
         message="Are you sure you want to delete this delivery term?" 
         itemName={deleteName} 
       />
+=======
+>>>>>>> origin/chore/repo-cleanup
     </MainCard>
   );
 }

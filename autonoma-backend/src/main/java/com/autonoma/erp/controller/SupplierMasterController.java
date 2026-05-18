@@ -15,6 +15,7 @@ public class SupplierMasterController {
     @Autowired
     private SupplierMasterService service;
 
+<<<<<<< HEAD
     @GetMapping("/{id}")
     public ResponseEntity<?> getSupplierById(@PathVariable String id) {
         if ("next-code".equals(id)) {
@@ -30,11 +31,23 @@ public class SupplierMasterController {
         }
     }
 
+=======
+>>>>>>> origin/chore/repo-cleanup
     @GetMapping
     public List<SupplierMaster> getAllSuppliers() {
         return service.getAllSuppliers();
     }
 
+<<<<<<< HEAD
+=======
+    @GetMapping("/{id}")
+    public ResponseEntity<SupplierMaster> getSupplierById(@PathVariable Long id) {
+        return service.getSupplierById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+>>>>>>> origin/chore/repo-cleanup
     @PostMapping
     public SupplierMaster createSupplier(@RequestBody SupplierMaster supplier) {
         return service.saveSupplier(supplier);

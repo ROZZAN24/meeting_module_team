@@ -6,7 +6,10 @@ import Button from '@mui/material/Button';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Box from '@mui/material/Box';
+<<<<<<< HEAD
 import FormHelperText from '@mui/material/FormHelperText';
+=======
+>>>>>>> origin/chore/repo-cleanup
 
 import Alert from '@mui/material/Alert';
 import Grid from '@mui/material/Grid';
@@ -159,7 +162,7 @@ export default function JWTLogin({ ...others }) {
           <Box sx={{ mt: 3 }}>
             <AnimateButton>
               <Button color="primary" disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained">
-                Sign In
+                Sign In to ERP
               </Button>
             </AnimateButton>
           </Box>

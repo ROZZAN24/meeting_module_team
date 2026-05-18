@@ -52,6 +52,7 @@ public class DesignationController {
     }
 
     @PostMapping
+<<<<<<< HEAD
     public ResponseEntity<?> create(@RequestBody Designation designation) {
         if (designationRepository.existsByDesignationName(designation.getDesignationName())) {
             return ResponseEntity.badRequest().body("Designation Name already exists!");
@@ -79,6 +80,17 @@ public class DesignationController {
         return designationRepository.findById(id)
                 .map(designation -> {
                     designation.setDesignationCode(designationDetails.getDesignationCode());
+=======
+    public Designation create(@RequestBody Designation designation) {
+        if (designation.getCreatedBy() == null) designation.setCreatedBy("Admin");
+        return designationRepository.save(designation);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Designation> update(@PathVariable Long id, @RequestBody Designation designationDetails) {
+        return designationRepository.findById(id)
+                .map(designation -> {
+>>>>>>> origin/chore/repo-cleanup
                     designation.setDesignationName(designationDetails.getDesignationName());
                     designation.setSubCategoryLevel(designationDetails.getSubCategoryLevel());
                     designation.setExperience(designationDetails.getExperience());
@@ -88,6 +100,10 @@ public class DesignationController {
                     designation.setJobDescription(designationDetails.getJobDescription());
                     designation.setOrgSeqNo(designationDetails.getOrgSeqNo());
                     designation.setBudgetedPositions(designationDetails.getBudgetedPositions());
+<<<<<<< HEAD
+=======
+                    designation.setUpdatedBy("Admin");
+>>>>>>> origin/chore/repo-cleanup
                     return ResponseEntity.ok(designationRepository.save(designation));
                 }).orElse(ResponseEntity.notFound().build());
     }

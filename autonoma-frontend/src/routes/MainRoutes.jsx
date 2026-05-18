@@ -190,9 +190,12 @@ const AdminCompanyProfile = Loadable(lazy(() => import('views/admin/CompanyProfi
 const AdminUserAccess = Loadable(lazy(() => import('views/admin/UserAccess')));
 const AdminBusinessAuthorization = Loadable(lazy(() => import('views/admin/BusinessAuthorization')));
 const AdminSessionMonitoring = Loadable(lazy(() => import('views/admin/SessionMonitoring')));
+<<<<<<< HEAD
 const DivisionMaster = Loadable(lazy(() => import('views/admin/DivisionMaster')));
 const AuditTrailPage = Loadable(lazy(() => import('views/admin/AuditTrailPage')));
 const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
+=======
+>>>>>>> origin/chore/repo-cleanup
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -263,8 +266,11 @@ const SubSegmentMaster = Loadable(lazy(() => import('views/sm/masters/SubSegment
 const PaymentTerms = Loadable(lazy(() => import('views/sm/masters/PaymentTerms')));
 const DeliveryTerms = Loadable(lazy(() => import('views/sm/masters/DeliveryTerms')));
 const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService')));
+<<<<<<< HEAD
 const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMaster')));
 const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
+=======
+>>>>>>> origin/chore/repo-cleanup
 
 // ==============================|| MAIN ROUTING ||============================== //
 
@@ -309,6 +315,7 @@ const MainRoutes = {
       element: <AdminSessionMonitoring />
     },
     {
+<<<<<<< HEAD
       path: '/admin/audit-trail',
       element: <AuditTrailPage />
     },
@@ -321,6 +328,8 @@ const MainRoutes = {
       element: <DivisionMaster />
     },
     {
+=======
+>>>>>>> origin/chore/repo-cleanup
       path: '/widget/statistics',
       element: <WidgetStatistics />
     },
@@ -933,6 +942,7 @@ const MainRoutes = {
       element: <QmsAuditCriteriaMaster />
     },
     {
+<<<<<<< HEAD
       path: '/master/npd/product-group',
       element: <NpdItemGroupMaster />
     },
@@ -973,6 +983,8 @@ const MainRoutes = {
       element: <NpdUomMaster />
     },
     {
+=======
+>>>>>>> origin/chore/repo-cleanup
       path: '/master/qms/meeting/master',
       element: <MeetingMaster />
     },
@@ -1102,10 +1114,13 @@ const MainRoutes = {
       element: <CurrencyMaster />
     },
     {
+<<<<<<< HEAD
       path: '/master/accounts/currency',
       element: <CurrencyMaster />
     },
     {
+=======
+>>>>>>> origin/chore/repo-cleanup
       path: '/sm/ocr/segment-master',
       element: <SegmentMaster />
     },
@@ -1122,6 +1137,7 @@ const MainRoutes = {
       element: <DeliveryTerms />
     },
     {
+<<<<<<< HEAD
       path: '/master/common/delivery-terms',
       element: <DeliveryTerms />
     },
@@ -1138,6 +1154,8 @@ const MainRoutes = {
       element: <StateMasterPage />
     },
     {
+=======
+>>>>>>> origin/chore/repo-cleanup
       path: '/sm/ocr/type-of-service',
       element: <TypeOfService />
     },

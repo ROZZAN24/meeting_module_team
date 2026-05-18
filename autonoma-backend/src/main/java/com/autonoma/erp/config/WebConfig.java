@@ -3,6 +3,7 @@ package com.autonoma.erp.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
+<<<<<<< HEAD
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -20,6 +21,11 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(auditContextInterceptor)
                 .addPathPatterns("/**"); // Apply to all paths
     }
+=======
+
+@Configuration
+public class WebConfig {
+>>>>>>> origin/chore/repo-cleanup
 
     @Bean
     public StandardServletMultipartResolver multipartResolver() {

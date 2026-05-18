@@ -62,9 +62,16 @@ export default function ModelMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
+<<<<<<<< HEAD:autonoma-frontend/src/views/npd/Model/ModelMaster.jsx
         defaultValue: 'ACTIVE',
         isStarred: true
       }
+========
+        defaultValue: 'Active',
+        isConstant: true
+      },
+      { id: 'gradeName', label: 'Grade Name', type: 'text', placeholder: 'Search by Name...', isConstant: true }
+>>>>>>>> origin/chore/repo-cleanup:autonoma-frontend/src/views/master/hr/GradeDetails.jsx
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));

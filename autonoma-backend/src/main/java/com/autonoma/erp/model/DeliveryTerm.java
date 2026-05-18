@@ -4,7 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
+<<<<<<< HEAD
 @Table(name = "sm_delivery_terms")
+=======
+@Table(name = "SM_DELIVERY_TERMS")
+>>>>>>> origin/chore/repo-cleanup
 @Data
 public class DeliveryTerm {
     @Id
@@ -20,6 +24,7 @@ public class DeliveryTerm {
     @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
+<<<<<<< HEAD
     @Column(name = "STATUS")
     private String status = "Active";
 
@@ -34,4 +39,8 @@ public class DeliveryTerm {
 
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
+=======
+    @Column(name = "STATUS", length = 20)
+    private String status;
+>>>>>>> origin/chore/repo-cleanup
 }

@@ -8,21 +8,29 @@ import { getInputStyles } from './BOSStyles';
  * Wraps MUI TextField with standardized BOS styles.
  * Handles mandatory (*) indicator, maxLength enforcement, and UTF-8 display.
  */
+<<<<<<< HEAD
 export default function BOSTextField({ error, helperText, maxLength, sx, inputProps, InputLabelProps, value, ...rest }) {
+=======
+export default function BOSTextField({ error, helperText, maxLength, sx, inputProps, ...rest }) {
+>>>>>>> origin/chore/repo-cleanup
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
 
+<<<<<<< HEAD
   // Auto-shrink label if value exists, or if explicitly told to shrink
   const shouldShrink = value !== undefined && value !== null && value !== '' ? true : undefined;
 
+=======
+>>>>>>> origin/chore/repo-cleanup
   return (
     <TextField
       fullWidth
       size="small"
       error={error}
       helperText={helperText}
+<<<<<<< HEAD
       value={value}
       inputProps={{ maxLength, ...inputProps }}
       InputLabelProps={{ 
@@ -33,6 +41,10 @@ export default function BOSTextField({ error, helperText, maxLength, sx, inputPr
         ...bosInput, 
         ...sx 
       }}
+=======
+      inputProps={{ maxLength, ...inputProps }}
+      sx={{ ...bosInput, ...sx }}
+>>>>>>> origin/chore/repo-cleanup
       {...rest}
     />
   );
