@@ -460,11 +460,6 @@ export default function MasterCheckList() {
           <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
           <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setIsAmendment(false); setDialogOpen(true); }}>Add</Button>
           <BOSExportButton data={rows} filename="Master_Check_List" columns={exportColumns} size="small" />
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
-            <IconAdjustmentsHorizontal size={20}/>
-            {activeCount > 0 && <Box sx={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', bgcolor:'error.main', color:'#fff', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>{activeCount}</Box>}
-          </IconButton>
         </Box>
       }
     >
