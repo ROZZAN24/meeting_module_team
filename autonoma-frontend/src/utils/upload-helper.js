@@ -92,23 +92,19 @@ export const autoUploadFiles = async (files, overrideModule = null, onProgress =
 
 export const getFileViewUrl = (serverFileName) => {
     if (!serverFileName) return '';
-    const clean = String(serverFileName).trim();
-    if (!clean || clean === '-' || clean === 'null' || clean === 'undefined') return '';
     const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
     const filesPath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
     
     // Use query parameter to avoid Tomcat path variable restrictions (spaces, slashes, etc.)
-    return `${baseUrl}${filesPath}/view?path=${encodeURIComponent(clean)}`;
+    return `${baseUrl}${filesPath}/view?path=${encodeURIComponent(serverFileName)}`;
 };
 
 export const getFileDownloadUrl = (serverFileName) => {
     if (!serverFileName) return '';
-    const clean = String(serverFileName).trim();
-    if (!clean || clean === '-' || clean === 'null' || clean === 'undefined') return '';
     const baseUrl = (axios.defaults.baseURL || '').replace(/\/+$/, '');
     const filesPath = API_PATHS.FILES.startsWith('/') ? API_PATHS.FILES : `/${API_PATHS.FILES}`;
     
-    return `${baseUrl}${filesPath}/download?path=${encodeURIComponent(clean)}`;
+    return `${baseUrl}${filesPath}/download?path=${encodeURIComponent(serverFileName)}`;
 };
 
 export const getUserImageUrl = (imgName) => {

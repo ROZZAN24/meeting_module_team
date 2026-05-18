@@ -36,12 +36,10 @@ export const parseBOSFiles = (files) => {
  */
 export const getPhotoUrl = (photoPath) => {
   if (!photoPath) return null;
-  const cleanPath = String(photoPath).trim();
-  if (!cleanPath || cleanPath === '-' || cleanPath === 'null' || cleanPath === 'undefined') return null;
-  if (cleanPath.startsWith('http') || cleanPath.startsWith('blob:')) return cleanPath;
+  if (photoPath.startsWith('http') || photoPath.startsWith('blob:')) return photoPath;
   
   // Use relative path to let Vite proxy handle it correctly (usually to 8081)
-  return `/api/files/view?path=${encodeURIComponent(cleanPath)}`;
+  return `/api/files/view?path=${encodeURIComponent(photoPath)}`;
 };
 
 /**

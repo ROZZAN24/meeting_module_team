@@ -27,8 +27,7 @@ import {
 import {
   IconRefresh,
   IconCheck,
-  IconUserCheck,
-  IconEye
+  IconUserCheck
 } from '@tabler/icons-react';
 
 // BOS Components
@@ -60,7 +59,7 @@ const columns = [
     id: 'averageRating',
     label: 'Rating',
     minWidth: 80,
-    render: (row) => row.averageRating ? (row.averageRating % 1 === 0 ? `${row.averageRating.toFixed(0)}/10` : `${row.averageRating.toFixed(1)}/10`) : '-'
+    render: (row) => row.averageRating ? `${row.averageRating.toFixed(1)}/5` : '-'
   },
   {
     id: 'currentStatus',
@@ -89,15 +88,6 @@ export default function InductionTrainee() {
   const [trainingDetails, setTrainingDetails] = useState([]);
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState('');
-
-  const canEdit = useMemo(() => {
-    if (!selectedAssignment || !user) return false;
-    const userEmpCode = String(user.empCode || '').trim().toLowerCase();
-    const userEmpId = String(user.empId || '').trim().toLowerCase();
-    const rowEmpCode = String(selectedAssignment.empCode || '').trim().toLowerCase();
-    const rowEmpId = String(selectedAssignment.empId || '').trim().toLowerCase();
-    return (userEmpCode && userEmpCode === rowEmpCode) || (userEmpId && userEmpId === rowEmpId);
-  }, [selectedAssignment, user]);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -176,8 +166,8 @@ export default function InductionTrainee() {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      const msg = typeof error === 'string' ? error : (error?.message || 'Failed to submit responses');
-      dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
+      const msg = error.response?.data || 'Failed to submit responses';
+      dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
     } finally {
       setSaving(false);
     }
@@ -240,26 +230,18 @@ export default function InductionTrainee() {
         loading={loading}
         onDoubleClickRow={handleUpdateTraining}
         actionColumn={{
-          render: (row) => {
-            const rowEmpCode = String(row.empCode || '').trim().toLowerCase();
-            const rowEmpId = String(row.empId || '').trim().toLowerCase();
-            const userEmpCode = String(user?.empCode || '').trim().toLowerCase();
-            const userEmpId = String(user?.empId || '').trim().toLowerCase();
-            const isTrainee = (userEmpCode && userEmpCode === rowEmpCode) || (userEmpId && userEmpId === rowEmpId);
-            
-            return (
-              <Button
-                size="small"
-                variant="contained"
-                color={isTrainee ? "info" : "secondary"}
-                startIcon={isTrainee ? <IconCheck size={16} /> : <IconEye size={16} />}
-                onClick={() => handleUpdateTraining(row)}
-                sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
-              >
-                {isTrainee ? 'Update Training' : 'View Response'}
-              </Button>
-            );
-          }
+          render: (row) => (
+            <Button
+              size="small"
+              variant="contained"
+              color="info"
+              startIcon={<IconCheck size={16} />}
+              onClick={() => handleUpdateTraining(row)}
+              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
+            >
+              Update Training
+            </Button>
+          )
         }}
       />
 
@@ -267,12 +249,11 @@ export default function InductionTrainee() {
       <BOSFormDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        title={canEdit ? "Induction Review — Trainee Response" : "Induction Review — Trainee Response (View Only)"}
+        title="Induction Review — Trainee Response"
         fullWidth
         maxWidth="xl"
-        onSave={canEdit ? handleSubmit : null}
-        saveLabel={canEdit ? "Submit Response" : null}
-        isViewOnly={!canEdit}
+        onSave={handleSubmit}
+        saveLabel="Submit Response"
       >
         {selectedAssignment && (
           <>
@@ -298,11 +279,7 @@ export default function InductionTrainee() {
                 {selectedAssignment.averageRating && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">TRAINER RATING</Typography>
-                    <Typography variant="h4">
-                      {selectedAssignment.averageRating % 1 === 0 
-                        ? selectedAssignment.averageRating.toFixed(0) 
-                        : selectedAssignment.averageRating.toFixed(1)} / 10
-                    </Typography>
+                    <Typography variant="h4">{selectedAssignment.averageRating.toFixed(1)} / 5</Typography>
                   </Box>
                 )}
               </Box>
@@ -353,7 +330,6 @@ export default function InductionTrainee() {
                             value={detail.traineeStatus || ''}
                             onChange={(e) => updateDetail(detail.id, 'traineeStatus', e.target.value)}
                             fullWidth
-                            disabled={!canEdit}
                             sx={{ minWidth: 150 }}
                           >
                             <MenuItem value="">-Select-</MenuItem>
@@ -369,10 +345,9 @@ export default function InductionTrainee() {
                             maxRows={3}
                             value={detail.traineeComments || ''}
                             onChange={(e) => updateDetail(detail.id, 'traineeComments', e.target.value)}
-                            placeholder={canEdit ? "Your comments... (mandatory)" : "-"}
+                            placeholder="Your comments... (mandatory)"
                             fullWidth
-                            disabled={!canEdit}
-                            required={canEdit}
+                            required
                           />
                         </TableCell>
                       </TableRow>

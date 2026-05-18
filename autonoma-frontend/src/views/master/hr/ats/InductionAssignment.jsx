@@ -13,9 +13,7 @@ import {
   MenuItem,
   Button,
   Chip,
-  Divider,
-  Checkbox,
-  ListItemText
+  Divider
 } from '@mui/material';
 import {
   IconRefresh,
@@ -83,23 +81,14 @@ const columns = [
     id: 'inductionStatus', 
     label: 'Induction Status', 
     minWidth: 120,
-    render: (row) => {
-      const status = row.inductionStatus;
-      let chipColor = 'default';
-      if (status === 'ACTIVE') chipColor = 'info';
-      else if (status === 'COMPLETED') chipColor = 'success';
-      else if (status === 'IN ACTIVE' || status === 'REJECTED') chipColor = 'error';
-      else if (status === 'PENDING') chipColor = 'warning';
-      
-      return (
-        <Chip 
-          label={status} 
-          variant="outlined"
-          size="small" 
-          color={chipColor}
-        />
-      );
-    }
+    render: (row) => (
+      <Chip 
+        label={row.inductionStatus} 
+        variant="outlined"
+        size="small" 
+        color={row.inductionStatus === 'ACTIVE' ? 'success' : 'error'}
+      />
+    )
   },
   { id: 'createdBy', label: 'Assigned By', minWidth: 120 }
 ];
@@ -112,7 +101,7 @@ const INITIAL_STATE = {
   department: '',
   designation: '',
   inductionRound: '',
-  screeningLevel: [], 
+  screeningLevel: 'Level 1', 
   inductionDate: new Date().toISOString().split('T')[0],
   inductionTime: '09:00',
   trainerName: '',
@@ -173,10 +162,6 @@ const InductionAssignment = () => {
         }
       });
 
-      if (row.isVirtual) {
-        cleanData.id = null;
-      }
-
       // Special handling for dates
       if (row.inductionDate && row.inductionDate !== '-') {
         cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
@@ -191,15 +176,7 @@ const InductionAssignment = () => {
       cleanData.oldEmpCode = row.oldEmpCode || '';
       cleanData.department = typeof row.department === 'object' ? row.department?.departmentName : (row.department || '');
       cleanData.designation = typeof row.designation === 'object' ? row.designation?.designationName : (row.designation || '');
-      if (typeof cleanData.screeningLevel === 'string') {
-        if (cleanData.screeningLevel === '-') {
-          cleanData.screeningLevel = [];
-        } else {
-          cleanData.screeningLevel = cleanData.screeningLevel.split(',').map(s => s.trim()).filter(Boolean);
-        }
-      } else if (!cleanData.screeningLevel) {
-        cleanData.screeningLevel = [];
-      }
+      cleanData.inductionStatus = 'ACTIVE'; // Force ACTIVE so it's not overridden by EmployeeMaster's PENDING status
 
       setFormData(cleanData);
       setErrors({});
@@ -209,7 +186,6 @@ const InductionAssignment = () => {
       // Fallback if history fails
       setFormData({
         ...INITIAL_STATE,
-        id: row.isVirtual ? null : row.id,
         empCode: row.empCode,
         empName: row.empName || row.employeeName,
         department: row.department,
@@ -229,38 +205,18 @@ const InductionAssignment = () => {
     { id: 'oldEmpCode', label: 'OldEmpCode', minWidth: 120, render: (row) => row.oldEmpCode || '-' },
     { id: 'department', label: 'Department', minWidth: 150 },
     { id: 'designation', label: 'Designation', minWidth: 150 },
-    {
-      id: 'hasLogin',
-      label: 'Login Account',
-      minWidth: 140,
-      render: (row) => (
-        <Chip
-          label={row.hasLogin ? 'CREATED' : 'NO LOGIN'}
-          size="small"
-          variant="outlined"
-          color={row.hasLogin ? 'success' : 'error'}
-          sx={{ fontWeight: 700, borderRadius: '6px' }}
-        />
-      )
-    },
     { 
       id: 'inductionStatus', 
       label: 'Induction Status', 
       minWidth: 130,
       render: (row) => {
         const status = row.inductionStatus || 'PENDING';
-        let chipColor = 'default';
-        if (status === 'COMPLETED') chipColor = 'success';
-        else if (status === 'ACTIVE') chipColor = 'info';
-        else if (status === 'PENDING') chipColor = 'warning';
-        else if (status === 'IN ACTIVE' || status === 'REJECTED') chipColor = 'error';
-
         return (
           <Chip 
             label={status} 
             variant="outlined"
             size="small" 
-            color={chipColor}
+            color={status === 'COMPLETED' ? 'success' : 'warning'}
           />
         );
       }
@@ -282,16 +238,13 @@ const InductionAssignment = () => {
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const [assignRes, empRes, userRes] = await Promise.all([
+      const [assignRes, empRes] = await Promise.all([
         axios.get('/api/hr/induction-assignment'),
-        axios.get('/api/master/employee/filter/active'),
-        axios.get('/api/users/all')
+        axios.get('/api/master/employee/filter/active')
       ]);
 
       const assignments = assignRes.data;
       const allActiveEmployees = empRes.data;
-      const allUsers = userRes.data || [];
-      const userEmpIds = new Set(allUsers.map(u => u.empId));
       
       const finalRows = [];
       assignments.forEach(a => {
@@ -299,13 +252,11 @@ const InductionAssignment = () => {
         const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : (emp?.department || a.department);
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : (emp?.designation || a.designation);
         finalRows.push({ 
-          ...emp, 
           ...a, 
-          id: a.id, // Enforce the assignment record ID
+          ...emp, 
           department: empDept,
           designation: empDesig,
-          isVirtual: false,
-          hasLogin: emp ? userEmpIds.has(emp.id) : false
+          isVirtual: false 
         });
       });
 
@@ -313,15 +264,13 @@ const InductionAssignment = () => {
         if (!assignments.some(a => a.empCode === emp.empCode)) {
           finalRows.push({ 
             ...emp, 
-            id: null, // Virtual assignment row has no database assignment ID
             empName: emp.employeeName,
             department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
             designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
             isVirtual: true, 
             currentStatus: 'PENDING', 
             inductionRound: '-', 
-            screeningLevel: '-',
-            hasLogin: userEmpIds.has(emp.id)
+            screeningLevel: '-' 
           });
         }
       });
@@ -357,7 +306,7 @@ const InductionAssignment = () => {
       department: formData.department,
       designation: formData.designation,
       inductionRound: formData.inductionRound,
-      screeningLevel: Array.isArray(formData.screeningLevel) ? formData.screeningLevel.join(', ') : formData.screeningLevel,
+      screeningLevel: formData.screeningLevel,
       inductionDate: formData.inductionDate,
       inductionTime: formData.inductionTime,
       trainerName: formData.trainerName,
@@ -387,8 +336,9 @@ const InductionAssignment = () => {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      console.error('Save error details:', error);
-      const message = typeof error === 'string' ? error : (error?.message || 'Failed to save');
+      console.error('Save error details:', error.response?.data);
+      const serverMsg = error.response?.data;
+      const message = typeof serverMsg === 'string' ? serverMsg : (serverMsg?.message || 'Failed to save');
       
       dispatch(openSnackbar({ 
         open: true, 
@@ -473,7 +423,6 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
-        showActions={false}
       />
 
       <BOSFormDialog
@@ -481,7 +430,7 @@ const InductionAssignment = () => {
         onClose={() => setDialogOpen(false)}
         title={formData.id ? 'Update Induction Process' : 'Assign Induction Process'}
         fullWidth
-        maxWidth="lg"
+        maxWidth="md"
         onSave={handleSave}
         onClear={() => {
           setFormData(INITIAL_STATE);
@@ -503,21 +452,14 @@ const InductionAssignment = () => {
                 select
                 name="screeningLevel"
                 label="SCREENING LEVEL"
-                value={formData.screeningLevel || []}
+                value={formData.screeningLevel}
                 onChange={handleInputChange}
-                SelectProps={{
-                  multiple: true,
-                  renderValue: (selected) => (selected || []).join(', ')
-                }}
                 required
                 error={!!errors.screeningLevel}
                 sx={errorStyle(!!errors.screeningLevel)}
               >
                 {LEVEL_OPTIONS.map(l => (
-                  <MenuItem key={l} value={l}>
-                    <Checkbox checked={(formData.screeningLevel || []).includes(l)} />
-                    <ListItemText primary={l} />
-                  </MenuItem>
+                  <MenuItem key={l} value={l}>{l}</MenuItem>
                 ))}
               </BOSTextField>
             </Box>
@@ -612,7 +554,7 @@ const InductionAssignment = () => {
         </BOSFormSection>
 
         {/* History Table */}
-        <Box sx={{ mt: 4, width: '100%', overflowX: 'auto' }}>
+        <Box sx={{ mt: 4 }}>
           <Typography variant="h5" sx={{ mb: 2, color: 'primary.main', fontWeight: 600 }}>Induction History</Typography>
           <BOSDataTable
             columns={[
@@ -626,22 +568,12 @@ const InductionAssignment = () => {
               )},
               { id: 'rescheduled', label: 'Rescheduled', render: () => 'NO' },
               { id: 'createdBy', label: 'Created By' },
-              { id: 'inductionStatus', label: 'Status', render: (r) => {
-                const status = r.inductionStatus;
-                let chipColor = 'default';
-                if (status === 'ACTIVE') chipColor = 'info';
-                else if (status === 'COMPLETED') chipColor = 'success';
-                else if (status === 'IN ACTIVE' || status === 'REJECTED') chipColor = 'error';
-                else if (status === 'PENDING') chipColor = 'warning';
-                
-                return (
-                  <Chip label={status} size="small" variant="outlined" color={chipColor} />
-                );
-              }}
+              { id: 'inductionStatus', label: 'Status', render: (r) => (
+                <Chip label={r.inductionStatus} size="small" variant="outlined" color={r.inductionStatus === 'ACTIVE' ? 'success' : 'default'} />
+              )}
             ]}
             rows={history.map((h, i) => ({ ...h, index: i + 1 }))}
             pagination={false}
-            sx={{ height: 'auto', maxHeight: '250px' }}
           />
         </Box>
       </BOSFormDialog>

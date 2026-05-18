@@ -18,7 +18,6 @@ import {
   IconChartBar,
   IconChartPie,
   IconCreditCard,
-<<<<<<< HEAD
   IconSettings,
   IconWorld,
   IconHierarchy,
@@ -48,17 +47,12 @@ import {
   IconMoodSmile,
   IconSearch,
   IconCategory
-=======
-  IconSettings
->>>>>>> origin/chore/repo-cleanup
+  IconSearch
 } from '@tabler/icons-react';
 
 const icons = {
   IconDashboard,
-<<<<<<< HEAD
   IconCategory,
-=======
->>>>>>> origin/chore/repo-cleanup
   IconUsers,
   IconBriefcase,
   IconBuildingFactory,
@@ -77,7 +71,6 @@ const icons = {
   IconChartBar,
   IconChartPie,
   IconCreditCard,
-<<<<<<< HEAD
   IconSettings,
   IconWorld,
   IconHierarchy,
@@ -106,9 +99,6 @@ const icons = {
   IconTractor,
   IconMoodSmile,
   IconSearch
-=======
-  IconSettings
->>>>>>> origin/chore/repo-cleanup
 };
 
 export const masters = {
@@ -122,7 +112,6 @@ export const masters = {
       id: 'master-hr',
       title: 'HR',
       type: 'collapse',
-<<<<<<< HEAD
       icon: icons.IconUsers,
       children: [
         {
@@ -295,32 +284,6 @@ export const masters = {
               icon: icons.IconFileText
             }
           ]
-=======
-      children: [
-        {
-          id: 'master-hr-dept-details',
-          title: 'Department Details',
-          type: 'item',
-          url: '/master/hr/department'
-        },
-        {
-          id: 'master-hr-designation-details',
-          title: 'Designation Details',
-          type: 'item',
-          url: '/master/hr/designation'
-        },
-        {
-          id: 'master-hr-grade-details',
-          title: 'Grade Details',
-          type: 'item',
-          url: '/master/hr/grade'
-        },
-        {
-          id: 'master-hr-designation-level',
-          title: 'Designation Level',
-          type: 'item',
-          url: '/master/hr/desg-level'
->>>>>>> origin/chore/repo-cleanup
         }
       ]
     },
@@ -328,7 +291,6 @@ export const masters = {
       id: 'master-qms',
       title: 'QMS',
       type: 'collapse',
-<<<<<<< HEAD
       icon: icons.IconListCheck,
       children: [
         {
@@ -343,19 +305,6 @@ export const masters = {
               type: 'item',
               url: '/master/qms/checklist/master',
               icon: icons.IconClipboardCheck
-=======
-      children: [
-        {
-          id: 'master-qms-checklist-parent',
-          title: 'Checklist',
-          type: 'collapse',
-          children: [
-            {
-              id: 'master-qms-checklist',
-              title: 'Checklist Master',
-              type: 'item',
-              url: '/master/qms/checklist/master'
->>>>>>> origin/chore/repo-cleanup
             }
           ]
         },
@@ -363,38 +312,26 @@ export const masters = {
           id: 'master-qms-audit',
           title: 'Audit',
           type: 'collapse',
-<<<<<<< HEAD
           icon: icons.IconFileCheck,
-=======
->>>>>>> origin/chore/repo-cleanup
           children: [
             {
               id: 'master-qms-audit-type',
               title: 'Audit Type',
               type: 'item',
-<<<<<<< HEAD
               url: '/master/qms/audit/type',
               icon: icons.IconNotes
-=======
-              url: '/master/qms/audit/type'
->>>>>>> origin/chore/repo-cleanup
             },
             {
               id: 'master-qms-audit-area',
               title: 'Audit Area / Zone',
               type: 'item',
-<<<<<<< HEAD
               url: '/master/qms/audit/area',
               icon: icons.IconMapPin
-=======
-              url: '/master/qms/audit/area'
->>>>>>> origin/chore/repo-cleanup
             },
             {
               id: 'master-qms-audit-criteria',
               title: 'Audit Criteria',
               type: 'item',
-<<<<<<< HEAD
               url: '/master/qms/audit/criteria',
               icon: icons.IconShieldCheck
             }
@@ -412,16 +349,12 @@ export const masters = {
               type: 'item',
               url: '/master/qms/meeting/master',
               icon: icons.IconCalendarEvent
-=======
-              url: '/master/qms/audit/criteria'
->>>>>>> origin/chore/repo-cleanup
             }
           ]
         }
       ]
     },
     {
-<<<<<<< HEAD
       id: 'master-npd',
       title: 'NPD',
       type: 'collapse',
@@ -433,13 +366,6 @@ export const masters = {
           type: 'collapse',
           icon: icons.IconBuildingFactory,
           children: [
-            {
-              id: 'master-npd-product-group',
-              title: 'Product Item Group',
-              type: 'item',
-              url: '/master/npd/product-group',
-              icon: icons.IconCategory
-            },
             {
               id: 'master-npd-product-type',
               title: 'Product Item Type',
@@ -481,45 +407,12 @@ export const masters = {
               type: 'item',
               url: '/master/npd/product-capacity',
               icon: icons.IconAward
-            },
-            {
-              id: 'master-npd-wind-farm',
-              title: 'Wind Farm',
-              type: 'item',
-              url: '/master/npd/wind-farm',
-              icon: icons.IconMapPin
-            },
-            {
-              id: 'master-npd-model-name',
-              title: 'Model Name',
-              type: 'item',
-              url: '/master/npd/model-name',
-              icon: icons.IconListCheck
-            },
-            {
-              id: 'master-npd-uom',
-              title: 'UOM',
-              type: 'item',
-              url: '/master/npd/uom',
-              icon: icons.IconScale
             }
           ]
-=======
-      id: 'master-meeting',
-      title: 'Meeting',
-      type: 'collapse',
-      children: [
-        {
-          id: 'master-meeting-master',
-          title: 'Meeting Master',
-          type: 'item',
-          url: '/master/qms/meeting/master'
->>>>>>> origin/chore/repo-cleanup
         }
       ]
     },
     {
-<<<<<<< HEAD
       id: 'master-vendor',
       title: 'Vendor Master',
       type: 'collapse',
@@ -543,15 +436,11 @@ export const masters = {
     },
     {
       id: 'master-sales',
-=======
-      id: 'sam',
->>>>>>> origin/chore/repo-cleanup
       title: 'Sales',
       type: 'collapse',
       icon: icons.IconBriefcase,
       children: [
         {
-<<<<<<< HEAD
           id: 'master-sales-crm',
           title: 'CRM',
           type: 'collapse',
@@ -566,51 +455,12 @@ export const masters = {
             },
             {
               id: 'master-sales-crm-contact',
-=======
-          id: 'sam-ocr',
-          title: 'OCR',
-          type: 'collapse',
-          icon: icons.IconServerCog,
-          children: [
-            {
-              id: 'sm-customer-master',
-              title: 'Customer Master',
-              type: 'item',
-              url: '/sm/customers',
-              icon: icons.IconUsers
-            },
-            {
-              id: 'sm-vendor',
-              title: 'Vendor',
-              type: 'collapse',
-              icon: icons.IconTruckDelivery,
-              children: [
-                {
-                  id: 'sm-supplier-master',
-                  title: 'Supplier Master',
-                  type: 'item',
-                  url: '/sm/suppliers',
-                  icon: icons.IconTruckDelivery
-                },
-                {
-                  id: 'sm-subcontractor',
-                  title: 'Sub Contractor',
-                  type: 'item',
-                  url: '/sm/sub-contractors',
-                  icon: icons.IconTool
-                }
-              ]
-            },
-            {
-              id: 'sm-contact-master',
->>>>>>> origin/chore/repo-cleanup
               title: 'Contact Master',
               type: 'item',
               url: '/sm/contacts',
               icon: icons.IconUsers
             },
             {
-<<<<<<< HEAD
               id: 'master-sales-crm-customer',
               title: 'Customer Master',
               type: 'item',
@@ -702,158 +552,12 @@ export const masters = {
               type: 'item',
               url: '/master/sales/logistics/freight',
               icon: icons.IconTractor
-=======
-              id: 'sm-customer-address',
-              title: 'Customer Address',
-              type: 'item',
-              url: '/sm/customer-address',
-              icon: icons.IconMapPin
-            },
-            {
-              id: 'sm-currency-master',
-              title: 'Currency Master',
-              type: 'item',
-              url: '/sm/ocr/currency-master',
-              icon: icons.IconCoins
-            },
-            {
-              id: 'sm-segment-master',
-              title: 'Segment Master',
-              type: 'item',
-              url: '/sm/ocr/segment-master',
-              icon: icons.IconChartBar
-            },
-            {
-              id: 'sm-sub-segment-master',
-              title: 'Sub Segment Master',
-              type: 'item',
-              url: '/sm/ocr/sub-segment-master',
-              icon: icons.IconChartPie
-            },
-            {
-              id: 'sm-payment-terms',
-              title: 'Payment Terms',
-              type: 'item',
-              url: '/sm/ocr/payment-terms',
-              icon: icons.IconCreditCard
-            },
-            {
-              id: 'sm-delivery-terms',
-              title: 'Delivery Terms',
-              type: 'item',
-              url: '/sm/ocr/delivery-terms',
-              icon: icons.IconTruckDelivery
->>>>>>> origin/chore/repo-cleanup
             }
           ]
         }
       ]
     },
-<<<<<<< HEAD
 
-=======
-    {
-      id: 'sam',
-      title: 'Sales',
-      type: 'collapse',
-      icon: icons.IconBriefcase,
-      children: [
-        {
-          id: 'sam-ocr',
-          title: 'OCR',
-          type: 'collapse',
-          icon: icons.IconServerCog,
-          children: [
-            {
-              id: 'sm-customer-master',
-              title: 'Customer Master',
-              type: 'item',
-              url: '/sm/customers',
-              icon: icons.IconUsers
-            },
-            {
-              id: 'sm-vendor',
-              title: 'Vendor',
-              type: 'collapse',
-              icon: icons.IconTruckDelivery,
-              children: [
-                {
-                  id: 'sm-supplier-master',
-                  title: 'Supplier Master',
-                  type: 'item',
-                  url: '/sm/suppliers',
-                  icon: icons.IconTruckDelivery
-                },
-                {
-                  id: 'sm-subcontractor',
-                  title: 'Sub Contractor',
-                  type: 'item',
-                  url: '/sm/sub-contractors',
-                  icon: icons.IconTool
-                }
-              ]
-            },
-            {
-              id: 'sm-contact-master',
-              title: 'Contact Master',
-              type: 'item',
-              url: '/sm/contacts',
-              icon: icons.IconUsers
-            },
-            {
-              id: 'sm-customer-address',
-              title: 'Customer Address',
-              type: 'item',
-              url: '/sm/customer-address',
-              icon: icons.IconMapPin
-            },
-            {
-              id: 'sm-currency-master',
-              title: 'Currency Master',
-              type: 'item',
-              url: '/sm/ocr/currency-master',
-              icon: icons.IconCoins
-            },
-            {
-              id: 'sm-segment-master',
-              title: 'Segment Master',
-              type: 'item',
-              url: '/sm/ocr/segment-master',
-              icon: icons.IconChartBar
-            },
-            {
-              id: 'sm-sub-segment-master',
-              title: 'Sub Segment Master',
-              type: 'item',
-              url: '/sm/ocr/sub-segment-master',
-              icon: icons.IconChartPie
-            },
-            {
-              id: 'sm-payment-terms',
-              title: 'Payment Terms',
-              type: 'item',
-              url: '/sm/ocr/payment-terms',
-              icon: icons.IconCreditCard
-            },
-            {
-              id: 'sm-delivery-terms',
-              title: 'Delivery Terms',
-              type: 'item',
-              url: '/sm/ocr/delivery-terms',
-              icon: icons.IconTruckDelivery
-            },
-            {
-              id: 'sm-type-of-service',
-              title: 'Type of Service',
-              type: 'item',
-              url: '/sm/ocr/type-of-service',
-              icon: icons.IconSettings
-            }
-          ]
-        }
-      ]
-    }
->>>>>>> origin/chore/repo-cleanup
   ]
 };
 
@@ -869,21 +573,14 @@ export const hra = {
       id: 'hra-hr-employee',
       title: 'Employee',
       type: 'collapse',
-<<<<<<< HEAD
       icon: icons.IconUsers,
-=======
->>>>>>> origin/chore/repo-cleanup
       children: [
         {
           id: 'hra-hr-employee-details',
           title: 'Employee Master',
           type: 'item',
-<<<<<<< HEAD
           url: '/hra/employee/master',
           icon: icons.IconUserPlus
-=======
-          url: '/hra/employee/master'
->>>>>>> origin/chore/repo-cleanup
         }
       ]
     }
@@ -1005,54 +702,35 @@ export const qms = {
       id: 'qms-checklist',
       title: 'Checklist',
       type: 'collapse',
-<<<<<<< HEAD
       icon: icons.IconClipboardCheck,
-=======
->>>>>>> origin/chore/repo-cleanup
       children: [
         {
           id: 'checklist-verify',
           title: 'Checklist Verify',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/checklist/verify',
           icon: icons.IconChecks
-=======
-          url: '/qms/checklist/verify'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'close-renewal',
           title: 'Close Checklist / Renewal',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/checklist/close-renewal',
           icon: icons.IconFileCheck
-=======
-          url: '/qms/checklist/close-renewal'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'renewal-verify',
           title: 'Checklist / Renewal Verify',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/checklist/renewal-verify',
           icon: icons.IconShieldCheck
-=======
-          url: '/qms/checklist/renewal-verify'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'renewal-report',
           title: 'Checklist / Renewal Report',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/checklist/renewal-report',
           icon: icons.IconReport
-=======
-          url: '/qms/checklist/renewal-report'
->>>>>>> origin/chore/repo-cleanup
         }
       ]
     },
@@ -1060,76 +738,49 @@ export const qms = {
       id: 'qms-audit',
       title: 'Audit',
       type: 'collapse',
-<<<<<<< HEAD
       icon: icons.IconFileCheck,
-=======
->>>>>>> origin/chore/repo-cleanup
       children: [
         {
           id: 'qms-audit-schedule',
           title: 'Audit Schedule',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/audit/schedule',
           icon: icons.IconCalendarEvent
-=======
-          url: '/qms/audit/schedule'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-audit-attendance',
           title: 'Audit User Attendance',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/audit/attendance',
           icon: icons.IconUserCheck
-=======
-          url: '/qms/audit/attendance'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-audit-observation',
           title: 'Audit Observation',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/audit/observation',
           icon: icons.IconReportAnalytics
-=======
-          url: '/qms/audit/observation'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-audit-ncr-close',
           title: 'Close NCR / OFI',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/audit/ncr/close',
           icon: icons.IconFileCheck
-=======
-          url: '/qms/audit/ncr/close'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-audit-ncr-approval',
           title: 'Audit NCR / OFI approval',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/audit/ncr/approval',
           icon: icons.IconShieldCheck
-=======
-          url: '/qms/audit/ncr/approval'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-audit-report',
           title: 'Audit Report',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/audit/report',
           icon: icons.IconReport
-=======
-          url: '/qms/audit/report'
->>>>>>> origin/chore/repo-cleanup
         }
       ]
     },
@@ -1137,16 +788,12 @@ export const qms = {
       id: 'qms-meeting',
       title: 'Meeting',
       type: 'collapse',
-<<<<<<< HEAD
       icon: icons.IconMessage2,
-=======
->>>>>>> origin/chore/repo-cleanup
       children: [
         {
           id: 'qms-meeting-schedule',
           title: 'Meeting Schedule',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/meeting-schedule',
           icon: icons.IconCalendarEvent
         },
@@ -1156,48 +803,27 @@ export const qms = {
           type: 'item',
           url: '/qms/meeting-attendance',
           icon: icons.IconUserCheck
-=======
-          url: '/qms/meeting-schedule'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-minutes-of-meeting',
           title: 'Minutes of Meeting',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/minutesofmeeting',
           icon: icons.IconNotes
-=======
-          url: '/qms/minutesofmeeting'
-        },
-        {
-          id: 'qms-meeting-attendance',
-          title: 'Meeting User Attendance',
-          type: 'item',
-          url: '/qms/meeting-attendance'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-close-mom',
           title: 'Close MOM',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/close-mom',
           icon: icons.IconFileCheck
-=======
-          url: '/qms/close-mom'
->>>>>>> origin/chore/repo-cleanup
         },
         {
           id: 'qms-mom-approval',
           title: 'MOM Approval',
           type: 'item',
-<<<<<<< HEAD
           url: '/qms/mom-approval',
           icon: icons.IconShieldCheck
-=======
-          url: '/qms/mom-approval'
->>>>>>> origin/chore/repo-cleanup
         }
       ]
     }

@@ -7,22 +7,16 @@ import {
 import { useColorScheme } from '@mui/material/styles';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { format } from 'date-fns';
-<<<<<<< HEAD
 import { useSelector, useDispatch } from 'react-redux';
 import { useMemo, useEffect } from 'react';
 import { setTableConfig } from 'store/slices/search';
-=======
->>>>>>> origin/chore/repo-cleanup
 import {
   tableContainerSx, tableHeadCellSx, getTableRowSx,
   tableActionEditSx, tableActionDeleteSx, getStatusChipSx
 } from './BOSStyles';
-<<<<<<< HEAD
 import { getPhotoUrl } from './BOSUtils';
 import { IconUser } from '@tabler/icons-react';
 import { Avatar } from '@mui/material';
-=======
->>>>>>> origin/chore/repo-cleanup
 
 /**
  * BOS DataTable — SOP #2, #7, #8, #12, #15, #16
@@ -36,12 +30,9 @@ export default function BOSDataTable({
   onEditRow,
   onDeleteRow,
   onDoubleClickRow,
-<<<<<<< HEAD
   showActions: showActionsProp = true,
   actionColumn,
-=======
   showActions = true,
->>>>>>> origin/chore/repo-cleanup
   selectable = false,
   onSelectionChange,
   totalCount,
@@ -58,7 +49,6 @@ export default function BOSDataTable({
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
-<<<<<<< HEAD
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -79,14 +69,11 @@ export default function BOSDataTable({
       dispatch(setTableConfig(null));
     };
   }, [columns, rows, dispatch]);
-=======
->>>>>>> origin/chore/repo-cleanup
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const baseRowSx = getTableRowSx(isDark);
 
-<<<<<<< HEAD
   const showActions = useMemo(() => {
     if (showActionsProp === false) return false;
     return Boolean(onEditRow || onDeleteRow || actionColumn);
@@ -144,16 +131,13 @@ export default function BOSDataTable({
     } catch { 
       return '-'; 
     }
-=======
   const formatDate = (d) => {
     if (!d) return '-';
     try { return format(new Date(d), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }
->>>>>>> origin/chore/repo-cleanup
   };
 
   const defaultRenderCell = (col, row, idx) => {
     if (col.render) return col.render(row, idx);
-<<<<<<< HEAD
     
     // ── DATA RESOLUTION (Supports camelCase, snake_case, and common audit fallbacks) ──
     let val = row[col.id];
@@ -217,19 +201,6 @@ export default function BOSDataTable({
       return val.name || val.label || val.id || '-';
     }
     return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
-=======
-    const val = row[col.id];
-    if (col.id === 'index') return page * size + idx + 1;
-    if (col.id === 'status' || col.id === 'accountStatus') {
-      const statusText = val === 1 || val === 'Active' ? 'Active' : 'Suspended';
-      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText)} />;
-    }
-    if (col.id.toLowerCase().includes('date')) return formatDate(val);
-    if (typeof val === 'object' && val !== null) {
-      return val.name || val.label || val.id || '-';
-    }
-    return val ?? '-';
->>>>>>> origin/chore/repo-cleanup
   };
 
   return (
@@ -247,11 +218,7 @@ export default function BOSDataTable({
                     ...(!showActions && ci === columns.length - 1 ? { borderTopRightRadius: '16px' } : {})
                   }}
                 >
-<<<<<<< HEAD
                   {col.id === 'index' ? 'No' : col.label}
-=======
-                  {col.label}
->>>>>>> origin/chore/repo-cleanup
                 </TableCell>
               ))}
               {showActions && (
@@ -268,22 +235,14 @@ export default function BOSDataTable({
                   <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>Loading data...</Typography>
                 </TableCell>
               </TableRow>
-<<<<<<< HEAD
             ) : (filteredRows?.length || 0) === 0 ? (
-=======
-            ) : (rows?.length || 0) === 0 ? (
->>>>>>> origin/chore/repo-cleanup
               <TableRow>
                 <TableCell colSpan={columns.length + (showActions ? 1 : 0)} align="center" sx={{ py: 3 }}>
                   <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>No records found.</Typography>
                 </TableCell>
               </TableRow>
             ) : (
-<<<<<<< HEAD
               filteredRows?.slice(page * size, page * size + size).map((row, idx) => {
-=======
-              rows?.map((row, idx) => {
->>>>>>> origin/chore/repo-cleanup
                 const isSelected = selectedRowId === row.id;
                 const rowSx = {
                   ...baseRowSx,
@@ -295,17 +254,13 @@ export default function BOSDataTable({
 
                 return (
                   <TableRow 
-<<<<<<< HEAD
                     key={row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`}
-=======
-                    key={row.id ?? idx} 
->>>>>>> origin/chore/repo-cleanup
+                    key={row.id ?? idx}
                     hover 
                     sx={rowSx} 
                     onClick={() => onClickRow?.(row)}
                     onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
                   >
-<<<<<<< HEAD
                   {columns.map((col) => (
                     <TableCell
                       key={col.id}
@@ -332,69 +287,24 @@ export default function BOSDataTable({
                   {showActions && (
                     <TableCell align="center" sx={{ minWidth: 100 }}>
                       <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-                        {actionColumn?.render ? (
-                          actionColumn.render(row, idx)
-                        ) : (
-                          <>
-                            {onEditRow && (
-                              <Tooltip title="Edit">
-                                <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
-                                  <IconEdit size={16} />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            {onDeleteRow && (
-                              <Tooltip title="Delete">
-                                <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
-                                  <IconTrash size={16} />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </>
+                        {onEditRow && (
+                          <Tooltip title="Edit">
+                            <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
+                              <IconEdit size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {onDeleteRow && (
+                          <Tooltip title="Delete">
+                            <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
+                              <IconTrash size={16} />
+                            </IconButton>
+                          </Tooltip>
                         )}
                       </Stack>
                     </TableCell>
                   )}
                 </TableRow>
-=======
-                    {columns.map((col) => (
-                      <TableCell
-                        key={col.id}
-                        sx={{
-                          cursor: (onDoubleClickRow || onClickRow) ? 'pointer' : 'default',
-                          ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
-                          ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
-                          // SOP: 15-char wrap rule
-                          whiteSpace: (String(row[col.id] || '').length > 15) ? 'normal' : 'nowrap',
-                          ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
-                          minWidth: col.minWidth || 80
-                        }}
-                      >
-                        {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}
-                      </TableCell>
-                    ))}
-                    {showActions && (
-                      <TableCell align="center">
-                        <Stack direction="row" justifyContent="center" spacing={1}>
-                          {onEditRow && (
-                            <Tooltip title="Edit">
-                              <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
-                                <IconEdit size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {onDeleteRow && (
-                            <Tooltip title="Delete">
-                              <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
-                                <IconTrash size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Stack>
-                      </TableCell>
-                    )}
-                  </TableRow>
->>>>>>> origin/chore/repo-cleanup
                 );
               })
             )}
@@ -402,7 +312,8 @@ export default function BOSDataTable({
         </Table>
       </TableContainer>
       <Box sx={{ 
-        p: 1.5, 
+        py: 0.5, 
+        px: 1.5, 
         display: 'flex', 
         alignItems: 'center',
         justifyContent: 'space-between', 
@@ -423,7 +334,31 @@ export default function BOSDataTable({
           page={page}
           onPageChange={(e, p) => onPageChange(p)}
           onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
-          sx={{ border: 'none' }}
+          sx={{
+            border: 'none',
+            '& .MuiTablePagination-toolbar': { 
+              justifyContent: 'center', 
+              flexWrap: 'nowrap',
+              minHeight: '36px !important',
+              height: '36px',
+              p: '0px !important',
+              gap: 1
+            },
+            '& .MuiTablePagination-spacer': { display: 'none' },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              margin: 0,
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-select': {
+              py: '2px',
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-actions': {
+              margin: 0
+            }
+          }}
         />
       </Box>
     </>

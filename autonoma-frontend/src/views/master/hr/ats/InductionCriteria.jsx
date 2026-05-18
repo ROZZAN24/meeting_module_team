@@ -53,7 +53,7 @@ const INITIAL_STATE = {
   inductionRound: '',
   attachmentRequired: 'NO',
   status: 'ACTIVE',
-  inductionAttachment: [] // Array to support multi-upload
+  inductionAttachment: '' // For file upload
 };
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
@@ -120,18 +120,15 @@ export default function InductionCriteria() {
     const deptCodes = row.departmentCodes ? row.departmentCodes.split(',').filter(Boolean) : [];
     const deptIds = deptCodes.map(code => departments.find(d => d.departmentCode === code)?.id?.toString() || code);
 
-    // Support multiple attachments split by comma
-    const attachments = row.inductionAttachment ? row.inductionAttachment.split(',').filter(Boolean).map(path => ({
-      serverFileName: path,
-      fileName: path.split('/').pop(),
-      isServer: true
-    })) : [];
-
     setFormData({
       ...row,
       departmentCodes: deptIds,
       levelCodes: row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [],
-      inductionAttachment: attachments
+      inductionAttachment: row.inductionAttachment ? { 
+        serverFileName: row.inductionAttachment, 
+        fileName: row.inductionAttachment.split('/').pop(),
+        isServer: true 
+      } : null
     });
     setErrors({});
     setDialogOpen(true);
@@ -146,31 +143,24 @@ export default function InductionCriteria() {
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
 
-    // Enforce Reference Document as MANDATORY under all conditions
-    if (!formData.inductionAttachment || formData.inductionAttachment.length === 0) {
+    if (formData.attachmentRequired === 'YES' && !formData.inductionAttachment) {
       dispatch(openSnackbar({
         open: true,
-        message: 'Reference document is MANDATORY',
+        message: 'Attachment is mandatory when Attachment Required is set to YES',
         variant: 'alert',
         alert: { variant: 'filled' },
         severity: 'error'
       }));
-      setErrors(prev => ({ ...prev, inductionAttachment: 'Reference document is MANDATORY' }));
+      setErrors(prev => ({ ...prev, inductionAttachment: 'File required' }));
       return;
     }
 
     try {
-      // Map and join multiple file paths with commas
-      const attachmentPaths = formData.inductionAttachment
-        .map(f => f.serverFileName || f)
-        .filter(Boolean)
-        .join(',');
-
       const payload = {
         ...formData,
         departmentCodes: formData.departmentCodes.map(id => departments.find(d => d.id.toString() === id)?.departmentCode || id).join(','),
         levelCodes: formData.levelCodes.join(','),
-        inductionAttachment: attachmentPaths
+        inductionAttachment: formData.inductionAttachment?.serverFileName || formData.inductionAttachment
       };
 
       // Clean up audit fields and helper fields before sending to backend
@@ -465,14 +455,15 @@ export default function InductionCriteria() {
               <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%' }}>
                 <BOSFileUpload
                   label="UPLOAD INDUCTION GUIDELINES / SOP"
-                  files={formData.inductionAttachment || []}
+                  files={formData.inductionAttachment ? [formData.inductionAttachment] : []}
                   onChange={(uploadedFiles) => {
-                    setFormData(prev => ({ ...prev, inductionAttachment: uploadedFiles }));
+                    const fileObj = uploadedFiles.length > 0 ? uploadedFiles[0] : null;
+                    setFormData(prev => ({ ...prev, inductionAttachment: fileObj }));
                     if (errors.inductionAttachment) clearErrors('inductionAttachment');
                   }}
-                  multiple={true}
-                  required={true}
-                  helperText={errors.inductionAttachment || "Reference document is MANDATORY (You can upload multiple files)"}
+                  multiple={false}
+                  required={formData.attachmentRequired === 'YES'}
+                  helperText={errors.inductionAttachment || (formData.attachmentRequired === 'YES' ? "Reference document is MANDATORY" : "Optional reference document (PDF/Images)")}
                   error={!!errors.inductionAttachment}
                   sx={errorStyle(!!errors.inductionAttachment)}
                 />

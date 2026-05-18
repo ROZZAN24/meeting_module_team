@@ -27,12 +27,8 @@ public class EmployeeAsset {
     @Column(name = "asset_name", length = 255)
     private String assetName;
 
-<<<<<<< HEAD
-=======
     @Column(name = "asset_value", precision = 12, scale = 2)
     private BigDecimal assetValue;
-
->>>>>>> origin/chore/repo-cleanup
 
     @Column(name = "issue_date")
     @Temporal(TemporalType.DATE)

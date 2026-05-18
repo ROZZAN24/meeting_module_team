@@ -30,18 +30,26 @@ public class ChecklistController {
     @GetMapping
     @Operation(summary = "Get All Master Checklists", description = "Retrieves a paginated list of master checklists with comprehensive filtering options including category, department, dual check flag, and verification status.")
     public ResponseEntity<Page<MasterChecklist>> getAllChecklists(
-            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by status (Active/Inactive)") @RequestParam(required = false) String status,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by category (RENEWAL/CHECK LIST)") @RequestParam(required = false) String category,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by department name") @RequestParam(required = false) String department,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Field to search by") @RequestParam(required = false) String searchBy,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Search term") @RequestParam(required = false) String searchValue,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by Dual Check flag (YES/NO)") @RequestParam(required = false) String dualCheck,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Filter by Verification Status (Pending for Verify/Verified/Rejected)") @RequestParam(required = false) String verifyStatus,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Page number (0-indexed)") @RequestParam(defaultValue = "0") int page,
-            @io.swagger.v3.oas.annotations.Parameter(description = "Page size") @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String searchBy,
+            @RequestParam(required = false) String searchValue,
+            @RequestParam(required = false) String dualCheck,
+            @RequestParam(required = false) String verifyStatus,
+            @RequestParam(required = false) String seqNo,
+            @RequestParam(required = false) String frequency,
+            @RequestParam(required = false) String checkingPoint,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String stockLink,
+            @RequestParam(required = false) String photoRequired,
+            @RequestParam(required = false) String carryForward,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, dualCheck, verifyStatus, pageable));
+        return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, dualCheck, verifyStatus, 
+                seqNo, frequency, checkingPoint, description, stockLink, photoRequired, carryForward, pageable));
     }
 
     @PostMapping

@@ -75,11 +75,13 @@ public class ChecklistService {
      * @return A paginated result set of MasterChecklist entities.
      */
     public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy,
-            String searchValue, String dualCheck, String verifyStatus, Pageable pageable) {
+            String searchValue, String dualCheck, String verifyStatus,
+            String seqNo, String frequency, String checkingPoint, String description,
+            String stockLink, String photoRequired, String carryForward, Pageable pageable) {
         return masterRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (dualCheck != null && !dualCheck.isEmpty()) {
+            if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
                 predicates.add(cb.equal(root.get("dualCheck"), dualCheck));
             }
 
@@ -98,6 +100,34 @@ public class ChecklistService {
             if (department != null && !department.isEmpty()) {
                 Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
                 predicates.add(cb.equal(deptJoin.get("departmentName"), department));
+            }
+
+            if (seqNo != null && !seqNo.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("seqNo")), "%" + seqNo.toLowerCase() + "%"));
+            }
+
+            if (frequency != null && !frequency.isEmpty() && !frequency.equals("All")) {
+                predicates.add(cb.equal(root.get("frequency"), frequency));
+            }
+
+            if (checkingPoint != null && !checkingPoint.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("checkingPoint")), "%" + checkingPoint.toLowerCase() + "%"));
+            }
+
+            if (description != null && !description.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
+            }
+
+            if (stockLink != null && !stockLink.isEmpty() && !stockLink.equals("All")) {
+                predicates.add(cb.equal(root.get("stockLink"), stockLink));
+            }
+
+            if (photoRequired != null && !photoRequired.isEmpty() && !photoRequired.equals("All")) {
+                predicates.add(cb.equal(root.get("photoRequired"), photoRequired));
+            }
+
+            if (carryForward != null && !carryForward.isEmpty() && !carryForward.equals("All")) {
+                predicates.add(cb.equal(root.get("carryForward"), carryForward));
             }
 
             if (searchValue != null && !searchValue.isEmpty()) {
@@ -217,6 +247,8 @@ public class ChecklistService {
             existing.setStockLink(checklist.getStockLink());
             existing.setPhotoRequired(checklist.getPhotoRequired());
             existing.setVerificationRequired(checklist.getVerificationRequired());
+            existing.setDualCheck(checklist.getDualCheck());
+            existing.setCarryForward(checklist.getCarryForward());
             existing.setStatus(checklist.getStatus());
             existing.setVerifyStatus(checklist.getVerifyStatus());
 
