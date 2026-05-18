@@ -140,12 +140,17 @@ public class QmsMomMasterService {
     public void closeDetail(Long momId, Long detailId, Map<String, Object> data) {
         QmsMomMaster mom = getMomById(momId);
         QmsMomDetail detail = mom.getDetails().stream()
-                .filter(d -> d.getId().equals(detailId))
+                .filter(d -> d.getId() != null && d.getId().longValue() == detailId.longValue())
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Detail not found"));
 
         detail.setStatus("PENDING FOR APPROVAL");
-        // Store action taken/observation data if needed (extend model later)
+        if (data.containsKey("actionTaken") && data.get("actionTaken") != null) {
+            detail.setActionTaken(String.valueOf(data.get("actionTaken")));
+        }
+        if (data.containsKey("actionObservation") && data.get("actionObservation") != null) {
+            detail.setActionObservation(String.valueOf(data.get("actionObservation")));
+        }
         repository.save(mom);
     }
 
@@ -156,7 +161,7 @@ public class QmsMomMasterService {
     public void approveDetail(Long momId, Long detailId) {
         QmsMomMaster mom = getMomById(momId);
         QmsMomDetail detail = mom.getDetails().stream()
-                .filter(d -> d.getId().equals(detailId))
+                .filter(d -> d.getId() != null && d.getId().longValue() == detailId.longValue())
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Detail not found"));
 
@@ -179,7 +184,7 @@ public class QmsMomMasterService {
     public void rejectDetail(Long momId, Long detailId, String comments) {
         QmsMomMaster mom = getMomById(momId);
         QmsMomDetail detail = mom.getDetails().stream()
-                .filter(d -> d.getId().equals(detailId))
+                .filter(d -> d.getId() != null && d.getId().longValue() == detailId.longValue())
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Detail not found"));
 

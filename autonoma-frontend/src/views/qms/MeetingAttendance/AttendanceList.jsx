@@ -105,6 +105,10 @@ export default function AttendanceList() {
   const renderCell = (col, row, idx) => {
     const format12h = (time24) => {
       if (!time24) return '-';
+      if (Array.isArray(time24)) {
+        const [h, m] = time24;
+        time24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
       const [h, m] = time24.split(':');
       const hour = parseInt(h, 10);
       const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -155,7 +159,12 @@ export default function AttendanceList() {
               { header: 'Participant', key: r => r.employee?.employeeName || '' },
               { header: 'In Time', key: r => {
                 if (!r.inTime) return '-';
-                const [h, m] = r.inTime.split(':');
+                let time24 = r.inTime;
+                if (Array.isArray(time24)) {
+                  const [hh, mm] = time24;
+                  time24 = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                }
+                const [h, m] = time24.split(':');
                 const hour = parseInt(h, 10);
                 const ampm = hour >= 12 ? 'PM' : 'AM';
                 const h12 = hour % 12 || 12;
@@ -163,7 +172,12 @@ export default function AttendanceList() {
               }},
               { header: 'Out Time', key: r => {
                 if (!r.outTime) return '-';
-                const [h, m] = r.outTime.split(':');
+                let time24 = r.outTime;
+                if (Array.isArray(time24)) {
+                  const [hh, mm] = time24;
+                  time24 = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+                }
+                const [h, m] = time24.split(':');
                 const hour = parseInt(h, 10);
                 const ampm = hour >= 12 ? 'PM' : 'AM';
                 const h12 = hour % 12 || 12;

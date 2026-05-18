@@ -439,7 +439,7 @@ export default function AddMeetingMinutes() {
                     { label: 'Meeting Schedule No', component: (
                       <Autocomplete
                         fullWidth
-                        options={meetingSchedules.filter(s => s.status === 'OPEN' || (editId && s.id === form.schedule?.id))}
+                        options={meetingSchedules.filter(s => s.status === 'OPEN' || s.status === 'AUTO CLOSED' || (editId && s.id === form.schedule?.id))}
                         getOptionLabel={(option) => option.scheduleNo || ''}
                         value={form.schedule}
                         onChange={(e, val) => {

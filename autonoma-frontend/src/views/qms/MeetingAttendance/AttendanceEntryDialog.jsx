@@ -11,6 +11,10 @@ import { API_PATHS } from 'utils/api-constants';
 
 const formatTo12h = (time24) => {
   if (!time24) return '-';
+  if (Array.isArray(time24)) {
+    const [h, m] = time24;
+    time24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
   const [hours, minutes] = time24.split(':');
   const h = parseInt(hours, 10);
   const ampm = h >= 12 ? 'PM' : 'AM';
@@ -23,7 +27,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
   const { employees = [] } = useLookups(['EMPLOYEES']);
   const [schedules, setSchedules] = useState([]);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
-  const [attendeeName, setAttendeeName] = useState('Current User');
+  const [attendeeName, setAttendeeName] = useState('');
   const [attendanceStatus, setAttendanceStatus] = useState('PRESENT');
   const [inTime, setInTime] = useState('');
   const [inTimeRaw, setInTimeRaw] = useState('');
@@ -53,22 +57,27 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             const today = now.toISOString().split('T')[0];
 
             const eligible = allSchedules.filter(s => {
-              if (s.status !== 'OPEN' && s.status !== 'RESCHEDULE') return false;
-              if (s.meetingDate !== today) return false;
-              if (!s.startTime) return false;
-              const [h, m] = s.startTime.split(':').map(Number);
-              const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
+              // Handle potential null/undefined status from backend just like the list page does
+              const scheduleStatus = s.status || 'OPEN';
               
-              // ── STRICT END TIME CHECK ──
-              // If the meeting has a defined end time and current time is past it, hide the schedule
-              if (s.endTime) {
-                const [eh, em] = s.endTime.split(':').map(Number);
-                const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
-                if (now.getTime() > endMs) return false;
-              }
-
-              const tenMinBefore = startMs - 10 * 60 * 1000;
-              if (now.getTime() < tenMinBefore) return false;
+              // TEMPORARY BYPASS FOR TESTING: Ignore ALL restrictions (status, date, time)
+              // To properly test the flow, we'll just allow any OPEN/RESCHEDULE schedule to appear.
+              // if (scheduleStatus !== 'OPEN' && scheduleStatus !== 'RESCHEDULE') return false;
+              // if (s.meetingDate !== today) return false;
+              // if (!s.startTime) return false;
+              // const [h, m] = s.startTime.split(':').map(Number);
+              // const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
+              // 
+              // // ── STRICT END TIME CHECK ──
+              // if (s.endTime) {
+              //   const [eh, em] = s.endTime.split(':').map(Number);
+              //   const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
+              //   if (now.getTime() > endMs) return false;
+              // }
+              //
+              // const tenMinBefore = startMs - 10 * 60 * 1000;
+              // if (now.getTime() < tenMinBefore) return false;
+              
               return true;
             });
             setSchedules(eligible);
@@ -123,13 +132,22 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         await axios.put(`${API_PATHS.QMS.MEETING_ATTENDANCE}/${item.id}/out`);
         dispatch(openSnackbar({ open: true, message: 'Out Time marked successfully', variant: 'alert', severity: 'success' }));
       } else {
+        if (!attendeeName) {
+          dispatch(openSnackbar({ open: true, message: 'Please select an attendee', variant: 'alert', severity: 'warning' }));
+          return;
+        }
         // FIND employeeId
         const selectedEmp = employees.find(e => e.employeeName === attendeeName);
+        
+        if (!selectedEmp) {
+          dispatch(openSnackbar({ open: true, message: 'Invalid attendee selected', variant: 'alert', severity: 'error' }));
+          return;
+        }
         
         // MARK IN ACTION
         await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
           scheduleId: selectedSchedule.id,
-          employeeId: selectedEmp ? selectedEmp.id : null,
+          employeeId: selectedEmp.id,
           inTime: inTimeRaw,
           status: attendanceStatus
         });

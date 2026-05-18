@@ -264,7 +264,13 @@ export default function BOSDataTable({
                         paddingX: 1.5
                       }}
                     >
-                      {renderCell ? renderCell(col, row, idx) : defaultRenderCell(col, row, idx)}
+                      {(() => {
+                        if (renderCell) {
+                          const customVal = renderCell(col, row, idx);
+                          if (customVal !== null && customVal !== undefined) return customVal;
+                        }
+                        return defaultRenderCell(col, row, idx);
+                      })()}
                     </TableCell>
                   ))}
                   {showActions && (

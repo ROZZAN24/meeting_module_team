@@ -12,6 +12,15 @@ import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-compo
 import { API_PATHS } from 'utils/api-constants';
 import AddMeetingScheduleDialog from './AddMeetingScheduleDialog';
 
+const formatTime12h = (time24) => {
+  if (!time24) return '-';
+  const [hours, minutes] = time24.split(':');
+  const h = parseInt(hours, 10);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+};
+
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'scheduleNo', label: 'Schedule No', minWidth: 180, bold: true },
@@ -19,7 +28,7 @@ const columns = [
   { id: 'scheduleDate', label: 'Schedule Date', minWidth: 120 },
   { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 150 },
   { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 180 },
-  { id: 'departments', label: 'Department', minWidth: 180 },
+  { id: 'departmentNames', label: 'Department', minWidth: 180 },
   { id: 'chairedByName', label: 'Chaired By', minWidth: 150 },
   { id: 'hostByName', label: 'Host By', minWidth: 150 },
   { id: 'participantsBy', label: 'Participants By', minWidth: 250 },
@@ -58,7 +67,7 @@ export default function MeetingScheduleList() {
         scheduleDate: row.createdAt ? row.createdAt.split('T')[0].split('-').reverse().join('/') : '-',
         meetingTypeName: row.meetingType?.meetingName || '-',
         meetingDateTime: d ? `${formattedDate} ${formatTime12h(t)}` : '-',
-        departments: (row.departments || []).map(d => d.department?.departmentName).filter(Boolean).join(','),
+        departmentNames: (row.departments || []).map(d => d.department?.departmentName).filter(Boolean).join(','),
         chairedByName: row.chairedBy?.employeeName || '-',
         hostByName: row.hostBy?.employeeName || '-',
         participantsBy: (row.participants || []).map(pr => {
@@ -168,14 +177,6 @@ export default function MeetingScheduleList() {
 
   useKeyboardShortcuts({ 'ctrl+n': handleAdd });
 
-  const formatTime12h = (time24) => {
-    if (!time24) return '-';
-    const [hours, minutes] = time24.split(':');
-    const h = parseInt(hours, 10);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const h12 = h % 12 || 12;
-    return `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
-  };
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
