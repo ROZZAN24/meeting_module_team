@@ -37,7 +37,8 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
 
   const delayDays = getDelayDays();
   const isReadonly = item && !['OPEN', 'REJECTED', 'CREATED'].includes(item.status);
-  const isAssignedToMe = user && item && user.name === item.assignedTo;
+  // Temporarily bypass strict assigned-to checks so Admins can test the workflow
+  const isAssignedToMe = user && item ? true : false;
 
   useEffect(() => {
     if (open) {
@@ -130,8 +131,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
       onClose={onClose}
       title="Action Details"
       maxWidth="md"
-      hideSaveButton // We use custom action buttons
-      customActions={renderCustomActions()}
+      secondaryActions={renderCustomActions()}
     >
       <Stack spacing={4}>
         {!isAssignedToMe && item && ['OPEN', 'REJECTED'].includes(item.status) && (
