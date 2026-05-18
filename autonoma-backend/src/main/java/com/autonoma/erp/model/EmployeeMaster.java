@@ -302,14 +302,14 @@ public class EmployeeMaster {
     @Column(name = "created_by", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
     @Column(name = "updated_by", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_date")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
