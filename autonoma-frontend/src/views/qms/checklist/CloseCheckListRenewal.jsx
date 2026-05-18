@@ -28,9 +28,9 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
+import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
-import { exportToExcel } from 'utils/excelExport';
 
 const columns = [
   '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
@@ -83,6 +83,26 @@ const tableCols = [
   { id: 'photoRequired', label: 'Photo Required' },
   { id: 'createdDate', label: 'Created Date' },
   { id: 'createdBy', label: 'Created By' }
+];
+
+const exportColumns = [
+  { header: 'Task Type', key: (r) => r.assignType || 'Mine' },
+  { header: 'Seq.No', key: (r) => r.checklist?.seqNo },
+  { header: 'Checking Point', key: (r) => r.checklist?.checkingPoint },
+  { header: 'Descriptions', key: (r) => r.checklist?.description },
+  { header: 'Category', key: (r) => r.checklist?.category },
+  { header: 'Frequency', key: (r) => r.checklist?.frequency },
+  { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
+  { header: 'Checklist Date', key: 'checklistDate' },
+  { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
+  { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
+  { header: 'Attended Date', key: 'attendedDate' },
+  { header: 'Attended By', key: 'attendedBy' },
+  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
+  { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
+  { header: 'Created Date', key: (r) => r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '' },
+  { header: 'Created By', key: (r) => r.checklist?.createdBy }
 ];
 
 const filterConfig = [
@@ -288,30 +308,6 @@ export default function CloseCheckListRenewal() {
     }
   };
 
-  const handleExport = () => {
-    const exportData = rows.map((r, i) => ({
-      '#': i + 1,
-      'Task Type': r.assignType || 'Mine',
-      'Seq No': r.checklist?.seqNo,
-      'Checking Point': r.checklist?.checkingPoint,
-      'Descriptions': r.checklist?.description,
-      'Category': r.checklist?.category,
-      'Frequency': r.checklist?.frequency,
-      'Department': (r.checklist?.departments || []).map(d => d.departmentName).join(', '),
-      'Date': r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '',
-      'Checklist Date': r.checklistDate,
-      'Next Due Date': r.checklist?.nextDueDate,
-      'Status': typeof r.status === 'object' ? r.status?.name : r.status,
-      'Attended Date': r.attendedDate,
-      'Attended By': r.attendedBy,
-      'Verification Required': r.checklist?.verificationRequired,
-      'Photo Required': r.checklist?.photoRequired,
-      'Created Date': r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '',
-      'Created By': r.checklist?.createdBy
-    }));
-    exportToExcel(exportData, 'Close_Checklist');
-  };
-
   const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
 
   return (
@@ -320,12 +316,7 @@ export default function CloseCheckListRenewal() {
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>
-          <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border: '1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius: 1.5, p: 0.8, position: 'relative' }}>
-            <IconAdjustmentsHorizontal size={20} />
-            {activeCount > 0 && <Box sx={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', bgcolor: 'error.main', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{activeCount}</Box>}
-          </IconButton>
+          <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />
         </Box>
       }
     >

@@ -16,6 +16,16 @@ axiosServices.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
+    const tenantId = localStorage.getItem('tenantId');
+    if (tenantId && !config.headers['X-Tenant-ID']) {
+      config.headers['X-Tenant-ID'] = tenantId;
+    }
+
+    const divisionId = localStorage.getItem('divisionId');
+    if (divisionId && !config.headers['X-Division-ID']) {
+      config.headers['X-Division-ID'] = divisionId;
+    }
+
     // Fix: If URL is absolute, clear baseURL to prevent double-origin prefixing
     if (config.url && config.url.startsWith('http')) {
       config.baseURL = '';

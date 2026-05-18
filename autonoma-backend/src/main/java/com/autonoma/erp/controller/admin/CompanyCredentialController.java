@@ -42,7 +42,7 @@ public class CompanyCredentialController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CompanyCredential> getById(@PathVariable Integer id) {
+    public ResponseEntity<CompanyCredential> getById(@PathVariable Long id) {
         Optional<CompanyCredential> result = service.findById(id);
         return result.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
@@ -58,7 +58,7 @@ public class CompanyCredentialController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<CompanyCredential> update(@PathVariable Integer id, @RequestBody CompanyCredential details) {
+    public ResponseEntity<CompanyCredential> update(@PathVariable Long id, @RequestBody CompanyCredential details) {
         Optional<CompanyCredential> optional = service.findById(id);
         if (optional.isPresent()) {
             CompanyCredential existing = optional.get();
@@ -141,7 +141,7 @@ public class CompanyCredentialController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.ok().build();
     }

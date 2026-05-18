@@ -10,21 +10,15 @@ public class SecurityUtils {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 Object principal = auth.getPrincipal();
-                String username = null;
-                
                 if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-                    username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    return ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
                 } else {
-                    username = auth.getName();
-                }
-                
-                if (username != null && !username.isEmpty()) {
-                    return username;
+                    return auth.getName();
                 }
             }
         } catch (Exception e) {
-            // Log error if possible, but always return a fallback
+            // Log error
         }
-        return "SYSTEM";
+        return null;
     }
 }

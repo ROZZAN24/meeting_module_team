@@ -16,7 +16,7 @@ public class CompanyCredential {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
     @Column(name = "company_name", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String companyName;
@@ -85,11 +85,11 @@ public class CompanyCredential {
     @Column(name = "RESTORE_ENABLE_DAYS")
     private Integer restoreEnableDays;
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

@@ -26,9 +26,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
+import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
-import { exportToExcel } from 'utils/excelExport';
 
 const columns = ['#', 'Category', 'Check Point', 'Dept', 'Level', 'Frequency', 'Stock Link', 'Comments', 'Verification Required', 'Assigned To', 'Assigned By', 'Status'];
 
@@ -68,6 +68,20 @@ const tableCols = [
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'assignedBy', label: 'Assigned By' },
   { id: 'status', label: 'Status' }
+];
+
+const exportColumns = [
+  { header: 'Category', key: (r) => r.checklist?.category },
+  { header: 'Check Point', key: (r) => r.checklist?.checkingPoint },
+  { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Level', key: () => '' },
+  { header: 'Frequency', key: (r) => r.checklist?.frequency },
+  { header: 'Stock Link', key: (r) => r.checklist?.stockLink },
+  { header: 'Comments', key: 'remarks' },
+  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
+  { header: 'Assigned To', key: 'assignedTo' },
+  { header: 'Assigned By', key: 'assignedBy' },
+  { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
 const filterConfig = [
@@ -243,24 +257,6 @@ export default function CheckListRenewalReport() {
     setPage(0);
   };
 
-  const handleExport = () => {
-    const exportData = rows.map((r, i) => ({
-      '#': i + 1,
-      'Category': r.checklist?.category,
-      'Check Point': r.checklist?.checkingPoint,
-      'Dept': (r.checklist?.departments || []).map(d => d.departmentName).join(', '),
-      'Level': '',
-      'Frequency': r.checklist?.frequency,
-      'Stock Link': r.checklist?.stockLink,
-      'Comments': r.remarks,
-      'Verification Required': r.checklist?.verificationRequired,
-      'Assigned To': r.assignedTo,
-      'Assigned By': r.assignedBy,
-      'Status': typeof r.status === 'object' ? r.status?.name : r.status
-    }));
-    exportToExcel(exportData, 'Checklist_Report');
-  };
-
   const activeCount = (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'All' ? 1 : 0) + (filters.status !== 'All' ? 1 : 0);
 
   return (
@@ -268,12 +264,7 @@ export default function CheckListRenewalReport() {
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border: '1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius: 1.5, p: 0.8, position: 'relative' }}>
-            <IconAdjustmentsHorizontal size={20} />
-            {activeCount > 0 && <Box sx={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', bgcolor: 'error.main', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{activeCount}</Box>}
-          </IconButton>
+          <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />
         </Box>
       }
     >
