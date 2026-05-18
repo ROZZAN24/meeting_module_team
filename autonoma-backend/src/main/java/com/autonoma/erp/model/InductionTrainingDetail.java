@@ -56,6 +56,9 @@ public class InductionTrainingDetail {
     @Transient
     private String attachmentRequired;
 
+    @Transient
+    private String inductionAttachment;
+
     // === Audit ===
     @Column(name = "created_by", length = 100)
     private String createdBy;
