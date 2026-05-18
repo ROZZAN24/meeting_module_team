@@ -252,6 +252,7 @@ const DeliveryTerms = Loadable(lazy(() => import('views/sm/masters/DeliveryTerms
 const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService')));
 const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMaster')));
 const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
+const CustomerPotentialMaster = Loadable(lazy(() => import('views/sm/crm/CustomerPotential/CustomerPotentialMaster')));
 
 // npd routing
 const NpdItemGroupMaster = Loadable(lazy(() => import('views/npd/ItemGroup/ItemGroupMaster')));
@@ -1135,6 +1136,10 @@ const MainRoutes = {
     {
       path: '/master/common/state',
       element: <StateMasterPage />
+    },
+    {
+      path: '/master/sales/crm/potential',
+      element: <CustomerPotentialMaster />
     },
     {
       path: '/master/npd/product-type',
