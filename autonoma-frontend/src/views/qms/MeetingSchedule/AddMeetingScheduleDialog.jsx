@@ -31,8 +31,13 @@ const ALL_TIME_OPTIONS = Array.from({ length: 96 }).map((_, i) => {
   const m = ((i % 4) * 15).toString().padStart(2, '0');
   const ampm = hour24 >= 12 ? 'PM' : 'AM';
   const hour12 = (hour24 % 12 || 12).toString().padStart(2, '0');
+<<<<<<< HEAD
   return { label: `${hour12}:${m} ${ampm}`, hour24, minutes: parseInt(m, 10) };
 });
+=======
+  return { label: `${hour12}:${m} ${ampm}`, hour24 };
+}).filter(t => t.hour24 >= 4).map(t => t.label);
+>>>>>>> origin/chore/repo-cleanup
 
 const to24h = (time12h) => {
   if (!time12h) return null;
@@ -87,16 +92,13 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
   const [form, setForm] = useState(INITIAL_FORM);
 
   const filteredTimeOptions = useMemo(() => {
-    // TEMPORARY BYPASS: Allow all 24 hours for testing.
     // Original logic: Restricted 9:00 AM to 11:00 PM for scheduling, up to 9:00 PM for modifications
-    // const limit = item ? 21 : 23;
-    // return ALL_TIME_OPTIONS.filter((t) => {
-    //   const isAfter9AM = t.hour24 >= 9;
-    //   const isBeforeLimit = t.hour24 < limit || (t.hour24 === limit && t.minutes === 0);
-    //   return isAfter9AM && isBeforeLimit;
-    // }).map((t) => t.label);
-    
-    return ALL_TIME_OPTIONS.map((t) => t.label);
+    const limit = item ? 21 : 23;
+    return ALL_TIME_OPTIONS.filter((t) => {
+      const isAfter9AM = t.hour24 >= 9;
+      const isBeforeLimit = t.hour24 < limit || (t.hour24 === limit && t.minutes === 0);
+      return isAfter9AM && isBeforeLimit;
+    }).map((t) => t.label);
   }, [item]);
 
   useEffect(() => {

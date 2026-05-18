@@ -69,8 +69,12 @@ export default function MeetingMasterList() {
     setLoading(true);
     try {
       const response = await axios.get(API_PATHS.QMS.MEETINGS);
+<<<<<<< HEAD
       const data = Array.isArray(response.data) ? response.data : [];
       setRows(data.sort((a, b) => b.id - a.id));
+=======
+      setRows(Array.isArray(response.data) ? response.data : []);
+>>>>>>> origin/chore/repo-cleanup
     } catch (error) {
       console.error('Failed to fetch meetings:', error);
       setRows([]);
@@ -178,8 +182,13 @@ export default function MeetingMasterList() {
             ]}
           />
           <Tooltip title={shortcutTooltip('Add Meeting', 'Ctrl + N')}>
+<<<<<<< HEAD
             <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
+=======
+            <Button variant="contained" color="secondary" size="medium" onClick={handleAdd} sx={btnNew}>
+              + Add
+>>>>>>> origin/chore/repo-cleanup
             </Button>
           </Tooltip>
         </Stack>

@@ -928,6 +928,46 @@ const MainRoutes = {
       element: <QmsAuditCriteriaMaster />
     },
     {
+      path: '/master/npd/product-group',
+      element: <NpdItemGroupMaster />
+    },
+    {
+      path: '/master/npd/product-type',
+      element: <NpdItemTypeMaster />
+    },
+    {
+      path: '/master/npd/product-subtype',
+      element: <NpdItemSubtypeMaster />
+    },
+    {
+      path: '/master/npd/product-oem',
+      element: <NpdOemMaster />
+    },
+    {
+      path: '/master/npd/product-oem-mapping',
+      element: <NpdOemMappingMaster />
+    },
+    {
+      path: '/master/npd/product-model',
+      element: <NpdModelMaster />
+    },
+    {
+      path: '/master/npd/product-capacity',
+      element: <NpdCapacityMaster />
+    },
+    {
+      path: '/master/npd/wind-farm',
+      element: <NpdWindFarmMaster />
+    },
+    {
+      path: '/master/npd/model-name',
+      element: <NpdModelNameMaster />
+    },
+    {
+      path: '/master/npd/uom',
+      element: <NpdUomMaster />
+    },
+    {
       path: '/master/qms/meeting/master',
       element: <MeetingMaster />
     },

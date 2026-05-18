@@ -11,10 +11,13 @@ import { API_PATHS } from 'utils/api-constants';
 
 const formatTo12h = (time24) => {
   if (!time24) return '-';
+<<<<<<< HEAD
   if (Array.isArray(time24)) {
     const [h, m] = time24;
     time24 = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
+=======
+>>>>>>> origin/chore/repo-cleanup
   const [hours, minutes] = time24.split(':');
   const h = parseInt(hours, 10);
   const ampm = h >= 12 ? 'PM' : 'AM';
@@ -27,13 +30,20 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
   const { employees = [] } = useLookups(['EMPLOYEES']);
   const [schedules, setSchedules] = useState([]);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
+<<<<<<< HEAD
   const [attendeeName, setAttendeeName] = useState('');
+=======
+  const [attendeeName, setAttendeeName] = useState('Current User');
+>>>>>>> origin/chore/repo-cleanup
   const [attendanceStatus, setAttendanceStatus] = useState('PRESENT');
   const [inTime, setInTime] = useState('');
   const [inTimeRaw, setInTimeRaw] = useState('');
   const [outTime, setOutTime] = useState('');
   const [outTimeRaw, setOutTimeRaw] = useState('');
+<<<<<<< HEAD
   const [existingAttendance, setExistingAttendance] = useState([]);
+=======
+>>>>>>> origin/chore/repo-cleanup
 
   const isEdit = !!item;
 
@@ -57,27 +67,40 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             const today = now.toISOString().split('T')[0];
 
             const eligible = allSchedules.filter(s => {
+<<<<<<< HEAD
               // Handle potential null/undefined status from backend just like the list page does
               const scheduleStatus = s.status || 'OPEN';
               
-              // TEMPORARY BYPASS FOR TESTING: Ignore ALL restrictions (status, date, time)
-              // To properly test the flow, we'll just allow any OPEN/RESCHEDULE schedule to appear.
-              // if (scheduleStatus !== 'OPEN' && scheduleStatus !== 'RESCHEDULE') return false;
-              // if (s.meetingDate !== today) return false;
-              // if (!s.startTime) return false;
-              // const [h, m] = s.startTime.split(':').map(Number);
-              // const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
-              // 
-              // // ── STRICT END TIME CHECK ──
-              // if (s.endTime) {
-              //   const [eh, em] = s.endTime.split(':').map(Number);
-              //   const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
-              //   if (now.getTime() > endMs) return false;
-              // }
-              //
-              // const tenMinBefore = startMs - 10 * 60 * 1000;
-              // if (now.getTime() < tenMinBefore) return false;
+              // Restore strict eligibility checks
+              if (scheduleStatus !== 'OPEN' && scheduleStatus !== 'RESCHEDULE') return false;
+=======
+              if (s.status !== 'OPEN' && s.status !== 'RESCHEDULE') return false;
+>>>>>>> origin/chore/repo-cleanup
+              if (s.meetingDate !== today) return false;
+              if (!s.startTime) return false;
+              const [h, m] = s.startTime.split(':').map(Number);
+              const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
               
+              // ── STRICT END TIME CHECK ──
+<<<<<<< HEAD
+=======
+              // If the meeting has a defined end time and current time is past it, hide the schedule
+>>>>>>> origin/chore/repo-cleanup
+              if (s.endTime) {
+                const [eh, em] = s.endTime.split(':').map(Number);
+                const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
+                if (now.getTime() > endMs) return false;
+              }
+<<<<<<< HEAD
+              
+              const tenMinBefore = startMs - 10 * 60 * 1000;
+              if (now.getTime() < tenMinBefore) return false;
+              
+=======
+
+              const tenMinBefore = startMs - 10 * 60 * 1000;
+              if (now.getTime() < tenMinBefore) return false;
+>>>>>>> origin/chore/repo-cleanup
               return true;
             });
             setSchedules(eligible);
@@ -106,12 +129,15 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
       const timeStr = now.toTimeString().slice(0, 5);
       setInTimeRaw(timeStr);
       setInTime(formatTo12h(timeStr));
+<<<<<<< HEAD
 
       // Fetch existing attendance to filter out already marked users
       axios.get(API_PATHS.QMS.MEETING_ATTENDANCE).then(res => {
         const filtered = (res.data || []).filter(a => a.schedule?.id === selectedSchedule.id);
         setExistingAttendance(filtered);
       }).catch(err => console.error('Failed to fetch attendance for filter', err));
+=======
+>>>>>>> origin/chore/repo-cleanup
     }
   }, [selectedSchedule, isEdit]);
 
@@ -132,6 +158,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         await axios.put(`${API_PATHS.QMS.MEETING_ATTENDANCE}/${item.id}/out`);
         dispatch(openSnackbar({ open: true, message: 'Out Time marked successfully', variant: 'alert', severity: 'success' }));
       } else {
+<<<<<<< HEAD
         if (!attendeeName) {
           dispatch(openSnackbar({ open: true, message: 'Please select an attendee', variant: 'alert', severity: 'warning' }));
           return;
@@ -148,6 +175,15 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
           scheduleId: selectedSchedule.id,
           employeeId: selectedEmp.id,
+=======
+        // FIND employeeId
+        const selectedEmp = employees.find(e => e.employeeName === attendeeName);
+        
+        // MARK IN ACTION
+        await axios.post(API_PATHS.QMS.MEETING_ATTENDANCE, {
+          scheduleId: selectedSchedule.id,
+          employeeId: selectedEmp ? selectedEmp.id : null,
+>>>>>>> origin/chore/repo-cleanup
           inTime: inTimeRaw,
           status: attendanceStatus
         });
@@ -200,18 +236,27 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             />
           ) : (
             <Autocomplete
+<<<<<<< HEAD
               options={employees.filter(emp => 
                 // Only show participants assigned to this schedule who haven't marked attendance yet
                 (!selectedSchedule || selectedSchedule.participants?.some(p => p.employee?.id === emp.id)) &&
                 !existingAttendance.some(att => att.employee?.id === emp.id)
               )}
+=======
+              options={employees}
+>>>>>>> origin/chore/repo-cleanup
               getOptionLabel={(option) => option.employeeName || ''}
               value={employees.find(e => e.employeeName === attendeeName) || null}
               onChange={(e, val) => setAttendeeName(val ? val.employeeName : 'Current User')}
               renderInput={(params) => (
+<<<<<<< HEAD
                 <BOSTextField {...params} label="Select Attendee" required fullWidth />
               )}
               noOptionsText={selectedSchedule ? "All assigned participants have marked attendance" : "Select a schedule first"}
+=======
+                <BOSTextField {...params} label="Select Attendee (Testing Mode)" required fullWidth />
+              )}
+>>>>>>> origin/chore/repo-cleanup
             />
           )}
 

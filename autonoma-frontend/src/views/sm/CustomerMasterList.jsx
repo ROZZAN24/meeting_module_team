@@ -44,11 +44,15 @@ const columns = [
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'distance', label: 'Distance', minWidth: 100 },
   { id: 'negotiateCustomer', label: 'Negotiate Customer', minWidth: 150 },
+<<<<<<< HEAD
   { id: 'dailyDispatchMail', label: 'Daily Dispatch Mail Req?', minWidth: 180 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+=======
+  { id: 'dailyDispatchMail', label: 'Daily Dispatch Mail Req?', minWidth: 180 }
+>>>>>>> origin/chore/repo-cleanup
 ];
 
 export default function CustomerMasterList() {
@@ -236,7 +240,10 @@ export default function CustomerMasterList() {
         selectedRowId={selectedListRow?.id}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
+<<<<<<< HEAD
         renderCell={null}
+=======
+>>>>>>> origin/chore/repo-cleanup
         footerActions={
           <Stack direction="row" spacing={1.5}>
             <Button 

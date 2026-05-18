@@ -50,4 +50,8 @@ npm run dev
 ## 📂 Project Structure
 *   `Autonoma_Backend/`: Spring Boot 3.x, JPA, Hibernate, JWT Security.
 *   `Autonoma_ERP/`: React 18, Material UI, Vite.
+<<<<<<< HEAD
 *   `Autonoma_Backend/sql/`: Database schema and migration scripts.
+=======
+*   `Autonoma_Backend/sql/`: Database schema and migration scripts.
+>>>>>>> origin/chore/repo-cleanup

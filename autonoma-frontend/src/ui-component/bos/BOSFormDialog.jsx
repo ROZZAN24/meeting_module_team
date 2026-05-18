@@ -127,6 +127,18 @@ export default function BOSFormDialog({
           {isViewOnly ? (
             <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
               {secondaryActions}
+              {onEditClick && (
+                <Tooltip title={shortcutTooltip('Edit Details', 'Ctrl + E')}>
+                  <Button
+                    onClick={onEditClick}
+                    variant="contained"
+                    sx={btnEdit(theme)}
+                    startIcon={<IconEdit size={20} />}
+                  >
+                    Edit
+                  </Button>
+                </Tooltip>
+              )}
               <Tooltip title={shortcutTooltip('Edit Details', 'Ctrl + E')}>
                 <Button
                   onClick={onEditClick}

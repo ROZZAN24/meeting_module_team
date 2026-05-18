@@ -25,11 +25,15 @@ const columns = [
   { id: 'unitPrice', label: 'Unit Price', minWidth: 100 },
   { id: 'quantity', label: 'Qty', minWidth: 80 },
   { id: 'currency', label: 'Currency', minWidth: 80 },
+<<<<<<< HEAD
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created By', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+=======
+  { id: 'status', label: 'Status', minWidth: 100 }
+>>>>>>> origin/chore/repo-cleanup
 ];
 
 export default function PriceMasterList() {
@@ -111,7 +115,11 @@ export default function PriceMasterList() {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
       'Master No': r.masterNo,
+<<<<<<< HEAD
       'Date': r.entryDate ? format(new Date(r.entryDate), 'dd/MM/yyyy') : '',
+=======
+      'Date': r.entryDate ? format(new Date(r.entryDate), 'dd-MM-yyyy') : '',
+>>>>>>> origin/chore/repo-cleanup
       'Customer': r.customerName,
       'Product': r.productName,
       'Unit Price': r.unitPrice,

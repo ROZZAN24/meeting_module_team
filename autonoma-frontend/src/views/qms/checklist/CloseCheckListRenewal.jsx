@@ -10,7 +10,6 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -122,8 +121,6 @@ const filterConfig = [
       { value: 'CHECK LIST', label: 'CHECK LIST' }
     ]
   },
-  { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
-  { id: 'checkingPoint', label: 'Checking Point', type: 'text', isStarred: false },
   {
     id: 'frequency', label: 'Frequency', type: 'select', isStarred: false, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },

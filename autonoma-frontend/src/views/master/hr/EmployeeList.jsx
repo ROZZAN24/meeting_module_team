@@ -70,7 +70,25 @@ export default function EmployeeList() {
 
   // SOP #16 — Global filter config handled automatically by Rule 1 & Rule 2
   useEffect(() => {
+<<<<<<< HEAD
     // We no longer need manual config here as BOSDataTable now auto-extracts options from rows
+=======
+    const config = [
+      {
+        id: 'status', label: 'Status', type: 'select',
+        options: [
+          { value: 'All', label: 'ALL' },
+          { value: 'Active', label: 'ACTIVE' },
+          { value: 'In Active', label: 'INACTIVE' }
+        ],
+        defaultValue: 'Active',
+        isConstant: true
+      },
+      { id: 'departmentId', label: 'Department', type: 'text', placeholder: 'Filter by Department...', isConstant: true },
+      { id: 'designationId', label: 'Designation', type: 'text', placeholder: 'Filter by Designation...' }
+    ];
+    dispatch(setFilterConfig(config));
+>>>>>>> origin/chore/repo-cleanup
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -121,12 +139,67 @@ export default function EmployeeList() {
     'escape': () => {}
   });
 
+<<<<<<< HEAD
   // SOP #16 — Global search + filters are now handled internally by BOSDataTable.
   // We just need to provide the resolved data for display.
   const resolvedRows = useMemo(() => {
     if (!Array.isArray(rows)) return [];
     console.debug(`EmployeeList: Resolving ${rows.length} rows for display`);
     return rows.map((row) => ({
+=======
+  const handleExport = () => {
+    const exportData = filteredRows.map((r, i) => ({
+      '#': i + 1,
+      'First Name': r.firstName,
+      'Last Name': r.lastName,
+      'Emp Code': r.empCode,
+      'Designation': getDesigName(r.designationId),
+      'Grade': r.gradeCode,
+      'Department': getDeptName(r.departmentId),
+      'Level': getLevelName(r.empLevelId),
+      'Home Manager': r.homeManager,
+      'Business Manager': r.businessManager,
+      'Supplier Name': r.supplierName || r.vendorName,
+      'Created By': r.createdBy,
+      'Created Date': r.createdAt ? format(new Date(r.createdAt), 'dd-MM-yyyy HH:mm') : '',
+      'Status': r.status
+    }));
+    exportToExcel(exportData, 'Employee_Master');
+  };
+
+  // SOP #16 — Global search + filters
+  const filteredRows = useMemo(() => {
+    if (!Array.isArray(rows)) {
+      console.warn('EmployeeList: rows is not an array', rows);
+      return [];
+    }
+    console.debug(`EmployeeList: Filtering ${rows.length} rows. Query: "${globalQuery}", Filters:`, globalFilters);
+
+    return rows.filter((row) => {
+      if (!row) return false;
+      const statusFilter = globalFilters?.status || 'All';
+      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+
+      const deptFilter = globalFilters?.departmentId || '';
+      const matchesDept = !deptFilter || getDeptName(row.departmentId).toLowerCase().includes(String(deptFilter).toLowerCase());
+
+      const desigFilter = globalFilters?.designationId || '';
+      const matchesDesig = !desigFilter || getDesigName(row.designationId).toLowerCase().includes(String(desigFilter).toLowerCase());
+
+      const matchesSearch = !globalQuery || [
+        row.firstName, row.lastName, row.empCode,
+        row.homeManager, row.businessManager, row.supplierName, row.vendorName
+      ].some((val) => val && String(val).toLowerCase().includes(String(globalQuery).toLowerCase()));
+
+      return matchesStatus && matchesDept && matchesDesig && matchesSearch;
+    });
+  }, [rows, globalQuery, globalFilters, departments, designations]);
+
+  const paginatedRows = useMemo(() => {
+    if (!Array.isArray(filteredRows)) return [];
+    console.debug(`EmployeeList: Paginating ${filteredRows.length} filtered rows (page ${page}, size ${size})`);
+    return filteredRows.slice(page * size, page * size + size).map((row, i) => ({
+>>>>>>> origin/chore/repo-cleanup
       ...row,
       photo: row.employeePhotoUpload,
       employeeName: row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '-',

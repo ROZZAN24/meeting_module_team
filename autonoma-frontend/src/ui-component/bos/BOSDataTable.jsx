@@ -30,7 +30,8 @@ export default function BOSDataTable({
   onEditRow,
   onDeleteRow,
   onDoubleClickRow,
-  showActions = true,
+  showActions: showActionsProp = true,
+  actionColumn,
   selectable = false,
   onSelectionChange,
   totalCount,
@@ -71,6 +72,11 @@ export default function BOSDataTable({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const baseRowSx = getTableRowSx(isDark);
+
+  const showActions = useMemo(() => {
+    if (showActionsProp === false) return false;
+    return Boolean(onEditRow || onDeleteRow || actionColumn);
+  }, [showActionsProp, onEditRow, onDeleteRow, actionColumn]);
 
   const searchQuery = useSelector((state) => state.search?.query || '');
   const globalFilters = useSelector((state) => state.search?.filters || {});
@@ -124,6 +130,9 @@ export default function BOSDataTable({
     } catch { 
       return '-'; 
     }
+  const formatDate = (d) => {
+    if (!d) return '-';
+    try { return format(new Date(d), 'dd-MM-yyyy HH:mm'); } catch { return '-'; }
   };
 
   const defaultRenderCell = (col, row, idx) => {
@@ -244,6 +253,7 @@ export default function BOSDataTable({
 
                 return (
                   <TableRow 
+                    key={row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`}
                     key={row.id ?? idx}
                     hover 
                     sx={rowSx} 
