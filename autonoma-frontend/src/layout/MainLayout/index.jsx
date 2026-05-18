@@ -19,6 +19,7 @@ import Sidebar from './Sidebar';
 import HorizontalBar from './HorizontalBar';
 import MainContentStyled from './MainContentStyled';
 import Customization from '../Customization';
+import BOSConnect from './BOSConnect';
 import Loader from 'ui-component/Loader';
 import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
@@ -300,6 +301,7 @@ function MainLayoutInner() {
         </Container>
       </MainContentStyled>
       <Customization />
+      <BOSConnect />
     </Box>
   );
 }
