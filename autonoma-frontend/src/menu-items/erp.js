@@ -45,11 +45,13 @@ import {
   IconPlaneTilt,
   IconTractor,
   IconMoodSmile,
-  IconSearch
+  IconSearch,
+  IconCategory
 } from '@tabler/icons-react';
 
 const icons = {
   IconDashboard,
+  IconCategory,
   IconUsers,
   IconBriefcase,
   IconBuildingFactory,
@@ -364,6 +366,13 @@ export const masters = {
           icon: icons.IconBuildingFactory,
           children: [
             {
+              id: 'master-npd-product-group',
+              title: 'Product Item Group',
+              type: 'item',
+              url: '/master/npd/product-group',
+              icon: icons.IconCategory
+            },
+            {
               id: 'master-npd-product-type',
               title: 'Product Item Type',
               type: 'item',
@@ -404,6 +413,27 @@ export const masters = {
               type: 'item',
               url: '/master/npd/product-capacity',
               icon: icons.IconAward
+            },
+            {
+              id: 'master-npd-wind-farm',
+              title: 'Wind Farm',
+              type: 'item',
+              url: '/master/npd/wind-farm',
+              icon: icons.IconMapPin
+            },
+            {
+              id: 'master-npd-model-name',
+              title: 'Model Name',
+              type: 'item',
+              url: '/master/npd/model-name',
+              icon: icons.IconListCheck
+            },
+            {
+              id: 'master-npd-uom',
+              title: 'UOM',
+              type: 'item',
+              url: '/master/npd/uom',
+              icon: icons.IconScale
             }
           ]
         }
