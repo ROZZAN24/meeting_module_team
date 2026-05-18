@@ -62,9 +62,8 @@ public class ChecklistService {
 
     /**
      * Retrieves master checklists based on comprehensive filtering criteria.
-     * 
-     * @param status       The lifecycle status of the checklist (e.g., Active,
-     *                     Inactive).
+     *
+     * @param status       The lifecycle status of the checklist (e.g., Active, Inactive).
      * @param category     The functional category (RENEWAL, CHECK LIST).
      * @param department   Optional department filter.
      * @param searchBy     The field to perform textual search on.
@@ -167,13 +166,7 @@ public class ChecklistService {
 
     @Transactional
     public MasterChecklist saveMasterChecklist(MasterChecklist checklist, List<String> departments) {
-<<<<<<< HEAD
-<<<<<<<< HEAD:autonoma-backend/src/main/java/com/autonoma/erp/service/ChecklistService.java
-        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same
-        // Department)
-========
         // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same Department)
->>>>>>>> origin/chore/repo-cleanup:autonoma-frontend/Autonoma_Backend/src/main/java/com/autonoma/erp/service/ChecklistService.java
         if (departments != null && !departments.isEmpty()) {
             List<MasterChecklist> duplicates = masterRepo.findDuplicates(
                     checklist.getCategory(),
@@ -183,18 +176,6 @@ public class ChecklistService {
             if (!duplicates.isEmpty()) {
                 throw new IllegalArgumentException(
                         "A checklist with the same Category and Checking Point already exists for one or more selected departments.");
-=======
-        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same Department)
-        if (departments != null && !departments.isEmpty()) {
-            List<MasterChecklist> duplicates = masterRepo.findDuplicates(
-                checklist.getCategory(), 
-                checklist.getCheckingPoint(), 
-                departments, 
-                checklist.getId()
-            );
-            if (!duplicates.isEmpty()) {
-                throw new IllegalArgumentException("A checklist with the same Category and Checking Point already exists for one or more selected departments.");
->>>>>>> origin/chore/repo-cleanup
             }
         }
 
@@ -215,11 +196,7 @@ public class ChecklistService {
                 if (checklist.getUpdatedBy() != null) {
                     checklist.setCreatedBy(checklist.getUpdatedBy());
                 } else if (checklist.getCreatedBy() == null) {
-<<<<<<< HEAD
                     checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-=======
-                    checklist.setCreatedBy("System");
->>>>>>> origin/chore/repo-cleanup
                 }
 
                 MasterChecklist saved = masterRepo.save(checklist);
@@ -287,11 +264,7 @@ public class ChecklistService {
             if (checklist.getVerifyStatus() == null)
                 checklist.setVerifyStatus("Pending for Verify");
             if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
-<<<<<<< HEAD
                 checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-=======
-                checklist.setCreatedBy("System");
->>>>>>> origin/chore/repo-cleanup
             }
             MasterChecklist saved = masterRepo.save(checklist);
 
@@ -324,12 +297,8 @@ public class ChecklistService {
     // --- Assignments ---
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate,
-<<<<<<< HEAD
             String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType,
             String currentUser, boolean excludeCompleted, Pageable pageable) {
-=======
-            String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType, String currentUser, boolean excludeCompleted, Pageable pageable) {
->>>>>>> origin/chore/repo-cleanup
 
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -356,12 +325,7 @@ public class ChecklistService {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
                 predicates.add(cb.equal(statusJoin.get("name"), status));
             } else if (excludeCompleted) {
-<<<<<<< HEAD
-                // If "All" is selected and we want to focus on execution, exclude
-                // completed/finalized tasks
-=======
                 // If "All" is selected and we want to focus on execution, exclude completed/finalized tasks
->>>>>>> origin/chore/repo-cleanup
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
                 predicates.add(cb.not(statusJoin.get("name").in("Completed", "Verified", "Accepted")));
             }
@@ -447,23 +411,10 @@ public class ChecklistService {
         if (id != null) {
             assignment = assignRepo.findById(id).orElse(new ChecklistAssignment());
         } else {
-            // Prevent duplicate assignments for same person on same checklist
             // Prevent duplicate assignments for same person on same checklist for same date
-<<<<<<< HEAD
             if (assignRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
                     .isPresent()) {
-=======
-            if (assignRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate).isPresent()) {
->>>>>>> origin/chore/repo-cleanup
                 // Return a dummy object or handle in controller to avoid 409 red console error
-                // For now, let's return a "special" assignment or just return null and handle
-                // in service?
-                // Actually, the cleanest way to avoid 409 in console but still inform UI is a
-                // custom response wrapper.
-                // But since I'm in Service, I'll throw a specific exception that I'll catch in
-                // Controller or
-                // just return a dummy with an error message.
-                // Reverting to returning a "Duplicate" indicator.
                 ChecklistAssignment duplicate = new ChecklistAssignment();
                 duplicate.setRemarks("DUPLICATE_ASSIGNMENT");
                 return duplicate;
@@ -557,8 +508,7 @@ public class ChecklistService {
         ChecklistVerification savedVerify = verifyRepo.save(verification);
 
         // RECURRING LOGIC:
-        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is
-        // NO),
+        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is NO),
         // we should generate the next assignment if it's a recurring task.
         boolean isFinalized = "Verified".equalsIgnoreCase(finalStatusName) ||
                 "Accepted".equalsIgnoreCase(finalStatusName) ||
@@ -600,21 +550,12 @@ public class ChecklistService {
         }
 
         Date nextDate = cal.getTime();
-<<<<<<< HEAD
 
-        // DUPLICATE PREVENTION: Check if a future assignment for this date already
-        // exists
+        // DUPLICATE PREVENTION: Check if a future assignment for this date already exists
         boolean exists = assignRepo.existsByChecklistIdAndAssignedToAndChecklistDate(
                 master.getId(), current.getAssignedTo(), nextDate);
         if (exists)
             return; // Skip if already generated
-=======
-        
-        // DUPLICATE PREVENTION: Check if a future assignment for this date already exists
-        boolean exists = assignRepo.existsByChecklistIdAndAssignedToAndChecklistDate(
-            master.getId(), current.getAssignedTo(), nextDate);
-        if (exists) return; // Skip if already generated
->>>>>>> origin/chore/repo-cleanup
 
         // Create new assignment
         ChecklistAssignment next = new ChecklistAssignment();
@@ -670,7 +611,3 @@ public class ChecklistService {
         }
     }
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> origin/chore/repo-cleanup

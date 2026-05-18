@@ -1,12 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
-<<<<<<<< HEAD:autonoma-backend/src/main/java/com/autonoma/erp/controller/admin/UserController.java
 import com.autonoma.erp.model.admin.UserCredential;
 import com.autonoma.erp.repository.admin.UserRepository;
-========
-import com.autonoma.erp.model.UserCredential;
-import com.autonoma.erp.repository.UserRepository;
->>>>>>>> origin/chore/repo-cleanup:autonoma-backend/src/main/java/com/autonoma/erp/controller/UserController.java
 import com.autonoma.erp.service.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;

@@ -10,15 +10,7 @@ GO
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[AD_COMPANY_CREDENTIAL]') AND type in (N'U'))
 BEGIN
 CREATE TABLE [dbo].[AD_COMPANY_CREDENTIAL](
-<<<<<<< HEAD
-<<<<<<<< HEAD:autonoma-backend/src/main/resources/db/migration/V1.2__Company_Profile.sql
 	[ID] [int] IDENTITY(1,1) NOT NULL,
-========
-	[ID] [int] NOT NULL,
->>>>>>>> origin/chore/repo-cleanup:autonoma-backend/src/main/resources/dbscripts/20260512_V1.2__Company_Profile.sql
-=======
-	[ID] [int] NOT NULL,
->>>>>>> origin/chore/repo-cleanup
 	[COMPANY_NAME] [nvarchar](100) NULL,
 	[SHORT_NAME] [nvarchar](50) NULL,
 	[ADDRESS_1] [nvarchar](200) NULL,

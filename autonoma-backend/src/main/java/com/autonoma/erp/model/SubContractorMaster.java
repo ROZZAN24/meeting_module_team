@@ -5,11 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-<<<<<<< HEAD
 @Table(name = "sm_subcontractor_master")
-=======
-@Table(name = "SM_SUBCONTRACTOR_MASTER")
->>>>>>> origin/chore/repo-cleanup
 @Data
 public class SubContractorMaster {
     @Id

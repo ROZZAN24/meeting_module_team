@@ -25,7 +25,6 @@ public class CustomerMasterService {
 
     @Transactional
     public CustomerMaster saveCustomer(CustomerMaster customer) {
-<<<<<<< HEAD
         if (customer.getId() == null) {
             if (repository.existsByCustomerNameIgnoreCase(customer.getCustomerName())) {
                 throw new org.springframework.web.server.ResponseStatusException(
@@ -38,8 +37,6 @@ public class CustomerMasterService {
             }
         }
 
-=======
->>>>>>> origin/chore/repo-cleanup
         if (customer.getCustomerCode() == null || customer.getCustomerCode().isEmpty()) {
             customer.setCustomerCode(generateNextCode());
         }
@@ -51,7 +48,6 @@ public class CustomerMasterService {
         repository.deleteById(id);
     }
 
-<<<<<<< HEAD
     public String getNextCustomerCode() {
         return generateNextCode();
     }
@@ -77,18 +73,6 @@ public class CustomerMasterService {
             e.printStackTrace();
             String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
             return "C-" + year + "-00001";
-=======
-    private String generateNextCode() {
-        String maxCode = repository.findMaxCustomerCode();
-        if (maxCode == null || maxCode.isEmpty()) {
-            return "CUST-00001";
-        }
-        try {
-            int lastNum = Integer.parseInt(maxCode.split("-")[1]);
-            return String.format("CUST-%05d", lastNum + 1);
-        } catch (Exception e) {
-            return "CUST-00001";
->>>>>>> origin/chore/repo-cleanup
         }
     }
 }

@@ -25,12 +25,9 @@ public class CustomerMaster {
     @Column(name = "customer_name", nullable = false, length = 200)
     private String customerName;
 
-<<<<<<< HEAD
     @Column(name = "customer_print_name", length = 200)
     private String customerPrintName;
 
-=======
->>>>>>> origin/chore/repo-cleanup
     @Column(name = "accounts_ledger", length = 200)
     private String accountsLedger;
 
@@ -76,12 +73,9 @@ public class CustomerMaster {
     @Column(name = "pan_no", length = 50)
     private String panNo;
 
-<<<<<<< HEAD
     @Column(name = "pan_file_info", length = 1000)
     private String panFileInfo;
 
-=======
->>>>>>> origin/chore/repo-cleanup
     @Column(name = "website", length = 150)
     private String website;
 

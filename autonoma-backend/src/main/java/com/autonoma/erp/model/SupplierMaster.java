@@ -5,11 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-<<<<<<< HEAD
 @Table(name = "sm_supplier_master")
-=======
-@Table(name = "SM_SUPPLIER_MASTER")
->>>>>>> origin/chore/repo-cleanup
 @Data
 public class SupplierMaster {
     @Id
@@ -64,7 +60,6 @@ public class SupplierMaster {
     @Column(name = "PAN_NO", length = 50)
     private String panNo;
 
-<<<<<<< HEAD
     @Column(name = "pan_file_info", length = 1000)
     private String panFileInfo;
 
@@ -80,14 +75,6 @@ public class SupplierMaster {
     @Column(name = "iso_file_info", length = 1000)
     private String isoFileInfo;
 
-=======
-    @Column(name = "MSME_NO", length = 50)
-    private String msmeNo;
-
-    @Column(name = "ISO_NO", length = 50)
-    private String isoNo;
-
->>>>>>> origin/chore/repo-cleanup
     @Column(name = "ISO_EXPIRY_DATE")
     private String isoExpiryDate;
 

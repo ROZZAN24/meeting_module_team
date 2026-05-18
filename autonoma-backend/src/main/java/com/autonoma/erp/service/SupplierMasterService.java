@@ -22,7 +22,6 @@ public class SupplierMasterService {
     }
 
     public SupplierMaster saveSupplier(SupplierMaster supplier) {
-<<<<<<< HEAD
         // Uniqueness checks
         if (supplier.getId() == null) {
             // New record
@@ -50,8 +49,6 @@ public class SupplierMasterService {
             }
         }
 
-=======
->>>>>>> origin/chore/repo-cleanup
         if (supplier.getSupplierCode() == null || supplier.getSupplierCode().isEmpty()) {
             supplier.setSupplierCode(generateSupplierCode());
         }
@@ -62,7 +59,6 @@ public class SupplierMasterService {
         repository.deleteById(id);
     }
 
-<<<<<<< HEAD
     public String getNextSupplierCode() {
         return generateSupplierCode();
     }
@@ -88,18 +84,6 @@ public class SupplierMasterService {
             e.printStackTrace(); // Minimal logging to stdout
             String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
             return "S-" + year + "-00001";
-=======
-    private String generateSupplierCode() {
-        String lastCode = repository.findMaxSupplierCode();
-        if (lastCode == null || lastCode.isEmpty()) {
-            return "SUP-00001";
-        }
-        try {
-            int lastNum = Integer.parseInt(lastCode.substring(4));
-            return String.format("SUP-%05d", lastNum + 1);
-        } catch (Exception e) {
-            return "SUP-" + System.currentTimeMillis();
->>>>>>> origin/chore/repo-cleanup
         }
     }
 }

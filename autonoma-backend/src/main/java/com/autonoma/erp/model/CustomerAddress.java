@@ -8,11 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-<<<<<<< HEAD
 @Table(name = "sm_customer_address")
-=======
-@Table(name = "SM_CUSTOMER_ADDRESS")
->>>>>>> origin/chore/repo-cleanup
 @Data
 @Builder
 @NoArgsConstructor

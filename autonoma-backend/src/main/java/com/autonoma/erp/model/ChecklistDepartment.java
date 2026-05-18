@@ -21,15 +21,7 @@ public class ChecklistDepartment {
     @JsonIgnore
     private MasterChecklist checklist;
 
-<<<<<<< HEAD
-<<<<<<<< HEAD:autonoma-backend/src/main/java/com/autonoma/erp/model/ChecklistDepartment.java
     @Column(name = "DEPARTMENT_NAME")
-========
-    @Column(name = "department_name")
->>>>>>>> origin/chore/repo-cleanup:autonoma-frontend/Autonoma_Backend/src/main/java/com/autonoma/erp/model/ChecklistDepartment.java
-=======
-    @Column(name = "department_name")
->>>>>>> origin/chore/repo-cleanup
     private String departmentName;
 
     public Long getId() { return id; }

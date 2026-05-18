@@ -166,9 +166,6 @@ public class FileService {
         }
 
         throw new RuntimeException("File not found: " + relativePath);
-        } else {
-            throw new RuntimeException("File not found: " + relativePath);
-        }
     }
 
     /**

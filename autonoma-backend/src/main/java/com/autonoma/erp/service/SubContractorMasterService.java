@@ -22,7 +22,6 @@ public class SubContractorMasterService {
     }
 
     public SubContractorMaster saveSubContractor(SubContractorMaster subcontractor) {
-<<<<<<< HEAD
         if (subcontractor.getId() == null) {
             if (repository.existsBySubcontractorNameIgnoreCase(subcontractor.getSubcontractorName())) {
                 throw new org.springframework.web.server.ResponseStatusException(
@@ -35,8 +34,6 @@ public class SubContractorMasterService {
             }
         }
 
-=======
->>>>>>> origin/chore/repo-cleanup
         if (subcontractor.getSubcontractorCode() == null || subcontractor.getSubcontractorCode().isEmpty()) {
             subcontractor.setSubcontractorCode(generateSubContractorCode());
         }

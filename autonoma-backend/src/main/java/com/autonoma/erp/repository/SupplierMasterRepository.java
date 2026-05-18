@@ -10,15 +10,10 @@ import java.util.Optional;
 public interface SupplierMasterRepository extends JpaRepository<SupplierMaster, Long> {
     Optional<SupplierMaster> findBySupplierCode(String supplierCode);
     
-<<<<<<< HEAD
     Optional<SupplierMaster> findTopBySupplierCodeStartingWithOrderBySupplierCodeDesc(String prefix);
     
     boolean existsBySupplierName(String supplierName);
     boolean existsBySupplierNameAndIdNot(String supplierName, Long id);
     boolean existsBySupplierCode(String supplierCode);
     boolean existsBySupplierCodeAndIdNot(String supplierCode, Long id);
-=======
-    @Query("SELECT MAX(s.supplierCode) FROM SupplierMaster s")
-    String findMaxSupplierCode();
->>>>>>> origin/chore/repo-cleanup
 }

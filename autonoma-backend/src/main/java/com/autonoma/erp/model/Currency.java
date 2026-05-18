@@ -4,11 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-<<<<<<< HEAD
 @Table(name = "sm_currency")
-=======
-@Table(name = "SM_CURRENCY")
->>>>>>> origin/chore/repo-cleanup
 @Data
 public class Currency {
     @Id
@@ -24,7 +20,6 @@ public class Currency {
     @Column(name = "SYMBOL", length = 10)
     private String symbol;
 
-<<<<<<< HEAD
     @Column(name = "STATUS")
     private String status = "Active";
 
@@ -39,8 +34,4 @@ public class Currency {
 
     @Column(name = "updated_at")
     private java.time.LocalDateTime updatedAt;
-=======
-    @Column(name = "STATUS", length = 20)
-    private String status;
->>>>>>> origin/chore/repo-cleanup
 }

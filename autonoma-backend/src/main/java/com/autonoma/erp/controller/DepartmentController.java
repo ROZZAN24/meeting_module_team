@@ -24,15 +24,10 @@ public class DepartmentController {
 
     @Operation(summary = "Get next available Department Number")
     @GetMapping("/next-code")
-<<<<<<< HEAD
     public ResponseEntity<String> getNextCode() {
         long maxNum = departmentRepository.findMaxDeptNumeric();
         String professionalCode = String.format("DEPT-%03d", maxNum + 1);
         return ResponseEntity.ok(professionalCode);
-=======
-    public ResponseEntity<Integer> getNextCode() {
-        return ResponseEntity.ok(departmentRepository.findMaxDepartmentNo().orElse(0) + 1);
->>>>>>> origin/chore/repo-cleanup
     }
 
     @GetMapping("/next-seq")
@@ -52,7 +47,6 @@ public class DepartmentController {
     }
 
     @PostMapping
-<<<<<<< HEAD
     public ResponseEntity<?> saveDepartment(@RequestBody Department department) {
         String name = department.getDepartmentName() != null ? department.getDepartmentName() : "";
         // Deep Sanitize: Replace non-breaking spaces and all types of whitespace with standard space
@@ -68,14 +62,10 @@ public class DepartmentController {
             return ResponseEntity.badRequest().body("Department Sequence Number already exists!");
         }
         department.setDepartmentName(sanitizedName);
-=======
-    public ResponseEntity<Department> saveDepartment(@RequestBody Department department) {
->>>>>>> origin/chore/repo-cleanup
         return ResponseEntity.ok(departmentService.saveDepartment(department));
     }
 
     @PutMapping("/{id}")
-<<<<<<< HEAD
     public ResponseEntity<?> updateDepartment(@PathVariable Long id, @RequestBody Department departmentDetails) {
         String name = departmentDetails.getDepartmentName() != null ? departmentDetails.getDepartmentName() : "";
         String sanitizedName = name.replaceAll("\\s+", " ").trim();
@@ -92,20 +82,10 @@ public class DepartmentController {
         return departmentRepository.findById(id)
                 .map(department -> {
                     department.setDepartmentName(sanitizedName);
-=======
-    public ResponseEntity<Department> updateDepartment(@PathVariable Long id, @RequestBody Department departmentDetails) {
-        return departmentRepository.findById(id)
-                .map(department -> {
-                    department.setDepartmentName(departmentDetails.getDepartmentName());
->>>>>>> origin/chore/repo-cleanup
                     department.setDepartmentNo(departmentDetails.getDepartmentNo());
                     department.setNdaCertificate(departmentDetails.getNdaCertificate());
                     department.setSequenceNo(departmentDetails.getSequenceNo());
                     department.setStatus(departmentDetails.getStatus());
-<<<<<<< HEAD
-=======
-                    department.setUpdatedBy("admin");
->>>>>>> origin/chore/repo-cleanup
                     return ResponseEntity.ok(departmentRepository.save(department));
                 }).orElse(ResponseEntity.notFound().build());
     }
