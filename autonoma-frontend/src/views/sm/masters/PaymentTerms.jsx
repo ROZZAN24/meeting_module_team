@@ -24,6 +24,8 @@ const columns = [
 ];
 
 export default function PaymentTerms() {
+  const dispatch = useDispatch();
+  const globalQuery = useSelector((state) => state.search.query);
   const [rows, setRows] = useState([]);
   const perms = usePagePermissions(PAGE_CODES.LOG_PAYMENT_TERMS);
   const dispatch = useDispatch();
