@@ -27,13 +27,14 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
+import useAuth from 'hooks/useAuth';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
+import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
 import { exportToExcel } from 'utils/excelExport';
 
 const columns = [
   '#', 'Task Type', 'Seq No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To'
+  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check'
 ];
 
 const STATUS_OPTIONS = ['Pending for Verified', 'Pending for Accepted', 'Verified', 'Rejected', 'Not Accepted', 'Accepted', 'Missed'];
@@ -49,7 +50,7 @@ const DEFAULT_FILTERS = {
   taskType: 'All',
   fromDate: '',
   toDate: '',
-  considerDate: 'No',
+  considerDate: 'All',
   statuses: [],
   assignTo: '',
   category: 'All',
@@ -59,7 +60,8 @@ const DEFAULT_FILTERS = {
   seqNo: '',
   checkingPoint: '',
   frequency: 'All',
-  stockLink: 'All'
+  stockLink: 'All',
+  dualCheck: 'All'
 };
 
 const tableCols = [
@@ -74,7 +76,8 @@ const tableCols = [
   { id: 'checklistDate', label: 'Checklist Date' },
   { id: 'status', label: 'Status' },
   { id: 'nextDueDate', label: 'Next Due Date' },
-  { id: 'assignedTo', label: 'Assigned To' }
+  { id: 'assignedTo', label: 'Assigned To' },
+  { id: 'dualCheck', label: 'Dual Check' }
 ];
 
 const filterConfig = [
@@ -134,6 +137,13 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
+  },
+  {
+    id: 'dualCheck', label: 'Dual Check', type: 'select', isStarred: true, defaultValue: 'All', options: [
+      { value: 'All', label: 'All' },
+      { value: 'YES', label: 'YES' },
+      { value: 'NO', label: 'NO' }
+    ]
   }
 ];
 
@@ -156,6 +166,7 @@ function StatusChip({ status }) {
 }
 
 export default function CheckListRenewalVerify() {
+  const { user } = useAuth();
   const dispatch = useDispatch();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -167,12 +178,13 @@ export default function CheckListRenewalVerify() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDoubleTap, setShowDoubleTap] = useState(false);
+  const [verifyRemarks, setVerifyRemarks] = useState('');
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-  const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false });
+  const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false, dualCheck: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   // Configure global search bar filters on mount
@@ -195,7 +207,7 @@ export default function CheckListRenewalVerify() {
         const filterKeys = [
           'taskType', 'fromDate', 'toDate', 'considerDate', 'statuses',
           'assignTo', 'category', 'searchBy', 'seqNo', 'checkingPoint',
-          'frequency', 'stockLink'
+          'frequency', 'stockLink', 'dualCheck'
         ];
 
         filterKeys.forEach((key) => {
@@ -225,11 +237,16 @@ export default function CheckListRenewalVerify() {
         searchValue: searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
 
+        // Task Filtering
+        taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
+        currentUser: user?.name || user?.id || undefined,
+
         // Add-on filters
         seqNo: filters.seqNo || undefined,
         checkingPoint: filters.checkingPoint || undefined,
         frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
-        stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined
+        stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined,
+        dualCheck: filters.dualCheck !== 'All' ? filters.dualCheck : undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
       setRows(response.data.content);
@@ -239,7 +256,7 @@ export default function CheckListRenewalVerify() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery]);
+  }, [page, size, filters, searchQuery, user]);
 
   useEffect(() => {
     fetchAssignments();
@@ -263,16 +280,17 @@ export default function CheckListRenewalVerify() {
     setPage(0);
   };
 
-  const handleVerify = async (status) => {
+  const handleVerify = async (status, remarks) => {
     if (!selectedRowId) return;
     try {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
-        remarks: `Verification action: ${status}`
+        verifiedBy: user?.name || user?.id || 'Current User',
+        remarks: remarks || `Verification action: ${status}`
       });
       setDialogOpen(false);
+      setVerifyRemarks('');
       fetchAssignments();
     } catch (error) {
       console.error('Verification failed:', error);
@@ -293,20 +311,18 @@ export default function CheckListRenewalVerify() {
       'Checklist Date': r.checklistDate,
       'Status': typeof r.status === 'object' ? r.status?.name : r.status,
       'Next Due Date': r.checklist?.nextDueDate,
-      'Assigned To': r.assignedTo
+      'Assigned To': r.assignedTo,
+      'Dual Check': r.checklist?.dualCheck || 'NO'
     }));
     exportToExcel(exportData, 'Checklist_Renewal_Verify');
   };
 
-  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0);
+  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'All' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + (filters.dualCheck !== 'All' ? 1 : 0);
 
   return (
     <MainCard title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="contained" color="error" size="small" startIcon={<IconBan size={18} />} onClick={() => handleVerify('Rejected')} disabled={!selectedRowId}>Reject</Button>
-          <Button variant="contained" color="secondary" size="small" onClick={() => handleVerify('Not Accepted')} disabled={!selectedRowId}>Not Accepted</Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleVerify('Accepted')} disabled={!selectedRowId}>Accept</Button>
           <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
           <IconButton size="small" onClick={() => setDrawerOpen(true)}
             sx={{ border: '1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius: 1.5, p: 0.8, position: 'relative' }}>
@@ -326,6 +342,7 @@ export default function CheckListRenewalVerify() {
           {filters.statuses.map((s) => <Chip key={s} label={s} size="small" color="warning" onDelete={() => toggleStatus(s)} />)}
           {filters.assignTo && <Chip label={`Assign To: ${filters.assignTo}`} size="small" color="info" onDelete={() => setFilter('assignTo', '')} />}
           {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category', 'All')} />}
+          {filters.dualCheck !== 'All' && <Chip label={`Dual Check: ${filters.dualCheck}`} size="small" color="secondary" onDelete={() => setFilter('dualCheck', 'All')} />}
           <Button size="small" color="error" onClick={resetFilters} sx={{ ml: 1 }}>Clear All</Button>
         </Box>
       )}
@@ -388,6 +405,7 @@ export default function CheckListRenewalVerify() {
                 <TableCell><StatusChip status={row.status} /></TableCell>
                 <TableCell>{row.checklist?.nextDueDate}</TableCell>
                 <TableCell>{row.assignedTo}</TableCell>
+                <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -475,6 +493,12 @@ export default function CheckListRenewalVerify() {
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider />
+          <FilterSection title="Dual Check" open={openSections.dualCheck} onToggle={() => toggleSection('dualCheck')}>
+            <FormControl><RadioGroup value={filters.dualCheck} onChange={(e) => setFilter('dualCheck', e.target.value)}>
+              {['All', 'YES', 'NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
+            </RadioGroup></FormControl>
+          </FilterSection>
+          <Divider />
           <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
             <FormControl fullWidth><RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
               {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small" />} label={<Typography variant="body2">{opt.label}</Typography>} />)}
@@ -489,10 +513,11 @@ export default function CheckListRenewalVerify() {
       </Drawer>
       <ExecutionVerifyDialog
         open={dialogOpen}
-        handleClose={() => setDialogOpen(false)}
+        handleClose={() => { setDialogOpen(false); setVerifyRemarks(''); }}
         data={activeRow}
-        onVerify={() => handleVerify('Accepted')}
-        onReject={() => handleVerify('Rejected')}
+        onVerify={(remarks) => handleVerify('Accepted', remarks)}
+        onReject={(remarks) => handleVerify('Rejected', remarks)}
+        onNotAccept={(remarks) => handleVerify('Not Accepted', remarks)}
         isExecution={false}
       />
     </MainCard>
