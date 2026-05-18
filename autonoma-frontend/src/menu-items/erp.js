@@ -408,6 +408,13 @@ export const masters = {
               icon: icons.IconAward
             }
           ]
+        },
+        {
+          id: 'master-npd-wind-farm',
+          title: 'Wind Farm Master',
+          type: 'item',
+          url: '/master/npd/wind-farm',
+          icon: icons.IconRocket
         }
       ]
     },
