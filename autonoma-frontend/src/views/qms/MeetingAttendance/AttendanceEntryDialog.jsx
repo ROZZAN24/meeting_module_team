@@ -60,23 +60,22 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
               // Handle potential null/undefined status from backend just like the list page does
               const scheduleStatus = s.status || 'OPEN';
               
-              // TEMPORARY BYPASS FOR TESTING: Ignore ALL restrictions (status, date, time)
-              // To properly test the flow, we'll just allow any OPEN/RESCHEDULE schedule to appear.
-              // if (scheduleStatus !== 'OPEN' && scheduleStatus !== 'RESCHEDULE') return false;
-              // if (s.meetingDate !== today) return false;
-              // if (!s.startTime) return false;
-              // const [h, m] = s.startTime.split(':').map(Number);
-              // const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
-              // 
-              // // ── STRICT END TIME CHECK ──
-              // if (s.endTime) {
-              //   const [eh, em] = s.endTime.split(':').map(Number);
-              //   const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
-              //   if (now.getTime() > endMs) return false;
-              // }
-              //
-              // const tenMinBefore = startMs - 10 * 60 * 1000;
-              // if (now.getTime() < tenMinBefore) return false;
+              // Restore strict eligibility checks
+              if (scheduleStatus !== 'OPEN' && scheduleStatus !== 'RESCHEDULE') return false;
+              if (s.meetingDate !== today) return false;
+              if (!s.startTime) return false;
+              const [h, m] = s.startTime.split(':').map(Number);
+              const startMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
+              
+              // ── STRICT END TIME CHECK ──
+              if (s.endTime) {
+                const [eh, em] = s.endTime.split(':').map(Number);
+                const endMs = new Date(now.getFullYear(), now.getMonth(), now.getDate(), eh, em).getTime();
+                if (now.getTime() > endMs) return false;
+              }
+              
+              const tenMinBefore = startMs - 10 * 60 * 1000;
+              if (now.getTime() < tenMinBefore) return false;
               
               return true;
             });

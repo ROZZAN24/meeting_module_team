@@ -56,9 +56,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
   if (!item) return null;
 
   const delayDays = getDelayDays();
-  // Allow assigned employee OR Admins to save
-  // Temporarily allowing all authenticated users to save for testing
-  const isAssignedToMe = user && item ? true : false;
+  const isAssignedToMe = user && item && (user.name === (item.assignedTo?.employeeName || item.assignedTo));
 
   return (
     <BOSFormDialog
