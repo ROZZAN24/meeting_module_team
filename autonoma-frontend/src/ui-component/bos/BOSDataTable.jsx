@@ -30,7 +30,8 @@ export default function BOSDataTable({
   onEditRow,
   onDeleteRow,
   onDoubleClickRow,
-  showActions = true,
+  showActions: showActionsProp = true,
+  actionColumn,
   selectable = false,
   onSelectionChange,
   totalCount,
@@ -71,6 +72,11 @@ export default function BOSDataTable({
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const baseRowSx = getTableRowSx(isDark);
+
+  const showActions = useMemo(() => {
+    if (showActionsProp === false) return false;
+    return Boolean(onEditRow || onDeleteRow || actionColumn);
+  }, [showActionsProp, onEditRow, onDeleteRow, actionColumn]);
 
   const searchQuery = useSelector((state) => state.search?.query || '');
   const globalFilters = useSelector((state) => state.search?.filters || {});
@@ -244,7 +250,7 @@ export default function BOSDataTable({
 
                 return (
                   <TableRow 
-                    key={row.id ?? idx}
+                    key={row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`}
                     hover 
                     sx={rowSx} 
                     onClick={() => onClickRow?.(row)}
@@ -270,19 +276,25 @@ export default function BOSDataTable({
                   {showActions && (
                     <TableCell align="center" sx={{ minWidth: 100 }}>
                       <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
-                        {onEditRow && (
-                          <Tooltip title="Edit">
-                            <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
-                              <IconEdit size={16} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        {onDeleteRow && (
-                          <Tooltip title="Delete">
-                            <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
-                              <IconTrash size={16} />
-                            </IconButton>
-                          </Tooltip>
+                        {actionColumn?.render ? (
+                          actionColumn.render(row, idx)
+                        ) : (
+                          <>
+                            {onEditRow && (
+                              <Tooltip title="Edit">
+                                <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
+                                  <IconEdit size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {onDeleteRow && (
+                              <Tooltip title="Delete">
+                                <IconButton onClick={(e) => { e.stopPropagation(); onDeleteRow(row); }} size="small" sx={tableActionDeleteSx}>
+                                  <IconTrash size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </>
                         )}
                       </Stack>
                     </TableCell>

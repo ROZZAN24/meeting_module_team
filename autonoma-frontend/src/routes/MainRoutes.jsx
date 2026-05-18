@@ -213,6 +213,19 @@ const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/Inducti
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
+const NpdModelNameMaster = Loadable(lazy(() => import('views/qms/ModelName/ModelNameMaster')));
+const NpdUomMaster = Loadable(lazy(() => import('views/qms/Uom/UomMaster')));
+
+// NPD Masters
+const NpdItemGroupMaster = Loadable(lazy(() => import('views/npd/ItemGroup/ItemGroupMaster')));
+const NpdItemTypeMaster = Loadable(lazy(() => import('views/npd/ItemType/ItemTypeMaster')));
+const NpdItemSubtypeMaster = Loadable(lazy(() => import('views/npd/ItemSubtype/ItemSubtypeMaster')));
+const NpdOemMaster = Loadable(lazy(() => import('views/npd/Oem/OemMaster')));
+const NpdOemMappingMaster = Loadable(lazy(() => import('views/npd/OemMapping/OemMappingMaster')));
+const NpdModelMaster = Loadable(lazy(() => import('views/npd/Model/ModelMaster')));
+const NpdCapacityMaster = Loadable(lazy(() => import('views/npd/Capacity/CapacityMaster')));
+const NpdWindFarmMaster = Loadable(lazy(() => import('views/npd/WindFarm/WindFarmMaster')));
+
 
 const QmsAuditScheduleList = Loadable(lazy(() => import('views/qms/AuditSchedule/AuditScheduleList')));
 const QmsAddAuditSchedule = Loadable(lazy(() => import('views/qms/AuditSchedule/AddAuditSchedule')));
@@ -918,6 +931,46 @@ const MainRoutes = {
     {
       path: '/master/qms/audit/criteria',
       element: <QmsAuditCriteriaMaster />
+    },
+    {
+      path: '/master/npd/product-group',
+      element: <NpdItemGroupMaster />
+    },
+    {
+      path: '/master/npd/product-type',
+      element: <NpdItemTypeMaster />
+    },
+    {
+      path: '/master/npd/product-subtype',
+      element: <NpdItemSubtypeMaster />
+    },
+    {
+      path: '/master/npd/product-oem',
+      element: <NpdOemMaster />
+    },
+    {
+      path: '/master/npd/product-oem-mapping',
+      element: <NpdOemMappingMaster />
+    },
+    {
+      path: '/master/npd/product-model',
+      element: <NpdModelMaster />
+    },
+    {
+      path: '/master/npd/product-capacity',
+      element: <NpdCapacityMaster />
+    },
+    {
+      path: '/master/npd/wind-farm',
+      element: <NpdWindFarmMaster />
+    },
+    {
+      path: '/master/npd/model-name',
+      element: <NpdModelNameMaster />
+    },
+    {
+      path: '/master/npd/uom',
+      element: <NpdUomMaster />
     },
     {
       path: '/master/qms/meeting/master',
