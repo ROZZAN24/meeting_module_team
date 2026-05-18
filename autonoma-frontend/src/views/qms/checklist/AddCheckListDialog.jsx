@@ -195,7 +195,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [reminderDate, setReminderDate] = useState('');
   const [renewalPoint, setRenewalPoint] = useState('');
   const [frequency, setFrequency] = useState('');
-  const [weekDays, setWeekDays] = useState([]);
+  const [weekDays, setWeekDays] = useState('');
   const [repeatEveryValue, setRepeatEveryValue] = useState('');
   const [repeatEveryUnit, setRepeatEveryUnit] = useState('');
   const [description, setDescription] = useState('');
@@ -279,7 +279,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setReminderDate(initialData.reminderDate || '');
         setRenewalPoint(initialData.checkingPoint || '');
         setFrequency(initialData.frequency || '');
-        setWeekDays(initialData.weekDays ? (Array.isArray(initialData.weekDays) ? initialData.weekDays : initialData.weekDays.split(',')) : []);
+        setWeekDays(initialData.weekDays ? (Array.isArray(initialData.weekDays) ? initialData.weekDays[0] : String(initialData.weekDays).split(',')[0]) : '');
         setRepeatEveryValue(initialData.repeatEveryValue || '');
         setRepeatEveryUnit(initialData.repeatEveryUnit || '');
         setDescription(initialData.description || '');
@@ -296,7 +296,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
         setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
         setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
-        setWeekDays([]); setRepeatEveryValue(''); setRepeatEveryUnit('');
+        setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
         axios.get('/api/qms/checklist/next-sequence')
           .then(res => setSeqNo(String(res.data.nextSeqNo).padStart(3, '0')))
@@ -316,7 +316,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
     setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
     setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
-    setWeekDays([]); setRepeatEveryValue(''); setRepeatEveryUnit('');
+    setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
     setAmendmentReason('');
   };
   const handleSave = () => {
@@ -339,7 +339,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       photoRequired: photoRequired || null,
       dualCheck: dualCheck || null,
       carryForward: carryForward || null,
-      weekDays: weekDays.length > 0 ? weekDays.join(',') : null,
+      weekDays: weekDays || null,
       repeatEveryValue: repeatEveryValue ? Number(repeatEveryValue) : null,
       repeatEveryUnit: repeatEveryUnit || null,
       expiryDate: expiryDate || null,
@@ -389,16 +389,16 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               </LabelInput>
               
               {frequency === 'WEEKLY' && (
-                <LabelInput label="Week Days" required>
+                <LabelInput label="Week Day" required>
                   <Select
-                    multiple fullWidth size="small" value={weekDays}
-                    onChange={e => setWeekDays(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value)}
-                    renderValue={sel => sel.length === 0 ? <em>-Select-</em> : sel.join(', ')}
+                    fullWidth size="small" value={weekDays}
+                    onChange={e => setWeekDays(e.target.value)}
+                    displayEmpty
                   >
+                    <MenuItem value=""><em>-Select-</em></MenuItem>
                     {WEEK_DAYS.map(day => (
                       <MenuItem key={day} value={day}>
-                        <Checkbox checked={weekDays.includes(day)} size="small" />
-                        <ListItemText primary={day} />
+                        {day}
                       </MenuItem>
                     ))}
                   </Select>
