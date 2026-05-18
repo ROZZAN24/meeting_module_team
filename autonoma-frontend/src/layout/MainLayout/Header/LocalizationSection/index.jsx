@@ -21,6 +21,23 @@ import Transitions from 'ui-component/extended/Transitions';
 import TranslateTwoToneIcon from '@mui/icons-material/TranslateTwoTone';
 import useConfig from 'hooks/useConfig';
 
+const getLangIndicator = (lng) => {
+  switch (lng) {
+    case 'ta':
+      return 'த';
+    case 'hi':
+      return 'ह';
+    case 'fr':
+      return 'F';
+    case 'ro':
+      return 'R';
+    case 'zh':
+      return '中';
+    default:
+      return 'E';
+  }
+};
+
 // ==============================|| LOCALIZATION ||============================== //
 
 export default function LocalizationSection() {
@@ -37,7 +54,16 @@ export default function LocalizationSection() {
 
   const handleListItemClick = (_event, lng) => {
     setField('i18n', lng);
+    
+    // Set the googtrans cookie for direct translation
+    const domain = window.location.hostname;
+    document.cookie = `googtrans=/en/${lng}; path=/; domain=${domain}`;
+    document.cookie = `googtrans=/en/${lng}; path=/`; // Localhost fallback
+    
     setOpen(false);
+    
+    // Fast page refresh to sync standard components and let Google Translate mount translated DOM immediately
+    window.location.reload();
   };
 
   const handleToggle = () => {
@@ -91,15 +117,17 @@ export default function LocalizationSection() {
           alt="language"
           onClick={handleToggle}
         >
-          <Activity mode={i18n !== 'en' ? 'visible' : 'hidden'}>
-            <Typography variant="h5" sx={{ textTransform: 'uppercase', color: 'inherit' }}>
-              {i18n}
-            </Typography>
-          </Activity>
-
-          <Activity mode={i18n === 'en' ? 'visible' : 'hidden'}>
-            <TranslateTwoToneIcon sx={{ fontSize: '1.3rem' }} />
-          </Activity>
+          <Typography
+            className="notranslate"
+            variant="h5"
+            sx={{
+              fontWeight: 'bold',
+              color: 'inherit',
+              fontSize: '1.15rem'
+            }}
+          >
+            {getLangIndicator(i18n)}
+          </Typography>
         </Avatar>
       </Box>
 
@@ -139,6 +167,30 @@ export default function LocalizationSection() {
                             <Typography>English</Typography>
                             <Typography variant="caption" sx={{ ml: '8px' }}>
                               (UK)
+                            </Typography>
+                          </Grid>
+                        }
+                      />
+                    </ListItemButton>
+                    <ListItemButton selected={i18n === 'ta'} onClick={(event) => handleListItemClick(event, 'ta')}>
+                      <ListItemText
+                        primary={
+                          <Grid container>
+                            <Typography>தமிழ்</Typography>
+                            <Typography variant="caption" sx={{ ml: '8px' }}>
+                              (Tamil)
+                            </Typography>
+                          </Grid>
+                        }
+                      />
+                    </ListItemButton>
+                    <ListItemButton selected={i18n === 'hi'} onClick={(event) => handleListItemClick(event, 'hi')}>
+                      <ListItemText
+                        primary={
+                          <Grid container>
+                            <Typography>हिन्दी</Typography>
+                            <Typography variant="caption" sx={{ ml: '8px' }}>
+                              (Hindi)
                             </Typography>
                           </Grid>
                         }
