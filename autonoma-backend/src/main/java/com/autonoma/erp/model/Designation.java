@@ -54,13 +54,13 @@ public class Designation {
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_date")
     private java.util.Date createdDate;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_date")
     private java.util.Date updatedDate;
 
     @PrePersist
