@@ -159,7 +159,7 @@ export default function JWTLogin({ ...others }) {
           <Box sx={{ mt: 3 }}>
             <AnimateButton>
               <Button color="primary" disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained">
-                Sign In
+                Sign In to ERP
               </Button>
             </AnimateButton>
           </Box>

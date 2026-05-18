@@ -130,8 +130,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
       onClose={onClose}
       title="Action Details"
       maxWidth="md"
-      hideSaveButton // We use custom action buttons
-      customActions={renderCustomActions()}
+      secondaryActions={renderCustomActions()}
     >
       <Stack spacing={4}>
         {!isAssignedToMe && item && ['OPEN', 'REJECTED'].includes(item.status) && (

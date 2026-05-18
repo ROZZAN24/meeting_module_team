@@ -48,7 +48,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
       });
       dispatch(openSnackbar({ open: true, message: 'Action submitted for approval', variant: 'alert', severity: 'success' }));
       onSave();
-    } catch (error) {
+    } catch {
       dispatch(openSnackbar({ open: true, message: 'Failed to save action', variant: 'alert', severity: 'error' }));
     }
   };
@@ -174,7 +174,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
         <Stack spacing={2} sx={{ mt: 1 }}>
           <Box sx={{ p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="text.secondary">
-              Samples & Documents section — Upload corrective action files here
+              Samples &amp; Documents section — Upload corrective action files here
             </Typography>
           </Box>
         </Stack>

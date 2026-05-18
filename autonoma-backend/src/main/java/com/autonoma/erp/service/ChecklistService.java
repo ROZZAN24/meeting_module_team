@@ -62,9 +62,8 @@ public class ChecklistService {
 
     /**
      * Retrieves master checklists based on comprehensive filtering criteria.
-     * 
-     * @param status       The lifecycle status of the checklist (e.g., Active,
-     *                     Inactive).
+     *
+     * @param status       The lifecycle status of the checklist (e.g., Active, Inactive).
      * @param category     The functional category (RENEWAL, CHECK LIST).
      * @param department   Optional department filter.
      * @param searchBy     The field to perform textual search on.
@@ -75,11 +74,13 @@ public class ChecklistService {
      * @return A paginated result set of MasterChecklist entities.
      */
     public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy,
-            String searchValue, String dualCheck, String verifyStatus, Pageable pageable) {
+            String searchValue, String dualCheck, String verifyStatus,
+            String seqNo, String frequency, String checkingPoint, String description,
+            String stockLink, String photoRequired, String carryForward, Pageable pageable) {
         return masterRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (dualCheck != null && !dualCheck.isEmpty()) {
+            if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
                 predicates.add(cb.equal(root.get("dualCheck"), dualCheck));
             }
 
@@ -98,6 +99,34 @@ public class ChecklistService {
             if (department != null && !department.isEmpty()) {
                 Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
                 predicates.add(cb.equal(deptJoin.get("departmentName"), department));
+            }
+
+            if (seqNo != null && !seqNo.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("seqNo")), "%" + seqNo.toLowerCase() + "%"));
+            }
+
+            if (frequency != null && !frequency.isEmpty() && !frequency.equals("All")) {
+                predicates.add(cb.equal(root.get("frequency"), frequency));
+            }
+
+            if (checkingPoint != null && !checkingPoint.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("checkingPoint")), "%" + checkingPoint.toLowerCase() + "%"));
+            }
+
+            if (description != null && !description.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
+            }
+
+            if (stockLink != null && !stockLink.isEmpty() && !stockLink.equals("All")) {
+                predicates.add(cb.equal(root.get("stockLink"), stockLink));
+            }
+
+            if (photoRequired != null && !photoRequired.isEmpty() && !photoRequired.equals("All")) {
+                predicates.add(cb.equal(root.get("photoRequired"), photoRequired));
+            }
+
+            if (carryForward != null && !carryForward.isEmpty() && !carryForward.equals("All")) {
+                predicates.add(cb.equal(root.get("carryForward"), carryForward));
             }
 
             if (searchValue != null && !searchValue.isEmpty()) {
@@ -137,8 +166,7 @@ public class ChecklistService {
 
     @Transactional
     public MasterChecklist saveMasterChecklist(MasterChecklist checklist, List<String> departments) {
-        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same
-        // Department)
+        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same Department)
         if (departments != null && !departments.isEmpty()) {
             List<MasterChecklist> duplicates = masterRepo.findDuplicates(
                     checklist.getCategory(),
@@ -196,6 +224,8 @@ public class ChecklistService {
             existing.setStockLink(checklist.getStockLink());
             existing.setPhotoRequired(checklist.getPhotoRequired());
             existing.setVerificationRequired(checklist.getVerificationRequired());
+            existing.setDualCheck(checklist.getDualCheck());
+            existing.setCarryForward(checklist.getCarryForward());
             existing.setStatus(checklist.getStatus());
             existing.setVerifyStatus(checklist.getVerifyStatus());
 
@@ -295,8 +325,7 @@ public class ChecklistService {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
                 predicates.add(cb.equal(statusJoin.get("name"), status));
             } else if (excludeCompleted) {
-                // If "All" is selected and we want to focus on execution, exclude
-                // completed/finalized tasks
+                // If "All" is selected and we want to focus on execution, exclude completed/finalized tasks
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
                 predicates.add(cb.not(statusJoin.get("name").in("Completed", "Verified", "Accepted")));
             }
@@ -382,19 +411,10 @@ public class ChecklistService {
         if (id != null) {
             assignment = assignRepo.findById(id).orElse(new ChecklistAssignment());
         } else {
-            // Prevent duplicate assignments for same person on same checklist
             // Prevent duplicate assignments for same person on same checklist for same date
             if (assignRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
                     .isPresent()) {
                 // Return a dummy object or handle in controller to avoid 409 red console error
-                // For now, let's return a "special" assignment or just return null and handle
-                // in service?
-                // Actually, the cleanest way to avoid 409 in console but still inform UI is a
-                // custom response wrapper.
-                // But since I'm in Service, I'll throw a specific exception that I'll catch in
-                // Controller or
-                // just return a dummy with an error message.
-                // Reverting to returning a "Duplicate" indicator.
                 ChecklistAssignment duplicate = new ChecklistAssignment();
                 duplicate.setRemarks("DUPLICATE_ASSIGNMENT");
                 return duplicate;
@@ -488,8 +508,7 @@ public class ChecklistService {
         ChecklistVerification savedVerify = verifyRepo.save(verification);
 
         // RECURRING LOGIC:
-        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is
-        // NO),
+        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is NO),
         // we should generate the next assignment if it's a recurring task.
         boolean isFinalized = "Verified".equalsIgnoreCase(finalStatusName) ||
                 "Accepted".equalsIgnoreCase(finalStatusName) ||
@@ -532,8 +551,7 @@ public class ChecklistService {
 
         Date nextDate = cal.getTime();
 
-        // DUPLICATE PREVENTION: Check if a future assignment for this date already
-        // exists
+        // DUPLICATE PREVENTION: Check if a future assignment for this date already exists
         boolean exists = assignRepo.existsByChecklistIdAndAssignedToAndChecklistDate(
                 master.getId(), current.getAssignedTo(), nextDate);
         if (exists)
@@ -593,4 +611,3 @@ public class ChecklistService {
         }
     }
 }
-

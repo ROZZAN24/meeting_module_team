@@ -36,8 +36,14 @@ public class QmsMeetingScheduleController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.deleteSchedule(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<?> delete(@PathVariable Long id) {
+        try {
+            service.deleteSchedule(id);
+            return ResponseEntity.noContent().build();
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Cannot delete this schedule because it is actively linked to existing Meeting Minutes (MOM) records. Please delete the associated MOMs first."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", "Failed to delete schedule: " + e.getMessage()));
+        }
     }
 }

@@ -45,11 +45,13 @@ import {
   IconPlaneTilt,
   IconTractor,
   IconMoodSmile,
-  IconSearch
+  IconSearch,
+  IconCategory
 } from '@tabler/icons-react';
 
 const icons = {
   IconDashboard,
+  IconCategory,
   IconUsers,
   IconBriefcase,
   IconBuildingFactory,
@@ -795,18 +797,18 @@ export const qms = {
           icon: icons.IconCalendarEvent
         },
         {
-          id: 'qms-minutes-of-meeting',
-          title: 'Minutes of Meeting',
-          type: 'item',
-          url: '/qms/minutesofmeeting',
-          icon: icons.IconNotes
-        },
-        {
           id: 'qms-meeting-attendance',
           title: 'Meeting User Attendance',
           type: 'item',
           url: '/qms/meeting-attendance',
           icon: icons.IconUserCheck
+        },
+        {
+          id: 'qms-minutes-of-meeting',
+          title: 'Minutes of Meeting',
+          type: 'item',
+          url: '/qms/minutesofmeeting',
+          icon: icons.IconNotes
         },
         {
           id: 'qms-close-mom',

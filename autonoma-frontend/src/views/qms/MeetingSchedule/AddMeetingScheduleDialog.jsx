@@ -87,7 +87,7 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
   const [form, setForm] = useState(INITIAL_FORM);
 
   const filteredTimeOptions = useMemo(() => {
-    // Restricted: 9:00 AM to 11:00 PM for scheduling, up to 9:00 PM for modifications
+    // Original logic: Restricted 9:00 AM to 11:00 PM for scheduling, up to 9:00 PM for modifications
     const limit = item ? 21 : 23;
     return ALL_TIME_OPTIONS.filter((t) => {
       const isAfter9AM = t.hour24 >= 9;

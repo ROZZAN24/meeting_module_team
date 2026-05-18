@@ -141,6 +141,16 @@ export default function AuditAreaMaster() {
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
+  const renderCell = useCallback((col, row) => {
+    if (col.id === 'updatedBy') {
+      return row.updatedBy || '-';
+    }
+    if (col.id === 'updatedDate') {
+      return row.updatedDate ? format(new Date(row.updatedDate), 'dd/MM/yyyy HH:mm') : '-';
+    }
+    return null;
+  }, []);
+
   return (
     <MainCard
       title={
@@ -185,6 +195,7 @@ export default function AuditAreaMaster() {
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
+        renderCell={renderCell}
       />
 
       <AddAuditAreaDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

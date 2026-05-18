@@ -15,7 +15,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Chip } from '@mui/material';
+import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel } from '@mui/material';
 
 // third party
 import PopupState, { bindPopper, bindToggle } from 'material-ui-popup-state';
@@ -103,8 +103,6 @@ function MobileSearch({ value, setValue, popupState, placeholder }) {
   );
 }
 
-const EMPTY_ARRAY = [];
-
 // ==============================|| SEARCH INPUT ||============================== //
 
 export default function SearchSection() {
@@ -176,21 +174,24 @@ export default function SearchSection() {
 
   useEffect(() => {
     if (combinedConfig && combinedConfig.length > 0) {
+      // Always start from the starred defaults for this filterConfig
+      const starredDefaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
+
+      // If user has saved prefs, merge them: starred always show + user's extras
       if (currentPrefs !== undefined) {
-        setVisibleFilterIds(currentPrefs);
+        // Keep starred visible, plus any extra filters the user has manually added
+        const extras = currentPrefs.filter(id => !starredDefaults.includes(id));
+        setVisibleFilterIds([...starredDefaults, ...extras]);
       } else {
-        // Rule 2: Only fields with isStarred OR isRequired (from * fields) are selected by default
-        const defaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
-        
-        if (defaults.length > 0) {
-          setVisibleFilterIds(defaults);
+        if (starredDefaults.length > 0) {
+          setVisibleFilterIds(starredDefaults);
         } else {
-          // Fallback if nothing is marked required
           const firstTwo = combinedConfig.slice(0, 2).map(f => f.id);
           setVisibleFilterIds(firstTwo);
         }
       }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [combinedConfig, location.pathname, currentPrefs]);
 
   const updateVisibleFilters = (newIds) => {
@@ -402,6 +403,7 @@ export default function SearchSection() {
                                     value={filters[`${field.id}Start`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
+                                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
@@ -412,6 +414,7 @@ export default function SearchSection() {
                                     value={filters[`${field.id}End`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
+                                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                 </Stack>
@@ -423,6 +426,7 @@ export default function SearchSection() {
                                   value={filters[field.id] || ''}
                                   onChange={(e) => handleFilterChange(field.id, e.target.value)}
                                   slotProps={{ inputLabel: { shrink: true } }}
+                                  inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                 />
                               ) : (
@@ -559,7 +563,14 @@ export default function SearchSection() {
                             color="inherit"
                             size="small"
                             startIcon={<IconRefresh size={15} />}
-                            onClick={() => dispatch(resetFilters())}
+                            onClick={() => {
+                              dispatch(resetFilters());
+                              if (combinedConfig && combinedConfig.length > 0) {
+                                const starredDefaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
+                                const defaultIds = starredDefaults.length > 0 ? starredDefaults : combinedConfig.slice(0, 2).map(f => f.id);
+                                updateVisibleFilters(defaultIds);
+                              }
+                            }}
                             sx={{ borderRadius: '10px', fontWeight: 600, border: '1.5px solid', borderColor: 'text.secondary', px: 2, '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' } }}
                           >
                             Reset

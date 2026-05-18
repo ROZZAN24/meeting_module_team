@@ -118,13 +118,13 @@ public class EmployeeMaster {
     private String lomDeduction = "NO";
 
     @Column(name = "lom_allow", precision = 10, scale = 2)
-    private String lomAllow;
+    private BigDecimal lomAllow;
 
     @Column(name = "lta_eligible", length = 10)
     private String ltaEligible = "NO";
 
     @Column(name = "pf_restriction", precision = 10, scale = 2)
-    private String pfRestriction;
+    private BigDecimal pfRestriction;
 
     @Column(name = "permission_toggle", length = 10)
     private String permissionToggle = "NO";

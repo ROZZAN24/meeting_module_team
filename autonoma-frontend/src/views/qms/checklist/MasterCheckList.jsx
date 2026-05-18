@@ -9,9 +9,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import IconButton from '@mui/material/IconButton';
 import Drawer from '@mui/material/Drawer';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -21,18 +19,20 @@ import Chip from '@mui/material/Chip';
 import Radio from '@mui/material/Radio';
 import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
-import FormLabel from '@mui/material/FormLabel';
 import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import axios from 'utils/axios';
 
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { setFilterConfig, setTableConfig } from 'store/slices/search';
 
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
+import ChecklistAssignDialog from './ChecklistAssignDialog';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
-
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
@@ -55,6 +55,9 @@ const columns = [
   { id: 'createdDate', label: 'Created Date', minWidth: 120 },
   { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
   { id: 'updatedDate', label: 'Updated Date', minWidth: 120 },
+  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
+  { id: 'createdBy', label: 'Created By', minWidth: 120 },
+  { id: 'updatedBy', label: 'Modified By', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'taskStatus', label: 'Task Status', minWidth: 120 },
   { id: 'verifyStatus', label: 'Verify Status', minWidth: 150 },
@@ -72,14 +75,102 @@ const DEPARTMENTS = [
 ];
 
 const DEFAULT_FILTERS = {
-  status: 'All',
-  taskStatus: 'All',
-  recordStatus: 'All',
+  seqNo: '',
   category: 'All',
+  frequency: 'All',
+  checkingPoint: '',
+  description: '',
   departments: [],
+  stockLink: 'All',
+  photoRequired: 'All',
+  dualCheck: 'All',
+  carryForward: 'All',
+
+  // Default visible filters
+  status: 'All',       // Verify Status
+  taskStatus: 'All',   // Task Status
+  recordStatus: 'All', // Record Status (Active / In Active)
   employeeName: '',
-  leftCompany: 'All'
+  leftCompany: 'All',
+  searchBy: '',        // Search by field selector
 };
+
+const filterConfig = [
+  // ── STARRED (default visible) filters ──
+  { id: 'recordStatus', label: 'Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'Active', label: 'Active' },
+    { value: 'In Active', label: 'In Active' }
+  ]},
+  { id: 'taskStatus', label: 'Task Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'Pending', label: 'Pending' },
+    { value: 'In Progress', label: 'In Progress' },
+    { value: 'Completed', label: 'Completed' },
+    { value: 'Missed', label: 'Missed' }
+  ]},
+  { id: 'status', label: 'Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'Pending for Verify', label: 'Pending for Verify' },
+    { value: 'Verified', label: 'Verified' },
+    { value: 'Rejected', label: 'Rejected' }
+  ]},
+  { id: 'category', label: 'Category', type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'RENEWAL', label: 'RENEWAL' },
+    { value: 'CHECK LIST', label: 'CHECK LIST' }
+  ]},
+  { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: DEPARTMENTS.map(d => ({ value: d, label: d })) },
+  { id: 'employeeName', label: 'Employee Name', type: 'text', isStarred: true },
+  { id: 'leftCompany', label: 'Left Company', type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'YES', label: 'YES' },
+    { value: 'NO', label: 'NO' }
+  ]},
+  { id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: '', options: [
+    { value: '', label: '-Select-' },
+    { value: 'checkingPoint', label: 'Checking Point' },
+    { value: 'description', label: 'Descriptions' },
+    { value: 'levelIds', label: 'Level' },
+    { value: 'seqNo', label: 'Seq.No' },
+    { value: 'frequency', label: 'Frequency Level' }
+  ]},
+
+  // ── ADD-ON (extra via filter drawer) filters ──
+  { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
+  { id: 'frequency', label: 'Frequency', type: 'select', isStarred: false, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'DAILY', label: 'DAILY' },
+    { value: 'WEEKLY', label: 'WEEKLY' },
+    { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' },
+    { value: 'MONTHLY', label: 'MONTHLY' },
+    { value: 'QUARTERLY', label: 'QUARTERLY' },
+    { value: 'HALF YEARLY', label: 'HALF YEARLY' },
+    { value: 'YEARLY', label: 'YEARLY' }
+  ]},
+  { id: 'checkingPoint', label: 'Renewal Point', type: 'text', isStarred: false },
+  { id: 'description', label: 'Descriptions/SOP', type: 'text', isStarred: false },
+  { id: 'stockLink', label: 'Stock Link', type: 'select', isStarred: false, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'YES', label: 'YES' },
+    { value: 'NO', label: 'NO' }
+  ]},
+  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'YES', label: 'YES' },
+    { value: 'NO', label: 'NO' }
+  ]},
+  { id: 'dualCheck', label: 'Dual Check', type: 'select', isStarred: false, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'YES', label: 'YES' },
+    { value: 'NO', label: 'NO' }
+  ]},
+  { id: 'carryForward', label: 'Carry Forward', type: 'select', isStarred: false, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' },
+    { value: 'YES', label: 'YES' },
+    { value: 'NO', label: 'NO' }
+  ]},
+];
 
 // Collapsible filter section
 function FilterSection({ title, open, onToggle, children }) {
@@ -95,7 +186,10 @@ function FilterSection({ title, open, onToggle, children }) {
 }
 
 export default function MasterCheckList() {
+  const dispatch = useDispatch();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [isAmendment, setIsAmendment] = useState(false);
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -103,10 +197,32 @@ export default function MasterCheckList() {
   const [loading, setLoading] = useState(false);
   
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+  const [showDoubleTap, setShowDoubleTap] = useState(false);
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  // Dynamic filter visibility — now all are starred by default, no extra toggles needed
+  const [visibleExtraFilters, setVisibleExtraFilters] = useState({
+    status: true,
+    taskStatus: true,
+    recordStatus: true,
+    employeeName: true,
+    leftCompany: true
+  });
+
+  // Configure global search bar filters on mount
+  useEffect(() => {
+    dispatch(setFilterConfig(filterConfig));
+    dispatch(setTableConfig(columns));
+    return () => {
+      dispatch(setFilterConfig(null));
+      dispatch(setTableConfig(null));
+    };
+  }, [dispatch]);
 
   // Sync global search filters with local filters
   useEffect(() => {
@@ -115,18 +231,27 @@ export default function MasterCheckList() {
         const newFilters = { ...prev };
         let hasChanges = false;
         
-        if (globalFilters.category && globalFilters.category !== prev.category) {
-          newFilters.category = globalFilters.category;
-          hasChanges = true;
-        }
-        if (globalFilters.status && globalFilters.status !== prev.status) {
-          newFilters.status = globalFilters.status;
-          hasChanges = true;
-        }
-        if (globalFilters.recordStatus && globalFilters.recordStatus !== prev.recordStatus) {
-          newFilters.recordStatus = globalFilters.recordStatus;
-          hasChanges = true;
-        }
+        const filterKeys = [
+          'category', 'status', 'taskStatus', 'recordStatus', 'seqNo', 'frequency',
+          'checkingPoint', 'description', 'departments', 'stockLink',
+          'photoRequired', 'dualCheck', 'carryForward', 'employeeName', 'leftCompany',
+          'searchBy'
+        ];
+        
+        filterKeys.forEach((key) => {
+          if (globalFilters[key] !== undefined && globalFilters[key] !== prev[key]) {
+            newFilters[key] = globalFilters[key];
+            hasChanges = true;
+            
+            // Auto-expand/make visible the extra filters in the drawer if they are activated globally
+            if (key === 'status') {
+              setVisibleExtraFilters((v) => ({ ...v, status: true }));
+            }
+            if (key === 'recordStatus') {
+              setVisibleExtraFilters((v) => ({ ...v, recordStatus: true }));
+            }
+          }
+        });
         
         return hasChanges ? newFilters : prev;
       });
@@ -134,7 +259,19 @@ export default function MasterCheckList() {
   }, [globalFilters]);
 
   // Section toggles
-  const [openSections, setOpenSections] = useState({ status:true, taskStatus:true, recordStatus:true, category:true, department:false, employee:false, leftCompany:false });
+  const [openSections, setOpenSections] = useState({
+    seqNo: true,
+    category: true,
+    frequency: false,
+    checkingPoint: false,
+    description: false,
+    department: false,
+    stockLink: false,
+    photoRequired: false,
+    dualCheck: false,
+    carryForward: false
+  });
+
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   const fetchChecklists = useCallback(async () => {
@@ -144,9 +281,20 @@ export default function MasterCheckList() {
         page,
         size,
         category: filters.category !== 'All' ? filters.category : undefined,
-        department: filters.departments.length > 0 ? filters.departments[0] : undefined, // Simplification for now
+        department: filters.departments.length > 0 ? filters.departments[0] : undefined,
+        seqNo: filters.seqNo || undefined,
+        frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
+        checkingPoint: filters.checkingPoint || undefined,
+        description: filters.description || undefined,
+        stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined,
+        photoRequired: filters.photoRequired !== 'All' ? filters.photoRequired : undefined,
+        dualCheck: filters.dualCheck !== 'All' ? filters.dualCheck : undefined,
+        carryForward: filters.carryForward !== 'All' ? filters.carryForward : undefined,
+        verifyStatus: filters.status !== 'All' ? filters.status : undefined,
+        status: filters.recordStatus !== 'All' ? filters.recordStatus : undefined,
+        taskStatus: filters.taskStatus !== 'All' ? filters.taskStatus : undefined,
         searchValue: searchQuery || undefined,
-        searchBy: undefined
+        searchBy: (searchQuery && filters.searchBy) ? filters.searchBy : undefined
       };
       const response = await axios.get('/api/qms/checklist', { params });
       setRows(response.data.content);
@@ -175,25 +323,100 @@ export default function MasterCheckList() {
     setPage(0);
   };
 
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
+  const addExtraFilter = (key) => {
+    setVisibleExtraFilters((p) => ({ ...p, [key]: true }));
+  };
+
+  const removeExtraFilter = (key) => {
+    setVisibleExtraFilters((p) => ({ ...p, [key]: false }));
+    setFilters((p) => ({ ...p, [key]: 'All' }));
     setPage(0);
   };
 
-  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.taskStatus !== 'All' ? 1 : 0) + (filters.recordStatus !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.employeeName ? 1 : 0) + (filters.leftCompany !== 'All' ? 1 : 0);
+  const resetFilters = () => {
+    setFilters({ ...DEFAULT_FILTERS });
+    setVisibleExtraFilters({ status: false, recordStatus: false });
+    setPage(0);
+  };
+
+  // Build the list of active chips
+  const activeChips = [];
+  if (filters.seqNo) activeChips.push({ key: 'seqNo', label: `Seq No: ${filters.seqNo}`, onDelete: () => setFilter('seqNo', '') });
+  if (filters.category !== 'All') activeChips.push({ key: 'category', label: `Category: ${filters.category}`, onDelete: () => setFilter('category', 'All') });
+  if (filters.frequency !== 'All') activeChips.push({ key: 'frequency', label: `Frequency: ${filters.frequency}`, onDelete: () => setFilter('frequency', 'All') });
+  if (filters.checkingPoint) activeChips.push({ key: 'checkingPoint', label: `Renewal Point: ${filters.checkingPoint}`, onDelete: () => setFilter('checkingPoint', '') });
+  if (filters.description) activeChips.push({ key: 'description', label: `Description: ${filters.description}`, onDelete: () => setFilter('description', '') });
+  filters.departments.forEach((d) => {
+    activeChips.push({ key: `dept-${d}`, label: d, onDelete: () => toggleDept(d) });
+  });
+  if (filters.stockLink !== 'All') activeChips.push({ key: 'stockLink', label: `Stock Link: ${filters.stockLink}`, onDelete: () => setFilter('stockLink', 'All') });
+  if (filters.photoRequired !== 'All') activeChips.push({ key: 'photoRequired', label: `Photo: ${filters.photoRequired}`, onDelete: () => setFilter('photoRequired', 'All') });
+  if (filters.dualCheck !== 'All') activeChips.push({ key: 'dualCheck', label: `Dual Check: ${filters.dualCheck}`, onDelete: () => setFilter('dualCheck', 'All') });
+  if (filters.carryForward !== 'All') activeChips.push({ key: 'carryForward', label: `Carry Forward: ${filters.carryForward}`, onDelete: () => setFilter('carryForward', 'All') });
+  
+  if (visibleExtraFilters.status && filters.status !== 'All') {
+    activeChips.push({ key: 'status', label: `Verify Status: ${filters.status}`, onDelete: () => setFilter('status', 'All') });
+  }
+  if (visibleExtraFilters.recordStatus && filters.recordStatus !== 'All') {
+    activeChips.push({ key: 'recordStatus', label: `Record Status: ${filters.recordStatus}`, onDelete: () => setFilter('recordStatus', 'All') });
+  }
+
+  const activeCount = activeChips.length;
+
+  const availableExtraFilters = [];
+  if (!visibleExtraFilters.status) availableExtraFilters.push({ key: 'status', label: 'Verify Status' });
+  if (!visibleExtraFilters.recordStatus) availableExtraFilters.push({ key: 'recordStatus', label: 'Record Status' });
 
   const handleSaveData = async (data) => {
     try {
-      await axios.post('/api/qms/checklist', data, {
-        params: { departments: (data.department || []).join(',') }
-      });
+      // Separate department list from body — departments go as query params, not body
+      const { department, ...rawBody } = data;
+      const departments = department || [];
+
+      // Build a safe body with no undefined/NaN values
+      const body = Object.fromEntries(
+        Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v /* NaN check */)
+      );
+
+      // Build query string with repeated departments params: ?departments=A&departments=B
+      const qs = new URLSearchParams();
+      departments.forEach((d) => qs.append('departments', d));
+
+      await axios.post(`/api/qms/checklist?${qs.toString()}`, body);
       fetchChecklists();
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to save checklist:', error);
+      const msg = error?.message || error?.error || 'Unknown error';
+      alert(`Failed to save: ${msg}`);
     }
   };
-  const handleEditClick = () => { if (!selectedRowId) { alert('Please select a row first!'); return; } setDialogOpen(true); };
+
+  const handleEditClick = () => {
+    if (!selectedRowId) {
+      alert('Please select a row first!');
+      return;
+    }
+    setIsAmendment(false);
+    setDialogOpen(true);
+  };
+
+  const handleAmendmentClick = () => {
+    if (!selectedRowId) {
+      alert('Please select a row first!');
+      return;
+    }
+    setIsAmendment(true);
+    setDialogOpen(true);
+  };
+
+  const handleAssignClick = () => {
+    if (!selectedRowId) {
+      alert('Please select a row first!');
+      return;
+    }
+    setAssignDialogOpen(true);
+  };
 
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
 
@@ -202,10 +425,10 @@ export default function MasterCheckList() {
       title="Master Check List"
       secondary={
         <Box sx={{ display:'flex', alignItems:'center', gap:1 }}>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconUserPlus size={18}/>}>Assign To</Button>
-          <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>}>Amendment</Button>
+          <Button variant="contained" color="secondary" size="small" startIcon={<IconUserPlus size={18}/>} onClick={handleAssignClick}>Assign To</Button>
+          <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>} onClick={handleAmendmentClick}>Amendment</Button>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setDialogOpen(true); }}>Add</Button>
+          <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setIsAmendment(false); setDialogOpen(true); }}>Add</Button>
           <IconButton size="small" onClick={() => setDrawerOpen(true)}
             sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
             <IconAdjustmentsHorizontal size={20}/>
@@ -215,58 +438,101 @@ export default function MasterCheckList() {
       }
     >
       <Box sx={{ p: 0.5, pb: 0 }}>
-      {activeCount > 0 && (
-        <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
-          <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
-          {filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status','All')}/>}
-          {filters.taskStatus !== 'All' && <Chip label={`Task: ${filters.taskStatus}`} size="small" color="primary" onDelete={() => setFilter('taskStatus','All')}/>}
-          {filters.recordStatus !== 'All' && <Chip label={`Record: ${filters.recordStatus}`} size="small" color="primary" onDelete={() => setFilter('recordStatus','All')}/>}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category','All')}/>}
-          {filters.departments.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)}/>)}
-          {filters.employeeName && <Chip label={`Employee: ${filters.employeeName}`} size="small" color="warning" onDelete={() => setFilter('employeeName','')}/>}
-          {filters.leftCompany !== 'All' && <Chip label={`Left: ${filters.leftCompany}`} size="small" color="error" onDelete={() => setFilter('leftCompany','All')}/>}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+        {activeCount > 0 && (
+          <Box sx={{ display:'flex', gap:0.5, mb:2, flexWrap:'wrap', alignItems:'center' }}>
+            <Typography variant="body2" sx={{ fontWeight:600, mr:0.5 }}>Filters:</Typography>
+            {activeChips.map((chip) => (
+              <Chip key={chip.key} label={chip.label} size="small" color="primary" onDelete={chip.onDelete}/>
+            ))}
+            <Button size="small" color="error" onClick={resetFilters} sx={{ ml:1 }}>Clear All</Button>
+          </Box>
+        )}
+      </Box>
+
+      {/* ── Cursor-following 'Double tap' label ── */}
+      {showDoubleTap && (
+        <Box
+          sx={{
+            position: 'fixed',
+            left: cursorPos.x + 14,
+            top: cursorPos.y - 28,
+            bgcolor: 'grey.800',
+            color: '#fff',
+            px: 1,
+            py: 0.3,
+            borderRadius: 1,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            pointerEvents: 'none',
+            zIndex: 9999,
+            letterSpacing: 0.4,
+            userSelect: 'none',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Double tap
         </Box>
       )}
 
-      </Box>
-
-      <TableContainer component={Paper} sx={{ maxHeight:'calc(100vh - 380px)', borderTop:'1px solid', borderColor:'divider', borderRadius: 0, '&::-webkit-scrollbar':{width:10,height:10}, '&::-webkit-scrollbar-track':{backgroundColor:'background.paper'}, '&::-webkit-scrollbar-thumb':{backgroundColor:'grey.400',borderRadius:2} }}>
+      <TableContainer component={Paper} sx={{ height: 'calc(100vh - 240px)', borderTop:'1px solid', borderColor:'divider', borderRadius: 0, '&::-webkit-scrollbar':{width:10,height:10}, '&::-webkit-scrollbar-track':{backgroundColor:'background.paper'}, '&::-webkit-scrollbar-thumb':{backgroundColor:'grey.400',borderRadius:2} }}>
         <Table stickyHeader sx={{ minWidth: 4000 }} aria-label="checklist table">
-          <TableHead><TableRow>{columns.map((col,i) => <TableCell key={i} sx={{ minWidth: col.minWidth || 200, bgcolor:'primary.dark', color:'white', fontWeight:'bold', whiteSpace:'nowrap', borderRight:'1px solid rgba(255,255,255,0.2)' }}>{col.label}</TableCell>)}</TableRow></TableHead>
+          <TableHead>
+            <TableRow>
+              {columns.map((col,i) => (
+                <TableCell key={i} sx={{ minWidth: col.minWidth || 200, bgcolor:'primary.dark', color:'white', fontWeight:'bold', whiteSpace:'nowrap', borderRight:'1px solid rgba(255,255,255,0.2)' }}>
+                  {col.label}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
           <TableBody>
             {loading ? (
               <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
             ) : rows.length === 0 ? (
               <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py:6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-            ) : rows.map((row,idx) => (
-              <TableRow key={row.id} hover onClick={() => setSelectedRowId(row.id)} sx={{ cursor:'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}>
-                <TableCell sx={{ minWidth: 200 }}>{page * size + idx + 1}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.seqNo}</TableCell>
+            ) : rows.map((row, idx) => (
+              <TableRow
+                key={row.id}
+                hover
+                onClick={() => setSelectedRowId(row.id)}
+                onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
+                onMouseEnter={() => setShowDoubleTap(true)}
+                onMouseLeave={() => setShowDoubleTap(false)}
+                onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+                sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+              >
+                <TableCell sx={{ minWidth: 50 }}>{page * size + idx + 1}</TableCell>
+                <TableCell sx={{ minWidth: 80, fontWeight:'bold' }}>{row.seqNo}</TableCell>
                 <TableCell sx={{ minWidth: 200 }}>{row.checkingPoint}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.category}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.frequency}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.effectiveFrom}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.reminderDays}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.expiryDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.reminderDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.stockLink}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.assignTo}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.assignDate}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.itemCode}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.qty}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.photoRequired}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.createdBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.updatedBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.status}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.taskStatus}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifyStatus}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifiedBy}</TableCell>
-                <TableCell sx={{ minWidth: 200 }}>{row.verifiedDate}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.category}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.frequency}</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>{row.levelIds || '-'}</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.effectiveFrom}</TableCell>
+                <TableCell sx={{ minWidth: 80 }}>{row.reminderDays}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.expiryDate}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.reminderDate}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{row.stockLink}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.assignTo}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.assignDate}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.itemCode}</TableCell>
+                <TableCell sx={{ minWidth: 80 }}>{row.qty}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{row.photoRequired}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{row.dualCheck}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{row.carryForward}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.createdBy}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : ''}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.updatedBy}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : ''}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{row.status}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.taskStatus}</TableCell>
+                <TableCell sx={{ minWidth: 150 }}>{row.verifyStatus}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.verifiedBy}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{row.verifiedDate ? new Date(row.verifiedDate).toLocaleDateString() : ''}</TableCell>
                 <TableCell sx={{ minWidth: 200 }}>{row.rejReason}</TableCell>
-              </TableRow>
+                <TableCell sx={{ minWidth: 80, align:'center' }}>-</TableCell>
+                </TableRow>
             ))}
           </TableBody>
         </Table>
@@ -281,11 +547,30 @@ export default function MasterCheckList() {
         onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
         rowsPerPageOptions={[5, 10, 25, 50]}
         sx={{
-          '& .MuiTablePagination-toolbar': { justifyContent: 'center' },
-          '& .MuiTablePagination-spacer': { display: 'none' }
+          '& .MuiTablePagination-toolbar': { 
+            justifyContent: 'center', 
+            flexWrap: 'nowrap',
+            minHeight: '36px !important',
+            height: '36px',
+            p: '0px !important',
+            gap: 1
+          },
+          '& .MuiTablePagination-spacer': { display: 'none' },
+          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+            margin: 0,
+            fontSize: '0.75rem',
+            fontWeight: 500
+          },
+          '& .MuiTablePagination-select': {
+            py: '2px',
+            fontSize: '0.75rem',
+            fontWeight: 500
+          },
+          '& .MuiTablePagination-actions': {
+            margin: 0
+          }
         }}
       />
-
 
       {/* ===== FILTER DRAWER ===== */}
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx:{ width:320 } }}>
@@ -294,52 +579,136 @@ export default function MasterCheckList() {
           <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20}/></IconButton>
         </Box>
 
-        <Box sx={{ overflowY:'auto', flex:1 }}>
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              {['All','Pending for Verify','Verified','Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Task Status" open={openSections.taskStatus} onToggle={() => toggleSection('taskStatus')}>
-            <FormControl><RadioGroup value={filters.taskStatus} onChange={(e) => setFilter('taskStatus', e.target.value)}>
-              {['All','Not Assigned','Assigned'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider/>
-
-          <FilterSection title="Record Status" open={openSections.recordStatus} onToggle={() => toggleSection('recordStatus')}>
-            <FormControl><RadioGroup value={filters.recordStatus} onChange={(e) => setFilter('recordStatus', e.target.value)}>
-              {['All','Active','In Active'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
-            </RadioGroup></FormControl>
+        <Box sx={{ overflowY:'auto', flex:1, py:1 }}>
+          
+          {/* ================= DEFAULT FILTERS ================= */}
+          <FilterSection title="Sequence No" open={openSections.seqNo} onToggle={() => toggleSection('seqNo')}>
+            <TextField size="small" fullWidth placeholder="Search sequence no..." value={filters.seqNo} onChange={(e) => setFilter('seqNo', e.target.value)}/>
           </FilterSection>
           <Divider/>
 
           <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
             <FormControl><RadioGroup value={filters.category} onChange={(e) => setFilter('category', e.target.value)}>
-              {['All','RENEWAL','CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>}/>)}
+              {['All','RENEWAL','CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
 
+          <FilterSection title="Frequency" open={openSections.frequency} onToggle={() => toggleSection('frequency')}>
+            <FormControl><RadioGroup value={filters.frequency} onChange={(e) => setFilter('frequency', e.target.value)}>
+              {['All','DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+            </RadioGroup></FormControl>
+          </FilterSection>
+          <Divider/>
+
+          <FilterSection title="Renewal Point" open={openSections.checkingPoint} onToggle={() => toggleSection('checkingPoint')}>
+            <TextField size="small" fullWidth placeholder="Search renewal point..." value={filters.checkingPoint} onChange={(e) => setFilter('checkingPoint', e.target.value)}/>
+          </FilterSection>
+          <Divider/>
+
+          <FilterSection title="Descriptions/SOP" open={openSections.description} onToggle={() => toggleSection('description')}>
+            <TextField size="small" fullWidth placeholder="Search description..." value={filters.description} onChange={(e) => setFilter('description', e.target.value)}/>
+          </FilterSection>
+          <Divider/>
+
           <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
-            <Box sx={{ maxHeight:250, overflowY:'auto' }}>
+            <Box sx={{ maxHeight:150, overflowY:'auto' }}>
               {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display:'flex', ml:0, mr:0, py:0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p:0.5 }}/>} label={<Typography variant="body2">{d}</Typography>}/>)}
             </Box>
           </FilterSection>
           <Divider/>
 
-          <FilterSection title="Employee Name" open={openSections.employee} onToggle={() => toggleSection('employee')}>
-            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.employeeName} onChange={(e) => setFilter('employeeName', e.target.value)}/>
+          <FilterSection title="Stock Link" open={openSections.stockLink} onToggle={() => toggleSection('stockLink')}>
+            <FormControl><RadioGroup value={filters.stockLink} onChange={(e) => setFilter('stockLink', e.target.value)}>
+              {['All','YES','NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+            </RadioGroup></FormControl>
           </FilterSection>
           <Divider/>
 
-          <FilterSection title="Left Company" open={openSections.leftCompany} onToggle={() => toggleSection('leftCompany')}>
-            <FormControl><RadioGroup value={filters.leftCompany} onChange={(e) => setFilter('leftCompany', e.target.value)}>
-              {['All','No','Yes'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+          <FilterSection title="Photo Required" open={openSections.photoRequired} onToggle={() => toggleSection('photoRequired')}>
+            <FormControl><RadioGroup value={filters.photoRequired} onChange={(e) => setFilter('photoRequired', e.target.value)}>
+              {['All','YES','NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
             </RadioGroup></FormControl>
           </FilterSection>
+          <Divider/>
+
+          <FilterSection title="Dual Check" open={openSections.dualCheck} onToggle={() => toggleSection('dualCheck')}>
+            <FormControl><RadioGroup value={filters.dualCheck} onChange={(e) => setFilter('dualCheck', e.target.value)}>
+              {['All','YES','NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+            </RadioGroup></FormControl>
+          </FilterSection>
+          <Divider/>
+
+          <FilterSection title="Carry Forward" open={openSections.carryForward} onToggle={() => toggleSection('carryForward')}>
+            <FormControl><RadioGroup value={filters.carryForward} onChange={(e) => setFilter('carryForward', e.target.value)}>
+              {['All','YES','NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+            </RadioGroup></FormControl>
+          </FilterSection>
+          <Divider/>
+
+          {/* ================= OPTIONAL EXTRA FILTERS ================= */}
+          {visibleExtraFilters.status && (
+            <>
+              <Box sx={{ px:2, pt:1.5, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight:700 }}>Verify Status</Typography>
+                <IconButton size="small" color="error" onClick={() => removeExtraFilter('status')}><IconX size={14}/></IconButton>
+              </Box>
+              <Box sx={{ px:2, pb:1 }}>
+                <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
+                  {['All','Pending for Verify','Verified','Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+                </RadioGroup></FormControl>
+              </Box>
+              <Divider/>
+            </>
+          )}
+
+          {visibleExtraFilters.recordStatus && (
+            <>
+              <Box sx={{ px:2, pt:1.5, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight:700 }}>Record Status</Typography>
+                <IconButton size="small" color="error" onClick={() => removeExtraFilter('recordStatus')}><IconX size={14}/></IconButton>
+              </Box>
+              <Box sx={{ px:2, pb:1 }}>
+                <FormControl><RadioGroup value={filters.recordStatus} onChange={(e) => setFilter('recordStatus', e.target.value)}>
+                  {['All','Active','In Active'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small"/>} label={<Typography variant="body2">{v}</Typography>}/>)}
+                </RadioGroup></FormControl>
+              </Box>
+              <Divider/>
+            </>
+          )}
+
+          {/* ADD FILTER DYNAMIC BUTTON */}
+          {availableExtraFilters.length > 0 && (
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<IconPlus size={16} />}
+                onClick={(e) => setAnchorEl(e.currentTarget)}
+                sx={{ textTransform: 'none', borderRadius: 1.5 }}
+              >
+                Add Filter
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={() => setAnchorEl(null)}
+              >
+                {availableExtraFilters.map((f) => (
+                  <MenuItem
+                    key={f.key}
+                    onClick={() => {
+                      addExtraFilter(f.key);
+                      setAnchorEl(null);
+                    }}
+                  >
+                    {f.label}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </Box>
+          )}
+
         </Box>
 
         <Box sx={{ p:2, borderTop:'1px solid', borderColor:'divider', display:'flex', gap:1 }}>
@@ -348,7 +717,8 @@ export default function MasterCheckList() {
         </Box>
       </Drawer>
 
-      <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow}/>
+      <AddCheckListDialog open={dialogOpen} handleClose={() => setDialogOpen(false)} onSave={handleSaveData} initialData={activeRow} isAmendment={isAmendment}/>
+      <ChecklistAssignDialog open={assignDialogOpen} onClose={() => { setAssignDialogOpen(false); fetchChecklists(); }} checklistId={selectedRowId} initialData={activeRow}/>
     </MainCard>
   );
 }
