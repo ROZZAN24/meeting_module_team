@@ -213,6 +213,8 @@ const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/Inducti
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
+<<<<<<< HEAD
+=======
 const NpdModelNameMaster = Loadable(lazy(() => import('views/qms/ModelName/ModelNameMaster')));
 const NpdUomMaster = Loadable(lazy(() => import('views/qms/Uom/UomMaster')));
 
@@ -226,6 +228,7 @@ const NpdModelMaster = Loadable(lazy(() => import('views/npd/Model/ModelMaster')
 const NpdCapacityMaster = Loadable(lazy(() => import('views/npd/Capacity/CapacityMaster')));
 const NpdWindFarmMaster = Loadable(lazy(() => import('views/npd/WindFarm/WindFarmMaster')));
 
+>>>>>>> origin/main
 
 const QmsAuditScheduleList = Loadable(lazy(() => import('views/qms/AuditSchedule/AuditScheduleList')));
 const QmsAddAuditSchedule = Loadable(lazy(() => import('views/qms/AuditSchedule/AddAuditSchedule')));
@@ -933,6 +936,8 @@ const MainRoutes = {
       element: <QmsAuditCriteriaMaster />
     },
     {
+<<<<<<< HEAD
+=======
       path: '/master/npd/product-group',
       element: <NpdItemGroupMaster />
     },
@@ -973,6 +978,7 @@ const MainRoutes = {
       element: <NpdUomMaster />
     },
     {
+>>>>>>> origin/main
       path: '/master/qms/meeting/master',
       element: <MeetingMaster />
     },

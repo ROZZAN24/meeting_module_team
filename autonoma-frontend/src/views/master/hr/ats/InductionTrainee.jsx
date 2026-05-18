@@ -27,8 +27,12 @@ import {
 import {
   IconRefresh,
   IconCheck,
+<<<<<<< HEAD
+  IconUserCheck
+=======
   IconUserCheck,
   IconEye
+>>>>>>> origin/main
 } from '@tabler/icons-react';
 
 // BOS Components
@@ -60,7 +64,11 @@ const columns = [
     id: 'averageRating',
     label: 'Rating',
     minWidth: 80,
+<<<<<<< HEAD
+    render: (row) => row.averageRating ? `${row.averageRating.toFixed(1)}/5` : '-'
+=======
     render: (row) => row.averageRating ? (row.averageRating % 1 === 0 ? `${row.averageRating.toFixed(0)}/10` : `${row.averageRating.toFixed(1)}/10`) : '-'
+>>>>>>> origin/main
   },
   {
     id: 'currentStatus',
@@ -90,6 +98,8 @@ export default function InductionTrainee() {
   const [saving, setSaving] = useState(false);
   const [searchText, setSearchText] = useState('');
 
+<<<<<<< HEAD
+=======
   const canEdit = useMemo(() => {
     if (!selectedAssignment || !user) return false;
     const userEmpCode = String(user.empCode || '').trim().toLowerCase();
@@ -99,6 +109,7 @@ export default function InductionTrainee() {
     return (userEmpCode && userEmpCode === rowEmpCode) || (userEmpId && userEmpId === rowEmpId);
   }, [selectedAssignment, user]);
 
+>>>>>>> origin/main
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
@@ -176,8 +187,13 @@ export default function InductionTrainee() {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
+<<<<<<< HEAD
+      const msg = error.response?.data || 'Failed to submit responses';
+      dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
+=======
       const msg = typeof error === 'string' ? error : (error?.message || 'Failed to submit responses');
       dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
+>>>>>>> origin/main
     } finally {
       setSaving(false);
     }
@@ -240,6 +256,20 @@ export default function InductionTrainee() {
         loading={loading}
         onDoubleClickRow={handleUpdateTraining}
         actionColumn={{
+<<<<<<< HEAD
+          render: (row) => (
+            <Button
+              size="small"
+              variant="contained"
+              color="info"
+              startIcon={<IconCheck size={16} />}
+              onClick={() => handleUpdateTraining(row)}
+              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
+            >
+              Update Training
+            </Button>
+          )
+=======
           render: (row) => {
             const rowEmpCode = String(row.empCode || '').trim().toLowerCase();
             const rowEmpId = String(row.empId || '').trim().toLowerCase();
@@ -260,6 +290,7 @@ export default function InductionTrainee() {
               </Button>
             );
           }
+>>>>>>> origin/main
         }}
       />
 
@@ -267,12 +298,20 @@ export default function InductionTrainee() {
       <BOSFormDialog
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
+<<<<<<< HEAD
+        title="Induction Review — Trainee Response"
+        fullWidth
+        maxWidth="xl"
+        onSave={handleSubmit}
+        saveLabel="Submit Response"
+=======
         title={canEdit ? "Induction Review — Trainee Response" : "Induction Review — Trainee Response (View Only)"}
         fullWidth
         maxWidth="xl"
         onSave={canEdit ? handleSubmit : null}
         saveLabel={canEdit ? "Submit Response" : null}
         isViewOnly={!canEdit}
+>>>>>>> origin/main
       >
         {selectedAssignment && (
           <>
@@ -298,11 +337,15 @@ export default function InductionTrainee() {
                 {selectedAssignment.averageRating && (
                   <Box>
                     <Typography variant="caption" color="text.secondary">TRAINER RATING</Typography>
+<<<<<<< HEAD
+                    <Typography variant="h4">{selectedAssignment.averageRating.toFixed(1)} / 5</Typography>
+=======
                     <Typography variant="h4">
                       {selectedAssignment.averageRating % 1 === 0 
                         ? selectedAssignment.averageRating.toFixed(0) 
                         : selectedAssignment.averageRating.toFixed(1)} / 10
                     </Typography>
+>>>>>>> origin/main
                   </Box>
                 )}
               </Box>
@@ -353,7 +396,10 @@ export default function InductionTrainee() {
                             value={detail.traineeStatus || ''}
                             onChange={(e) => updateDetail(detail.id, 'traineeStatus', e.target.value)}
                             fullWidth
+<<<<<<< HEAD
+=======
                             disabled={!canEdit}
+>>>>>>> origin/main
                             sx={{ minWidth: 150 }}
                           >
                             <MenuItem value="">-Select-</MenuItem>
@@ -369,10 +415,16 @@ export default function InductionTrainee() {
                             maxRows={3}
                             value={detail.traineeComments || ''}
                             onChange={(e) => updateDetail(detail.id, 'traineeComments', e.target.value)}
+<<<<<<< HEAD
+                            placeholder="Your comments... (mandatory)"
+                            fullWidth
+                            required
+=======
                             placeholder={canEdit ? "Your comments... (mandatory)" : "-"}
                             fullWidth
                             disabled={!canEdit}
                             required={canEdit}
+>>>>>>> origin/main
                           />
                         </TableCell>
                       </TableRow>

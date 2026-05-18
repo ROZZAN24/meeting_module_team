@@ -24,22 +24,43 @@ public class InductionTrainingService {
     @Autowired
     private EmployeeMasterRepository empRepo;
 
+<<<<<<< HEAD
+=======
     @Autowired
     private DepartmentRepository deptRepo;
 
+>>>>>>> origin/main
     /**
      * Get assignments for a specific trainer (login-filtered).
      */
     public List<InductionAssignment> getForTrainer(String trainerEmpCode) {
+<<<<<<< HEAD
+        return assignmentRepo.findByTrainerEmpCode(trainerEmpCode);
+=======
         List<InductionAssignment> list = assignmentRepo.findByTrainerEmpCode(trainerEmpCode);
         enrichProgress(list);
         return list;
+>>>>>>> origin/main
     }
 
     /**
      * Get ALL assignments (Admin/HR view).
      */
     public List<InductionAssignment> getAll() {
+<<<<<<< HEAD
+        return assignmentRepo.findAllActive();
+    }
+
+    /**
+     * Get training detail items for a specific assignment.
+     * Enriches each detail row with the criteria text from InductionMaster.
+     */
+    public List<InductionTrainingDetail> getDetails(Long assignmentId) {
+        List<InductionTrainingDetail> details = detailRepo.findByAssignmentId(assignmentId);
+
+        // Enrich with InductionMaster data (transient fields)
+        for (InductionTrainingDetail detail : details) {
+=======
         List<InductionAssignment> list = assignmentRepo.findAllActive();
         enrichProgress(list);
         return list;
@@ -162,11 +183,25 @@ public class InductionTrainingService {
                 .collect(Collectors.toList());
 
         for (InductionTrainingDetail detail : activeDetails) {
+>>>>>>> origin/main
             masterRepo.findById(detail.getInductionMasterId()).ifPresent(master -> {
                 detail.setInductionDetails(master.getInductionDetails());
                 detail.setAnswer(master.getAnswer());
                 detail.setInductionRound(master.getInductionRound());
                 detail.setAttachmentRequired(master.getAttachmentRequired());
+<<<<<<< HEAD
+            });
+        }
+        return details;
+    }
+
+    /**
+     * Start a training session:
+     * 1. Validate scheduled time has been reached
+     * 2. Load matching criteria from InductionMaster
+     * 3. Create detail rows for each criteria
+     * 4. Update assignment status to TRAINING_STARTED
+=======
                 detail.setInductionAttachment(master.getInductionAttachment());
             });
         }
@@ -175,12 +210,24 @@ public class InductionTrainingService {
 
     /**
      * Start a training session for the currently active level in sequential order.
+>>>>>>> origin/main
      */
     @Transactional
     public InductionAssignment startTraining(Long assignmentId, String currentUser) {
         InductionAssignment assignment = assignmentRepo.findById(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
+<<<<<<< HEAD
+        if (!"PENDING".equalsIgnoreCase(assignment.getCurrentStatus()) 
+            && !"RESCHEDULE".equalsIgnoreCase(assignment.getCurrentStatus())) {
+            throw new RuntimeException("Training can only be started from PENDING or RESCHEDULE status. Current: " + assignment.getCurrentStatus());
+        }
+
+        // Check if detail rows already exist (re-start case)
+        List<InductionTrainingDetail> existing = detailRepo.findByAssignmentId(assignmentId);
+        if (!existing.isEmpty()) {
+            // Already started before — just update status
+=======
         List<InductionTrainingDetail> allDetails = detailRepo.findByAssignmentId(assignmentId);
         String activeLvl = getActiveLevel(assignment, allDetails);
         
@@ -192,6 +239,7 @@ public class InductionTrainingService {
                 .collect(Collectors.toList());
                 
         if (!activeDetails.isEmpty()) {
+>>>>>>> origin/main
             assignment.setCurrentStatus("TRAINING STARTED");
             assignment.setTrainingStartedAt(new Date());
             assignment.setUpdatedBy(currentUser);
@@ -199,6 +247,22 @@ public class InductionTrainingService {
             return assignmentRepo.save(assignment);
         }
 
+<<<<<<< HEAD
+        // Load matching criteria from InductionMaster
+        String round = assignment.getInductionRound();
+        List<InductionMaster> criteria = masterRepo.findByRoundAndActive(round);
+
+        // Filter by department and level if the employee has those set
+        String empDept = assignment.getDepartment();
+        criteria = criteria.stream()
+                .filter(c -> {
+                    // Department match: criteria departmentCodes contains the employee's department
+                    if (c.getDepartmentCodes() != null && empDept != null && !empDept.isEmpty()) {
+                        // departmentCodes is comma-separated
+                        return c.getDepartmentCodes().contains(empDept) || c.getDepartmentCodes().equalsIgnoreCase("ALL");
+                    }
+                    return true; // If no department filter, include all
+=======
         // Create new detail rows for activeLvl
         String round = assignment.getInductionRound();
         List<InductionMaster> criteria = masterRepo.findByRoundAndActive(round);
@@ -246,13 +310,21 @@ public class InductionTrainingService {
                     }
 
                     return deptMatch && isLevelMatch(c.getLevelCodes(), activeLvl);
+>>>>>>> origin/main
                 })
                 .collect(Collectors.toList());
 
         if (criteria.isEmpty()) {
+<<<<<<< HEAD
+            throw new RuntimeException("No induction criteria found for round: " + round + ". Please assign criteria first in Induction Criteria page.");
+        }
+
+        // Create detail rows
+=======
             throw new RuntimeException("No induction criteria found for active level: " + activeLvl + " in round: " + round);
         }
 
+>>>>>>> origin/main
         for (InductionMaster master : criteria) {
             InductionTrainingDetail detail = new InductionTrainingDetail();
             detail.setAssignmentId(assignmentId);
@@ -263,6 +335,10 @@ public class InductionTrainingService {
             detailRepo.save(detail);
         }
 
+<<<<<<< HEAD
+        // Update assignment
+=======
+>>>>>>> origin/main
         assignment.setCurrentStatus("TRAINING STARTED");
         assignment.setTrainingStartedAt(new Date());
         assignment.setUpdatedBy(currentUser);
@@ -270,6 +346,12 @@ public class InductionTrainingService {
         return assignmentRepo.save(assignment);
     }
 
+<<<<<<< HEAD
+    /**
+     * Save training progress (batch update detail items).
+     */
+=======
+>>>>>>> origin/main
     @Transactional
     public void saveProgress(Long assignmentId, List<InductionTrainingDetail> updates, String currentUser) {
         for (InductionTrainingDetail update : updates) {
@@ -291,15 +373,33 @@ public class InductionTrainingService {
     }
 
     /**
+<<<<<<< HEAD
+     * Complete training:
+     * 1. Validate all items have trainerStatus = COMPLETED
+     * 2. Validate all items have skillRating
+     * 3. Calculate average rating
+     * 4. Update assignment to TRAINING GIVEN
+=======
      * Completes the training for the active level.
      * If there are further levels assigned, transitions back to RESCHEDULE status to allow next level training.
      * If all assigned levels are fully completed, transitions to TRAINING GIVEN status.
+>>>>>>> origin/main
      */
     @Transactional
     public InductionAssignment completeTraining(Long assignmentId, String currentUser) {
         InductionAssignment assignment = assignmentRepo.findById(assignmentId)
                 .orElseThrow(() -> new RuntimeException("Assignment not found"));
 
+<<<<<<< HEAD
+        List<InductionTrainingDetail> details = detailRepo.findByAssignmentId(assignmentId);
+
+        if (details.isEmpty()) {
+            throw new RuntimeException("No training details found. Please start training first.");
+        }
+
+        // Validate all items completed
+        long pendingCount = details.stream()
+=======
         List<InductionTrainingDetail> allDetails = detailRepo.findByAssignmentId(assignmentId);
         if (allDetails.isEmpty()) {
             throw new RuntimeException("No training details found. Please start training first.");
@@ -315,19 +415,39 @@ public class InductionTrainingService {
                 .collect(Collectors.toList());
 
         long pendingCount = activeDetails.stream()
+>>>>>>> origin/main
                 .filter(d -> !"COMPLETED".equalsIgnoreCase(d.getTrainerStatus()))
                 .count();
         if (pendingCount > 0) {
             throw new RuntimeException("Please complete all trainer status. " + pendingCount + " items still pending.");
         }
 
+<<<<<<< HEAD
+        // Validate all items have skill rating
+        long noRating = details.stream()
+=======
         long noRating = activeDetails.stream()
+>>>>>>> origin/main
                 .filter(d -> d.getSkillRating() == null || d.getSkillRating() < 1)
                 .count();
         if (noRating > 0) {
             throw new RuntimeException("Please select skill matrix rating for all items. " + noRating + " items without rating.");
         }
 
+<<<<<<< HEAD
+        // Calculate average rating
+        double avgRating = details.stream()
+                .mapToInt(InductionTrainingDetail::getSkillRating)
+                .average()
+                .orElse(0.0);
+
+        // Update assignment
+        assignment.setCurrentStatus("TRAINING GIVEN");
+        assignment.setAverageRating(avgRating);
+        assignment.setUpdatedBy(currentUser);
+        assignment.setUpdatedAt(new Date());
+        return assignmentRepo.save(assignment);
+=======
         // Determine if more levels exist
         String screeningLevelStr = assignment.getScreeningLevel();
         List<String> assignedLevels = Arrays.stream(screeningLevelStr.split(","))
@@ -357,5 +477,6 @@ public class InductionTrainingService {
             assignment.setUpdatedAt(new Date());
             return assignmentRepo.save(assignment);
         }
+>>>>>>> origin/main
     }
 }

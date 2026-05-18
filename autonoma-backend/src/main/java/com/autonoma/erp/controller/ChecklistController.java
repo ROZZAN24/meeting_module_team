@@ -30,6 +30,28 @@ public class ChecklistController {
     @GetMapping
     @Operation(summary = "Get All Master Checklists", description = "Retrieves a paginated list of master checklists with comprehensive filtering options including category, department, dual check flag, and verification status.")
     public ResponseEntity<Page<MasterChecklist>> getAllChecklists(
+<<<<<<< HEAD
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String searchBy,
+            @RequestParam(required = false) String searchValue,
+            @RequestParam(required = false) String dualCheck,
+            @RequestParam(required = false) String verifyStatus,
+            @RequestParam(required = false) String seqNo,
+            @RequestParam(required = false) String frequency,
+            @RequestParam(required = false) String checkingPoint,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String stockLink,
+            @RequestParam(required = false) String photoRequired,
+            @RequestParam(required = false) String carryForward,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, dualCheck, verifyStatus, 
+                seqNo, frequency, checkingPoint, description, stockLink, photoRequired, carryForward, pageable));
+=======
             @io.swagger.v3.oas.annotations.Parameter(description = "Filter by status (Active/Inactive)") @RequestParam(required = false) String status,
             @io.swagger.v3.oas.annotations.Parameter(description = "Filter by category (RENEWAL/CHECK LIST)") @RequestParam(required = false) String category,
             @io.swagger.v3.oas.annotations.Parameter(description = "Filter by department name") @RequestParam(required = false) String department,
@@ -42,6 +64,7 @@ public class ChecklistController {
         
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, dualCheck, verifyStatus, pageable));
+>>>>>>> origin/main
     }
 
     @PostMapping

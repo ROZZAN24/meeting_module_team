@@ -31,6 +31,13 @@ export default function BOSTextField({ error, helperText, maxLength, sx, inputPr
       }}
       sx={{ 
         ...bosInput, 
+<<<<<<< HEAD
+        '& input::-webkit-calendar-picker-indicator': {
+          display: 'none',
+          webkitAppearance: 'none'
+        },
+=======
+>>>>>>> origin/main
         ...sx 
       }}
       {...rest}

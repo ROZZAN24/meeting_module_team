@@ -29,9 +29,12 @@ public class InductionTraineeService {
      * Only shows records with currentStatus = 'TRAINING GIVEN'.
      */
     public List<InductionAssignment> getForTrainee(String empCode) {
+<<<<<<< HEAD
+=======
         if ("*".equals(empCode)) {
             return assignmentRepo.findAllTraineeRecordsForAdmin();
         }
+>>>>>>> origin/main
         return assignmentRepo.findTraineeRecords(empCode);
     }
 
@@ -48,7 +51,10 @@ public class InductionTraineeService {
                 detail.setAnswer(master.getAnswer());
                 detail.setInductionRound(master.getInductionRound());
                 detail.setAttachmentRequired(master.getAttachmentRequired());
+<<<<<<< HEAD
+=======
                 detail.setInductionAttachment(master.getInductionAttachment());
+>>>>>>> origin/main
             });
         }
         return details;

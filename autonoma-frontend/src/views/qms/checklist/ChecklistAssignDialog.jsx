@@ -45,18 +45,36 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
+  const [selectedRowId, setSelectedRowId] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    assignTo: '',
+    assignType: '',
+=======
   const [formData, setFormData] = useState({
     assignTo: '',
     assignType: 'PRIMARY',
+>>>>>>> origin/main
     id: null
   });
 
   useEffect(() => {
     if (open && checklistId) {
       fetchAssignments();
+<<<<<<< HEAD
+      setSelectedRowId(null);
+      setIsEditing(false);
+    } else {
+      setAssignments([]);
+      setFormData({ assignTo: '', assignType: '', id: null });
+      setSelectedRowId(null);
+      setIsEditing(false);
+=======
     } else {
       setAssignments([]);
       setFormData({ assignTo: '', assignType: 'PRIMARY', id: null });
+>>>>>>> origin/main
     }
   }, [open, checklistId]);
 
@@ -68,14 +86,24 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       // A better way is to add an endpoint or just fetch the checklist with assignments.
       // For now, we will fetch assignments and filter by seqNo
       const res = await axios.get(`${API_PATHS.QMS.CHECKLIST}/assignments?size=100&searchBy=checklist.seqNo&searchValue=${initialData?.seqNo}`);
+<<<<<<< HEAD
+      const list = res.data.content || [];
+      setAssignments(list);
+      setFormData({ assignTo: '', assignType: '', id: null });
+=======
       setAssignments(res.data.content || []);
+>>>>>>> origin/main
     } catch (error) {
       console.error('Failed to fetch assignments', error);
     } finally {
       setLoading(false);
     }
   };
+<<<<<<< HEAD
+  
+=======
 
+>>>>>>> origin/main
   const handleAssign = async () => {
     if (!formData.assignTo || !formData.assignType) {
       dispatch(openSnackbar({ open: true, message: 'Please select Assign To and Assign Type', severity: 'warning', variant: 'alert' }));
@@ -114,7 +142,13 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       }
 
       dispatch(openSnackbar({ open: true, message: formData.id ? 'Assignment updated!' : 'Task assigned!', severity: 'success', variant: 'alert' }));
+<<<<<<< HEAD
+      setFormData({ assignTo: '', assignType: '', id: null });
+      setSelectedRowId(null);
+      setIsEditing(false);
+=======
       setFormData({ assignTo: '', assignType: 'PRIMARY', id: null });
+>>>>>>> origin/main
       fetchAssignments();
     } catch (err) {
       dispatch(openSnackbar({ 
@@ -136,6 +170,10 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     { id: 'assignType', label: 'Assign Type', minWidth: 100 },
     { id: 'assignDate', label: 'Assign Date', minWidth: 100 },
     { id: 'assignedBy', label: 'Created By', minWidth: 100 },
+<<<<<<< HEAD
+    { id: 'modifiedBy', label: 'Modified By', minWidth: 100 },
+=======
+>>>>>>> origin/main
     { id: 'status', label: 'Status', minWidth: 100 }
   ];
 
@@ -150,6 +188,10 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     assignType: a.assignType || 'PRIMARY',
     assignDate: a.assignedDate ? new Date(a.assignedDate).toLocaleDateString() : '-',
     assignedBy: a.assignedBy || '-',
+<<<<<<< HEAD
+    modifiedBy: '-',
+=======
+>>>>>>> origin/main
     status: a.status?.name || 'ACTIVE'
   }));
 
@@ -161,6 +203,25 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     });
   };
 
+<<<<<<< HEAD
+  const handleReAssignClick = () => {
+    const selectedRow = rows.find(r => r.id === selectedRowId);
+    if (selectedRow) {
+      handleEditAssignment(selectedRow);
+      setIsEditing(true);
+      dispatch(openSnackbar({ open: true, message: `Loaded assignment for ${selectedRow.assignTo}. Update fields above.`, severity: 'info', variant: 'alert' }));
+    }
+  };
+
+  const handleInActiveClick = () => {
+    if (selectedRowId) {
+      setSelectedAssignmentId(selectedRowId);
+      setDeleteDialogOpen(true);
+    }
+  };
+
+=======
+>>>>>>> origin/main
   const handleDeleteAssignment = async () => {
     if (!selectedAssignmentId) return;
     try {
@@ -169,6 +230,10 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       fetchAssignments();
       setDeleteDialogOpen(false);
       setSelectedAssignmentId(null);
+<<<<<<< HEAD
+      setSelectedRowId(null);
+=======
+>>>>>>> origin/main
     } catch (err) {
       dispatch(openSnackbar({ open: true, message: 'Delete failed', severity: 'error', variant: 'alert' }));
     }
@@ -212,8 +277,15 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onChange={(e) => setFormData(p => ({ ...p, assignType: e.target.value }))}
                 required
               >
+<<<<<<< HEAD
+                <MenuItem value="">-Select-</MenuItem>
                 <MenuItem value="PRIMARY">PRIMARY</MenuItem>
                 <MenuItem value="SECONDARY">SECONDARY</MenuItem>
+                <MenuItem value="TERTIARY">TERTIARY</MenuItem>
+=======
+                <MenuItem value="PRIMARY">PRIMARY</MenuItem>
+                <MenuItem value="SECONDARY">SECONDARY</MenuItem>
+>>>>>>> origin/main
               </BOSTextField>
 
               <Button 
@@ -223,7 +295,11 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onClick={handleAssign}
                 sx={{ height: 40, mt: 2 }}
               >
+<<<<<<< HEAD
+                Update
+=======
                 {formData.id ? 'Update' : 'Assign'}
+>>>>>>> origin/main
               </Button>
             </Box>
           </Box>
@@ -236,6 +312,14 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               rows={rows}
               loading={loading}
               page={0}
+<<<<<<< HEAD
+              size={10}
+              onPageChange={() => {}}
+              onSizeChange={() => {}}
+              onClickRow={(row) => setSelectedRowId(row.id)}
+              selectedRowId={selectedRowId}
+              showActions={false}
+=======
               size={100}
               onPageChange={() => {}}
               onSizeChange={() => {}}
@@ -245,12 +329,38 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 setDeleteDialogOpen(true);
               }}
               showActions={true}
+>>>>>>> origin/main
               renderCell={(col, row) => {
                 if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' || row.status === 'Started' ? 'ACTIVE' : 'INACTIVE')} />;
                 return row[col.id];
               }}
             />
           </Box>
+<<<<<<< HEAD
+
+          {/* Control Actions */}
+          <Stack direction="row" spacing={2} justifyContent="flex-start" sx={{ pt: 1 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={handleReAssignClick}
+              disabled={!selectedRowId}
+              sx={{ borderRadius: '8px', fontWeight: 600 }}
+            >
+              ReAssign
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleInActiveClick}
+              disabled={!selectedRowId}
+              sx={{ borderRadius: '8px', fontWeight: 600 }}
+            >
+              InActive
+            </Button>
+          </Stack>
+=======
+>>>>>>> origin/main
         </Stack>
 
         <ConfirmDeleteDialog

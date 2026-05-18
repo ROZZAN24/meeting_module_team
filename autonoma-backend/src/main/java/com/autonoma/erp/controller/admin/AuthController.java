@@ -90,6 +90,14 @@ public class AuthController {
                 userMap.put("empId", user.getEmpId());
 
                 String empName = "Employee " + user.getEmpId();
+<<<<<<< HEAD
+                if (user.getEmpId() != null) {
+                    empName = employeeMasterRepository.findById(user.getEmpId())
+                            .map(e -> e.getEmployeeName())
+                            .orElse(empName);
+                }
+                userMap.put("name", empName);
+=======
                 String empCode = null;
                 if (user.getEmpId() != null) {
                     var empOpt = employeeMasterRepository.findById(user.getEmpId());
@@ -100,6 +108,7 @@ public class AuthController {
                 }
                 userMap.put("name", empName);
                 userMap.put("empCode", empCode);
+>>>>>>> origin/main
                 userMap.put("role", "ADMIN");
                 userMap.put("imgName", user.getImgName());
                 userMap.put("isBosAdmin", user.getIsBosAdmin());
@@ -136,6 +145,14 @@ public class AuthController {
                         userMap.put("empId", user.getEmpId());
 
                         String empName = "Employee " + user.getEmpId();
+<<<<<<< HEAD
+                        if (user.getEmpId() != null) {
+                            empName = employeeMasterRepository.findById(user.getEmpId())
+                                    .map(e -> e.getEmployeeName())
+                                    .orElse(empName);
+                        }
+                        userMap.put("name", empName);
+=======
                         String empCode = null;
                         if (user.getEmpId() != null) {
                             var empOpt = employeeMasterRepository.findById(user.getEmpId());
@@ -146,6 +163,7 @@ public class AuthController {
                         }
                         userMap.put("name", empName);
                         userMap.put("empCode", empCode);
+>>>>>>> origin/main
                         userMap.put("role", "ADMIN");
                         userMap.put("imgName", user.getImgName());
                         userMap.put("isBosAdmin", user.getIsBosAdmin());

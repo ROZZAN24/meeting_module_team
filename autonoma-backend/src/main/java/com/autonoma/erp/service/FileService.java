@@ -68,6 +68,15 @@ public class FileService {
         }
 
         // Standardize the document root path based on OS
+<<<<<<< HEAD
+        if (resolvedPath == null || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
+            if (os.contains("win")) {
+                resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
+            } else {
+                // On Mac/Linux, we use a clean folder name without Windows drive letters
+                resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath();
+            }
+=======
         if (os.contains("win")) {
             if (resolvedPath == null || !resolvedPath.isAbsolute() || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
                 resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
@@ -75,6 +84,7 @@ public class FileService {
         } else {
             // On Mac/Linux, ignore Windows paths completely and place BOS_DOCUMENTS inside the autonoma-backend folder
             resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath().normalize();
+>>>>>>> origin/main
         }
 
         // Ensure root directory exists
@@ -83,6 +93,10 @@ public class FileService {
                 Files.createDirectories(resolvedPath);
             }
         } catch (IOException e) {
+<<<<<<< HEAD
+            // Fallback to a guaranteed temp dir if creation fails
+            resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
+=======
             if (os.contains("win")) {
                 resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
             } else {
@@ -93,6 +107,7 @@ public class FileService {
                     resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
                 }
             }
+>>>>>>> origin/main
         }
 
         return resolvedPath;
@@ -133,6 +148,11 @@ public class FileService {
 
         if (resource.exists() || resource.isReadable()) {
             return resource;
+<<<<<<< HEAD
+        } else {
+            throw new RuntimeException("File not found: " + relativePath);
+        }
+=======
         }
 
         // Fuzzy space and encoding resolution
@@ -161,6 +181,7 @@ public class FileService {
         }
 
         throw new RuntimeException("File not found: " + relativePath);
+>>>>>>> origin/main
     }
 
     /**

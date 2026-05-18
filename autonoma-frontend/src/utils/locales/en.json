@@ -348,6 +348,9 @@
   "Induction Pending / Assignment": "Induction Pending / Assignment",
   "Induction Pending": "Induction Pending",
   "Induction Training": "Induction Training",
+<<<<<<< HEAD
+  "Induction Trainee": "Induction Trainee"
+=======
   "Induction Trainee": "Induction Trainee",
   "Admin Hub": "Admin Hub",
   "BOS(S) Admin": "BOS(S) Admin",
@@ -361,4 +364,5 @@
   "Model Name": "Model Name",
   "UOM": "UOM",
   "Wind Farm": "Wind Farm"
+>>>>>>> origin/main
 }

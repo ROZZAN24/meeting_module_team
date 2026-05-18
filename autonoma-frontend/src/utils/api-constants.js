@@ -35,9 +35,13 @@ export const API_PATHS = {
     MEETINGS: `${API_BASE}/qms/meetings`,
     MEETING_SCHEDULES: `${API_BASE}/qms/meeting-schedules`,
     MEETING_ATTENDANCE: `${API_BASE}/qms/meeting-attendance`,
+<<<<<<< HEAD
+    MOMS: `${API_BASE}/qms/moms`
+=======
     MOMS: `${API_BASE}/qms/moms`,
     MODEL_NAME: `${API_BASE}/master/qms/model-name`,
     UOM: `${API_BASE}/master/qms/uom`
+>>>>>>> origin/main
   },
 
   // Admin Module
@@ -68,6 +72,8 @@ export const API_PATHS = {
     PROCESSING_BY_ID: (id) => `${API_BASE}/ocr/processing-requests/${id}`,
   },
 
+<<<<<<< HEAD
+=======
   NPD: {
     ITEM_GROUP: `${API_BASE}/master/npd/item-group`,
     ITEM_TYPE: `${API_BASE}/master/npd/item-type`,
@@ -79,6 +85,7 @@ export const API_PATHS = {
     WIND_FARMS: `${API_BASE}/master/npd/wind-farm`
   },
 
+>>>>>>> origin/main
   // Common/Infrastructure
   FILES: `${API_BASE}/files`
 };

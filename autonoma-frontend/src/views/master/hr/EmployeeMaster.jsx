@@ -230,6 +230,9 @@ export default function EmployeeMaster() {
         return;
       }
     } catch (e) {
+<<<<<<< HEAD
+      dispatch(openSnackbar({ open: true, message: 'Failed to save employee record.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+=======
       console.error('Error saving employee:', e);
       let errorMessage = 'Failed to save employee record.';
       if (e.response && e.response.data) {
@@ -244,6 +247,7 @@ export default function EmployeeMaster() {
         errorMessage = e.message;
       }
       dispatch(openSnackbar({ open: true, message: errorMessage, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+>>>>>>> origin/main
     } finally { setLoading(false); }
   };
 
@@ -410,6 +414,13 @@ export default function EmployeeMaster() {
             </R>
             <R><BOSTextField name="employeeName" label="Employee Name *" value={form.employeeName} onChange={h} error={!!errors.employeeName} helperText={errors.employeeName} /></R>
             <R><BOSTextField name="fatherHusbandName" label="Father/Husband Name" value={form.fatherHusbandName} onChange={h} /></R>
+<<<<<<< HEAD
+            
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.employeePhotoUpload ? [{ fileName: form.employeePhotoUpload.split('/').pop(), serverFileName: form.employeePhotoUpload, isServer: true }] : []}
+=======
           </Grid>
           
           <Divider sx={{ my: 1.5 }} />
@@ -423,6 +434,7 @@ export default function EmployeeMaster() {
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.employeePhotoUpload && form.employeePhotoUpload !== '-' && form.employeePhotoUpload !== 'null' && form.employeePhotoUpload !== 'undefined') ? [{ fileName: form.employeePhotoUpload.split('/').pop(), serverFileName: form.employeePhotoUpload, isServer: true }] : []}
+>>>>>>> origin/main
                   onChange={(files) => handleBOSFileChange('employeePhotoUpload', files)}
                   module="HRA_PROFILE"
                   multiple={false}
@@ -432,11 +444,19 @@ export default function EmployeeMaster() {
                   label="Employee Photo Upload"
                 />
               </Box>
+<<<<<<< HEAD
+            </R>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.employeeSignatureUpload ? [{ fileName: form.employeeSignatureUpload.split('/').pop(), serverFileName: form.employeeSignatureUpload, isServer: true }] : []}
+=======
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.employeeSignatureUpload && form.employeeSignatureUpload !== '-' && form.employeeSignatureUpload !== 'null' && form.employeeSignatureUpload !== 'undefined') ? [{ fileName: form.employeeSignatureUpload.split('/').pop(), serverFileName: form.employeeSignatureUpload, isServer: true }] : []}
+>>>>>>> origin/main
                   onChange={(files) => handleBOSFileChange('employeeSignatureUpload', files)}
                   module="HRA_SIGNATURE"
                   multiple={false}
@@ -446,11 +466,19 @@ export default function EmployeeMaster() {
                   label="Employee Signature Upload"
                 />
               </Box>
+<<<<<<< HEAD
+            </R>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.ndaUpload ? [{ fileName: form.ndaUpload.split('/').pop(), serverFileName: form.ndaUpload, isServer: true }] : []}
+=======
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.ndaUpload && form.ndaUpload !== '-' && form.ndaUpload !== 'null' && form.ndaUpload !== 'undefined') ? [{ fileName: form.ndaUpload.split('/').pop(), serverFileName: form.ndaUpload, isServer: true }] : []}
+>>>>>>> origin/main
                   onChange={(files) => handleBOSFileChange('ndaUpload', files)}
                   module="HRA_NDA"
                   multiple={false}
@@ -460,11 +488,19 @@ export default function EmployeeMaster() {
                   label="NDA Upload"
                 />
               </Box>
+<<<<<<< HEAD
+            </R>
+            <R lg={6}>
+              <Box sx={{ minHeight: 100 }}>
+                <BOSFileUpload
+                  files={form.fitnessCertificateUpload ? [{ fileName: form.fitnessCertificateUpload.split('/').pop(), serverFileName: form.fitnessCertificateUpload, isServer: true }] : []}
+=======
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.fitnessCertificateUpload && form.fitnessCertificateUpload !== '-' && form.fitnessCertificateUpload !== 'null' && form.fitnessCertificateUpload !== 'undefined') ? [{ fileName: form.fitnessCertificateUpload.split('/').pop(), serverFileName: form.fitnessCertificateUpload, isServer: true }] : []}
+>>>>>>> origin/main
                   onChange={(files) => handleBOSFileChange('fitnessCertificateUpload', files)}
                   module="HRA_FITNESS"
                   multiple={false}
@@ -474,7 +510,11 @@ export default function EmployeeMaster() {
                   label="Fitness Certificate Upload"
                 />
               </Box>
+<<<<<<< HEAD
+            </R>
+=======
             </Grid>
+>>>>>>> origin/main
           </Grid>
         </BOSFormSection>
 
@@ -709,6 +749,9 @@ export default function EmployeeMaster() {
 
       </Stack>
 
+<<<<<<< HEAD
+      <ConfirmDeleteDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={async () => { try { await axios.delete(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`); dispatch(openSnackbar({ open: true, message: 'Employee Master deleted permanently.', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' })); navigate('/hra/employee/master'); } catch (e) { dispatch(openSnackbar({ open: true, message: 'Failed to delete record.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' })); } }} title="Delete Employee" message="This will permanently delete the employee and ALL related data." itemName={`${form.firstName} ${form.lastName}`} />
+=======
       <ConfirmDeleteDialog 
         open={deleteOpen} 
         onClose={() => setDeleteOpen(false)} 
@@ -738,6 +781,7 @@ export default function EmployeeMaster() {
         message="This will permanently delete the employee and ALL related data." 
         itemName={`${form.firstName} ${form.lastName}`} 
       />
+>>>>>>> origin/main
 
       <BOSFilePreview 
         open={previewOpen} 

@@ -7,12 +7,21 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
+<<<<<<< HEAD
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+=======
+>>>>>>> origin/main
 
 @Entity
 @Table(name = "qms_checklist_master")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+<<<<<<< HEAD
+@JsonIgnoreProperties(ignoreUnknown = true)
+=======
+>>>>>>> origin/main
 public class MasterChecklist {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,6 +42,18 @@ public class MasterChecklist {
     @Column(name = "FREQUENCY")
     private String frequency;
 
+<<<<<<< HEAD
+    @Column(name = "WEEK_DAYS")
+    private String weekDays;
+
+    @Column(name = "REPEAT_EVERY_VALUE")
+    private Integer repeatEveryValue;
+
+    @Column(name = "REPEAT_EVERY_UNIT")
+    private String repeatEveryUnit;
+
+=======
+>>>>>>> origin/main
     @Column(name = "EFFECTIVE_FROM")
     @Temporal(TemporalType.DATE)
     @JsonFormat(pattern = "yyyy-MM-dd")
@@ -87,6 +108,12 @@ public class MasterChecklist {
     @Column(name = "DUAL_CHECK")
     private String dualCheck;
 
+<<<<<<< HEAD
+    @Column(name = "CARRY_FORWARD")
+    private String carryForward;
+
+=======
+>>>>>>> origin/main
     @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
     private String amendmentReason;
 
@@ -134,6 +161,10 @@ public class MasterChecklist {
     private String qty;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
+<<<<<<< HEAD
+    @JsonIgnoreProperties({"checklist", "hibernateLazyInitializer"})
+=======
+>>>>>>> origin/main
     private List<ChecklistDepartment> departments;
 
     // Getters and Setters
@@ -211,4 +242,9 @@ public class MasterChecklist {
     public void setQty(String qty) { this.qty = qty; }
     public List<ChecklistDepartment> getDepartments() { return departments; }
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
+<<<<<<< HEAD
+    public String getCarryForward() { return carryForward; }
+    public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
+=======
+>>>>>>> origin/main
 }

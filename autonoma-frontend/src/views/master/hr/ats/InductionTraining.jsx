@@ -23,14 +23,21 @@ import {
   TableRow,
   Paper,
   Rating,
+<<<<<<< HEAD
+  TextField
+=======
   TextField,
   Popover,
   Badge
+>>>>>>> origin/main
 } from '@mui/material';
 import {
   IconRefresh,
   IconPlayerPlay,
   IconCheck,
+<<<<<<< HEAD
+  IconClipboardCheck
+=======
   IconClipboardCheck,
   IconInfoCircle,
   IconPaperclip,
@@ -38,6 +45,7 @@ import {
   IconTrash,
   IconExternalLink,
   IconEye
+>>>>>>> origin/main
 } from '@tabler/icons-react';
 
 // BOS Components
@@ -63,7 +71,11 @@ const columns = [
   {
     id: 'currentStatus',
     label: 'Current Status',
+<<<<<<< HEAD
+    minWidth: 140,
+=======
     minWidth: 170, // Increased slightly to accommodate progress text cleanly
+>>>>>>> origin/main
     render: (row) => {
       const colors = {
         'PENDING': 'warning',
@@ -73,6 +85,11 @@ const columns = [
         'REJECTED': 'error',
         'RESCHEDULE': 'secondary'
       };
+<<<<<<< HEAD
+      return (
+        <Chip
+          label={row.currentStatus}
+=======
       
       let statusLabel = row.currentStatus;
       if (row.currentStatus === 'TRAINING STARTED') {
@@ -101,6 +118,7 @@ const columns = [
       return (
         <Chip
           label={statusLabel}
+>>>>>>> origin/main
           size="small"
           color={colors[row.currentStatus] || 'default'}
           sx={{ fontWeight: 700, borderRadius: '6px' }}
@@ -112,6 +130,9 @@ const columns = [
     id: 'averageRating',
     label: 'Rating',
     minWidth: 100,
+<<<<<<< HEAD
+    render: (row) => row.averageRating ? `${row.averageRating.toFixed(1)}/5` : '-'
+=======
     align: 'center',
     render: (row) => {
       const rating = row.averageRating;
@@ -143,11 +164,22 @@ const columns = [
         </Box>
       );
     }
+>>>>>>> origin/main
   },
   {
     id: 'inductionStatus',
     label: 'Induction Status',
     minWidth: 120,
+<<<<<<< HEAD
+    render: (row) => (
+      <Chip
+        label={row.inductionStatus}
+        variant="outlined"
+        size="small"
+        color={row.inductionStatus === 'ACTIVE' ? 'success' : 'error'}
+      />
+    )
+=======
     render: (row) => {
       const status = row.inductionStatus;
       let chipColor = 'default';
@@ -165,6 +197,7 @@ const columns = [
         />
       );
     }
+>>>>>>> origin/main
   }
 ];
 
@@ -190,6 +223,8 @@ export default function InductionTraining() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchText, setSearchText] = useState('');
 
+<<<<<<< HEAD
+=======
   const [attachmentAnchor, setAttachmentAnchor] = useState(null);
   const [activeAttachments, setActiveAttachments] = useState([]);
 
@@ -216,6 +251,7 @@ export default function InductionTraining() {
     setActiveAnswer('');
   };
 
+>>>>>>> origin/main
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
@@ -240,7 +276,10 @@ export default function InductionTraining() {
       if (row.currentStatus === 'PENDING' || row.currentStatus === 'RESCHEDULE') {
         await axios.post(`/api/hr/induction-training/${row.id}/start`);
         dispatch(openSnackbar({ open: true, message: 'Training session started!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+<<<<<<< HEAD
+=======
         await fetchRows();
+>>>>>>> origin/main
       }
 
       // Load training detail items
@@ -248,12 +287,21 @@ export default function InductionTraining() {
       setTrainingDetails(data || []);
       setDialogOpen(true);
     } catch (error) {
+<<<<<<< HEAD
+      const msg = error.response?.data || 'Failed to start training';
+      dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
+    } finally {
+      setLoading(false);
+    }
+  }, [dispatch]);
+=======
       const msg = typeof error === 'string' ? error : (error?.message || 'Failed to start training');
       dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
     } finally {
       setLoading(false);
     }
   }, [dispatch, fetchRows]);
+>>>>>>> origin/main
 
   // Update a detail item locally
   const updateDetail = (detailId, field, value) => {
@@ -262,6 +310,36 @@ export default function InductionTraining() {
     );
   };
 
+<<<<<<< HEAD
+  // Save progress
+  const handleSaveProgress = async () => {
+    setSaving(true);
+    try {
+      await axios.put(`/api/hr/induction-training/${selectedAssignment.id}/details`, trainingDetails);
+      dispatch(openSnackbar({ open: true, message: 'Training progress saved', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+    } catch (error) {
+      const msg = error.response?.data || 'Failed to save progress';
+      dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Complete training
+  const handleCompleteTraining = async () => {
+    setSaving(true);
+    try {
+      // Save progress first
+      await axios.put(`/api/hr/induction-training/${selectedAssignment.id}/details`, trainingDetails);
+      // Then complete
+      await axios.post(`/api/hr/induction-training/${selectedAssignment.id}/complete`);
+      dispatch(openSnackbar({ open: true, message: 'Induction Training Given Successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+      setDialogOpen(false);
+      fetchRows();
+    } catch (error) {
+      const msg = error.response?.data || 'Failed to complete training';
+      dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
+=======
   // Save progress & complete level
   const handleSaveProgress = async () => {
     setSaving(true);
@@ -296,6 +374,7 @@ export default function InductionTraining() {
     } catch (error) {
       const msg = typeof error === 'string' ? error : (error?.message || 'Failed to save progress');
       dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
+>>>>>>> origin/main
     } finally {
       setSaving(false);
     }
@@ -409,7 +488,23 @@ export default function InductionTraining() {
         fullWidth
         maxWidth="xl"
         onSave={handleSaveProgress}
+<<<<<<< HEAD
+        saveLabel="Save Progress"
+        extraActions={
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleCompleteTraining}
+            disabled={saving || completedCount < totalCount}
+            startIcon={<IconCheck size={18} />}
+            sx={{ fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
+          >
+            Complete Training ({completedCount}/{totalCount})
+          </Button>
+        }
+=======
         saveLabel={completedCount === totalCount && totalCount > 0 ? "Complete Level" : "Save Progress"}
+>>>>>>> origin/main
       >
         {selectedAssignment && (
           <>
@@ -443,6 +538,14 @@ export default function InductionTraining() {
                 <Table size="small">
                   <TableHead>
                     <TableRow sx={{ bgcolor: 'primary.light' }}>
+<<<<<<< HEAD
+                      <TableCell sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
+                      <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Induction Details</TableCell>
+                      <TableCell sx={{ fontWeight: 700, minWidth: 150 }}>Expected Answer</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 140 }}>Trainer Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, width: 160 }}>Skill Rating</TableCell>
+                      <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Trainer Comments</TableCell>
+=======
                       <TableCell sx={{ fontWeight: 700, width: 60 }}>Sl.No</TableCell>
                       <TableCell sx={{ fontWeight: 700, minWidth: 220 }}>Induction Details</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 80, textAlign: 'center' }}>Answer</TableCell>
@@ -451,6 +554,7 @@ export default function InductionTraining() {
                       <TableCell sx={{ fontWeight: 700, width: 170 }}>Skill Matrix</TableCell>
                       <TableCell sx={{ fontWeight: 700, minWidth: 180 }}>Comments</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 160 }}>Attachment</TableCell>
+>>>>>>> origin/main
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -459,15 +563,26 @@ export default function InductionTraining() {
                         bgcolor: detail.trainerStatus === 'COMPLETED' ? 'success.lighter' : 'inherit',
                         '&:hover': { bgcolor: 'action.hover' }
                       }}>
+<<<<<<< HEAD
+                        <TableCell>{idx + 1}</TableCell>
+=======
                         {/* Sl.No */}
                         <TableCell>{idx + 1}</TableCell>
 
                         {/* Induction Details */}
+>>>>>>> origin/main
                         <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
                             {detail.inductionDetails || '-'}
                           </Typography>
                         </TableCell>
+<<<<<<< HEAD
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {detail.answer || '-'}
+                          </Typography>
+                        </TableCell>
+=======
 
                         {/* Answer Icon (Eye Icon with expected answer details in Tooltip & Popover on click) */}
                         <TableCell align="center">
@@ -501,6 +616,7 @@ export default function InductionTraining() {
                         </TableCell>
 
                         {/* Trainer Status (PENDING/COMPLETED) */}
+>>>>>>> origin/main
                         <TableCell>
                           <TextField
                             select
@@ -508,12 +624,31 @@ export default function InductionTraining() {
                             value={detail.trainerStatus || 'PENDING'}
                             onChange={(e) => updateDetail(detail.id, 'trainerStatus', e.target.value)}
                             fullWidth
+<<<<<<< HEAD
+                            sx={{ minWidth: 120 }}
+=======
                             sx={{ minWidth: 110 }}
+>>>>>>> origin/main
                           >
                             <MenuItem value="PENDING">PENDING</MenuItem>
                             <MenuItem value="COMPLETED">COMPLETED</MenuItem>
                           </TextField>
                         </TableCell>
+<<<<<<< HEAD
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Rating
+                              value={detail.skillRating || 0}
+                              onChange={(e, newValue) => updateDetail(detail.id, 'skillRating', newValue)}
+                              size="small"
+                              max={5}
+                            />
+                            <Typography variant="caption" color="text.secondary">
+                              {detail.skillRating ? SKILL_LABELS[detail.skillRating] : ''}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+=======
 
                         {/* Skill Matrix (BASIC LEVEL, ADVANCE LEVEL, EXPERT) */}
                         <TableCell>
@@ -533,6 +668,7 @@ export default function InductionTraining() {
                         </TableCell>
 
                         {/* Comments */}
+>>>>>>> origin/main
                         <TableCell>
                           <TextField
                             size="small"
@@ -544,6 +680,8 @@ export default function InductionTraining() {
                             fullWidth
                           />
                         </TableCell>
+<<<<<<< HEAD
+=======
 
                         {/* Attachment (Eye/Paperclip Icon with Popover for Multi-File Viewing) */}
                         <TableCell align="center">
@@ -588,11 +726,16 @@ export default function InductionTraining() {
                             '-'
                           )}
                         </TableCell>
+>>>>>>> origin/main
                       </TableRow>
                     ))}
                     {trainingDetails.length === 0 && (
                       <TableRow>
+<<<<<<< HEAD
+                        <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+=======
                         <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+>>>>>>> origin/main
                           <Typography color="text.secondary">No criteria items loaded. Click "Start Training" first.</Typography>
                         </TableCell>
                       </TableRow>
@@ -604,6 +747,8 @@ export default function InductionTraining() {
           </>
         )}
       </BOSFormDialog>
+<<<<<<< HEAD
+=======
 
       {/* Attachments Viewer Popover */}
       <Popover
@@ -717,6 +862,7 @@ export default function InductionTraining() {
           {activeAnswer}
         </Typography>
       </Popover>
+>>>>>>> origin/main
     </MainCard>
   );
 }
