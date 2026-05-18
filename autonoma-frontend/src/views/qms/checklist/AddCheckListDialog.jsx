@@ -305,6 +305,39 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     }
   }, [open, initialData]);
 
+  // Automatically calculate Reminder Days when Expiry Date or Reminder Date changes
+  useEffect(() => {
+    if (expiryDate && reminderDate) {
+      const exp = new Date(expiryDate);
+      const rem = new Date(reminderDate);
+      
+      // Clear time components to get exact day difference
+      exp.setHours(0, 0, 0, 0);
+      rem.setHours(0, 0, 0, 0);
+      
+      const diffTime = exp.getTime() - rem.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      if (!isNaN(diffDays)) {
+        setReminderDays(diffDays >= 0 ? String(diffDays) : '0');
+      }
+    }
+  }, [expiryDate, reminderDate]);
+
+  // Automatically calculate Reminder Date when user manually updates Reminder Days
+  const handleReminderDaysChange = (val) => {
+    setReminderDays(val);
+    if (expiryDate && val && !isNaN(Number(val))) {
+      const exp = new Date(expiryDate);
+      exp.setHours(0, 0, 0, 0);
+      exp.setDate(exp.getDate() - Number(val));
+      
+      const yyyy = exp.getFullYear();
+      const mm = String(exp.getMonth() + 1).padStart(2, '0');
+      const dd = String(exp.getDate()).padStart(2, '0');
+      setReminderDate(`${yyyy}-${mm}-${dd}`);
+    }
+  };
+
   const handleFileUpload = (e) => {
     if (e.target.files?.length) setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)]);
   };
@@ -436,7 +469,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
               </LabelInput>
               <LabelInput label="Reminder Days">
-                <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => setReminderDays(e.target.value)} />
+                <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => handleReminderDaysChange(e.target.value)} />
               </LabelInput>
               <LabelInput label="Reminder Date">
                 <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
