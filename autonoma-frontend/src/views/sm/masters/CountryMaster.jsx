@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
   DialogActions, TextField, MenuItem
@@ -22,6 +22,8 @@ const columns = [
 ];
 
 export default function CountryMaster() {
+  const dispatch = useDispatch();
+  const globalQuery = useSelector((state) => state.search.query);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -110,7 +112,7 @@ export default function CountryMaster() {
 
   const filteredRows = useMemo(() => {
     const q = (globalQuery || '').toLowerCase();
-    const sourceRows = resolvedRows || rows || []; // handle if resolvedRows exists (like SupplierList)
+    const sourceRows = rows || [];
     if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
     return sourceRows.filter(row =>
       (row.country && row.country.toString().toLowerCase().includes(q))

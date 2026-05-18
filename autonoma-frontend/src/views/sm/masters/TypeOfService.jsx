@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
   DialogActions, TextField, MenuItem
@@ -23,6 +23,8 @@ const columns = [
 ];
 
 export default function TypeOfService() {
+  const dispatch = useDispatch();
+  const globalQuery = useSelector((state) => state.search.query);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
