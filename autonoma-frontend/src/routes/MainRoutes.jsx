@@ -254,12 +254,16 @@ const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMa
 const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
 
 // npd routing
+const NpdItemGroupMaster = Loadable(lazy(() => import('views/npd/ItemGroup/ItemGroupMaster')));
 const NpdItemTypeMaster = Loadable(lazy(() => import('views/npd/ItemType/ItemTypeMaster')));
 const NpdItemSubtypeMaster = Loadable(lazy(() => import('views/npd/ItemSubtype/ItemSubtypeMaster')));
 const NpdOemMaster = Loadable(lazy(() => import('views/npd/Oem/OemMaster')));
 const NpdOemMappingMaster = Loadable(lazy(() => import('views/npd/OemMapping/OemMappingMaster')));
 const NpdModelMaster = Loadable(lazy(() => import('views/npd/Model/ModelMaster')));
 const NpdCapacityMaster = Loadable(lazy(() => import('views/npd/Capacity/CapacityMaster')));
+const NpdWindFarmMaster = Loadable(lazy(() => import('views/npd/WindFarm/WindFarmMaster')));
+const NpdModelNameMaster = Loadable(lazy(() => import('views/qms/ModelName/ModelNameMaster')));
+const NpdUomMaster = Loadable(lazy(() => import('views/qms/Uom/UomMaster')));
 
 // ==============================|| MAIN ROUTING ||============================== //
 
