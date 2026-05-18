@@ -89,3 +89,27 @@ To manually run scripts against your local SQL Server container:
 ## 🤝 4. Best Practices for Developers
 1. **Never edit an already pushed script.** If you need to make changes to a table that has already been created, create a new script with a new version number (e.g. `V14.7.1`) to append your changes.
 2. **Always test locally** before pushing to `main` to ensure there are no SQL syntax or mapping mismatches.
+
+---
+
+## 👥 5. Multi-Company & Multi-Team Concurrent Work Protocol
+
+Since multiple different development teams and companies (e.g. Nutech, Autonoma, and others) are co-developing this ERP repository, strict coordination is required to avoid git merge conflicts and database startup crashes.
+
+### 🔄 Rule 1: The "Pull-First" Protocol
+Before creating any database change script in your local feature branch, you **MUST**:
+1. Pull the latest `main` branch: `git checkout main && git pull`
+2. Check the `dbscripts/` folder to see the **highest version number** and **latest date prefix** checked in by other companies (e.g. if the highest version in `main` is `V18.1`, your new script should start at `V19.0` or `V18.2`).
+3. Rebase or merge `main` into your feature branch *before* staging your new script.
+
+### 🏷️ Rule 2: Suffix Namespaces for Concurrent Features
+If two companies are developing custom modifications concurrently, append a team-based identifier suffix to the script description to prevent git rename collisions:
+* **Example Team A (TIS)**: `20260518_V6.5__Hardening_Schema_Sync__TIS.sql`
+* **Example Team B (Default)**: `20260518_V6.5__Hardening_Schema_Sync.sql`
+* The custom backward-compatibility runner handles these suffixes cleanly without colliding!
+
+### 💥 Rule 3: Zero Toleration for Raw DDL Commands
+When another team pulls your code, their local Spring Boot server automatically attempts to execute your new SQL scripts. 
+* **If you write a raw, unprotected command** (like `ALTER TABLE ADD column_name INT;`), and their database already has that column, **their backend server will crash on startup.**
+* **CRITICAL REQUIREMENT**: Every table creation, column addition, database index, foreign key, or data insertion must be wrapped in `IF NOT EXISTS` guards (refer to **Section 2**).
+
