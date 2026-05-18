@@ -319,7 +319,6 @@ export default function SupplierMaster() {
                 <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" /></R>
                 <R lg={6} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
               </Grid>
-              </Grid>
             </Grid>
           </Grid>
         </BOSFormSection>
