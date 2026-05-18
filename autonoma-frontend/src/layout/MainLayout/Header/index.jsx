@@ -1,4 +1,4 @@
-import { Activity } from 'react';
+import { useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -24,7 +24,7 @@ import useConfig from 'hooks/useConfig';
 // assets
 import { IconMenu2, IconCalculator } from '@tabler/icons-react';
 import WeightCalculator from 'ui-component/WeightCalculator';
-import { useState } from 'react';
+import SessionInfoBadge from 'ui-component/SessionInfoBadge';
 
 // ==============================|| MAIN NAVBAR / HEADER ||============================== //
 
@@ -47,8 +47,7 @@ export default function Header() {
         <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
           <LogoSection />
         </Box>
-        <Activity mode={!isHorizontal ? 'visible' : 'hidden'}>
-          <Avatar
+        <Avatar
             variant="rounded"
             sx={{
               ...theme.typography.commonAvatar,
@@ -74,13 +73,13 @@ export default function Header() {
           >
             <IconMenu2 stroke={1.5} size="20px" />
           </Avatar>
-        </Activity>
       </Box>
 
-      {/* Global Header Search */}
-      <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', px: 2 }}>
+      {/* Global Header Search + Session Context */}
+      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2, gap: 1.5 }}>
         <SearchSection />
         <VoiceAssistant />
+        <SessionInfoBadge />
       </Box>
 
       {/* mega-menu */}
