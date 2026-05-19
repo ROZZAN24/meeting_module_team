@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 // material-ui
 import {
@@ -21,7 +21,16 @@ import {
   useTheme,
   Tooltip,
   Snackbar,
-  Alert
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  Divider,
+  Tabs,
+  Tab,
+  CircularProgress
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
@@ -33,6 +42,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
+import { exportToExcel } from 'utils/excelExport';
+import { getUserImageUrl } from 'utils/upload-helper';
+import BOSDataTable from 'ui-component/bos/BOSDataTable';
 
 // assets
 import HistoryIcon from '@mui/icons-material/History';
@@ -43,6 +55,7 @@ import FilePresentIcon from '@mui/icons-material/FilePresent';
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 import TableViewIcon from '@mui/icons-material/TableView';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CloseIcon from '@mui/icons-material/Close';
 
 // ==============================|| MINI CHART CARD ||============================== //
 
@@ -109,6 +122,13 @@ const FileTraceabilityHub = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
+  // Preview States
+  const [selectedPreviewLog, setSelectedPreviewLog] = useState(null);
+  const [previewData, setPreviewData] = useState(null);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewTab, setPreviewTab] = useState(0);
+
   useEffect(() => {
     const traceFilterConfig = [
       { id: 'pageName', label: 'Page Name', type: 'text', isStarred: true },
@@ -139,12 +159,141 @@ const FileTraceabilityHub = () => {
     }
   };
 
+  const handlePreviewClick = async (log) => {
+    setSelectedPreviewLog(log);
+    setPreviewTab(log.reportName?.toLowerCase().endsWith('.pdf') ? 1 : 0);
+
+    if (!log.filePath) {
+      setPreviewData(null);
+      setPreviewDialogOpen(true);
+      return;
+    }
+
+    try {
+      setPreviewLoading(true);
+      const res = await axios.get(`/api/files/view?path=${encodeURIComponent(log.filePath)}`);
+      setPreviewData(res.data);
+      setPreviewDialogOpen(true);
+    } catch (err) {
+      console.error("Failed to load report preview data:", err);
+      setSnackbar({ open: true, message: 'Could not load report preview data from server.', severity: 'error' });
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handlePrintPDF = () => {
+    try {
+      if (!previewData) return;
+
+      let iframe = document.getElementById('pdf-print-iframe');
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.id = 'pdf-print-iframe';
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
+      }
+
+      const timestamp = new Date(previewData.timestamp || selectedPreviewLog.createdAt).toLocaleString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+
+      const columnsHtml = (previewData.columns || []).map(col => `
+        <th style="padding: 10px 8px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 2px solid #ddd; background-color: #673ab7; color: white;">
+          ${col.header || col.label || col.id}
+        </th>
+      `).join('');
+
+      const rowsHtml = (previewData.data || []).map((row, idx) => `
+        <tr style="border-bottom: 1px solid #eee; background-color: ${idx % 2 === 0 ? 'transparent' : '#fafafa'};">
+          ${(previewData.columns || []).map(col => `
+            <td style="padding: 10px 8px; font-size: 10px; color: #444;">
+              ${row[col.header || col.id] || '-'}
+            </td>
+          `).join('')}
+        </tr>
+      `).join('');
+
+      const iframeDoc = iframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(`
+        <html>
+          <head>
+            <title>${previewData.filename || 'export'}</title>
+            <style>
+              body { font-family: 'Inter', 'Roboto', sans-serif; margin: 0; padding: 20px; }
+              .header-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; border-bottom: 3px solid #673ab7; padding-bottom: 15px; }
+              .summary-box { background-color: #f9f9f9; padding: 15px; border-left: 4px solid #673ab7; border-radius: 4px; margin-bottom: 25px; }
+              .data-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+              .footer { border-top: 1px solid #eee; padding-top: 15px; text-align: center; color: #aaa; font-size: 10px; margin-top: 50px; }
+              @media print {
+                body { padding: 0; }
+              }
+            </style>
+          </head>
+          <body>
+            <table class="header-table">
+              <tr>
+                <td style="vertical-align: top;">
+                  <h1 style="margin: 0; color: #673ab7; font-size: 28px; font-weight: 900; letter-spacing: -1px;">AUTONOMA</h1>
+                  <span style="font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1px;">Business Operating System</span>
+                </td>
+                <td style="text-align: right; vertical-align: top;">
+                  <h3 style="margin: 0; font-size: 18px; color: #333;">${(previewData.filename || '').replace(/_/g, ' ')}</h3>
+                  <div style="font-size: 11px; color: #666; margin-top: 5px;">
+                    Generated By: ${selectedPreviewLog.creatorName || selectedPreviewLog.createdBy || 'System User'}<br>
+                    Date: ${timestamp}
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <div class="summary-box">
+              <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #333;">Report Summary</h4>
+              <span style="font-size: 11px; color: #666;">This document contains ${previewData.data.length} verified records from the Autonoma ERP database.</span>
+            </div>
+
+            <table class="data-table">
+              <thead>
+                <tr>${columnsHtml}</tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+
+            <div class="footer">
+              Confidential Report | © ${new Date().getFullYear()} Autonoma ERP
+            </div>
+          </body>
+        </html>
+      `);
+      iframeDoc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }, 500);
+    } catch (error) {
+      console.error("PDF download/print failed:", error);
+      setSnackbar({ open: true, message: 'PDF print failed: ' + error.message, severity: 'error' });
+    }
+  };
+
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   // Filtering Logic
   const filteredLogs = logs.filter((log) => {
     const matchesSearch = !globalSearch ||
       (log.pageName && log.pageName.toLowerCase().includes(globalSearch.toLowerCase())) ||
+      (log.page?.pageCode && log.page.pageCode.toLowerCase().includes(globalSearch.toLowerCase())) ||
+      (log.pageCode && log.pageCode.toLowerCase().includes(globalSearch.toLowerCase())) ||
       (log.reportName && log.reportName.toLowerCase().includes(globalSearch.toLowerCase())) ||
       (log.createdBy && log.createdBy.toLowerCase().includes(globalSearch.toLowerCase()));
 
@@ -282,11 +431,9 @@ const FileTraceabilityHub = () => {
                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.dark' }}>
                           {log.pageName || 'Unknown Page'}
                         </Typography>
-                        {(log.pageId || log.page?.pageId) && (
-                          <Typography variant="caption" color="textSecondary">
-                            Page ID: {log.pageId || log.page?.pageId}
-                          </Typography>
-                        )}
+                        <Typography variant="caption" color="textSecondary">
+                          Page Code: {log.page?.pageCode || log.pageCode || 'N/A'}
+                        </Typography>
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -295,7 +442,17 @@ const FileTraceabilityHub = () => {
                           {getFileIcon(log.reportName)}
                         </Avatar>
                         <Box>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: 700,
+                              color: 'primary.main',
+                              cursor: 'pointer',
+                              textDecoration: 'underline',
+                              '&:hover': { color: 'primary.dark' }
+                            }}
+                            onClick={() => handlePreviewClick(log)}
+                          >
                             {log.reportName || 'export_document'}
                           </Typography>
                         </Box>
@@ -303,11 +460,14 @@ const FileTraceabilityHub = () => {
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar sx={{ width: 28, height: 28, bgcolor: theme.palette.secondary.main, fontSize: '0.8rem' }}>
-                          {log.createdBy ? log.createdBy.charAt(0).toUpperCase() : 'U'}
+                        <Avatar
+                          src={log.creatorImg ? getUserImageUrl(log.creatorImg) : undefined}
+                          sx={{ width: 28, height: 28, bgcolor: theme.palette.secondary.main, fontSize: '0.8rem' }}
+                        >
+                          {!log.creatorImg && (log.creatorName || log.createdBy || 'U').charAt(0).toUpperCase()}
                         </Avatar>
                         <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                          {log.createdBy || 'System User'}
+                          {log.creatorName || log.createdBy || 'System User'}
                         </Typography>
                       </Stack>
                     </TableCell>
@@ -355,6 +515,219 @@ const FileTraceabilityHub = () => {
           />
         </Box>
       </MainCard>
+
+      {/* ── PREVIEW LOADING BACKDROP ── */}
+      {previewLoading && (
+        <Dialog open={true} PaperProps={{ sx: { bgcolor: 'transparent', boxShadow: 'none' } }}>
+          <CircularProgress color="primary" size={60} />
+        </Dialog>
+      )}
+
+      {/* ── REPORT PREVIEW DIALOG ── */}
+      {previewDialogOpen && selectedPreviewLog && (
+        <Dialog
+          open={previewDialogOpen}
+          onClose={() => setPreviewDialogOpen(false)}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: '16px', overflow: 'hidden', height: '90vh' } }}
+        >
+          <DialogTitle sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'primary.light' }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Avatar sx={{ bgcolor: 'primary.main', width: 34, height: 34 }}>
+                {selectedPreviewLog.reportName?.toLowerCase().endsWith('.pdf') ? <PictureAsPdfIcon /> : <TableViewIcon />}
+              </Avatar>
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                  Preview: {selectedPreviewLog.reportName}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  Exported By: {selectedPreviewLog.creatorName || selectedPreviewLog.createdBy} | Code: {selectedPreviewLog.page?.pageCode || selectedPreviewLog.pageCode || 'N/A'}
+                </Typography>
+              </Box>
+            </Stack>
+            <IconButton onClick={() => setPreviewDialogOpen(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+
+          {previewData && (
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+              <Tabs value={previewTab} onChange={(e, val) => setPreviewTab(val)} aria-label="preview tabs">
+                <Tab label="Excel View" icon={<TableViewIcon fontSize="small" />} iconPosition="start" disabled={!selectedPreviewLog.reportName?.toLowerCase().endsWith('.xls') && !selectedPreviewLog.reportName?.toLowerCase().endsWith('.xlsx') && previewTab !== 0} />
+                <Tab label="PDF View" icon={<PictureAsPdfIcon fontSize="small" />} iconPosition="start" disabled={!selectedPreviewLog.reportName?.toLowerCase().endsWith('.pdf') && previewTab !== 1} />
+              </Tabs>
+            </Box>
+          )}
+
+          <DialogContent sx={{ p: 0, bgcolor: 'grey.50', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            {!previewData ? (
+              <Box sx={{ p: 6, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', bgcolor: 'background.paper' }}>
+                <Avatar
+                  sx={{
+                    bgcolor: theme.palette.warning.light,
+                    color: theme.palette.warning.dark,
+                    width: 70,
+                    height: 70,
+                    mb: 3,
+                    fontSize: '2rem'
+                  }}
+                >
+                  ⚠️
+                </Avatar>
+                <Typography variant="h3" gutterBottom sx={{ fontWeight: 800 }}>
+                  Preview Not Available
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mb: 4, lineHeight: 1.6 }}>
+                  This report log was created before file storage tracking was enabled. Live preview and recovery downloads are only supported for reports exported after this update.
+                </Typography>
+                <Typography variant="caption" sx={{ px: 2, py: 1, bgcolor: 'grey.100', borderRadius: '8px', color: 'text.secondary', fontWeight: 600 }}>
+                  Log Row ID: #{selectedPreviewLog.rowId} | File: {selectedPreviewLog.reportName}
+                </Typography>
+              </Box>
+            ) : previewTab === 0 ? (
+              // Excel preview
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+                <Box sx={{ p: 1, bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', gap: 1, alignItems: 'center' }}>
+                  <Typography variant="caption" sx={{ px: 1, py: 0.5, bgcolor: 'success.main', color: 'white', borderRadius: '4px', fontWeight: 800 }}>
+                    EXCEL WORKBOOK
+                  </Typography>
+                  <Divider orientation="vertical" flexItem />
+                  <Typography variant="caption" color="textSecondary">
+                    Sheet1 ({previewData.data?.length || 0} rows)
+                  </Typography>
+                </Box>
+                <Box sx={{ flexGrow: 1, height: 'calc(90vh - 180px)', overflow: 'auto' }}>
+                  <BOSDataTable
+                    rows={previewData.data || []}
+                    columns={previewData.columns ? previewData.columns.map(c => ({ id: c.header || c.id, label: c.header || c.label })) : []}
+                    checkboxSelection={false}
+                    disableSelectionOnClick
+                    showSearch={false}
+                    showFilters={false}
+                  />
+                </Box>
+              </Box>
+            ) : (
+              // PDF / Document preview
+              <Box sx={{ flexGrow: 1, overflow: 'auto', p: 4, display: 'flex', justifyContent: 'center', height: 'calc(90vh - 180px)' }}>
+                <Paper sx={{
+                  width: '210mm',
+                  minHeight: '297mm',
+                  p: '20mm',
+                  bgcolor: 'white',
+                  boxShadow: '0 4px 24px rgba(0,0,0,0.1)',
+                  fontFamily: theme.typography.fontFamily,
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}>
+                  <Stack direction="row" justifyContent="space-between" sx={{ mb: 4, borderBottom: '3px solid', borderColor: 'primary.main', pb: 2 }}>
+                    <Box>
+                      <Typography variant="h2" sx={{ color: 'primary.main', fontWeight: 900, fontSize: '2rem', letterSpacing: -1 }}>
+                        AUTONOMA
+                      </Typography>
+                      <span style={{ fontSize: '10px', fontWeight: 700, color: '#666', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                        Business Operating System
+                      </span>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="h3" sx={{ color: 'text.primary', fontWeight: 700 }}>
+                        {selectedPreviewLog.reportName?.replace(/_/g, ' ').replace(/\.[^/.]+$/, '')}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Generated: {new Date(previewData.timestamp || selectedPreviewLog.createdAt).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </Typography>
+                    </Box>
+                  </Stack>
+
+                  <Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.main, 0.04), borderLeft: '4px solid', borderColor: 'primary.main', borderRadius: '4px', mb: 3 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.8rem' }}>
+                      Report Summary
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      This document contains {previewData.data?.length || 0} verified records from the Autonoma ERP database.
+                    </Typography>
+                  </Box>
+
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: theme.palette.primary.main, color: 'white' }}>
+                        {previewData.columns?.map(col => (
+                          <th key={col.header || col.id} style={{ padding: '8px 6px', textAlign: 'left', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase' }}>
+                            {col.header || col.label}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {previewData.data?.slice(0, 15).map((row, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid #eee', backgroundColor: idx % 2 === 0 ? 'transparent' : '#fafafa' }}>
+                          {previewData.columns?.map(col => (
+                            <td key={col.header || col.id} style={{ padding: '8px 6px', fontSize: '10px', color: '#444' }}>
+                              {row[col.header || col.id]}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {previewData.data?.length > 15 && (
+                    <Box sx={{ p: 1.5, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '4px', mb: 2 }}>
+                      <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                        [... {previewData.data.length - 15} additional records omitted from preview ...]
+                      </Typography>
+                    </Box>
+                  )}
+
+                  <Box sx={{ mt: 'auto', pt: 2, borderTop: '1px solid #eee', textAlign: 'center' }}>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', display: 'block' }}>
+                      Confidential Report | © {new Date().getFullYear()} Autonoma ERP
+                    </Typography>
+                  </Box>
+                </Paper>
+              </Box>
+            )}
+          </DialogContent>
+
+          <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.paper', justifyContent: 'flex-end', gap: 1.5 }}>
+            <Button onClick={() => setPreviewDialogOpen(false)} variant="outlined" color="secondary" sx={{ textTransform: 'none', borderRadius: '8px' }}>
+              Close Preview
+            </Button>
+            
+            {previewData && (
+              previewTab === 0 ? (
+                <Button
+                  onClick={() => {
+                    try {
+                      exportToExcel(previewData.data, previewData.filename || 'export', { userName: selectedPreviewLog.creatorName || selectedPreviewLog.createdBy });
+                    } catch (error) {
+                      console.error("Excel export failed:", error);
+                      setSnackbar({ open: true, message: 'Excel export failed: ' + error.message, severity: 'error' });
+                    }
+                  }}
+                  variant="contained"
+                  color="success"
+                  startIcon={<TableViewIcon />}
+                  sx={{ textTransform: 'none', borderRadius: '8px', color: 'white', '&:hover': { bgcolor: 'success.dark' } }}
+                >
+                  Download Excel
+                </Button>
+              ) : (
+                <Button
+                  onClick={handlePrintPDF}
+                  variant="contained"
+                  color="error"
+                  startIcon={<PictureAsPdfIcon />}
+                  sx={{ textTransform: 'none', borderRadius: '8px', '&:hover': { bgcolor: 'error.dark' } }}
+                >
+                  Download / Print PDF
+                </Button>
+              )
+            )}
+          </DialogActions>
+        </Dialog>
+      )}
 
       {/* ── NOTIFICATION SNACKBAR ── */}
       <Snackbar

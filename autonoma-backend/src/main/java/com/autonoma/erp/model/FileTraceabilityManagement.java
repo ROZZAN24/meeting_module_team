@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.Date;
 import com.autonoma.erp.model.admin.BosPage;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "file_traceability_management")
@@ -24,11 +25,25 @@ public class FileTraceabilityManagement {
     @Column(name = "page_id")
     private Integer pageId;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "page_id", insertable = false, updatable = false)
+    @JsonIgnoreProperties({"module", "subModule", "hibernateLazyInitializer", "handler"})
+    private BosPage page;
+
     @Column(name = "page_name", length = 200)
     private String pageName;
 
     @Column(name = "report_name", length = 200)
     private String reportName;
+
+    @Column(name = "file_path", length = 500)
+    private String filePath;
+
+    @Transient
+    private String creatorName;
+
+    @Transient
+    private String creatorImg;
 
     @Column(name = "created_by", nullable = false, length = 100)
     private String createdBy;
