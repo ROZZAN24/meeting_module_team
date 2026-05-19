@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,7 @@ public class DivisionController {
     // ── Create ────────────────────────────────────────────────────────────────
     @Operation(summary = "Create a new division — division_code (BIGINT) is auto-assigned by the server")
     @PostMapping
+    @RequirePagePermission(pageCode = "AD1120", action = "write")
     public ResponseEntity<Division> create(@RequestBody Division division) {
         return ResponseEntity.ok(divisionService.createDivision(division));
     }
@@ -59,6 +61,7 @@ public class DivisionController {
     // ── Update ────────────────────────────────────────────────────────────────
     @Operation(summary = "Update an existing division")
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "AD1120", action = "write")
     public ResponseEntity<Division> update(@PathVariable Long id, @RequestBody Division details) {
         return divisionService.updateDivision(id, details)
                 .map(ResponseEntity::ok)
@@ -68,6 +71,7 @@ public class DivisionController {
     // ── Delete ────────────────────────────────────────────────────────────────
     @Operation(summary = "Delete a division by ID")
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "AD1120", action = "delete")
     public ResponseEntity<Map<String, String>> delete(@PathVariable Long id) {
         return divisionService.findById(id)
                 .map(d -> {

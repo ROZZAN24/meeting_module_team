@@ -7,6 +7,7 @@ import com.autonoma.erp.repository.ProductOemRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,7 @@ public class ProductModelController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M3160", action = "write")
     public ResponseEntity<?> createModel(@RequestBody ProductModel model) {
         try {
             if (model.getModelNo() == null || model.getModelNo().trim().isEmpty()) {
@@ -73,6 +75,7 @@ public class ProductModelController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3160", action = "write")
     public ResponseEntity<?> updateModel(@PathVariable Long id, @RequestBody ProductModel model) {
         try {
             if (!modelRepository.existsById(id)) {
@@ -109,6 +112,7 @@ public class ProductModelController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3160", action = "delete")
     public ResponseEntity<?> deleteModel(@PathVariable Long id) {
         try {
             if (!modelRepository.existsById(id)) {

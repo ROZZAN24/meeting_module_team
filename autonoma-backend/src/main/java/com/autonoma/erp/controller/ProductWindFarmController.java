@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.ProductWindFarmRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class ProductWindFarmController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M3210", action = "write")
     public ResponseEntity<?> createWindFarm(@RequestBody ProductWindFarm windFarm) {
         try {
             if (windFarm.getWindFarmName() == null || windFarm.getWindFarmName().trim().isEmpty()) {
@@ -69,6 +71,7 @@ public class ProductWindFarmController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3210", action = "write")
     public ResponseEntity<?> updateWindFarm(@PathVariable Long id, @RequestBody ProductWindFarm windFarm) {
         try {
             if (!repository.existsById(id)) {
@@ -106,6 +109,7 @@ public class ProductWindFarmController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3210", action = "delete")
     public ResponseEntity<?> deleteWindFarm(@PathVariable Long id) {
         try {
             if (!repository.existsById(id)) {

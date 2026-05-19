@@ -7,6 +7,7 @@ import com.autonoma.erp.util.AuthHelper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.security.Principal;
 import java.util.List;
@@ -54,6 +55,7 @@ public class InductionTraineeController {
      * Submit trainee responses (UNDERSTOOD / NEED MORE TRAINING).
      */
     @PutMapping("/{assignmentId}/respond")
+    @RequirePagePermission(pageCode = "HRA_IND_03", action = "write")
     public ResponseEntity<?> submitResponses(
             @PathVariable Long assignmentId,
             @RequestBody List<InductionTrainingDetail> responses,

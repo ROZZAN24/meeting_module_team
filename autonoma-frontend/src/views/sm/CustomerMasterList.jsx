@@ -4,6 +4,7 @@ import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/m
 import { IconFileDownload, IconRefresh, IconUserPlus, IconMapPin } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -56,6 +57,7 @@ export default function CustomerMasterList() {
   const navigate = useNavigate();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.CRM_CUSTOMER);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -204,7 +206,7 @@ export default function CustomerMasterList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Customer_Master"
             columns={[
@@ -213,12 +215,12 @@ export default function CustomerMasterList() {
               { header: 'City', key: 'city' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Customer', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Customer', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -231,11 +233,11 @@ export default function CustomerMasterList() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
         onClickRow={handleRowClick}
         selectedRowId={selectedListRow?.id}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={null}
         footerActions={
           <Stack direction="row" spacing={1.5}>

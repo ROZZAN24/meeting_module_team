@@ -12,6 +12,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ReassignDialog from './ReassignDialog';
 
 const columns = [
@@ -41,6 +42,7 @@ export default function MomList() {
   const navigate = useNavigate();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_MOM);
   const lookups = useLookups(['DEPARTMENTS']);
 
   const [rows, setRows] = useState([]);
@@ -217,7 +219,7 @@ export default function MomList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Minutes_of_Meeting"
             columns={[
@@ -229,7 +231,7 @@ export default function MomList() {
               { header: 'Process', key: 'processType' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
           <Tooltip title="Reassign selected action">
             <Button
               variant="outlined"
@@ -242,11 +244,11 @@ export default function MomList() {
               Reassign
             </Button>
           </Tooltip>
-          <Tooltip title={shortcutTooltip('Create New MOM', 'Ctrl + N')}>
+          {perms.write && <Tooltip title={shortcutTooltip('Create New MOM', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -262,7 +264,7 @@ export default function MomList() {
         onClickRow={(row) => setSelectedRow(row)}
         selectedRowId={selectedRow?.id}
         onEditRow={handleEdit}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="mom-list-table"
       />

@@ -13,6 +13,7 @@ import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import WorkItemMasterDialog from './WorkItemMasterDialog';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'wiNo', label: 'WI NO', minWidth: 80, bold: true },
@@ -37,6 +38,7 @@ const columns = [
 ];
 
 export default function EnquiryDashboard() {
+  const perms = usePagePermissions(PAGE_CODES.SM_ENQUIRY_DASHBOARD);
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -202,7 +204,7 @@ export default function EnquiryDashboard() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Enquiry_Dashboard"
             columns={[
@@ -217,12 +219,12 @@ export default function EnquiryDashboard() {
               { header: 'Quote No', key: 'quoteNo' },
               { header: 'Mode', key: 'mode' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -235,9 +237,9 @@ export default function EnquiryDashboard() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
-        onDoubleClickRow={handleOpenEdit}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
       />
 
       <WorkItemMasterDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

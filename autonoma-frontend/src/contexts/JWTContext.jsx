@@ -7,6 +7,8 @@ import { jwtDecode } from 'jwt-decode';
 
 // reducer - state management
 import { LOGIN, LOGOUT } from 'store/actions';
+import { store } from 'store';
+import { clearPermissions } from 'store/slices/permissions';
 import accountReducer from 'store/accountReducer';
 
 // project imports
@@ -74,6 +76,7 @@ export function JWTProvider({ children }) {
     }
     setSession(null);
     dispatch({ type: LOGOUT });
+    store.dispatch(clearPermissions());
     setLogoutCountdown(null);
   };
 

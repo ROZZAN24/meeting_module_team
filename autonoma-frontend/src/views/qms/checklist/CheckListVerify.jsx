@@ -30,11 +30,13 @@ import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Seq No', 'Checking Point', 'Category', 'Frequency', 'Department',
   'Effective From', 'Days', 'Expire Date', 'Stock Link',
-  'Created Date', 'Created By', 'Verify Status', 'Verified By', 'Verified Date'
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE',
+  'Verify Status', 'Verified By', 'Verified Date'
 ];
 
 const DEPARTMENTS = [
@@ -63,8 +65,10 @@ const tableCols = [
   { id: 'days', label: 'Days' },
   { id: 'expireDate', label: 'Expire Date' },
   { id: 'stockLink', label: 'Stock Link' },
-  { id: 'createdDate', label: 'Created Date' },
-  { id: 'createdBy', label: 'Created By' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
   { id: 'verifiedDate', label: 'Verified Date' }
@@ -80,8 +84,10 @@ const exportColumns = [
   { header: 'Days', key: 'reminderDays' },
   { header: 'Expire Date', key: 'expiryDate' },
   { header: 'Stock Link', key: 'stockLink' },
-  { header: 'Created Date', key: 'createdDate' },
-  { header: 'Created By', key: 'createdBy' },
+  { header: 'CREATED USER', key: 'createdBy' },
+  { header: 'CREATED DATE', key: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : (r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: 'updatedBy' },
+  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '' },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
   { header: 'Verified Date', key: 'verifiedDate' }
@@ -173,6 +179,7 @@ export default function CheckListVerify() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_VERIFY);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ status:true, category:true, department:false, searchBy:false });
@@ -279,7 +286,7 @@ export default function CheckListVerify() {
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -320,79 +327,100 @@ export default function CheckListVerify() {
         </Box>
       )}
 
-      <TableContainer component={Paper} sx={{ height: 'calc(100vh - 240px)', border: '1px solid', borderColor: 'divider', borderRadius: 0, '&::-webkit-scrollbar': { width: 10, height: 10 }, '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 } }}>
-        <Table stickyHeader sx={{ minWidth: 1800 }} aria-label="checklist verify table">
-          <TableHead><TableRow>{columns.map((col, i) => <TableCell key={i} sx={{ bgcolor: 'primary.dark', color: 'white', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-            ) : rows.map((row, idx) => (
-              <TableRow
-                key={row.id}
-                hover
-                onClick={() => setSelectedRowId(row.id)}
-                onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                onMouseEnter={() => setShowDoubleTap(true)}
-                onMouseLeave={() => setShowDoubleTap(false)}
-                onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
-              >
-                <TableCell>{page * size + idx + 1}</TableCell>
-                <TableCell>{row.seqNo}</TableCell>
-                <TableCell>{row.checkingPoint}</TableCell>
-                <TableCell>{row.category}</TableCell>
-                <TableCell>{row.frequency}</TableCell>
-                <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell>{row.effectiveFrom}</TableCell>
-                <TableCell>{row.reminderDays}</TableCell>
-                <TableCell>{row.expiryDate}</TableCell>
-                <TableCell>{row.stockLink}</TableCell>
-                <TableCell>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell>{row.createdBy}</TableCell>
-                <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
-                <TableCell>{row.verifiedBy}</TableCell>
-                <TableCell>{row.verifiedDate}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 185px)' }}>
+        <TableContainer component={Paper} sx={{ flexGrow: 1, border: '1px solid', borderColor: 'divider', borderRadius: 0, '&::-webkit-scrollbar': { width: 10, height: 10 }, '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 } }}>
+          <Table stickyHeader sx={{ minWidth: 1800 }} aria-label="checklist verify table">
+            <TableHead><TableRow>{columns.map((col, i) => <TableCell key={i} sx={{ bgcolor: 'primary.dark', color: 'white', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
+                    <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <Typography variant="body1" color="textSecondary">Loading...</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
+                    <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <Typography variant="body1" color="textSecondary">
+                        {searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : rows.map((row, idx) => (
+                <TableRow
+                  key={row.id}
+                  hover
+                  onClick={() => setSelectedRowId(row.id)}
+                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
+                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onMouseLeave={() => setShowDoubleTap(false)}
+                  onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                >
+                  <TableCell>{page * size + idx + 1}</TableCell>
+                  <TableCell>{row.seqNo}</TableCell>
+                  <TableCell>{row.checkingPoint}</TableCell>
+                  <TableCell>{row.category}</TableCell>
+                  <TableCell>{row.frequency}</TableCell>
+                  <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
+                  <TableCell>{row.effectiveFrom}</TableCell>
+                  <TableCell>{row.reminderDays}</TableCell>
+                  <TableCell>{row.expiryDate}</TableCell>
+                  <TableCell>{row.stockLink}</TableCell>
+                  <TableCell>{row.createdBy || '-'}</TableCell>
+                  <TableCell>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : (row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{row.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
+                  <TableCell>{row.verifiedBy}</TableCell>
+                  <TableCell>{row.verifiedDate}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <TablePagination
-        component="div"
-        count={totalElements}
-        page={page}
-        onPageChange={(e, p) => setPage(p)}
-        rowsPerPage={size}
-        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        sx={{
-          '& .MuiTablePagination-toolbar': {
-            justifyContent: 'center',
-            flexWrap: 'nowrap',
+        <TablePagination
+          component="div"
+          count={totalElements}
+          page={page}
+          onPageChange={(e, p) => setPage(p)}
+          rowsPerPage={size}
+          onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          sx={{
             minHeight: '36px !important',
-            height: '36px',
-            p: '0px !important',
-            gap: 1
-          },
-          '& .MuiTablePagination-spacer': { display: 'none' },
-          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-            margin: 0,
-            fontSize: '0.75rem',
-            fontWeight: 500
-          },
-          '& .MuiTablePagination-select': {
-            py: '2px',
-            fontSize: '0.75rem',
-            fontWeight: 500
-          },
-          '& .MuiTablePagination-actions': {
-            margin: 0
-          }
-        }}
-      />
+            height: '36px !important',
+            overflow: 'hidden',
+            '& .MuiTablePagination-toolbar': {
+              justifyContent: 'center',
+              flexWrap: 'nowrap',
+              minHeight: '36px !important',
+              height: '36px',
+              p: '0px !important',
+              gap: 1
+            },
+            '& .MuiTablePagination-spacer': { display: 'none' },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              margin: 0,
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-select': {
+              py: '2px',
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-actions': {
+              margin: 0
+            }
+          }}
+        />
+      </Box>
 
 
       {/* FILTER DRAWER */}

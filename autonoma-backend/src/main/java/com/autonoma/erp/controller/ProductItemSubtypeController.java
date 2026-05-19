@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.ProductItemSubtypeRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 
@@ -36,6 +37,7 @@ public class ProductItemSubtypeController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M3130", action = "write")
     public ResponseEntity<?> createSubtype(@RequestBody ProductItemSubtype subtype) {
         try {
             if (subtype.getType() == null || subtype.getType().getId() == null) {
@@ -63,6 +65,7 @@ public class ProductItemSubtypeController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3130", action = "write")
     public ResponseEntity<?> updateSubtype(@PathVariable Long id, @RequestBody ProductItemSubtype subtype) {
         try {
             if (!subtypeRepository.existsById(id)) {
@@ -94,6 +97,7 @@ public class ProductItemSubtypeController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3130", action = "delete")
     public ResponseEntity<?> deleteSubtype(@PathVariable Long id) {
         try {
             if (!subtypeRepository.existsById(id)) {

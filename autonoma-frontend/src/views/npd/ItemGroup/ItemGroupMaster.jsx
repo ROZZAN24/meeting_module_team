@@ -12,24 +12,26 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| PRODUCT ITEM GROUP MASTER (BOS SOP COMPLIANT) ||============================== //
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'groupName', label: 'Item Group', minWidth: 200, bold: true },
-  { id: 'description', label: 'Description', minWidth: 300 },
+  { id: 'groupName', label: 'Product Item Group', minWidth: 200, bold: true },
+  { id: 'description', label: 'Group Description', minWidth: 300 },
   { id: 'createdBy', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedBy', label: 'UPDATED USER', minWidth: 120 },
   { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 },
-  { id: 'status', label: 'Status', minWidth: 100 }
+  { id: 'status', label: 'Status', minWidth: 100, status: true }
 ];
 
 export default function ItemGroupMaster() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -129,20 +131,20 @@ export default function ItemGroupMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Product_Item_Group_Master"
             columns={[
-              { header: 'Item Group', key: 'groupName' },
-              { header: 'Description', key: 'description' },
+              { header: 'Product Item Group', key: 'groupName' },
+              { header: 'Group Description', key: 'description' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Item Group', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Item Group', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -155,9 +157,9 @@ export default function ItemGroupMaster() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddItemGroupDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

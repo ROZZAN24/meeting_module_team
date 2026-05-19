@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.AuditTrail;
 import com.autonoma.erp.repository.admin.AuditTrailRepository;
 
@@ -25,6 +27,9 @@ public class AuditTrailController {
     private com.autonoma.erp.service.admin.AuditTrailService auditTrailService;
 
     @PostMapping("/log")
+
+
+    @RequirePagePermission(pageCode = "AD1150", action = "write")
     public org.springframework.http.ResponseEntity<?> logAction(@RequestBody java.util.Map<String, Object> payload) {
         try {
             String userId = (String) payload.get("userId");
@@ -44,6 +49,9 @@ public class AuditTrailController {
     }
 
     @PostMapping("/restore/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1150", action = "write")
     public org.springframework.http.ResponseEntity<?> restoreRecord(@PathVariable Long id) {
         try {
             auditTrailService.restoreRecord(id);

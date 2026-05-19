@@ -59,4 +59,31 @@ public class BosUserPageAuthService {
     public void saveAll(List<BosUserPageAuth> auths) {
         authRepository.saveAll(auths);
     }
+
+    /**
+     * Check if a user has a specific permission on a page.
+     * Used by PagePermissionInterceptor for backend API security.
+     *
+     * @param userId   The user ID
+     * @param pageCode The page code (e.g., "M3110")
+     * @param action   The permission type: "write", "delete", "export", "approval"
+     * @return true if the user has the requested permission
+     */
+    public boolean hasPermission(String userId, String pageCode, String action) {
+        BosPage page = pageRepository.findByPageCode(pageCode).orElse(null);
+        if (page == null) return false;
+
+        BosUserPageAuth auth = authRepository.findByUserIdAndPageId(userId, page.getPageId());
+        if (auth == null || auth.getEnable() == 0) return false;
+
+        return switch (action.toLowerCase()) {
+            case "read" -> auth.getReadAcs() == 1;
+            case "write" -> auth.getWrite() == 1;
+            case "delete" -> auth.getDeleteAcs() == 1;
+            case "export" -> auth.getExport() == 1;
+            case "approval" -> auth.getApproval() == 1;
+            case "manager" -> auth.getManager() == 1;
+            default -> false;
+        };
+    }
 }

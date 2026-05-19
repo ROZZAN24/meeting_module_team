@@ -22,6 +22,36 @@ import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
+const isDepartmentMatch = (allowedDepts, empDeptName) => {
+  if (!allowedDepts || !allowedDepts.length) return true;
+  if (!empDeptName) return false;
+  
+  const cleanEmpDept = empDeptName.toUpperCase().trim();
+  
+  // Custom mapping rules for QMS checklist codes vs HRM department names
+  const mappings = {
+    'HRA': ['HUMAN RESOURCES', 'HR', 'HR/ADMIN'],
+    'HR/ADMIN': ['HUMAN RESOURCES', 'HR', 'HRA'],
+    'HUMAN RESOURCES': ['HRA', 'HR', 'HR/ADMIN'],
+    'QUALITY': ['QUALITY MANAGEMENT', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
+    'QUALITY MANAGEMENT': ['QUALITY', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
+    'IT': ['INFORMATION TECHNOLOGY'],
+    'INFORMATION TECHNOLOGY': ['IT'],
+    'FINANCE': ['FINANCE & ACCOUNTS', 'FINANCE AND ACCOUNTS', 'ACCOUNTS'],
+    'FINANCE & ACCOUNTS': ['FINANCE', 'ACCOUNTS'],
+    'MARKETING': ['SALES & MARKETING', 'SALES AND MARKETING', 'SALES'],
+    'SALES & MARKETING': ['MARKETING', 'SALES']
+  };
+
+  return allowedDepts.some(allowedDept => {
+    const cleanAllowed = allowedDept.toUpperCase().trim();
+    if (cleanAllowed === cleanEmpDept) return true;
+    if (mappings[cleanAllowed] && mappings[cleanAllowed].includes(cleanEmpDept)) return true;
+    if (mappings[cleanEmpDept] && mappings[cleanEmpDept].includes(cleanAllowed)) return true;
+    return cleanAllowed.includes(cleanEmpDept) || cleanEmpDept.includes(cleanAllowed);
+  });
+};
+
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -34,7 +64,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const filteredEmployees = (lookups.employees || []).filter(emp => {
     if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
     const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
-    return empDept && allowedDeptNames.includes(empDept.departmentName);
+    return empDept && isDepartmentMatch(allowedDeptNames, empDept.departmentName);
   });
 
   const employeeOptions = filteredEmployees.map(e => ({

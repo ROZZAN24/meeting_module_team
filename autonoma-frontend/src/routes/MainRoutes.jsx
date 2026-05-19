@@ -193,6 +193,7 @@ const AdminSessionMonitoring = Loadable(lazy(() => import('views/admin/SessionMo
 const DivisionMaster = Loadable(lazy(() => import('views/admin/DivisionMaster')));
 const AuditTrailPage = Loadable(lazy(() => import('views/admin/AuditTrailPage')));
 const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
+const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -315,6 +316,10 @@ const MainRoutes = {
     {
       path: '/admin/session-analytics',
       element: <UserSessionAnalytics />
+    },
+    {
+      path: '/admin/file-traceability-hub',
+      element: <FileTraceabilityHub />
     },
     {
       path: '/admin/division',

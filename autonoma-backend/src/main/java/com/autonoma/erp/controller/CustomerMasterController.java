@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 
@@ -41,11 +42,13 @@ public class CustomerMasterController {
         return service.getNextCustomerCode();
     }
 
+    @RequirePagePermission(pageCode = "M5130", action = "write")
     @PostMapping
     public CustomerMaster createCustomer(@RequestBody CustomerMaster customer) {
         return service.saveCustomer(customer);
     }
 
+    @RequirePagePermission(pageCode = "M5130", action = "write")
     @PutMapping("/{id}")
     public ResponseEntity<CustomerMaster> updateCustomer(@PathVariable Long id, @RequestBody CustomerMaster customerDetails) {
         return service.getCustomerById(id)
@@ -89,6 +92,7 @@ public class CustomerMasterController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @RequirePagePermission(pageCode = "M5130", action = "delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCustomer(@PathVariable Long id) {
         service.deleteCustomer(id);

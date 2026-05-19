@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.PrefixCredential;
 import com.autonoma.erp.service.admin.PrefixCredentialService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +30,17 @@ public class PrefixCredentialController {
     }
 
     @PostMapping("/create")
+
+
+    @RequirePagePermission(pageCode = "AD1230", action = "write")
     public PrefixCredential createPrefixCredential(@RequestBody PrefixCredential credential) {
         return service.createPrefixCredential(credential);
     }
 
     @PutMapping("/update/{accountYear}")
+
+
+    @RequirePagePermission(pageCode = "AD1230", action = "write")
     public ResponseEntity<PrefixCredential> updatePrefixCredential(
             @PathVariable String accountYear,
             @RequestBody PrefixCredential credential) {
@@ -45,6 +53,9 @@ public class PrefixCredentialController {
     }
 
     @DeleteMapping("/{accountYear}")
+
+
+    @RequirePagePermission(pageCode = "AD1230", action = "delete")
     public ResponseEntity<Void> deletePrefixCredential(@PathVariable String accountYear) {
         service.deletePrefixCredential(accountYear);
         return ResponseEntity.ok().build();

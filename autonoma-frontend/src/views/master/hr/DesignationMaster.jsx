@@ -12,6 +12,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationDialog from './AddDesignationDialog';
 import { format } from 'date-fns';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: 'No', minWidth: 60 },
@@ -28,6 +29,7 @@ const columns = [
 
 export default function DesignationMaster() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.EMP_DESIGNATION);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
@@ -106,7 +108,7 @@ export default function DesignationMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Designation_Master"
             columns={[
@@ -119,12 +121,12 @@ export default function DesignationMaster() {
               { header: 'Updated By', key: 'updatedBy' },
               { header: 'Updated Date', key: 'updatedDate' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Designation', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Designation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -136,8 +138,8 @@ export default function DesignationMaster() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
         onDeleteRow={(row) => { setSelectedRow(row); setDeleteDialogOpen(true); }}
       />
 

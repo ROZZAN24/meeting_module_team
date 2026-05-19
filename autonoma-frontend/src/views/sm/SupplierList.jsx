@@ -4,6 +4,7 @@ import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/m
 import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -29,6 +30,7 @@ const columns = [
 
 export default function SupplierList() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.VEN_SUPPLIER);
   const navigate = useNavigate();
 
   const [rows, setRows] = useState([]);
@@ -112,7 +114,7 @@ export default function SupplierList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Supplier_Master"
             columns={[
@@ -121,12 +123,12 @@ export default function SupplierList() {
               { header: 'GST No', key: 'gstNo' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Supplier', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Supplier', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -138,11 +140,11 @@ export default function SupplierList() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
         onClickRow={handleRowClick}
         selectedRowId={selectedListRow?.id}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
       
       <ConfirmDeleteDialog

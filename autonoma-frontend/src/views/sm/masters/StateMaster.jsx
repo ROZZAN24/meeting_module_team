@@ -8,6 +8,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -23,6 +24,7 @@ const columns = [
 
 export default function StateMaster() {
   const [rows, setRows] = useState([]);
+  const perms = usePagePermissions(PAGE_CODES.LOG_STATE);
   const [countries, setCountries] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -126,7 +128,7 @@ export default function StateMaster() {
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="State_Master"
             columns={[
@@ -135,7 +137,7 @@ export default function StateMaster() {
               { header: 'State Code', key: 'stateCode' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
             New State
           </Button>
@@ -151,7 +153,7 @@ export default function StateMaster() {
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={(row) => handleOpen(row)}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">

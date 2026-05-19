@@ -74,6 +74,14 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
     }
   }, [data, open]);
 
+  const handleClear = () => {
+    setFormData({
+      status: '',
+      remarks: '',
+      actualFiles: []
+    });
+  };
+
   if (!data) return null;
 
   // Assignments have a nested checklist object, Master records don't
@@ -117,9 +125,10 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
         }
         onSave({ ...formData });
       } : null}
+      onClear={isExecution ? handleClear : null}
       title={isExecution ? `Update Progress - ${master.seqNo}` : (isAssignment ? `Verify Execution - ${master.seqNo}` : `Verify Master Record - ${master.seqNo}`)}
       maxWidth="lg"
-      isViewOnly={!isExecution || formData.status === 'Pending for Verified' || formData.status === 'Accepted' || formData.status === 'Verified'}
+      isViewOnly={!isExecution}
       secondaryActions={
         (onVerify || onReject) && (
           <Stack direction="row" spacing={1.5}>
