@@ -8,6 +8,7 @@ BEGIN
         page_id INT NULL,
         page_name NVARCHAR(200) NULL,
         report_name NVARCHAR(200) NULL,
+        file_path NVARCHAR(500) NULL,
         created_by NVARCHAR(100) NOT NULL,
         created_at DATETIME NULL,
         updated_by NVARCHAR(100) NULL,

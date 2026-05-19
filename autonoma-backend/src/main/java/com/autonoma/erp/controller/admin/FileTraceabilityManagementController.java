@@ -4,6 +4,10 @@ import com.autonoma.erp.model.FileTraceabilityManagement;
 import com.autonoma.erp.repository.FileTraceabilityManagementRepository;
 import com.autonoma.erp.model.admin.BosPage;
 import com.autonoma.erp.repository.admin.BosPageRepository;
+import com.autonoma.erp.repository.admin.UserRepository;
+import com.autonoma.erp.repository.EmployeeMasterRepository;
+import com.autonoma.erp.model.admin.UserCredential;
+import com.autonoma.erp.model.EmployeeMaster;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,11 +32,59 @@ public class FileTraceabilityManagementController {
     @Autowired
     private BosPageRepository bosPageRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private EmployeeMasterRepository employeeMasterRepository;
+
     @GetMapping
     @Operation(summary = "Get All File Traceability Records", description = "Fetches a complete list of logged exported files")
     public List<FileTraceabilityManagement> getAllLogs() {
         log.info("Fetching all file traceability logs");
-        return fileTraceabilityManagementRepository.findAllByOrderByCreatedAtDesc();
+        List<FileTraceabilityManagement> logs = fileTraceabilityManagementRepository.findAllByOrderByCreatedAtDesc();
+        try {
+            List<UserCredential> users = userRepository.findAll();
+            Map<String, UserCredential> userMap = new java.util.HashMap<>();
+            for (UserCredential u : users) {
+                if (u.getUserId() != null) {
+                    userMap.put(u.getUserId().toLowerCase(), u);
+                }
+            }
+            
+            List<EmployeeMaster> employees = employeeMasterRepository.findAll();
+            Map<Long, EmployeeMaster> empMap = new java.util.HashMap<>();
+            for (EmployeeMaster e : employees) {
+                if (e.getId() != null) {
+                    empMap.put(e.getId(), e);
+                }
+            }
+            
+            for (FileTraceabilityManagement logEntry : logs) {
+                String createdBy = logEntry.getCreatedBy();
+                if (createdBy != null) {
+                    UserCredential userCred = userMap.get(createdBy.toLowerCase());
+                    if (userCred != null) {
+                        logEntry.setCreatorImg(userCred.getImgName());
+                        if (userCred.getEmpId() != null) {
+                            EmployeeMaster emp = empMap.get(userCred.getEmpId());
+                            if (emp != null) {
+                                logEntry.setCreatorName(emp.getEmployeeName());
+                            } else {
+                                logEntry.setCreatorName(createdBy);
+                            }
+                        } else {
+                            logEntry.setCreatorName(createdBy);
+                        }
+                    } else {
+                        logEntry.setCreatorName(createdBy);
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Error populating creator details for logs", ex);
+        }
+        return logs;
     }
 
     @PostMapping
@@ -44,6 +96,7 @@ public class FileTraceabilityManagementController {
             String pageName = (String) payload.get("pageName");
             String reportName = (String) payload.get("reportName");
             String createdBy = (String) payload.get("createdBy");
+            String filePath = (String) payload.get("filePath");
 
             Integer finalPageId = null;
             String finalPageName = pageName;
@@ -103,6 +156,7 @@ public class FileTraceabilityManagementController {
             
             traceLog.setPageName(finalPageName != null ? finalPageName : pageName);
             traceLog.setReportName(reportName);
+            traceLog.setFilePath(filePath);
             
             if (createdBy != null && !createdBy.trim().isEmpty()) {
                 traceLog.setCreatedBy(createdBy);

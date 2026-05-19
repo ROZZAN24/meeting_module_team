@@ -90,14 +90,39 @@ export default function BOSExportButton({
   };
 
   const getFormattedFilename = () => {
-    const ts = format(new Date(), 'dd/MM/yyyy_HHmm');
+    const ts = format(new Date(), 'dd-MM-yyyy_HHmm');
     return `${filename}_${ts}`;
   };
 
-  const logExport = async (formatType) => {
+  const uploadAndLogExport = async (formatType) => {
     const pageTitle = filename.replace(/_/g, ' ');
+    let filePath = null;
 
-    // Log to standard audit trail
+    // 1. Prepare and upload the JSON metadata file to enable high-fidelity preview
+    try {
+      const exportMeta = {
+        data: prepareData(),
+        columns: columns || (data.length > 0 ? Object.keys(data[0]).map(k => ({ header: k, key: k })) : []),
+        filename: filename,
+        formatType: formatType,
+        timestamp: new Date().toISOString()
+      };
+
+      const jsonBlob = new Blob([JSON.stringify(exportMeta)], { type: 'application/json' });
+      const formData = new FormData();
+      const metaFilename = `${getFormattedFilename()}_meta.json`;
+      formData.append('file', jsonBlob, metaFilename);
+      formData.append('module', 'TRACEABILITY');
+
+      const uploadRes = await axios.post('/api/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      filePath = uploadRes.data; // e.g. "DEFAULT/uuid_name_meta.json"
+    } catch (err) {
+      console.error('Failed to upload export metadata to server:', err);
+    }
+
+    // 2. Log to standard audit trail
     try {
       await axios.post('/api/audit-trail/log', {
         userId: user?.username || user?.email || user?.name || 'SYSTEM',
@@ -117,7 +142,7 @@ export default function BOSExportButton({
       console.error('Failed to log export audit:', err);
     }
 
-    // Log to File Traceability Hub
+    // 3. Log to File Traceability Hub
     try {
       const computedPageName = pageTitle.toLowerCase().endsWith('master') ? pageTitle : `${pageTitle} Master`;
       await axios.post('/api/file-traceability', {
@@ -125,6 +150,7 @@ export default function BOSExportButton({
         pageCode: pageCode || 'M_DF_01',
         pageName: pageName || computedPageName,
         reportName: `${getFormattedFilename()}.${formatType === 'Excel' ? 'xlsx' : 'pdf'}`,
+        filePath: filePath,
         createdBy: user?.username || user?.email || user?.name || 'SYSTEM'
       });
     } catch (err) {
@@ -134,14 +160,14 @@ export default function BOSExportButton({
 
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
-    logExport('Excel');
+    uploadAndLogExport('Excel');
     exportToExcel(prepareData(), getFormattedFilename(), { userName: user?.name });
     handleClosePreview();
   };
 
   const handleExportPDF = () => {
     if (!data || data.length === 0) return;
-    logExport('PDF');
+    uploadAndLogExport('PDF');
     const originalTitle = document.title;
     document.title = getFormattedFilename();
     window.print();
