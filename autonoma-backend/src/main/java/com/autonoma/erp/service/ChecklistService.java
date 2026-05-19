@@ -260,6 +260,9 @@ public class ChecklistService {
             if (checklist.getUploadedFiles() != null) existing.setUploadedFiles(checklist.getUploadedFiles());
             if (checklist.getScannedFiles() != null) existing.setScannedFiles(checklist.getScannedFiles());
             existing.setUpdatedDate(new Date());
+            existing.setUpdatedBy(checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty() 
+                    ? checklist.getUpdatedBy() 
+                    : com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
 
             // Re-sync departments safely via the managed list of the existing entity to avoid Hibernate state desync
             if (existing.getDepartments() != null) {
@@ -606,8 +609,9 @@ public class ChecklistService {
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
-        checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
+        checklist.setUpdatedBy(verifiedBy);
+        checklist.setUpdatedDate(new Date());
         if ("Rejected".equals(status)) {
             checklist.setRejReason(remarks);
         } else if ("Verified".equals(status)) {
