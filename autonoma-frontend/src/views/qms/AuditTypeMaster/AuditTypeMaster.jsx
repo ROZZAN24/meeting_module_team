@@ -65,8 +65,9 @@ export default function AuditTypeMaster() {
       { id: 'standard', label: 'Standard', type: 'text', placeholder: 'Filter by Standard...' },
       { id: 'description', label: 'Description', type: 'text', placeholder: 'Filter by Description...' },
       { id: 'auditArea', label: 'Audit Area', type: 'text', placeholder: 'Filter by Area...' },
-      { id: 'criteriaType', label: 'Criteria Type', type: 'select', 
-        options: [{value: 'All', label: 'ALL'}, {value: 'Fixed', label: 'Fixed'}, {value: 'Variable', label: 'Variable'}] 
+      {
+        id: 'criteriaType', label: 'Criteria Type', type: 'select',
+        options: [{ value: 'All', label: 'ALL' }, { value: 'Fixed', label: 'Fixed' }, { value: 'Variable', label: 'Variable' }]
       },
       { id: 'createdBy', label: 'Created User', type: 'text' },
       { id: 'updatedBy', label: 'Updated User', type: 'text' }
@@ -146,7 +147,7 @@ export default function AuditTypeMaster() {
     return rows.filter((row) => {
       const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      
+
       const auditTypeFilter = globalFilters.auditType || '';
       const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
       const standardFilter = globalFilters.standard || '';
@@ -165,7 +166,7 @@ export default function AuditTypeMaster() {
       const matchesSearch = !globalQuery ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.standard && row.standard.toLowerCase().includes(globalQuery.toLowerCase()));
-      
+
       return matchesStatus && matchesAuditType && matchesStandard && matchesDescription && matchesAuditArea && matchesCriteriaType && matchesCreatedBy && matchesUpdatedBy && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
