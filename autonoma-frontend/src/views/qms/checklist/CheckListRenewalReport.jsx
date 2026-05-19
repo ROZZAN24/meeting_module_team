@@ -30,7 +30,10 @@ import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
 
-const columns = ['#', 'Category', 'Check Point', 'Dept', 'Level', 'Frequency', 'Stock Link', 'Comments', 'Verification Required', 'Assigned To', 'Assigned By', 'Status'];
+const columns = [
+  '#', 'Category', 'Check Point', 'Dept', 'Level', 'Frequency', 'Stock Link', 'Comments', 'Verification Required', 'Assigned To', 'Assigned By',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE', 'Status'
+];
 
 const DEPARTMENTS = [
   'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT',
@@ -67,6 +70,10 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'assignedBy', label: 'Assigned By' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'status', label: 'Status' }
 ];
 
@@ -74,13 +81,17 @@ const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Check Point', key: (r) => r.checklist?.checkingPoint },
   { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Level', key: () => '' },
+  { header: 'Level', key: (r) => r.checklist?.levelIds || '' },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
   { header: 'Stock Link', key: (r) => r.checklist?.stockLink },
   { header: 'Comments', key: 'remarks' },
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Assigned To', key: 'assignedTo' },
   { header: 'Assigned By', key: 'assignedBy' },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: (r) => r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '' },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
@@ -328,13 +339,17 @@ export default function CheckListRenewalReport() {
                 <TableCell>{row.checklist?.category}</TableCell>
                 <TableCell>{row.checklist?.checkingPoint}</TableCell>
                 <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell></TableCell>
+                <TableCell>{row.checklist?.levelIds || '-'}</TableCell>
                 <TableCell>{row.checklist?.frequency}</TableCell>
                 <TableCell>{row.checklist?.stockLink}</TableCell>
                 <TableCell>{row.remarks}</TableCell>
                 <TableCell>{row.checklist?.verificationRequired}</TableCell>
                 <TableCell>{row.assignedTo}</TableCell>
                 <TableCell>{row.assignedBy}</TableCell>
+                <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                <TableCell>{row.checklist?.updatedBy || '-'}</TableCell>
+                <TableCell>{row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-'}</TableCell>
                 <TableCell><StatusChip status={row.status} /></TableCell>
               </TableRow>
             ))}

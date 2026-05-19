@@ -34,7 +34,8 @@ import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, I
 
 const columns = [
   '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Next Due Date', 'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required', 'Created Date', 'Created By'
+  'Date', 'Checklist Date', 'Next Due Date', 'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 
 const STATUS_OPTIONS = [
@@ -81,8 +82,10 @@ const tableCols = [
   { id: 'attendedBy', label: 'Attended By' },
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'photoRequired', label: 'Photo Required' },
-  { id: 'createdDate', label: 'Created Date' },
-  { id: 'createdBy', label: 'Created By' }
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
 const exportColumns = [
@@ -101,8 +104,10 @@ const exportColumns = [
   { header: 'Attended By', key: 'attendedBy' },
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
-  { header: 'Created Date', key: (r) => r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '' },
-  { header: 'Created By', key: (r) => r.checklist?.createdBy }
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: (r) => r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '' }
 ];
 
 const filterConfig = [
@@ -393,8 +398,10 @@ export default function CloseCheckListRenewal() {
                 <TableCell>{row.attendedBy}</TableCell>
                 <TableCell>{row.checklist?.verificationRequired}</TableCell>
                 <TableCell>{row.checklist?.photoRequired}</TableCell>
-                <TableCell>{row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell>{row.checklist?.createdBy}</TableCell>
+                <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                <TableCell>{row.checklist?.updatedBy || '-'}</TableCell>
+                <TableCell>{row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>

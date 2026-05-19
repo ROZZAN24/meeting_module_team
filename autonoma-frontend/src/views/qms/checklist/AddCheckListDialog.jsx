@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Grid, Box, Typography, TextField, Select, MenuItem,
   Button, IconButton, Divider, Checkbox, ListItemText, Slide, useTheme,
-  CircularProgress
+  CircularProgress, Autocomplete, Chip
 } from '@mui/material';
 import {
   IconX, IconCheck, IconEraser, IconCloudUpload, IconCamera, IconFileDescription,
@@ -207,6 +207,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [dualCheck, setDualCheck] = useState('');
   const [carryForward, setCarryForward] = useState('');
   const [amendmentReason, setAmendmentReason] = useState('');
+  const [levelIds, setLevelIds] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const speechRef = useRef(null);
@@ -289,6 +290,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setDualCheck(initialData.dualCheck || '');
         setCarryForward(initialData.carryForward || '');
         setAmendmentReason(initialData.amendmentReason || '');
+        setLevelIds(initialData.levelIds ? initialData.levelIds.split(',').map(s => s.trim()).filter(Boolean) : []);
         setUploadedFiles([]);
         setScannedFiles([]);
       } else {
@@ -298,6 +300,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
         setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
+        setLevelIds([]);
         axios.get('/api/qms/checklist/next-sequence')
           .then(res => setSeqNo(String(res.data.nextSeqNo).padStart(3, '0')))
           .catch(() => {});
@@ -351,10 +354,11 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
     setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
     setAmendmentReason('');
+    setLevelIds([]);
   };
   const handleSave = () => {
-    if (!category || !frequency || !effectiveFrom || !renewalPoint || !description || department.length === 0) {
-      alert('Please fill in all required fields (Category, Frequency, Effective From, Renewal Point, Descriptions/SOP, Department)'); return;
+    if (!category || !frequency || !effectiveFrom || !renewalPoint || !description || department.length === 0 || levelIds.length === 0) {
+      alert('Please fill in all required fields (Category, Frequency, Effective From, Renewal Point, Descriptions/SOP, Department, Levels)'); return;
     }
     if (isAmendment && !amendmentReason) {
       alert('Please provide an Amendment Reason!'); return;
@@ -379,6 +383,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       reminderDate: reminderDate || null,
       reminderDays: reminderDays ? Number(reminderDays) : null,
       amendmentReason: amendmentReason || null,
+      levelIds: levelIds.join(','),
     });
     handleClose();
   };
@@ -543,6 +548,25 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     </MenuItem>
                   ))}
                 </Select>
+              </LabelInput>
+
+              <LabelInput label="Levels" required>
+                <Autocomplete
+                  multiple
+                  size="small"
+                  options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
+                  value={levelIds}
+                  onChange={(e, val) => setLevelIds(val)}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="Select Levels" size="small" />
+                  )}
+                />
               </LabelInput>
 
               {/* ── Yes/No dropdowns ── */}

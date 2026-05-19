@@ -34,7 +34,8 @@ import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDown
 
 const columns = [
   '#', 'Task Type', 'Seq No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check'
+  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 
 const STATUS_OPTIONS = ['Pending for Verified', 'Pending for Accepted', 'Verified', 'Rejected', 'Not Accepted', 'Accepted', 'Missed'];
@@ -77,7 +78,11 @@ const tableCols = [
   { id: 'status', label: 'Status' },
   { id: 'nextDueDate', label: 'Next Due Date' },
   { id: 'assignedTo', label: 'Assigned To' },
-  { id: 'dualCheck', label: 'Dual Check' }
+  { id: 'dualCheck', label: 'Dual Check' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
 const exportColumns = [
@@ -93,7 +98,11 @@ const exportColumns = [
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
   { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
   { header: 'Assigned To', key: 'assignedTo' },
-  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' }
+  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: (r) => r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '' }
 ];
 
 const filterConfig = [
@@ -397,6 +406,10 @@ export default function CheckListRenewalVerify() {
                 <TableCell>{row.checklist?.nextDueDate}</TableCell>
                 <TableCell>{row.assignedTo}</TableCell>
                 <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
+                <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                <TableCell>{row.checklist?.updatedBy || '-'}</TableCell>
+                <TableCell>{row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
