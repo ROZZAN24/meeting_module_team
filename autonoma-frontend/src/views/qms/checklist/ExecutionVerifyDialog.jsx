@@ -128,7 +128,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
       onClear={isExecution ? handleClear : null}
       title={isExecution ? `Update Progress - ${master.seqNo}` : (isAssignment ? `Verify Execution - ${master.seqNo}` : `Verify Master Record - ${master.seqNo}`)}
       maxWidth="lg"
-      isViewOnly={!isExecution || formData.status === 'Pending for Verified' || formData.status === 'Accepted' || formData.status === 'Verified'}
+      isViewOnly={!isExecution}
       secondaryActions={
         (onVerify || onReject) && (
           <Stack direction="row" spacing={1.5}>
