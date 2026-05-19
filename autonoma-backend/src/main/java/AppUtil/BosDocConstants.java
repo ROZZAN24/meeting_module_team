@@ -18,6 +18,8 @@ public class BosDocConstants {
     public static final String QUALITY_DOC_PATH = "Quality";
     public static final String STORES_DOC_PATH = "Stores";
     public static final String USER_PROFILE_DOC_PATH = "User Profile";
+    public static final String CHAT_UPLOADS_PATH = "Chat/Uploads";
+    public static final String CHAT_VOICES_PATH = "Chat/Voices";
 
     // ─── HRA Sub-Paths ──────────────────────────────────────────────────
     public static final String HRA_EMPLOYEE_PROFILE_PATH = "HRA/Employee Profile";

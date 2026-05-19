@@ -209,7 +209,7 @@ export const getInputStyles = (theme, isDark) => ({
 // ─── DATATABLE STYLE TOKENS (SOP #2, #15, #16) ─────────────
 
 export const tableContainerSx = {
-  height: 'calc(100vh - 300px)',
+  maxHeight: 'calc(100vh - 300px)',
   border: '1px solid',
   borderColor: 'divider',
   boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
@@ -226,7 +226,7 @@ export const tableHeadCellSx = {
   color: 'primary.light',
   fontWeight: 600,
   fontSize: '0.8rem',
-  py: 2,
+  py: 1,
   textTransform: 'uppercase',
   letterSpacing: '0.5px',
   borderBottom: 'none',
@@ -236,7 +236,7 @@ export const tableHeadCellSx = {
 export const getTableRowSx = (isDark) => ({
   cursor: 'pointer',
   transition: 'all 0.2s',
-  '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 },
+  '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 0.75 },
   '&:nth-of-type(even)': { bgcolor: isDark ? '#161b22' : '#fafafa' },
   '&:hover': {
     bgcolor: isDark ? '#30363d !important' : 'grey.50 !important'

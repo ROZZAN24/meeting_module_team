@@ -224,6 +224,12 @@ public class FileService {
                 return BosDocConstants.USER_PROFILE_DOC_PATH;
             case "COMPANY_PROFILE":
                 return BosDocConstants.COMPANY_PROFILE_PATH;
+            case "CHAT_UPLOAD":
+            case "CHAT_UPLOADS":
+                return BosDocConstants.CHAT_UPLOADS_PATH;
+            case "CHAT_VOICE":
+            case "CHAT_VOICES":
+                return BosDocConstants.CHAT_VOICES_PATH;
 
             // ─── HRA sub-module paths ───────────────────────────
             case "HRA_PROFILE":

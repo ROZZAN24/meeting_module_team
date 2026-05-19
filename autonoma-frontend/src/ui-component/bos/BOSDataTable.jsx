@@ -312,13 +312,16 @@ export default function BOSDataTable({
         display: 'flex', 
         alignItems: 'center',
         justifyContent: 'space-between', 
+        position: 'relative',
+        minHeight: '44px',
         borderTop: '1px solid', 
         borderColor: 'divider',
         bgcolor: isDark ? 'background.default' : 'grey.50',
         borderBottomLeftRadius: '16px',
-        borderBottomRightRadius: '16px'
+        borderBottomRightRadius: '16px',
+        overflow: 'hidden'
       }}>
-        <Box sx={{ flexGrow: 1 }}>
+        <Box sx={{ mr: 'auto', display: 'flex', alignItems: 'center', zIndex: 1 }}>
           {footerActions}
         </Box>
         <TablePagination
@@ -331,13 +334,19 @@ export default function BOSDataTable({
           onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
           sx={{
             border: 'none',
+            position: 'absolute',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1,
+            overflow: 'hidden',
             '& .MuiTablePagination-toolbar': { 
               justifyContent: 'center', 
               flexWrap: 'nowrap',
               minHeight: '36px !important',
               height: '36px',
               p: '0px !important',
-              gap: 1
+              gap: 1,
+              overflow: 'hidden'
             },
             '& .MuiTablePagination-spacer': { display: 'none' },
             '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
