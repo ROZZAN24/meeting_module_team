@@ -14,7 +14,7 @@ public class HibernateFilterAspect {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Before("execution(* com.autonoma.erp.repository..*Repository.*(..)) && !target(com.autonoma.erp.repository.DivisionRepository)")
+    @Before("execution(* com.autonoma.erp.repository..*Repository.*(..)) && !execution(* com.autonoma.erp.repository.DivisionRepository.*(..))")
     public void enableDivisionFilter() {
         Long currentDivisionId = DivisionContextHolder.getDivisionId();
         if (currentDivisionId != null) {
