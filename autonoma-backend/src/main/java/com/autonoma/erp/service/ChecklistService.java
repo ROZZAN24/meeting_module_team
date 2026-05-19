@@ -525,6 +525,8 @@ public class ChecklistService {
         if (actualFiles != null) {
             assignment.setActualFiles(actualFiles);
         }
+        assignment.setUpdatedBy(verifiedBy);
+        assignment.setUpdatedAt(new Date());
         assignRepo.save(assignment);
 
         // Create verification record

@@ -101,8 +101,8 @@ const exportColumns = [
   { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' },
   { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
-  { header: 'UPDATED USER', key: (r) => r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '' }
+  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : (r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '') }
 ];
 
 const filterConfig = [
@@ -423,8 +423,8 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
                   <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
-                  <TableCell>{row.checklist?.updatedBy || '-'}</TableCell>
-                  <TableCell>{row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : (row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-')}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
