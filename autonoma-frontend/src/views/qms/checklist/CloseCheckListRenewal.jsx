@@ -74,14 +74,20 @@ const tableCols = [
   { id: 'category', label: 'Category' },
   { id: 'frequency', label: 'Frequency' },
   { id: 'department', label: 'Dept' },
+  { id: 'stockLink', label: 'Stock Link' },
+  { id: 'itemCode', label: 'Item Code' },
+  { id: 'qty', label: 'Quantity' },
+  { id: 'assignedTo', label: 'Assign To' },
   { id: 'assignedDate', label: 'Date' },
   { id: 'checklistDate', label: 'Checklist Date' },
+  { id: 'expireDate', label: 'Expire Date' },
   { id: 'nextDueDate', label: 'Next Due Date' },
   { id: 'status', label: 'Status' },
   { id: 'attendedDate', label: 'Attended Date' },
   { id: 'attendedBy', label: 'Attended By' },
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'photoRequired', label: 'Photo Required' },
+  { id: 'carryForward', label: 'Carry Forward' },
   { id: 'createdBy', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
   { id: 'updatedBy', label: 'UPDATED USER' },
@@ -96,14 +102,20 @@ const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
   { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Stock Link', key: (r) => r.checklist?.stockLink },
+  { header: 'Item Code', key: (r) => r.checklist?.itemCode },
+  { header: 'Quantity', key: (r) => r.checklist?.qty },
+  { header: 'Assign To', key: (r) => r.assignedTo },
   { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
   { header: 'Checklist Date', key: 'checklistDate' },
+  { header: 'Expire Date', key: (r) => r.checklist?.expiryDate ? new Date(r.checklist.expiryDate).toLocaleDateString() : '' },
   { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
   { header: 'Attended Date', key: 'attendedDate' },
   { header: 'Attended By', key: 'attendedBy' },
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
+  { header: 'Carry Forward', key: (r) => r.carryForward || r.checklist?.carryForward },
   { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
   { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
@@ -437,14 +449,20 @@ export default function CloseCheckListRenewal() {
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
+                  <TableCell>{row.checklist?.stockLink || '-'}</TableCell>
+                  <TableCell>{row.checklist?.itemCode || '-'}</TableCell>
+                  <TableCell>{row.checklist?.qty || '-'}</TableCell>
+                  <TableCell>{row.assignedTo || '-'}</TableCell>
                   <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
                   <TableCell>{row.checklistDate}</TableCell>
+                  <TableCell>{row.checklist?.expiryDate ? new Date(row.checklist.expiryDate).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>{row.checklist?.nextDueDate}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                   <TableCell>{row.attendedDate}</TableCell>
                   <TableCell>{row.attendedBy}</TableCell>
                   <TableCell>{row.checklist?.verificationRequired}</TableCell>
                   <TableCell>{row.checklist?.photoRequired}</TableCell>
+                  <TableCell>{row.carryForward || row.checklist?.carryForward || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
                   <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
