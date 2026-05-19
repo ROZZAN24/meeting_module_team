@@ -313,6 +313,38 @@ export default function CloseCheckListRenewal() {
     }
   };
 
+  const handleSaveExecution = async (formData) => {
+    if (!selectedRowId) return;
+    try {
+      const uploadedFileNames = [];
+      for (const f of formData.actualFiles) {
+        if (f.isServer) {
+          uploadedFileNames.push(f.serverFileName || f.name);
+        } else if (f.file) {
+          const upFormData = new FormData();
+          upFormData.append('file', f.file);
+          const res = await axios.post('/api/files/upload', upFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedFileNames.push(res.data);
+        }
+      }
+
+      await axios.post('/api/qms/checklist/verify', {
+        assignmentId: selectedRowId,
+        status: formData.status || 'Completed',
+        verifiedBy: user?.name || user?.id || 'Executor',
+        remarks: formData.remarks || '',
+        actualFiles: uploadedFileNames
+      });
+
+      setDialogOpen(false);
+      fetchAssignments();
+    } catch (error) {
+      console.error('Failed to save execution:', error);
+    }
+  };
+
   const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
 
   return (
@@ -514,7 +546,8 @@ export default function CloseCheckListRenewal() {
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}
         data={activeRow}
-        isExecution={false}
+        isExecution={true}
+        onSave={handleSaveExecution}
       />
     </MainCard>
   );
