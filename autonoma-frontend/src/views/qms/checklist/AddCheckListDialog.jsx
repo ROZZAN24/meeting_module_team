@@ -161,8 +161,8 @@ const FileItem = ({ file, onEnter, onMove, onLeave }) => (
 FileItem.propTypes = { file: PropTypes.object, onEnter: PropTypes.func, onMove: PropTypes.func, onLeave: PropTypes.func };
 
 const DEPARTMENTS = [
-  'HRA', 'PRODUCTION', 'MAINTENANCE', 'FINANCE', 'STORES',
-  'QUALITY', 'PURCHASE', 'LOGISTICS', 'MARKETING', 'IT', 'MANAGEMENT'
+  'ACCOUNTS','ADMIN','ASSEMBLY','BUSINESS DEVELOPMENT','DESIGN & DEVELOPMENT',
+  'FINANCE','HRA','IT','LOGISTICS','MAINTENANCE','MARKETING','PRODUCTION','PURCHASE','QUALITY','STORES'
 ];
 
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -182,10 +182,28 @@ const LabelInput = ({ label, required, children }) => (
     <Box sx={{ flex: 1 }}>{children}</Box>
   </Box>
 );
-const formatDateForInput = (dateStr) => {
-  if (!dateStr) return '';
+const formatDateForInput = (dateVal) => {
+  if (!dateVal) return '';
   try {
-    const d = new Date(dateStr);
+    if (typeof dateVal === 'number') {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().split('T')[0];
+    }
+    
+    let str = String(dateVal).trim();
+    if (!str) return '';
+    
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      return str.substring(0, 10);
+    }
+    
+    if (/^\d{2}-\d{2}-\d{4}/.test(str)) {
+      const parts = str.split('-');
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    
+    const d = new Date(str);
     if (isNaN(d.getTime())) return '';
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -369,8 +387,18 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setLevelIds([]);
   };
   const handleSave = () => {
-    if (!category || !frequency || !effectiveFrom || !renewalPoint || !description || department.length === 0 || levelIds.length === 0) {
-      alert('Please fill in all required fields (Category, Frequency, Effective From, Renewal Point, Descriptions/SOP, Department, Levels)'); return;
+    const missing = [];
+    if (!category) missing.push('Category');
+    if (!frequency) missing.push('Frequency');
+    if (!effectiveFrom) missing.push('Effective From');
+    if (!renewalPoint) missing.push('Renewal Point');
+    if (!description) missing.push('Descriptions/SOP');
+    if (department.length === 0) missing.push('Department');
+    if (levelIds.length === 0) missing.push('Levels');
+
+    if (missing.length > 0) {
+      alert(`Please fill in all required fields: ${missing.join(', ')}`);
+      return;
     }
     if (isAmendment && !amendmentReason) {
       alert('Please provide an Amendment Reason!'); return;
