@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.CompanyCredential;
 import com.autonoma.erp.service.FileService;
 import com.autonoma.erp.service.admin.CompanyCredentialService;
@@ -42,13 +44,16 @@ public class CompanyCredentialController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CompanyCredential> getById(@PathVariable Integer id) {
+    public ResponseEntity<CompanyCredential> getById(@PathVariable Long id) {
         Optional<CompanyCredential> result = service.findById(id);
         return result.map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/create")
+
+
+    @RequirePagePermission(pageCode = "AD1110", action = "write")
     public ResponseEntity<CompanyCredential> create(@RequestBody CompanyCredential company) {
         company.setCreatedDate(new Date());
         if (company.getCreatedBy() == null || company.getCreatedBy().isEmpty()) {
@@ -58,7 +63,10 @@ public class CompanyCredentialController {
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<CompanyCredential> update(@PathVariable Integer id, @RequestBody CompanyCredential details) {
+
+
+    @RequirePagePermission(pageCode = "AD1110", action = "write")
+    public ResponseEntity<CompanyCredential> update(@PathVariable Long id, @RequestBody CompanyCredential details) {
         Optional<CompanyCredential> optional = service.findById(id);
         if (optional.isPresent()) {
             CompanyCredential existing = optional.get();
@@ -92,11 +100,17 @@ public class CompanyCredentialController {
     }
 
     @PostMapping(value = "/upload-logo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+
+    @RequirePagePermission(pageCode = "AD1110", action = "write")
     public ResponseEntity<Map<String, String>> uploadLogo(@RequestParam("file") MultipartFile file) {
         return handleImageUpload(file, "Logo uploaded successfully");
     }
 
     @PostMapping(value = "/upload-bg", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+
+    @RequirePagePermission(pageCode = "AD1110", action = "write")
     public ResponseEntity<Map<String, String>> uploadBackground(@RequestParam("file") MultipartFile file) {
         return handleImageUpload(file, "Login background uploaded successfully");
     }
@@ -141,7 +155,10 @@ public class CompanyCredentialController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Integer id) {
+
+
+    @RequirePagePermission(pageCode = "AD1110", action = "delete")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.deleteById(id);
         return ResponseEntity.ok().build();
     }

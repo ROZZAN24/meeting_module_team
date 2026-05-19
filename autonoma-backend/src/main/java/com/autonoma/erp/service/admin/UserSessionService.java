@@ -12,14 +12,69 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.scheduling.annotation.Scheduled;
+
 @Service
 public class UserSessionService {
+
+    private static final java.util.Map<String, Long> userLastSeenMap = new ConcurrentHashMap<>();
 
     @Autowired
     private UserSessionRepository userSessionRepository;
 
     @Autowired
     private UserSessionActivityRepository userSessionActivityRepository;
+
+    public void updateLastSeen(String userId) {
+        if (userId != null) {
+            userLastSeenMap.put(userId, System.currentTimeMillis());
+        }
+    }
+
+    @Scheduled(fixedRate = 60000)
+    public void cleanupInactiveSessions() {
+        try {
+            List<UserSession> allSessions = userSessionRepository.findAll();
+            long now = System.currentTimeMillis();
+            for (UserSession session : allSessions) {
+                if (session != null && "ACTIVE".equals(session.getStatus())) {
+                    String userId = session.getUserId();
+                    Long lastSeen = userId != null ? userLastSeenMap.get(userId) : null;
+                    
+                    boolean isInactive = false;
+                    long inactiveTimestamp = now;
+                    
+                    if (lastSeen != null) {
+                        if (now - lastSeen > 3 * 60 * 1000) { // 3 minutes threshold
+                            isInactive = true;
+                            inactiveTimestamp = lastSeen;
+                        }
+                    } else {
+                        // Check if loginTime was more than 10 minutes ago
+                        if (session.getLoginTime() != null && (now - session.getLoginTime().getTime() > 10 * 60 * 1000)) {
+                            isInactive = true;
+                            inactiveTimestamp = session.getLoginTime().getTime();
+                        }
+                    }
+                    
+                    if (isInactive) {
+                        session.setStatus("COMPLETED");
+                        session.setLogoutTime(new Date(inactiveTimestamp));
+                        userSessionRepository.save(session);
+                        
+                        if (userId != null) {
+                            recordPageExit(userId);
+                            userLastSeenMap.remove(userId);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Silently log or handle scheduler errors to keep it from breaking the application
+            System.err.println("Error in session cleanup scheduler: " + e.getMessage());
+        }
+    }
 
     public UserSession recordLogin(String userId, HttpServletRequest request, String userAgent) {
         String ipAddress = request.getHeader("X-Forwarded-For");
@@ -29,6 +84,16 @@ public class UserSessionService {
         // Handle comma-separated list of IPs if multiple proxies exist
         if (ipAddress != null && ipAddress.contains(",")) {
             ipAddress = ipAddress.split(",")[0].trim();
+        }
+
+        // Deactivate previous active sessions for this user
+        List<UserSession> activeSessions = userSessionRepository.findByUserIdAndStatus(userId, "ACTIVE");
+        if (activeSessions != null) {
+            for (UserSession s : activeSessions) {
+                s.setLogoutTime(new Date());
+                s.setStatus("COMPLETED");
+                userSessionRepository.save(s);
+            }
         }
 
         UserSession session = new UserSession();

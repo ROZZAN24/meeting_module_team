@@ -6,6 +6,7 @@ import com.autonoma.erp.repository.SmQuotationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,6 +39,7 @@ public class SmQuotationController {
     }
 
     @Operation(summary = "Create a new quotation")
+    @RequirePagePermission(pageCode = "SM1140", action = "write")
     @PostMapping
     public ResponseEntity<?> createQuotation(@RequestBody SmQuotation quotation) {
         if (quotationRepository.existsByQuotationNo(quotation.getQuotationNo())) {
@@ -47,6 +49,7 @@ public class SmQuotationController {
     }
 
     @Operation(summary = "Update an existing quotation")
+    @RequirePagePermission(pageCode = "SM1140", action = "write")
     @PutMapping("/{id}")
     public ResponseEntity<?> updateQuotation(@PathVariable Long id, @RequestBody SmQuotation quotationDetails) {
         if (quotationRepository.existsByQuotationNoAndIdNot(quotationDetails.getQuotationNo(), id)) {
@@ -80,6 +83,7 @@ public class SmQuotationController {
     }
 
     @Operation(summary = "Delete a quotation")
+    @RequirePagePermission(pageCode = "SM1140", action = "delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteQuotation(@PathVariable Long id) {
         quotationService.deleteQuotation(id);

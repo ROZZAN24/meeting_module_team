@@ -13,6 +13,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| AUDIT TYPE MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -36,6 +37,7 @@ export default function AuditTypeMaster() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_TYPE);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -65,8 +67,9 @@ export default function AuditTypeMaster() {
       { id: 'standard', label: 'Standard', type: 'text', placeholder: 'Filter by Standard...' },
       { id: 'description', label: 'Description', type: 'text', placeholder: 'Filter by Description...' },
       { id: 'auditArea', label: 'Audit Area', type: 'text', placeholder: 'Filter by Area...' },
-      { id: 'criteriaType', label: 'Criteria Type', type: 'select', 
-        options: [{value: 'All', label: 'ALL'}, {value: 'Fixed', label: 'Fixed'}, {value: 'Variable', label: 'Variable'}] 
+      {
+        id: 'criteriaType', label: 'Criteria Type', type: 'select',
+        options: [{ value: 'All', label: 'ALL' }, { value: 'Fixed', label: 'Fixed' }, { value: 'Variable', label: 'Variable' }]
       },
       { id: 'createdBy', label: 'Created User', type: 'text' },
       { id: 'updatedBy', label: 'Updated User', type: 'text' }
@@ -146,7 +149,7 @@ export default function AuditTypeMaster() {
     return rows.filter((row) => {
       const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
-      
+
       const auditTypeFilter = globalFilters.auditType || '';
       const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
       const standardFilter = globalFilters.standard || '';
@@ -165,7 +168,7 @@ export default function AuditTypeMaster() {
       const matchesSearch = !globalQuery ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.standard && row.standard.toLowerCase().includes(globalQuery.toLowerCase()));
-      
+
       return matchesStatus && matchesAuditType && matchesStandard && matchesDescription && matchesAuditArea && matchesCriteriaType && matchesCreatedBy && matchesUpdatedBy && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
@@ -185,7 +188,7 @@ export default function AuditTypeMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Audit_Type_Details"
             columns={[
@@ -193,12 +196,12 @@ export default function AuditTypeMaster() {
               { header: 'Standard', key: 'standard' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -211,9 +214,9 @@ export default function AuditTypeMaster() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={(col, row) => {
           const val = row[col.id];
           if (col.id === 'index') return rows.indexOf(row) + 1;

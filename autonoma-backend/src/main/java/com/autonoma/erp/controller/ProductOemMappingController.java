@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.ProductOemMappingRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ public class ProductOemMappingController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M3150", action = "write")
     public ResponseEntity<?> createMapping(@RequestBody ProductOemMapping mapping) {
         try {
             if (mapping.getPartNo() == null || mapping.getPartNo().trim().isEmpty()) {
@@ -67,6 +69,7 @@ public class ProductOemMappingController {
     }
 
     @PostMapping("/bulk")
+    @RequirePagePermission(pageCode = "M3150", action = "write")
     public ResponseEntity<?> createMappingsBulk(@RequestBody List<ProductOemMapping> mappings) {
         try {
             int savedCount = 0;
@@ -123,6 +126,7 @@ public class ProductOemMappingController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3150", action = "write")
     public ResponseEntity<?> updateMapping(@PathVariable Long id, @RequestBody ProductOemMapping mapping) {
         try {
             if (!mappingRepository.existsById(id)) {
@@ -154,6 +158,7 @@ public class ProductOemMappingController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3150", action = "delete")
     public ResponseEntity<?> deleteMapping(@PathVariable Long id) {
         try {
             if (!mappingRepository.existsById(id)) {

@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.BosPage;
 import com.autonoma.erp.service.admin.BosPageService;
 
@@ -23,6 +25,9 @@ public class BosPageController {
     }
 
     @PostMapping("/save-all")
+
+
+    @RequirePagePermission(pageCode = "AD1210", action = "write")
     public ResponseEntity<String> saveAll(@RequestBody List<BosPage> pages) {
         pageService.saveAll(pages);
         return ResponseEntity.ok("Pages updated successfully");

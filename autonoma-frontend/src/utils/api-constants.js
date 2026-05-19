@@ -58,6 +58,7 @@ export const API_PATHS = {
     QUOTATIONS: `${API_BASE}/sm/quotation`,
     SEGMENTS: `${API_BASE}/sm/segments`,
     SUB_SEGMENTS: `${API_BASE}/sm/sub-segments`,
+    POTENTIAL: `${API_BASE}/master/sales/crm/potential`,
   },
 
   // OCR Module (proxied through Spring Boot)

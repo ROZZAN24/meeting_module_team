@@ -10,6 +10,7 @@ import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -25,6 +26,7 @@ const columns = [
 export default function TypeOfService() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
+  const perms = usePagePermissions(PAGE_CODES.SM_TYPE_OF_SERVICE);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -144,7 +146,7 @@ return (
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={formattedRows}
             filename="Type_Of_Service"
             columns={[
@@ -152,7 +154,7 @@ return (
               { header: 'Service Name', key: 'serviceName' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
             New Service Type
           </Button>
@@ -167,7 +169,7 @@ return (
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={(row) => handleOpen(row)}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">

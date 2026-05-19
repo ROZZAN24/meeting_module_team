@@ -6,6 +6,7 @@ import com.autonoma.erp.repository.SmPriceMasterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,12 +39,14 @@ public class SmPriceMasterController {
     }
 
     @Operation(summary = "Create a new price master")
+    @RequirePagePermission(pageCode = "SM1130", action = "write")
     @PostMapping
     public ResponseEntity<SmPriceMaster> createMaster(@RequestBody SmPriceMaster master) {
         return ResponseEntity.ok(priceMasterService.saveMaster(master));
     }
 
     @Operation(summary = "Update an existing price master")
+    @RequirePagePermission(pageCode = "SM1130", action = "write")
     @PutMapping("/{id}")
     public ResponseEntity<SmPriceMaster> updateMaster(@PathVariable Long id, @RequestBody SmPriceMaster masterDetails) {
         return priceMasterRepository.findById(id)
@@ -70,6 +73,7 @@ public class SmPriceMasterController {
     }
 
     @Operation(summary = "Delete a price master")
+    @RequirePagePermission(pageCode = "SM1130", action = "delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteMaster(@PathVariable Long id) {
         priceMasterService.deleteMaster(id);

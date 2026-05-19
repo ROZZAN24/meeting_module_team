@@ -13,6 +13,7 @@ import { exportToExcel } from 'utils/excelExport';
 import useAuth from 'hooks/useAuth';
 import BOSDataTable from './BOSDataTable';
 import { format } from 'date-fns';
+import axios from 'utils/axios';
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -28,7 +29,10 @@ export default function BOSExportButton({
   loading = false,
   variant = 'outlined',
   color = 'primary',
-  size = 'medium'
+  size = 'medium',
+  pageId = null,
+  pageName = null,
+  pageCode = null
 }) {
   const theme = useTheme();
   const { user } = useAuth();
@@ -36,6 +40,7 @@ export default function BOSExportButton({
   const [activeTab, setActiveTab] = useState(0); // 0: Excel, 1: PDF
   const [page, setPage] = useState(0);
   const [sizePerPage, setSizePerPage] = useState(10);
+
 
   const handleOpenPreview = () => setPreviewOpen(true);
   const handleClosePreview = () => {
@@ -85,18 +90,84 @@ export default function BOSExportButton({
   };
 
   const getFormattedFilename = () => {
-    const ts = format(new Date(), 'dd/MM/yyyy_HHmm');
+    const ts = format(new Date(), 'dd-MM-yyyy_HHmm');
     return `${filename}_${ts}`;
+  };
+
+  const uploadAndLogExport = async (formatType) => {
+    const pageTitle = filename.replace(/_/g, ' ');
+    let filePath = null;
+
+    // 1. Prepare and upload the JSON metadata file to enable high-fidelity preview
+    try {
+      const exportMeta = {
+        data: prepareData(),
+        columns: columns || (data.length > 0 ? Object.keys(data[0]).map(k => ({ header: k, key: k })) : []),
+        filename: filename,
+        formatType: formatType,
+        timestamp: new Date().toISOString()
+      };
+
+      const jsonBlob = new Blob([JSON.stringify(exportMeta)], { type: 'application/json' });
+      const formData = new FormData();
+      const metaFilename = `${getFormattedFilename()}_meta.json`;
+      formData.append('file', jsonBlob, metaFilename);
+      formData.append('module', 'TRACEABILITY');
+
+      const uploadRes = await axios.post('/api/files/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      filePath = uploadRes.data; // e.g. "DEFAULT/uuid_name_meta.json"
+    } catch (err) {
+      console.error('Failed to upload export metadata to server:', err);
+    }
+
+    // 2. Log to standard audit trail
+    try {
+      await axios.post('/api/audit-trail/log', {
+        userId: user?.username || user?.email || user?.name || 'SYSTEM',
+        pageName: `${pageTitle} Master`,
+        actionType: 'EXPORT',
+        tableName: filename,
+        recordId: formatType,
+        previousValue: JSON.stringify({
+          recordCount: data.length,
+          filename: getFormattedFilename(),
+          format: formatType
+        }),
+        currentValue: null,
+        comments: `Exported ${data.length} records of ${pageTitle} in ${formatType} format.`
+      });
+    } catch (err) {
+      console.error('Failed to log export audit:', err);
+    }
+
+    // 3. Log to File Traceability Hub
+    try {
+      const computedPageName = pageTitle.toLowerCase().endsWith('master') ? pageTitle : `${pageTitle} Master`;
+      await axios.post('/api/file-traceability', {
+        pageId: pageId,
+        pageCode: pageCode || 'M_DF_01',
+        pageName: pageName || computedPageName,
+        reportName: `${getFormattedFilename()}.${formatType === 'Excel' ? 'xlsx' : 'pdf'}`,
+        filePath: filePath,
+        createdBy: user?.username || user?.email || user?.name || 'SYSTEM'
+      });
+    } catch (err) {
+      console.error('Failed to log file traceability:', err);
+    }
   };
 
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
+    uploadAndLogExport('Excel');
     exportToExcel(prepareData(), getFormattedFilename(), { userName: user?.name });
     handleClosePreview();
   };
 
   const handleExportPDF = () => {
     if (!data || data.length === 0) return;
+    uploadAndLogExport('PDF');
     const originalTitle = document.title;
     document.title = getFormattedFilename();
     window.print();
@@ -419,7 +490,10 @@ BOSExportButton.propTypes = {
   loading: PropTypes.bool,
   variant: PropTypes.string,
   color: PropTypes.string,
-  size: PropTypes.string
+  size: PropTypes.string,
+  pageId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  pageName: PropTypes.string,
+  pageCode: PropTypes.string
 };
 
 

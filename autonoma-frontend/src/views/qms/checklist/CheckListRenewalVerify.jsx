@@ -27,13 +27,17 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
+import useAuth from 'hooks/useAuth';
+import { BOSExportButton } from 'ui-component/bos';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
-import { exportToExcel } from 'utils/excelExport';
+import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Task Type', 'Seq No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To'
+  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check',
+  'Verification Required', 'Photo Required',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 
 const STATUS_OPTIONS = ['Pending for Verified', 'Pending for Accepted', 'Verified', 'Rejected', 'Not Accepted', 'Accepted', 'Missed'];
@@ -49,7 +53,7 @@ const DEFAULT_FILTERS = {
   taskType: 'All',
   fromDate: '',
   toDate: '',
-  considerDate: 'No',
+  considerDate: 'All',
   statuses: [],
   assignTo: '',
   category: 'All',
@@ -59,7 +63,8 @@ const DEFAULT_FILTERS = {
   seqNo: '',
   checkingPoint: '',
   frequency: 'All',
-  stockLink: 'All'
+  stockLink: 'All',
+  dualCheck: 'All'
 };
 
 const tableCols = [
@@ -74,7 +79,34 @@ const tableCols = [
   { id: 'checklistDate', label: 'Checklist Date' },
   { id: 'status', label: 'Status' },
   { id: 'nextDueDate', label: 'Next Due Date' },
-  { id: 'assignedTo', label: 'Assigned To' }
+  { id: 'assignedTo', label: 'Assigned To' },
+  { id: 'dualCheck', label: 'Dual Check' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' }
+];
+
+const exportColumns = [
+  { header: 'Task Type', key: (r) => r.assignType || 'Mine' },
+  { header: 'Seq No', key: (r) => r.checklist?.seqNo },
+  { header: 'Checking Point', key: (r) => r.checklist?.checkingPoint },
+  { header: 'Descriptions', key: (r) => r.checklist?.description },
+  { header: 'Category', key: (r) => r.checklist?.category },
+  { header: 'Frequency', key: (r) => r.checklist?.frequency },
+  { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
+  { header: 'Checklist Date', key: 'checklistDate' },
+  { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
+  { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
+  { header: 'Assigned To', key: 'assignedTo' },
+  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' },
+  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired || 'NO' },
+  { header: 'Photo Required', key: (r) => r.checklist?.photoRequired || 'NO' },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : (r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '') }
 ];
 
 const filterConfig = [
@@ -134,6 +166,13 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
+  },
+  {
+    id: 'dualCheck', label: 'Dual Check', type: 'select', isStarred: true, defaultValue: 'All', options: [
+      { value: 'All', label: 'All' },
+      { value: 'YES', label: 'YES' },
+      { value: 'NO', label: 'NO' }
+    ]
   }
 ];
 
@@ -156,6 +195,7 @@ function StatusChip({ status }) {
 }
 
 export default function CheckListRenewalVerify() {
+  const { user } = useAuth();
   const dispatch = useDispatch();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
@@ -167,12 +207,14 @@ export default function CheckListRenewalVerify() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDoubleTap, setShowDoubleTap] = useState(false);
+  const [verifyRemarks, setVerifyRemarks] = useState('');
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_RENEWAL_VERIFY);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-  const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false });
+  const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false, dualCheck: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   // Configure global search bar filters on mount
@@ -195,7 +237,7 @@ export default function CheckListRenewalVerify() {
         const filterKeys = [
           'taskType', 'fromDate', 'toDate', 'considerDate', 'statuses',
           'assignTo', 'category', 'searchBy', 'seqNo', 'checkingPoint',
-          'frequency', 'stockLink'
+          'frequency', 'stockLink', 'dualCheck'
         ];
 
         filterKeys.forEach((key) => {
@@ -225,11 +267,16 @@ export default function CheckListRenewalVerify() {
         searchValue: searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
 
+        // Task Filtering
+        taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
+        currentUser: user?.name || user?.id || undefined,
+
         // Add-on filters
         seqNo: filters.seqNo || undefined,
         checkingPoint: filters.checkingPoint || undefined,
         frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
-        stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined
+        stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined,
+        dualCheck: filters.dualCheck !== 'All' ? filters.dualCheck : undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
       setRows(response.data.content);
@@ -239,7 +286,7 @@ export default function CheckListRenewalVerify() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery]);
+  }, [page, size, filters, searchQuery, user]);
 
   useEffect(() => {
     fetchAssignments();
@@ -263,56 +310,30 @@ export default function CheckListRenewalVerify() {
     setPage(0);
   };
 
-  const handleVerify = async (status) => {
+  const handleVerify = async (status, remarks) => {
     if (!selectedRowId) return;
     try {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
-        remarks: `Verification action: ${status}`
+        verifiedBy: user?.name || user?.id || 'Current User',
+        remarks: remarks || `Verification action: ${status}`
       });
       setDialogOpen(false);
+      setVerifyRemarks('');
       fetchAssignments();
     } catch (error) {
       console.error('Verification failed:', error);
     }
   };
 
-  const handleExport = () => {
-    const exportData = rows.map((r, i) => ({
-      '#': i + 1,
-      'Task Type': r.assignType || 'Mine',
-      'Seq No': r.checklist?.seqNo,
-      'Checking Point': r.checklist?.checkingPoint,
-      'Descriptions': r.checklist?.description,
-      'Category': r.checklist?.category,
-      'Frequency': r.checklist?.frequency,
-      'Department': (r.checklist?.departments || []).map(d => d.departmentName).join(', '),
-      'Date': r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '',
-      'Checklist Date': r.checklistDate,
-      'Status': typeof r.status === 'object' ? r.status?.name : r.status,
-      'Next Due Date': r.checklist?.nextDueDate,
-      'Assigned To': r.assignedTo
-    }));
-    exportToExcel(exportData, 'Checklist_Renewal_Verify');
-  };
-
-  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0);
+  const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'All' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + (filters.dualCheck !== 'All' ? 1 : 0);
 
   return (
     <MainCard title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="contained" color="error" size="small" startIcon={<IconBan size={18} />} onClick={() => handleVerify('Rejected')} disabled={!selectedRowId}>Reject</Button>
-          <Button variant="contained" color="secondary" size="small" onClick={() => handleVerify('Not Accepted')} disabled={!selectedRowId}>Not Accepted</Button>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleVerify('Accepted')} disabled={!selectedRowId}>Accept</Button>
-          <Button variant="outlined" color="primary" size="small" startIcon={<IconFileDownload size={18} />} onClick={handleExport} sx={{ borderRadius: 1.5 }}>Export Excel</Button>
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border: '1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius: 1.5, p: 0.8, position: 'relative' }}>
-            <IconAdjustmentsHorizontal size={20} />
-            {activeCount > 0 && <Box sx={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', bgcolor: 'error.main', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>{activeCount}</Box>}
-          </IconButton>
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -326,6 +347,7 @@ export default function CheckListRenewalVerify() {
           {filters.statuses.map((s) => <Chip key={s} label={s} size="small" color="warning" onDelete={() => toggleStatus(s)} />)}
           {filters.assignTo && <Chip label={`Assign To: ${filters.assignTo}`} size="small" color="info" onDelete={() => setFilter('assignTo', '')} />}
           {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category', 'All')} />}
+          {filters.dualCheck !== 'All' && <Chip label={`Dual Check: ${filters.dualCheck}`} size="small" color="secondary" onDelete={() => setFilter('dualCheck', 'All')} />}
           <Button size="small" color="error" onClick={resetFilters} sx={{ ml: 1 }}>Clear All</Button>
         </Box>
       )}
@@ -356,77 +378,103 @@ export default function CheckListRenewalVerify() {
         </Box>
       )}
 
-      <TableContainer component={Paper} sx={{ height: 'calc(100vh - 240px)', border: '1px solid', borderColor: 'divider', borderRadius: 0, '&::-webkit-scrollbar': { width: 10, height: 10 }, '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 } }}>
-        <Table stickyHeader sx={{ minWidth: 2500 }} aria-label="renewal verify table">
-          <TableHead><TableRow>{columns.map((col, i) => <TableCell key={i} sx={{ bgcolor: 'primary.dark', color: 'white', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-            ) : rows.map((row, idx) => (
-              <TableRow
-                key={row.id}
-                hover
-                onClick={() => setSelectedRowId(row.id)}
-                onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                onMouseEnter={() => setShowDoubleTap(true)}
-                onMouseLeave={() => setShowDoubleTap(false)}
-                onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
-              >
-                <TableCell>{page * size + idx + 1}</TableCell>
-                <TableCell>{row.assignType || 'Mine'}</TableCell>
-                <TableCell>{row.checklist?.seqNo}</TableCell>
-                <TableCell>{row.checklist?.checkingPoint}</TableCell>
-                <TableCell>{row.checklist?.description}</TableCell>
-                <TableCell>{row.checklist?.category}</TableCell>
-                <TableCell>{row.checklist?.frequency}</TableCell>
-                <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell>{row.checklistDate}</TableCell>
-                <TableCell><StatusChip status={row.status} /></TableCell>
-                <TableCell>{row.checklist?.nextDueDate}</TableCell>
-                <TableCell>{row.assignedTo}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 185px)' }}>
+        <TableContainer component={Paper} sx={{ flexGrow: 1, border: '1px solid', borderColor: 'divider', borderRadius: 0, '&::-webkit-scrollbar': { width: 10, height: 10 }, '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 } }}>
+          <Table stickyHeader sx={{ minWidth: 2500 }} aria-label="renewal verify table">
+            <TableHead><TableRow>{columns.map((col, i) => <TableCell key={i} sx={{ bgcolor: 'primary.dark', color: 'white', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
+                    <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <Typography variant="body1" color="textSecondary">Loading...</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
+                    <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <Typography variant="body1" color="textSecondary">
+                        {searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : rows.map((row, idx) => (
+                <TableRow
+                  key={row.id}
+                  hover
+                  onClick={() => setSelectedRowId(row.id)}
+                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
+                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onMouseLeave={() => setShowDoubleTap(false)}
+                  onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                >
+                  <TableCell>{page * size + idx + 1}</TableCell>
+                  <TableCell>{row.assignType || 'Mine'}</TableCell>
+                  <TableCell>{row.checklist?.seqNo}</TableCell>
+                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>{row.checklist?.description}</TableCell>
+                  <TableCell>{row.checklist?.category}</TableCell>
+                  <TableCell>{row.checklist?.frequency}</TableCell>
+                  <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
+                  <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
+                  <TableCell>{row.checklistDate}</TableCell>
+                  <TableCell><StatusChip status={row.status} /></TableCell>
+                  <TableCell>{row.checklist?.nextDueDate}</TableCell>
+                  <TableCell>{row.assignedTo}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
+                  <TableCell>{row.checklist?.verificationRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : (row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-')}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <TablePagination
-        component="div"
-        count={totalElements}
-        page={page}
-        onPageChange={(e, p) => setPage(p)}
-        rowsPerPage={size}
-        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        sx={{
-          '& .MuiTablePagination-toolbar': {
-            justifyContent: 'center',
-            flexWrap: 'nowrap',
+        <TablePagination
+          component="div"
+          count={totalElements}
+          page={page}
+          onPageChange={(e, p) => setPage(p)}
+          rowsPerPage={size}
+          onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          sx={{
             minHeight: '36px !important',
-            height: '36px',
-            p: '0px !important',
-            gap: 1
-          },
-          '& .MuiTablePagination-spacer': { display: 'none' },
-          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-            margin: 0,
-            fontSize: '0.75rem',
-            fontWeight: 500
-          },
-          '& .MuiTablePagination-select': {
-            py: '2px',
-            fontSize: '0.75rem',
-            fontWeight: 500
-          },
-          '& .MuiTablePagination-actions': {
-            margin: 0
-          }
-        }}
-      />
+            height: '36px !important',
+            overflow: 'hidden',
+            '& .MuiTablePagination-toolbar': {
+              justifyContent: 'center',
+              flexWrap: 'nowrap',
+              minHeight: '36px !important',
+              height: '36px',
+              p: '0px !important',
+              gap: 1
+            },
+            '& .MuiTablePagination-spacer': { display: 'none' },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              margin: 0,
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-select': {
+              py: '2px',
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-actions': {
+              margin: 0
+            }
+          }}
+        />
+      </Box>
 
 
       {/* FILTER DRAWER */}
@@ -475,6 +523,12 @@ export default function CheckListRenewalVerify() {
             </RadioGroup></FormControl>
           </FilterSection>
           <Divider />
+          <FilterSection title="Dual Check" open={openSections.dualCheck} onToggle={() => toggleSection('dualCheck')}>
+            <FormControl><RadioGroup value={filters.dualCheck} onChange={(e) => setFilter('dualCheck', e.target.value)}>
+              {['All', 'YES', 'NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
+            </RadioGroup></FormControl>
+          </FilterSection>
+          <Divider />
           <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
             <FormControl fullWidth><RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
               {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small" />} label={<Typography variant="body2">{opt.label}</Typography>} />)}
@@ -489,10 +543,11 @@ export default function CheckListRenewalVerify() {
       </Drawer>
       <ExecutionVerifyDialog
         open={dialogOpen}
-        handleClose={() => setDialogOpen(false)}
+        handleClose={() => { setDialogOpen(false); setVerifyRemarks(''); }}
         data={activeRow}
-        onVerify={() => handleVerify('Accepted')}
-        onReject={() => handleVerify('Rejected')}
+        onVerify={(remarks) => handleVerify('Accepted', remarks)}
+        onReject={(remarks) => handleVerify('Rejected', remarks)}
+        onNotAccept={(remarks) => handleVerify('Not Accepted', remarks)}
         isExecution={false}
       />
     </MainCard>

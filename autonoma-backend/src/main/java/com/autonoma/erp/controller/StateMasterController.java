@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.StateMaster;
 import com.autonoma.erp.repository.StateMasterRepository;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,11 +32,17 @@ public class StateMasterController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M5260", action = "write")
     public StateMaster create(@RequestBody StateMaster item) {
         return repository.save(item);
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5260", action = "write")
     public ResponseEntity<StateMaster> update(@PathVariable Long id, @RequestBody StateMaster item) {
         return repository.findById(id)
                 .map(existing -> {
@@ -45,6 +53,9 @@ public class StateMasterController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5260", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();

@@ -2,22 +2,24 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton, Grid, MenuItem, Box, Checkbox, ListItemText } from '@mui/material';
 import { IconClipboardCheck, IconRefresh, IconPlus, IconDeviceFloppy, IconEraser } from '@tabler/icons-react';
 import axios from 'utils/axios';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { 
-  BOSDataTable, 
-  BOSExportButton, 
-  btnNew, 
-  BOSFormDialog, 
-  BOSTextField, 
+import {
+  BOSDataTable,
+  BOSExportButton,
+  btnNew,
+  BOSFormDialog,
+  BOSTextField,
   BOSFormSection,
   BOSFileUpload,
   errorStyle
 } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
+import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
@@ -30,11 +32,11 @@ const columns = [
   { id: 'levelCodes', label: 'Level', minWidth: 120 },
   { id: 'inductionRound', label: 'Round', minWidth: 120 },
   { id: 'attachmentRequired', label: 'Attach Req.', minWidth: 100 },
-  { 
-    id: 'status', 
-    label: 'Status', 
-    required: true, 
-    hide: true, 
+  {
+    id: 'status',
+    label: 'Status',
+    required: true,
+    hide: true,
     minWidth: 100,
     render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
   },
@@ -88,6 +90,32 @@ export default function InductionCriteria() {
 
   const { departments = [] } = useLookups(['DEPARTMENTS']);
 
+  const globalQuery = useSelector((state) => state.search.query);
+  const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
+
+  // Dispatch starred filter configuration matching Status
+  useEffect(() => {
+    const config = [
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'ALL', label: 'ALL' },
+          { value: 'ACTIVE', label: 'ACTIVE' },
+          { value: 'IN ACTIVE', label: 'INACTIVE' }
+        ],
+        defaultValue: 'ALL',
+        isStarred: true
+      }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [dispatch]);
+
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
@@ -124,10 +152,10 @@ export default function InductionCriteria() {
       ...row,
       departmentCodes: deptIds,
       levelCodes: row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [],
-      inductionAttachment: row.inductionAttachment ? { 
-        serverFileName: row.inductionAttachment, 
+      inductionAttachment: row.inductionAttachment ? {
+        serverFileName: row.inductionAttachment,
         fileName: row.inductionAttachment.split('/').pop(),
-        isServer: true 
+        isServer: true
       } : null
     });
     setErrors({});
@@ -172,33 +200,33 @@ export default function InductionCriteria() {
 
       if (formData.id) {
         await axios.put(`/api/hr/induction-master/${formData.id}`, payload);
-        dispatch(openSnackbar({ 
-          open: true, 
-          message: 'Induction Criteria Updated Successfully', 
-          variant: 'alert', 
+        dispatch(openSnackbar({
+          open: true,
+          message: 'Induction Criteria Updated Successfully',
+          variant: 'alert',
           alert: { variant: 'filled' },
-          severity: 'success' 
+          severity: 'success'
         }));
       } else {
         await axios.post('/api/hr/induction-master', payload);
-        dispatch(openSnackbar({ 
-          open: true, 
-          message: 'Induction Criteria Saved Successfully', 
-          variant: 'alert', 
+        dispatch(openSnackbar({
+          open: true,
+          message: 'Induction Criteria Saved Successfully',
+          variant: 'alert',
           alert: { variant: 'filled' },
-          severity: 'success' 
+          severity: 'success'
         }));
       }
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
       const msg = error.response?.data?.message || error.response?.data || 'Failed to save induction criteria';
-      dispatch(openSnackbar({ 
-        open: true, 
-        message: msg, 
-        variant: 'alert', 
+      dispatch(openSnackbar({
+        open: true,
+        message: msg,
+        variant: 'alert',
         alert: { variant: 'filled' },
-        severity: 'error' 
+        severity: 'error'
       }));
     }
   };
@@ -247,11 +275,11 @@ export default function InductionCriteria() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton 
-            data={resolvedRows} 
-            filename="Induction_Criteria" 
-            columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
-          />
+          {perms.export && <BOSExportButton
+            data={resolvedRows}
+            filename="Induction_Criteria"
+            columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          />}
           <Button variant="contained" color="primary" onClick={handleOpenAdd} sx={btnNew} startIcon={<IconPlus size={18} />}>
             + New
           </Button>
@@ -262,9 +290,9 @@ export default function InductionCriteria() {
         columns={columns}
         rows={resolvedRows}
         loading={loading}
-        onEditRow={handleOpenEdit}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
         onDeleteRow={handleDelete}
-        onDoubleClickRow={handleOpenEdit}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
       />
 
       <BOSFormDialog
@@ -294,9 +322,9 @@ export default function InductionCriteria() {
                 disabled
                 InputProps={{
                   readOnly: true,
-                  sx: { 
-                    bgcolor: 'rgba(33, 150, 243, 0.04)', 
-                    fontWeight: 700, 
+                  sx: {
+                    bgcolor: 'rgba(33, 150, 243, 0.04)',
+                    fontWeight: 700,
                     color: 'primary.main',
                     '& .MuiInputBase-input.Mui-disabled': {
                       WebkitTextFillColor: 'var(--primary-main)',
@@ -405,7 +433,7 @@ export default function InductionCriteria() {
                   label="DEPARTMENT"
                   value={formData.departmentCodes}
                   onChange={handleInputChange}
-                  SelectProps={{ 
+                  SelectProps={{
                     multiple: true,
                     renderValue: (selected) => {
                       if (!selected || selected.length === 0) return <em>-Select-</em>;
@@ -430,7 +458,7 @@ export default function InductionCriteria() {
                   label="LEVEL"
                   value={formData.levelCodes}
                   onChange={handleInputChange}
-                  SelectProps={{ 
+                  SelectProps={{
                     multiple: true,
                     renderValue: (selected) => {
                       if (selected.length === 0) return <em>-Select-</em>;

@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.UserCredential;
 import com.autonoma.erp.repository.admin.UserRepository;
 import com.autonoma.erp.service.FileService;
@@ -50,6 +52,9 @@ public class UserController {
     }
 
     @PostMapping("/create")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> createUser(@RequestBody UserCredential user) {
         if (user.getUserId() == null || user.getUserId().isEmpty()) {
             return ResponseEntity.badRequest().body("User ID cannot be empty");
@@ -57,13 +62,20 @@ public class UserController {
         if (userRepository.existsById(user.getUserId())) {
             return ResponseEntity.badRequest().body("User ID already exists");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        } else {
+            user.setPassword(passwordEncoder.encode(""));
+        }
         user.setCreatedDate(new Date());
         user.setCreatedBy(getCurrentUserId());
         return ResponseEntity.ok(userRepository.save(user));
     }
 
     @PutMapping("/update/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserCredential userDetails) {
         return userRepository.findById(id).map(user -> {
             // Delete old image if it's being replaced
@@ -74,9 +86,15 @@ public class UserController {
             user.setEmpId(userDetails.getEmpId());
             user.setStatus(userDetails.getStatus());
             user.setImgName(userDetails.getImgName());
+            user.setFaceImage(userDetails.getFaceImage());
+            user.setAuthMethod(userDetails.getAuthMethod());
+            user.setFaceDescriptor(userDetails.getFaceDescriptor());
 
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+                // Prevent double-encoding if the frontend sends back the existing encrypted hash
+                if (!userDetails.getPassword().equals(user.getPassword())) {
+                    user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+                }
             }
 
             user.setUpdatedBy(getCurrentUserId());
@@ -86,6 +104,9 @@ public class UserController {
     }
 
     @PostMapping(value = "/upload-profile-pic", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> uploadProfilePic(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "previousFile", required = false) String previousFile) {
@@ -129,8 +150,113 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "delete")
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         userRepository.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserDivisionMappingRepository userDivisionMappingRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserCompanyMappingRepository userCompanyMappingRepository;
+
+    @Autowired
+    private com.autonoma.erp.service.DivisionService divisionService;
+
+    @GetMapping("/{userId}/mappings")
+    public ResponseEntity<?> getUserMappings(@PathVariable String userId) {
+        java.util.List<Long> divIds = userDivisionMappingRepository.findByUserId(userId).stream()
+                .map(com.autonoma.erp.model.admin.UserDivisionMapping::getDivisionId)
+                .collect(java.util.stream.Collectors.toList());
+
+        java.util.List<Long> compIds = userCompanyMappingRepository.findByUserId(userId).stream()
+                .map(com.autonoma.erp.model.admin.UserCompanyMapping::getCompanyId)
+                .collect(java.util.stream.Collectors.toList());
+
+        UserCredential user = userRepository.findById(userId).orElse(null);
+        Integer isBosAdmin = (user != null && user.getIsBosAdmin() != null) ? user.getIsBosAdmin() : 0;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("mappedDivisionIds", divIds);
+        result.put("mappedCompanyIds", compIds);
+        result.put("isBosAdmin", isBosAdmin);
+
+        return ResponseEntity.ok(result);
+    }
+
+    public static class UserMappingPayload {
+        private java.util.List<Long> mappedDivisionIds;
+        private Integer isBosAdmin;
+
+        public java.util.List<Long> getMappedDivisionIds() {
+            return mappedDivisionIds;
+        }
+
+        public void setMappedDivisionIds(java.util.List<Long> mappedDivisionIds) {
+            this.mappedDivisionIds = mappedDivisionIds;
+        }
+
+        public Integer getIsBosAdmin() {
+            return isBosAdmin;
+        }
+
+        public void setIsBosAdmin(Integer isBosAdmin) {
+            this.isBosAdmin = isBosAdmin;
+        }
+    }
+
+    @PostMapping("/{userId}/mappings")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
+    public ResponseEntity<?> updateUserMappings(@PathVariable String userId, @RequestBody UserMappingPayload payload) {
+        UserCredential user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        user.setIsBosAdmin(payload.getIsBosAdmin() != null ? payload.getIsBosAdmin() : 0);
+        userRepository.save(user);
+
+        userDivisionMappingRepository.deleteByUserId(userId);
+        userCompanyMappingRepository.deleteByUserId(userId);
+
+        if (payload.getIsBosAdmin() == null || payload.getIsBosAdmin() == 0) {
+            if (payload.getMappedDivisionIds() != null && !payload.getMappedDivisionIds().isEmpty()) {
+                java.util.Set<Long> companyIds = new java.util.HashSet<>();
+
+                for (Long divId : payload.getMappedDivisionIds()) {
+                    com.autonoma.erp.model.admin.UserDivisionMapping divMapping = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                    divMapping.setUserId(userId);
+                    divMapping.setDivisionId(divId);
+                    divMapping.setCreatedBy(getCurrentUserId());
+                    divMapping.setCreatedAt(new Date());
+                    userDivisionMappingRepository.save(divMapping);
+
+                    divisionService.findById(divId).ifPresent(div -> {
+                        if (div.getCompanyId() != null) {
+                            companyIds.add(div.getCompanyId());
+                        }
+                    });
+                }
+
+                for (Long compId : companyIds) {
+                    com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                    compMapping.setUserId(userId);
+                    compMapping.setCompanyId(compId);
+                    compMapping.setCreatedBy(getCurrentUserId());
+                    compMapping.setCreatedAt(new Date());
+                    userCompanyMappingRepository.save(compMapping);
+                }
+            }
+        }
+
+        Map<String, String> res = new HashMap<>();
+        res.put("message", "User mappings updated successfully");
+        return ResponseEntity.ok(res);
     }
 }

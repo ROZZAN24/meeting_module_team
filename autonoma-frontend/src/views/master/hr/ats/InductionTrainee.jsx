@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'utils/axios';
 import { useTheme } from '@mui/material/styles';
 import useAuth from 'hooks/useAuth';
@@ -41,6 +41,7 @@ import {
   errorStyle
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION TRAINEE (EMPLOYEE PAGE) ||============================== //
 
@@ -79,6 +80,7 @@ const columns = [
 export default function InductionTrainee() {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINEE);
   const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
@@ -87,7 +89,8 @@ export default function InductionTrainee() {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [trainingDetails, setTrainingDetails] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [searchText, setSearchText] = useState('');
+
+  const globalQuery = useSelector((state) => state.search.query);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -176,8 +179,8 @@ export default function InductionTrainee() {
   // Filter rows
   const resolvedRows = useMemo(() => {
     let filtered = rows;
-    if (searchText) {
-      const s = searchText.toLowerCase();
+    if (globalQuery) {
+      const s = globalQuery.toLowerCase();
       filtered = filtered.filter(r =>
         (r.inductionRound || '').toLowerCase().includes(s) ||
         (r.trainerName || '').toLowerCase().includes(s) ||
@@ -189,7 +192,7 @@ export default function InductionTrainee() {
       index: i + 1,
       inductionDate: r.inductionDate ? new Date(r.inductionDate).toLocaleDateString('en-GB') : '-'
     }));
-  }, [rows, searchText]);
+  }, [rows, globalQuery]);
 
   return (
     <MainCard
@@ -201,13 +204,6 @@ export default function InductionTrainee() {
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSTextField
-            size="small"
-            placeholder="Search..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            sx={{ minWidth: 200 }}
-          />
           <Tooltip title="Refresh">
             <IconButton onClick={fetchRows} color="primary" size="small" sx={{
               border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
@@ -216,11 +212,11 @@ export default function InductionTrainee() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Induction_Trainee"
             columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />
+          />}
         </Stack>
       }
     >

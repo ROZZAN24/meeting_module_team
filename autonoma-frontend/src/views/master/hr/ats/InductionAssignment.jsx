@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'utils/axios';
 import { useTheme } from '@mui/material/styles';
 
@@ -39,6 +39,8 @@ import {
 import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
+import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
@@ -110,14 +112,6 @@ const INITIAL_STATE = {
   remarks: ''
 };
 
-const SEARCH_OPTIONS = [
-  { value: 'empCode', label: 'Employee Code' },
-  { value: 'empName', label: 'Employee Name' },
-  { value: 'department', label: 'Department' },
-  { value: 'currentStatus', label: 'Current Status' },
-  { value: 'inductionRound', label: 'Induction Round' }
-];
-
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
 const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED'];
@@ -140,13 +134,50 @@ const InductionAssignment = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [searchBy, setSearchBy] = useState('empCode');
-  const [searchText, setSearchText] = useState('');
   const [formData, setFormData] = useState(INITIAL_STATE);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const [history, setHistory] = useState([]);
+
+  const globalQuery = useSelector((state) => state.search.query);
+  const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
+
+  // Dispatch starred filter configuration matching Status and Search By
+  useEffect(() => {
+    const config = [
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'ALL', label: 'ALL' },
+          { value: 'PENDING', label: 'PENDING' },
+          { value: 'COMPLETED', label: 'COMPLETED' }
+        ],
+        defaultValue: 'ALL',
+        isStarred: true
+      },
+      {
+        id: 'searchBy',
+        label: 'Search By',
+        type: 'select',
+        options: [
+          { value: 'empCode', label: 'Employee Code' },
+          { value: 'empName', label: 'Employee Name' },
+          { value: 'department', label: 'Department' },
+          { value: 'currentStatus', label: 'Current Status' },
+          { value: 'inductionRound', label: 'Induction Round' }
+        ],
+        defaultValue: 'empCode',
+        isStarred: true
+      }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [dispatch]);
 
   const handleAssign = useCallback(async (row) => {
     setLoading(true);
@@ -352,68 +383,36 @@ const InductionAssignment = () => {
 
   const resolvedRows = useMemo(() => {
     return rows.filter(row => {
-      const matchesStatus = statusFilter === 'ALL' || row.inductionStatus === statusFilter;
-      const term = searchText.toLowerCase();
-      const matchesSearch = !term || (row[searchBy] && row[searchBy].toString().toLowerCase().includes(term));
+      const statusVal = globalFilters.status || 'ALL';
+      const matchesStatus = statusVal === 'ALL' || row.inductionStatus === statusVal;
+      
+      const searchByVal = globalFilters.searchBy || 'empCode';
+      const term = globalQuery ? globalQuery.toLowerCase() : '';
+      const matchesSearch = !term || (row[searchByVal] && row[searchByVal].toString().toLowerCase().includes(term));
+      
       return matchesStatus && matchesSearch;
     }).map((r, i) => ({ ...r, index: i + 1 }));
-  }, [rows, statusFilter, searchBy, searchText]);
+  }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
 
   return (
     <MainCard
       title="Employee Induction Summary"
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSTextField
-            select
-            size="small"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ width: 150 }}
-            label="STATUS"
-          >
-            <MenuItem value="ALL">ALL</MenuItem>
-            <MenuItem value="PENDING">PENDING</MenuItem>
-            <MenuItem value="COMPLETED">COMPLETED</MenuItem>
-          </BOSTextField>
- 
-          <BOSTextField
-            select
-            size="small"
-            value={searchBy}
-            onChange={(e) => setSearchBy(e.target.value)}
-            sx={{ width: 160 }}
-            label="SEARCH BY"
-          >
-            <MenuItem value="">-SELECT-</MenuItem>
-            {SEARCH_OPTIONS.map(opt => (
-              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-            ))}
-          </BOSTextField>
+          <Tooltip title="Refresh">
+            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
+              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
+              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
+            }}>
+              <IconRefresh size={20} />
+            </IconButton>
+          </Tooltip>
 
-          <BOSTextField
-            size="small"
-            placeholder="Search..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            sx={{ width: 180 }}
-          />
-
-          <Button 
-            variant="contained" 
-            startIcon={<IconRefresh size={18} />} 
-            onClick={fetchRows}
-            size="small"
-            sx={{ height: 40, px: 2, borderRadius: '8px' }}
-          >
-            Get Details
-          </Button>
-
-          <BOSExportButton 
+          {perms.export && <BOSExportButton 
             data={resolvedRows} 
             filename="Induction_Summary" 
             columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
-          />
+          />}
         </Stack>
       }
     >

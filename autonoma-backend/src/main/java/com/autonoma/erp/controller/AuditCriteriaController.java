@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.AuditCriteriaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -32,6 +33,7 @@ public class AuditCriteriaController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M1130", action = "write")
     @Operation(summary = "Create/Update Audit Criteria", description = "Creates a new audit criteria or updates an existing one")
     public AuditCriteria createAuditCriteria(@RequestBody AuditCriteria auditCriteria) {
         log.info("Saving audit criteria: {}", auditCriteria);
@@ -52,6 +54,7 @@ public class AuditCriteriaController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1130", action = "delete")
     public ResponseEntity<Void> deleteAuditCriteria(@PathVariable Long id) {
         auditCriteriaRepository.deleteById(id);
         return ResponseEntity.noContent().build();

@@ -5,6 +5,7 @@ import com.autonoma.erp.service.SupplierMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import java.util.List;
 
 @RestController
@@ -35,11 +36,13 @@ public class SupplierMasterController {
         return service.getAllSuppliers();
     }
 
+    @RequirePagePermission(pageCode = "M4110", action = "write")
     @PostMapping
     public SupplierMaster createSupplier(@RequestBody SupplierMaster supplier) {
         return service.saveSupplier(supplier);
     }
 
+    @RequirePagePermission(pageCode = "M4110", action = "write")
     @PutMapping("/{id}")
     public ResponseEntity<SupplierMaster> updateSupplier(@PathVariable Long id, @RequestBody SupplierMaster supplier) {
         return service.getSupplierById(id)
@@ -53,6 +56,7 @@ public class SupplierMasterController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @RequirePagePermission(pageCode = "M4110", action = "delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSupplier(@PathVariable Long id) {
         service.deleteSupplier(id);

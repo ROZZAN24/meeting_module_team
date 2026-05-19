@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.QmsModelName;
 import com.autonoma.erp.repository.QmsModelNameRepository;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,9 @@ public class QmsModelNameController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M3160", action = "write")
     public ResponseEntity<?> createModelName(@RequestBody QmsModelName modelName) {
         try {
             if (modelName.getModelName() == null || modelName.getModelName().trim().isEmpty()) {
@@ -56,6 +61,9 @@ public class QmsModelNameController {
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M3160", action = "write")
     public ResponseEntity<?> updateModelName(@PathVariable Long id, @RequestBody QmsModelName modelName) {
         try {
             if (!repository.existsById(id)) {
@@ -80,6 +88,9 @@ public class QmsModelNameController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M3160", action = "delete")
     public ResponseEntity<?> deleteModelName(@PathVariable Long id) {
         try {
             if (!repository.existsById(id)) {

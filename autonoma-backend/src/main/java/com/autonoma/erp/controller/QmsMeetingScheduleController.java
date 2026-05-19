@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import com.autonoma.erp.security.RequirePagePermission;
 
 @RestController
 @RequestMapping("/api/qms/meeting-schedules")
@@ -25,17 +26,20 @@ public class QmsMeetingScheduleController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "QM1310", action = "write")
     public ResponseEntity<QmsMeetingSchedule> create(@RequestBody QmsMeetingSchedule schedule) {
         return ResponseEntity.ok(service.saveSchedule(schedule));
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1310", action = "write")
     public ResponseEntity<QmsMeetingSchedule> update(@PathVariable Long id, @RequestBody QmsMeetingSchedule schedule) {
         schedule.setId(id);
         return ResponseEntity.ok(service.saveSchedule(schedule));
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1310", action = "delete")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             service.deleteSchedule(id);

@@ -213,47 +213,69 @@ public class ChecklistService {
             }
 
             // Normal update (either not verified yet, or no amendment reason)
-            existing.setSeqNo(checklist.getSeqNo());
-            existing.setCheckingPoint(checklist.getCheckingPoint());
-            existing.setDescription(checklist.getDescription());
-            existing.setCategory(checklist.getCategory());
-            existing.setFrequency(checklist.getFrequency());
+            existing.setSeqNo(checklist.getSeqNo() != null ? checklist.getSeqNo() : existing.getSeqNo());
+            existing.setCheckingPoint(checklist.getCheckingPoint() != null ? checklist.getCheckingPoint() : existing.getCheckingPoint());
+            existing.setDescription(checklist.getDescription() != null ? checklist.getDescription() : existing.getDescription());
+            existing.setCategory(checklist.getCategory() != null ? checklist.getCategory() : existing.getCategory());
+            existing.setFrequency(checklist.getFrequency() != null ? checklist.getFrequency() : existing.getFrequency());
+            existing.setEffectiveFrom(checklist.getEffectiveFrom() != null ? checklist.getEffectiveFrom() : existing.getEffectiveFrom());
             existing.setExpiryDate(checklist.getExpiryDate());
             existing.setReminderDays(checklist.getReminderDays());
             existing.setReminderDate(checklist.getReminderDate());
-            existing.setStockLink(checklist.getStockLink());
-            existing.setPhotoRequired(checklist.getPhotoRequired());
-            existing.setVerificationRequired(checklist.getVerificationRequired());
-            existing.setDualCheck(checklist.getDualCheck());
-            existing.setCarryForward(checklist.getCarryForward());
-            existing.setStatus(checklist.getStatus());
-            existing.setVerifyStatus(checklist.getVerifyStatus());
+            existing.setStockLink(checklist.getStockLink() != null ? checklist.getStockLink() : existing.getStockLink());
+            existing.setPhotoRequired(checklist.getPhotoRequired() != null ? checklist.getPhotoRequired() : existing.getPhotoRequired());
+            existing.setVerificationRequired(checklist.getVerificationRequired() != null ? checklist.getVerificationRequired() : existing.getVerificationRequired());
+            existing.setDualCheck(checklist.getDualCheck() != null ? checklist.getDualCheck() : existing.getDualCheck());
+            existing.setCarryForward(checklist.getCarryForward() != null ? checklist.getCarryForward() : existing.getCarryForward());
+            
+            existing.setWeekDays(checklist.getWeekDays() != null ? checklist.getWeekDays() : existing.getWeekDays());
+            existing.setRepeatEveryValue(checklist.getRepeatEveryValue() != null ? checklist.getRepeatEveryValue() : existing.getRepeatEveryValue());
+            existing.setRepeatEveryUnit(checklist.getRepeatEveryUnit() != null ? checklist.getRepeatEveryUnit() : existing.getRepeatEveryUnit());
+
+            if (checklist.getStatus() != null) {
+                existing.setStatus(checklist.getStatus());
+            } else if (existing.getStatus() == null) {
+                existing.setStatus("Active");
+            }
+
+            if (checklist.getVerifyStatus() != null) {
+                existing.setVerifyStatus(checklist.getVerifyStatus());
+            } else if (existing.getVerifyStatus() == null || "Rejected".equals(existing.getVerifyStatus())) {
+                existing.setVerifyStatus("Pending for Verify");
+            }
 
             if (checklist.getAmendmentReason() != null && !checklist.getAmendmentReason().isEmpty()) {
                 existing.setVerifyStatus("Pending for Verify");
             }
 
-            existing.setVerifiedBy(checklist.getVerifiedBy());
-            existing.setVerifiedDate(checklist.getVerifiedDate());
-            existing.setRejReason(checklist.getRejReason());
-            existing.setAssignTo(checklist.getAssignTo());
-            existing.setAssignDate(checklist.getAssignDate());
-            existing.setItemCode(checklist.getItemCode());
-            existing.setQty(checklist.getQty());
-            existing.setLevelIds(checklist.getLevelIds());
-            existing.setAmendmentReason(checklist.getAmendmentReason());
-            existing.setUploadedFiles(checklist.getUploadedFiles());
-            existing.setScannedFiles(checklist.getScannedFiles());
+            if (checklist.getVerifiedBy() != null) existing.setVerifiedBy(checklist.getVerifiedBy());
+            if (checklist.getVerifiedDate() != null) existing.setVerifiedDate(checklist.getVerifiedDate());
+            if (checklist.getRejReason() != null) existing.setRejReason(checklist.getRejReason());
+            if (checklist.getAssignTo() != null) existing.setAssignTo(checklist.getAssignTo());
+            if (checklist.getAssignDate() != null) existing.setAssignDate(checklist.getAssignDate());
+            if (checklist.getItemCode() != null) existing.setItemCode(checklist.getItemCode());
+            if (checklist.getQty() != null) existing.setQty(checklist.getQty());
+            if (checklist.getLevelIds() != null) existing.setLevelIds(checklist.getLevelIds());
+            if (checklist.getAmendmentReason() != null) existing.setAmendmentReason(checklist.getAmendmentReason());
+            if (checklist.getUploadedFiles() != null) existing.setUploadedFiles(checklist.getUploadedFiles());
+            if (checklist.getScannedFiles() != null) existing.setScannedFiles(checklist.getScannedFiles());
             existing.setUpdatedDate(new Date());
+            existing.setUpdatedBy(checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty() 
+                    ? checklist.getUpdatedBy() 
+                    : com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
 
-            // Re-sync departments
-            deptRepo.deleteByChecklist(existing);
+            // Re-sync departments safely via the managed list of the existing entity to avoid Hibernate state desync
+            if (existing.getDepartments() != null) {
+                existing.getDepartments().clear();
+            } else {
+                existing.setDepartments(new ArrayList<>());
+            }
             if (departments != null) {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
                     dept.setChecklist(existing);
                     dept.setDepartmentName(deptName);
-                    deptRepo.save(dept);
+                    existing.getDepartments().add(dept);
                 }
             }
             return masterRepo.save(existing);
@@ -298,18 +320,27 @@ public class ChecklistService {
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate,
             String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType,
-            String currentUser, boolean excludeCompleted, Pageable pageable) {
+            String currentUser, boolean excludeCompleted, String dualCheck, Pageable pageable) {
 
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            Join<ChecklistAssignment, MasterChecklist> masterJoin = null;
+
             if (masterVerifyStatus != null && !masterVerifyStatus.isEmpty()) {
-                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                masterJoin = root.join("checklist");
                 if ("Verified".equals(masterVerifyStatus)) {
                     predicates.add(masterJoin.get("verifyStatus").in("Verified", "Accepted"));
                 } else {
                     predicates.add(cb.equal(masterJoin.get("verifyStatus"), masterVerifyStatus));
                 }
+            }
+
+            if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
+                if (masterJoin == null) {
+                    masterJoin = root.join("checklist");
+                }
+                predicates.add(cb.equal(masterJoin.get("dualCheck"), dualCheck));
             }
 
             // Task Type Logic (SOP Item 8)
@@ -353,7 +384,9 @@ public class ChecklistService {
             }
 
             if (category != null && !category.equals("All")) {
-                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                if (masterJoin == null) {
+                    masterJoin = root.join("checklist");
+                }
                 predicates.add(cb.equal(masterJoin.get("category"), category));
             }
 
@@ -495,6 +528,8 @@ public class ChecklistService {
         if (actualFiles != null) {
             assignment.setActualFiles(actualFiles);
         }
+        assignment.setUpdatedBy(verifiedBy);
+        assignment.setUpdatedAt(new Date());
         assignRepo.save(assignment);
 
         // Create verification record
@@ -574,8 +609,9 @@ public class ChecklistService {
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
-        checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
+        checklist.setUpdatedBy(verifiedBy);
+        checklist.setUpdatedDate(new Date());
         if ("Rejected".equals(status)) {
             checklist.setRejReason(remarks);
         } else if ("Verified".equals(status)) {

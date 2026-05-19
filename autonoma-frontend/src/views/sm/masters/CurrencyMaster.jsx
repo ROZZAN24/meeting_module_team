@@ -8,6 +8,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -26,6 +27,7 @@ const INITIAL = { currencyCode: '', currencyName: '', symbol: '', status: 'Activ
 export default function CurrencyMaster() {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.LOG_CURRENCY);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -117,7 +119,7 @@ return (
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="Currency_Master"
             columns={[
@@ -126,7 +128,7 @@ return (
               { header: 'Symbol', key: 'symbol' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
             Add New
           </Button>
@@ -141,7 +143,7 @@ return (
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <Dialog open={showForm} onClose={() => { setShowForm(false); setForm(INITIAL); setSelectedId(null); }} fullWidth maxWidth="sm">

@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Grid, Box, Typography, TextField, Select, MenuItem,
   Button, IconButton, Divider, Checkbox, ListItemText, Slide, useTheme,
-  CircularProgress
+  CircularProgress, Autocomplete, Chip
 } from '@mui/material';
 import {
   IconX, IconCheck, IconEraser, IconCloudUpload, IconCamera, IconFileDescription,
@@ -161,8 +161,8 @@ const FileItem = ({ file, onEnter, onMove, onLeave }) => (
 FileItem.propTypes = { file: PropTypes.object, onEnter: PropTypes.func, onMove: PropTypes.func, onLeave: PropTypes.func };
 
 const DEPARTMENTS = [
-  'HRA', 'PRODUCTION', 'MAINTENANCE', 'FINANCE', 'STORES',
-  'QUALITY', 'PURCHASE', 'LOGISTICS', 'MARKETING', 'IT', 'MANAGEMENT'
+  'ACCOUNTS','ADMIN','ASSEMBLY','BUSINESS DEVELOPMENT','DESIGN & DEVELOPMENT',
+  'FINANCE','HRA','IT','LOGISTICS','MAINTENANCE','MARKETING','PRODUCTION','PURCHASE','QUALITY','STORES'
 ];
 
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -182,7 +182,37 @@ const LabelInput = ({ label, required, children }) => (
     <Box sx={{ flex: 1 }}>{children}</Box>
   </Box>
 );
-LabelInput.propTypes = { label: PropTypes.string, required: PropTypes.bool, children: PropTypes.node };
+const formatDateForInput = (dateVal) => {
+  if (!dateVal) return '';
+  try {
+    if (typeof dateVal === 'number') {
+      const d = new Date(dateVal);
+      if (isNaN(d.getTime())) return '';
+      return d.toISOString().split('T')[0];
+    }
+    
+    let str = String(dateVal).trim();
+    if (!str) return '';
+    
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      return str.substring(0, 10);
+    }
+    
+    if (/^\d{2}-\d{2}-\d{4}/.test(str)) {
+      const parts = str.split('-');
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    
+    const d = new Date(str);
+    if (isNaN(d.getTime())) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } catch (e) {
+    return '';
+  }
+};
 
 export default function AddCheckListDialog({ open, handleClose, onSave, initialData, isAmendment }) {
   const theme = useTheme();
@@ -207,6 +237,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [dualCheck, setDualCheck] = useState('');
   const [carryForward, setCarryForward] = useState('');
   const [amendmentReason, setAmendmentReason] = useState('');
+  const [levelIds, setLevelIds] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const speechRef = useRef(null);
@@ -273,10 +304,10 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       if (initialData) {
         setSeqNo(initialData.seqNo || '');
         setCategory(initialData.category || '');
-        setEffectiveFrom(initialData.effectiveFrom || '');
-        setExpiryDate(initialData.expiryDate || '');
+        setEffectiveFrom(formatDateForInput(initialData.effectiveFrom));
+        setExpiryDate(formatDateForInput(initialData.expiryDate));
         setReminderDays(initialData.reminderDays || '');
-        setReminderDate(initialData.reminderDate || '');
+        setReminderDate(formatDateForInput(initialData.reminderDate));
         setRenewalPoint(initialData.checkingPoint || '');
         setFrequency(initialData.frequency || '');
         setWeekDays(initialData.weekDays ? (Array.isArray(initialData.weekDays) ? initialData.weekDays[0] : String(initialData.weekDays).split(',')[0]) : '');
@@ -289,6 +320,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setDualCheck(initialData.dualCheck || '');
         setCarryForward(initialData.carryForward || '');
         setAmendmentReason(initialData.amendmentReason || '');
+        setLevelIds(initialData.levelIds ? initialData.levelIds.split(',').map(s => s.trim()).filter(Boolean) : []);
         setUploadedFiles([]);
         setScannedFiles([]);
       } else {
@@ -298,12 +330,46 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
         setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
+        setLevelIds([]);
         axios.get('/api/qms/checklist/next-sequence')
           .then(res => setSeqNo(String(res.data.nextSeqNo).padStart(3, '0')))
           .catch(() => {});
       }
     }
   }, [open, initialData]);
+
+  // Automatically calculate Reminder Days when Expiry Date or Reminder Date changes
+  useEffect(() => {
+    if (expiryDate && reminderDate) {
+      const exp = new Date(expiryDate);
+      const rem = new Date(reminderDate);
+      
+      // Clear time components to get exact day difference
+      exp.setHours(0, 0, 0, 0);
+      rem.setHours(0, 0, 0, 0);
+      
+      const diffTime = exp.getTime() - rem.getTime();
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      if (!isNaN(diffDays)) {
+        setReminderDays(diffDays >= 0 ? String(diffDays) : '0');
+      }
+    }
+  }, [expiryDate, reminderDate]);
+
+  // Automatically calculate Reminder Date when user manually updates Reminder Days
+  const handleReminderDaysChange = (val) => {
+    setReminderDays(val);
+    if (expiryDate && val && !isNaN(Number(val))) {
+      const exp = new Date(expiryDate);
+      exp.setHours(0, 0, 0, 0);
+      exp.setDate(exp.getDate() - Number(val));
+      
+      const yyyy = exp.getFullYear();
+      const mm = String(exp.getMonth() + 1).padStart(2, '0');
+      const dd = String(exp.getDate()).padStart(2, '0');
+      setReminderDate(`${yyyy}-${mm}-${dd}`);
+    }
+  };
 
   const handleFileUpload = (e) => {
     if (e.target.files?.length) setUploadedFiles(prev => [...prev, ...Array.from(e.target.files)]);
@@ -318,10 +384,21 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
     setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
     setAmendmentReason('');
+    setLevelIds([]);
   };
   const handleSave = () => {
-    if (!category || !frequency || !effectiveFrom || !renewalPoint || !description || department.length === 0) {
-      alert('Please fill in all required fields (Category, Frequency, Effective From, Renewal Point, Descriptions/SOP, Department)'); return;
+    const missing = [];
+    if (!category) missing.push('Category');
+    if (!frequency) missing.push('Frequency');
+    if (!effectiveFrom) missing.push('Effective From');
+    if (!renewalPoint) missing.push('Renewal Point');
+    if (!description) missing.push('Descriptions/SOP');
+    if (department.length === 0) missing.push('Department');
+    if (levelIds.length === 0) missing.push('Levels');
+
+    if (missing.length > 0) {
+      alert(`Please fill in all required fields: ${missing.join(', ')}`);
+      return;
     }
     if (isAmendment && !amendmentReason) {
       alert('Please provide an Amendment Reason!'); return;
@@ -346,6 +423,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       reminderDate: reminderDate || null,
       reminderDays: reminderDays ? Number(reminderDays) : null,
       amendmentReason: amendmentReason || null,
+      levelIds: levelIds.join(','),
     });
     handleClose();
   };
@@ -430,16 +508,16 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 </LabelInput>
               )}
               <LabelInput label="Effective From" required>
-                <TextField fullWidth size="small" type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+                <TextField fullWidth size="small" type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
               </LabelInput>
               <LabelInput label="Expiry Date">
-                <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+                <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
               </LabelInput>
               <LabelInput label="Reminder Days">
-                <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => setReminderDays(e.target.value)} />
+                <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => handleReminderDaysChange(e.target.value)} />
               </LabelInput>
               <LabelInput label="Reminder Date">
-                <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+                <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
               </LabelInput>
               <LabelInput label="Renewal Point" required>
                 <TextField fullWidth size="small" value={renewalPoint} onChange={e => setRenewalPoint(e.target.value)} />
@@ -510,6 +588,25 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     </MenuItem>
                   ))}
                 </Select>
+              </LabelInput>
+
+              <LabelInput label="Levels" required>
+                <Autocomplete
+                  multiple
+                  size="small"
+                  options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
+                  value={levelIds}
+                  onChange={(e, val) => setLevelIds(val)}
+                  renderTags={(value, getTagProps) =>
+                    value.map((option, index) => {
+                      const { key, ...tagProps } = getTagProps({ index });
+                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                    })
+                  }
+                  renderInput={(params) => (
+                    <TextField {...params} placeholder="Select Levels" size="small" />
+                  )}
+                />
               </LabelInput>
 
               {/* ── Yes/No dropdowns ── */}

@@ -7,6 +7,7 @@ import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, bt
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -25,6 +26,7 @@ const INITIAL = { segmentName: '', subSegmentCode: '', subSegmentName: '', subSe
 
 export default function SubSegmentMaster() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.LOG_SUB_SEGMENT);
   const [rows, setRows] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(INITIAL);
@@ -98,22 +100,28 @@ return (
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSExportButton
-            data={rows}
-            filename="Sub_Segment_Master"
-            columns={[
-              { header: 'Segment Name', key: 'segmentName' },
-              { header: 'Sub Segment Code', key: 'subSegmentCode' },
-              { header: 'Sub Segment Name', key: 'subSegmentName' },
-              { header: 'Sub Segment Description', key: 'subSegmentDescription' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />
-          <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => { setForm(INITIAL); setSelectedId(null); setShowForm(true); }} sx={btnSave}>
-            Add New
-          </Button>
-        </Stack>
+        !showForm && (
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            {perms.export && (
+              <BOSExportButton
+                data={rows}
+                filename="Sub_Segment_Master"
+                columns={[
+                  { header: 'Segment Name', key: 'segmentName' },
+                  { header: 'Sub Segment Code', key: 'subSegmentCode' },
+                  { header: 'Sub Segment Name', key: 'subSegmentName' },
+                  { header: 'Sub Segment Description', key: 'subSegmentDescription' },
+                  { header: 'Status', key: 'status' }
+                ]}
+              />
+            )}
+            {perms.write && (
+              <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => { setForm(INITIAL); setSelectedId(null); setShowForm(true); }} sx={btnSave}>
+                Add New
+              </Button>
+            )}
+          </Stack>
+        )
       }
     >
       <BOSDataTable

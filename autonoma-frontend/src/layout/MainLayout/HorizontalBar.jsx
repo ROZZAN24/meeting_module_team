@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { cloneElement, useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
 import AppBar from '@mui/material/AppBar';
 import Container from '@mui/material/Container';
@@ -29,9 +29,61 @@ import { useRibbon } from 'contexts/RibbonContext';
 
 import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight } from '@tabler/icons-react';
 
+const getGroupColors = (title) => {
+  const t = (title || '').toUpperCase();
+  if (t.includes('MASTER')) {
+    return {
+      main: '#1e88e5',    // Professional Blue
+      light: '#6ab7ff',
+      lighter: 'rgba(30, 136, 229, 0.08)'
+    };
+  }
+  if (t.includes('HRA') || t.includes('HR')) {
+    return {
+      main: '#e65100',    // Warm Amber/Orange
+      light: '#ffb74d',
+      lighter: 'rgba(230, 81, 0, 0.08)'
+    };
+  }
+  if (t.includes('SALES') || t.includes('MARKETING')) {
+    return {
+      main: '#2e7d32',    // Forest Green
+      light: '#81c784',
+      lighter: 'rgba(46, 125, 50, 0.08)'
+    };
+  }
+  if (t.includes('QUALITY') || t.includes('QMS')) {
+    return {
+      main: '#673ab7',    // Deep Violet/Indigo
+      light: '#b39ddb',
+      lighter: 'rgba(103, 58, 183, 0.08)'
+    };
+  }
+  if (t.includes('REPORTS') || t.includes('ANALYTICS')) {
+    return {
+      main: '#c2185b',    // Premium Rose/Magenta
+      light: '#f48fb1',
+      lighter: 'rgba(194, 24, 91, 0.08)'
+    };
+  }
+  if (t.includes('ADMIN')) {
+    return {
+      main: '#0097a7',    // Clean Cyan/Teal
+      light: '#80deea',
+      lighter: 'rgba(0, 151, 167, 0.08)'
+    };
+  }
+  // Default (e.g., Dashboard, others)
+  return {
+    main: '#455a64',      // Sleek Slate Blue/Grey
+    light: '#90a4ae',
+    lighter: 'rgba(69, 90, 100, 0.08)'
+  };
+};
+
 // ==============================|| RIBBON CHILD ITEM ||============================== //
 
-function RibbonChildItem({ item, onClose, isGroup }) {
+function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
   const theme = useTheme();
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -39,6 +91,13 @@ function RibbonChildItem({ item, onClose, isGroup }) {
   const open = Boolean(anchorEl);
   const Icon = item.icon;
   const hasChildren = item.children?.length > 0;
+
+  const defaultColors = {
+    main: theme.palette.primary.main,
+    light: theme.palette.primary.light,
+    lighter: theme.palette.primary.lighter
+  };
+  const colors = customColors || defaultColors;
 
   const handleMouseEnter = (e) => {
     if (timeoutRef.current) {
@@ -71,21 +130,52 @@ function RibbonChildItem({ item, onClose, isGroup }) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: isGroup ? 'center' : 'flex-start',
-          px: 1,
-          pt: isGroup ? 0 : 1,
-          pb: isGroup ? 0 : 0.5,
-          minWidth: 54,
+          px: 0.75,
+          pt: isGroup ? 0 : 0.75,
+          pb: isGroup ? 0 : 0.25,
+          minWidth: isGroup ? 52 : 46,
           maxWidth: 80,
           height: '100%',
-          borderRadius: 1,
-          color: open ? 'primary.main' : isGroup ? 'primary.dark' : 'text.primary',
-          bgcolor: open ? 'primary.lighter' : isGroup ? 'grey.100' : 'transparent',
-          transition: 'all 0.15s',
-          '&:hover': { bgcolor: isGroup ? 'grey.200' : 'action.hover', color: 'primary.main' }
+          borderRadius: isGroup ? '12px' : '8px',
+          color: open 
+            ? colors.main 
+            : isGroup 
+              ? colors.main 
+              : 'text.secondary',
+          background: open 
+            ? `linear-gradient(135deg, ${alpha(colors.main, 0.15)} 0%, ${alpha(colors.main, 0.05)} 100%)` 
+            : isGroup 
+              ? `linear-gradient(135deg, ${alpha(colors.main, 0.08)} 0%, ${alpha(colors.main, 0.02)} 100%)` 
+              : 'transparent',
+          border: isGroup 
+            ? `1px solid ${alpha(colors.main, 0.12)}` 
+            : '1px solid transparent',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': { 
+            background: isGroup 
+              ? `linear-gradient(135deg, ${alpha(colors.main, 0.16)} 0%, ${alpha(colors.main, 0.06)} 100%)` 
+              : alpha(colors.main, 0.06),
+            borderColor: isGroup ? colors.main : 'transparent',
+            color: colors.main,
+            transform: 'translateY(-2px)',
+            boxShadow: isGroup ? `0 6px 16px -4px ${alpha(colors.main, 0.35)}` : 'none',
+            '& .child-icon': {
+              transform: 'scale(1.08)',
+              color: colors.main
+            }
+          }
         }}
       >
-        <Box sx={{ mb: !isGroup ? 0.5 : 0, lineHeight: 0 }}>
-          {Icon && <Icon stroke={isGroup ? 1.5 : 1.5} size={isGroup ? '38px' : '20px'} />}
+        <Box 
+          className="child-icon"
+          sx={{ 
+            mb: !isGroup ? 0.5 : 0, 
+            lineHeight: 0,
+            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            color: open || isGroup ? colors.main : 'text.secondary'
+          }}
+        >
+          {Icon && <Icon stroke={isGroup ? 1.5 : 1.8} size={isGroup ? '28px' : '20px'} />}
         </Box>
         {!isGroup && (
           <Typography
@@ -151,50 +241,81 @@ function RibbonChildItem({ item, onClose, isGroup }) {
 // ==============================|| RIBBON GROUP SECTION ||============================== //
 
 function RibbonGroupSection({ group, onClose }) {
+  const theme = useTheme();
   const children = group.children || [];
   const GroupIcon = group.icon;
+  const colors = getGroupColors(group.title);
 
   return (
     <Box
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        height: '100%',
-        px: 0.5,
-        pt: 0.5,
-        pb: 0.25,
+        height: 'calc(100% - 10px)',
+        my: 0.5,
+        px: 1,
+        py: 0.5,
         justifyContent: 'space-between',
-        minWidth: children.length === 0 ? 80 : 'auto'
+        alignItems: 'center',
+        minWidth: children.length === 0 ? 64 : 'auto',
+        borderRadius: '10px',
+        border: `1px solid ${alpha(colors.main, 0.3)}`,
+        bgcolor: alpha(colors.main, 0.15),
+        boxShadow: `inset 0 0 20px ${alpha(colors.main, 0.05)}`,
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        '&:hover': {
+          bgcolor: alpha(colors.main, 0.25),
+          borderColor: alpha(colors.main, 0.5),
+          boxShadow: `0 4px 12px ${alpha(colors.main, 0.15)}`
+        }
       }}
     >
       {/* Top part: Main module icon + Children icons */}
-      <Box sx={{ display: 'flex', flex: 1, alignItems: 'stretch', gap: 0.25 }}>
+      <Box sx={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', gap: 0.5, width: '100%' }}>
         {/* Always show the main module icon as a functional button */}
-        <RibbonChildItem item={group} onClose={onClose} isGroup={true} />
+        <RibbonChildItem item={group} onClose={onClose} isGroup={true} colors={colors} />
 
         {/* Show children if any */}
         {children.length > 0 && (
           <>
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 1, opacity: 0.5 }} />
+            <Divider 
+              orientation="vertical" 
+              flexItem 
+              sx={{ 
+                mx: 0.35, 
+                my: 1.25, 
+                opacity: 0.4, 
+                borderColor: alpha(theme.palette.divider, 0.5) 
+              }} 
+            />
             {children.map((child) => (
-              <RibbonChildItem key={child.id} item={child} onClose={onClose} isGroup={false} />
+              <RibbonChildItem key={child.id} item={child} onClose={onClose} isGroup={false} colors={colors} />
             ))}
           </>
         )}
       </Box>
-      {/* Bottom part: Group Title with Icon */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 0.5, gap: 0.5 }}>
-        {GroupIcon && <GroupIcon stroke={1.5} size="12px" style={{ opacity: 0.7 }} />}
+
+      {/* Bottom part: Clean, centered Outlook-style category title */}
+      <Box 
+        sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          mt: 0.5, 
+          gap: 0.5,
+          width: 'max-content'
+        }}
+      >
         <Typography
           variant="caption"
           sx={{
             textAlign: 'center',
-            color: 'text.secondary',
-            fontSize: '0.65rem',
-            fontWeight: 500,
-            opacity: 0.8,
+            color: colors.main,
+            fontSize: '0.62rem',
+            fontWeight: 800,
             textTransform: 'uppercase',
-            letterSpacing: '0.02em'
+            letterSpacing: '0.05em',
+            whiteSpace: 'nowrap'
           }}
         >
           {group.title}
@@ -216,6 +337,7 @@ function ElevationScroll({ children, window }) {
 // ==============================|| HORIZONTAL BAR ||============================== //
 
 export default function HorizontalBar() {
+  const theme = useTheme();
   const {
     state: { container }
   } = useConfig();
@@ -228,7 +350,7 @@ export default function HorizontalBar() {
   // useEffect(() => { setRibbonOpen(false); }, [pathname]);
 
   const COMPACT_H = 62;
-  const RIBBON_H = 86;
+  const RIBBON_H = 96;
 
   const compactScrollRef = useRef(null);
   const ribbonScrollRef = useRef(null);
@@ -244,19 +366,21 @@ export default function HorizontalBar() {
       <AppBar
         sx={(theme) => ({
           top: 71,
-          bgcolor: 'background.paper',
+          bgcolor: 'rgba(255, 255, 255, 0.75)',
+          backdropFilter: 'blur(16px)',
           width: '100%',
           height: ribbonOpen ? RIBBON_H : COMPACT_H,
-          transition: theme.transitions.create('height', {
+          transition: theme.transitions.create(['height', 'background-color'], {
             easing: theme.transitions.easing.easeInOut,
             duration: theme.transitions.duration.shorter
           }),
-          borderTop: '1px solid',
-          borderColor: 'grey.300',
+          borderTop: '1px solid rgba(229, 231, 235, 0.5)',
+          borderBottom: '1px solid rgba(229, 231, 235, 0.5)',
+          boxShadow: '0 4px 20px -8px rgba(0,0,0,0.06)',
           zIndex: 1098,
           ...theme.applyStyles('dark', {
-            bgcolor: 'background.default',
-            borderColor: 'background.paper'
+            bgcolor: 'rgba(18, 18, 18, 0.75)',
+            borderColor: 'rgba(255, 255, 255, 0.08)'
           }),
           display: 'flex',
           flexDirection: 'column',
@@ -331,7 +455,22 @@ export default function HorizontalBar() {
               <IconButton
                 onClick={() => handleScroll(ribbonScrollRef, -400)}
                 size="small"
-                sx={{ mr: 1, height: 32, '&:hover': { bgcolor: 'action.hover' } }}
+                sx={{
+                  mr: 1,
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  bgcolor: 'background.paper',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  transition: 'all 0.2s',
+                  '&:hover': { 
+                    bgcolor: 'primary.lighter',
+                    color: 'primary.main',
+                    borderColor: 'primary.main',
+                    transform: 'scale(1.05)'
+                  }
+                }}
               >
                 <IconChevronLeft size="18px" />
               </IconButton>
@@ -351,15 +490,10 @@ export default function HorizontalBar() {
                   scrollbarWidth: 'none'
                 }}
               >
-                {/* All groups as sections */}
-                <Box sx={{ display: 'flex', alignItems: 'stretch', height: '100%' }}>
-                  {groups.map((group, idx) => (
-                    <Box key={group.id} sx={{ display: 'flex', alignItems: 'stretch' }}>
-                      <RibbonGroupSection group={group} onClose={() => setRibbonOpen(false)} />
-                      {idx < groups.length - 1 && (
-                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5, my: 0.75, borderColor: 'divider' }} />
-                      )}
-                    </Box>
+                {/* All groups as sections with micro-margins */}
+                <Box sx={{ display: 'flex', alignItems: 'stretch', gap: 1.25, height: '100%' }}>
+                  {groups.map((group) => (
+                    <RibbonGroupSection key={group.id} group={group} onClose={() => setRibbonOpen(false)} />
                   ))}
                 </Box>
               </Box>
@@ -367,29 +501,51 @@ export default function HorizontalBar() {
               <IconButton
                 onClick={() => handleScroll(ribbonScrollRef, 400)}
                 size="small"
-                sx={{ mx: 1, height: 32, '&:hover': { bgcolor: 'action.hover' } }}
+                sx={{
+                  mx: 1,
+                  width: 32,
+                  height: 32,
+                  borderRadius: '50%',
+                  border: '1px solid rgba(0,0,0,0.06)',
+                  bgcolor: 'background.paper',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                  transition: 'all 0.2s',
+                  '&:hover': { 
+                    bgcolor: 'primary.lighter',
+                    color: 'primary.main',
+                    borderColor: 'primary.main',
+                    transform: 'scale(1.05)'
+                  }
+                }}
               >
                 <IconChevronRight size="18px" />
               </IconButton>
 
               {/* Collapse toggle at far right */}
-              <Tooltip title="Collapse" placement="bottom" arrow>
+              <Tooltip title="Collapse Menu" placement="bottom" arrow>
                 <IconButton
                   onClick={() => setRibbonOpen(false)}
                   size="small"
                   sx={{
                     flexShrink: 0,
-                    width: 28,
-                    height: 28,
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
                     border: '1px solid',
                     borderColor: 'primary.main',
-                    borderRadius: 1,
                     color: 'primary.main',
                     bgcolor: 'primary.lighter',
-                    '&:hover': { bgcolor: 'primary.light' }
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.15)}`,
+                    transition: 'all 0.2s',
+                    '&:hover': { 
+                      bgcolor: 'primary.main',
+                      color: '#fff',
+                      transform: 'scale(1.05)',
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
+                    }
                   }}
                 >
-                  <IconChevronUp size="16px" stroke={2} />
+                  <IconChevronUp size="16px" stroke={2.5} />
                 </IconButton>
               </Tooltip>
             </Box>

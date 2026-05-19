@@ -10,6 +10,7 @@ import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -26,6 +27,7 @@ export default function PaymentTerms() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const [rows, setRows] = useState([]);
+  const perms = usePagePermissions(PAGE_CODES.LOG_PAYMENT_TERMS);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);
@@ -142,7 +144,7 @@ return (
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="Payment_Terms"
             columns={[
@@ -150,7 +152,7 @@ return (
               { header: 'Description', key: 'description' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
             New Term
           </Button>
@@ -165,7 +167,7 @@ return (
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={(row) => handleOpen(row)}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">

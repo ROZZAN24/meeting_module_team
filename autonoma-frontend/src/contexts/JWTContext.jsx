@@ -7,11 +7,15 @@ import { jwtDecode } from 'jwt-decode';
 
 // reducer - state management
 import { LOGIN, LOGOUT } from 'store/actions';
+import { store } from 'store';
+import { clearPermissions } from 'store/slices/permissions';
 import accountReducer from 'store/accountReducer';
 
 // project imports
 import Loader from 'ui-component/Loader';
 import axios from 'utils/axios';
+import useConfig from 'hooks/useConfig';
+import { useColorScheme } from '@mui/material/styles';
 
 const chance = new Chance();
 
@@ -21,6 +25,13 @@ const initialState = {
   isInitialized: false,
   user: null
 };
+
+function setSessionContext(tenantId, divisionId, companyName, divisionName) {
+  if (tenantId) sessionStorage.setItem('tenantId', tenantId); else sessionStorage.removeItem('tenantId');
+  if (divisionId) sessionStorage.setItem('divisionId', String(divisionId)); else sessionStorage.removeItem('divisionId');
+  if (companyName) sessionStorage.setItem('companyName', companyName); else sessionStorage.removeItem('companyName');
+  if (divisionName) sessionStorage.setItem('divisionName', divisionName); else sessionStorage.removeItem('divisionName');
+}
 
 function verifyToken(serviceToken) {
   if (!serviceToken) {
@@ -39,11 +50,12 @@ function verifyToken(serviceToken) {
 
 function setSession(serviceToken) {
   if (serviceToken) {
-    localStorage.setItem('serviceToken', serviceToken);
+    sessionStorage.setItem('serviceToken', serviceToken);
     axios.defaults.headers.common.Authorization = `Bearer ${serviceToken}`;
   } else {
-    localStorage.removeItem('serviceToken');
+    sessionStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
+    setSessionContext(null, null, null, null);
   }
 }
 
@@ -55,6 +67,46 @@ export function JWTProvider({ children }) {
   const [state, dispatch] = useReducer(accountReducer, initialState);
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [logoutCountdown, setLogoutCountdown] = useState(null);
+  const { setState: setConfigState } = useConfig();
+  const { setMode } = useColorScheme();
+
+  const loadUserThemeSettings = async (token) => {
+    try {
+      const response = await axios.get('/api/theme-settings', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.data) {
+        const dbSettings = response.data;
+        if (dbSettings.themeMode) {
+          localStorage.setItem('theme-mode', dbSettings.themeMode);
+          if (setMode) {
+            setMode(dbSettings.themeMode);
+          }
+        }
+        
+        const mappedSettings = {
+          menuOrientation: dbSettings.menuOrientation,
+          miniDrawer: dbSettings.miniDrawer,
+          fontFamily: dbSettings.fontFamily,
+          borderRadius: dbSettings.borderRadius,
+          outlinedFilled: dbSettings.outlinedFilled,
+          presetColor: dbSettings.presetColor,
+          i18n: dbSettings.i18n,
+          themeDirection: dbSettings.themeDirection,
+          container: dbSettings.container
+        };
+        
+        setConfigState((prev) => ({
+          ...prev,
+          ...mappedSettings
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load user theme settings from DB:', err);
+    }
+  };
 
   const logout = async () => {
     try {
@@ -66,6 +118,7 @@ export function JWTProvider({ children }) {
     }
     setSession(null);
     dispatch({ type: LOGOUT });
+    store.dispatch(clearPermissions());
     setLogoutCountdown(null);
   };
 
@@ -108,11 +161,14 @@ export function JWTProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const serviceToken = window.localStorage.getItem('serviceToken');
+        const serviceToken = window.sessionStorage.getItem('serviceToken');
         if (serviceToken && verifyToken(serviceToken)) {
           setSession(serviceToken);
+          loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
+          // Keep sessionStorage in sync so SessionInfoBadge reads correctly
+          setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,
             payload: {
@@ -121,12 +177,14 @@ export function JWTProvider({ children }) {
             }
           });
         } else {
+          setSession(null);
           dispatch({
             type: LOGOUT
           });
         }
       } catch (err) {
         console.error(err);
+        setSession(null);
         dispatch({
           type: LOGOUT
         });
@@ -136,10 +194,24 @@ export function JWTProvider({ children }) {
     init();
   }, []);
 
-  const login = async (email, password) => {
-    const response = await axios.post('/api/account/login', { email, password });
+  const login = async (email, password, context = {}) => {
+    const { tenantId, divisionId } = context;
+    const response = await axios.post('/api/account/login', {
+      email,
+      password,
+      tenantId: tenantId || null,
+      divisionId: divisionId || null
+    });
     const { serviceToken, user } = response.data;
     setSession(serviceToken);
+    loadUserThemeSettings(serviceToken);
+    // Persist company/division so they survive page refresh
+    setSessionContext(
+      user.tenantId,
+      user.divisionId,
+      user.companyName,
+      user.divisionName
+    );
     dispatch({
       type: LOGIN,
       payload: {
@@ -147,6 +219,60 @@ export function JWTProvider({ children }) {
         user
       }
     });
+  };
+
+  const faceLogin = async (email, faceImage, context = {}, faceDescriptor = null) => {
+    const { tenantId, divisionId } = context;
+    const response = await axios.post('/api/account/face-login', {
+      email,
+      faceImage,
+      faceDescriptor,
+      tenantId: tenantId || null,
+      divisionId: divisionId || null
+    });
+    const { serviceToken, user } = response.data;
+    setSession(serviceToken);
+    loadUserThemeSettings(serviceToken);
+    setSessionContext(
+      user.tenantId,
+      user.divisionId,
+      user.companyName,
+      user.divisionName
+    );
+    dispatch({
+      type: LOGIN,
+      payload: {
+        isLoggedIn: true,
+        user
+      }
+    });
+  };
+
+  const switchContext = async (tenantId, divisionId) => {
+    try {
+      if (tenantId) sessionStorage.setItem('tenantId', tenantId);
+      if (divisionId) sessionStorage.setItem('divisionId', String(divisionId));
+
+      const response = await axios.get('/api/account/me', {
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Division-ID': String(divisionId)
+        }
+      });
+      const { user } = response.data;
+      setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
+      dispatch({
+        type: LOGIN,
+        payload: {
+          isLoggedIn: true,
+          user
+        }
+      });
+      // Force refresh to ensure all components/hooks pick up the new context
+      window.location.reload();
+    } catch (err) {
+      console.error('Failed to switch context:', err);
+    }
   };
 
   const register = async (email, password, firstName, lastName) => {
@@ -193,7 +319,7 @@ export function JWTProvider({ children }) {
     return <Loader />;
   }
 
-  return <JWTContext.Provider value={{ ...state, licenseStatus, logoutCountdown, login, logout, register, resetPassword, updateProfile }}>{children}</JWTContext.Provider>;
+  return <JWTContext.Provider value={{ ...state, licenseStatus, logoutCountdown, login, logout, register, resetPassword, updateProfile, switchContext, faceLogin }}>{children}</JWTContext.Provider>;
 }
 
 export default JWTContext;

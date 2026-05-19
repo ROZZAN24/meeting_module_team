@@ -156,9 +156,22 @@ public class GlobalAuditInterceptor implements Interceptor {
 
         String className = entity.getClass().getSimpleName();
         // Skip session monitoring and user activity data as requested
-        return className.equals("UserSession") ||
+        if (className.equals("UserSession") ||
                 className.equals("UserSessionActivity") ||
-                className.equals("EmployeeActivity");
+                className.equals("EmployeeActivity")) {
+            return true;
+        }
+
+        // Skip chat/oneconnect messaging and channel details as requested
+        if (entity.getClass().getName().startsWith("com.autonoma.erp.model.chat") ||
+                className.equals("CommMessage") ||
+                className.equals("CommChannel") ||
+                className.equals("CommChannelMember") ||
+                className.equals("CommUserStatus")) {
+            return true;
+        }
+
+        return false;
     }
 
     private void saveAuditTrail(String actionType, String tableName, String recordId, String prevVal, String currVal,

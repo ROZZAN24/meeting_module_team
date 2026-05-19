@@ -229,7 +229,7 @@ export default function AuditAttendance() {
       secondary={
         <Stack direction="row" spacing={1.5}>
           <IconButton onClick={fetchData} color="primary" sx={{ border: '1px solid divider', p: 1 }}><IconRefresh size={20} /></IconButton>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="Audit_Attendance"
             columns={[
@@ -238,7 +238,7 @@ export default function AuditAttendance() {
               { header: 'Name', key: 'name' },
               { header: 'Attendance Status', key: 'attendanceStatus' }
             ]}
-          />
+          />}
           <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>
         </Stack>
       }
@@ -252,7 +252,7 @@ export default function AuditAttendance() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={setSize}
-        onEditRow={handleOpenEdit}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
         onDeleteRow={(r) => { setDeleteTarget(r); setDeleteDialogOpen(true); }}
         renderCell={null}
       />

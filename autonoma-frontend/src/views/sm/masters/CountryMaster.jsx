@@ -10,6 +10,7 @@ import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -25,6 +26,7 @@ export default function CountryMaster() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const [rows, setRows] = useState([]);
+  const perms = usePagePermissions(PAGE_CODES.LOG_COUNTRY);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);
@@ -128,14 +130,14 @@ return (
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="Country_Master"
             columns={[
               { header: 'Country', key: 'country' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
             New Country
           </Button>
@@ -150,7 +152,7 @@ return (
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={(row) => handleOpen(row)}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">

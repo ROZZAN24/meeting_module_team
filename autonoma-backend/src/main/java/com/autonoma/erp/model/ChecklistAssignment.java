@@ -6,12 +6,14 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "qms_checklist_assignment")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ChecklistAssignment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,6 +21,8 @@ public class ChecklistAssignment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHECKLIST_ID")
+    @lombok.EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
     private MasterChecklist checklist;
 
     @Column(name = "ASSIGNED_TO")
@@ -53,6 +57,13 @@ public class ChecklistAssignment {
     @Column(name = "FILE_PATH")
     private List<String> actualFiles;
 
+    @Column(name = "UPDATED_BY")
+    private String updatedBy;
+
+    @Column(name = "UPDATED_AT")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public MasterChecklist getChecklist() { return checklist; }
@@ -75,4 +86,8 @@ public class ChecklistAssignment {
     public void setAssignType(String assignType) { this.assignType = assignType; }
     public List<String> getActualFiles() { return actualFiles; }
     public void setActualFiles(List<String> actualFiles) { this.actualFiles = actualFiles; }
+    public String getUpdatedBy() { return updatedBy; }
+    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
+    public Date getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 }
