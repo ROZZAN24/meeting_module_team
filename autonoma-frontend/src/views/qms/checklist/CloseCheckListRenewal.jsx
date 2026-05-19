@@ -34,7 +34,10 @@ import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, I
 
 const columns = [
   '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Next Due Date', 'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required',
+  'Stock Link', 'Item Code', 'Quantity', 'Assign To',
+  'Date', 'Checklist Date', 'Expire Date', 'Next Due Date',
+  'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required',
+  'Carry Forward',
   'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 

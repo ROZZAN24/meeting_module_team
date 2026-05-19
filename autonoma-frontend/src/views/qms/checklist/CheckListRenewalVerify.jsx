@@ -35,6 +35,7 @@ import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDown
 const columns = [
   '#', 'Task Type', 'Seq No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
   'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check',
+  'Verification Required', 'Photo Required',
   'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 
@@ -99,6 +100,8 @@ const exportColumns = [
   { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
   { header: 'Assigned To', key: 'assignedTo' },
   { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' },
+  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired || 'NO' },
+  { header: 'Photo Required', key: (r) => r.checklist?.photoRequired || 'NO' },
   { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
   { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
@@ -421,6 +424,8 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{row.checklist?.nextDueDate}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
                   <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
+                  <TableCell>{row.checklist?.verificationRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
                   <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
