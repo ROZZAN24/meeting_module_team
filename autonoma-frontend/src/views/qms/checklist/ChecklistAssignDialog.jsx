@@ -61,11 +61,16 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
   
   // Filter employees whose department matches one of the checklist's departments
-  const filteredEmployees = (lookups.employees || []).filter(emp => {
+  let filteredEmployees = (lookups.employees || []).filter(emp => {
     if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
     const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
     return empDept && isDepartmentMatch(allowedDeptNames, empDept.departmentName);
   });
+
+  // Fallback: If no employees match the checklist's department, show all active employees so they can still assign the task
+  if (filteredEmployees.length === 0) {
+    filteredEmployees = lookups.employees || [];
+  }
 
   const employeeOptions = filteredEmployees.map(e => ({
     label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})${e.status !== 'Active' ? ' - INACTIVE' : ''}`,
