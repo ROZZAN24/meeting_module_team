@@ -182,7 +182,19 @@ const LabelInput = ({ label, required, children }) => (
     <Box sx={{ flex: 1 }}>{children}</Box>
   </Box>
 );
-LabelInput.propTypes = { label: PropTypes.string, required: PropTypes.bool, children: PropTypes.node };
+const formatDateForInput = (dateStr) => {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } catch (e) {
+    return '';
+  }
+};
 
 export default function AddCheckListDialog({ open, handleClose, onSave, initialData, isAmendment }) {
   const theme = useTheme();
@@ -274,10 +286,10 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       if (initialData) {
         setSeqNo(initialData.seqNo || '');
         setCategory(initialData.category || '');
-        setEffectiveFrom(initialData.effectiveFrom || '');
-        setExpiryDate(initialData.expiryDate || '');
+        setEffectiveFrom(formatDateForInput(initialData.effectiveFrom));
+        setExpiryDate(formatDateForInput(initialData.expiryDate));
         setReminderDays(initialData.reminderDays || '');
-        setReminderDate(initialData.reminderDate || '');
+        setReminderDate(formatDateForInput(initialData.reminderDate));
         setRenewalPoint(initialData.checkingPoint || '');
         setFrequency(initialData.frequency || '');
         setWeekDays(initialData.weekDays ? (Array.isArray(initialData.weekDays) ? initialData.weekDays[0] : String(initialData.weekDays).split(',')[0]) : '');
@@ -468,16 +480,16 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 </LabelInput>
               )}
               <LabelInput label="Effective From" required>
-                <TextField fullWidth size="small" type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+                <TextField fullWidth size="small" type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
               </LabelInput>
               <LabelInput label="Expiry Date">
-                <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+                <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
               </LabelInput>
               <LabelInput label="Reminder Days">
                 <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => handleReminderDaysChange(e.target.value)} />
               </LabelInput>
               <LabelInput label="Reminder Date">
-                <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+                <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
               </LabelInput>
               <LabelInput label="Renewal Point" required>
                 <TextField fullWidth size="small" value={renewalPoint} onChange={e => setRenewalPoint(e.target.value)} />
