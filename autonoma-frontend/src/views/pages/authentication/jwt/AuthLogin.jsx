@@ -641,24 +641,9 @@ export default function JWTLogin({ ...others }) {
                 </Button>
               </AnimateButton>
             </Box>
-<<<<<<< HEAD
           </motion.div>
         )}
       </AnimatePresence>
     </Box>
-=======
-          )}
-
-          <Box sx={{ mt: 3 }}>
-            <AnimateButton>
-              <Button color="primary" disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained">
-                Sign In to ERP
-              </Button>
-            </AnimateButton>
-          </Box>
-        </form>
-      )}
-    </Formik>
->>>>>>> 7b28c2939a644a4d1b360181d6a661b62996ddd9
   );
 }
