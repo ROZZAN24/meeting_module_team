@@ -19,6 +19,7 @@ import Sidebar from './Sidebar';
 import HorizontalBar from './HorizontalBar';
 import MainContentStyled from './MainContentStyled';
 import Customization from '../Customization';
+import BOSConnect from './BOSConnect';
 import Loader from 'ui-component/Loader';
 import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
@@ -38,12 +39,12 @@ function MainLayoutInner() {
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
 
   const {
-    state: { borderRadius, container, miniDrawer, menuOrientation }
+    state: { borderRadius, container, miniDrawer, menuOrientation, i18n }
   } = useConfig();
   const { menuMaster, menuMasterLoading } = useGetMenuMaster();
   const drawerOpen = menuMaster?.isDashboardDrawerOpened;
   const { ribbonOpen } = useRibbon();
-  const { licenseStatus, logoutCountdown } = useAuth();
+  const { user, licenseStatus, logoutCountdown } = useAuth();
   const [showLicenseAlert, setShowLicenseAlert] = useState(false);
 
   useEffect(() => {
@@ -68,6 +69,117 @@ function MainLayoutInner() {
     downMD && handlerDrawerOpen(false);
   }, [downMD]);
 
+  // Dynamically load Google Translate Engine on Mount
+  useEffect(() => {
+    if (!document.getElementById('google-translate-script')) {
+      const googleTranslateElementInit = () => {
+        if (window.google && window.google.translate) {
+          new window.google.translate.TranslateElement({
+            pageLanguage: 'en',
+            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+          }, 'google_translate_element');
+        }
+      };
+      window.googleTranslateElementInit = googleTranslateElementInit;
+
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.type = 'text/javascript';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      document.body.appendChild(script);
+
+      const container = document.createElement('div');
+      container.id = 'google_translate_element';
+      container.style.display = 'none';
+      document.body.appendChild(container);
+
+      // Hide Google Translate standard banner and overlays to preserve premium client layout
+      const style = document.createElement('style');
+      style.id = 'google-translate-styles';
+      style.innerHTML = `
+        iframe.skiptranslate, .skiptranslate, #goog-gt-tt, .goog-te-balloon-frame {
+          display: none !important;
+        }
+        body {
+          top: 0px !important;
+        }
+        .goog-text-highlight {
+          background-color: transparent !important;
+          box-shadow: none !important;
+          box-sizing: border-box !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
+  // Programmatically trigger translation all over the page when i18n changes
+  useEffect(() => {
+    const triggerTranslation = () => {
+      const selectField = document.querySelector('select.goog-te-combo');
+      if (selectField) {
+        selectField.value = i18n;
+        selectField.dispatchEvent(new Event('change'));
+      } else {
+        setTimeout(triggerTranslation, 300);
+      }
+    };
+
+    const domain = window.location.hostname;
+    document.cookie = `googtrans=/en/${i18n}; path=/; domain=${domain}`;
+    document.cookie = `googtrans=/en/${i18n}; path=/`; // Localhost fallback
+
+    triggerTranslation();
+  }, [i18n]);
+
+  // Anti-screenshot, printing, and context-menu protection
+  useEffect(() => {
+    const isSuperUser = user?.isBosAdmin === 1;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'PrintScreen' && !isSuperUser) {
+        navigator.clipboard.writeText('');
+      }
+      if (e.ctrlKey && (e.key === 'p' || e.key === 'P') && !isSuperUser) {
+        e.preventDefault();
+        alert('Printing and PDF exports are disabled for security reasons.');
+      }
+      if ((e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'C' || e.key === 'c'))) && !isSuperUser) {
+        e.preventDefault();
+      }
+    };
+
+    const handleContextMenu = (e) => {
+      if (!isSuperUser) {
+        e.preventDefault();
+      }
+    };
+
+    // Block printing completely in CSS media query for standard users
+    let style;
+    if (!isSuperUser) {
+      style = document.createElement('style');
+      style.innerHTML = `
+        @media print {
+          body { display: none !important; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('contextmenu', handleContextMenu);
+
+    return () => {
+      if (style) {
+        document.head.removeChild(style);
+      }
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [user]);
+
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downMD;
 
   // horizontal menu-list bar : drawer
@@ -77,6 +189,7 @@ function MainLayoutInner() {
 
   return (
     <Box sx={{ display: 'flex' }}>
+
       {/* header */}
       <AppBar enableColorOnDark position="fixed" color="inherit" elevation={0} sx={{ bgcolor: 'background.default' }}>
         <Toolbar sx={{ p: isHorizontal ? 1.25 : 2 }}>
@@ -188,6 +301,7 @@ function MainLayoutInner() {
         </Container>
       </MainContentStyled>
       <Customization />
+      <BOSConnect />
     </Box>
   );
 }
