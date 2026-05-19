@@ -62,7 +62,11 @@ public class UserController {
         if (userRepository.existsById(user.getUserId())) {
             return ResponseEntity.badRequest().body("User ID already exists");
         }
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        if (user.getPassword() != null && !user.getPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+        } else {
+            user.setPassword(passwordEncoder.encode(""));
+        }
         user.setCreatedDate(new Date());
         user.setCreatedBy(getCurrentUserId());
         return ResponseEntity.ok(userRepository.save(user));
@@ -82,6 +86,9 @@ public class UserController {
             user.setEmpId(userDetails.getEmpId());
             user.setStatus(userDetails.getStatus());
             user.setImgName(userDetails.getImgName());
+            user.setFaceImage(userDetails.getFaceImage());
+            user.setAuthMethod(userDetails.getAuthMethod());
+            user.setFaceDescriptor(userDetails.getFaceDescriptor());
 
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
                 // Prevent double-encoding if the frontend sends back the existing encrypted hash

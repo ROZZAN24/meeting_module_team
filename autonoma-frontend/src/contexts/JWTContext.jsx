@@ -14,6 +14,8 @@ import accountReducer from 'store/accountReducer';
 // project imports
 import Loader from 'ui-component/Loader';
 import axios from 'utils/axios';
+import useConfig from 'hooks/useConfig';
+import { useColorScheme } from '@mui/material/styles';
 
 const chance = new Chance();
 
@@ -25,10 +27,10 @@ const initialState = {
 };
 
 function setSessionContext(tenantId, divisionId, companyName, divisionName) {
-  if (tenantId) localStorage.setItem('tenantId', tenantId); else localStorage.removeItem('tenantId');
-  if (divisionId) localStorage.setItem('divisionId', String(divisionId)); else localStorage.removeItem('divisionId');
-  if (companyName) localStorage.setItem('companyName', companyName); else localStorage.removeItem('companyName');
-  if (divisionName) localStorage.setItem('divisionName', divisionName); else localStorage.removeItem('divisionName');
+  if (tenantId) sessionStorage.setItem('tenantId', tenantId); else sessionStorage.removeItem('tenantId');
+  if (divisionId) sessionStorage.setItem('divisionId', String(divisionId)); else sessionStorage.removeItem('divisionId');
+  if (companyName) sessionStorage.setItem('companyName', companyName); else sessionStorage.removeItem('companyName');
+  if (divisionName) sessionStorage.setItem('divisionName', divisionName); else sessionStorage.removeItem('divisionName');
 }
 
 function verifyToken(serviceToken) {
@@ -48,10 +50,10 @@ function verifyToken(serviceToken) {
 
 function setSession(serviceToken) {
   if (serviceToken) {
-    localStorage.setItem('serviceToken', serviceToken);
+    sessionStorage.setItem('serviceToken', serviceToken);
     axios.defaults.headers.common.Authorization = `Bearer ${serviceToken}`;
   } else {
-    localStorage.removeItem('serviceToken');
+    sessionStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
     setSessionContext(null, null, null, null);
   }
@@ -65,6 +67,46 @@ export function JWTProvider({ children }) {
   const [state, dispatch] = useReducer(accountReducer, initialState);
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [logoutCountdown, setLogoutCountdown] = useState(null);
+  const { setState: setConfigState } = useConfig();
+  const { setMode } = useColorScheme();
+
+  const loadUserThemeSettings = async (token) => {
+    try {
+      const response = await axios.get('/api/theme-settings', {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      if (response.data) {
+        const dbSettings = response.data;
+        if (dbSettings.themeMode) {
+          localStorage.setItem('theme-mode', dbSettings.themeMode);
+          if (setMode) {
+            setMode(dbSettings.themeMode);
+          }
+        }
+        
+        const mappedSettings = {
+          menuOrientation: dbSettings.menuOrientation,
+          miniDrawer: dbSettings.miniDrawer,
+          fontFamily: dbSettings.fontFamily,
+          borderRadius: dbSettings.borderRadius,
+          outlinedFilled: dbSettings.outlinedFilled,
+          presetColor: dbSettings.presetColor,
+          i18n: dbSettings.i18n,
+          themeDirection: dbSettings.themeDirection,
+          container: dbSettings.container
+        };
+        
+        setConfigState((prev) => ({
+          ...prev,
+          ...mappedSettings
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to load user theme settings from DB:', err);
+    }
+  };
 
   const logout = async () => {
     try {
@@ -119,12 +161,13 @@ export function JWTProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const serviceToken = window.localStorage.getItem('serviceToken');
+        const serviceToken = window.sessionStorage.getItem('serviceToken');
         if (serviceToken && verifyToken(serviceToken)) {
           setSession(serviceToken);
+          loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          // Keep localStorage in sync so SessionInfoBadge reads correctly
+          // Keep sessionStorage in sync so SessionInfoBadge reads correctly
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,
@@ -161,7 +204,35 @@ export function JWTProvider({ children }) {
     });
     const { serviceToken, user } = response.data;
     setSession(serviceToken);
+    loadUserThemeSettings(serviceToken);
     // Persist company/division so they survive page refresh
+    setSessionContext(
+      user.tenantId,
+      user.divisionId,
+      user.companyName,
+      user.divisionName
+    );
+    dispatch({
+      type: LOGIN,
+      payload: {
+        isLoggedIn: true,
+        user
+      }
+    });
+  };
+
+  const faceLogin = async (email, faceImage, context = {}, faceDescriptor = null) => {
+    const { tenantId, divisionId } = context;
+    const response = await axios.post('/api/account/face-login', {
+      email,
+      faceImage,
+      faceDescriptor,
+      tenantId: tenantId || null,
+      divisionId: divisionId || null
+    });
+    const { serviceToken, user } = response.data;
+    setSession(serviceToken);
+    loadUserThemeSettings(serviceToken);
     setSessionContext(
       user.tenantId,
       user.divisionId,
@@ -179,8 +250,8 @@ export function JWTProvider({ children }) {
 
   const switchContext = async (tenantId, divisionId) => {
     try {
-      if (tenantId) localStorage.setItem('tenantId', tenantId);
-      if (divisionId) localStorage.setItem('divisionId', String(divisionId));
+      if (tenantId) sessionStorage.setItem('tenantId', tenantId);
+      if (divisionId) sessionStorage.setItem('divisionId', String(divisionId));
 
       const response = await axios.get('/api/account/me', {
         headers: {
@@ -248,7 +319,7 @@ export function JWTProvider({ children }) {
     return <Loader />;
   }
 
-  return <JWTContext.Provider value={{ ...state, licenseStatus, logoutCountdown, login, logout, register, resetPassword, updateProfile, switchContext }}>{children}</JWTContext.Provider>;
+  return <JWTContext.Provider value={{ ...state, licenseStatus, logoutCountdown, login, logout, register, resetPassword, updateProfile, switchContext, faceLogin }}>{children}</JWTContext.Provider>;
 }
 
 export default JWTContext;

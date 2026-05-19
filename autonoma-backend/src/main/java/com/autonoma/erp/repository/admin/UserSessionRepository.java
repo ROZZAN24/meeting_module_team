@@ -13,4 +13,6 @@ public interface UserSessionRepository extends JpaRepository<UserSession, Long> 
     List<UserSession> findByUserIdOrderByLoginTimeDesc(String userId);
 
     Optional<UserSession> findTopByUserIdAndStatusOrderByLoginTimeDesc(String userId, String status);
+
+    List<UserSession> findByUserIdAndStatus(String userId, String status);
 }

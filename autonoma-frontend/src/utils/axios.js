@@ -11,17 +11,17 @@ const axiosServices = axios.create({
 
 axiosServices.interceptors.request.use(
   async (config) => {
-    const accessToken = localStorage.getItem('serviceToken');
+    const accessToken = sessionStorage.getItem('serviceToken');
     if (accessToken) {
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    const tenantId = localStorage.getItem('tenantId');
+    const tenantId = sessionStorage.getItem('tenantId');
     if (tenantId && !config.headers['X-Tenant-ID']) {
       config.headers['X-Tenant-ID'] = tenantId;
     }
 
-    const divisionId = localStorage.getItem('divisionId');
+    const divisionId = sessionStorage.getItem('divisionId');
     if (divisionId && !config.headers['X-Division-ID']) {
       config.headers['X-Division-ID'] = divisionId;
     }

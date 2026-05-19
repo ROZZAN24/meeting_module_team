@@ -351,7 +351,7 @@ export default function BOSConnect() {
             if (lastMsg && lastMsg.senderId !== currentUserId && lastMsg.senderId !== 'BOS_AI_ASSISTANT') {
               playPing();
               showDesktopNotification(lastMsg);
-              
+
               // Only trigger visual in-app toast if:
               // - Chat is closed, OR
               // - We are in a different active channel!
@@ -714,7 +714,7 @@ export default function BOSConnect() {
         initial={{ x: 0, y: 0 }}
         style={{
           position: 'fixed',
-          bottom: '24px',
+          bottom: '100px',
           right: '24px',
           zIndex: 10000,
           touchAction: 'none'
@@ -733,9 +733,9 @@ export default function BOSConnect() {
               borderRadius: '50%',
               boxShadow: '0 4px 16px rgba(13, 148, 136, 0.45)',
               border: 'none',
-              width: '56px',
-              height: '56px',
-              minWidth: '56px',
+              width: '50px',
+              height: '50px',
+              minWidth: '50px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -746,25 +746,25 @@ export default function BOSConnect() {
               }
             }}
           >
-            <IconMessage size={24} />
+            <IconMessage size={20} />
             {channels.reduce((acc, c) => acc + c.unreadCount, 0) > 0 && (
               <Box
                 sx={{
                   position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  minWidth: 20,
-                  height: 20,
+                  top: -2,
+                  right: -2,
+                  minWidth: 16,
+                  height: 16,
                   borderRadius: '50%',
                   bgcolor: '#ff4d4f',
                   color: '#fff',
-                  fontSize: '0.7rem',
+                  fontSize: '0.6rem',
                   fontWeight: 900,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 0 8px #ff4d4f',
-                  border: '2px solid #fff',
+                  border: '1.5px solid #fff',
                   zIndex: 10
                 }}
               >
@@ -782,7 +782,7 @@ export default function BOSConnect() {
             <Box
               sx={{
                 position: 'fixed',
-                bottom: isMaximized ? '24px' : '90px',
+                bottom: isMaximized ? '24px' : '170px',
                 right: '24px',
                 width: isMaximized ? 'calc(100vw - 48px)' : `${dimensions.width}px`,
                 height: isMaximized ? 'calc(100vh - 120px)' : `${dimensions.height}px`,
@@ -791,15 +791,15 @@ export default function BOSConnect() {
                 zIndex: 9999,
                 display: 'flex',
                 flexDirection: 'column',
-                background: theme.palette.mode === 'dark' 
-                  ? `linear-gradient(135deg, ${alpha(activeColor, 0.18)} 0%, ${alpha('#121212', 0.85)} 100%)` 
+                background: theme.palette.mode === 'dark'
+                  ? `linear-gradient(135deg, ${alpha(activeColor, 0.18)} 0%, ${alpha('#121212', 0.85)} 100%)`
                   : `linear-gradient(135deg, ${alpha(activeColor, 0.12)} 0%, ${alpha('#ffffff', 0.85)} 100%)`,
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderRadius: '12px',
                 boxShadow: `0 12px 32px ${alpha(activeColor, 0.15)}, 0 4px 12px rgba(0,0,0,0.08)`,
-                border: theme.palette.mode === 'dark' 
-                  ? `1px solid ${alpha(activeColor, 0.25)}` 
+                border: theme.palette.mode === 'dark'
+                  ? `1px solid ${alpha(activeColor, 0.25)}`
                   : `1px solid ${alpha(activeColor, 0.2)}`,
                 overflow: 'hidden',
                 transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
@@ -883,7 +883,7 @@ export default function BOSConnect() {
                     </IconButton>
                   )}
                   {activeChannel ? (
-                    <Avatar 
+                    <Avatar
                       src={activeChannel.channelType === 'DIRECT' && activeChannel.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(activeChannel.members.find(m => m.userId !== currentUserId).imgName) : undefined}
                       sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}
                     >
@@ -947,11 +947,11 @@ export default function BOSConnect() {
                     </Tooltip>
                   ) : (
                     <Tooltip title="Click to Enable Desktop Notifications">
-                      <IconButton 
-                        size="small" 
-                        onClick={requestNotificationPermission} 
-                        sx={{ 
-                          color: '#faad14', 
+                      <IconButton
+                        size="small"
+                        onClick={requestNotificationPermission}
+                        sx={{
+                          color: '#faad14',
                           animation: 'pulse 2s infinite',
                           '@keyframes pulse': {
                             '0%': { opacity: 0.6, transform: 'scale(0.95)' },
@@ -1032,17 +1032,17 @@ export default function BOSConnect() {
                         <CircularProgress size={36} sx={{ color: '#6366f1' }} />
                       </Box>
                     ) : (
-                      <Box sx={{ 
-                        flexGrow: 1, 
-                        p: 2.5, 
-                        overflowY: 'auto', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
+                      <Box sx={{
+                        flexGrow: 1,
+                        p: 2.5,
+                        overflowY: 'auto',
+                        display: 'flex',
+                        flexDirection: 'column',
                         gap: 1.5,
                         backgroundColor: theme.palette.mode === 'dark' ? '#12121e' : '#f0f3f8',
                         backgroundImage: 'none'
-                       }}>
-                         {filteredMessages.map((msg, index) => {
+                      }}>
+                        {filteredMessages.map((msg, index) => {
                           const isSelf = msg.senderId === currentUserId;
                           const isSystem = msg.senderId === 'BOS_AI_ASSISTANT' || msg.messageType === 'SYSTEM';
 
@@ -1152,7 +1152,7 @@ export default function BOSConnect() {
                                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 0.5 }}>
                                         {/* Dynamic inline preview if attachment is an image */}
                                         {(msg.attachmentType === 'IMAGE' || (msg.attachmentName && msg.attachmentName.match(/\.(jpg|jpeg|png|gif|webp)$/i))) ? (
-                                          <Box 
+                                          <Box
                                             component="img"
                                             src={`/api/files/view/${msg.attachmentUrl}`}
                                             alt={msg.attachmentName}
@@ -1242,15 +1242,15 @@ export default function BOSConnect() {
                                         {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                       </Typography>
                                       {isSelf && (
-                                        <Typography 
-                                          variant="caption" 
-                                          sx={{ 
-                                            color: msg.isSeen ? '#4ade80' : 'rgba(255,255,255,0.65)', 
-                                            fontSize: '0.625rem', 
-                                            fontWeight: 700, 
-                                            display: 'inline-flex', 
+                                        <Typography
+                                          variant="caption"
+                                          sx={{
+                                            color: msg.isSeen ? '#4ade80' : 'rgba(255,255,255,0.65)',
+                                            fontSize: '0.625rem',
+                                            fontWeight: 700,
+                                            display: 'inline-flex',
                                             alignItems: 'center',
-                                            ml: 0.5 
+                                            ml: 0.5
                                           }}
                                         >
                                           {msg.isSeen ? 'Read' : 'Sent'}
@@ -1271,12 +1271,12 @@ export default function BOSConnect() {
 
                         {/* SMART REPLIES FLOATING CHIPS IN MESSAGE TIMELINE */}
                         {smartReplies.length > 0 && (
-                          <Box 
-                            sx={{ 
-                              display: 'flex', 
-                              flexWrap: 'wrap', 
-                              gap: 1, 
-                              mt: 2, 
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              flexWrap: 'wrap',
+                              gap: 1,
+                              mt: 2,
                               mb: 1,
                               justifyContent: 'flex-start',
                               pl: 2
@@ -1329,7 +1329,7 @@ export default function BOSConnect() {
                       </Box>
                     )}
 
-                     {/* INPUT CONTROL PANEL */}
+                    {/* INPUT CONTROL PANEL */}
                     <Box
                       sx={{
                         p: 1.5,
@@ -1347,13 +1347,13 @@ export default function BOSConnect() {
                       />
 
                       {/* Main Premium Capsule Bar */}
-                      <Box sx={{ 
-                        flexGrow: 1, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        bgcolor: theme.palette.mode === 'dark' ? '#202c33' : '#ffffff', 
-                        borderRadius: '24px', 
-                        px: 2, 
+                      <Box sx={{
+                        flexGrow: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        bgcolor: theme.palette.mode === 'dark' ? '#202c33' : '#ffffff',
+                        borderRadius: '24px',
+                        px: 2,
                         py: 0.5,
                         boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                       }}>
@@ -1396,7 +1396,7 @@ export default function BOSConnect() {
                           InputProps={{ disableUnderline: true }}
                           sx={{
                             mx: 1.5,
-                            '& input': { 
+                            '& input': {
                               color: theme.palette.mode === 'dark' ? '#e9edef' : '#111b21',
                               fontSize: '0.95rem',
                               py: 0.75
@@ -1421,9 +1421,9 @@ export default function BOSConnect() {
                             {isRecordingVoice ? <IconMicrophoneOff size={22} /> : <IconMicrophone size={22} />}
                           </IconButton>
                         ) : (
-                          <IconButton 
-                            onClick={() => handleSendMessage()} 
-                            sx={{ 
+                          <IconButton
+                            onClick={() => handleSendMessage()}
+                            sx={{
                               color: '#00a884'
                             }}
                           >
@@ -1626,7 +1626,7 @@ export default function BOSConnect() {
                                     variant="dot"
                                     color={chan.members.some(m => m.userId !== currentUserId && m.online) ? 'success' : 'default'}
                                   >
-                                    <Avatar 
+                                    <Avatar
                                       src={chan.channelType === 'DIRECT' && chan.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(chan.members.find(m => m.userId !== currentUserId).imgName) : undefined}
                                       sx={{ bgcolor: '#312e81', width: 40, height: 40 }}
                                     >
@@ -1720,7 +1720,7 @@ export default function BOSConnect() {
                                 >
                                   <ListItemAvatar>
                                     <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color={u.online ? 'success' : 'default'}>
-                                      <Avatar 
+                                      <Avatar
                                         src={u.imgName ? getUserImageUrl(u.imgName) : undefined}
                                         sx={{ bgcolor: '#312e81' }}
                                       >
@@ -1877,7 +1877,7 @@ export default function BOSConnect() {
               padding: '16px',
               background: theme.palette.mode === 'dark' ? 'rgba(30, 30, 47, 0.92)' : 'rgba(255, 255, 255, 0.95)',
               border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(99, 102, 241, 0.15)'}`,
-              boxShadow: theme.palette.mode === 'dark' 
+              boxShadow: theme.palette.mode === 'dark'
                 ? '0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(99, 102, 241, 0.1)'
                 : '0 12px 32px rgba(99, 102, 241, 0.12), 0 4px 12px rgba(0,0,0,0.06)',
               backdropFilter: 'blur(10px)',

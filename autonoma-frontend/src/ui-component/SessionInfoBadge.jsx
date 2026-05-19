@@ -53,8 +53,8 @@ export default function SessionInfoBadge() {
     switchContext(tenantId, divisionId);
   };
 
-  const companyName = user?.companyName || localStorage.getItem('companyName') || null;
-  const divisionName = user?.divisionName || localStorage.getItem('divisionName') || null;
+  const companyName = user?.companyName || sessionStorage.getItem('companyName') || null;
+  const divisionName = user?.divisionName || sessionStorage.getItem('divisionName') || null;
 
   if (!companyName && !divisionName) return null;
 
@@ -144,7 +144,7 @@ export default function SessionInfoBadge() {
             }}
           >
             {options
-              .filter((opt) => opt.company.companyName === companyName || opt.company.dbSourceName === localStorage.getItem('tenantId'))
+              .filter((opt) => opt.company.companyName === companyName || opt.company.dbSourceName === sessionStorage.getItem('tenantId'))
               .map((opt, idx) => (
                 <Box key={idx}>
                   <Box sx={{ px: 2, py: 1, bgcolor: alpha(theme.palette.primary.main, 0.03) }}>
