@@ -17,13 +17,13 @@ import { API_PATHS } from 'utils/api-constants';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'groupName', label: 'Item Group', minWidth: 200, bold: true },
-  { id: 'description', label: 'Description', minWidth: 300 },
+  { id: 'groupName', label: 'Product Item Group', minWidth: 200, bold: true },
+  { id: 'description', label: 'Group Description', minWidth: 300 },
   { id: 'createdBy', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedBy', label: 'UPDATED USER', minWidth: 120 },
   { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 },
-  { id: 'status', label: 'Status', minWidth: 100 }
+  { id: 'status', label: 'Status', minWidth: 100, status: true }
 ];
 
 export default function ItemGroupMaster() {
@@ -133,8 +133,8 @@ export default function ItemGroupMaster() {
             data={filteredRows}
             filename="Product_Item_Group_Master"
             columns={[
-              { header: 'Item Group', key: 'groupName' },
-              { header: 'Description', key: 'description' },
+              { header: 'Product Item Group', key: 'groupName' },
+              { header: 'Group Description', key: 'description' },
               { header: 'Status', key: 'status' }
             ]}
           />
