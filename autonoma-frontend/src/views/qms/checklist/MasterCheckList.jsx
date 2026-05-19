@@ -446,6 +446,11 @@ export default function MasterCheckList() {
       alert('Please select a row first!');
       return;
     }
+    const selectedRow = rows.find((r) => r.id === selectedRowId);
+    if (selectedRow?.verifyStatus !== 'Verified') {
+      alert('Only verified checklists can be assigned to users!');
+      return;
+    }
     setAssignDialogOpen(true);
   };
 
