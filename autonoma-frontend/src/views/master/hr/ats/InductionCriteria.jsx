@@ -19,6 +19,7 @@ import {
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
@@ -91,6 +92,7 @@ export default function InductionCriteria() {
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
@@ -273,11 +275,11 @@ export default function InductionCriteria() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Induction_Criteria"
             columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />
+          />}
           <Button variant="contained" color="primary" onClick={handleOpenAdd} sx={btnNew} startIcon={<IconPlus size={18} />}>
             + New
           </Button>
@@ -288,9 +290,9 @@ export default function InductionCriteria() {
         columns={columns}
         rows={resolvedRows}
         loading={loading}
-        onEditRow={handleOpenEdit}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
         onDeleteRow={handleDelete}
-        onDoubleClickRow={handleOpenEdit}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
       />
 
       <BOSFormDialog

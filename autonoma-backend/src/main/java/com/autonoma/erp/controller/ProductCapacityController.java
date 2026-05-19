@@ -7,6 +7,7 @@ import com.autonoma.erp.repository.ProductModelRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +42,7 @@ public class ProductCapacityController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M3170", action = "write")
     public ResponseEntity<?> createCapacity(@RequestBody ProductCapacity capacity) {
         try {
             if (capacity.getUom() == null || capacity.getUom().trim().isEmpty()) {
@@ -79,6 +81,7 @@ public class ProductCapacityController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3170", action = "write")
     public ResponseEntity<?> updateCapacity(@PathVariable Long id, @RequestBody ProductCapacity capacity) {
         try {
             if (!capacityRepository.existsById(id)) {
@@ -121,6 +124,7 @@ public class ProductCapacityController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3170", action = "delete")
     public ResponseEntity<?> deleteCapacity(@PathVariable Long id) {
         try {
             if (!capacityRepository.existsById(id)) {

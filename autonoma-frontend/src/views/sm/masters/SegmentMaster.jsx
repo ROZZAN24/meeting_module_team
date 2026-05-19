@@ -7,6 +7,7 @@ import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, 
 import axios from 'axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -24,6 +25,7 @@ const INITIAL = { segmentCode: '', segmentName: '', segmentDescription: '', stat
 
 export default function SegmentMaster() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.LOG_SEGMENT);
   const [rows, setRows] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(INITIAL);
@@ -96,7 +98,7 @@ return (
       secondary={
         !showForm && (
           <Stack direction="row" spacing={1.5} alignItems="center">
-            <BOSExportButton
+            {perms.export && <BOSExportButton
               data={rows}
               filename="Segment_Master"
               columns={[
@@ -105,7 +107,7 @@ return (
                 { header: 'Segment Description', key: 'segmentDescription' },
                 { header: 'Status', key: 'status' }
               ]}
-            />
+            />}
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)} sx={btnSave}>
               Add New
             </Button>

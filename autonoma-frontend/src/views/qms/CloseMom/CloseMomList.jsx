@@ -10,6 +10,7 @@ import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import CloseMomDialog from './CloseMomDialog';
 
 const columns = [
@@ -33,6 +34,7 @@ export default function CloseMomList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_CLOSE_MOM);
   const lookups = useLookups(['EMPLOYEES']);
 
   const [rows, setRows] = useState([]);
@@ -186,7 +188,7 @@ export default function CloseMomList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Close_MOM"
             columns={[
@@ -196,7 +198,7 @@ export default function CloseMomList() {
               { header: 'Target Date', key: 'targetDate' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
         </Stack>
       }
     >

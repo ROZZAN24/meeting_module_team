@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.AuditObservationDetailRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.Date;
 import java.util.List;
@@ -24,6 +25,7 @@ public class AuditNcrController {
     }
 
     @PutMapping("/close/{id}")
+    @RequirePagePermission(pageCode = "QM1240", action = "write")
     public ResponseEntity<AuditObservationDetail> closeNcr(@PathVariable Long id, @RequestBody AuditObservationDetail update) {
         return detailRepository.findById(id).map(detail -> {
             detail.setRootCause(update.getRootCause());
@@ -43,6 +45,7 @@ public class AuditNcrController {
     }
 
     @PutMapping("/approve/{id}")
+    @RequirePagePermission(pageCode = "QM1250", action = "approval")
     public ResponseEntity<AuditObservationDetail> approveNcr(@PathVariable Long id) {
         return detailRepository.findById(id).map(detail -> {
             detail.setNcrStatus("CLOSED");

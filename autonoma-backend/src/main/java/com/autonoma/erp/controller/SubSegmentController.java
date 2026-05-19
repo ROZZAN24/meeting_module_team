@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.SubSegment;
 import com.autonoma.erp.repository.SubSegmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +23,17 @@ public class SubSegmentController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M5280", action = "write")
     public SubSegment create(@RequestBody SubSegment item) {
         return repository.save(item);
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5280", action = "write")
     public ResponseEntity<SubSegment> update(@PathVariable Long id, @RequestBody SubSegment item) {
         return repository.findById(id)
                 .map(existing -> {
@@ -36,6 +44,9 @@ public class SubSegmentController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5280", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();

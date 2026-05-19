@@ -5,6 +5,7 @@ import com.autonoma.erp.service.InductionMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import java.security.Principal;
 import java.util.List;
 
@@ -34,6 +35,7 @@ public class InductionMasterController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "HR_ATS_01", action = "write")
     public ResponseEntity<?> save(@RequestBody InductionMaster entity, Principal principal) {
         try {
             String currentUser = principal != null ? principal.getName() : "SYSTEM";
@@ -44,6 +46,7 @@ public class InductionMasterController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "HR_ATS_01", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody InductionMaster entity, Principal principal) {
         try {
             entity.setId(id);
@@ -55,6 +58,7 @@ public class InductionMasterController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "HR_ATS_01", action = "delete")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             service.delete(id);

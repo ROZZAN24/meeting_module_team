@@ -43,7 +43,8 @@ const admin = {
           type: 'item',
           url: '/admin/company-profile',
           icon: icons.IconBuildingSkyscraper,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1110'
         },
         {
           id: 'division-master',
@@ -51,7 +52,8 @@ const admin = {
           type: 'item',
           url: '/admin/division',
           icon: icons.IconLayoutColumns,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1120'
         },
         {
           id: 'user-credentials',
@@ -59,7 +61,8 @@ const admin = {
           type: 'item',
           url: '/admin/user-credentials',
           icon: icons.IconUsers,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1130'
         },
         {
           id: 'user-access',
@@ -67,7 +70,8 @@ const admin = {
           type: 'item',
           url: '/admin/user-access',
           icon: icons.IconFingerprint,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1140'
         },
         {
           id: 'audit-trail',
@@ -75,7 +79,8 @@ const admin = {
           type: 'item',
           url: '/admin/audit-trail',
           icon: icons.IconHistory,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1150'
         },
         {
           id: 'session-analytics',
@@ -83,7 +88,8 @@ const admin = {
           type: 'item',
           url: '/admin/session-analytics',
           icon: icons.IconTimeline,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1160'
         },
         {
           id: 'file-traceability-hub',
@@ -91,7 +97,8 @@ const admin = {
           type: 'item',
           url: '/admin/file-traceability-hub',
           icon: icons.IconFileAnalytics,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1170'
         }
       ]
     },
@@ -107,7 +114,8 @@ const admin = {
           type: 'item',
           url: '/admin/business-authorization',
           icon: icons.IconShieldLock,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1210'
         },
         {
           id: 'preference-master',
@@ -115,7 +123,8 @@ const admin = {
           type: 'item',
           url: '/admin/preference-master',
           icon: icons.IconSettings,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1220'
         },
         {
           id: 'prefix-credentials',
@@ -123,7 +132,8 @@ const admin = {
           type: 'item',
           url: '/admin/prefix-credentials',
           icon: icons.IconSettings,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1230'
         },
         {
           id: 'session-monitoring',
@@ -131,7 +141,8 @@ const admin = {
           type: 'item',
           url: '/admin/session-monitoring',
           icon: icons.IconActivity,
-          breadcrumbs: true
+          breadcrumbs: true,
+          pageCode: 'AD1240'
         }
       ]
     }

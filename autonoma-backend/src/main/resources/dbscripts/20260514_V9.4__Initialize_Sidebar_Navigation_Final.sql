@@ -96,8 +96,8 @@ INSERT INTO bos_pages (mod_id, sub_mod_id, page_code, page_name, enabled, page_u
 (5, 7, 'HR_PY_01', 'Holiday', 1, '/hr/payroll/holiday', 'IconCalendar'),
 (5, 7, 'HR_PY_02', 'Bank Details', 1, '/hr/payroll/bank-details', 'IconBuildingBank'),
 -- QMS -> Audit
-(2, 9, 'QMS_AU_01', 'Audit Type', 1, '/qms/audit/type', 'IconSearch'),
-(2, 9, 'QMS_AU_02', 'Audit Area / Zone', 1, '/qms/audit/area', 'IconMapPin'),
+(2, 9, 'QM1210', 'Audit Type', 1, '/qms/audit/type', 'IconSearch'),
+(2, 9, 'QM1220', 'Audit Area / Zone', 1, '/qms/audit/area', 'IconMapPin'),
 -- Sales -> CRM
 (4, 12, 'S_CRM_01', 'Customer Master', 1, '/sales/crm/customer-master', 'IconUsers'),
 (4, 12, 'S_CRM_02', 'Contact Master', 1, '/sales/crm/contact-master', 'IconPhone');

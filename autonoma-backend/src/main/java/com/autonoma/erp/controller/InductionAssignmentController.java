@@ -5,6 +5,7 @@ import com.autonoma.erp.service.InductionAssignmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class InductionAssignmentController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "HRA_IND_01", action = "write")
     public ResponseEntity<?> save(@RequestBody InductionAssignment entity, Principal principal) {
         try {
             String currentUser = principal != null ? principal.getName() : "SYSTEM";
@@ -43,6 +45,7 @@ public class InductionAssignmentController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "HRA_IND_01", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody InductionAssignment entity, Principal principal) {
         try {
             entity.setId(id);
@@ -54,6 +57,7 @@ public class InductionAssignmentController {
     }
 
     @PatchMapping("/{id}/status")
+    @RequirePagePermission(pageCode = "HRA_IND_01", action = "write")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> statusMap, Principal principal) {
         try {
             String newStatus = statusMap.get("status");

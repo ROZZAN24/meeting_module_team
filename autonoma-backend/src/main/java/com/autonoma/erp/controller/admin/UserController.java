@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.UserCredential;
 import com.autonoma.erp.repository.admin.UserRepository;
 import com.autonoma.erp.service.FileService;
@@ -50,6 +52,9 @@ public class UserController {
     }
 
     @PostMapping("/create")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> createUser(@RequestBody UserCredential user) {
         if (user.getUserId() == null || user.getUserId().isEmpty()) {
             return ResponseEntity.badRequest().body("User ID cannot be empty");
@@ -64,6 +69,9 @@ public class UserController {
     }
 
     @PutMapping("/update/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserCredential userDetails) {
         return userRepository.findById(id).map(user -> {
             // Delete old image if it's being replaced
@@ -89,6 +97,9 @@ public class UserController {
     }
 
     @PostMapping(value = "/upload-profile-pic", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> uploadProfilePic(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "previousFile", required = false) String previousFile) {
@@ -132,6 +143,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "delete")
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         userRepository.deleteById(id);
         return ResponseEntity.ok().build();
@@ -189,6 +203,9 @@ public class UserController {
     }
 
     @PostMapping("/{userId}/mappings")
+
+
+    @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> updateUserMappings(@PathVariable String userId, @RequestBody UserMappingPayload payload) {
         UserCredential user = userRepository.findById(userId).orElse(null);
         if (user == null) {

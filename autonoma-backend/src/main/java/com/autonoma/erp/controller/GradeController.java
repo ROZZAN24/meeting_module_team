@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.autonoma.erp.model.Gradedetails;
 import com.autonoma.erp.service.EmpGradeService;
+import com.autonoma.erp.security.RequirePagePermission;
 
 @RestController
 @RequestMapping("/api/master/hr/grade")
@@ -40,11 +41,13 @@ public class GradeController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M2260", action = "write")
     public Gradedetails createGradeDetail(@RequestBody Gradedetails gradeDetail) {
         return gradeDetailsService.createGradeDetail(gradeDetail);
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2260", action = "write")
     public ResponseEntity<Gradedetails> updateGradeDetail(@PathVariable Long id,
             @RequestBody Gradedetails gradeDetailDetails) {
         Gradedetails updatedGradeDetail = gradeDetailsService.updateGradeDetail(id, gradeDetailDetails);
@@ -60,6 +63,7 @@ public class GradeController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2260", action = "delete")
     public ResponseEntity<Void> deleteGradeDetail(@PathVariable Long id) {
         gradeDetailsService.deleteGradeDetail(id);
         return ResponseEntity.ok().build();

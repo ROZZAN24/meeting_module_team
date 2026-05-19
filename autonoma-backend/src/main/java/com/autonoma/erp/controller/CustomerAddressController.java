@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.CustomerAddress;
 import com.autonoma.erp.service.CustomerAddressService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,11 +35,17 @@ public class CustomerAddressController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M5130", action = "write")
     public CustomerAddress createAddress(@RequestBody CustomerAddress address) {
         return service.saveAddress(address);
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5130", action = "write")
     public ResponseEntity<CustomerAddress> updateAddress(@PathVariable Long id, @RequestBody CustomerAddress details) {
         return service.getAddressById(id)
                 .map(address -> {
@@ -60,6 +68,9 @@ public class CustomerAddressController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5130", action = "delete")
     public ResponseEntity<Void> deleteAddress(@PathVariable Long id) {
         service.deleteAddress(id);
         return ResponseEntity.ok().build();

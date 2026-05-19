@@ -6,6 +6,7 @@ import com.autonoma.erp.repository.DesignationLevelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 
@@ -39,6 +40,7 @@ public class DesignationLevelController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M2250", action = "write")
     public ResponseEntity<?> create(@RequestBody DesignationLevel level) {
         if (designationLevelRepository.existsByLevel(level.getLevel())) {
             return ResponseEntity.badRequest().body("Designation level already exists");
@@ -49,6 +51,7 @@ public class DesignationLevelController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2250", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody DesignationLevel levelDetails) {
         return designationLevelRepository.findById(id)
                 .map(level -> {
@@ -66,6 +69,7 @@ public class DesignationLevelController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2250", action = "delete")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         return designationLevelRepository.findById(id)
                 .map(level -> {

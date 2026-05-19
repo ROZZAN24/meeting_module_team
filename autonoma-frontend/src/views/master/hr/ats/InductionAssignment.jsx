@@ -40,6 +40,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
@@ -140,6 +141,7 @@ const InductionAssignment = () => {
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
 
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
@@ -406,11 +408,11 @@ const InductionAssignment = () => {
             </IconButton>
           </Tooltip>
 
-          <BOSExportButton 
+          {perms.export && <BOSExportButton 
             data={resolvedRows} 
             filename="Induction_Summary" 
             columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
-          />
+          />}
         </Stack>
       }
     >
