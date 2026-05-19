@@ -35,7 +35,8 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 const columns = [
   '#', 'Seq No', 'Checking Point', 'Category', 'Frequency', 'Department',
   'Effective From', 'Days', 'Expire Date', 'Stock Link',
-  'Created Date', 'Created By', 'Verify Status', 'Verified By', 'Verified Date'
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE',
+  'Verify Status', 'Verified By', 'Verified Date'
 ];
 
 const DEPARTMENTS = [
@@ -64,8 +65,10 @@ const tableCols = [
   { id: 'days', label: 'Days' },
   { id: 'expireDate', label: 'Expire Date' },
   { id: 'stockLink', label: 'Stock Link' },
-  { id: 'createdDate', label: 'Created Date' },
-  { id: 'createdBy', label: 'Created By' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
   { id: 'verifiedDate', label: 'Verified Date' }
@@ -81,8 +84,10 @@ const exportColumns = [
   { header: 'Days', key: 'reminderDays' },
   { header: 'Expire Date', key: 'expiryDate' },
   { header: 'Stock Link', key: 'stockLink' },
-  { header: 'Created Date', key: 'createdDate' },
-  { header: 'Created By', key: 'createdBy' },
+  { header: 'CREATED USER', key: 'createdBy' },
+  { header: 'CREATED DATE', key: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : (r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: 'updatedBy' },
+  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '' },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
   { header: 'Verified Date', key: 'verifiedDate' }
@@ -366,8 +371,10 @@ export default function CheckListVerify() {
                   <TableCell>{row.reminderDays}</TableCell>
                   <TableCell>{row.expiryDate}</TableCell>
                   <TableCell>{row.stockLink}</TableCell>
-                  <TableCell>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.createdBy}</TableCell>
+                  <TableCell>{row.createdBy || '-'}</TableCell>
+                  <TableCell>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : (row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{row.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : '-'}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
                   <TableCell>{row.verifiedBy}</TableCell>
                   <TableCell>{row.verifiedDate}</TableCell>

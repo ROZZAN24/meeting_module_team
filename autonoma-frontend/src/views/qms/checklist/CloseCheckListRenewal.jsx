@@ -35,7 +35,11 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Next Due Date', 'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required', 'Created Date', 'Created By'
+  'Stock Link', 'Item Code', 'Quantity', 'Assign To',
+  'Date', 'Checklist Date', 'Expire Date', 'Next Due Date',
+  'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required',
+  'Carry Forward',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 
 const STATUS_OPTIONS = [
@@ -74,16 +78,24 @@ const tableCols = [
   { id: 'category', label: 'Category' },
   { id: 'frequency', label: 'Frequency' },
   { id: 'department', label: 'Dept' },
+  { id: 'stockLink', label: 'Stock Link' },
+  { id: 'itemCode', label: 'Item Code' },
+  { id: 'qty', label: 'Quantity' },
+  { id: 'assignedTo', label: 'Assign To' },
   { id: 'assignedDate', label: 'Date' },
   { id: 'checklistDate', label: 'Checklist Date' },
+  { id: 'expireDate', label: 'Expire Date' },
   { id: 'nextDueDate', label: 'Next Due Date' },
   { id: 'status', label: 'Status' },
   { id: 'attendedDate', label: 'Attended Date' },
   { id: 'attendedBy', label: 'Attended By' },
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'photoRequired', label: 'Photo Required' },
-  { id: 'createdDate', label: 'Created Date' },
-  { id: 'createdBy', label: 'Created By' }
+  { id: 'carryForward', label: 'Carry Forward' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
 const exportColumns = [
@@ -94,16 +106,24 @@ const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
   { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Stock Link', key: (r) => r.checklist?.stockLink },
+  { header: 'Item Code', key: (r) => r.checklist?.itemCode },
+  { header: 'Quantity', key: (r) => r.checklist?.qty },
+  { header: 'Assign To', key: (r) => r.assignedTo },
   { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
   { header: 'Checklist Date', key: 'checklistDate' },
+  { header: 'Expire Date', key: (r) => r.checklist?.expiryDate ? new Date(r.checklist.expiryDate).toLocaleDateString() : '' },
   { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
   { header: 'Attended Date', key: 'attendedDate' },
   { header: 'Attended By', key: 'attendedBy' },
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
-  { header: 'Created Date', key: (r) => r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '' },
-  { header: 'Created By', key: (r) => r.checklist?.createdBy }
+  { header: 'Carry Forward', key: (r) => r.carryForward || r.checklist?.carryForward },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : (r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '') }
 ];
 
 const filterConfig = [
@@ -310,6 +330,38 @@ export default function CloseCheckListRenewal() {
     }
   };
 
+  const handleSaveExecution = async (formData) => {
+    if (!selectedRowId) return;
+    try {
+      const uploadedFileNames = [];
+      for (const f of formData.actualFiles) {
+        if (f.isServer) {
+          uploadedFileNames.push(f.serverFileName || f.name);
+        } else if (f.file) {
+          const upFormData = new FormData();
+          upFormData.append('file', f.file);
+          const res = await axios.post('/api/files/upload', upFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedFileNames.push(res.data);
+        }
+      }
+
+      await axios.post('/api/qms/checklist/verify', {
+        assignmentId: selectedRowId,
+        status: formData.status || 'Completed',
+        verifiedBy: user?.name || user?.id || 'Executor',
+        remarks: formData.remarks || '',
+        actualFiles: uploadedFileNames
+      });
+
+      setDialogOpen(false);
+      fetchAssignments();
+    } catch (error) {
+      console.error('Failed to save execution:', error);
+    }
+  };
+
   const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
 
   return (
@@ -402,16 +454,24 @@ export default function CloseCheckListRenewal() {
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
+                  <TableCell>{row.checklist?.stockLink || '-'}</TableCell>
+                  <TableCell>{row.checklist?.itemCode || '-'}</TableCell>
+                  <TableCell>{row.checklist?.qty || '-'}</TableCell>
+                  <TableCell>{row.assignedTo || '-'}</TableCell>
                   <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
                   <TableCell>{row.checklistDate}</TableCell>
+                  <TableCell>{row.checklist?.expiryDate ? new Date(row.checklist.expiryDate).toLocaleDateString() : '-'}</TableCell>
                   <TableCell>{row.checklist?.nextDueDate}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                   <TableCell>{row.attendedDate}</TableCell>
                   <TableCell>{row.attendedBy}</TableCell>
                   <TableCell>{row.checklist?.verificationRequired}</TableCell>
                   <TableCell>{row.checklist?.photoRequired}</TableCell>
-                  <TableCell>{row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.checklist?.createdBy}</TableCell>
+                  <TableCell>{row.carryForward || row.checklist?.carryForward || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : (row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-')}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -509,7 +569,8 @@ export default function CloseCheckListRenewal() {
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}
         data={activeRow}
-        isExecution={false}
+        isExecution={true}
+        onSave={handleSaveExecution}
       />
     </MainCard>
   );
