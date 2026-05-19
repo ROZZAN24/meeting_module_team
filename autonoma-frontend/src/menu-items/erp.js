@@ -373,6 +373,13 @@ export const masters = {
           icon: icons.IconBuildingFactory,
           children: [
             {
+              id: 'master-npd-product-group',
+              title: 'Product Item Group',
+              type: 'item',
+              url: '/master/npd/product-group',
+              icon: icons.IconCategory
+            },
+            {
               id: 'master-npd-product-type',
               title: 'Product Item Type',
               type: 'item',

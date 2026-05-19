@@ -14,7 +14,7 @@ import useAuth from 'hooks/useAuth';
 // ==============================|| PRODUCT ITEM GROUP - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
 const VALIDATION_RULES = [
-  { field: 'groupName', label: 'Group Name', required: true, maxLength: 100 }
+  { field: 'groupName', label: 'Product Item Group', required: true, maxLength: 100 }
 ];
 
 const INITIAL_STATE = { groupName: '', description: '', status: 'ACTIVE' };
@@ -112,7 +112,7 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
         <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Group Details">
           <BOSTextField
             name="groupName"
-            label="Group Name"
+            label="Product Item Group"
             value={formData.groupName}
             onChange={handleChange}
             disabled={isViewOnly}
@@ -124,7 +124,7 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
 
           <BOSTextField
             name="description"
-            label="Description"
+            label="Group Description"
             multiline
             rows={3}
             value={formData.description}
@@ -143,8 +143,8 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
             onChange={handleChange}
             disabled={isViewOnly}
           >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
+            <MenuItem value="ACTIVE">Active</MenuItem>
+            <MenuItem value="INACTIVE">Inactive</MenuItem>
           </BOSTextField>
         </BOSFormSection>
       </BOSFormDialog>
