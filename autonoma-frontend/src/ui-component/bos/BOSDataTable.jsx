@@ -200,8 +200,8 @@ export default function BOSDataTable({
   };
 
   return (
-    <>
-      <TableContainer component={Paper} sx={{ ...tableContainerSx, ...sx }} id={id}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 185px)', overflow: 'hidden' }}>
+      <TableContainer component={Paper} sx={{ ...tableContainerSx, flexGrow: 1, height: 'auto', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, ...sx }} id={id}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
@@ -227,14 +227,18 @@ export default function BOSDataTable({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (showActions ? 1 : 0)} align="center" sx={{ py: 3 }}>
-                  <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>Loading data...</Typography>
+                <TableCell colSpan={columns.length + (showActions ? 1 : 0)} sx={{ p: 0, border: 'none' }}>
+                  <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 3 }}>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>Loading data...</Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : (filteredRows?.length || 0) === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (showActions ? 1 : 0)} align="center" sx={{ py: 3 }}>
-                  <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>No records found.</Typography>
+                <TableCell colSpan={columns.length + (showActions ? 1 : 0)} sx={{ p: 0, border: 'none' }}>
+                  <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 3 }}>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>No records found.</Typography>
+                  </Box>
                 </TableCell>
               </TableRow>
             ) : (
@@ -309,60 +313,60 @@ export default function BOSDataTable({
       <Box sx={{ 
         py: 0.5, 
         px: 1.5, 
-        display: 'flex', 
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
-        justifyContent: 'space-between', 
-        position: 'relative',
-        minHeight: '44px',
         borderTop: '1px solid', 
         borderColor: 'divider',
         bgcolor: isDark ? 'background.default' : 'grey.50',
         borderBottomLeftRadius: '16px',
         borderBottomRightRadius: '16px'
       }}>
-        <Box sx={{ mr: 'auto', display: 'flex', alignItems: 'center', zIndex: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
           {footerActions}
         </Box>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          component="div"
-          count={totalCount ?? (rows?.length || 0)}
-          rowsPerPage={size}
-          page={page}
-          onPageChange={(e, p) => onPageChange(p)}
-          onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
-          sx={{
-            border: 'none',
-            position: 'absolute',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1,
-            '& .MuiTablePagination-toolbar': { 
-              justifyContent: 'center', 
-              flexWrap: 'nowrap',
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={totalCount ?? (rows?.length || 0)}
+            rowsPerPage={size}
+            page={page}
+            onPageChange={(e, p) => onPageChange(p)}
+            onRowsPerPageChange={(e) => onSizeChange(parseInt(e.target.value, 10))}
+            sx={{
               minHeight: '36px !important',
-              height: '36px',
-              p: '0px !important',
-              gap: 1
-            },
-            '& .MuiTablePagination-spacer': { display: 'none' },
-            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-              margin: 0,
-              fontSize: '0.75rem',
-              fontWeight: 500
-            },
-            '& .MuiTablePagination-select': {
-              py: '2px',
-              fontSize: '0.75rem',
-              fontWeight: 500
-            },
-            '& .MuiTablePagination-actions': {
-              margin: 0
-            }
-          }}
-        />
+              height: '36px !important',
+              overflow: 'hidden',
+              border: 'none',
+              '& .MuiTablePagination-toolbar': { 
+                justifyContent: 'center', 
+                flexWrap: 'nowrap',
+                minHeight: '36px !important',
+                height: '36px',
+                p: '0px !important',
+                gap: 1
+              },
+              '& .MuiTablePagination-spacer': { display: 'none' },
+              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                margin: 0,
+                fontSize: '0.75rem',
+                fontWeight: 500
+              },
+              '& .MuiTablePagination-select': {
+                py: '2px',
+                fontSize: '0.75rem',
+                fontWeight: 500
+              },
+              '& .MuiTablePagination-actions': {
+                margin: 0
+              }
+            }}
+          />
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }} />
       </Box>
-    </>
+    </Box>
   );
 }
 

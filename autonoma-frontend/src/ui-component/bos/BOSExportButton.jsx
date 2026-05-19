@@ -29,7 +29,10 @@ export default function BOSExportButton({
   loading = false,
   variant = 'outlined',
   color = 'primary',
-  size = 'medium'
+  size = 'medium',
+  pageId = null,
+  pageName = null,
+  pageCode = null
 }) {
   const theme = useTheme();
   const { user } = useAuth();
@@ -37,6 +40,7 @@ export default function BOSExportButton({
   const [activeTab, setActiveTab] = useState(0); // 0: Excel, 1: PDF
   const [page, setPage] = useState(0);
   const [sizePerPage, setSizePerPage] = useState(10);
+
 
   const handleOpenPreview = () => setPreviewOpen(true);
   const handleClosePreview = () => {
@@ -91,8 +95,10 @@ export default function BOSExportButton({
   };
 
   const logExport = async (formatType) => {
+    const pageTitle = filename.replace(/_/g, ' ');
+
+    // Log to standard audit trail
     try {
-      const pageTitle = filename.replace(/_/g, ' ');
       await axios.post('/api/audit-trail/log', {
         userId: user?.username || user?.email || user?.name || 'SYSTEM',
         pageName: `${pageTitle} Master`,
@@ -109,6 +115,20 @@ export default function BOSExportButton({
       });
     } catch (err) {
       console.error('Failed to log export audit:', err);
+    }
+
+    // Log to File Traceability Hub
+    try {
+      const computedPageName = pageTitle.toLowerCase().endsWith('master') ? pageTitle : `${pageTitle} Master`;
+      await axios.post('/api/file-traceability', {
+        pageId: pageId,
+        pageCode: pageCode || 'M_DF_01',
+        pageName: pageName || computedPageName,
+        reportName: `${getFormattedFilename()}.${formatType === 'Excel' ? 'xlsx' : 'pdf'}`,
+        createdBy: user?.username || user?.email || user?.name || 'SYSTEM'
+      });
+    } catch (err) {
+      console.error('Failed to log file traceability:', err);
     }
   };
 
@@ -444,7 +464,10 @@ BOSExportButton.propTypes = {
   loading: PropTypes.bool,
   variant: PropTypes.string,
   color: PropTypes.string,
-  size: PropTypes.string
+  size: PropTypes.string,
+  pageId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
+  pageName: PropTypes.string,
+  pageCode: PropTypes.string
 };
 
 

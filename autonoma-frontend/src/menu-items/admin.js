@@ -2,7 +2,7 @@
 import {
   IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper,
   IconAccessPoint, IconHistory, IconLayoutColumns, IconTimeline,
-  IconFingerprint, IconActivity, IconUserShield, IconCategory
+  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics
 } from '@tabler/icons-react';
 
 // constant
@@ -19,7 +19,8 @@ const icons = {
   IconFingerprint,
   IconActivity,
   IconUserShield,
-  IconCategory
+  IconCategory,
+  IconFileAnalytics
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -82,6 +83,14 @@ const admin = {
           type: 'item',
           url: '/admin/session-analytics',
           icon: icons.IconTimeline,
+          breadcrumbs: true
+        },
+        {
+          id: 'file-traceability-hub',
+          title: 'File Traceability Hub',
+          type: 'item',
+          url: '/admin/file-traceability-hub',
+          icon: icons.IconFileAnalytics,
           breadcrumbs: true
         }
       ]

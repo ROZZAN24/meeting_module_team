@@ -363,84 +363,103 @@ export default function CloseCheckListRenewal() {
         </Box>
       )}
 
-      <TableContainer component={Paper} sx={{ height: 'calc(100vh - 240px)', border: '1px solid', borderColor: 'divider', borderRadius: 0, '&::-webkit-scrollbar': { width: 10, height: 10 }, '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 } }}>
-        <Table stickyHeader sx={{ minWidth: 2500 }} aria-label="close renewal table">
-          <TableHead><TableRow>{columns.map((col, i) => <TableCell key={i} sx={{ bgcolor: 'primary.dark', color: 'white', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
-          <TableBody>
-            {loading ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}><Typography variant="body1" color="textSecondary">Loading...</Typography></TableCell></TableRow>
-            ) : rows.length === 0 ? (
-              <TableRow><TableCell colSpan={columns.length} align="center" sx={{ py: 6 }}><Typography variant="body1" color="textSecondary">{searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}</Typography></TableCell></TableRow>
-            ) : rows.map((row, idx) => (
-              <TableRow
-                key={row.id}
-                hover
-                onClick={() => setSelectedRowId(row.id)}
-                onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                onMouseEnter={() => setShowDoubleTap(true)}
-                onMouseLeave={() => setShowDoubleTap(false)}
-                onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
-              >
-                <TableCell>{page * size + idx + 1}</TableCell>
-                <TableCell>{row.assignType || 'Mine'}</TableCell>
-                <TableCell>{row.checklist?.seqNo}</TableCell>
-                <TableCell>{row.checklist?.checkingPoint}</TableCell>
-                <TableCell>{row.checklist?.description}</TableCell>
-                <TableCell>{row.checklist?.category}</TableCell>
-                <TableCell>{row.checklist?.frequency}</TableCell>
-                <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
-                <TableCell>{row.checklistDate}</TableCell>
-                <TableCell>{row.checklist?.nextDueDate}</TableCell>
-                <TableCell><StatusChip status={row.status} /></TableCell>
-                <TableCell>{row.attendedDate}</TableCell>
-                <TableCell>{row.attendedBy}</TableCell>
-                <TableCell>{row.checklist?.verificationRequired}</TableCell>
-                <TableCell>{row.checklist?.photoRequired}</TableCell>
-                <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
-                <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
-                <TableCell>{row.checklist?.updatedBy || '-'}</TableCell>
-                <TableCell>{row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-'}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 185px)' }}>
+        <TableContainer component={Paper} sx={{ flexGrow: 1, border: '1px solid', borderColor: 'divider', borderRadius: 0, '&::-webkit-scrollbar': { width: 10, height: 10 }, '&::-webkit-scrollbar-track': { backgroundColor: 'background.paper' }, '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.400', borderRadius: 2 } }}>
+          <Table stickyHeader sx={{ minWidth: 2500 }} aria-label="close renewal table">
+            <TableHead><TableRow>{columns.map((col, i) => <TableCell key={i} sx={{ bgcolor: 'primary.dark', color: 'white', fontWeight: 'bold', whiteSpace: 'nowrap', borderRight: '1px solid rgba(255,255,255,0.2)' }}>{col}</TableCell>)}</TableRow></TableHead>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
+                    <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <Typography variant="body1" color="textSecondary">Loading...</Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : rows.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
+                    <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
+                      <Typography variant="body1" color="textSecondary">
+                        {searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ) : rows.map((row, idx) => (
+                <TableRow
+                  key={row.id}
+                  hover
+                  onClick={() => setSelectedRowId(row.id)}
+                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
+                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onMouseLeave={() => setShowDoubleTap(false)}
+                  onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                >
+                  <TableCell>{page * size + idx + 1}</TableCell>
+                  <TableCell>{row.assignType || 'Mine'}</TableCell>
+                  <TableCell>{row.checklist?.seqNo}</TableCell>
+                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>{row.checklist?.description}</TableCell>
+                  <TableCell>{row.checklist?.category}</TableCell>
+                  <TableCell>{row.checklist?.frequency}</TableCell>
+                  <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
+                  <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
+                  <TableCell>{row.checklistDate}</TableCell>
+                  <TableCell>{row.checklist?.nextDueDate}</TableCell>
+                  <TableCell><StatusChip status={row.status} /></TableCell>
+                  <TableCell>{row.attendedDate}</TableCell>
+                  <TableCell>{row.attendedBy}</TableCell>
+                  <TableCell>{row.checklist?.verificationRequired}</TableCell>
+                  <TableCell>{row.checklist?.photoRequired}</TableCell>
+                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
 
-      <TablePagination
-        component="div"
-        count={totalElements}
-        page={page}
-        onPageChange={(e, p) => setPage(p)}
-        rowsPerPage={size}
-        onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
-        rowsPerPageOptions={[5, 10, 25, 50]}
-        sx={{
-          '& .MuiTablePagination-toolbar': {
-            justifyContent: 'center',
-            flexWrap: 'nowrap',
+        <TablePagination
+          component="div"
+          count={totalElements}
+          page={page}
+          onPageChange={(e, p) => setPage(p)}
+          rowsPerPage={size}
+          onRowsPerPageChange={(e) => { setSize(parseInt(e.target.value, 10)); setPage(0); }}
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          sx={{
             minHeight: '36px !important',
-            height: '36px',
-            p: '0px !important',
-            gap: 1
-          },
-          '& .MuiTablePagination-spacer': { display: 'none' },
-          '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-            margin: 0,
-            fontSize: '0.75rem',
-            fontWeight: 500
-          },
-          '& .MuiTablePagination-select': {
-            py: '2px',
-            fontSize: '0.75rem',
-            fontWeight: 500
-          },
-          '& .MuiTablePagination-actions': {
-            margin: 0
-          }
-        }}
-      />
+            height: '36px !important',
+            overflow: 'hidden',
+            '& .MuiTablePagination-toolbar': {
+              justifyContent: 'center',
+              flexWrap: 'nowrap',
+              minHeight: '36px !important',
+              height: '36px',
+              p: '0px !important',
+              gap: 1
+            },
+            '& .MuiTablePagination-spacer': { display: 'none' },
+            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+              margin: 0,
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-select': {
+              py: '2px',
+              fontSize: '0.75rem',
+              fontWeight: 500
+            },
+            '& .MuiTablePagination-actions': {
+              margin: 0
+            }
+          }}
+        />
+      </Box>
 
 
 
