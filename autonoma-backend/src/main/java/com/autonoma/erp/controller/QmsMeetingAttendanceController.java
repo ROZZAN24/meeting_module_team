@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Map;
+import com.autonoma.erp.security.RequirePagePermission;
 
 @RestController
 @RequestMapping("/api/qms/meeting-attendance")
@@ -25,6 +26,7 @@ public class QmsMeetingAttendanceController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "QM1330", action = "write")
     public ResponseEntity<?> markAttendance(@RequestBody Map<String, Object> data) {
         try {
             QmsMeetingUserAttendance attendance = attendanceService.markAttendance(data);
@@ -35,6 +37,7 @@ public class QmsMeetingAttendanceController {
     }
 
     @PutMapping("/{id}/out")
+    @RequirePagePermission(pageCode = "QM1330", action = "write")
     public ResponseEntity<?> markOutTime(@PathVariable Long id) {
         try {
             QmsMeetingUserAttendance attendance = attendanceService.markOutTime(id);

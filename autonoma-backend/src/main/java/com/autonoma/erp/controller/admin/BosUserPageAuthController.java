@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.BosUserPageAuth;
 import com.autonoma.erp.service.admin.BosUserPageAuthService;
 
@@ -23,6 +25,9 @@ public class BosUserPageAuthController {
     }
 
     @PostMapping("/save-all")
+
+
+    @RequirePagePermission(pageCode = "AD1140", action = "write")
     public ResponseEntity<String> saveAll(@RequestBody List<BosUserPageAuth> auths) {
         authService.saveAll(auths);
         return ResponseEntity.ok("Authorizations saved successfully");

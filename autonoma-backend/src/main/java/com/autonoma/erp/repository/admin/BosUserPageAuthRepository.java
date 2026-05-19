@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface BosUserPageAuthRepository extends JpaRepository<BosUserPageAuth, Object> {
     List<BosUserPageAuth> findByUserId(String userId);
+
+    BosUserPageAuth findByUserIdAndPageId(String userId, Integer pageId);
 }

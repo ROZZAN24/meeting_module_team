@@ -34,6 +34,7 @@ import ChecklistAssignDialog from './ChecklistAssignDialog';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'seqNo', label: 'Seq No', minWidth: 80, bold: true },
@@ -232,6 +233,7 @@ export default function MasterCheckList() {
   const [showDoubleTap, setShowDoubleTap] = useState(false);
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [anchorEl, setAnchorEl] = useState(null);
@@ -460,7 +462,7 @@ export default function MasterCheckList() {
           <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>} onClick={handleAmendmentClick}>Amendment</Button>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
           <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setIsAmendment(false); setDialogOpen(true); }}>Add</Button>
-          <BOSExportButton data={rows} filename="Master_Check_List" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Master_Check_List" columns={exportColumns} size="small" />}
         </Box>
       }
     >

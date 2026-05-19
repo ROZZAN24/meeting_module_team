@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.AuditAttendanceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 
@@ -25,11 +26,13 @@ public class AuditAttendanceController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "QM1220", action = "write")
     public AuditAttendance create(@RequestBody AuditAttendance attendance) {
         return auditAttendanceService.saveAttendance(attendance);
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1220", action = "write")
     public ResponseEntity<AuditAttendance> update(@PathVariable Long id, @RequestBody AuditAttendance details) {
         return auditAttendanceRepository.findById(id)
                 .map(attendance -> {
@@ -44,6 +47,7 @@ public class AuditAttendanceController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1220", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         return auditAttendanceRepository.findById(id)
                 .map(attendance -> {

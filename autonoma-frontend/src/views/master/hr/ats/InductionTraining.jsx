@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'utils/axios';
 import { useTheme } from '@mui/material/styles';
 import useAuth from 'hooks/useAuth';
@@ -43,6 +43,8 @@ import {
   errorStyle
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
+import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION TRAINING (TRAINER PAGE) ||============================== //
 
@@ -115,8 +117,34 @@ export default function InductionTraining() {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [trainingDetails, setTrainingDetails] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [statusFilter, setStatusFilter] = useState('ALL');
-  const [searchText, setSearchText] = useState('');
+
+  const globalQuery = useSelector((state) => state.search.query);
+  const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINING);
+
+  // Dispatch starred filter configuration matching Status
+  useEffect(() => {
+    const config = [
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'ALL', label: 'ALL' },
+          { value: 'PENDING', label: 'PENDING' },
+          { value: 'TRAINING STARTED', label: 'TRAINING STARTED' },
+          { value: 'TRAINING GIVEN', label: 'TRAINING GIVEN' },
+          { value: 'COMPLETED', label: 'COMPLETED' }
+        ],
+        defaultValue: 'ALL',
+        isStarred: true
+      }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [dispatch]);
 
   const fetchRows = useCallback(async () => {
     setLoading(true);
@@ -199,11 +227,12 @@ export default function InductionTraining() {
   // Filter rows
   const resolvedRows = useMemo(() => {
     let filtered = rows;
-    if (statusFilter !== 'ALL') {
-      filtered = filtered.filter(r => r.currentStatus === statusFilter);
+    const statusVal = globalFilters.status || 'ALL';
+    if (statusVal !== 'ALL') {
+      filtered = filtered.filter(r => r.currentStatus === statusVal);
     }
-    if (searchText) {
-      const s = searchText.toLowerCase();
+    if (globalQuery) {
+      const s = globalQuery.toLowerCase();
       filtered = filtered.filter(r =>
         (r.empCode || '').toLowerCase().includes(s) ||
         (r.empName || '').toLowerCase().includes(s) ||
@@ -215,7 +244,7 @@ export default function InductionTraining() {
       index: i + 1,
       inductionDate: r.inductionDate ? new Date(r.inductionDate).toLocaleDateString('en-GB') : '-'
     }));
-  }, [rows, statusFilter, searchText]);
+  }, [rows, globalFilters.status, globalQuery]);
 
   // Count completed items
   const completedCount = trainingDetails.filter(d => d.trainerStatus === 'COMPLETED').length;
@@ -231,26 +260,6 @@ export default function InductionTraining() {
       }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
-          <BOSTextField
-            select
-            size="small"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="ALL">All Status</MenuItem>
-            <MenuItem value="PENDING">PENDING</MenuItem>
-            <MenuItem value="TRAINING STARTED">TRAINING STARTED</MenuItem>
-            <MenuItem value="TRAINING GIVEN">TRAINING GIVEN</MenuItem>
-            <MenuItem value="COMPLETED">COMPLETED</MenuItem>
-          </BOSTextField>
-          <BOSTextField
-            size="small"
-            placeholder="Search..."
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            sx={{ minWidth: 200 }}
-          />
           <Tooltip title="Refresh">
             <IconButton onClick={fetchRows} color="primary" size="small" sx={{
               border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
@@ -259,11 +268,11 @@ export default function InductionTraining() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Induction_Training"
             columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />
+          />}
         </Stack>
       }
     >

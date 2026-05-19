@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { BOSDataTable, BOSExportButton, btnExport, getStatusChipSx } from 'ui-component/bos';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -24,6 +25,7 @@ const columns = [
 
 export default function AuditReport() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_REPORT);
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -83,7 +85,7 @@ export default function AuditReport() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Audit_Summary_Report"
             columns={[
@@ -93,7 +95,7 @@ export default function AuditReport() {
               { header: 'Status', key: 'status' },
               { header: 'Score', key: 'auditScore' }
             ]}
-          />
+          />}
         </Stack>
       }
     >

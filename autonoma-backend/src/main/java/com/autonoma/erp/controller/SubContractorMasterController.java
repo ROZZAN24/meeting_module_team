@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.SubContractorMaster;
 import com.autonoma.erp.service.SubContractorMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,11 +30,17 @@ public class SubContractorMasterController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M4210", action = "write")
     public SubContractorMaster createSubContractor(@RequestBody SubContractorMaster subcontractor) {
         return service.saveSubContractor(subcontractor);
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M4210", action = "write")
     public ResponseEntity<SubContractorMaster> updateSubContractor(@PathVariable Long id, @RequestBody SubContractorMaster subcontractor) {
         return service.getSubContractorById(id)
                 .map(existing -> {
@@ -43,6 +51,9 @@ public class SubContractorMasterController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M4210", action = "delete")
     public ResponseEntity<Void> deleteSubContractor(@PathVariable Long id) {
         service.deleteSubContractor(id);
         return ResponseEntity.ok().build();

@@ -2,6 +2,7 @@ package com.autonoma.erp.controller;
 
 import com.autonoma.erp.model.ProductItemType;
 import com.autonoma.erp.repository.ProductItemTypeRepository;
+import com.autonoma.erp.security.RequirePagePermission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +31,7 @@ public class ProductItemTypeController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M3120", action = "write")
     @Operation(summary = "Create Product Item Type", description = "Creates a new product item type")
     public ResponseEntity<?> create(@RequestBody ProductItemType itemType) {
         log.info("Creating product item type: {}", itemType);
@@ -55,6 +57,7 @@ public class ProductItemTypeController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3120", action = "write")
     @Operation(summary = "Update Product Item Type", description = "Updates an existing product item type")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody ProductItemType details) {
         log.info("Updating product item type ID {}: {}", id, details);
@@ -90,6 +93,7 @@ public class ProductItemTypeController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M3120", action = "delete")
     @Operation(summary = "Delete Product Item Type", description = "Deletes a product item type by its ID")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         log.info("Deleting product item type ID: {}", id);

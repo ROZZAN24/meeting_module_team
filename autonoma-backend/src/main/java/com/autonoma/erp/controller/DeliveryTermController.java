@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.DeliveryTerm;
 import com.autonoma.erp.repository.DeliveryTermRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,11 +23,17 @@ public class DeliveryTermController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M5220", action = "write")
     public DeliveryTerm create(@RequestBody DeliveryTerm item) {
         return repository.save(item);
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5220", action = "write")
     public ResponseEntity<DeliveryTerm> update(@PathVariable Long id, @RequestBody DeliveryTerm item) {
         return repository.findById(id)
                 .map(existing -> {
@@ -36,6 +44,9 @@ public class DeliveryTermController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5220", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();

@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.CustomerPotential;
 import com.autonoma.erp.repository.CustomerPotentialRepository;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,9 @@ public class CustomerPotentialController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M5140", action = "write")
     public ResponseEntity<?> create(@RequestBody CustomerPotential item) {
         try {
             if (item.getCustomerCode() == null || item.getCustomerCode().trim().isEmpty()) {
@@ -49,6 +54,9 @@ public class CustomerPotentialController {
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5140", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody CustomerPotential item) {
         try {
             if (!repository.existsById(id)) {
@@ -66,6 +74,9 @@ public class CustomerPotentialController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5140", action = "delete")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         try {
             if (!repository.existsById(id)) {

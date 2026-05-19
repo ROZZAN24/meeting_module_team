@@ -13,6 +13,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| PRODUCT OEM MAPPING MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -32,6 +33,7 @@ export default function OemMappingMaster() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.NPD_OEM_MAPPING);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
@@ -168,7 +170,7 @@ export default function OemMappingMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Product_OEM_Mapping"
             columns={[
@@ -179,7 +181,7 @@ export default function OemMappingMaster() {
               { header: 'Created By', key: 'createdBy' },
               { header: 'Created Date', key: 'createdAt' }
             ]}
-          />
+          />}
           <Tooltip title="Bulk OEM Upload">
             <Button
               variant="outlined"
@@ -192,11 +194,11 @@ export default function OemMappingMaster() {
               Bulk Upload
             </Button>
           </Tooltip>
-          <Tooltip title={shortcutTooltip('Create New Mapping', 'Ctrl + N')}>
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Mapping', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -209,9 +211,9 @@ export default function OemMappingMaster() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddOemMappingDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

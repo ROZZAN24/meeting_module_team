@@ -21,6 +21,7 @@ import {
   getStatusChipSx 
 } from 'ui-component/bos';
 import { getFileViewUrl } from 'utils/upload-helper';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| AUDIT NCR / OFI APPROVAL (REFACTORED WITH PATTERNS) ||============================== //
 
@@ -45,6 +46,7 @@ export default function AuditNcrApproval() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_NCR_APPROVAL);
 
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -153,7 +155,7 @@ export default function AuditNcrApproval() {
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="NCR_Approval_Report"
             columns={[
@@ -162,7 +164,7 @@ export default function AuditNcrApproval() {
               { header: 'Observation No', key: 'observationNo' },
               { header: 'Status', key: 'ncrStatus' }
             ]}
-          />
+          />}
         </Stack>
       }
     >
