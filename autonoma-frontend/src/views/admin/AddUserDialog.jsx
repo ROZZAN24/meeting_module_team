@@ -20,12 +20,13 @@ import {
   Stack,
   Slider
 } from '@mui/material';
-import { 
   IconPhoto, 
   IconPencil, 
   IconShieldLock, 
   IconCrop,
-  IconX
+  IconX,
+  IconCamera,
+  IconTrash
 } from '@tabler/icons-react';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -56,16 +57,76 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = React.useRef(null);
+  const streamRef = React.useRef(null);
+
   const initialData = {
     userId: editingUser?.userId || '',
     empId: editingUser?.empId || '',
     password: editingUser?.password || '',
     status: editingUser?.status ?? 1,
-    imgName: editingUser?.imgName || ''
+    imgName: editingUser?.imgName || '',
+    faceImage: editingUser?.faceImage || '',
+    authMethod: editingUser?.authMethod || 'PASSWORD'
   };
 
   const [formData, setFormData] = useState(initialData);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
+
+  const startCamera = async () => {
+    try {
+      setCameraActive(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320 } });
+      streamRef.current = stream;
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error("Error accessing camera for registration:", err);
+      dispatch(openSnackbar({ open: true, message: 'Could not access webcam for face registration', variant: 'alert', severity: 'error' }));
+      setCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  const captureFace = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 160;
+      canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoRef.current, 0, 0, 160, 160);
+      const dataUrl = canvas.toDataURL('image/jpeg');
+      setFormData(prev => ({ ...prev, faceImage: dataUrl }));
+      stopCamera();
+      dispatch(openSnackbar({ open: true, message: 'Face snapshot captured successfully', variant: 'alert', severity: 'success' }));
+    }
+  };
+
+  React.useEffect(() => {
+    if (!open) {
+      stopCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  React.useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -102,7 +163,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           empId: Number(formData.empId), 
           password: formData.password, 
           status: Number(formData.status), 
-          imgName: formData.imgName 
+          imgName: formData.imgName,
+          faceImage: formData.faceImage,
+          authMethod: formData.authMethod
         });
       } else {
         await axios.post('/api/users/create', { 
@@ -110,7 +173,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           empId: Number(formData.empId), 
           password: formData.password, 
           status: Number(formData.status), 
-          imgName: formData.imgName 
+          imgName: formData.imgName,
+          faceImage: formData.faceImage,
+          authMethod: formData.authMethod
         });
       }
 
@@ -299,6 +364,73 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                     <MenuItem value={1}>ACTIVE</MenuItem>
                     <MenuItem value={0}>SUSPENDED</MenuItem>
                   </BOSTextField>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <BOSTextField
+                    select
+                    name="authMethod"
+                    label="Preferred Login Method"
+                    value={formData.authMethod || 'PASSWORD'}
+                    onChange={handleChange}
+                    error={errors.authMethod}
+                  >
+                    <MenuItem value="PASSWORD">Password Only</MenuItem>
+                    <MenuItem value="FACE">Face ID Only</MenuItem>
+                    <MenuItem value="BOTH">Password or Face ID</MenuItem>
+                  </BOSTextField>
+                </Grid>
+              </Grid>
+            </BOSFormSection>
+
+            <Box sx={{ mt: 3 }} />
+
+            <BOSFormSection title="Face ID Biometric Registration">
+              <Grid container spacing={2} alignItems="center">
+                <Grid item xs={12} sm={4} display="flex" justifyContent="center">
+                  {cameraActive ? (
+                    <Box sx={{ position: 'relative', width: 120, height: 120, borderRadius: '50%', overflow: 'hidden', border: '3px solid', borderColor: 'primary.main' }}>
+                      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </Box>
+                  ) : (
+                    <Avatar 
+                      src={formData.faceImage || null} 
+                      sx={{ width: 120, height: 120, border: '3px solid', borderColor: formData.faceImage ? 'success.main' : 'grey.300', bgcolor: 'grey.100' }}
+                    >
+                      <IconPhoto size={40} />
+                    </Avatar>
+                  )}
+                </Grid>
+                <Grid item xs={12} sm={8}>
+                  <Stack spacing={1.5}>
+                    <Typography variant="body2" color="textSecondary">
+                      {formData.faceImage 
+                        ? 'Face biometric registered. You can use Face ID to sign in.' 
+                        : 'No face registered yet. Turn on the camera to scan and register.'}
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      {cameraActive ? (
+                        <>
+                          <Button size="small" variant="contained" color="success" onClick={captureFace}>
+                            Capture Face
+                          </Button>
+                          <Button size="small" variant="outlined" color="error" onClick={stopCamera}>
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="small" variant="contained" color="primary" onClick={startCamera}>
+                            {formData.faceImage ? 'Re-Register Face' : 'Register Face'}
+                          </Button>
+                          {formData.faceImage && (
+                            <Button size="small" variant="text" color="error" onClick={() => setFormData(prev => ({ ...prev, faceImage: '' }))}>
+                              Clear
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </Stack>
+                  </Stack>
                 </Grid>
               </Grid>
             </BOSFormSection>

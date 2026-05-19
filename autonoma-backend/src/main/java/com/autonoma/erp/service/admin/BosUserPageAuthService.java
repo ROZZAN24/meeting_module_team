@@ -4,6 +4,7 @@ import com.autonoma.erp.model.admin.BosPage;
 import com.autonoma.erp.model.admin.BosUserPageAuth;
 import com.autonoma.erp.repository.admin.BosPageRepository;
 import com.autonoma.erp.repository.admin.BosUserPageAuthRepository;
+import com.autonoma.erp.repository.admin.UserRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,12 +24,19 @@ public class BosUserPageAuthService {
     @Autowired
     private BosPageRepository pageRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
     public List<BosUserPageAuth> getAuthByUserId(String userId) {
         List<BosPage> allPages = pageRepository.findAll();
         List<BosUserPageAuth> userAuths = authRepository.findByUserId(userId);
 
         Map<Integer, BosUserPageAuth> authMap = userAuths.stream()
                 .collect(Collectors.toMap(BosUserPageAuth::getPageId, a -> a));
+
+        boolean isBosAdmin = userRepository.findByUserId(userId)
+                .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                .orElse(false);
 
         List<BosUserPageAuth> result = new ArrayList<>();
         for (BosPage page : allPages) {
@@ -48,6 +56,17 @@ public class BosUserPageAuthService {
                 auth.setManager(0);
                 auth.setAdditional1(0);
                 auth.setAdditional2(0);
+            }
+            if (isBosAdmin) {
+                auth.setEnable(1);
+                auth.setReadAcs(1);
+                auth.setWrite(1);
+                auth.setDeleteAcs(1);
+                auth.setExport(1);
+                auth.setApproval(1);
+                auth.setManager(1);
+                auth.setAdditional1(1);
+                auth.setAdditional2(1);
             }
             auth.setPage(page);
             result.add(auth);
@@ -70,6 +89,13 @@ public class BosUserPageAuthService {
      * @return true if the user has the requested permission
      */
     public boolean hasPermission(String userId, String pageCode, String action) {
+        boolean isBosAdmin = userRepository.findByUserId(userId)
+                .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                .orElse(false);
+        if (isBosAdmin) {
+            return true;
+        }
+
         BosPage page = pageRepository.findByPageCode(pageCode).orElse(null);
         if (page == null) return false;
 

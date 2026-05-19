@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // material-ui
 import Button from '@mui/material/Button';
@@ -33,29 +33,37 @@ import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
 import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
 import axios from 'utils/axios';
+import { getFaceDescriptor } from 'utils/faceApi';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { IconBuilding, IconBuildingFactory2, IconArrowLeft, IconLogin, IconShieldCheck, IconLock, IconCheck, IconInfoCircle } from '@tabler/icons-react';
+import { IconBuilding, IconBuildingFactory2, IconArrowLeft, IconLogin, IconShieldCheck, IconLock, IconCheck, IconInfoCircle, IconCamera, IconCameraOff, IconScan, IconUser } from '@tabler/icons-react';
 
 // ===============================|| JWT - TWO-STEP LOGIN ||=============================== //
 
 export default function JWTLogin({ ...others }) {
   const theme = useTheme();
-  const { login } = useAuth();
+  const { login, faceLogin } = useAuth();
   const scriptedRef = useScriptRef();
 
   // Step management: 'credentials' | 'selection'
   const [step, setStep] = useState('credentials');
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'face'
   const [showPassword, setShowPassword] = useState(false);
   const [checkError, setCheckError] = useState(null);
   const [loginError, setLoginError] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Webcam states
+  const [webcamStream, setWebcamStream] = useState(null);
+  const [webcamActive, setWebcamActive] = useState(false);
+  const [webcamError, setWebcamError] = useState(null);
+  const [isFaceScanning, setIsFaceScanning] = useState(false);
+
   // Data from step 1
-  const [pendingCredentials, setPendingCredentials] = useState({ username: '', password: '' });
+  const [pendingCredentials, setPendingCredentials] = useState({ username: '', password: '', faceImage: '', faceDescriptor: null });
   const [companies, setCompanies] = useState([]); // [{company, divisions}]
 
   // Step 2 selections
@@ -65,7 +73,44 @@ export default function JWTLogin({ ...others }) {
   const handleClickShowPassword = () => setShowPassword((v) => !v);
   const handleMouseDownPassword = (e) => e.preventDefault();
 
-  // ── STEP 1: Verify credentials & get company/division options ────────────────
+  const startWebcam = async () => {
+    setWebcamError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 320, height: 240, facingMode: 'user' }
+      });
+      setWebcamStream(stream);
+      setWebcamActive(true);
+      
+      setTimeout(() => {
+        const videoElement = document.getElementById('webcam-video');
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
+      }, 150);
+    } catch (err) {
+      console.error("Webcam access error:", err);
+      setWebcamError("Camera access denied or unavailable. Please check permissions.");
+    }
+  };
+
+  const stopWebcam = () => {
+    if (webcamStream) {
+      webcamStream.getTracks().forEach((track) => track.stop());
+      setWebcamStream(null);
+    }
+    setWebcamActive(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [webcamStream]);
+
+  // ── STEP 1 (Password): Verify credentials & get company/division options ────────────────
   const handleCheckCredentials = async (values) => {
     setIsChecking(true);
     setCheckError(null);
@@ -82,7 +127,6 @@ export default function JWTLogin({ ...others }) {
       }
 
       // If super user (BOS admin) and only 0 or 1 company is available, auto-login directly.
-      // If multiple companies are available, we will let them select the context.
       const isSuperUser = res.headers?.['x-is-bos-admin'] === '1';
       if (isSuperUser && matches.length <= 1) {
         const tenantId = matches[0]?.company?.dbSourceName || null;
@@ -123,10 +167,9 @@ export default function JWTLogin({ ...others }) {
         }
       }
 
-      setPendingCredentials({ username: values.email.trim(), password: values.password });
+      setPendingCredentials({ username: values.email.trim(), password: values.password, faceImage: '', faceDescriptor: null });
       setCompanies(matches);
       setSelectedCompanyIndex(0);
-      // Auto-select first division if available
       const firstDivs = matches[0]?.divisions || [];
       setSelectedDivisionId(firstDivs.length > 0 ? String(firstDivs[0].id) : '');
       setStep('selection');
@@ -138,6 +181,107 @@ export default function JWTLogin({ ...others }) {
       setCheckError(msg);
     } finally {
       setIsChecking(false);
+    }
+  };
+
+  // ── STEP 1 (Face ID): Verify face image & get company/division options ──────────────────
+  const handleFaceScan = async (username) => {
+    const videoElement = document.getElementById('webcam-video');
+    if (!videoElement || !webcamActive) {
+      setCheckError('Please start the camera first.');
+      return;
+    }
+
+    setIsFaceScanning(true);
+    setCheckError(null);
+
+    try {
+      // Get face descriptor using face-api.js
+      const descriptorArray = await getFaceDescriptor(videoElement);
+      const faceDescriptor = descriptorArray ? JSON.stringify(descriptorArray) : null;
+
+      // Capture frame using canvas (fallback/UI)
+      const canvas = document.createElement('canvas');
+      canvas.width = 320;
+      canvas.height = 240;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+      const faceImageBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+      if (!faceDescriptor) {
+          setCheckError('No face detected. Please ensure your face is clearly visible.');
+          setIsFaceScanning(false);
+          return;
+      }
+
+      // Verify face image with backend
+      const res = await axios.post('/api/account/check-face', {
+        username: (username || '').trim(),
+        faceImage: faceImageBase64,
+        faceDescriptor
+      });
+
+      const resData = res.data;
+      const matches = Array.isArray(resData) ? resData : (resData?.matches || []);
+      const matchedUserId = resData?.userId || username || '';
+      if (!matches || matches.length === 0) {
+        setCheckError('Invalid face credentials or no company mapping found.');
+        return;
+      }
+
+      stopWebcam();
+
+      // If super user (BOS admin) and only 0 or 1 company is available, auto-login directly.
+      const isSuperUser = res.headers?.['x-is-bos-admin'] === '1';
+      if (isSuperUser && matches.length <= 1) {
+        const tenantId = matches[0]?.company?.dbSourceName || null;
+        const divisionId = matches[0]?.divisions?.[0]?.id || null;
+
+        setIsLoggingIn(true);
+        try {
+          await faceLogin(matchedUserId.trim(), faceImageBase64, {
+            tenantId,
+            divisionId: divisionId ? Number(divisionId) : null
+          }, faceDescriptor);
+          return;
+        } catch (loginErr) {
+          setCheckError(typeof loginErr === 'string' ? loginErr : loginErr?.response?.data?.message || loginErr?.message || 'Face login failed.');
+          setIsLoggingIn(false);
+          return;
+        }
+      }
+
+      // If exactly one company and one division, auto-login
+      if (matches.length === 1 && matches[0].divisions.length === 1) {
+        const tenantId = matches[0].company.dbSourceName;
+        const divisionId = matches[0].divisions[0].id;
+
+        setIsLoggingIn(true);
+        try {
+          await faceLogin(matchedUserId.trim(), faceImageBase64, {
+            tenantId,
+            divisionId: Number(divisionId)
+          }, faceDescriptor);
+          return;
+        } catch (loginErr) {
+          setCheckError(typeof loginErr === 'string' ? loginErr : loginErr?.response?.data?.message || loginErr?.message || 'Face login failed.');
+          setIsLoggingIn(false);
+          return;
+        }
+      }
+
+      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
+      setCompanies(matches);
+      setSelectedCompanyIndex(0);
+      const firstDivs = matches[0]?.divisions || [];
+      setSelectedDivisionId(firstDivs.length > 0 ? String(firstDivs[0].id) : '');
+      setStep('selection');
+    } catch (err) {
+      console.error(err);
+      const msg = typeof err === 'string' ? err : err?.response?.data?.message || err?.message || 'Facial recognition failed. Please try again.';
+      setCheckError(msg);
+    } finally {
+      setIsFaceScanning(false);
     }
   };
 
@@ -155,10 +299,17 @@ export default function JWTLogin({ ...others }) {
     setIsLoggingIn(true);
     setLoginError(null);
     try {
-      await login(pendingCredentials.username, pendingCredentials.password, {
-        tenantId: chosen.company.dbSourceName,
-        divisionId: selectedDivisionId ? Number(selectedDivisionId) : null
-      });
+      if (loginMethod === 'face') {
+        await faceLogin(pendingCredentials.username, pendingCredentials.faceImage, {
+          tenantId: chosen.company.dbSourceName,
+          divisionId: selectedDivisionId ? Number(selectedDivisionId) : null
+        }, pendingCredentials.faceDescriptor);
+      } else {
+        await login(pendingCredentials.username, pendingCredentials.password, {
+          tenantId: chosen.company.dbSourceName,
+          divisionId: selectedDivisionId ? Number(selectedDivisionId) : null
+        });
+      }
     } catch (err) {
       if (scriptedRef.current) {
         const msg = typeof err === 'string' ? err : err?.message || 'Login failed. Please try again.';
@@ -185,13 +336,23 @@ export default function JWTLogin({ ...others }) {
             <Formik
               initialValues={{ email: '', password: '', submit: null }}
               validationSchema={Yup.object().shape({
-                email: Yup.string().max(255).required('User ID is required'),
-                password: Yup.string()
-                  .required('Password is required')
-                  .test('no-spaces', 'Password cannot start or end with spaces', (v) => v === v?.trim())
-                  .max(50, 'Password must be under 50 characters')
+                email: loginMethod === 'password'
+                  ? Yup.string().max(255).required('User ID is required')
+                  : Yup.string().max(255).nullable(),
+                password: loginMethod === 'password'
+                  ? Yup.string()
+                      .required('Password is required')
+                      .test('no-spaces', 'Password cannot start or end with spaces', (v) => v === v?.trim())
+                      .max(50, 'Password must be under 50 characters')
+                  : Yup.string().nullable()
               })}
-              onSubmit={handleCheckCredentials}
+              onSubmit={(values) => {
+                if (loginMethod === 'face') {
+                  handleFaceScan(values.email);
+                } else {
+                  handleCheckCredentials(values);
+                }
+              }}
             >
               {({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
                 <form noValidate onSubmit={handleSubmit}>
@@ -209,10 +370,67 @@ export default function JWTLogin({ ...others }) {
                     >
                       <IconShieldCheck size={28} /> Welcome Back
                     </Typography>
-
                   </Box>
 
-                  <CustomFormControl fullWidth error={Boolean(touched.email && errors.email)} sx={{ mb: 2 }}>
+                  {/* Login Method Toggle */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      p: 0.5,
+                      borderRadius: '12px',
+                      mb: 3
+                    }}
+                  >
+                    <Button
+                      fullWidth
+                      type="button"
+                      onClick={() => {
+                        setLoginMethod('password');
+                        stopWebcam();
+                        setCheckError(null);
+                      }}
+                      variant={loginMethod === 'password' ? 'contained' : 'text'}
+                      sx={{
+                        borderRadius: '10px',
+                        py: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 700,
+                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : 'transparent',
+                        color: loginMethod === 'password' ? '#fff' : theme.palette.text.secondary,
+                        '&:hover': {
+                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
+                        }
+                      }}
+                    >
+                      Password
+                    </Button>
+                    <Button
+                      fullWidth
+                      type="button"
+                      onClick={() => {
+                        setLoginMethod('face');
+                        setCheckError(null);
+                      }}
+                      variant={loginMethod === 'face' ? 'contained' : 'text'}
+                      sx={{
+                        borderRadius: '10px',
+                        py: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 700,
+                        bgcolor: loginMethod === 'face' ? theme.palette.primary.main : 'transparent',
+                        color: loginMethod === 'face' ? '#fff' : theme.palette.text.secondary,
+                        '&:hover': {
+                          bgcolor: loginMethod === 'face' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
+                        }
+                      }}
+                    >
+                      Face ID
+                    </Button>
+                  </Box>
+
+                  {loginMethod === 'password' && (
+                    <CustomFormControl fullWidth error={Boolean(touched.email && errors.email)} sx={{ mb: 2 }}>
                     <InputLabel htmlFor="login-userid">User ID / Email</InputLabel>
                     <OutlinedInput
                       id="login-userid"
@@ -238,46 +456,146 @@ export default function JWTLogin({ ...others }) {
                       </FormHelperText>
                     )}
                   </CustomFormControl>
+                  )}
 
-                  <CustomFormControl fullWidth error={Boolean(touched.password && errors.password)}>
-                    <InputLabel htmlFor="login-password">Password</InputLabel>
-                    <OutlinedInput
-                      id="login-password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={values.password}
-                      name="password"
-                      onBlur={handleBlur}
-                      onChange={(e) => {
-                        handleChange(e);
-                        if (checkError) setCheckError(null);
-                      }}
-                      label="Password"
-                      autoComplete="current-password"
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                            size="large"
-                          >
-                            {showPassword ? <Visibility /> : <VisibilityOff />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
+                  {loginMethod === 'password' ? (
+                    <CustomFormControl fullWidth error={Boolean(touched.password && errors.password)}>
+                      <InputLabel htmlFor="login-password">Password</InputLabel>
+                      <OutlinedInput
+                        id="login-password"
+                        type={showPassword ? 'text' : 'password'}
+                        value={values.password}
+                        name="password"
+                        onBlur={handleBlur}
+                        onChange={(e) => {
+                          handleChange(e);
+                          if (checkError) setCheckError(null);
+                        }}
+                        label="Password"
+                        autoComplete="current-password"
+                        endAdornment={
+                          <InputAdornment position="end">
+                            <IconButton
+                              aria-label="toggle password visibility"
+                              onClick={handleClickShowPassword}
+                              onMouseDown={handleMouseDownPassword}
+                              edge="end"
+                              size="large"
+                            >
+                              {showPassword ? <Visibility /> : <VisibilityOff />}
+                            </IconButton>
+                          </InputAdornment>
+                        }
+                        sx={{
+                          borderRadius: '12px',
+                          bgcolor: alpha(theme.palette.background.paper, 0.5),
+                          backdropFilter: 'blur(4px)'
+                        }}
+                      />
+                      {touched.password && errors.password && (
+                        <FormHelperText error id="standard-weight-helper-text-password-login">
+                          {errors.password}
+                        </FormHelperText>
+                      )}
+                    </CustomFormControl>
+                  ) : (
+                    <Box
                       sx={{
-                        borderRadius: '12px',
-                        bgcolor: alpha(theme.palette.background.paper, 0.5),
-                        backdropFilter: 'blur(4px)'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        mb: 2,
+                        position: 'relative'
                       }}
-                    />
-                    {touched.password && errors.password && (
-                      <FormHelperText error id="standard-weight-helper-text-password-login">
-                        {errors.password}
-                      </FormHelperText>
-                    )}
-                  </CustomFormControl>
+                    >
+                      <Box
+                        sx={{
+                          width: 180,
+                          height: 180,
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          position: 'relative',
+                          border: `4px solid ${theme.palette.primary.main}`,
+                          boxShadow: `0 0 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+                          bgcolor: '#000',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {webcamActive ? (
+                          <>
+                            <video
+                              id="webcam-video"
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                transform: 'scaleX(-1)'
+                              }}
+                              autoPlay
+                              playsInline
+                              muted
+                            />
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                height: '4px',
+                                background: `linear-gradient(to bottom, rgba(0, 0, 0, 0), ${theme.palette.primary.main})`,
+                                boxShadow: `0 0 10px ${theme.palette.primary.main}`,
+                                opacity: 0.8,
+                                animation: 'scan 2s linear infinite',
+                                '@keyframes scan': {
+                                  '0%': { top: '0%' },
+                                  '50%': { top: '100%' },
+                                  '100%': { top: '0%' }
+                                }
+                              }}
+                            />
+                          </>
+                        ) : (
+                          <Box sx={{ color: alpha('#fff', 0.4), display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <IconUser size={64} stroke={1.2} />
+                          </Box>
+                        )}
+                      </Box>
+
+                      <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
+                        {!webcamActive ? (
+                          <Button
+                            type="button"
+                            size="small"
+                            variant="outlined"
+                            onClick={startWebcam}
+                            startIcon={<IconCamera size={16} />}
+                            sx={{ borderRadius: '8px' }}
+                          >
+                            Enable Camera
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={stopWebcam}
+                            startIcon={<IconCameraOff size={16} />}
+                            sx={{ borderRadius: '8px' }}
+                          >
+                            Disable Camera
+                          </Button>
+                        )}
+                      </Box>
+
+                      {webcamError && (
+                        <Typography variant="caption" color="error" sx={{ mt: 1, textAlign: 'center', display: 'block' }}>
+                          {webcamError}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
 
                   {checkError && (
                     <Box sx={{ mt: 2 }}>
@@ -301,12 +619,20 @@ export default function JWTLogin({ ...others }) {
                     <AnimateButton>
                       <Button
                         color="primary"
-                        disabled={isChecking}
+                        disabled={isChecking || isFaceScanning}
                         fullWidth
                         size="large"
                         type="submit"
                         variant="contained"
-                        startIcon={isChecking ? <CircularProgress size={18} color="inherit" /> : <IconLock size={18} />}
+                        startIcon={
+                          isChecking || isFaceScanning ? (
+                            <CircularProgress size={18} color="inherit" />
+                          ) : loginMethod === 'face' ? (
+                            <IconScan size={18} />
+                          ) : (
+                            <IconLock size={18} />
+                          )
+                        }
                         sx={{
                           borderRadius: '14px',
                           fontWeight: 700,
@@ -319,7 +645,13 @@ export default function JWTLogin({ ...others }) {
                           }
                         }}
                       >
-                        {isChecking ? 'Verifying Credentials…' : 'Continue'}
+                        {isChecking
+                          ? 'Verifying Credentials…'
+                          : isFaceScanning
+                          ? 'Scanning Face…'
+                          : loginMethod === 'face'
+                          ? 'Verify Face & Continue'
+                          : 'Continue'}
                       </Button>
                     </AnimateButton>
                   </Box>

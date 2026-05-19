@@ -164,7 +164,7 @@ const CompanyProfile = () => {
 
   // ── Load existing record on mount ──
   useEffect(() => {
-    const token = localStorage.getItem('serviceToken') || '';
+    const token = sessionStorage.getItem('serviceToken') || '';
     fetch(`${API_BASE}/api/company-profile/all`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
@@ -236,7 +236,7 @@ const CompanyProfile = () => {
     const endpoint = isLogo ? 'upload-logo' : 'upload-bg';
     setUploading(prev => ({ ...prev, [isLogo ? 'logo' : 'bg']: true }));
     try {
-      const token = localStorage.getItem('serviceToken') || '';
+      const token = sessionStorage.getItem('serviceToken') || '';
       const fd = new FormData();
       fd.append('file', file);
       const res = await fetch(`${API_BASE}/api/company-profile/${endpoint}`, {
@@ -288,7 +288,7 @@ const CompanyProfile = () => {
   const fetchDirectory = async (path) => {
     setBrowserLoading(true);
     try {
-      const token = localStorage.getItem('serviceToken') || '';
+      const token = sessionStorage.getItem('serviceToken') || '';
       const url = path
         ? `${API_BASE}/api/directory/list?path=${encodeURIComponent(path)}`
         : `${API_BASE}/api/directory/roots`;
@@ -332,7 +332,7 @@ const CompanyProfile = () => {
     if (!validate()) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem('serviceToken') || '';
+      const token = sessionStorage.getItem('serviceToken') || '';
       const payload = {
         ...form,
         stateCode: form.stateCode ? parseInt(form.stateCode) : null,

@@ -10,7 +10,7 @@ const AuthLoginBackground = () => {
   const [bgImage, setBgImage] = useState(erpBg);
 
   useEffect(() => {
-    const token = localStorage.getItem('serviceToken') || '';
+    const token = sessionStorage.getItem('serviceToken') || '';
     const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
     fetch(`${API_BASE}/api/company-profile/all`, {
       headers: { 'Authorization': `Bearer ${token}` }

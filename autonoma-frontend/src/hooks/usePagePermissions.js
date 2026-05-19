@@ -35,6 +35,20 @@ export default function usePagePermissions(pageCode) {
   );
 
   return useMemo(() => {
+    // If the user is a BOS admin (SuperUser), grant all permissions unconditionally
+    if (user?.isBosAdmin === 1) {
+      return {
+        loading: false,
+        enabled: true,
+        read: true,
+        write: true,
+        delete: true,
+        export: true,
+        approval: true,
+        manager: true
+      };
+    }
+
     // While loading, default to read-only (graceful degradation — don't block users)
     if (isLoading || !auths) {
       return {
