@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 // material-ui
 import {
@@ -23,7 +24,7 @@ import {
   Grow,
   InputAdornment
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 
 // icons
 import {
@@ -49,7 +50,9 @@ import {
   IconMicrophoneOff,
   IconMaximize,
   IconMinimize,
-  IconMoodSmile
+  IconMoodSmile,
+  IconBell,
+  IconBellOff
 } from '@tabler/icons-react';
 
 import EmojiPicker from 'emoji-picker-react';
@@ -57,16 +60,62 @@ import EmojiPicker from 'emoji-picker-react';
 // project imports
 import axiosServices from 'utils/axios';
 import useAuth from 'hooks/useAuth';
+import { getCompanyImageUrl, getUserImageUrl } from 'utils/upload-helper';
+
+const getActiveModuleColor = (pathname) => {
+  const p = (pathname || '').toLowerCase();
+  if (p.includes('/master/') || p.includes('/customer/') || p.includes('/supplier/') || p.includes('/sm/')) {
+    return '#1e88e5'; // Professional Blue
+  }
+  if (p.includes('/hra/') || p.includes('/hr/') || p.includes('/employee/')) {
+    return '#e65100'; // Warm Orange
+  }
+  if (p.includes('/sales/') || p.includes('/marketing/')) {
+    return '#2e7d32'; // Forest Green
+  }
+  if (p.includes('/quality/') || p.includes('/qms/')) {
+    return '#673ab7'; // Deep Violet/Indigo
+  }
+  if (p.includes('/reports/') || p.includes('/analytics/')) {
+    return '#c2185b'; // Rose/Magenta
+  }
+  if (p.includes('/admin/')) {
+    return '#0097a7'; // Cyan/Teal
+  }
+  return '#6264A7'; // Sleek Purple Default
+};
+
+const getFormattedSeparatorDate = (dateStr) => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(today.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
+};
 
 // ==============================|| BOS CONNECT INTERNAL CHAT ||============================== //
 
 export default function BOSConnect() {
   const theme = useTheme();
+  const location = useLocation();
+  const activeColor = getActiveModuleColor(location.pathname);
   const { user } = useAuth();
-  const currentUserId = user?.userId || 'bos';
+  const currentUserId = user?.userId || user?.id || 'bos';
 
   // State
   const [isOpen, setIsOpen] = useState(false);
+  const [companyLogoUrl, setCompanyLogoUrl] = useState('/logo.png');
+  const [activeToast, setActiveToast] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState(
+    window.Notification ? Notification.permission : 'default'
+  );
   const [activeTab, setActiveTab] = useState(0); // 0 = Chats, 1 = Search Users, 2 = Create Group
   const [channels, setChannels] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
@@ -183,19 +232,69 @@ export default function BOSConnect() {
 
   // 2. HTML5 Desktop popup alert
   const showDesktopNotification = (msg) => {
-    // if (Notification.permission === 'granted') {
-    new Notification('BOS Connect : ' + msg.senderName, {
+    if (!window.Notification) return;
+
+    const options = {
       body: msg.messageContent || 'Sent an attachment',
+      icon: companyLogoUrl || '/logo.png',
       tag: 'bos-connect-msg-' + msg.channelId
-    });
-    // }
+    };
+
+    if (Notification.permission === 'granted') {
+      try {
+        new Notification('Autonoma OneConnect : ' + msg.senderName, options);
+      } catch (err) {
+        console.warn('Direct notification failed, falling back to service worker...', err);
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((registration) => {
+            registration.showNotification('Autonoma OneConnect : ' + msg.senderName, options);
+          });
+        }
+      }
+    } else if (Notification.permission !== 'denied') {
+      Notification.requestPermission().then((permission) => {
+        if (permission === 'granted') {
+          try {
+            new Notification('Autonoma OneConnect : ' + msg.senderName, options);
+          } catch (err) {
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.ready.then((registration) => {
+                registration.showNotification('Autonoma OneConnect : ' + msg.senderName, options);
+              });
+            }
+          }
+        }
+      });
+    }
   };
 
-  // 3. Request Notification permissions on Mount
-  useEffect(() => {
-    if (window.Notification && Notification.permission === 'default') {
-      Notification.requestPermission();
+  const requestNotificationPermission = () => {
+    if (window.Notification) {
+      Notification.requestPermission().then((perm) => {
+        setNotificationPermission(perm);
+        console.log('Notification permission request returned:', perm);
+      });
     }
+  };
+
+  // 3. Request Notification permissions and fetch company logo on Mount
+  useEffect(() => {
+    requestNotificationPermission();
+
+    // Fetch custom company logo configuration
+    const fetchCompanyLogo = async () => {
+      try {
+        const response = await axiosServices.get('/api/company-profile/all');
+        if (response.data && response.data.length > 0 && response.data[0].logoFileName) {
+          const logoUrl = getCompanyImageUrl(response.data[0].logoFileName);
+          setCompanyLogoUrl(logoUrl);
+        }
+      } catch (e) {
+        console.warn('Failed to fetch company profile logo', e);
+      }
+    };
+    fetchCompanyLogo();
+
     // Set presence online on Mount
     updatePresenceStatus(true);
     return () => {
@@ -210,20 +309,13 @@ export default function BOSConnect() {
     axiosServices.post(`/api/chat/presence?isOnline=${isOnline}`).catch(() => { });
   };
 
-  // 5. Poll channel list and messages
+  // 5. Poll channel list and messages always
   useEffect(() => {
-    if (isOpen) {
-      fetchChannels();
-      // Start real-time polling every 3 seconds
-      pollingRef.current = setInterval(() => {
-        pollData();
-      }, 3000);
-    } else {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
-    }
+    fetchChannels();
+    const intervalTime = isOpen ? 3000 : 5000;
+    pollingRef.current = setInterval(() => {
+      pollData();
+    }, intervalTime);
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
@@ -247,6 +339,39 @@ export default function BOSConnect() {
     try {
       // 1. Refresh channels list
       const resChan = await axiosServices.get('/api/chat/channels');
+
+      // Detect new incoming messages for background toast alerts!
+      if (channels && channels.length > 0) {
+        resChan.data.forEach(newC => {
+          const oldC = channels.find(c => c.id === newC.id);
+          const oldUnread = oldC ? oldC.unreadCount : 0;
+          if (newC.unreadCount > oldUnread) {
+            // A new message arrived in this room!
+            const lastMsg = newC.lastMessage;
+            if (lastMsg && lastMsg.senderId !== currentUserId && lastMsg.senderId !== 'BOS_AI_ASSISTANT') {
+              playPing();
+              showDesktopNotification(lastMsg);
+              
+              // Only trigger visual in-app toast if:
+              // - Chat is closed, OR
+              // - We are in a different active channel!
+              if (!isOpen || !activeChannel || activeChannel.id !== newC.id) {
+                setActiveToast({
+                  id: lastMsg.id || new Date().getTime(),
+                  senderName: lastMsg.senderName || newC.channelName || lastMsg.senderId,
+                  messageContent: lastMsg.messageContent || 'Sent an attachment',
+                  channel: newC
+                });
+                // Auto dismiss
+                setTimeout(() => {
+                  setActiveToast(null);
+                }, 4000);
+              }
+            }
+          }
+        });
+      }
+
       setChannels(resChan.data);
 
       // Extract typing indicator status for active channel members
@@ -293,7 +418,7 @@ export default function BOSConnect() {
     setShowAiSummary(false);
     setShowFilesList(false);
     setSearchMessageQuery('');
-    
+
     // Set otherUserTyping initially based on current channel data
     if (chan.members) {
       const isSomeoneTyping = chan.members.some(
@@ -595,47 +720,52 @@ export default function BOSConnect() {
           touchAction: 'none'
         }}
       >
-        <Tooltip title="Drag anywhere! Click to open internal chat." placement="top">
+        <Tooltip title="Autonoma OneConnect" placement="top">
           <Button
             variant="contained"
-            onClick={() => setIsOpen(!isOpen)}
-            startIcon={<IconMessage size={18} />}
+            onClick={() => {
+              setIsOpen(!isOpen);
+              requestNotificationPermission();
+            }}
             sx={{
-              background: '#6264A7',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0d9488 50%, #16a34a 100%)',
               color: '#fff',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-              letterSpacing: 'normal',
-              textTransform: 'none',
-              px: 2.5,
-              py: 0.8,
-              borderRadius: '6px',
-              boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
+              borderRadius: '50%',
+              boxShadow: '0 4px 16px rgba(13, 148, 136, 0.45)',
               border: 'none',
-              backdropFilter: 'none',
-              minWidth: 'auto',
-              height: '40px',
+              width: '56px',
+              height: '56px',
+              minWidth: '56px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              position: 'relative',
               '&:hover': {
-                background: '#464775'
+                background: 'linear-gradient(135deg, #0369a1 0%, #0f766e 50%, #15803d 100%)',
+                boxShadow: '0 6px 20px rgba(13, 148, 136, 0.55)'
               }
             }}
           >
-            BOS Connect
+            <IconMessage size={24} />
             {channels.reduce((acc, c) => acc + c.unreadCount, 0) > 0 && (
               <Box
                 sx={{
-                  ml: 1,
-                  width: 16,
-                  height: 16,
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 20,
+                  height: 20,
                   borderRadius: '50%',
                   bgcolor: '#ff4d4f',
                   color: '#fff',
-                  fontSize: '0.65rem',
+                  fontSize: '0.7rem',
                   fontWeight: 900,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 6px #ff4d4f'
+                  boxShadow: '0 0 8px #ff4d4f',
+                  border: '2px solid #fff',
+                  zIndex: 10
                 }}
               >
                 {channels.reduce((acc, c) => acc + c.unreadCount, 0)}
@@ -661,12 +791,16 @@ export default function BOSConnect() {
                 zIndex: 9999,
                 display: 'flex',
                 flexDirection: 'column',
-                background: theme.palette.mode === 'dark' ? '#201f1f' : '#ffffff',
-                backdropFilter: 'none',
-                WebkitBackdropFilter: 'none',
-                borderRadius: '8px',
-                boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
-                border: theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd',
+                background: theme.palette.mode === 'dark' 
+                  ? `linear-gradient(135deg, ${alpha(activeColor, 0.18)} 0%, ${alpha('#121212', 0.85)} 100%)` 
+                  : `linear-gradient(135deg, ${alpha(activeColor, 0.12)} 0%, ${alpha('#ffffff', 0.85)} 100%)`,
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderRadius: '12px',
+                boxShadow: `0 12px 32px ${alpha(activeColor, 0.15)}, 0 4px 12px rgba(0,0,0,0.08)`,
+                border: theme.palette.mode === 'dark' 
+                  ? `1px solid ${alpha(activeColor, 0.25)}` 
+                  : `1px solid ${alpha(activeColor, 0.2)}`,
                 overflow: 'hidden',
                 transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
                 animation: 'slideUp 0.3s ease-out',
@@ -731,7 +865,7 @@ export default function BOSConnect() {
               {/* HEADER GORGEOUS GRADIENT */}
               <Box
                 sx={{
-                  background: '#6264A7',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0d9488 50%, #16a34a 100%)',
                   p: 1.5,
                   color: '#fff',
                   display: 'flex',
@@ -743,10 +877,24 @@ export default function BOSConnect() {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  {activeChannel ? (
-                    <IconButton size="small" onClick={() => setActiveChannel(null)} sx={{ color: '#fff' }}>
+                  {activeChannel && (
+                    <IconButton size="small" onClick={() => setActiveChannel(null)} sx={{ color: '#fff', mr: -0.5 }}>
                       <IconArrowLeft size={20} />
                     </IconButton>
+                  )}
+                  {activeChannel ? (
+                    <Avatar 
+                      src={activeChannel.channelType === 'DIRECT' && activeChannel.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(activeChannel.members.find(m => m.userId !== currentUserId).imgName) : undefined}
+                      sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}
+                    >
+                      {activeChannel.channelType === 'DIRECT' ? (
+                        activeChannel.channelName.charAt(0).toUpperCase()
+                      ) : activeChannel.channelType === 'DEPARTMENT' ? (
+                        <IconFileText size={20} />
+                      ) : (
+                        <IconUsers size={20} />
+                      )}
+                    </Avatar>
                   ) : (
                     <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}>
                       <IconMessage size={20} />
@@ -754,10 +902,10 @@ export default function BOSConnect() {
                   )}
                   <Box>
                     <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', letterSpacing: '0.02em', mb: 0.1 }}>
-                      {activeChannel ? activeChannel.channelName : 'BOS Connect'}
+                      {activeChannel ? activeChannel.channelName : 'Autonoma OneConnect'}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
-                      {activeChannel ? `${activeChannel.channelType} Chat` : 'Internal Enterprise Workspace'}
+                      {activeChannel ? (activeChannel.channelType === 'DIRECT' ? 'Chat' : `${activeChannel.channelType} Chat`) : 'Unified Enterprise Communication'}
                     </Typography>
                   </Box>
                 </Box>
@@ -782,6 +930,39 @@ export default function BOSConnect() {
                         </IconButton>
                       </Tooltip>
                     </>
+                  )}
+
+                  {/* DESKTOP NOTIFICATION STATUS INDICATOR */}
+                  {notificationPermission === 'granted' ? (
+                    <Tooltip title="Desktop Notifications Enabled">
+                      <IconButton size="small" sx={{ color: '#a0d911' }}>
+                        <IconBell size={18} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : notificationPermission === 'denied' ? (
+                    <Tooltip title="Notifications blocked in browser. Please enable them in browser URL settings.">
+                      <IconButton size="small" sx={{ color: '#ff4d4f' }}>
+                        <IconBellOff size={18} />
+                      </IconButton>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip title="Click to Enable Desktop Notifications">
+                      <IconButton 
+                        size="small" 
+                        onClick={requestNotificationPermission} 
+                        sx={{ 
+                          color: '#faad14', 
+                          animation: 'pulse 2s infinite',
+                          '@keyframes pulse': {
+                            '0%': { opacity: 0.6, transform: 'scale(0.95)' },
+                            '50%': { opacity: 1, transform: 'scale(1.05)' },
+                            '100%': { opacity: 0.6, transform: 'scale(0.95)' }
+                          }
+                        }}
+                      >
+                        <IconBellOff size={18} />
+                      </IconButton>
+                    </Tooltip>
                   )}
 
                   {/* WINDOW CONTROLS: MAXIMIZE / RESTORE */}
@@ -834,7 +1015,7 @@ export default function BOSConnect() {
 
               {/* MAIN CONTENT AREA */}
               <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: isMaximized ? 'row-reverse' : 'column', overflow: 'hidden' }}>
-                
+
                 {/* EMPTY STATE FOR RIGHT PANE WHEN MAXIMIZED AND NO CHANNEL SELECTED */}
                 {isMaximized && !activeChannel && (
                   <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#ffffff' }}>
@@ -851,231 +1032,308 @@ export default function BOSConnect() {
                         <CircularProgress size={36} sx={{ color: '#6366f1' }} />
                       </Box>
                     ) : (
-                      <Box sx={{ flexGrow: 1, p: 2, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                        {filteredMessages.map((msg, index) => {
+                      <Box sx={{ 
+                        flexGrow: 1, 
+                        p: 2.5, 
+                        overflowY: 'auto', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 1.5,
+                        backgroundColor: theme.palette.mode === 'dark' ? '#12121e' : '#f0f3f8',
+                        backgroundImage: 'none'
+                       }}>
+                         {filteredMessages.map((msg, index) => {
                           const isSelf = msg.senderId === currentUserId;
                           const isSystem = msg.senderId === 'BOS_AI_ASSISTANT' || msg.messageType === 'SYSTEM';
 
-                          if (isSystem) {
-                            return (
-                              <Box key={msg.id || index} sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
-                                <Paper
-                                  elevation={0}
-                                  sx={{
-                                    p: 2,
-                                    bgcolor: 'rgba(99, 102, 241, 0.05)',
-                                    border: '1px dashed rgba(99, 102, 241, 0.35)',
-                                    borderRadius: '16px',
-                                    maxWidth: '90%',
-                                    position: 'relative',
-                                    '& table': {
-                                      width: '100%',
-                                      borderCollapse: 'collapse',
-                                      my: 1
-                                    },
-                                    '& th, & td': {
-                                      border: '1px solid rgba(255,255,255,0.1)',
-                                      p: 0.75,
-                                      fontSize: '0.75rem',
-                                      color: '#e2e8f0'
-                                    },
-                                    '& th': {
-                                      bgcolor: 'rgba(99, 102, 241, 0.15)'
-                                    }
-                                  }}
-                                >
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: '#a5b4fc' }}>
-                                    <IconSparkles size={16} />
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                      {msg.senderName}
-                                    </Typography>
-                                  </Box>
-                                  <Typography variant="body2" component="div" sx={{ color: '#e2e8f0', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>
-                                    {msg.messageContent}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.8, color: '#94a3b8', fontSize: '0.65rem' }}>
-                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </Typography>
-                                </Paper>
-                              </Box>
-                            );
-                          }
+                          // WhatsApp style date grouping separator
+                          const msgDate = new Date(msg.createdAt).toDateString();
+                          const prevMsgDate = index > 0 ? new Date(filteredMessages[index - 1].createdAt).toDateString() : null;
+                          const showDateSeparator = msgDate !== prevMsgDate;
 
                           return (
-                            <Box
-                              key={msg.id || index}
-                              sx={{
-                                display: 'flex',
-                                justifyContent: isSelf ? 'flex-end' : 'flex-start',
-                                gap: 1
-                              }}
-                            >
-                              {!isSelf && (
-                                <Avatar sx={{ width: 28, height: 28, fontSize: '0.75rem', bgcolor: '#312e81' }}>
-                                  {msg.senderName.charAt(0).toUpperCase()}
-                                </Avatar>
-                              )}
-                              <Box sx={{ maxWidth: '75%' }}>
-                                <Box
-                                  sx={{
-                                    p: 1.5,
-                                    borderRadius: '6px',
-                                    background: isSelf ? (theme.palette.mode === 'dark' ? '#3B3A39' : '#E8EBFA') : (theme.palette.mode === 'dark' ? '#292929' : '#FFFFFF'),
-                                    color: theme.palette.mode === 'dark' ? '#FFFFFF' : '#242424',
-                                    border: isSelf ? 'none' : (theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd'),
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                    wordBreak: 'break-word'
-                                  }}
-                                >
-                                  {!isSelf && (
-                                    <Typography variant="caption" sx={{ display: 'block', fontWeight: 800, color: '#818cf8', mb: 0.5, fontSize: '0.7rem' }}>
-                                      {msg.senderName}
+                            <Box key={msg.id || index} sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                              {showDateSeparator && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 1.5 }}>
+                                  <Box
+                                    sx={{
+                                      px: 1.5,
+                                      py: 0.5,
+                                      bgcolor: theme.palette.mode === 'dark' ? '#182229' : '#ffffff',
+                                      borderRadius: '8px',
+                                      boxShadow: '0 1px 1px rgba(0,0,0,0.08)',
+                                      border: theme.palette.mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.05)'
+                                    }}
+                                  >
+                                    <Typography variant="caption" sx={{ color: theme.palette.mode === 'dark' ? '#8696a0' : '#667781', fontWeight: 600, fontSize: '0.75rem' }}>
+                                      {getFormattedSeparatorDate(msg.createdAt)}
                                     </Typography>
-                                  )}
+                                  </Box>
+                                </Box>
+                              )}
 
-                                  {/* RENDER NORMAL TEXT */}
-                                  {msg.messageType === 'TEXT' && (
-                                    <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                              {isSystem ? (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
+                                  <Paper
+                                    elevation={0}
+                                    sx={{
+                                      p: 2,
+                                      bgcolor: 'rgba(99, 102, 241, 0.05)',
+                                      border: '1px dashed rgba(99, 102, 241, 0.35)',
+                                      borderRadius: '16px',
+                                      maxWidth: '90%',
+                                      position: 'relative',
+                                      '& table': {
+                                        width: '100%',
+                                        borderCollapse: 'collapse',
+                                        my: 1
+                                      },
+                                      '& th, & td': {
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        p: 0.75,
+                                        fontSize: '0.75rem',
+                                        color: '#e2e8f0'
+                                      },
+                                      '& th': {
+                                        bgcolor: 'rgba(99, 102, 241, 0.15)'
+                                      }
+                                    }}
+                                  >
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: '#a5b4fc' }}>
+                                      <IconSparkles size={16} />
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                        {msg.senderName}
+                                      </Typography>
+                                    </Box>
+                                    <Typography variant="body2" component="div" sx={{ color: '#e2e8f0', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>
                                       {msg.messageContent}
                                     </Typography>
-                                  )}
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.8, color: '#94a3b8', fontSize: '0.65rem' }}>
+                                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </Typography>
+                                  </Paper>
+                                </Box>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    display: 'flex',
+                                    width: '100%',
+                                    justifyContent: isSelf ? 'flex-end' : 'flex-start',
+                                    mb: 0.5
+                                  }}
+                                >
+                                  <Box
+                                    sx={{
+                                      p: 1.25,
+                                      borderRadius: '12px',
+                                      background: isSelf ? 'linear-gradient(135deg, #0284c7 0%, #0d9488 100%)' : (theme.palette.mode === 'dark' ? '#202330' : '#FFFFFF'),
+                                      color: isSelf ? '#ffffff' : (theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'),
+                                      border: 'none',
+                                      boxShadow: '0 1px 1.5px rgba(0,0,0,0.12)',
+                                      wordBreak: 'break-word',
+                                      maxWidth: '75%'
+                                    }}
+                                  >
+                                    {!isSelf && activeChannel?.channelType !== 'DIRECT' && (
+                                      <Typography variant="caption" sx={{ display: 'block', fontWeight: 800, color: '#818cf8', mb: 0.5, fontSize: '0.7rem' }}>
+                                        {msg.senderId}
+                                      </Typography>
+                                    )}
 
-                                  {/* RENDER FILE ATTACHMENTS */}
-                                  {msg.messageType === 'FILE' && (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <IconFileText size={24} color={isSelf ? '#fff' : '#818cf8'} />
-                                        <Box>
-                                          <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.8rem', color: 'inherit' }}>
-                                            {msg.attachmentName}
-                                          </Typography>
-                                          <Typography variant="caption" sx={{ opacity: 0.8, fontSize: '0.65rem' }}>
-                                            {msg.attachmentType} File
-                                          </Typography>
-                                        </Box>
-                                      </Box>
-                                      <Button
-                                        size="small"
-                                        variant="outlined"
-                                        href={`/api/files/view/${msg.attachmentUrl}`}
-                                        target="_blank"
-                                        sx={{
-                                          borderColor: isSelf ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.15)',
-                                          color: 'inherit',
-                                          textTransform: 'none',
-                                          fontSize: '0.7rem',
-                                          borderRadius: '8px',
-                                          '&:hover': {
-                                            borderColor: isSelf ? '#fff' : '#818cf8',
-                                            bgcolor: 'rgba(255,255,255,0.1)'
-                                          }
-                                        }}
-                                      >
-                                        Open Document
-                                      </Button>
-                                    </Box>
-                                  )}
+                                    {/* RENDER NORMAL TEXT */}
+                                    {msg.messageType === 'TEXT' && (
+                                      <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                                        {msg.messageContent}
+                                      </Typography>
+                                    )}
 
-                                  {/* RENDER VOICE NOTE */}
-                                  {msg.messageType === 'VOICE' && (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                      {msg.attachmentUrl ? (
-                                        <audio
-                                          controls
-                                          src={`/api/files/view/${msg.attachmentUrl}`}
-                                          style={{ outline: 'none', minWidth: '220px', height: '40px' }}
-                                        />
-                                      ) : (
-                                        <>
-                                          <IconMicrophone size={20} color={isSelf ? '#fff' : '#818cf8'} />
-                                          <Box sx={{ width: 100, height: 16, display: 'flex', gap: '2px', alignItems: 'center' }}>
-                                            {[...Array(12)].map((_, i) => (
-                                              <Box
-                                                key={i}
-                                                sx={{
-                                                  width: 3,
-                                                  height: Math.floor(Math.random() * 12) + 4,
-                                                  bgcolor: isSelf ? '#fff' : '#818cf8',
-                                                  borderRadius: 1
-                                                }}
-                                              />
-                                            ))}
+                                    {/* RENDER FILE ATTACHMENTS */}
+                                    {msg.messageType === 'FILE' && (
+                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 0.5 }}>
+                                        {/* Dynamic inline preview if attachment is an image */}
+                                        {(msg.attachmentType === 'IMAGE' || (msg.attachmentName && msg.attachmentName.match(/\.(jpg|jpeg|png|gif|webp)$/i))) ? (
+                                          <Box 
+                                            component="img"
+                                            src={`/api/files/view/${msg.attachmentUrl}`}
+                                            alt={msg.attachmentName}
+                                            sx={{
+                                              width: '100%',
+                                              maxHeight: '180px',
+                                              objectFit: 'cover',
+                                              borderRadius: '8px',
+                                              cursor: 'pointer',
+                                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                              transition: 'transform 0.2s',
+                                              '&:hover': { transform: 'scale(1.02)' }
+                                            }}
+                                            onClick={() => window.open(`/api/files/view/${msg.attachmentUrl}`, '_blank')}
+                                          />
+                                        ) : (
+                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <IconFileText size={24} color={isSelf ? '#53bdeb' : '#818cf8'} />
+                                            <Box>
+                                              <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.8rem', color: 'inherit' }}>
+                                                {msg.attachmentName}
+                                              </Typography>
+                                              <Typography variant="caption" sx={{ opacity: 0.8, fontSize: '0.65rem' }}>
+                                                {msg.attachmentType} File
+                                              </Typography>
+                                            </Box>
                                           </Box>
-                                          <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
-                                            0:05
-                                          </Typography>
-                                        </>
+                                        )}
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          href={`/api/files/view/${msg.attachmentUrl}`}
+                                          target="_blank"
+                                          sx={{
+                                            borderColor: isSelf ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.15)',
+                                            color: 'inherit',
+                                            textTransform: 'none',
+                                            fontSize: '0.7rem',
+                                            borderRadius: '8px',
+                                            '&:hover': {
+                                              borderColor: isSelf ? '#fff' : '#818cf8',
+                                              bgcolor: 'rgba(255,255,255,0.1)'
+                                            }
+                                          }}
+                                        >
+                                          View Full Document
+                                        </Button>
+                                      </Box>
+                                    )}
+
+                                    {/* RENDER VOICE NOTE */}
+                                    {msg.messageType === 'VOICE' && (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        {msg.attachmentUrl ? (
+                                          <audio
+                                            controls
+                                            src={`/api/files/view/${msg.attachmentUrl}`}
+                                            style={{ outline: 'none', minWidth: '220px', height: '40px' }}
+                                          />
+                                        ) : (
+                                          <>
+                                            <IconMicrophone size={20} color={isSelf ? '#53bdeb' : '#818cf8'} />
+                                            <Box sx={{ width: 100, height: 16, display: 'flex', gap: '2px', alignItems: 'center' }}>
+                                              {[...Array(12)].map((_, i) => (
+                                                <Box
+                                                  key={i}
+                                                  sx={{
+                                                    width: 3,
+                                                    height: Math.floor(Math.random() * 12) + 4,
+                                                    bgcolor: isSelf ? '#fff' : '#818cf8',
+                                                    borderRadius: 1
+                                                  }}
+                                                />
+                                              ))}
+                                            </Box>
+                                            <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                                              0:05
+                                            </Typography>
+                                          </>
+                                        )}
+                                      </Box>
+                                    )}
+
+                                    {/* TIMESTAMP AND READ RECEIPT INSIDE BUBBLE */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.75, opacity: 0.85 }}>
+                                      <Typography variant="caption" sx={{ color: isSelf ? 'rgba(255,255,255,0.7)' : (theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b'), fontSize: '0.625rem', fontWeight: 600 }}>
+                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </Typography>
+                                      {isSelf && (
+                                        <Typography 
+                                          variant="caption" 
+                                          sx={{ 
+                                            color: msg.isSeen ? '#4ade80' : 'rgba(255,255,255,0.65)', 
+                                            fontSize: '0.625rem', 
+                                            fontWeight: 700, 
+                                            display: 'inline-flex', 
+                                            alignItems: 'center',
+                                            ml: 0.5 
+                                          }}
+                                        >
+                                          {msg.isSeen ? 'Read' : 'Sent'}
+                                          {msg.isSeen ? (
+                                            <IconChecks size={14} color="#4ade80" style={{ marginLeft: 3 }} />
+                                          ) : (
+                                            <IconCheck size={14} color="rgba(255,255,255,0.5)" style={{ marginLeft: 3 }} />
+                                          )}
+                                        </Typography>
                                       )}
                                     </Box>
-                                  )}
+                                  </Box>
                                 </Box>
-
-                                {/* TIMESTAMP AND READ RECEIPT */}
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                                  <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.65rem' }}>
-                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                  </Typography>
-                                  {isSelf && (
-                                    <IconChecks size={14} color="#818cf8" />
-                                  )}
-                                </Box>
-                              </Box>
+                              )}
                             </Box>
                           );
                         })}
-                        <div ref={messageEndRef} />
-                        
-                        {/* TYPING INDICATOR UI */}
-                        {otherUserTyping && (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, ml: 2, pb: 1 }}>
-                            <Avatar sx={{ width: 24, height: 24, bgcolor: '#e1dfdd' }}>
-                              <IconUsers size={14} color="#616161" />
-                            </Avatar>
-                            <Box sx={{ display: 'flex', gap: 0.5, bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#f5f5f5', p: 1.5, borderRadius: '6px' }}>
-                              <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#6264A7' }} />
-                              <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#6264A7' }} />
-                              <motion.div animate={{ y: [0, -4, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} style={{ width: 5, height: 5, borderRadius: '50%', backgroundColor: '#6264A7' }} />
-                            </Box>
-                          </Box>
-                        )}
-                      </Box>
-                    )}
 
-                    {/* SMART REPLIES CAROUSEL */}
-                    {smartReplies.length > 0 && (
-                      <Box sx={{ p: 1, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 1, overflowX: 'auto', bgcolor: 'rgba(15, 23, 42, 0.95)', whiteSpace: 'nowrap' }}>
-                        {smartReplies.map((r, i) => (
-                          <Button
-                            key={i}
-                            size="small"
-                            variant="outlined"
-                            onClick={() => handleSendMessage(r)}
-                            sx={{
-                              borderRadius: '16px',
-                              fontSize: '0.75rem',
-                              textTransform: 'none',
-                              color: '#a5b4fc',
-                              borderColor: 'rgba(99, 102, 241, 0.3)',
-                              flexShrink: 0,
-                              px: 1.5,
-                              '&:hover': {
-                                bgcolor: 'rgba(99, 102, 241, 0.1)',
-                                borderColor: '#a5b4fc'
-                              }
+                        {/* SMART REPLIES FLOATING CHIPS IN MESSAGE TIMELINE */}
+                        {smartReplies.length > 0 && (
+                          <Box 
+                            sx={{ 
+                              display: 'flex', 
+                              flexWrap: 'wrap', 
+                              gap: 1, 
+                              mt: 2, 
+                              mb: 1,
+                              justifyContent: 'flex-start',
+                              pl: 2
                             }}
                           >
-                            {r}
-                          </Button>
-                        ))}
+                            {smartReplies.map((r, i) => (
+                              <Button
+                                key={i}
+                                variant="outlined"
+                                onClick={() => handleSendMessage(r)}
+                                startIcon={<IconSparkles size={13} style={{ color: activeColor }} />}
+                                sx={{
+                                  borderRadius: '20px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 600,
+                                  textTransform: 'none',
+                                  color: theme.palette.mode === 'dark' ? '#fff' : '#444',
+                                  borderColor: alpha(activeColor, 0.35),
+                                  background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
+                                  flexShrink: 0,
+                                  px: 2,
+                                  height: '32px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+                                  transition: 'all 0.2s ease-in-out',
+                                  '&:hover': {
+                                    background: `linear-gradient(135deg, ${alpha(activeColor, 0.15)} 0%, ${alpha(activeColor, 0.05)} 100%)`,
+                                    borderColor: activeColor,
+                                    boxShadow: `0 3px 8px ${alpha(activeColor, 0.2)}`,
+                                    transform: 'translateY(-1px)'
+                                  },
+                                  '& .MuiButton-startIcon': {
+                                    margin: 0,
+                                    marginRight: '5px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center'
+                                  }
+                                }}
+                              >
+                                {r}
+                              </Button>
+                            ))}
+                          </Box>
+                        )}
+
+                        <div ref={messageEndRef} />
+                        <Box sx={{ minHeight: '16px', width: '100%' }} />
                       </Box>
                     )}
 
-                    {/* INPUT CONTROL PANEL */}
+                     {/* INPUT CONTROL PANEL */}
                     <Box
                       sx={{
                         p: 1.5,
-                        borderTop: theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd',
-                        bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#ffffff',
+                        bgcolor: theme.palette.mode === 'dark' ? '#0b141a' : '#efeae2',
                         display: 'flex',
                         alignItems: 'center',
                         gap: 1
@@ -1087,73 +1345,92 @@ export default function BOSConnect() {
                         style={{ display: 'none' }}
                         onChange={handleFileChange}
                       />
-                      <IconButton size="small" onClick={triggerFileUpload} color="primary" sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#94a3b8' }}>
-                        <IconPaperclip size={18} />
-                      </IconButton>
 
-                      <Box sx={{ position: 'relative' }}>
-                        <IconButton size="small" onClick={() => setShowEmojiPicker(!showEmojiPicker)} color="primary" sx={{ bgcolor: showEmojiPicker ? 'rgba(99, 102, 241, 0.15)' : 'rgba(255, 255, 255, 0.05)', color: showEmojiPicker ? '#818cf8' : '#94a3b8' }}>
-                          <IconMoodSmile size={18} />
+                      {/* Main Premium Capsule Bar */}
+                      <Box sx={{ 
+                        flexGrow: 1, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        bgcolor: theme.palette.mode === 'dark' ? '#202c33' : '#ffffff', 
+                        borderRadius: '24px', 
+                        px: 2, 
+                        py: 0.5,
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                      }}>
+                        {/* Plus button for file upload */}
+                        <IconButton size="small" onClick={triggerFileUpload} sx={{ color: theme.palette.mode === 'dark' ? '#8696a0' : '#54656f', p: 0.75 }}>
+                          <IconPlus size={22} />
                         </IconButton>
 
-                        {showEmojiPicker && (
-                          <Box sx={{ position: 'absolute', bottom: '100%', left: 0, mb: 1, zIndex: 10 }}>
-                            <EmojiPicker
-                              theme="dark"
-                              onEmojiClick={(emojiData) => {
-                                setNewMessage(prev => prev + emojiData.emoji);
-                                setShowEmojiPicker(false);
-                              }}
-                              width={280}
-                              height={350}
-                            />
-                          </Box>
+                        {/* Emoji Picker Button */}
+                        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                          <IconButton size="small" onClick={() => setShowEmojiPicker(!showEmojiPicker)} sx={{ color: theme.palette.mode === 'dark' ? '#8696a0' : '#54656f', p: 0.75 }}>
+                            <IconMoodSmile size={22} />
+                          </IconButton>
+
+                          {showEmojiPicker && (
+                            <Box sx={{ position: 'absolute', bottom: '100%', left: 0, mb: 1, zIndex: 10 }}>
+                              <EmojiPicker
+                                theme="dark"
+                                onEmojiClick={(emojiData) => {
+                                  setNewMessage(prev => prev + emojiData.emoji);
+                                  setShowEmojiPicker(false);
+                                }}
+                                width={280}
+                                height={350}
+                              />
+                            </Box>
+                          )}
+                        </Box>
+
+                        {/* Message Input Textbox */}
+                        <TextField
+                          fullWidth
+                          size="small"
+                          placeholder={isRecordingVoice ? `Recording voice note... ${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')}` : 'Type a message'}
+                          disabled={isRecordingVoice}
+                          value={newMessage}
+                          onChange={handleInputChange}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                          variant="standard"
+                          InputProps={{ disableUnderline: true }}
+                          sx={{
+                            mx: 1.5,
+                            '& input': { 
+                              color: theme.palette.mode === 'dark' ? '#e9edef' : '#111b21',
+                              fontSize: '0.95rem',
+                              py: 0.75
+                            }
+                          }}
+                        />
+
+                        {/* Right Action Button inside the capsule */}
+                        {newMessage.trim() === '' ? (
+                          <IconButton
+                            onClick={handleVoiceToggle}
+                            sx={{
+                              color: isRecordingVoice ? '#f44336' : (theme.palette.mode === 'dark' ? '#8696a0' : '#54656f'),
+                              animation: isRecordingVoice ? 'pulse 1s infinite' : 'none',
+                              '@keyframes pulse': {
+                                '0%': { transform: 'scale(1)' },
+                                '50%': { transform: 'scale(1.1)' },
+                                '100%': { transform: 'scale(1)' }
+                              }
+                            }}
+                          >
+                            {isRecordingVoice ? <IconMicrophoneOff size={22} /> : <IconMicrophone size={22} />}
+                          </IconButton>
+                        ) : (
+                          <IconButton 
+                            onClick={() => handleSendMessage()} 
+                            sx={{ 
+                              color: '#00a884'
+                            }}
+                          >
+                            <IconSend size={22} />
+                          </IconButton>
                         )}
                       </Box>
-
-                      <IconButton
-                        size="small"
-                        onClick={handleVoiceToggle}
-                        color={isRecordingVoice ? 'error' : 'primary'}
-                        sx={{
-                          bgcolor: isRecordingVoice ? 'rgba(244, 67, 54, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                          color: isRecordingVoice ? '#f44336' : '#94a3b8',
-                          animation: isRecordingVoice ? 'pulse 1s infinite' : 'none',
-                          '@keyframes pulse': {
-                            '0%': { transform: 'scale(1)' },
-                            '50%': { transform: 'scale(1.15)' },
-                            '100%': { transform: 'scale(1)' }
-                          }
-                        }}
-                      >
-                        {isRecordingVoice ? <IconMicrophoneOff size={18} /> : <IconMicrophone size={18} />}
-                      </IconButton>
-
-                      <TextField
-                        fullWidth
-                        size="small"
-                        placeholder={isRecordingVoice ? `Recording voice note... ${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')}` : 'Type a message or /boss...'}
-                        disabled={isRecordingVoice}
-                        value={newMessage}
-                        onChange={handleInputChange}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                        variant="outlined"
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: '4px',
-                            bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#f5f5f5',
-                            color: theme.palette.mode === 'dark' ? '#fff' : '#242424',
-                            '& input': { color: theme.palette.mode === 'dark' ? '#fff' : '#242424' },
-                            '& fieldset': { borderColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e1dfdd' },
-                            '&:hover fieldset': { borderColor: '#6264A7' },
-                            '&.Mui-focused fieldset': { borderColor: '#6264A7' }
-                          }
-                        }}
-                      />
-
-                      <IconButton size="small" color="primary" onClick={() => handleSendMessage()} sx={{ bgcolor: '#6366f1', color: '#fff', boxShadow: '0 0 12px rgba(99, 102, 241, 0.4)', '&:hover': { bgcolor: '#4f46e5', boxShadow: '0 0 18px rgba(99, 102, 241, 0.6)' } }}>
-                        <IconSend size={18} />
-                      </IconButton>
                     </Box>
 
                     {/* AI SUMMARY SLIDE-IN PANEL */}
@@ -1290,14 +1567,14 @@ export default function BOSConnect() {
                     </AnimatePresence>
                   </Box>
                 )}
-                
+
                 {(!activeChannel || isMaximized) && (
                   // ============================== CHANNELS / ROOMS LIST (SIDEBAR) ==============================
-                  <Box sx={{ 
-                    width: isMaximized ? '320px' : '100%', 
+                  <Box sx={{
+                    width: isMaximized ? '320px' : '100%',
                     flexShrink: 0,
-                    display: 'flex', 
-                    flexDirection: 'column', 
+                    display: 'flex',
+                    flexDirection: 'column',
                     overflow: 'hidden',
                     borderRight: isMaximized ? (theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd') : 'none',
                     bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#f5f5f5'
@@ -1349,7 +1626,10 @@ export default function BOSConnect() {
                                     variant="dot"
                                     color={chan.members.some(m => m.userId !== currentUserId && m.online) ? 'success' : 'default'}
                                   >
-                                    <Avatar sx={{ bgcolor: '#312e81', width: 40, height: 40 }}>
+                                    <Avatar 
+                                      src={chan.channelType === 'DIRECT' && chan.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(chan.members.find(m => m.userId !== currentUserId).imgName) : undefined}
+                                      sx={{ bgcolor: '#312e81', width: 40, height: 40 }}
+                                    >
                                       {chan.channelType === 'DIRECT' ? (
                                         chan.channelName.charAt(0).toUpperCase()
                                       ) : chan.channelType === 'DEPARTMENT' ? (
@@ -1363,7 +1643,7 @@ export default function BOSConnect() {
                                 <ListItemText
                                   primary={
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#f8fafc' }}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: theme.palette.mode === 'dark' ? '#f8fafc' : '#111b21' }}>
                                         {chan.channelName}
                                       </Typography>
                                       <Typography variant="caption" color="#94a3b8" sx={{ fontSize: '0.65rem' }}>
@@ -1440,12 +1720,17 @@ export default function BOSConnect() {
                                 >
                                   <ListItemAvatar>
                                     <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color={u.online ? 'success' : 'default'}>
-                                      <Avatar sx={{ bgcolor: '#312e81' }}>{u.employeeName.charAt(0).toUpperCase()}</Avatar>
+                                      <Avatar 
+                                        src={u.imgName ? getUserImageUrl(u.imgName) : undefined}
+                                        sx={{ bgcolor: '#312e81' }}
+                                      >
+                                        {u.userId.charAt(0).toUpperCase()}
+                                      </Avatar>
                                     </Badge>
                                   </ListItemAvatar>
                                   <ListItemText
                                     primary={u.userId}
-                                    secondary={`${u.employeeName} • ${u.designationName || 'BOS Staff'} • ${u.departmentName || 'Admin'}`}
+                                    secondary={`${u.designationName || 'BOS Staff'} • ${u.departmentName || 'Admin'}`}
                                     primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 800, color: theme.palette.mode === 'dark' ? '#f8fafc' : '#0f172a' }}
                                     secondaryTypographyProps={{ fontSize: '0.7rem', color: '#94a3b8' }}
                                   />
@@ -1523,9 +1808,9 @@ export default function BOSConnect() {
                                     }}
                                   >
                                     <ListItemText
-                                      primary={u.employeeName}
+                                      primary={u.userId}
                                       secondary={u.departmentName}
-                                      primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 800, color: '#f8fafc' }}
+                                      primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 800, color: theme.palette.mode === 'dark' ? '#f8fafc' : '#111b21' }}
                                       secondaryTypographyProps={{ fontSize: '0.65rem', color: '#94a3b8' }}
                                     />
                                     {selectedGroupUsers.includes(u.userId) && (
@@ -1558,11 +1843,73 @@ export default function BOSConnect() {
                         </Box>
                       )}
                     </Box>
-                    </Box>
-                  )}
+                  </Box>
+                )}
               </Box>
             </Box>
           </Grow>
+        )}
+      </AnimatePresence>
+
+      {/* 🔔 PREMIUM IN-APP TOAST ALERTS PANEL */}
+      <AnimatePresence>
+        {activeToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            onClick={() => {
+              setIsOpen(true);
+              if (activeToast.channel) {
+                selectRoom(activeToast.channel);
+              }
+              setActiveToast(null);
+            }}
+            style={{
+              position: 'fixed',
+              top: 24,
+              right: 24,
+              zIndex: 11000,
+              cursor: 'pointer',
+              width: '320px',
+              borderRadius: '16px',
+              padding: '16px',
+              background: theme.palette.mode === 'dark' ? 'rgba(30, 30, 47, 0.92)' : 'rgba(255, 255, 255, 0.95)',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(99, 102, 241, 0.15)'}`,
+              boxShadow: theme.palette.mode === 'dark' 
+                ? '0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(99, 102, 241, 0.1)'
+                : '0 12px 32px rgba(99, 102, 241, 0.12), 0 4px 12px rgba(0,0,0,0.06)',
+              backdropFilter: 'blur(10px)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px'
+            }}
+          >
+            <Avatar
+              src={activeToast.channel?.lastMessage?.senderId ? getUserImageUrl(activeToast.channel.lastMessage.senderId) : undefined}
+              sx={{
+                bgcolor: activeColor,
+                width: 44,
+                height: 44,
+                boxShadow: `0 4px 10px ${alpha(activeColor, 0.3)}`
+              }}
+            >
+              {activeToast.senderName.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: theme.palette.mode === 'dark' ? '#fff' : '#0f172a', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                {activeToast.senderName}
+                <Box sx={{ width: 6, height: 6, bgcolor: '#3b82f6', borderRadius: '50%' }} />
+              </Typography>
+              <Typography variant="caption" sx={{ color: theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mt: 0.2 }}>
+                {activeToast.messageContent}
+              </Typography>
+            </Box>
+            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setActiveToast(null); }} sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', '&:hover': { color: '#ff4d4f' } }}>
+              <IconX size={16} />
+            </IconButton>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

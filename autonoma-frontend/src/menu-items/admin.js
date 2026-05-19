@@ -46,10 +46,10 @@ const admin = {
         },
         {
           id: 'division-master',
-          title: 'Division Master (Units)',
+          title: 'Divisions / Units',
           type: 'item',
           url: '/admin/division',
-          icon: icons.IconLayoutColumns,
+          icon: icons.IconCategory,
           breadcrumbs: true
         },
         {
