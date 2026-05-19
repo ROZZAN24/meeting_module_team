@@ -314,7 +314,7 @@ export default function CheckListRenewalVerify() {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: user?.name || user?.id || 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: remarks || `Verification action: ${status}`
       });
       setDialogOpen(false);

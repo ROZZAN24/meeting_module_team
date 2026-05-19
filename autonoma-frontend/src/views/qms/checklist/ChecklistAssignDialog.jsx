@@ -19,6 +19,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
+import useAuth from 'hooks/useAuth';
 import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
@@ -55,6 +56,7 @@ const isDepartmentMatch = (allowedDepts, empDeptName) => {
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS']);
   
   // Get allowed department names for this checklist
@@ -143,7 +145,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
         checklistId: checklistId,
         assignedTo: formData.assignTo,
         assignType: formData.assignType,
-        assignedBy: 'Current User' // TODO: Get from auth context
+        assignedBy: user?.name || user?.id || 'Admin'
       });
 
       if (res.data?.remarks === 'DUPLICATE_ASSIGNMENT') {

@@ -319,7 +319,7 @@ export default function CloseCheckListRenewal() {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: `Status updated to ${status}`
       });
       fetchAssignments();

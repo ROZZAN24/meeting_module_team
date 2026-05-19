@@ -32,6 +32,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
 import { BOSExportButton } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
 const columns = [
@@ -218,6 +219,7 @@ function FilterSection({ title, open, onToggle, children }) {
 
 export default function MasterCheckList() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isAmendment, setIsAmendment] = useState(false);
@@ -408,6 +410,9 @@ export default function MasterCheckList() {
       const body = Object.fromEntries(
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v /* NaN check */)
       );
+
+      // Inject current logged-in user context
+      body.updatedBy = user?.name || user?.id || 'Admin';
 
       // Build query string with repeated departments params: ?departments=A&departments=B
       const qs = new URLSearchParams();

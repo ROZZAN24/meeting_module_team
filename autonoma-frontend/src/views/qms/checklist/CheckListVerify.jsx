@@ -28,6 +28,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
 
@@ -165,6 +166,7 @@ function StatusChip({ status }) {
 
 export default function CheckListVerify() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -267,7 +269,7 @@ export default function CheckListVerify() {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: remarks || (status === 'Rejected' ? 'Rejected by verifier' : 'Verified')
       });
       fetchChecklists();
