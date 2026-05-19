@@ -209,7 +209,7 @@ export const getInputStyles = (theme, isDark) => ({
 // ─── DATATABLE STYLE TOKENS (SOP #2, #15, #16) ─────────────
 
 export const tableContainerSx = {
-  height: 'calc(100vh - 300px)',
+  maxHeight: 'calc(100vh - 300px)',
   border: '1px solid',
   borderColor: 'divider',
   boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
