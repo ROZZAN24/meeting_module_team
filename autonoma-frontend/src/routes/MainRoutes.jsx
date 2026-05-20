@@ -254,6 +254,8 @@ const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService
 const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMaster')));
 const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
 const CustomerPotentialMaster = Loadable(lazy(() => import('views/sm/crm/CustomerPotential/CustomerPotentialMaster')));
+const DespatchMode = Loadable(lazy(() => import('views/sm/masters/DespatchMode')));
+const Freight = Loadable(lazy(() => import('views/sm/masters/Freight')));
 
 // npd routing
 const NpdItemGroupMaster = Loadable(lazy(() => import('views/npd/ItemGroup/ItemGroupMaster')));
@@ -1173,6 +1175,14 @@ const MainRoutes = {
     {
       path: '/sm/ocr/type-of-service',
       element: <TypeOfService />
+    },
+    {
+      path: '/master/sales/logistics/despatch-mode',
+      element: <DespatchMode />
+    },
+    {
+      path: '/master/sales/logistics/freight',
+      element: <Freight />
     },
     {
       path: '*',
