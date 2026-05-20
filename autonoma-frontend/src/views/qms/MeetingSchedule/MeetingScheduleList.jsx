@@ -12,6 +12,7 @@ import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-compo
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import AddMeetingScheduleDialog from './AddMeetingScheduleDialog';
+import { isMobile } from 'react-device-detect';
 
 const formatTime12h = (time24) => {
   if (!time24) return '-';
@@ -121,7 +122,11 @@ export default function MeetingScheduleList() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // ── HANDLERS ──
-  const handleAdd = () => { setSelectedItem(null); setDialogOpen(true); };
+  const handleAdd = () => {
+    if (!perms.write) return;
+    setSelectedItem(null);
+    setDialogOpen(true);
+  };
   const handleEdit = (item) => { setSelectedItem(item); setDialogOpen(true); };
   const handleDeleteClick = (row) => { setDeleteTarget(row); setDeleteDialogOpen(true); };
 
@@ -182,20 +187,45 @@ export default function MeetingScheduleList() {
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
+    let val;
     if (col.id === 'status') {
       const s = row.status || 'OPEN';
       let chipStatus = 'ACTIVE';
       if (s === 'CLOSED' || s === 'AUTO CLOSED') chipStatus = 'INACTIVE';
       if (s === 'RESCHEDULE') chipStatus = 'PENDING';
       if (s === 'CANCELLED') chipStatus = 'INACTIVE';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+    } else if (col.id === 'createdAt') {
+      if (!row.createdAt) val = '-';
+      else {
+        const dt = new Date(row.createdAt);
+        val = `${dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+      }
+    } else if (col.id === 'index') {
+      val = idx + 1 + page * size;
+    } else {
+      let rawVal = row[col.id];
+      if (rawVal === undefined || rawVal === null) {
+        const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        rawVal = row[snakeCaseId];
+      }
+      if (typeof rawVal === 'boolean') {
+        val = rawVal ? 'Yes' : 'No';
+      } else if (typeof rawVal === 'object' && rawVal !== null) {
+        val = rawVal.name || rawVal.label || rawVal.id || '-';
+      } else {
+        val = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? String(rawVal) : '-';
+      }
     }
-    if (col.id === 'createdAt') {
-      if (!row.createdAt) return '-';
-      const dt = new Date(row.createdAt);
-      return `${dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
-    }
-    return null; // Let BOSDataTable handle default rendering
+
+    const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    return (
+      <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
+        <div style={{ width: '100%' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   return (
@@ -260,7 +290,6 @@ export default function MeetingScheduleList() {
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleEdit}
-        onEditRow={handleEdit}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="meeting-schedule-table"

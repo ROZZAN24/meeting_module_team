@@ -375,7 +375,8 @@ const AddMeetingScheduleDialog = ({ open, onClose, onSave, item }) => {
 
             <Autocomplete
               multiple
-              options={employees.filter(e => e.isParticipants === 'YES')}
+              disableCloseOnSelect
+              options={employees.filter(e => e.isParticipants === 'YES' && !form.participants.some(p => p.id === e.id || p.empCode === e.empCode))}
               getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
               value={form.participants}
               onChange={(e, val) => {

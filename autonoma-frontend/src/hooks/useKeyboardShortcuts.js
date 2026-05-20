@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useRef } from 'react';
 
 // ==============================|| KEYBOARD SHORTCUTS HOOK - BOS SOP #4 ||============================== //
 
@@ -19,9 +19,17 @@ import { useEffect, useCallback } from 'react';
  * @param {boolean} enabled - Whether shortcuts are active (default: true)
  */
 export default function useKeyboardShortcuts(shortcuts = {}, enabled = true) {
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (!enabled) return;
+  // Use a ref so the event listener always reads the latest handlers
+  // without needing to be re-registered on every render.
+  const shortcutsRef = useRef(shortcuts);
+  shortcutsRef.current = shortcuts;
+
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!enabledRef.current) return;
 
       // Don't trigger shortcuts when typing in inputs (unless it's Escape)
       const tag = e.target.tagName.toLowerCase();
@@ -38,32 +46,30 @@ export default function useKeyboardShortcuts(shortcuts = {}, enabled = true) {
       }
 
       const combo = parts.join('+');
+      const currentShortcuts = shortcutsRef.current;
 
       // Allow Escape even in inputs
-      if (combo === 'escape' && shortcuts['escape']) {
+      if (combo === 'escape' && currentShortcuts['escape']) {
         e.preventDefault();
-        shortcuts['escape']();
+        currentShortcuts['escape']();
         return;
       }
 
       // Skip other shortcuts when in input fields
       if (isInput && combo !== 'escape') return;
 
-      if (shortcuts[combo]) {
+      if (currentShortcuts[combo]) {
         e.preventDefault();
         e.stopPropagation();
-        shortcuts[combo]();
+        currentShortcuts[combo]();
       }
-    },
-    [shortcuts, enabled]
-  );
+    };
 
-  useEffect(() => {
-    if (!enabled) return;
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown, enabled]);
+  }, []); // Empty deps — listener is registered once and uses refs for latest values
 }
+
 
 /**
  * Helper to generate tooltip text with shortcut hint.

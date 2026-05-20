@@ -11,6 +11,7 @@ import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-compo
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import AttendanceEntryDialog from './AttendanceEntryDialog';
+import { isMobile } from 'react-device-detect';
 
 const columns = [
   { id: 'index', label: 'Sl No', minWidth: 60 },
@@ -100,7 +101,11 @@ export default function AttendanceList() {
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
-  const handleAdd = () => setDialogOpen(true);
+  const handleAdd = () => {
+    if (!perms.write) return;
+    setSelectedRow(null);
+    setDialogOpen(true);
+  };
   useKeyboardShortcuts({ 'ctrl+n': handleAdd });
 
   // ── RENDER CELL ──
@@ -118,19 +123,30 @@ export default function AttendanceList() {
       return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
     };
 
-    if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'scheduleNo') return row.schedule?.scheduleNo || '-';
-    if (col.id === 'participantName') return row.employee?.employeeName || '-';
-    if (col.id === 'inTime') return format12h(row.inTime);
-    if (col.id === 'outTime') return format12h(row.outTime);
-    if (col.id === 'status') {
+    let val;
+    if (col.id === 'index') val = idx + 1 + page * size;
+    else if (col.id === 'scheduleNo') val = row.schedule?.scheduleNo || '-';
+    else if (col.id === 'participantName') val = row.employee?.employeeName || '-';
+    else if (col.id === 'inTime') val = format12h(row.inTime);
+    else if (col.id === 'outTime') val = format12h(row.outTime);
+    else if (col.id === 'status') {
       const s = row.status || 'PRESENT';
       let chipStatus = 'ACTIVE';
       if (s === 'LATE') chipStatus = 'PENDING';
       if (s === 'ABSENT') chipStatus = 'INACTIVE';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+    } else {
+      val = row[col.id] || '-';
     }
-    return row[col.id] || '-';
+
+    const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    return (
+      <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
+        <div style={{ width: '100%' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   const handleEdit = (row) => {
@@ -189,7 +205,7 @@ export default function AttendanceList() {
             ]}
           />}
           {perms.write && <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
+            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
             </Button>
           </Tooltip>}

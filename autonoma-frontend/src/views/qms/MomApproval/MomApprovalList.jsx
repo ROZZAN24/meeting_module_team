@@ -11,6 +11,7 @@ import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import MomApprovalDialog from './MomApprovalDialog';
+import { isMobile } from 'react-device-detect';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -140,27 +141,39 @@ export default function MomApprovalList() {
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
-    if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'actionNo') return row._momNo || '-';
-    if (col.id === 'discussedPoint') return row.discussedPoint || '-';
-    if (col.id === 'actionTaken') return row.actionTaken || '-';
-    if (col.id === 'actionObservation') return row.actionObservation || '-';
-    if (col.id === 'targetDate') return row.targetDate || '-';
-    if (col.id === 'assignedTo') return row.assignedTo?.employeeName || '-';
-    if (col.id === 'createdBy') return row.createdBy || '-';
-    if (col.id === 'createdAt') {
-      if (!row._createdAt) return '-';
-      const dt = new Date(row._createdAt);
-      return `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (col.id === 'status') {
+    let val;
+    if (col.id === 'index') val = idx + 1 + page * size;
+    else if (col.id === 'actionNo') val = row._momNo || '-';
+    else if (col.id === 'discussedPoint') val = row.discussedPoint || '-';
+    else if (col.id === 'actionTaken') val = row.actionTaken || '-';
+    else if (col.id === 'actionObservation') val = row.actionObservation || '-';
+    else if (col.id === 'targetDate') val = row.targetDate || '-';
+    else if (col.id === 'assignedTo') val = row.assignedTo?.employeeName || '-';
+    else if (col.id === 'createdBy') val = row.createdBy || '-';
+    else if (col.id === 'createdAt') {
+      if (!row._createdAt) val = '-';
+      else {
+        const dt = new Date(row._createdAt);
+        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+    } else if (col.id === 'status') {
       const s = row.status || 'PENDING FOR APPROVAL';
       let chipStatus = 'PENDING';
       if (s === 'APPROVED' || s === 'CLOSED') chipStatus = 'ACTIVE';
       if (s === 'REJECTED') chipStatus = 'INACTIVE';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+    } else {
+      val = row[col.id] || '-';
     }
-    return row[col.id] || '-';
+
+    const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    return (
+      <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
+        <div style={{ width: '100%' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   return (
@@ -202,7 +215,6 @@ export default function MomApprovalList() {
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleOpenApproval}
-        onEditRow={handleOpenApproval}
         renderCell={renderCell}
         showActions={true}
         id="mom-approval-table"

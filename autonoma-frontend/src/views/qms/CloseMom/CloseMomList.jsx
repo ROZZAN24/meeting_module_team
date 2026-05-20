@@ -12,6 +12,7 @@ import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import CloseMomDialog from './CloseMomDialog';
+import { isMobile } from 'react-device-detect';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -149,28 +150,42 @@ export default function CloseMomList() {
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
-    if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'momNo') return row._momNo || '-';
-    if (col.id === 'momDate') return row._momDate || '-';
-    if (col.id === 'scheduleNo') return row._scheduleNo || '-';
-    if (col.id === 'discussedPoint') return row.discussedPoint || '-';
-    if (col.id === 'assignedTo') return row.assignedTo?.employeeName || '-';
-    if (col.id === 'assignedBy') return row.assignedBy?.employeeName || '-';
-    if (col.id === 'targetDate') return row.targetDate || '-';
-    if (col.id === 'createdAt') {
-      if (!row._createdAt) return '-';
-      const dt = new Date(row._createdAt);
-      return `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+    let val;
+    if (col.id === 'index') val = idx + 1 + page * size;
+    else if (col.id === 'momNo') val = row._momNo || '-';
+    else if (col.id === 'momDate') val = row._momDate || '-';
+    else if (col.id === 'scheduleNo') val = row._scheduleNo || '-';
+    else if (col.id === 'discussedPoint') val = row.discussedPoint || '-';
+    else if (col.id === 'assignedTo') val = row.assignedTo?.employeeName || '-';
+    else if (col.id === 'assignedBy') val = row.assignedBy?.employeeName || '-';
+    else if (col.id === 'targetDate') val = row.targetDate || '-';
+    else if (col.id === 'createdAt') {
+      if (!row._createdAt) val = '-';
+      else {
+        const dt = new Date(row._createdAt);
+        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      }
     }
-    if (col.id === 'status') {
+    else if (col.id === 'status') {
       const s = row.status || 'OPEN';
       let chipStatus = 'PENDING';
       if (s === 'CLOSED') chipStatus = 'ACTIVE';
       if (s === 'UNRESOLVED') chipStatus = 'INACTIVE';
       if (s === 'PENDING FOR APPROVAL') chipStatus = 'PENDING';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
     }
-    return row[col.id] || '-';
+    else {
+      val = row[col.id] || '-';
+    }
+
+    const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    return (
+      <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
+        <div style={{ width: '100%' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   return (

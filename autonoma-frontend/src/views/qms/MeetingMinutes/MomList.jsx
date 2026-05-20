@@ -14,6 +14,7 @@ import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-compo
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ReassignDialog from './ReassignDialog';
+import { isMobile } from 'react-device-detect';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -97,7 +98,10 @@ export default function MomList() {
   }, [dispatch]);
 
   // ── HANDLERS ──
-  const handleAdd = () => { navigate('/qms/minutesofmeeting/add'); };
+  const handleAdd = () => {
+    if (!perms.write) return;
+    navigate('/qms/minutesofmeeting/add');
+  };
   const handleEdit = (item) => {
     const momId = item._momId || item.id;
     navigate(`/qms/minutesofmeeting/edit/${momId}`);
@@ -191,6 +195,8 @@ export default function MomList() {
         </Tooltip>
       );
     }
+
+    let val;
     if (col.id === 'detailStatus') {
       const s = row.status || 'OPEN';
       let chipStatus = 'ACTIVE';
@@ -199,9 +205,32 @@ export default function MomList() {
       if (s === 'CANCELLED') chipStatus = 'INACTIVE';
       if (s === 'OVERDUE') chipStatus = 'INACTIVE';
       if (s === 'PENDING FOR APPROVAL') chipStatus = 'PENDING';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+    } else if (col.id === 'index') {
+      val = idx + 1 + page * size;
+    } else {
+      let rawVal = row[col.id];
+      if (rawVal === undefined || rawVal === null) {
+        const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        rawVal = row[snakeCaseId];
+      }
+      if (typeof rawVal === 'boolean') {
+        val = rawVal ? 'Yes' : 'No';
+      } else if (typeof rawVal === 'object' && rawVal !== null) {
+        val = rawVal.name || rawVal.label || rawVal.id || '-';
+      } else {
+        val = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? String(rawVal) : '-';
+      }
     }
-    return null; // Let BOSDataTable handle default rendering
+
+    const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    return (
+      <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
+        <div style={{ width: '100%' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   return (
@@ -263,7 +292,6 @@ export default function MomList() {
         onDoubleClickRow={handleEdit}
         onClickRow={(row) => setSelectedRow(row)}
         selectedRowId={selectedRow?.id}
-        onEditRow={handleEdit}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="mom-list-table"
