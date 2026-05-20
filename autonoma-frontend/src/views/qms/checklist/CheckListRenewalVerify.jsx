@@ -86,6 +86,34 @@ const tableCols = [
   { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
+
 const exportColumns = [
   { header: 'Task Type', key: (r) => r.assignType || 'Mine' },
   { header: 'Seq No', key: (r) => r.checklist?.seqNo },
@@ -94,18 +122,18 @@ const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
   { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
-  { header: 'Checklist Date', key: 'checklistDate' },
+  { header: 'Date', key: (r) => formatDate(r.assignedDate) },
+  { header: 'Checklist Date', key: (r) => formatDate(r.checklistDate) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
-  { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
+  { header: 'Next Due Date', key: (r) => formatDate(r.checklist?.nextDueDate) },
   { header: 'Assigned To', key: 'assignedTo' },
-  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' },
-  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired || 'NO' },
+  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
+  { header: 'Verification Required', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired || 'NO' },
   { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
-  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
   { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : (r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '') }
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
 const filterConfig = [
@@ -268,6 +296,7 @@ export default function CheckListRenewalVerify() {
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.name || user?.id || undefined,
+        excludePending: true,
 
         // Add-on filters
         seqNo: filters.seqNo || undefined,
@@ -418,18 +447,18 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.checklistDate}</TableCell>
+                  <TableCell>{formatDate(row.assignedDate)}</TableCell>
+                  <TableCell>{formatDate(row.checklistDate)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{row.checklist?.nextDueDate}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.nextDueDate)}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
-                  <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
-                  <TableCell>{row.checklist?.verificationRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
                   <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
-                  <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
                   <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
-                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : (row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-')}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -543,7 +572,7 @@ export default function CheckListRenewalVerify() {
         open={dialogOpen}
         handleClose={() => { setDialogOpen(false); setVerifyRemarks(''); }}
         data={activeRow}
-        onVerify={(remarks) => handleVerify('Accepted', remarks)}
+        onVerify={(remarks) => handleVerify('Verified', remarks)}
         onReject={(remarks) => handleVerify('Rejected', remarks)}
         onNotAccept={(remarks) => handleVerify('Not Accepted', remarks)}
         isExecution={false}

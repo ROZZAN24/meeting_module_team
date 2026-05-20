@@ -49,6 +49,12 @@ public class ChecklistAssignment {
     @Column(name = "CARRY_FORWARD")
     private String carryForward;
 
+    @Column(name = "CARRY_FORWARD_STATUS")
+    private String carryForwardStatus;
+
+    @Column(name = "CARRY_FORWARD_COUNT")
+    private Integer carryForwardCount = 0;
+
     @Column(name = "ASSIGN_TYPE")
     private String assignType;
 
@@ -82,6 +88,10 @@ public class ChecklistAssignment {
     public void setChecklistDate(Date checklistDate) { this.checklistDate = checklistDate; }
     public String getCarryForward() { return carryForward; }
     public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
+    public String getCarryForwardStatus() { return carryForwardStatus; }
+    public void setCarryForwardStatus(String carryForwardStatus) { this.carryForwardStatus = carryForwardStatus; }
+    public Integer getCarryForwardCount() { return carryForwardCount; }
+    public void setCarryForwardCount(Integer carryForwardCount) { this.carryForwardCount = carryForwardCount; }
     public String getAssignType() { return assignType; }
     public void setAssignType(String assignType) { this.assignType = assignType; }
     public List<String> getActualFiles() { return actualFiles; }

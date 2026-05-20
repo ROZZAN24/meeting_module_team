@@ -169,7 +169,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               startIcon={<IconChecks size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
-              {isAssignment ? 'Accept' : 'Verify'}
+              Verify
             </Button>
           </Stack>
         )
@@ -215,10 +215,27 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               
               {isExecution ? (
                 <>
+                  {data.remarks && (
+                    <BOSTextField 
+                      label="Previous Remarks / Manager Feedback" 
+                      value={data.remarks} 
+                      multiline 
+                      rows={3} 
+                      disabled 
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff8f0' } }}
+                    />
+                  )}
                   <BOSTextField 
                     select 
                     label="Status" 
-                    value={formData.status === 'Pending for Verified' ? 'Completed' : formData.status} 
+                    value={
+                      (formData.status === 'Pending for Verified' || 
+                       formData.status === 'Rejected' ||
+                       formData.status === 'Pending' ||
+                       formData.status === 'Started')
+                        ? (formData.status === 'Started' ? 'Started' : 'Completed')
+                        : formData.status
+                    } 
                     onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
                     required
                   >
