@@ -35,7 +35,7 @@ export default function BOSFormSection({ icon, title, children, defaultOpen = tr
           {isOpen ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
         </IconButton>
       </Box>
-      <Collapse in={isOpen}>
+      <Collapse in={isOpen} sx={{ '& .MuiCollapse-wrapper': { overflow: 'visible' }, '& .MuiCollapse-wrapperInner': { overflow: 'visible' } }}>
         <Box sx={{ p: 3, ...contentSx }}>
           <Stack spacing={2.5} sx={{ width: '100%' }}>
             {children}

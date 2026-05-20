@@ -285,7 +285,12 @@ export default function BOSDataTable({
                   ))}
                   {showActions && (
                     <TableCell align="center" sx={{ minWidth: 100 }}>
-                      <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap' }}>
+                      <Stack direction="row" justifyContent="center" spacing={1} sx={{ flexWrap: 'nowrap', alignItems: 'center' }}>
+                        {actionColumn && actionColumn.render && (
+                          <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', gap: 0.5 }}>
+                            {actionColumn.render(row)}
+                          </Box>
+                        )}
                         {onEditRow && (
                           <Tooltip title="Edit">
                             <IconButton onClick={(e) => { e.stopPropagation(); onEditRow(row); }} size="small" sx={tableActionEditSx}>
@@ -385,6 +390,7 @@ BOSDataTable.propTypes = {
   onEditRow: PropTypes.func,
   onDeleteRow: PropTypes.func,
   showActions: PropTypes.bool,
+  actionColumn: PropTypes.object,
   renderCell: PropTypes.func,
   footerActions: PropTypes.node,
   id: PropTypes.string
