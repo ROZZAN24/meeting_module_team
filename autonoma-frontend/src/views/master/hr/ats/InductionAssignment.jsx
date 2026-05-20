@@ -121,7 +121,7 @@ const INITIAL_STATE = {
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
-const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED'];
+const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
 const VALIDATION_RULES = [
   { field: 'empCode', label: 'Employee', required: true },
@@ -541,10 +541,10 @@ const InductionAssignment = () => {
                     const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
                     const round = formData.inductionRound;
                     if (round === 'HR') {
-                      return empDept?.toUpperCase() === 'HR' || empDept?.toUpperCase() === 'HUMAN RESOURCES';
+                      return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
                     }
                     if (round === 'QMS') {
-                      return empDept?.toUpperCase() === 'QMS' || empDept?.toUpperCase() === 'QUALITY MANAGEMENT';
+                      return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT'].includes(empDept?.toUpperCase());
                     }
                     if (round === 'DEPARTMENT') {
                       return empDept?.toLowerCase() === formData.department?.toLowerCase();
