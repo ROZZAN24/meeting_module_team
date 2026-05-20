@@ -31,6 +31,8 @@ import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
+import { BOSExportButton } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
 const columns = [
@@ -51,13 +53,12 @@ const columns = [
   { id: 'itemCode', label: 'Item Code', minWidth: 120 },
   { id: 'qty', label: 'Qty', minWidth: 80 },
   { id: 'photoRequired', label: 'Photo Required', minWidth: 100 },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
-  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'updatedBy', label: 'Modified By', minWidth: 120 },
+  { id: 'dualCheck', label: 'Dual Check', minWidth: 100 },
+  { id: 'carryForward', label: 'Carry Forward', minWidth: 100 },
+  { id: 'createdBy', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 120 },
+  { id: 'updatedBy', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'taskStatus', label: 'Task Status', minWidth: 120 },
   { id: 'verifyStatus', label: 'Verify Status', minWidth: 150 },
@@ -65,6 +66,37 @@ const columns = [
   { id: 'verifiedDate', label: 'Verified Date', minWidth: 120 },
   { id: 'rejReason', label: 'Rej Reason', minWidth: 200 },
   { id: 'attachments', label: 'Docs', minWidth: 80, align: 'center' }
+];
+
+const exportColumns = [
+  { header: 'Seq No', key: 'seqNo' },
+  { header: 'Checking Point', key: 'checkingPoint' },
+  { header: 'Category', key: 'category' },
+  { header: 'Frequency', key: 'frequency' },
+  { header: 'Level', key: 'levelIds' },
+  { header: 'Department', key: (r) => (r.departments || []).map(d => d.departmentName).join(', ') },
+  { header: 'Effective From', key: 'effectiveFrom' },
+  { header: 'Days', key: 'reminderDays' },
+  { header: 'Expire Date', key: 'expiryDate' },
+  { header: 'Reminder Date', key: 'reminderDate' },
+  { header: 'Stock Link', key: 'stockLink' },
+  { header: 'Assign To', key: 'assignTo' },
+  { header: 'Assign Date', key: 'assignDate' },
+  { header: 'Item Code', key: 'itemCode' },
+  { header: 'Qty', key: 'qty' },
+  { header: 'Photo Required', key: 'photoRequired' },
+  { header: 'Dual Check', key: 'dualCheck' },
+  { header: 'Carry Forward', key: 'carryForward' },
+  { header: 'CREATED USER', key: 'createdBy' },
+  { header: 'CREATED DATE', key: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : (r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '') },
+  { header: 'UPDATED USER', key: 'updatedBy' },
+  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '' },
+  { header: 'Status', key: 'status' },
+  { header: 'Task Status', key: 'taskStatus' },
+  { header: 'Verify Status', key: 'verifyStatus' },
+  { header: 'Verified By', key: 'verifiedBy' },
+  { header: 'Verified Date', key: 'verifiedDate' },
+  { header: 'Rej Reason', key: 'rejReason' }
 ];
 
 const DEPARTMENTS = [
@@ -187,6 +219,7 @@ function FilterSection({ title, open, onToggle, children }) {
 
 export default function MasterCheckList() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isAmendment, setIsAmendment] = useState(false);
@@ -378,6 +411,9 @@ export default function MasterCheckList() {
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v /* NaN check */)
       );
 
+      // Inject current logged-in user context
+      body.updatedBy = user?.name || user?.id || 'Admin';
+
       // Build query string with repeated departments params: ?departments=A&departments=B
       const qs = new URLSearchParams();
       departments.forEach((d) => qs.append('departments', d));
@@ -415,6 +451,11 @@ export default function MasterCheckList() {
       alert('Please select a row first!');
       return;
     }
+    const selectedRow = rows.find((r) => r.id === selectedRowId);
+    if (selectedRow?.verifyStatus !== 'Verified') {
+      alert('Only verified checklists can be assigned to users!');
+      return;
+    }
     setAssignDialogOpen(true);
   };
 
@@ -429,11 +470,7 @@ export default function MasterCheckList() {
           <Button variant="contained" color="secondary" size="small" startIcon={<IconFileDots size={18}/>} onClick={handleAmendmentClick}>Amendment</Button>
           <Button variant="contained" color="secondary" size="small" startIcon={<IconEdit size={18}/>} onClick={handleEditClick}>Edit</Button>
           <Button variant="contained" color="primary" size="small" startIcon={<IconPlus size={18}/>} onClick={() => { setSelectedRowId(null); setIsAmendment(false); setDialogOpen(true); }}>Add</Button>
-          <IconButton size="small" onClick={() => setDrawerOpen(true)}
-            sx={{ border:'1px solid', borderColor: activeCount > 0 ? 'primary.main' : 'divider', bgcolor: activeCount > 0 ? 'primary.light' : 'transparent', borderRadius:1.5, p:0.8, position:'relative' }}>
-            <IconAdjustmentsHorizontal size={20}/>
-            {activeCount > 0 && <Box sx={{ position:'absolute', top:-4, right:-4, width:18, height:18, borderRadius:'50%', bgcolor:'error.main', color:'#fff', fontSize:11, display:'flex', alignItems:'center', justifyContent:'center', fontWeight:700 }}>{activeCount}</Box>}
-          </IconButton>
+          <BOSExportButton data={rows} filename="Master_Check_List" columns={exportColumns} size="small" />
         </Box>
       }
     >

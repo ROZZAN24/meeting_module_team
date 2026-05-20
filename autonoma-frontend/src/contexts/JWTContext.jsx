@@ -22,6 +22,13 @@ const initialState = {
   user: null
 };
 
+function setSessionContext(tenantId, divisionId, companyName, divisionName) {
+  if (tenantId) localStorage.setItem('tenantId', tenantId); else localStorage.removeItem('tenantId');
+  if (divisionId) localStorage.setItem('divisionId', String(divisionId)); else localStorage.removeItem('divisionId');
+  if (companyName) localStorage.setItem('companyName', companyName); else localStorage.removeItem('companyName');
+  if (divisionName) localStorage.setItem('divisionName', divisionName); else localStorage.removeItem('divisionName');
+}
+
 function verifyToken(serviceToken) {
   if (!serviceToken) {
     return false;
@@ -44,6 +51,7 @@ function setSession(serviceToken) {
   } else {
     localStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
+    setSessionContext(null, null, null, null);
   }
 }
 
@@ -113,6 +121,8 @@ export function JWTProvider({ children }) {
           setSession(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
+          // Keep localStorage in sync so SessionInfoBadge reads correctly
+          setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,
             payload: {
@@ -121,12 +131,14 @@ export function JWTProvider({ children }) {
             }
           });
         } else {
+          setSession(null);
           dispatch({
             type: LOGOUT
           });
         }
       } catch (err) {
         console.error(err);
+        setSession(null);
         dispatch({
           type: LOGOUT
         });
@@ -136,10 +148,23 @@ export function JWTProvider({ children }) {
     init();
   }, []);
 
-  const login = async (email, password) => {
-    const response = await axios.post('/api/account/login', { email, password });
+  const login = async (email, password, context = {}) => {
+    const { tenantId, divisionId } = context;
+    const response = await axios.post('/api/account/login', {
+      email,
+      password,
+      tenantId: tenantId || null,
+      divisionId: divisionId || null
+    });
     const { serviceToken, user } = response.data;
     setSession(serviceToken);
+    // Persist company/division so they survive page refresh
+    setSessionContext(
+      user.tenantId,
+      user.divisionId,
+      user.companyName,
+      user.divisionName
+    );
     dispatch({
       type: LOGIN,
       payload: {
@@ -147,6 +172,33 @@ export function JWTProvider({ children }) {
         user
       }
     });
+  };
+
+  const switchContext = async (tenantId, divisionId) => {
+    try {
+      if (tenantId) localStorage.setItem('tenantId', tenantId);
+      if (divisionId) localStorage.setItem('divisionId', String(divisionId));
+
+      const response = await axios.get('/api/account/me', {
+        headers: {
+          'X-Tenant-ID': tenantId,
+          'X-Division-ID': String(divisionId)
+        }
+      });
+      const { user } = response.data;
+      setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
+      dispatch({
+        type: LOGIN,
+        payload: {
+          isLoggedIn: true,
+          user
+        }
+      });
+      // Force refresh to ensure all components/hooks pick up the new context
+      window.location.reload();
+    } catch (err) {
+      console.error('Failed to switch context:', err);
+    }
   };
 
   const register = async (email, password, firstName, lastName) => {
@@ -193,7 +245,7 @@ export function JWTProvider({ children }) {
     return <Loader />;
   }
 
-  return <JWTContext.Provider value={{ ...state, licenseStatus, logoutCountdown, login, logout, register, resetPassword, updateProfile }}>{children}</JWTContext.Provider>;
+  return <JWTContext.Provider value={{ ...state, licenseStatus, logoutCountdown, login, logout, register, resetPassword, updateProfile, switchContext }}>{children}</JWTContext.Provider>;
 }
 
 export default JWTContext;

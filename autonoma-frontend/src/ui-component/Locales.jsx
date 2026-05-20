@@ -14,6 +14,10 @@ function loadLocaleData(i18n) {
       return import('utils/locales/ro.json');
     case 'zh':
       return import('utils/locales/zh.json');
+    case 'ta':
+      return import('utils/locales/ta.json');
+    case 'hi':
+      return import('utils/locales/hi.json');
     default:
       return import('utils/locales/en.json');
   }

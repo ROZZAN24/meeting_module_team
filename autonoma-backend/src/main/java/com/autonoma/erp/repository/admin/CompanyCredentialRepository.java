@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 import com.autonoma.erp.model.admin.CompanyCredential;
 
 @Repository
-public interface CompanyCredentialRepository extends JpaRepository<CompanyCredential, Integer> {
+public interface CompanyCredentialRepository extends JpaRepository<CompanyCredential, Long> {
 }

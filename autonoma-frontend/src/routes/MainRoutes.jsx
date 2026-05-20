@@ -193,6 +193,7 @@ const AdminSessionMonitoring = Loadable(lazy(() => import('views/admin/SessionMo
 const DivisionMaster = Loadable(lazy(() => import('views/admin/DivisionMaster')));
 const AuditTrailPage = Loadable(lazy(() => import('views/admin/AuditTrailPage')));
 const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
+const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -252,6 +253,7 @@ const DeliveryTerms = Loadable(lazy(() => import('views/sm/masters/DeliveryTerms
 const TypeOfService = Loadable(lazy(() => import('views/sm/masters/TypeOfService')));
 const CountryMasterPage = Loadable(lazy(() => import('views/sm/masters/CountryMaster')));
 const StateMasterPage = Loadable(lazy(() => import('views/sm/masters/StateMaster')));
+const CustomerPotentialMaster = Loadable(lazy(() => import('views/sm/crm/CustomerPotential/CustomerPotentialMaster')));
 
 // npd routing
 const NpdItemGroupMaster = Loadable(lazy(() => import('views/npd/ItemGroup/ItemGroupMaster')));
@@ -314,6 +316,10 @@ const MainRoutes = {
     {
       path: '/admin/session-analytics',
       element: <UserSessionAnalytics />
+    },
+    {
+      path: '/admin/file-traceability-hub',
+      element: <FileTraceabilityHub />
     },
     {
       path: '/admin/division',
@@ -1135,6 +1141,10 @@ const MainRoutes = {
     {
       path: '/master/common/state',
       element: <StateMasterPage />
+    },
+    {
+      path: '/master/sales/crm/potential',
+      element: <CustomerPotentialMaster />
     },
     {
       path: '/master/npd/product-type',

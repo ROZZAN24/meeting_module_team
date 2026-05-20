@@ -7,7 +7,7 @@ import { drawerWidth } from 'store/constant';
 
 // ==============================|| MAIN LAYOUT - STYLED ||============================== //
 
-const RIBBON_H = 86; // px — height of expanded ribbon row
+const RIBBON_H = 96; // px — height of expanded ribbon row
 
 const MainContentStyled = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'menuOrientation' && prop !== 'borderRadius' && prop !== 'ribbonOpen'

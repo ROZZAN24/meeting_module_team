@@ -212,6 +212,13 @@ export const masters = {
               icon: icons.IconHierarchy
             },
             {
+              id: 'master-hr-grade',
+              title: 'Grade',
+              type: 'item',
+              url: '/master/hr/grade',
+              icon: icons.IconAward
+            },
+            {
               id: 'master-hr-employee-satisfaction',
               title: 'Employee Satisfaction Criteria',
               type: 'item',
@@ -408,6 +415,13 @@ export const masters = {
               icon: icons.IconAward
             }
           ]
+        },
+        {
+          id: 'master-npd-wind-farm',
+          title: 'Wind Farm Master',
+          type: 'item',
+          url: '/master/npd/wind-farm',
+          icon: icons.IconRocket
         }
       ]
     },
@@ -567,23 +581,7 @@ export const hra = {
   caption: 'HR & Admin HA0000',
   type: 'group',
   icon: icons.IconUsers,
-  children: [
-    {
-      id: 'hra-hr-employee',
-      title: 'Employee',
-      type: 'collapse',
-      icon: icons.IconUsers,
-      children: [
-        {
-          id: 'hra-hr-employee-details',
-          title: 'Employee Master',
-          type: 'item',
-          url: '/hra/employee/master',
-          icon: icons.IconUserPlus
-        }
-      ]
-    }
-  ]
+  children: []
 };
 
 

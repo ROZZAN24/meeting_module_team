@@ -72,7 +72,7 @@ export default function Login() {
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 3, sm: 5 },
+            p: { xs: 2.5, sm: 3.5 },
             width: '100%',
             background: 'rgba(255, 255, 255, 0.85)',
             backdropFilter: 'blur(10px)',
@@ -86,9 +86,9 @@ export default function Login() {
         >
           {!isLoggedIn && <ViewOnlyAlert />}
 
-          <Box sx={{ mb: 4, textAlign: 'center' }}>
+          <Box sx={{ mb: 2, textAlign: 'center' }}>
             <Link to="#" aria-label="logo">
-              <Logo height={140} />
+              <Logo height={100} />
             </Link>
           </Box>
 

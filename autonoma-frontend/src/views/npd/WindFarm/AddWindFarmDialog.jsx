@@ -38,26 +38,34 @@ const AddWindFarmDialog = ({ open, handleClose, initialData, readOnly = false })
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   // States fetched dynamically from state master
+  const [countries, setCountries] = useState([]);
   const [allStates, setAllStates] = useState([]);
-  const [uniqueCountries, setUniqueCountries] = useState([]);
   const [filteredStates, setFilteredStates] = useState([]);
 
   useEffect(() => {
-    const fetchStatesData = async () => {
+    const fetchLookupData = async () => {
       try {
-        const response = await axios.get('/api/master/states');
-        const statesList = response.data || [];
-        setAllStates(statesList);
+        const [countriesRes, statesRes] = await Promise.all([
+          axios.get('/api/master/countries'),
+          axios.get('/api/master/states')
+        ]);
         
-        // Extract unique countries
-        const countriesSet = new Set(statesList.map(s => s.countryName).filter(Boolean));
-        setUniqueCountries(Array.from(countriesSet));
+        const countriesList = countriesRes.data || [];
+        const statesList = statesRes.data || [];
+        
+        const activeCountries = countriesList
+          .filter(c => !c.status || c.status.toUpperCase() === 'ACTIVE')
+          .map(c => c.country)
+          .filter(Boolean);
+        
+        setCountries(activeCountries);
+        setAllStates(statesList);
       } catch (error) {
-        console.error('Failed to fetch states for lookups:', error);
+        console.error('Failed to fetch country/state lookups:', error);
       }
     };
     if (open) {
-      fetchStatesData();
+      fetchLookupData();
     }
   }, [open]);
 
@@ -188,7 +196,7 @@ const AddWindFarmDialog = ({ open, handleClose, initialData, readOnly = false })
               }));
             }}
             disabled={isViewOnly}
-            options={uniqueCountries}
+            options={countries}
             freeSolo={false}
             renderInput={(params) => (
               <MuiTextField

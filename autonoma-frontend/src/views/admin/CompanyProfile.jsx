@@ -183,7 +183,7 @@ const CompanyProfile = () => {
             country: rec.country || '',
             pincode: rec.pincode || '',
             gstIn: rec.gstIn || '',
-            dbSourceName: rec.dbSourceName || 'BOSDBSRC',
+            dbSourceName: rec.dbSourceName || 'AUTONOMA',
             licRenewalDate: rec.licRenewalDate ? rec.licRenewalDate.slice(0, 10) : '',
             licExpiryDate: rec.licExpiryDate ? rec.licExpiryDate.slice(0, 10) : '',
             logoFileName: rec.logoFileName || '',

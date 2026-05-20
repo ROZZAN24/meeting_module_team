@@ -28,19 +28,19 @@ const columns = [
 
 export default function WindFarmMaster() {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
 
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
+  const [selectedRow, setSelectedRow] = useState(null);
+  const [isReadOnly, setIsReadOnly] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
-  const [selectedListRow, setSelectedListRow] = useState(null);
-  const theme = useTheme();
 
   // Dispatch starred filter configuration matching Wind Farm Search
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function WindFarmMaster() {
     setLoading(true);
     try {
       const response = await axios.get(API_PATHS.NPD.WIND_FARMS);
-      setRows(response.data);
+      setRows(response.data || []);
     } catch (error) {
       console.error('Failed to fetch Wind Farms:', error);
       setRows([]);
@@ -95,7 +95,8 @@ export default function WindFarmMaster() {
   };
 
   useKeyboardShortcuts({
-    'ctrl+n': handleOpenAdd
+    'ctrl+n': handleOpenAdd,
+    'escape': () => { if (dialogOpen) handleCloseDialog(); }
   });
 
   const filteredRows = useMemo(() => {
@@ -163,8 +164,6 @@ export default function WindFarmMaster() {
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleOpenEdit}
-        onClickRow={handleRowClick}
-        selectedRowId={selectedListRow?.id}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteClick}
       />

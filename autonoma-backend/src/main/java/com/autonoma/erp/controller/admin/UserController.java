@@ -76,7 +76,10 @@ public class UserController {
             user.setImgName(userDetails.getImgName());
 
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+                // Prevent double-encoding if the frontend sends back the existing encrypted hash
+                if (!userDetails.getPassword().equals(user.getPassword())) {
+                    user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+                }
             }
 
             user.setUpdatedBy(getCurrentUserId());
@@ -132,5 +135,104 @@ public class UserController {
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
         userRepository.deleteById(id);
         return ResponseEntity.ok().build();
+    }
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserDivisionMappingRepository userDivisionMappingRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserCompanyMappingRepository userCompanyMappingRepository;
+
+    @Autowired
+    private com.autonoma.erp.service.DivisionService divisionService;
+
+    @GetMapping("/{userId}/mappings")
+    public ResponseEntity<?> getUserMappings(@PathVariable String userId) {
+        java.util.List<Long> divIds = userDivisionMappingRepository.findByUserId(userId).stream()
+                .map(com.autonoma.erp.model.admin.UserDivisionMapping::getDivisionId)
+                .collect(java.util.stream.Collectors.toList());
+
+        java.util.List<Long> compIds = userCompanyMappingRepository.findByUserId(userId).stream()
+                .map(com.autonoma.erp.model.admin.UserCompanyMapping::getCompanyId)
+                .collect(java.util.stream.Collectors.toList());
+
+        UserCredential user = userRepository.findById(userId).orElse(null);
+        Integer isBosAdmin = (user != null && user.getIsBosAdmin() != null) ? user.getIsBosAdmin() : 0;
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("mappedDivisionIds", divIds);
+        result.put("mappedCompanyIds", compIds);
+        result.put("isBosAdmin", isBosAdmin);
+
+        return ResponseEntity.ok(result);
+    }
+
+    public static class UserMappingPayload {
+        private java.util.List<Long> mappedDivisionIds;
+        private Integer isBosAdmin;
+
+        public java.util.List<Long> getMappedDivisionIds() {
+            return mappedDivisionIds;
+        }
+
+        public void setMappedDivisionIds(java.util.List<Long> mappedDivisionIds) {
+            this.mappedDivisionIds = mappedDivisionIds;
+        }
+
+        public Integer getIsBosAdmin() {
+            return isBosAdmin;
+        }
+
+        public void setIsBosAdmin(Integer isBosAdmin) {
+            this.isBosAdmin = isBosAdmin;
+        }
+    }
+
+    @PostMapping("/{userId}/mappings")
+    public ResponseEntity<?> updateUserMappings(@PathVariable String userId, @RequestBody UserMappingPayload payload) {
+        UserCredential user = userRepository.findById(userId).orElse(null);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        user.setIsBosAdmin(payload.getIsBosAdmin() != null ? payload.getIsBosAdmin() : 0);
+        userRepository.save(user);
+
+        userDivisionMappingRepository.deleteByUserId(userId);
+        userCompanyMappingRepository.deleteByUserId(userId);
+
+        if (payload.getIsBosAdmin() == null || payload.getIsBosAdmin() == 0) {
+            if (payload.getMappedDivisionIds() != null && !payload.getMappedDivisionIds().isEmpty()) {
+                java.util.Set<Long> companyIds = new java.util.HashSet<>();
+
+                for (Long divId : payload.getMappedDivisionIds()) {
+                    com.autonoma.erp.model.admin.UserDivisionMapping divMapping = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                    divMapping.setUserId(userId);
+                    divMapping.setDivisionId(divId);
+                    divMapping.setCreatedBy(getCurrentUserId());
+                    divMapping.setCreatedAt(new Date());
+                    userDivisionMappingRepository.save(divMapping);
+
+                    divisionService.findById(divId).ifPresent(div -> {
+                        if (div.getCompanyId() != null) {
+                            companyIds.add(div.getCompanyId());
+                        }
+                    });
+                }
+
+                for (Long compId : companyIds) {
+                    com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                    compMapping.setUserId(userId);
+                    compMapping.setCompanyId(compId);
+                    compMapping.setCreatedBy(getCurrentUserId());
+                    compMapping.setCreatedAt(new Date());
+                    userCompanyMappingRepository.save(compMapping);
+                }
+            }
+        }
+
+        Map<String, String> res = new HashMap<>();
+        res.put("message", "User mappings updated successfully");
+        return ResponseEntity.ok(res);
     }
 }

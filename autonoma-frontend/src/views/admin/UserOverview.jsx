@@ -97,11 +97,36 @@ const UserOverview = () => {
     return err?.message || err?.error || err?.detail || JSON.stringify(err) || 'An unexpected error occurred';
   };
 
+  const [divisionMap, setDivisionMap] = useState({});
+  const [userMappingsMap, setUserMappingsMap] = useState({});
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/users/all');
-      setUsers(response.data);
+      const [usersRes, divisionsRes] = await Promise.all([
+        axios.get('/api/users/all'),
+        axios.get('/api/admin/divisions')
+      ]);
+      const divMap = {};
+      divisionsRes.data.forEach(d => { divMap[d.id] = d; });
+      setDivisionMap(divMap);
+
+      const usersData = usersRes.data;
+      // Load mappings for all users in parallel
+      const mappingsResults = await Promise.allSettled(
+        usersData.map(u => axios.get(`/api/users/${u.userId}/mappings`))
+      );
+      const mappings = {};
+      usersData.forEach((u, i) => {
+        const result = mappingsResults[i];
+        if (result.status === 'fulfilled') {
+          mappings[u.userId] = result.value.data;
+        } else {
+          mappings[u.userId] = { mappedDivisionIds: [], isBosAdmin: 0 };
+        }
+      });
+      setUserMappingsMap(mappings);
+      setUsers(usersData);
     } catch (err) {
       console.error('Failed to fetch users:', err);
       dispatch(openSnackbar({ open: true, message: getErrorMessage(err) || 'Failed to fetch users', variant: 'alert', severity: 'error' }));
@@ -124,13 +149,26 @@ const UserOverview = () => {
     }
   };
 
+  const [divisions, setDivisions] = useState([]);
+  const fetchDivisions = async () => {
+    if (divisions.length > 0) return;
+    try {
+      const response = await axios.get('/api/admin/divisions');
+      setDivisions(response.data);
+    } catch (err) {
+      console.error('Failed to fetch divisions:', err);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
   }, []);
 
   const handleClickOpen = () => {
+    setEditingUser(null);
     setOpen(true);
     fetchEmployees();
+    fetchDivisions();
   };
 
   const handleClose = () => {
@@ -139,10 +177,20 @@ const UserOverview = () => {
     setShowPassword(false);
   };
 
-  const handleEdit = (user) => {
-    setEditingUser(user);
+  const handleEdit = async (user) => {
+    try {
+      const res = await axios.get(`/api/users/${user.userId}/mappings`);
+      setEditingUser({
+        ...user,
+        isBosAdmin: res.data.isBosAdmin || 0,
+        mappedDivisionIds: res.data.mappedDivisionIds || []
+      });
+    } catch (err) {
+      setEditingUser({ ...user, isBosAdmin: user.isBosAdmin || 0, mappedDivisionIds: [] });
+    }
     setOpen(true);
     fetchEmployees();
+    fetchDivisions();
   };
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
@@ -258,6 +306,7 @@ const UserOverview = () => {
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#ccc', fontSize: '0.7rem', py: 2.5, width: 50 }}>#</TableCell>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>User Identity</TableCell>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Linked Employee</TableCell>
+                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Divisions</TableCell>
                 <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Account Status</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5, width: 120 }}>Action</TableCell>
               </TableRow>
@@ -265,7 +314,7 @@ const UserOverview = () => {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
                     <CircularProgress size={32} thickness={5} />
                     <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>Synchronizing...</Typography>
                   </TableCell>
@@ -274,10 +323,12 @@ const UserOverview = () => {
                 paginatedUsers.map((row, idx) => (
                   <TableRow
                     key={row.userId}
+                    onDoubleClick={() => handleEdit(row)}
                     sx={{
                       '& td': { py: 1.5, borderBottom: '1px solid #f8fafc' },
                       '&:hover': { bgcolor: '#f1f5f9 !important' },
-                      bgcolor: idx % 2 === 0 ? 'white' : '#f9fbff'
+                      bgcolor: idx % 2 === 0 ? 'white' : '#f9fbff',
+                      cursor: 'pointer'
                     }}
                   >
                     <TableCell sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.75rem' }}>{page * rowsPerPage + idx + 1}</TableCell>
@@ -313,6 +364,34 @@ const UserOverview = () => {
                           CODE: {employeeMap[row.empId]?.empCode || 'N/A'}
                         </Typography>
                       </Box>
+                    </TableCell>
+                    <TableCell sx={{ maxWidth: 220 }}>
+                      {(() => {
+                        const mapping = userMappingsMap[row.userId];
+                        if (!mapping) return <Typography variant="caption" color="text.disabled">—</Typography>;
+                        if (mapping.isBosAdmin === 1) return (
+                          <Chip label="BOS Admin" size="small" sx={{ bgcolor: '#ede7f6', color: '#673ab7', fontWeight: 800, fontSize: '0.65rem', borderRadius: '6px' }} />
+                        );
+                        const divIds = mapping.mappedDivisionIds || [];
+                        if (divIds.length === 0) return <Typography variant="caption" color="text.disabled">No divisions</Typography>;
+                        return (
+                          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                            {divIds.slice(0, 3).map(id => (
+                              <Chip
+                                key={id}
+                                label={divisionMap[id]?.divisionName || `Div ${id}`}
+                                size="small"
+                                sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: '0.62rem', borderRadius: '6px', mb: 0.5 }}
+                              />
+                            ))}
+                            {divIds.length > 3 && (
+                              <Tooltip title={divIds.slice(3).map(id => divisionMap[id]?.divisionName || `Div ${id}`).join(', ')} arrow>
+                                <Chip label={`+${divIds.length - 3}`} size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 700, fontSize: '0.62rem', borderRadius: '6px', mb: 0.5 }} />
+                              </Tooltip>
+                            )}
+                          </Stack>
+                        );
+                      })()}
                     </TableCell>
                     <TableCell>
                       <Stack direction="row" spacing={1} alignItems="center">
@@ -362,7 +441,7 @@ const UserOverview = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
+                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
                     <Typography variant="h5" color="textSecondary">No credentials found</Typography>
                   </TableCell>
                 </TableRow>
@@ -389,33 +468,17 @@ const UserOverview = () => {
       </Box>
 
       {/* ── MODAL DIALOG ── */}
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: '24px', overflow: 'hidden' } }}>
-        <DialogTitle sx={{ p: 0, background: `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.secondary.main} 100%)` }}>
-          <Box sx={{ p: 4, pb: 8, color: 'white', position: 'relative' }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-              <Box>
-                <Typography variant="h3" fontWeight={800} color="inherit" sx={{ mb: 0.5, textTransform: 'uppercase' }}>
-                  {editingUser ? 'Edit User Credential' : 'New User Account'}
-                </Typography>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ opacity: 0.8 }}>
-                  <IconShieldLock size={16} />
-                  <Typography variant="body2" fontWeight={500}>{editingUser ? `Updating access for ${editingUser.userId}` : 'Configure credentials for a new system user'}</Typography>
-                </Stack>
-              </Box>
-              <IconButton onClick={handleClose} sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
-                <IconX size={20} />
-              </IconButton>
-            </Stack>
-          </Box>
-        </DialogTitle>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth scroll="paper" PaperProps={{ sx: { borderRadius: '24px', overflow: 'hidden' } }}>
         <Formik
           enableReinitialize={true}
           initialValues={{
             userId: editingUser?.userId || '',
             empId: editingUser?.empId || '',
-            password: editingUser?.password || '',
+            password: '', // Leave blank to avoid showing hash
             status: editingUser?.status ?? 1,
             imgName: editingUser?.imgName || '',
+            isBosAdmin: editingUser?.isBosAdmin ?? 0,
+            mappedDivisionIds: editingUser?.mappedDivisionIds || [],
             submit: null
           }}
           validationSchema={Yup.object().shape({
@@ -426,11 +489,18 @@ const UserOverview = () => {
           })}
           onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
             try {
+              let savedUserId = values.userId;
               if (editingUser) {
                 await axios.put(`/api/users/update/${editingUser.userId}`, { empId: Number(values.empId), password: values.password, status: Number(values.status), imgName: values.imgName });
               } else {
                 await axios.post('/api/users/create', { userId: values.userId, empId: Number(values.empId), password: values.password, status: Number(values.status), imgName: values.imgName });
               }
+
+              await axios.post(`/api/users/${savedUserId}/mappings`, {
+                mappedDivisionIds: values.mappedDivisionIds,
+                isBosAdmin: values.isBosAdmin
+              });
+
               if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) updateProfile({ imgName: values.imgName });
               dispatch(openSnackbar({ open: true, message: `User ${editingUser ? 'updated' : 'created'} successfully`, variant: 'alert', severity: 'success' }));
               setOpen(false);
@@ -443,8 +513,46 @@ const UserOverview = () => {
           }}
         >
           {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values, setFieldValue }) => (
-            <form noValidate onSubmit={handleSubmit}>
-              <DialogContent sx={{ p: 0, bgcolor: 'background.paper', mt: -5, borderTopLeftRadius: '40px', borderTopRightRadius: '40px', overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}>
+            <form noValidate onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+              <DialogTitle sx={{ p: 0, background: `linear-gradient(135deg, ${theme.palette.secondary.dark} 0%, ${theme.palette.secondary.main} 100%)` }}>
+                <Box sx={{ p: 2, pb: 3, color: 'white', position: 'relative' }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Typography variant="h3" fontWeight={800} color="inherit" sx={{ mb: 0.5, textTransform: 'uppercase' }}>
+                        {editingUser ? 'Edit User Credential' : 'New User Account'}
+                      </Typography>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ opacity: 0.8 }}>
+                        <IconShieldLock size={16} />
+                        <Typography variant="body2" fontWeight={500}>{editingUser ? `Updating access for ${editingUser.userId}` : 'Configure credentials for a new system user'}</Typography>
+                      </Stack>
+                    </Box>
+                    <Stack direction="row" spacing={1.5} alignItems="center">
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={isSubmitting}
+                        sx={{
+                          bgcolor: 'white',
+                          color: 'secondary.main',
+                          fontWeight: 800,
+                          px: 3,
+                          borderRadius: '8px',
+                          '&:hover': {
+                            bgcolor: 'rgba(255,255,255,0.9)',
+                          }
+                        }}
+                      >
+                        {isSubmitting ? 'Saving...' : editingUser ? 'Save' : 'Create'}
+                      </Button>
+                      <IconButton onClick={handleClose} sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
+                        <IconX size={20} />
+                      </IconButton>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </DialogTitle>
+              <DialogContent sx={{ p: 0, bgcolor: '#f8fafc', position: 'relative' }}>
+                <Box sx={{ bgcolor: 'background.paper', mt: -2.5, borderTopLeftRadius: '32px', borderTopRightRadius: '32px', position: 'relative', zIndex: 2, overflowY: 'auto', overflowX: 'hidden', maxHeight: 'calc(100vh - 200px)' }}>
                 <Grid container>
                   <Grid item xs={12} md={4} sx={{ p: 4, borderRight: '1px solid', borderColor: 'divider' }}>
                     <Box sx={{ p: 4, height: '100%', borderRadius: 6, bgcolor: 'white', border: '2px dashed', borderColor: 'secondary.light', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -494,15 +602,52 @@ const UserOverview = () => {
                           renderInput={(params) => <TextField {...params} label="Employee Selection" error={Boolean(touched.empId && errors.empId)} helperText={touched.empId && errors.empId} />}
                         />
                         <TextField fullWidth label="User ID" name="userId" value={values.userId} onChange={handleChange} onBlur={handleBlur} disabled={Boolean(editingUser)} error={Boolean(touched.userId && errors.userId)} helperText={touched.userId && errors.userId} />
-                        <TextField fullWidth label={editingUser ? 'Update Password' : 'Password'} name="password" type={showPassword ? 'text' : 'password'} value={values.password} onChange={handleChange} onBlur={handleBlur} error={Boolean(touched.password && errors.password)} helperText={touched.password && errors.password} InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={handleClickShowPassword}>{showPassword ? <Visibility /> : <VisibilityOff />}</IconButton></InputAdornment> }} />
+                        <TextField fullWidth label={editingUser ? 'Update Password' : 'Password'} name="password" placeholder={editingUser ? 'Leave blank to keep current password' : ''} type={showPassword ? 'text' : 'password'} value={values.password} onChange={handleChange} onBlur={handleBlur} error={Boolean(touched.password && errors.password)} helperText={(touched.password && errors.password) || (editingUser ? 'Leave blank to keep existing credentials' : '')} InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={handleClickShowPassword}>{showPassword ? <Visibility /> : <VisibilityOff />}</IconButton></InputAdornment> }} />
                         <TextField select fullWidth label="Account Status" name="status" value={values.status} onChange={handleChange} onBlur={handleBlur}>
                           <MenuItem value={1}>Active</MenuItem>
                           <MenuItem value={0}>Suspended</MenuItem>
                         </TextField>
+
+                        <Box sx={{ pt: 2, borderTop: '1px solid #eef2f6' }}>
+                          <Typography variant="subtitle1" fontWeight={800} color="secondary.main" sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                            Organization & Division Authorization
+                          </Typography>
+                          <Stack spacing={3}>
+                            <Autocomplete
+                              multiple
+                              options={divisions}
+                              getOptionLabel={(option) => `${option.divisionName} (ID: ${option.id})`}
+                              value={divisions.filter(d => values.mappedDivisionIds.includes(d.id))}
+                              onChange={(e, newValue) => {
+                                setFieldValue('mappedDivisionIds', newValue.map(item => item.id));
+                              }}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  label="Authorized Divisions"
+                                  placeholder="Select divisions"
+                                  helperText="User will automatically be granted access to the parent companies of the selected divisions."
+                                />
+                              )}
+                              renderTags={(value, getTagProps) =>
+                                value.map((option, index) => (
+                                  <Chip
+                                    variant="outlined"
+                                    label={`${option.divisionName}`}
+                                    {...getTagProps({ index })}
+                                    color="secondary"
+                                    sx={{ borderRadius: '8px', fontWeight: 700 }}
+                                  />
+                                ))
+                              }
+                            />
+                          </Stack>
+                        </Box>
                       </Stack>
                     </Stack>
                   </Grid>
                 </Grid>
+                </Box>
 
                 {/* ── CROP DIALOG (Nested inside Content but managed via separate Dialog is better) ── */}
                 <Dialog
@@ -578,13 +723,7 @@ const UserOverview = () => {
                     </Stack>
                   </DialogActions>
                 </Dialog>
-              </DialogContent>
-              <DialogActions sx={{ p: 3, bgcolor: '#f8fafc', borderTop: '1px solid', borderColor: 'divider' }}>
-                <Button onClick={handleClose} color="inherit" sx={{ fontWeight: 700 }}>Cancel</Button>
-                <Button type="submit" variant="contained" color="secondary" disabled={isSubmitting} sx={{ px: 4, fontWeight: 700, borderRadius: '8px' }}>
-                  {editingUser ? 'Save Changes' : 'Create User'}
-                </Button>
-              </DialogActions>
+                          </DialogContent>
             </form>
           )}
         </Formik>

@@ -361,5 +361,8 @@
   "Product Capacity Master": "Product Capacity Master",
   "Model Name": "Model Name",
   "UOM": "UOM",
-  "Wind Farm": "Wind Farm"
+  "Wind Farm": "Wind Farm",
+  "Wind Farm Master": "Wind Farm Master",
+  "Customer Potential": "Customer Potential",
+  "Customer Potential Master": "Customer Potential Master"
 }
