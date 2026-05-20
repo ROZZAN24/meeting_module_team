@@ -497,6 +497,7 @@ const InductionAssignment = () => {
                 value={formData.inductionDate}
                 onChange={handleInputChange}
                 required
+                inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
                 sx={errorStyle(!!errors.inductionDate)}
@@ -531,17 +532,18 @@ const InductionAssignment = () => {
                 <MenuItem value="">-Select-</MenuItem>
                 {employees
                   .filter(emp => {
-                    if (emp.isInductionEligible !== 'YES') return false;
+                    if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
+                    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
                     const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
                     const round = formData.inductionRound;
                     if (round === 'HR') {
-                      return empDept === 'Human Resources';
+                      return empDept?.toUpperCase() === 'HR' || empDept?.toUpperCase() === 'HUMAN RESOURCES';
                     }
                     if (round === 'QMS') {
-                      return empDept === 'Quality Management';
+                      return empDept?.toUpperCase() === 'QMS' || empDept?.toUpperCase() === 'QUALITY MANAGEMENT';
                     }
                     if (round === 'DEPARTMENT') {
-                      return empDept === formData.department;
+                      return empDept?.toLowerCase() === formData.department?.toLowerCase();
                     }
                     return true;
                   })
