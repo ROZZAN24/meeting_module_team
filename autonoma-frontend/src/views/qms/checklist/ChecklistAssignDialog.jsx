@@ -19,6 +19,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
+import useAuth from 'hooks/useAuth';
 import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
@@ -55,17 +56,23 @@ const isDepartmentMatch = (allowedDepts, empDeptName) => {
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS']);
   
   // Get allowed department names for this checklist
   const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
   
   // Filter employees whose department matches one of the checklist's departments
-  const filteredEmployees = (lookups.employees || []).filter(emp => {
+  let filteredEmployees = (lookups.employees || []).filter(emp => {
     if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
     const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
     return empDept && isDepartmentMatch(allowedDeptNames, empDept.departmentName);
   });
+
+  // Fallback: If no employees match the checklist's department, show all active employees so they can still assign the task
+  if (filteredEmployees.length === 0) {
+    filteredEmployees = lookups.employees || [];
+  }
 
   const employeeOptions = filteredEmployees.map(e => ({
     label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})${e.status !== 'Active' ? ' - INACTIVE' : ''}`,
@@ -138,7 +145,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
         checklistId: checklistId,
         assignedTo: formData.assignTo,
         assignType: formData.assignType,
-        assignedBy: 'Current User' // TODO: Get from auth context
+        assignedBy: user?.name || user?.id || 'Admin'
       });
 
       if (res.data?.remarks === 'DUPLICATE_ASSIGNMENT') {

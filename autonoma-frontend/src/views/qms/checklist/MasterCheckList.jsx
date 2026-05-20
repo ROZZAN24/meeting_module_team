@@ -32,6 +32,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
 import { BOSExportButton } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
 
 import { IconUserPlus, IconEdit, IconPlus, IconFileDots, IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -68,6 +69,34 @@ const columns = [
   { id: 'attachments', label: 'Docs', minWidth: 80, align: 'center' }
 ];
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
+
 const exportColumns = [
   { header: 'Seq No', key: 'seqNo' },
   { header: 'Checking Point', key: 'checkingPoint' },
@@ -75,27 +104,27 @@ const exportColumns = [
   { header: 'Frequency', key: 'frequency' },
   { header: 'Level', key: 'levelIds' },
   { header: 'Department', key: (r) => (r.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Effective From', key: 'effectiveFrom' },
+  { header: 'Effective From', key: (r) => formatDate(r.effectiveFrom) },
   { header: 'Days', key: 'reminderDays' },
-  { header: 'Expire Date', key: 'expiryDate' },
-  { header: 'Reminder Date', key: 'reminderDate' },
+  { header: 'Expire Date', key: (r) => formatDate(r.expiryDate) },
+  { header: 'Reminder Date', key: (r) => formatDate(r.reminderDate) },
   { header: 'Stock Link', key: 'stockLink' },
   { header: 'Assign To', key: 'assignTo' },
-  { header: 'Assign Date', key: 'assignDate' },
+  { header: 'Assign Date', key: (r) => formatDate(r.assignDate) },
   { header: 'Item Code', key: 'itemCode' },
   { header: 'Qty', key: 'qty' },
   { header: 'Photo Required', key: 'photoRequired' },
   { header: 'Dual Check', key: 'dualCheck' },
   { header: 'Carry Forward', key: 'carryForward' },
   { header: 'CREATED USER', key: 'createdBy' },
-  { header: 'CREATED DATE', key: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : (r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '') },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
   { header: 'UPDATED USER', key: 'updatedBy' },
-  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '' },
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.updatedDate) },
   { header: 'Status', key: 'status' },
   { header: 'Task Status', key: 'taskStatus' },
   { header: 'Verify Status', key: 'verifyStatus' },
   { header: 'Verified By', key: 'verifiedBy' },
-  { header: 'Verified Date', key: 'verifiedDate' },
+  { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) },
   { header: 'Rej Reason', key: 'rejReason' }
 ];
 
@@ -219,6 +248,7 @@ function FilterSection({ title, open, onToggle, children }) {
 
 export default function MasterCheckList() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [isAmendment, setIsAmendment] = useState(false);
@@ -411,6 +441,9 @@ export default function MasterCheckList() {
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v /* NaN check */)
       );
 
+      // Inject current logged-in user context
+      body.updatedBy = user?.name || user?.id || 'Admin';
+
       // Build query string with repeated departments params: ?departments=A&departments=B
       const qs = new URLSearchParams();
       departments.forEach((d) => qs.append('departments', d));
@@ -446,6 +479,11 @@ export default function MasterCheckList() {
   const handleAssignClick = () => {
     if (!selectedRowId) {
       alert('Please select a row first!');
+      return;
+    }
+    const selectedRow = rows.find((r) => r.id === selectedRowId);
+    if (selectedRow?.verifyStatus !== 'Verified') {
+      alert('Only verified checklists can be assigned to users!');
       return;
     }
     setAssignDialogOpen(true);
@@ -538,27 +576,27 @@ export default function MasterCheckList() {
                 <TableCell sx={{ minWidth: 120 }}>{row.frequency}</TableCell>
                 <TableCell sx={{ minWidth: 150 }}>{row.levelIds || '-'}</TableCell>
                 <TableCell sx={{ minWidth: 150 }}>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.effectiveFrom}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.effectiveFrom)}</TableCell>
                 <TableCell sx={{ minWidth: 80 }}>{row.reminderDays}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.expiryDate}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.reminderDate}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.expiryDate)}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.reminderDate)}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{row.stockLink}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{row.assignTo}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.assignDate}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.assignDate)}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{row.itemCode}</TableCell>
                 <TableCell sx={{ minWidth: 80 }}>{row.qty}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{row.photoRequired}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{row.dualCheck}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{row.carryForward}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{row.createdBy}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : ''}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.createdAt)}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{row.updatedBy}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : ''}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.updatedAt)}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{row.status}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{row.taskStatus}</TableCell>
                 <TableCell sx={{ minWidth: 150 }}>{row.verifyStatus}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{row.verifiedBy}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{row.verifiedDate ? new Date(row.verifiedDate).toLocaleDateString() : ''}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(row.verifiedDate)}</TableCell>
                 <TableCell sx={{ minWidth: 200 }}>{row.rejReason}</TableCell>
                 <TableCell sx={{ minWidth: 80, align:'center' }}>-</TableCell>
                 </TableRow>

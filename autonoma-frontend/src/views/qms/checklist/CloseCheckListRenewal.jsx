@@ -34,12 +34,22 @@ import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, I
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
-  '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Stock Link', 'Item Code', 'Quantity', 'Assign To',
-  'Date', 'Checklist Date', 'Expire Date', 'Next Due Date',
-  'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required',
-  'Carry Forward',
-  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
+  '#',
+  'Seq.No',
+  'Checking Point',
+  'Frequency',
+  'Category',
+  'Assign Type',
+  'Photo Required',
+  'Verification Required',
+  'Assign Date',
+  'Next Renewal Date',
+  'Assign To',
+  'Verification Status',
+  'Created User',
+  'Created Date',
+  'Updated User',
+  'Updated Date'
 ];
 
 const STATUS_OPTIONS = [
@@ -98,32 +108,50 @@ const tableCols = [
   { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
+
 const exportColumns = [
-  { header: 'Task Type', key: (r) => r.assignType || 'Mine' },
   { header: 'Seq.No', key: (r) => r.checklist?.seqNo },
   { header: 'Checking Point', key: (r) => r.checklist?.checkingPoint },
-  { header: 'Descriptions', key: (r) => r.checklist?.description },
-  { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
-  { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Stock Link', key: (r) => r.checklist?.stockLink },
-  { header: 'Item Code', key: (r) => r.checklist?.itemCode },
-  { header: 'Quantity', key: (r) => r.checklist?.qty },
-  { header: 'Assign To', key: (r) => r.assignedTo },
-  { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
-  { header: 'Checklist Date', key: 'checklistDate' },
-  { header: 'Expire Date', key: (r) => r.checklist?.expiryDate ? new Date(r.checklist.expiryDate).toLocaleDateString() : '' },
-  { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
-  { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
-  { header: 'Attended Date', key: 'attendedDate' },
-  { header: 'Attended By', key: 'attendedBy' },
-  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
+  { header: 'Category', key: (r) => r.checklist?.category },
+  { header: 'Assign Type', key: (r) => r.assignType || 'Mine' },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
-  { header: 'Carry Forward', key: (r) => r.carryForward || r.checklist?.carryForward },
-  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
-  { header: 'CREATED DATE', key: (r) => r.checklist?.createdAt ? new Date(r.checklist.createdAt).toLocaleDateString() : (r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '') },
-  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : (r.checklist?.updatedAt ? new Date(r.checklist.updatedAt).toLocaleDateString() : '') }
+  { header: 'Verification Required', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
+  { header: 'Assign Date', key: (r) => formatDate(r.assignedDate) },
+  { header: 'Next Renewal Date', key: (r) => r.checklist?.nextDueDate || formatDate(r.checklist?.expiryDate) },
+  { header: 'Assign To', key: (r) => r.assignedTo },
+  { header: 'Verification Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
+  { header: 'Created User', key: (r) => r.checklist?.createdBy },
+  { header: 'Created Date', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
+  { header: 'Updated User', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'Updated Date', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
 const filterConfig = [
@@ -197,8 +225,8 @@ function FilterSection({ title, open, onToggle, children }) {
 }
 
 function StatusChip({ status }) {
-  const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning' };
-  const label = typeof status === 'object' ? status?.name : status;
+  const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
+  let label = typeof status === 'object' ? status?.name : status;
   return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
 }
 
@@ -275,6 +303,7 @@ export default function CloseCheckListRenewal() {
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.name || user?.id || undefined,
+        excludePending: false,
 
         // Add-on filters
         seqNo: filters.seqNo || undefined,
@@ -321,7 +350,7 @@ export default function CloseCheckListRenewal() {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: `Status updated to ${status}`
       });
       fetchAssignments();
@@ -447,31 +476,21 @@ export default function CloseCheckListRenewal() {
                   sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
-                  <TableCell>{row.assignType || 'Mine'}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>
                   <TableCell>{row.checklist?.checkingPoint}</TableCell>
-                  <TableCell>{row.checklist?.description}</TableCell>
-                  <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
-                  <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{row.checklist?.stockLink || '-'}</TableCell>
-                  <TableCell>{row.checklist?.itemCode || '-'}</TableCell>
-                  <TableCell>{row.checklist?.qty || '-'}</TableCell>
+                  <TableCell>{row.checklist?.category}</TableCell>
+                  <TableCell>{row.assignType || 'Mine'}</TableCell>
+                  <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                  <TableCell>{formatDate(row.assignedDate)}</TableCell>
+                  <TableCell>{row.checklist?.nextDueDate || formatDate(row.checklist?.expiryDate)}</TableCell>
                   <TableCell>{row.assignedTo || '-'}</TableCell>
-                  <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.checklistDate}</TableCell>
-                  <TableCell>{row.checklist?.expiryDate ? new Date(row.checklist.expiryDate).toLocaleDateString() : '-'}</TableCell>
-                  <TableCell>{row.checklist?.nextDueDate}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{row.attendedDate}</TableCell>
-                  <TableCell>{row.attendedBy}</TableCell>
-                  <TableCell>{row.checklist?.verificationRequired}</TableCell>
-                  <TableCell>{row.checklist?.photoRequired}</TableCell>
-                  <TableCell>{row.carryForward || row.checklist?.carryForward || '-'}</TableCell>
                   <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
-                  <TableCell>{row.checklist?.createdAt ? new Date(row.checklist.createdAt).toLocaleDateString() : (row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
                   <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
-                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : (row.checklist?.updatedAt ? new Date(row.checklist.updatedAt).toLocaleDateString() : '-')}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

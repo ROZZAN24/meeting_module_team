@@ -6,7 +6,11 @@ import {
   Typography,
   Chip,
   Button,
-  useTheme
+  useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import { 
   IconUser, 
@@ -42,6 +46,8 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
     actualFiles: []
   });
   const [verifyRemarks, setVerifyRemarks] = useState('');
+  const [rejectOpen, setRejectOpen] = useState(false);
+  const [rejectComment, setRejectComment] = useState('');
 
   useEffect(() => {
     if (data) {
@@ -71,6 +77,8 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
         })
       });
       setVerifyRemarks('');
+      setRejectOpen(false);
+      setRejectComment('');
     }
   }, [data, open]);
 
@@ -135,7 +143,10 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
             <Button
               variant="contained"
               color="error"
-              onClick={() => onReject(verifyRemarks)}
+              onClick={() => {
+                setRejectComment('');
+                setRejectOpen(true);
+              }}
               startIcon={<IconBan size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
@@ -158,7 +169,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               startIcon={<IconChecks size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
-              {isAssignment ? 'Accept' : 'Verify'}
+              Verify
             </Button>
           </Stack>
         )
@@ -204,10 +215,27 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               
               {isExecution ? (
                 <>
+                  {data.remarks && (
+                    <BOSTextField 
+                      label="Previous Remarks / Manager Feedback" 
+                      value={data.remarks} 
+                      multiline 
+                      rows={3} 
+                      disabled 
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff8f0' } }}
+                    />
+                  )}
                   <BOSTextField 
                     select 
                     label="Status" 
-                    value={formData.status === 'Pending for Verified' ? 'Completed' : formData.status} 
+                    value={
+                      (formData.status === 'Pending for Verified' || 
+                       formData.status === 'Rejected' ||
+                       formData.status === 'Pending' ||
+                       formData.status === 'Started')
+                        ? (formData.status === 'Started' ? 'Started' : 'Completed')
+                        : formData.status
+                    } 
                     onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
                     required
                   >
@@ -317,6 +345,58 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
           </BOSFormSection>
         </Stack>
       </Box>
+
+      {/* MANDATORY REJECTION COMMENTS POPUP */}
+      <Dialog 
+        open={rejectOpen} 
+        onClose={() => setRejectOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        sx={{ zIndex: 1400 }}
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: theme.palette.error.light, color: theme.palette.error.dark }}>
+          <IconBan size={24} />
+          <Typography component="span" variant="h3" color="inherit">Reject Checklist - {master.seqNo}</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3, pt: '24px !important' }}>
+          <Stack spacing={2.5}>
+            <Typography variant="body1" color="text.secondary">
+              Please enter a comment explaining the reason for rejecting this checklist item. Comments are mandatory to reject.
+            </Typography>
+            <BOSTextField
+              label="Rejection Comments"
+              value={rejectComment}
+              onChange={(e) => setRejectComment(e.target.value)}
+              multiline
+              rows={4}
+              placeholder="Provide detailed rejection feedback here..."
+              required
+              error={!rejectComment.trim()}
+              helperText={!rejectComment.trim() ? "Comment is required to proceed with rejection." : ""}
+              fullWidth
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Button onClick={() => setRejectOpen(false)} variant="outlined" color="primary" sx={{ borderRadius: '8px', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={() => {
+              if (rejectComment.trim()) {
+                onReject(rejectComment.trim());
+                setRejectOpen(false);
+              }
+            }} 
+            variant="contained" 
+            color="error" 
+            disabled={!rejectComment.trim()}
+            sx={{ borderRadius: '8px', fontWeight: 600 }}
+          >
+            Reject
+          </Button>
+        </DialogActions>
+      </Dialog>
     </BOSFormDialog>
   );
 };

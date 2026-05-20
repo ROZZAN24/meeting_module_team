@@ -28,6 +28,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -74,23 +75,51 @@ const tableCols = [
   { id: 'verifiedDate', label: 'Verified Date' }
 ];
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
+
 const exportColumns = [
   { header: 'Seq No', key: 'seqNo' },
   { header: 'Checking Point', key: 'checkingPoint' },
   { header: 'Category', key: 'category' },
   { header: 'Frequency', key: 'frequency' },
   { header: 'Department', key: (r) => (r.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Effective From', key: 'effectiveFrom' },
+  { header: 'Effective From', key: (r) => formatDate(r.effectiveFrom) },
   { header: 'Days', key: 'reminderDays' },
-  { header: 'Expire Date', key: 'expiryDate' },
+  { header: 'Expire Date', key: (r) => formatDate(r.expiryDate) },
   { header: 'Stock Link', key: 'stockLink' },
   { header: 'CREATED USER', key: 'createdBy' },
-  { header: 'CREATED DATE', key: (r) => r.createdAt ? new Date(r.createdAt).toLocaleDateString() : (r.createdDate ? new Date(r.createdDate).toLocaleDateString() : '') },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
   { header: 'UPDATED USER', key: 'updatedBy' },
-  { header: 'UPDATED DATE', key: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '' },
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.updatedDate) },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
-  { header: 'Verified Date', key: 'verifiedDate' }
+  { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) }
 ];
 
 const filterConfig = [
@@ -166,6 +195,7 @@ function StatusChip({ status }) {
 
 export default function CheckListVerify() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -269,7 +299,7 @@ export default function CheckListVerify() {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: remarks || (status === 'Rejected' ? 'Rejected by verifier' : 'Verified')
       });
       fetchChecklists();
@@ -367,17 +397,17 @@ export default function CheckListVerify() {
                   <TableCell>{row.category}</TableCell>
                   <TableCell>{row.frequency}</TableCell>
                   <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{row.effectiveFrom}</TableCell>
+                  <TableCell>{formatDate(row.effectiveFrom)}</TableCell>
                   <TableCell>{row.reminderDays}</TableCell>
-                  <TableCell>{row.expiryDate}</TableCell>
+                  <TableCell>{formatDate(row.expiryDate)}</TableCell>
                   <TableCell>{row.stockLink}</TableCell>
                   <TableCell>{row.createdBy || '-'}</TableCell>
-                  <TableCell>{row.createdAt ? new Date(row.createdAt).toLocaleDateString() : (row.createdDate ? new Date(row.createdDate).toLocaleDateString() : '')}</TableCell>
+                  <TableCell>{formatDate(row.createdAt || row.createdDate)}</TableCell>
                   <TableCell>{row.updatedBy || '-'}</TableCell>
-                  <TableCell>{row.updatedAt ? new Date(row.updatedAt).toLocaleDateString() : '-'}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.updatedDate)}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
                   <TableCell>{row.verifiedBy}</TableCell>
-                  <TableCell>{row.verifiedDate}</TableCell>
+                  <TableCell>{formatDate(row.verifiedDate)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

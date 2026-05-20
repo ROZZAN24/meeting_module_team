@@ -4,13 +4,14 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Grid, Box, Typography, TextField, Select, MenuItem,
   Button, IconButton, Divider, Checkbox, ListItemText, Slide, useTheme,
-  CircularProgress, Autocomplete, Chip
+  CircularProgress, Autocomplete, Chip, FormControl, InputLabel
 } from '@mui/material';
 import {
   IconX, IconCheck, IconEraser, IconCloudUpload, IconCamera, IconFileDescription,
   IconMicrophone, IconMicrophoneOff
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import useLookups from 'hooks/useLookups';
 import * as XLSX from 'xlsx';
 import mammoth from 'mammoth';
 
@@ -172,14 +173,12 @@ const Transition = React.forwardRef(function Transition(props, ref) {
 });
 
 const LabelInput = ({ label, required, children }) => (
-  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1.5 }}>
-    <Box sx={{ width: 135, flexShrink: 0, pt: 0.8 }}>
-      <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
-        {label}
-        {required && <Typography component="span" sx={{ color: 'error.main', fontWeight: 900, ml: 0.2 }}>*</Typography>}
-      </Typography>
-    </Box>
-    <Box sx={{ flex: 1 }}>{children}</Box>
+  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.6, width: '100%' }}>
+    <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.78rem', color: 'text.secondary' }}>
+      {label}
+      {required && <Typography component="span" sx={{ color: 'error.main', fontWeight: 900, ml: 0.2 }}>*</Typography>}
+    </Typography>
+    <Box sx={{ width: '100%' }}>{children}</Box>
   </Box>
 );
 const formatDateForInput = (dateVal) => {
@@ -214,10 +213,39 @@ const formatDateForInput = (dateVal) => {
   }
 };
 
+const inputSx = {
+  backgroundColor: '#fff',
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '8px',
+    '& fieldset': {
+      borderColor: '#cbd5e1',
+    },
+    '&:hover fieldset': {
+      borderColor: '#94a3b8',
+    },
+    '&.Mui-focused fieldset': {
+      borderColor: '#2563eb',
+      borderWidth: '1px',
+    },
+  },
+  '& .MuiInputLabel-root': {
+    color: '#64748b',
+    '&.Mui-focused': {
+      color: '#2563eb',
+    },
+  },
+  '& .MuiFormLabel-asterisk': {
+    color: '#ef4444',
+  }
+};
+
 export default function AddCheckListDialog({ open, handleClose, onSave, initialData, isAmendment }) {
   const theme = useTheme();
 
   const [seqNo, setSeqNo] = useState('');
+  const [assignTo, setAssignTo] = useState('');
+  const lookups = useLookups(['EMPLOYEES']);
+  const employeeList = (lookups.employees || []).map(e => e.employeeName || `${e.firstName} ${e.lastName}`);
   const [category, setCategory] = useState('');
   const [effectiveFrom, setEffectiveFrom] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
@@ -303,6 +331,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     if (open) {
       if (initialData) {
         setSeqNo(initialData.seqNo || '');
+        setAssignTo(initialData.assignTo || '');
         setCategory(initialData.category || '');
         setEffectiveFrom(formatDateForInput(initialData.effectiveFrom));
         setExpiryDate(formatDateForInput(initialData.expiryDate));
@@ -324,7 +353,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setUploadedFiles([]);
         setScannedFiles([]);
       } else {
-        setSeqNo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
+        setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
         setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
         setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
         setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
@@ -378,7 +407,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     if (e.target.files?.length) setScannedFiles(prev => [...prev, ...Array.from(e.target.files)]);
   };
   const handleClear = () => {
-    setSeqNo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
+    setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
     setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
     setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
@@ -386,7 +415,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setAmendmentReason('');
     setLevelIds([]);
   };
-  const handleSave = () => {
+  const handleSave = (statusOverride) => {
     const missing = [];
     if (!category) missing.push('Category');
     if (!frequency) missing.push('Frequency');
@@ -395,7 +424,6 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     if (!description) missing.push('Descriptions/SOP');
     if (department.length === 0) missing.push('Department');
     if (levelIds.length === 0) missing.push('Levels');
-
     if (missing.length > 0) {
       alert(`Please fill in all required fields: ${missing.join(', ')}`);
       return;
@@ -403,14 +431,20 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     if (isAmendment && !amendmentReason) {
       alert('Please provide an Amendment Reason!'); return;
     }
+
+    const statusVal = statusOverride === 'INACTIVE' ? 'Inactive' : 'Active';
+
     if (onSave) onSave({
       id: initialData?.id || null,
       seqNo,
+      assignTo: assignTo || null,
       category,
       checkingPoint: renewalPoint,
       frequency,
       description,
       department,
+      status: statusVal,
+      verificationRequired: dualCheck === 'YES' ? 'YES' : 'NO',
       effectiveFrom: effectiveFrom || null,
       stockLink: stockLink || null,
       photoRequired: photoRequired || null,
@@ -435,129 +469,233 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       <Dialog
         open={open} TransitionComponent={Transition} keepMounted onClose={handleClose}
         maxWidth="lg" fullWidth
-        PaperProps={{ sx: { height: '90vh' } }}
+        PaperProps={{ sx: { height: '90vh', borderRadius: '12px', overflow: 'hidden' } }}
       >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'primary.light', py: 1.2 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: 'primary.dark' }}>Master Details of Check List</Typography>
-          <IconButton onClick={handleClose} size="small"><IconX size={20} /></IconButton>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f1f5f9', borderBottom: '1px solid #e2e8f0', py: 1.8, px: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 600, color: '#1e3a8a' }}>Master Details of Check List</Typography>
+          <IconButton onClick={handleClose} size="small" sx={{ color: '#64748b' }}><IconX size={20} /></IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 2, display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-          <Grid container spacing={2} sx={{ height: '100%', flexWrap: 'nowrap' }}>
-
-            {/* ── LEFT: Form ── */}
-            <Grid item sx={{ width: 360, flexShrink: 0, height: '100%', overflowY: 'auto' }}>
-              <LabelInput label="Sequence No" required>
-                <TextField fullWidth size="small" value={seqNo} InputProps={{ readOnly: true }} />
-              </LabelInput>
-              <LabelInput label="Category" required>
-                <Select fullWidth size="small" value={category} onChange={e => setCategory(e.target.value)} displayEmpty>
+        <DialogContent sx={{ p: 4, pt: '24px !important', display: 'flex', flexDirection: 'column', gap: 3.5, bgcolor: '#f8fafc', overflowY: 'auto' }}>
+          {/* Form Fields CSS Grid */}
+          <Box sx={{ 
+            display: 'grid', 
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, 1fr)' }, 
+            gap: 2.5,
+            mt: 1
+          }}>
+            {/* ROW 1 */}
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <TextField
+                label="Sequence No"
+                fullWidth
+                size="small"
+                value={seqNo}
+                InputProps={{ readOnly: true }}
+                InputLabelProps={{ shrink: true }}
+                required
+                sx={inputSx}
+              />
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="category-label">Category</InputLabel>
+                <Select
+                  labelId="category-label"
+                  label="Category"
+                  value={category}
+                  onChange={e => setCategory(e.target.value)}
+                >
                   <MenuItem value=""><em>-Select-</em></MenuItem>
                   <MenuItem value="RENEWAL">RENEWAL</MenuItem>
                   <MenuItem value="CHECK LIST">CHECK LIST</MenuItem>
                 </Select>
-              </LabelInput>
-              <LabelInput label="Frequency" required>
-                <Select fullWidth size="small" value={frequency} onChange={e => setFrequency(e.target.value)} displayEmpty>
+              </FormControl>
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="frequency-label">Frequency</InputLabel>
+                <Select
+                  labelId="frequency-label"
+                  label="Frequency"
+                  value={frequency}
+                  onChange={e => setFrequency(e.target.value)}
+                >
                   <MenuItem value=""><em>-Select-</em></MenuItem>
                   {['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY', 'CUSTOM'].map(f => (
                     <MenuItem key={f} value={f}>{f}</MenuItem>
                   ))}
                 </Select>
-              </LabelInput>
-              
-              {frequency === 'WEEKLY' && (
-                <LabelInput label="Week Day" required>
-                  <Select
-                    fullWidth size="small" value={weekDays}
-                    onChange={e => setWeekDays(e.target.value)}
-                    displayEmpty
-                  >
-                    <MenuItem value=""><em>-Select-</em></MenuItem>
-                    {WEEK_DAYS.map(day => (
-                      <MenuItem key={day} value={day}>
-                        {day}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </LabelInput>
-              )}
+              </FormControl>
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <TextField
+                label="Effective From"
+                fullWidth
+                size="small"
+                type="date"
+                value={effectiveFrom}
+                onChange={e => setEffectiveFrom(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}}
+                required
+                sx={inputSx}
+              />
+            </Box>
 
-              {frequency === 'CUSTOM' && (
-                <LabelInput label="Repeat Every" required>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <TextField 
-                      fullWidth size="small" 
-                      placeholder="e.g. 2"
-                      value={repeatEveryValue} 
-                      onChange={e => setRepeatEveryValue(e.target.value)} 
-                    />
-                    <Select 
-                      fullWidth size="small" 
-                      value={repeatEveryUnit} 
-                      onChange={e => setRepeatEveryUnit(e.target.value)} 
-                      displayEmpty
-                    >
-                      <MenuItem value=""><em>-Select-</em></MenuItem>
-                      <MenuItem value="DAYS">DAYS</MenuItem>
-                      <MenuItem value="WEEKS">WEEKS</MenuItem>
-                      <MenuItem value="MONTHS">MONTHS</MenuItem>
-                      <MenuItem value="YEARS">YEARS</MenuItem>
-                    </Select>
-                  </Box>
-                </LabelInput>
-              )}
-              <LabelInput label="Effective From" required>
-                <TextField fullWidth size="small" type="date" value={effectiveFrom} onChange={e => setEffectiveFrom(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
-              </LabelInput>
-              <LabelInput label="Expiry Date">
-                <TextField fullWidth size="small" type="date" value={expiryDate} onChange={e => setExpiryDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
-              </LabelInput>
-              <LabelInput label="Reminder Days">
-                <TextField fullWidth size="small" type="number" value={reminderDays} onChange={e => handleReminderDaysChange(e.target.value)} />
-              </LabelInput>
-              <LabelInput label="Reminder Date">
-                <TextField fullWidth size="small" type="date" value={reminderDate} onChange={e => setReminderDate(e.target.value)} InputLabelProps={{ shrink: true }} inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}} />
-              </LabelInput>
-              <LabelInput label="Renewal Point" required>
-                <TextField fullWidth size="small" value={renewalPoint} onChange={e => setRenewalPoint(e.target.value)} />
-              </LabelInput>
-              <LabelInput label="Descriptions/SOP" required>
-                <Box sx={{ position: 'relative' }}>
-                  <TextField
-                    fullWidth size="small" multiline minRows={4}
-                    value={isListening && interimText ? description + ' ' + interimText : description}
-                    onChange={e => setDescription(e.target.value)}
-                    placeholder="Standard Operating Procedure... (or use mic 🎤)"
-                    InputProps={{ sx: { pr: '44px' } }}
-                  />
-                  <IconButton
-                    onClick={toggleListening}
-                    size="small"
-                    title={isListening ? 'Stop recording' : isSpeechSupported ? 'Start voice input' : 'Not supported — use Chrome/Edge'}
-                    sx={{
-                      position: 'absolute', bottom: 8, right: 6,
-                      color: isListening ? 'error.main' : 'text.secondary',
-                      animation: isListening ? 'micPulse 1.2s ease-in-out infinite' : 'none',
-                      '@keyframes micPulse': {
-                        '0%':   { transform: 'scale(1)',    opacity: 1 },
-                        '50%':  { transform: 'scale(1.3)',  opacity: 0.55 },
-                        '100%': { transform: 'scale(1)',    opacity: 1 },
-                      }
-                    }}
-                  >
-                    {isListening ? <IconMicrophone size={18} /> : <IconMicrophoneOff size={18} />}
-                  </IconButton>
+            {/* Dynamic frequency helper inputs - if WEEKLY or CUSTOM are selected */}
+            {(frequency === 'WEEKLY' || frequency === 'CUSTOM') && (
+              <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 4' } }}>
+                <Box sx={{ p: 2.5, border: '1px dashed', borderColor: 'primary.main', borderRadius: 2, bgcolor: '#ffffff', display: 'flex', gap: 2.5, alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                  {frequency === 'WEEKLY' && (
+                    <FormControl size="small" sx={{ minWidth: 200, ...inputSx }} required>
+                      <InputLabel id="weekly-day-label">Week Day</InputLabel>
+                      <Select
+                        labelId="weekly-day-label"
+                        label="Week Day"
+                        value={weekDays}
+                        onChange={e => setWeekDays(e.target.value)}
+                      >
+                        <MenuItem value=""><em>-Select-</em></MenuItem>
+                        {WEEK_DAYS.map(day => (
+                          <MenuItem key={day} value={day}>{day}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                  {frequency === 'CUSTOM' && (
+                    <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center' }}>
+                      <TextField 
+                        label="Repeat Every"
+                        size="small"
+                        sx={{ width: 140, ...inputSx }}
+                        placeholder="e.g. 2"
+                        value={repeatEveryValue} 
+                        onChange={e => setRepeatEveryValue(e.target.value)} 
+                        required
+                      />
+                      <FormControl size="small" sx={{ width: 180, ...inputSx }} required>
+                        <InputLabel id="repeat-unit-label">Unit</InputLabel>
+                        <Select
+                          labelId="repeat-unit-label"
+                          label="Unit"
+                          value={repeatEveryUnit} 
+                          onChange={e => setRepeatEveryUnit(e.target.value)} 
+                        >
+                          <MenuItem value=""><em>-Select-</em></MenuItem>
+                          <MenuItem value="DAYS">DAYS</MenuItem>
+                          <MenuItem value="WEEKS">WEEKS</MenuItem>
+                          <MenuItem value="MONTHS">MONTHS</MenuItem>
+                          <MenuItem value="YEARS">YEARS</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Box>
+                  )}
                 </Box>
-                {isListening && (
-                  <Typography variant="caption" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                    <IconMicrophone size={12} /> Listening… speak now
-                  </Typography>
-                )}
-              </LabelInput>
-              <LabelInput label="Department" required>
+              </Box>
+            )}
+
+            {/* ROW 2 */}
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <TextField
+                label="Expiry Date (dd/mm/yyyy)"
+                fullWidth
+                size="small"
+                type="date"
+                value={expiryDate}
+                onChange={e => setExpiryDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}}
+                sx={inputSx}
+              />
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <TextField
+                label="Reminder Days"
+                fullWidth
+                size="small"
+                type="number"
+                value={reminderDays}
+                onChange={e => handleReminderDaysChange(e.target.value)}
+                sx={inputSx}
+              />
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <TextField
+                label="Reminder Date (dd/mm/yyyy)"
+                fullWidth
+                size="small"
+                type="date"
+                value={reminderDate}
+                onChange={e => setReminderDate(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}}
+                sx={inputSx}
+              />
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <TextField
+                label="Renewal Point"
+                fullWidth
+                size="small"
+                value={renewalPoint}
+                onChange={e => setRenewalPoint(e.target.value)}
+                required
+                sx={inputSx}
+              />
+            </Box>
+
+            {/* ROW 3 - Descriptions/SOP */}
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 4' } }}>
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  label="Descriptions/SOP"
+                  fullWidth
+                  size="small"
+                  multiline
+                  minRows={4}
+                  value={isListening && interimText ? description + ' ' + interimText : description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Standard Operating Procedure... (or use mic 🎤)"
+                  InputLabelProps={{ shrink: true }}
+                  InputProps={{ sx: { pr: '44px' } }}
+                  required
+                  sx={inputSx}
+                />
+                <IconButton
+                  onClick={toggleListening}
+                  size="small"
+                  title={isListening ? 'Stop recording' : isSpeechSupported ? 'Start voice input' : 'Not supported — use Chrome/Edge'}
+                  sx={{
+                    position: 'absolute', bottom: 12, right: 12,
+                    color: isListening ? 'error.main' : 'text.secondary',
+                    animation: isListening ? 'micPulse 1.2s ease-in-out infinite' : 'none',
+                    '@keyframes micPulse': {
+                      '0%':   { transform: 'scale(1)',    opacity: 1 },
+                      '50%':  { transform: 'scale(1.3)',  opacity: 0.55 },
+                      '100%': { transform: 'scale(1)',    opacity: 1 },
+                    }
+                  }}
+                >
+                  {isListening ? <IconMicrophone size={18} /> : <IconMicrophoneOff size={18} />}
+                </IconButton>
+              </Box>
+              {isListening && (
+                <Typography variant="caption" sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                  <IconMicrophone size={12} /> Listening… speak now
+                </Typography>
+              )}
+            </Box>
+
+            {/* ROW 4 */}
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="department-label">Department</InputLabel>
                 <Select
-                  multiple fullWidth size="small" value={department}
+                  labelId="department-label"
+                  label="Department"
+                  multiple
+                  value={department}
                   onChange={e => {
                     const val = e.target.value;
                     if (val.includes('Select All')) {
@@ -570,7 +708,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                       setDepartment(typeof val === 'string' ? val.split(',') : val);
                     }
                   }}
-                  renderValue={sel => sel.length === 0 ? <em>-Select-</em> : sel.length === DEPARTMENTS.length ? 'All Departments' : sel.join(', ')}
+                  renderValue={sel => sel.length === 0 ? '-Select-' : sel.length === DEPARTMENTS.length ? 'All Departments' : sel.join(', ')}
                 >
                   <MenuItem value="Select All">
                     <Checkbox 
@@ -588,146 +726,270 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                     </MenuItem>
                   ))}
                 </Select>
-              </LabelInput>
+              </FormControl>
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <Autocomplete
+                multiple
+                size="small"
+                options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
+                value={levelIds}
+                onChange={(e, val) => setLevelIds(val)}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
+                  })
+                }
+                renderInput={(params) => (
+                  <TextField {...params} label="Levels" placeholder="Select Levels" size="small" required sx={inputSx} />
+                )}
+              />
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="photo-required-label">Photo Required</InputLabel>
+                <Select
+                  labelId="photo-required-label"
+                  label="Photo Required"
+                  value={photoRequired}
+                  onChange={e => setPhotoRequired(e.target.value)}
+                >
+                  <MenuItem value=""><em>-Select-</em></MenuItem>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="dual-check-label">Dual Check</InputLabel>
+                <Select
+                  labelId="dual-check-label"
+                  label="Dual Check"
+                  value={dualCheck}
+                  onChange={e => setDualCheck(e.target.value)}
+                >
+                  <MenuItem value=""><em>-Select-</em></MenuItem>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
 
-              <LabelInput label="Levels" required>
-                <Autocomplete
-                  multiple
-                  size="small"
-                  options={['L1', 'L2', 'L3', 'L4', 'L5', 'L6', 'L7']}
-                  value={levelIds}
-                  onChange={(e, val) => setLevelIds(val)}
-                  renderTags={(value, getTagProps) =>
-                    value.map((option, index) => {
-                      const { key, ...tagProps } = getTagProps({ index });
-                      return <Chip key={key} variant="outlined" label={option} size="small" {...tagProps} />;
-                    })
-                  }
-                  renderInput={(params) => (
-                    <TextField {...params} placeholder="Select Levels" size="small" />
-                  )}
+            {/* ROW 5 */}
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="carry-forward-label">Carry Forward</InputLabel>
+                <Select
+                  labelId="carry-forward-label"
+                  label="Carry Forward"
+                  value={carryForward}
+                  onChange={e => setCarryForward(e.target.value)}
+                >
+                  <MenuItem value=""><em>-Select-</em></MenuItem>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+              <FormControl fullWidth size="small" required sx={inputSx}>
+                <InputLabel id="stock-link-label">Stock Link</InputLabel>
+                <Select
+                  labelId="stock-link-label"
+                  label="Stock Link"
+                  value={stockLink}
+                  onChange={e => setStockLink(e.target.value)}
+                >
+                  <MenuItem value=""><em>-Select-</em></MenuItem>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}></Box>
+
+            {isAmendment && (
+              <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 4' } }}>
+                <TextField 
+                  label="Amendment Reason"
+                  fullWidth 
+                  size="small" 
+                  multiline 
+                  minRows={2} 
+                  value={amendmentReason} 
+                  onChange={e => setAmendmentReason(e.target.value)} 
+                  placeholder="Enter reason for this amendment..."
+                  required
+                  sx={inputSx}
                 />
-              </LabelInput>
+              </Box>
+            )}
+          </Box>
 
-              {/* ── Yes/No dropdowns ── */}
-              {[{ label: 'Stock Link', value: stockLink, setter: setStockLink },
-                { label: 'Photo Required', value: photoRequired, setter: setPhotoRequired },
-                { label: 'Dual Check', value: dualCheck, setter: setDualCheck },
-                { label: 'Carry Forward', value: carryForward, setter: setCarryForward }]
-                .map(({ label, value, setter }) => (
-                  <LabelInput key={label} label={label} required>
-                    <Select fullWidth size="small" value={value} onChange={e => setter(e.target.value)} displayEmpty>
-                      <MenuItem value=""><em>-Select-</em></MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                      <MenuItem value="NO">NO</MenuItem>
-                    </Select>
-                  </LabelInput>
-                ))
-              }
-
-              {isAmendment && (
-                <LabelInput label="Amendment Reason" required>
-                  <TextField 
-                    fullWidth 
-                    size="small" 
-                    multiline 
-                    minRows={2} 
-                    value={amendmentReason} 
-                    onChange={e => setAmendmentReason(e.target.value)} 
-                    placeholder="Enter reason for this amendment..."
-                  />
-                </LabelInput>
-              )}
-            </Grid>
-
-            {/* ── RIGHT: Upload + Scan boxes (fill remaining space) ── */}
-            <Grid item sx={{ flex: 1, height: '100%', display: 'flex', gap: 2, minWidth: 0, pl: 1 }}>
-
-              {/* Uploaded Files box */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Uploaded Files</Typography>
-                  <Button component="label" variant="contained" color="secondary" size="small"
+          {/* BOTTOM SECTION: Files Grid */}
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            {/* Uploaded Files box */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#334155' }}>Uploaded Files</Typography>
+                  <Button
+                    component="label"
+                    variant="contained"
+                    size="small"
                     startIcon={<IconCloudUpload size={16} />}
-                    sx={{ borderRadius: 1.5, textTransform: 'none', fontSize: '0.78rem' }}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: '8px',
+                      bgcolor: '#5c33a6', 
+                      '&:hover': { bgcolor: '#4c298a' }
+                    }}
                   >
                     Upload File
-                    <input type="file" multiple hidden onChange={handleFileUpload} />
+                    <input type="file" hidden multiple onChange={handleFileUpload} />
                   </Button>
                 </Box>
-                <Box sx={{
-                  flex: 1, border: `1.5px dashed ${theme.palette.divider}`, borderRadius: 2,
-                  p: 1.5, overflowY: 'auto',
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: uploadedFiles.length === 0 ? 'center' : 'flex-start',
-                  justifyContent: uploadedFiles.length === 0 ? 'center' : 'flex-start',
-                }} onMouseLeave={hidePreview}>
+                <Box sx={{ 
+                  height: 200, 
+                  bgcolor: '#ffffff', 
+                  border: '1px dashed #cbd5e1', 
+                  borderRadius: '10px', 
+                  p: 3,
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: 1.5,
+                  overflowY: 'auto'
+                }}>
                   {uploadedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
-                      <IconFileDescription size={52} stroke={1} />
-                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>No file uploaded yet</Typography>
-                      <Typography variant="caption">Upload files using the button above</Typography>
+                    <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <IconCloudUpload size={48} stroke={1.5} color="#2563eb" />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b' }}>No file uploaded yet</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>Upload files using the button above</Typography>
                     </Box>
                   ) : (
-                    uploadedFiles.map((f, i) => (
-                      <FileItem
-                        key={i} file={f}
-                        onEnter={(e) => showPreview(f, e)}
-                        onMove={movePreview}
-                        onLeave={hidePreview}
-                      />
-                    ))
+                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }} onMouseLeave={hidePreview}>
+                      {uploadedFiles.map((f, i) => (
+                        <FileItem
+                          key={i} file={f}
+                          onEnter={(e) => showPreview(f, e)}
+                          onMove={movePreview}
+                          onLeave={hidePreview}
+                        />
+                      ))}
+                    </Box>
                   )}
                 </Box>
               </Box>
+            </Grid>
 
-              {/* Scanned Files box */}
-              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Scanned Files</Typography>
-                  <Button component="label" variant="contained" color="primary" size="small"
+            {/* Scanned Files box */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: '#334155' }}>Scanned Files</Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
                     startIcon={<IconCamera size={16} />}
-                    sx={{ borderRadius: 1.5, textTransform: 'none', fontSize: '0.78rem' }}
+                    sx={{
+                      textTransform: 'none',
+                      borderRadius: '8px',
+                      bgcolor: '#0070f3',
+                      '&:hover': { bgcolor: '#005ed3' }
+                    }}
                   >
                     Scan & Upload
-                    <input type="file" accept="image/*" capture="environment" hidden onChange={handleScanUpload} />
                   </Button>
                 </Box>
-                <Box sx={{
-                  flex: 1, border: `1.5px dashed ${theme.palette.divider}`, borderRadius: 2,
-                  p: 1.5, overflowY: 'auto',
-                  display: 'flex', flexDirection: 'column',
-                  alignItems: scannedFiles.length === 0 ? 'center' : 'flex-start',
-                  justifyContent: scannedFiles.length === 0 ? 'center' : 'flex-start',
-                }} onMouseLeave={hidePreview}>
+                <Box sx={{ 
+                  height: 200, 
+                  bgcolor: '#ffffff', 
+                  border: '1px dashed #cbd5e1', 
+                  borderRadius: '10px', 
+                  p: 3,
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: 1.5,
+                  overflowY: 'auto'
+                }}>
                   {scannedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', color: 'text.disabled' }}>
-                      <IconFileDescription size={52} stroke={1} />
-                      <Typography variant="body2" sx={{ mt: 1, fontWeight: 600 }}>No file scanned yet</Typography>
-                      <Typography variant="caption">Upload files using the button above</Typography>
+                    <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                      <IconFileDescription size={48} stroke={1.5} color="#2563eb" />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b' }}>No file scanned yet</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748b' }}>Upload files using the button above</Typography>
                     </Box>
                   ) : (
-                    scannedFiles.map((f, i) => (
-                      <FileItem
-                        key={i} file={f}
-                        onEnter={(e) => showPreview(f, e)}
-                        onMove={movePreview}
-                        onLeave={hidePreview}
-                      />
-                    ))
+                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {scannedFiles.map((f, i) => (
+                        <FileItem key={i} file={f} />
+                      ))}
+                    </Box>
                   )}
                 </Box>
               </Box>
-
             </Grid>
           </Grid>
         </DialogContent>
 
         <Divider />
-        <DialogActions sx={{ p: 2, justifyContent: 'center', gap: 2 }}>
-          <Button variant="contained" color="error" startIcon={<IconX size={18} />} sx={{ px: 4, borderRadius: 1.5, textTransform: 'none' }}>IN ACTIVE</Button>
-          <Button onClick={handleClear} variant="contained" color="secondary" startIcon={<IconEraser size={18} />} sx={{ px: 4, borderRadius: 1.5, textTransform: 'none' }}>Clear</Button>
-          <Button onClick={handleSave} variant="contained" color="primary" startIcon={<IconCheck size={18} />} sx={{ px: 4, borderRadius: 1.5, textTransform: 'none' }}>Save</Button>
+        <DialogActions sx={{ justifyContent: 'center', gap: 2, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', py: 2.5 }}>
+          <Button
+            variant="contained"
+            onClick={() => handleSave('INACTIVE')}
+            startIcon={<IconX size={16} />}
+            sx={{
+              bgcolor: '#dc2626',
+              color: '#ffffff',
+              borderRadius: '8px',
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#b91c1c' }
+            }}
+          >
+            IN ACTIVE
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleClear}
+            startIcon={<IconEraser size={16} />}
+            sx={{
+              bgcolor: '#5c33a6',
+              color: '#ffffff',
+              borderRadius: '8px',
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#4c298a' }
+            }}
+          >
+            Clear
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => handleSave('ACTIVE')}
+            startIcon={<IconCheck size={16} />}
+            sx={{
+              bgcolor: '#0070f3',
+              color: '#ffffff',
+              borderRadius: '8px',
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              fontWeight: 600,
+              '&:hover': { bgcolor: '#005ed3' }
+            }}
+          >
+            Save
+          </Button>
         </DialogActions>
       </Dialog>
 
