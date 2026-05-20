@@ -290,8 +290,10 @@ const InductionAssignment = () => {
         const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : (emp?.department || a.department);
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : (emp?.designation || a.designation);
         finalRows.push({ 
-          ...a, 
           ...emp, 
+          ...a, 
+          id: a.id,
+          employeeId: emp?.id,
           department: empDept,
           designation: empDesig,
           isVirtual: false 
@@ -302,6 +304,8 @@ const InductionAssignment = () => {
         if (!assignments.some(a => a.empCode === emp.empCode)) {
           finalRows.push({ 
             ...emp, 
+            id: null,
+            employeeId: emp.id,
             empName: emp.employeeName,
             department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
             designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
