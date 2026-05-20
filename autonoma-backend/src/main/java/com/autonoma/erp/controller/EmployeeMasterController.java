@@ -21,6 +21,15 @@ public class EmployeeMasterController {
     @Autowired
     private EmployeeMasterService service;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeManagerMappingRepository managerMappingRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserRepository userRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.DesignationLevelRepository designationLevelRepository;
+
     // ======================== EMPLOYEE MASTER ========================
 
     @GetMapping
@@ -317,5 +326,107 @@ public class EmployeeMasterController {
     public ResponseEntity<Void> deleteActivity(@PathVariable Long actId) {
         service.deleteActivity(actId);
         return ResponseEntity.ok().build();
+    }
+
+    // ======================== EMPLOYEE MANAGER MAPPING ========================
+
+    @GetMapping("/manager-mapping")
+    @Operation(summary = "Get all employee manager mappings")
+    public ResponseEntity<List<EmployeeManagerMapping>> getAllManagerMappings() {
+        return ResponseEntity.ok(managerMappingRepository.findAll());
+    }
+
+    @GetMapping("/manager-mapping/{empId}")
+    @Operation(summary = "Get employee manager mapping")
+    public ResponseEntity<EmployeeManagerMapping> getManagerMapping(@PathVariable Long empId) {
+        return ResponseEntity.ok(managerMappingRepository.findByEmpId(empId)
+                .orElse(new EmployeeManagerMapping(null, empId, null, null, null, null, null, null, null, null, "Active")));
+    }
+
+    @PostMapping("/manager-mapping")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
+    @Operation(summary = "Create or update employee manager mapping")
+    public ResponseEntity<EmployeeManagerMapping> saveManagerMapping(@RequestBody EmployeeManagerMapping mapping) {
+        EmployeeManagerMapping existing = managerMappingRepository.findByEmpId(mapping.getEmpId()).orElse(null);
+        if (existing != null) {
+            existing.setHomeManagerId(mapping.getHomeManagerId());
+            existing.setBusinessManagerId(mapping.getBusinessManagerId());
+            existing.setVerticalHeadId(mapping.getVerticalHeadId());
+            existing.setHrId(mapping.getHrId());
+            existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            existing.setUpdatedAt(new java.util.Date());
+            return ResponseEntity.ok(managerMappingRepository.save(existing));
+        } else {
+            mapping.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            mapping.setCreatedAt(new java.util.Date());
+            return ResponseEntity.ok(managerMappingRepository.save(mapping));
+        }
+    }
+
+    @GetMapping("/manager-mapping/eligible-managers")
+    @Operation(summary = "Get eligible managers based on designation level criteria")
+    public ResponseEntity<List<EmployeeMaster>> getEligibleManagers(@RequestParam(required = false) Long empId) {
+        int empLevelVal = 0;
+        if (empId != null) {
+            EmployeeMaster emp = service.getEmployeeById(empId);
+            if (emp != null && emp.getEmpLevelId() != null) {
+                DesignationLevel dLevel = designationLevelRepository.findById(emp.getEmpLevelId()).orElse(null);
+                if (dLevel != null) {
+                    empLevelVal = parseLevelNumber(dLevel.getLevel());
+                }
+            }
+        }
+
+        List<EmployeeMaster> active = service.getActiveEmployees();
+        List<EmployeeMaster> eligible = new java.util.ArrayList<>();
+        // Cache level values for sorting
+        java.util.Map<Long, Integer> levelCache = new java.util.HashMap<>();
+
+        for (EmployeeMaster candidate : active) {
+            // 0. Exclude the selected employee themselves
+            if (empId != null && candidate.getId().equals(empId)) {
+                continue;
+            }
+            // 1. User credentials created
+            if (!userRepository.existsByEmpId(candidate.getId())) {
+                continue;
+            }
+            // 2. Induction completed
+            if (candidate.getInductionStatus() == null || !candidate.getInductionStatus().equalsIgnoreCase("COMPLETED")) {
+                continue;
+            }
+            // 3. Level condition: candidateLevelVal must be STRICTLY GREATER than empLevelVal
+            if (candidate.getEmpLevelId() != null) {
+                DesignationLevel candLevelObj = designationLevelRepository.findById(candidate.getEmpLevelId()).orElse(null);
+                if (candLevelObj != null) {
+                    int candLevelVal = parseLevelNumber(candLevelObj.getLevel());
+                    if (candLevelVal > empLevelVal) {
+                        eligible.add(candidate);
+                        levelCache.put(candidate.getId(), candLevelVal);
+                    }
+                }
+            }
+        }
+
+        // Sort: highest level first, then employee name ascending
+        eligible.sort((a, b) -> {
+            int levelA = levelCache.getOrDefault(a.getId(), 0);
+            int levelB = levelCache.getOrDefault(b.getId(), 0);
+            if (levelB != levelA) return Integer.compare(levelB, levelA); // descending level
+            String nameA = a.getEmployeeName() != null ? a.getEmployeeName() : "";
+            String nameB = b.getEmployeeName() != null ? b.getEmployeeName() : "";
+            return nameA.compareToIgnoreCase(nameB); // ascending name
+        });
+
+        return ResponseEntity.ok(eligible);
+    }
+
+    private int parseLevelNumber(String levelName) {
+        if (levelName == null || levelName.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(levelName.replaceAll("[^0-9]", ""));
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }
