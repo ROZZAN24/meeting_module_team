@@ -26,8 +26,10 @@ import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
+import useLookups from 'hooks/useLookups';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
@@ -225,6 +227,7 @@ function StatusChip({ status }) {
 export default function CheckListRenewalVerify() {
   const { user } = useAuth();
   const dispatch = useDispatch();
+  const { employees = [] } = useLookups(['EMPLOYEES']);
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -341,6 +344,66 @@ export default function CheckListRenewalVerify() {
 
   const handleVerify = async (status, remarks) => {
     if (!selectedRowId) return;
+    if (!activeRow) return;
+
+    // ── Mapped Vertical Head Validation ──
+    const assigneeName = activeRow.assignedTo;
+    if (assigneeName) {
+      const assignee = (employees || []).find((emp) => {
+        const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase().trim();
+        return fullName === assigneeName.toLowerCase().trim();
+      });
+
+      if (!assignee) {
+        if (user?.isBosAdmin !== 1) {
+          dispatch(openSnackbar({
+            open: true,
+            message: `Assignee '${assigneeName}' not found in Employee Master. Only an administrator can verify.`,
+            variant: 'alert',
+            alert: { variant: 'filled' },
+            severity: 'error',
+            close: false
+          }));
+          return;
+        }
+      } else {
+        try {
+          const mappingRes = await axios.get(`/api/master/employee/manager-mapping/${assignee.id}`);
+          const mapping = mappingRes.data;
+          
+          const isVerticalHead = mapping && mapping.verticalHeadId && (
+            String(user?.empId) === String(mapping.verticalHeadId) ||
+            (employees || []).find(emp => String(emp.id) === String(mapping.verticalHeadId))?.firstName?.toLowerCase() === user?.name?.split(' ')[0]?.toLowerCase()
+          );
+
+          if (!isVerticalHead && user?.isBosAdmin !== 1) {
+            dispatch(openSnackbar({
+              open: true,
+              message: `Only the mapped Vertical Head of '${assigneeName}' can verify or reject this record!`,
+              variant: 'alert',
+              alert: { variant: 'filled' },
+              severity: 'error',
+              close: false
+            }));
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to verify manager mapping:', err);
+          if (user?.isBosAdmin !== 1) {
+            dispatch(openSnackbar({
+              open: true,
+              message: 'Failed to validate manager permissions. Only administrators can bypass.',
+              variant: 'alert',
+              alert: { variant: 'filled' },
+              severity: 'error',
+              close: false
+            }));
+            return;
+          }
+        }
+      }
+    }
+
     try {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
@@ -348,11 +411,27 @@ export default function CheckListRenewalVerify() {
         verifiedBy: user?.name || user?.id || 'Admin',
         remarks: remarks || `Verification action: ${status}`
       });
+      dispatch(openSnackbar({
+        open: true,
+        message: `Task successfully ${status === 'Verified' ? 'verified' : 'rejected'}!`,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'success',
+        close: false
+      }));
       setDialogOpen(false);
       setVerifyRemarks('');
       fetchAssignments();
     } catch (error) {
       console.error('Verification failed:', error);
+      dispatch(openSnackbar({
+        open: true,
+        message: error?.response?.data?.message || 'Verification action failed.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 
@@ -522,11 +601,11 @@ export default function CheckListRenewalVerify() {
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
             <Box sx={{ mb: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>From</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>To</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
           </FilterSection>
           <Divider />

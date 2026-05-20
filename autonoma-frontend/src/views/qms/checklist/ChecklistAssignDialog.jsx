@@ -57,21 +57,44 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const theme = useTheme();
   const dispatch = useDispatch();
   const { user } = useAuth();
-  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS']);
+  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS']);
   
   // Get allowed department names for this checklist
   const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
+  const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
   
-  // Filter employees whose department matches one of the checklist's departments
+  // Filter employees whose department matches one of the checklist's departments,
+  // and who are active, completed induction, and have credentials created.
   let filteredEmployees = (lookups.employees || []).filter(emp => {
-    if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
-    const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
-    return empDept && isDepartmentMatch(allowedDeptNames, empDept.departmentName);
+    // 1. Same department (if checklist has allowed departments)
+    if (allowedDeptNames.length > 0) {
+      const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
+      if (!empDept || !isDepartmentMatch(allowedDeptNames, empDept.departmentName)) {
+        return false;
+      }
+    }
+    // 2. Active status
+    if (emp.status !== 'Active') {
+      return false;
+    }
+    // 3. Induction completed
+    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') {
+      return false;
+    }
+    // 4. Credentials created (exists in user list)
+    if (!userEmpIds.includes(Number(emp.id))) {
+      return false;
+    }
+    return true;
   });
 
-  // Fallback: If no employees match the checklist's department, show all active employees so they can still assign the task
+  // Fallback: If no employees match the checklist's department, show all employees who are active, induction completed, and credentialed.
   if (filteredEmployees.length === 0) {
-    filteredEmployees = lookups.employees || [];
+    filteredEmployees = (lookups.employees || []).filter(emp => {
+      return emp.status === 'Active' && 
+             emp.inductionStatus?.toUpperCase() === 'COMPLETED' && 
+             userEmpIds.includes(Number(emp.id));
+    });
   }
 
   const employeeOptions = filteredEmployees.map(e => ({
