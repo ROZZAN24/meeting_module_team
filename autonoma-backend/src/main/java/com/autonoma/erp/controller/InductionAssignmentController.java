@@ -34,7 +34,7 @@ public class InductionAssignmentController {
     }
 
     @PostMapping
-    @RequirePagePermission(pageCode = "HRA_IND_01", action = "write")
+    @RequirePagePermission(pageCode = "M2150", action = "write")
     public ResponseEntity<?> save(@RequestBody InductionAssignment entity, Principal principal) {
         try {
             String currentUser = principal != null ? principal.getName() : "SYSTEM";
@@ -45,7 +45,7 @@ public class InductionAssignmentController {
     }
 
     @PutMapping("/{id}")
-    @RequirePagePermission(pageCode = "HRA_IND_01", action = "write")
+    @RequirePagePermission(pageCode = "M2150", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody InductionAssignment entity, Principal principal) {
         try {
             entity.setId(id);
@@ -57,7 +57,7 @@ public class InductionAssignmentController {
     }
 
     @PatchMapping("/{id}/status")
-    @RequirePagePermission(pageCode = "HRA_IND_01", action = "write")
+    @RequirePagePermission(pageCode = "M2150", action = "write")
     public ResponseEntity<?> updateStatus(@PathVariable Long id, @RequestBody Map<String, String> statusMap, Principal principal) {
         try {
             String newStatus = statusMap.get("status");

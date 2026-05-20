@@ -55,7 +55,7 @@ public class InductionTraineeController {
      * Submit trainee responses (UNDERSTOOD / NEED MORE TRAINING).
      */
     @PutMapping("/{assignmentId}/respond")
-    @RequirePagePermission(pageCode = "HRA_IND_03", action = "write")
+    @RequirePagePermission(pageCode = "M2170", action = "write")
     public ResponseEntity<?> submitResponses(
             @PathVariable Long assignmentId,
             @RequestBody List<InductionTrainingDetail> responses,

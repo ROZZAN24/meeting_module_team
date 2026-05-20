@@ -13,7 +13,14 @@ import {
   MenuItem,
   Button,
   Chip,
-  Divider
+  Divider,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper
 } from '@mui/material';
 import {
   IconRefresh,
@@ -367,9 +374,10 @@ const InductionAssignment = () => {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      console.error('Save error details:', error.response?.data);
-      const serverMsg = error.response?.data;
-      const message = typeof serverMsg === 'string' ? serverMsg : (serverMsg?.message || 'Failed to save');
+      console.error('Save error details:', error);
+      const message = typeof error === 'string'
+        ? error
+        : (error.response?.data?.message || error.response?.data || error.message || error.error || 'Failed to save');
       
       dispatch(openSnackbar({ 
         open: true, 
@@ -474,8 +482,8 @@ const InductionAssignment = () => {
                 sx={errorStyle(!!errors.inductionRound)}
               >
                 <MenuItem value="">-SELECT-</MenuItem>
-                {departments.map(d => (
-                  <MenuItem key={d.id} value={d.departmentName}>{d.departmentName}</MenuItem>
+                {ROUND_OPTIONS.map(r => (
+                  <MenuItem key={r} value={r}>{r}</MenuItem>
                 ))}
               </BOSTextField>
             </Box>
@@ -523,8 +531,19 @@ const InductionAssignment = () => {
                 <MenuItem value="">-Select-</MenuItem>
                 {employees
                   .filter(emp => {
+                    if (emp.isInductionEligible !== 'YES') return false;
                     const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
-                    return emp.isInductionEligible === 'YES' && empDept === formData.inductionRound;
+                    const round = formData.inductionRound;
+                    if (round === 'HR') {
+                      return empDept === 'Human Resources';
+                    }
+                    if (round === 'QMS') {
+                      return empDept === 'Quality Management';
+                    }
+                    if (round === 'DEPARTMENT') {
+                      return empDept === formData.department;
+                    }
+                    return true;
                   })
                   .map(emp => (
                     <MenuItem key={emp.id} value={emp.employeeName}>
@@ -555,25 +574,60 @@ const InductionAssignment = () => {
         {/* History Table */}
         <Box sx={{ mt: 4 }}>
           <Typography variant="h5" sx={{ mb: 2, color: 'primary.main', fontWeight: 600 }}>Induction History</Typography>
-          <BOSDataTable
-            columns={[
-              { id: 'index', label: '#', minWidth: 40 },
-              { id: 'screeningLevel', label: 'Screening Level' },
-              { id: 'inductionRound', label: 'Round' },
-              { id: 'inductionDate', label: 'Date', render: (r) => `${r.inductionDate} ${r.inductionTime}` },
-              { id: 'trainerName', label: 'Induction by' },
-              { id: 'currentStatus', label: 'Induction Status', render: (r) => (
-                <Chip label={r.currentStatus} size="small" color={r.currentStatus === 'REJECTED' ? 'error' : 'primary'} />
-              )},
-              { id: 'rescheduled', label: 'Rescheduled', render: () => 'NO' },
-              { id: 'createdBy', label: 'Created By' },
-              { id: 'inductionStatus', label: 'Status', render: (r) => (
-                <Chip label={r.inductionStatus} size="small" variant="outlined" color={r.inductionStatus === 'ACTIVE' ? 'success' : 'default'} />
-              )}
-            ]}
-            rows={history.map((h, i) => ({ ...h, index: i + 1 }))}
-            pagination={false}
-          />
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'primary.light' }}>
+                  <TableCell sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Screening Level</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Round</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Induction by</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Induction Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Rescheduled</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Created By</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {history.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center" sx={{ py: 2, fontStyle: 'italic', color: 'text.secondary' }}>
+                      No history found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  history.map((h, i) => (
+                    <TableRow key={h.id || i} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{h.screeningLevel || '-'}</TableCell>
+                      <TableCell>{h.inductionRound || '-'}</TableCell>
+                      <TableCell>{h.inductionDate ? `${h.inductionDate} ${h.inductionTime || ''}` : '-'}</TableCell>
+                      <TableCell>{h.trainerName || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={h.currentStatus || 'PENDING'} 
+                          size="small" 
+                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')} 
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </TableCell>
+                      <TableCell>NO</TableCell>
+                      <TableCell>{h.createdBy || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={h.inductionStatus || 'ACTIVE'} 
+                          size="small" 
+                          variant="outlined" 
+                          color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Box>
       </BOSFormDialog>
     </MainCard>
