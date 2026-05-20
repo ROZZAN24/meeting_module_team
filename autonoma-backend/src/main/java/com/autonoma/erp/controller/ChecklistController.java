@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -53,12 +54,14 @@ public class ChecklistController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M1210", action = "write")
     @Operation(summary = "Create/Update Master Checklist", description = "Creates a new Master Checklist or updates an existing one")
     public ResponseEntity<MasterChecklist> createMasterChecklist(@RequestBody MasterChecklist checklist, @RequestParam(required = false) List<String> departments) {
         return ResponseEntity.ok(checklistService.saveMasterChecklist(checklist, departments));
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1210", action = "delete")
     @Operation(summary = "Delete Master Checklist", description = "Deletes a Master Checklist by ID")
     @CrossOrigin(origins = "*")
     public ResponseEntity<Void> deleteMasterChecklist(@PathVariable Long id) {
@@ -126,6 +129,7 @@ public class ChecklistController {
     }
 
     @PostMapping("/verify-master")
+    @RequirePagePermission(pageCode = "M1210", action = "approval")
     @Operation(summary = "Verify Master Checklist", description = "Approves or rejects a Master Checklist definition")
     public ResponseEntity<MasterChecklist> verifyMaster(@RequestBody Map<String, Object> payload) {
         Long checklistId = Long.valueOf(payload.get("checklistId").toString());

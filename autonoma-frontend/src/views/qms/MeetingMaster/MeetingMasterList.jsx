@@ -10,6 +10,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import AddMeetingMasterDialog from './AddMeetingMasterDialog';
 
 const columns = [
@@ -28,6 +29,7 @@ export default function MeetingMasterList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_MEETING);
 
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -163,7 +165,7 @@ export default function MeetingMasterList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Meeting_Master"
             columns={[
@@ -176,12 +178,12 @@ export default function MeetingMasterList() {
               { header: 'Created User', key: 'createdBy' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Add Meeting', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Add Meeting', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -196,7 +198,7 @@ export default function MeetingMasterList() {
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleEdit}
         onEditRow={handleEdit}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="meeting-master-table"
       />

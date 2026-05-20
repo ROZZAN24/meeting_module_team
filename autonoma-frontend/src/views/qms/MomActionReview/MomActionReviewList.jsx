@@ -72,14 +72,10 @@ export default function MomActionReviewList() {
       {
         id: 'status', label: 'Status Filter', type: 'select', isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
-          { value: 'OPEN', label: 'OPEN' },
-          { value: 'UNRESOLVED', label: 'UNRESOLVED' },
-          { value: 'PENDING FOR APPROVAL', label: 'PENDING FOR APPROVAL' },
-          { value: 'CLOSED', label: 'CLOSED' },
-          { value: 'OVERDUE', label: 'OVERDUE' }
+          { value: 'PENDING', label: 'Pending' },
+          { value: 'CLOSED', label: 'Closed' }
         ],
-        defaultValue: 'All'
+        defaultValue: 'PENDING'
       },
       {
         id: 'accessFilter', label: 'User Access', type: 'select', isStarred: true,
@@ -135,8 +131,14 @@ export default function MomActionReviewList() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // Status Filter
-      const statusFilter = globalFilters.status || 'All';
-      if (statusFilter !== 'All' && row.displayStatus !== statusFilter) return false;
+      const statusFilter = globalFilters.status || 'PENDING';
+      if (statusFilter === 'PENDING') {
+        if ((row.displayStatus || 'OPEN') === 'CLOSED') return false;
+      } else if (statusFilter === 'CLOSED') {
+        if ((row.displayStatus || 'OPEN') !== 'CLOSED') return false;
+      } else if (statusFilter !== 'All') {
+        if (row.displayStatus !== statusFilter) return false;
+      }
 
       // Access Filter (Mocked to employee name check for now)
       const accessFilter = globalFilters.accessFilter || 'All';

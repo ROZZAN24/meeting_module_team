@@ -11,6 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 
@@ -34,6 +35,7 @@ export default function AuditObservationList() {
   const navigate = useNavigate();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_OBSERVATION);
 
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -173,7 +175,7 @@ export default function AuditObservationList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Audit_Observations"
             columns={[
@@ -183,12 +185,12 @@ export default function AuditObservationList() {
               { header: 'Dept Name', key: 'departmentName' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Observation', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Observation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -201,7 +203,7 @@ export default function AuditObservationList() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onEditRow={handleOpenEdit}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
         onDeleteRow={(row) => { setDeleteTarget(row); setDeleteDialogOpen(true); }}
         renderCell={renderCell}
       />

@@ -11,6 +11,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| CUSTOMER POTENTIAL MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -35,6 +36,7 @@ export default function CustomerPotentialMaster() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.CRM_POTENTIAL);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -217,7 +219,7 @@ export default function CustomerPotentialMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Customer_Potential_Master"
             columns={[
@@ -235,8 +237,8 @@ export default function CustomerPotentialMaster() {
               { header: 'Created By', key: 'createdBy' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Customer Potential', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Customer Potential', 'Ctrl + N')}>
             <Button
               variant="contained"
               color="primary"
@@ -246,7 +248,7 @@ export default function CustomerPotentialMaster() {
             >
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -262,9 +264,9 @@ export default function CustomerPotentialMaster() {
           setSize(s);
           setPage(0);
         }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddPotentialDialog

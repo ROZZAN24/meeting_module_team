@@ -106,7 +106,7 @@ export default function BOSFormDialog({
       {/* ── CONTENT ── */}
       <DialogContent sx={ds.content}>
         {sidebar ? (
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' }, gap: 4, width: '100%', alignItems: 'start' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' }, gap: 4, width: '100%', alignItems: 'start', mt: 2 }}>
             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%' }}>
               {children}
             </Box>
@@ -115,7 +115,7 @@ export default function BOSFormDialog({
             </Box>
           </Box>
         ) : (
-          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%', alignItems: 'start' }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%', alignItems: 'start', mt: 2 }}>
             {children}
           </Box>
         )}

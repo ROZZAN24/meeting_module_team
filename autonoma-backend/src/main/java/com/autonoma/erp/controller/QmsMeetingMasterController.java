@@ -5,6 +5,7 @@ import com.autonoma.erp.service.QmsMeetingMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import java.util.List;
 
@@ -29,11 +30,13 @@ public class QmsMeetingMasterController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M1310", action = "write")
     public QmsMeetingMaster createMeeting(@RequestBody QmsMeetingMaster meeting) {
         return service.saveMeeting(meeting);
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1310", action = "write")
     public ResponseEntity<QmsMeetingMaster> updateMeeting(@PathVariable Integer id, @RequestBody QmsMeetingMaster meeting) {
         return service.getMeetingById(id)
                 .map(existing -> {
@@ -44,6 +47,7 @@ public class QmsMeetingMasterController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1310", action = "delete")
     public ResponseEntity<Void> deleteMeeting(@PathVariable Integer id) {
         service.deleteMeeting(id);
         return ResponseEntity.ok().build();

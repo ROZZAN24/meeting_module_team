@@ -20,6 +20,7 @@ import {
   btnExport, 
   getStatusChipSx 
 } from 'ui-component/bos';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| AUDIT NCR / OFI CLOSURE (REFACTORED WITH PATTERNS) ||============================== //
 
@@ -49,6 +50,7 @@ export default function AuditNcrClose() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_NCR_CLOSE);
 
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -209,7 +211,7 @@ export default function AuditNcrClose() {
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={rows}
             filename="NCR_Closure_List"
             columns={[
@@ -219,7 +221,7 @@ export default function AuditNcrClose() {
               { header: 'DEPARTMENT', key: 'departmentName' },
               { header: 'APPROVAL STATUS', key: 'ncrStatus' }
             ]}
-          />
+          />}
         </Stack>
       }
     >

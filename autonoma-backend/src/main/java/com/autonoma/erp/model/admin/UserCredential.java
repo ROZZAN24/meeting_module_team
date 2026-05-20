@@ -47,6 +47,15 @@ public class UserCredential {
     @Column(name = "IS_BOS_ADMIN")
     private Integer isBosAdmin;
 
+    @Column(name = "face_image", columnDefinition = "NVARCHAR(MAX)")
+    private String faceImage;
+
+    @Column(name = "auth_method", columnDefinition = "NVARCHAR(50)")
+    private String authMethod = "PASSWORD";
+
+    @Column(name = "face_descriptor", columnDefinition = "NVARCHAR(MAX)")
+    private String faceDescriptor;
+
     public String getUserId() {
         return userId;
     }
@@ -125,5 +134,29 @@ public class UserCredential {
 
     public void setIsBosAdmin(Integer isBosAdmin) {
         this.isBosAdmin = isBosAdmin;
+    }
+
+    public String getFaceImage() {
+        return faceImage;
+    }
+
+    public void setFaceImage(String faceImage) {
+        this.faceImage = faceImage;
+    }
+
+    public String getAuthMethod() {
+        return authMethod;
+    }
+
+    public void setAuthMethod(String authMethod) {
+        this.authMethod = authMethod;
+    }
+
+    public String getFaceDescriptor() {
+        return faceDescriptor;
+    }
+
+    public void setFaceDescriptor(String faceDescriptor) {
+        this.faceDescriptor = faceDescriptor;
     }
 }

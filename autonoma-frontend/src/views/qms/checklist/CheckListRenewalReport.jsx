@@ -29,6 +29,7 @@ import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Category', 'Check Point', 'Dept', 'Level', 'Frequency', 'Stock Link', 'Comments', 'Verification Required', 'Assigned To', 'Assigned By',
@@ -181,6 +182,7 @@ export default function CheckListRenewalReport() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_REPORT);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ dateRange:true, considerDate:false, status:true });
@@ -275,7 +277,7 @@ export default function CheckListRenewalReport() {
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />}
         </Box>
       }
     >

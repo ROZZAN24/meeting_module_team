@@ -5,6 +5,7 @@ import com.autonoma.erp.service.DepartmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -47,6 +48,7 @@ public class DepartmentController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M2230", action = "write")
     public ResponseEntity<?> saveDepartment(@RequestBody Department department) {
         String name = department.getDepartmentName() != null ? department.getDepartmentName() : "";
         // Deep Sanitize: Replace non-breaking spaces and all types of whitespace with standard space
@@ -66,6 +68,7 @@ public class DepartmentController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2230", action = "write")
     public ResponseEntity<?> updateDepartment(@PathVariable Long id, @RequestBody Department departmentDetails) {
         String name = departmentDetails.getDepartmentName() != null ? departmentDetails.getDepartmentName() : "";
         String sanitizedName = name.replaceAll("\\s+", " ").trim();
@@ -91,6 +94,7 @@ public class DepartmentController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2230", action = "delete")
     public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);
         return ResponseEntity.ok().build();

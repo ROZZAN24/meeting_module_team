@@ -3,6 +3,7 @@ import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconAddressBook } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -38,6 +39,7 @@ export default function ContactMasterList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.CRM_CONTACT);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -160,7 +162,7 @@ export default function ContactMasterList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Contact_Master"
             columns={[
@@ -169,12 +171,12 @@ export default function ContactMasterList() {
               { header: 'Group Name', key: 'groupName' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Contact', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Contact', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -187,9 +189,9 @@ export default function ContactMasterList() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddContactDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

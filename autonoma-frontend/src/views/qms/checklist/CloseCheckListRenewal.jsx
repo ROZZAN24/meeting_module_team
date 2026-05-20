@@ -31,6 +31,7 @@ import useAuth from 'hooks/useAuth';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
@@ -217,6 +218,7 @@ export default function CloseCheckListRenewal() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_CLOSE);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
@@ -368,7 +370,7 @@ export default function CloseCheckListRenewal() {
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>
-          <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }
     >

@@ -12,6 +12,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationLevelDialog from './AddDesignationLevelDialog';
 import { format } from 'date-fns';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
     { id: 'index', label: '#', minWidth: 50 },
@@ -26,6 +27,7 @@ const columns = [
 
 export default function DesignationLevelMaster() {
     const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.EMP_LEVEL);
     const [rows, setRows] = useState([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
@@ -136,7 +138,7 @@ export default function DesignationLevelMaster() {
                             <IconRefresh size={20} />
                         </IconButton>
                     </Tooltip>
-                    <BOSExportButton
+                    {perms.export && <BOSExportButton
                         data={filteredRows}
                         filename="Designation_Level"
                         columns={[
@@ -145,12 +147,12 @@ export default function DesignationLevelMaster() {
                             { header: 'DA', key: 'da' },
                             { header: 'HRA', key: 'hra' }
                         ]}
-                    />
-                    <Tooltip title={shortcutTooltip('Create Designation Level', 'Ctrl + N')}>
+                    />}
+                    {perms.write && <Tooltip title={shortcutTooltip('Create Designation Level', 'Ctrl + N')}>
                         <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
                             + New
                         </Button>
-                    </Tooltip>
+                    </Tooltip>}
                 </Stack>
             }
         >
@@ -163,8 +165,8 @@ export default function DesignationLevelMaster() {
                 loading={loading}
                 onPageChange={setPage}
                 onSizeChange={(s) => { setSize(s); setPage(0); }}
-                onDoubleClickRow={handleOpenEdit}
-                onEditRow={handleOpenEdit}
+                onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+                onEditRow={perms.write ? handleOpenEdit : undefined}
                 onDeleteRow={(row) => { setSelectedRow(row); setDeleteDialogOpen(true); }}
                 renderCell={renderCell}
             />

@@ -259,13 +259,14 @@ function RibbonGroupSection({ group, onClose }) {
         alignItems: 'center',
         minWidth: children.length === 0 ? 64 : 'auto',
         borderRadius: '10px',
-        border: `1px solid ${alpha(colors.main, 0.14)}`,
-        bgcolor: alpha(colors.main, 0.02),
+        border: `1px solid ${alpha(colors.main, 0.3)}`,
+        bgcolor: alpha(colors.main, 0.15),
+        boxShadow: `inset 0 0 20px ${alpha(colors.main, 0.05)}`,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         '&:hover': {
-          bgcolor: alpha(colors.main, 0.04),
-          borderColor: alpha(colors.main, 0.28),
-          boxShadow: `0 4px 12px ${alpha(colors.main, 0.08)}`
+          bgcolor: alpha(colors.main, 0.25),
+          borderColor: alpha(colors.main, 0.5),
+          boxShadow: `0 4px 12px ${alpha(colors.main, 0.15)}`
         }
       }}
     >
