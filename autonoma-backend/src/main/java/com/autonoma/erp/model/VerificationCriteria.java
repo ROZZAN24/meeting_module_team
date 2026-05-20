@@ -7,19 +7,19 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "hrm_employee_type_master")
+@Table(name = "hr_verification_criteria")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmployeeTypeMaster {
+public class VerificationCriteria {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "type_name", unique = true, nullable = false)
-    private String typeName;
+    @Column(name = "type", length = 100, nullable = false)
+    private String type;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", length = 2000, nullable = false)
     private String description;
 
     @Column(name = "status")
@@ -38,9 +38,4 @@ public class EmployeeTypeMaster {
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
-
-    public EmployeeTypeMaster(String name) {
-        this.typeName = name;
-        this.status = "ACTIVE";
-    }
 }

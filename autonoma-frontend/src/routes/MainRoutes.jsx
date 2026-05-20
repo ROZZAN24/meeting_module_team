@@ -202,12 +202,16 @@ const QmsCloseCheckListRenewal = Loadable(lazy(() => import('views/qms/checklist
 const QmsCheckListRenewalVerify = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalVerify')));
 const QmsCheckListRenewalReport = Loadable(lazy(() => import('views/qms/checklist/CheckListRenewalReport')));
 const MasterHrDepartment = Loadable(lazy(() => import('views/master/hr/DepartmentDetails')));
+const EmployeeType = Loadable(lazy(() => import('views/master/hr/EmployeeType')));
 const MasterHrEmployeeList = Loadable(lazy(() => import('views/master/hr/EmployeeList')));
 const MasterHrEmployee = Loadable(lazy(() => import('views/master/hr/EmployeeMaster')));
 const MasterHrDesignation = Loadable(lazy(() => import('views/master/hr/DesignationMaster')));
 const MasterHrGrade = Loadable(lazy(() => import('views/master/hr/GradeDetails')));
 const MasterHrDesignationLevel = Loadable(lazy(() => import('views/master/hr/DesignationLevelMaster')));
 const InductionCriteria = Loadable(lazy(() => import('views/master/hr/ats/InductionCriteria')));
+const InterviewCriteria = Loadable(lazy(() => import('views/master/hr/ats/InterviewCriteria')));
+const EmailContent = Loadable(lazy(() => import('views/master/hr/ats/EmailContent')));
+const VerificationCriteria = Loadable(lazy(() => import('views/master/hr/ats/VerificationCriteria')));
 const InductionAssignment = Loadable(lazy(() => import('views/master/hr/ats/InductionAssignment')));
 const InductionTraining = Loadable(lazy(() => import('views/master/hr/ats/InductionTraining')));
 const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/InductionTrainee')));
@@ -840,6 +844,18 @@ const MainRoutes = {
       element: <InductionCriteria />
     },
     {
+      path: '/master/hr/ats/interview-criteria',
+      element: <InterviewCriteria />
+    },
+    {
+      path: '/master/hr/ats/email-content',
+      element: <EmailContent />
+    },
+    {
+      path: '/master/hr/ats/verification',
+      element: <VerificationCriteria />
+    },
+    {
       path: '/master/hr/ats/induction-assignment',
       element: <InductionAssignment />
     },
@@ -906,6 +922,10 @@ const MainRoutes = {
     {
       path: '/master/hr/department',
       element: <MasterHrDepartment />
+    },
+    {
+      path: '/master/hr/employee-type',
+      element: <EmployeeType />
     },
     {
       path: '/hra/employee/master',
