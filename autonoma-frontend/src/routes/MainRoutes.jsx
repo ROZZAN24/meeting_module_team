@@ -1198,21 +1198,20 @@ const MainRoutes = {
       element: <TypeOfService />
     },
     {
-<<<<<<< HEAD
       path: '/support/raised-for-me',
       element: <TicketManagement viewType="raised-for-me" />
     },
     {
       path: '/support/ticket-by-me',
       element: <TicketManagement viewType="raised-by-me" />
-=======
+    },
+    {
       path: '/master/sales/logistics/despatch-mode',
       element: <DespatchMode />
     },
     {
       path: '/master/sales/logistics/freight',
       element: <Freight />
->>>>>>> 24e8ee9d613e2573f838598e9eaba3dc9b2ed40c
     },
     {
       path: '*',
