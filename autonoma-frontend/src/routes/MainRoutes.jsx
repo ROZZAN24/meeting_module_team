@@ -194,6 +194,7 @@ const DivisionMaster = Loadable(lazy(() => import('views/admin/DivisionMaster'))
 const AuditTrailPage = Loadable(lazy(() => import('views/admin/AuditTrailPage')));
 const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
 const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
+const TicketManagement = Loadable(lazy(() => import('views/admin/TicketManagement')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -1173,6 +1174,14 @@ const MainRoutes = {
     {
       path: '/sm/ocr/type-of-service',
       element: <TypeOfService />
+    },
+    {
+      path: '/support/raised-for-me',
+      element: <TicketManagement viewType="raised-for-me" />
+    },
+    {
+      path: '/support/ticket-by-me',
+      element: <TicketManagement viewType="raised-by-me" />
     },
     {
       path: '*',

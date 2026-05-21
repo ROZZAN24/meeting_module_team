@@ -558,7 +558,7 @@ export const masters = {
               url: '/sm/ocr/sub-segment-master',
               icon: icons.IconChartDonut
             }
-,
+            ,
             {
               id: 'master-sales-logistics-despatch-mode',
               title: 'Mode of Despatch',
@@ -849,5 +849,28 @@ export const erpSupport = {
   caption: 'Support S0000',
   type: 'group',
   icon: icons.IconHelp,
-  children: []
+  children: [
+    {
+      id: 'support-ticket-management',
+      title: 'Ticket Management',
+      type: 'collapse',
+      icon: icons.IconHelp,
+      children: [
+        {
+          id: 'support-raised-by-me',
+          title: 'Raised By Me',
+          type: 'item',
+          url: '/support/ticket-by-me',
+          breadcrumbs: false
+        },
+        {
+          id: 'support-raised-for-me',
+          title: 'Raised For Me',
+          type: 'item',
+          url: '/support/raised-for-me',
+          breadcrumbs: false
+        }
+      ]
+    }
+  ]
 };
