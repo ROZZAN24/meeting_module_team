@@ -84,8 +84,18 @@ export default function MomList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    // Keep specialized filters like Date Range, but let Rule 1 handle the rest
     dispatch(setFilterConfig([
+      {
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
+        options: [
+          { value: 'PENDING', label: 'Pending (Open / In Progress)' },
+          { value: 'CLOSED', label: 'Closed' },
+          { value: 'PENDING FOR APPROVAL', label: 'Pending For Approval' },
+          { value: 'CANCELLED', label: 'Cancelled' },
+          { value: 'All', label: 'All' }
+        ],
+        defaultValue: 'PENDING'
+      },
       { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
       { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
       {
@@ -96,6 +106,42 @@ export default function MomList() {
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
+
+  // ── FILTERED ROWS (apply status + date filters) ──
+  const filteredRows = useMemo(() => {
+    return resolvedRows.filter((row) => {
+      // Status Filter
+      const statusFilter = globalFilters.status || 'PENDING';
+      if (statusFilter !== 'All') {
+        const rowStatus = (row.status || 'OPEN').toUpperCase();
+        if (statusFilter === 'PENDING') {
+          // PENDING shows everything except CLOSED and CANCELLED
+          if (rowStatus === 'CLOSED' || rowStatus === 'CANCELLED') return false;
+        } else {
+          if (rowStatus !== statusFilter) return false;
+        }
+      }
+
+      // Date Filtering
+      if (globalFilters.considerDate === 'YES' && globalFilters.fromDate && globalFilters.toDate) {
+        const dateVal = row.momDate || '';
+        if (dateVal && dateVal !== '-') {
+          if (dateVal < globalFilters.fromDate || dateVal > globalFilters.toDate) return false;
+        }
+      }
+
+      // Global Quick Search
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.momNo || '').toLowerCase().includes(q) ||
+               (row.discussedPoint || '').toLowerCase().includes(q) ||
+               (row.assignedTo || '').toLowerCase().includes(q) ||
+               (row.scheduleNo || '').toLowerCase().includes(q);
+      }
+
+      return true;
+    });
+  }, [resolvedRows, globalQuery, globalFilters]);
 
   // ── HANDLERS ──
   const handleAdd = () => {
@@ -249,7 +295,7 @@ export default function MomList() {
             </IconButton>
           </Tooltip>
           {perms.export && <BOSExportButton
-            data={resolvedRows}
+            data={filteredRows}
             filename="Minutes_of_Meeting"
             columns={[
               { header: 'Meeting Min No', key: 'momNo' },
@@ -283,7 +329,7 @@ export default function MomList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={resolvedRows}
+        rows={filteredRows}
         page={page}
         size={size}
         loading={loading}
