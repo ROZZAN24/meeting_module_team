@@ -11,6 +11,7 @@ import { BOSDataTable, BOSExportButton, BOSFormDialog, BOSFormSection, BOSTextFi
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useBOSValidation from 'hooks/useBOSValidation';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -40,6 +41,7 @@ const VALIDATION_RULES = [
 
 export default function AuditAttendance() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_ATTENDANCE);
   const { validate, clearErrors, errors } = useBOSValidation();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);

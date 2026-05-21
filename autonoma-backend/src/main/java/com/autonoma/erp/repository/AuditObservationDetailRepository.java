@@ -17,8 +17,8 @@ public interface AuditObservationDetailRepository extends JpaRepository<AuditObs
            "AND (:query IS NULL OR ao.observationNo LIKE %:query% OR ao.auditScheduleNo LIKE %:query% OR ao.auditType LIKE %:query%) " +
            "AND (:considerDate = 'No' OR (ao.observationDate >= :fromDate AND ao.observationDate <= :toDate))")
     List<AuditObservationDetail> findPendingNcrFindingsFiltered(
-            @org.springframework.data.repository.query.Param("fromDate") String fromDate,
-            @org.springframework.data.repository.query.Param("toDate") String toDate,
+            @org.springframework.data.repository.query.Param("fromDate") java.util.Date fromDate,
+            @org.springframework.data.repository.query.Param("toDate") java.util.Date toDate,
             @org.springframework.data.repository.query.Param("considerDate") String considerDate,
             @org.springframework.data.repository.query.Param("observationStatus") String observationStatus,
             @org.springframework.data.repository.query.Param("ncrStatus") String ncrStatus,
