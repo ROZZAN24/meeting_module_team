@@ -25,6 +25,9 @@ public interface InductionAssignmentRepository extends JpaRepository<InductionAs
     @Query("SELECT a FROM InductionAssignment a WHERE a.empCode = :empCode AND a.currentStatus = 'TRAINING GIVEN' AND a.inductionStatus = 'ACTIVE'")
     List<InductionAssignment> findTraineeRecords(@org.springframework.data.repository.query.Param("empCode") String empCode);
 
+    @Query("SELECT a FROM InductionAssignment a WHERE a.currentStatus = 'TRAINING GIVEN' AND a.inductionStatus = 'ACTIVE'")
+    List<InductionAssignment> findAllTraineeRecords();
+
     // === Check if all rounds are completed for an employee ===
     @Query("SELECT COUNT(a) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus != 'COMPLETED'")
     long countIncompleteByEmpCode(@org.springframework.data.repository.query.Param("empCode") String empCode);

@@ -77,7 +77,12 @@ export default function AddDesignationLevelDialog({ open, handleClose, initialDa
             dispatch(openSnackbar({ open: true, message: `Designation Level ${isEditing ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
             handleClose(true);
         } catch (error) {
-            dispatch(openSnackbar({ open: true, message: 'Failed to save designation level', severity: 'error', variant: 'alert' }));
+            // Extract the real backend error message (e.g. "Designation level already exists")
+            const msg = error?.response?.data?.message
+                || (typeof error?.response?.data === 'string' ? error.response.data : null)
+                || error?.message
+                || 'Failed to save designation level';
+            dispatch(openSnackbar({ open: true, message: msg, severity: 'error', variant: 'alert' }));
         }
     };
 

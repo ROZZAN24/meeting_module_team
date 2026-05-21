@@ -107,6 +107,18 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
 
   const EXECUTION_STATUSES = ['-Select-', 'Started', '25%', '50%', '75%', 'Completed'];
 
+  const STATUS_ORDER = { 'Started': 1, '25%': 2, '50%': 3, '75%': 4, 'Completed': 5 };
+  const getAvailableStatuses = (currentStatus) => {
+    const cs = typeof currentStatus === 'object' ? currentStatus?.name : currentStatus;
+    const locked = ['Completed', 'Verified', 'Accepted', 'Pending for Verified', 'Pending for Accepted'];
+    if (locked.includes(cs)) return [];
+    if (!cs || cs === 'Pending' || cs === 'Rejected') return EXECUTION_STATUSES;
+    const currentOrder = STATUS_ORDER[cs] || 0;
+    return ['-Select-', ...Object.entries(STATUS_ORDER)
+      .filter(([, order]) => order >= currentOrder)
+      .map(([name]) => name)];
+  };
+
   // Helper to convert filename|details strings to BOS file objects
   const parseFile = (f) => {
     if (typeof f === 'string') {
@@ -120,6 +132,25 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
       };
     }
     return f;
+  };
+
+  const parseFileString = (fileStr) => {
+    if (!fileStr || typeof fileStr !== 'string') return [];
+    return fileStr
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(name => {
+        const parts = name.split('_');
+        const displayName = parts.length > 1 && parts[0].length >= 32 ? parts.slice(1).join('_') : name;
+        return {
+          name: displayName,
+          fileName: displayName,
+          serverFileName: name,
+          isServer: true,
+          size: 0
+        };
+      });
   };
 
   return (
@@ -169,7 +200,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               startIcon={<IconChecks size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
-              {isAssignment ? 'Accept' : 'Verify'}
+              Verify
             </Button>
           </Stack>
         )
@@ -215,14 +246,30 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               
               {isExecution ? (
                 <>
+                  {data.remarks && (
+                    <BOSTextField 
+                      label="Previous Remarks / Manager Feedback" 
+                      value={data.remarks} 
+                      multiline 
+                      rows={3} 
+                      disabled 
+                      sx={{ '& .MuiOutlinedInput-root': { bgcolor: '#fff8f0' } }}
+                    />
+                  )}
                   <BOSTextField 
                     select 
                     label="Status" 
-                    value={formData.status === 'Pending for Verified' ? 'Completed' : formData.status} 
+                    value={
+                      ['Started', '25%', '50%', '75%', 'Completed'].includes(formData.status)
+                        ? formData.status
+                        : ''
+                    } 
                     onChange={(e) => setFormData(p => ({ ...p, status: e.target.value }))}
                     required
+                    disabled={getAvailableStatuses(data?.status).length === 0}
+                    helperText={getAvailableStatuses(data?.status).length === 0 ? 'Status is locked' : ''}
                   >
-                    {EXECUTION_STATUSES.map(s => <MenuItem key={s} value={s === '-Select-' ? '' : s}>{s}</MenuItem>)}
+                    {getAvailableStatuses(data?.status).map(s => <MenuItem key={s} value={s === '-Select-' ? '' : s}>{s}</MenuItem>)}
                   </BOSTextField>
                   <BOSTextField 
                     label="Execution Comments" 
@@ -274,7 +321,10 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
         <Stack spacing={3}>
           <BOSFormSection title="Samples (Template)" icon={<IconCloudUpload size={20} color={theme.palette.secondary.main} />}>
              <BOSFileGallery 
-               files={(master.uploadedFiles || []).map(parseFile)} 
+               files={[
+                 ...parseFileString(master.uploadedFiles),
+                 ...parseFileString(master.scannedFiles)
+               ]} 
                isEditing={false}
                title="SAMPLES"
              />

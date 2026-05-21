@@ -121,7 +121,7 @@ const INITIAL_STATE = {
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
-const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED'];
+const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
 const VALIDATION_RULES = [
   { field: 'empCode', label: 'Employee', required: true },
@@ -290,8 +290,10 @@ const InductionAssignment = () => {
         const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : (emp?.department || a.department);
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : (emp?.designation || a.designation);
         finalRows.push({ 
-          ...a, 
           ...emp, 
+          ...a, 
+          id: a.id,
+          employeeId: emp?.id,
           department: empDept,
           designation: empDesig,
           isVirtual: false 
@@ -302,6 +304,8 @@ const InductionAssignment = () => {
         if (!assignments.some(a => a.empCode === emp.empCode)) {
           finalRows.push({ 
             ...emp, 
+            id: null,
+            employeeId: emp.id,
             empName: emp.employeeName,
             department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
             designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
@@ -497,6 +501,7 @@ const InductionAssignment = () => {
                 value={formData.inductionDate}
                 onChange={handleInputChange}
                 required
+                inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
                 sx={errorStyle(!!errors.inductionDate)}
@@ -531,17 +536,18 @@ const InductionAssignment = () => {
                 <MenuItem value="">-Select-</MenuItem>
                 {employees
                   .filter(emp => {
-                    if (emp.isInductionEligible !== 'YES') return false;
+                    if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
+                    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
                     const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
                     const round = formData.inductionRound;
                     if (round === 'HR') {
-                      return empDept === 'Human Resources';
+                      return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
                     }
                     if (round === 'QMS') {
-                      return empDept === 'Quality Management';
+                      return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT'].includes(empDept?.toUpperCase());
                     }
                     if (round === 'DEPARTMENT') {
-                      return empDept === formData.department;
+                      return empDept?.toLowerCase() === formData.department?.toLowerCase();
                     }
                     return true;
                   })
