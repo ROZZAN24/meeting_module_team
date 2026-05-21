@@ -244,6 +244,7 @@ export const tableHeadCellSx = {
 export const getTableRowSx = (isDark) => ({
   cursor: 'pointer',
   transition: 'all 0.2s',
+  bgcolor: isDark ? 'background.paper' : '#ffffff',
   '& td': { borderBottom: '1px solid', borderColor: 'divider', py: 1.5 },
   '&:nth-of-type(even)': { bgcolor: isDark ? '#161b22' : '#fafafa' },
   '&:hover': {

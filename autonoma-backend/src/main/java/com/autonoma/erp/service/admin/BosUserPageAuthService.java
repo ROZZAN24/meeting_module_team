@@ -100,7 +100,8 @@ public class BosUserPageAuthService {
         if (page == null) return false;
 
         BosUserPageAuth auth = authRepository.findByUserIdAndPageId(userId, page.getPageId());
-        if (auth == null || auth.getEnable() == 0) return false;
+        if (auth == null) return true;
+        if (auth.getEnable() == 0) return false;
 
         return switch (action.toLowerCase()) {
             case "read" -> auth.getReadAcs() == 1;

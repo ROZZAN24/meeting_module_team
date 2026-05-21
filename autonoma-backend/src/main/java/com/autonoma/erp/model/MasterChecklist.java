@@ -102,6 +102,9 @@ public class MasterChecklist {
     @Column(name = "CARRY_FORWARD")
     private String carryForward;
 
+    @Column(name = "CARRY_FORWARD_STATUS")
+    private String carryForwardStatus;
+
     @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
     private String amendmentReason;
 
@@ -231,4 +234,6 @@ public class MasterChecklist {
     public void setDepartments(List<ChecklistDepartment> departments) { this.departments = departments; }
     public String getCarryForward() { return carryForward; }
     public void setCarryForward(String carryForward) { this.carryForward = carryForward; }
+    public String getCarryForwardStatus() { return carryForwardStatus; }
+    public void setCarryForwardStatus(String carryForwardStatus) { this.carryForwardStatus = carryForwardStatus; }
 }

@@ -74,10 +74,20 @@ public class InductionTrainingService {
             throw new RuntimeException("Training can only be started from PENDING or RESCHEDULE status. Current: " + assignment.getCurrentStatus());
         }
 
-        // Check if detail rows already exist (re-start case)
+        // Check if detail rows already exist (re-start/reschedule case)
         List<InductionTrainingDetail> existing = detailRepo.findByAssignmentId(assignmentId);
         if (!existing.isEmpty()) {
-            // Already started before — just update status
+            // Reset all responses for the new attempt
+            for (InductionTrainingDetail detail : existing) {
+                detail.setTrainerStatus("PENDING");
+                detail.setSkillRating(null);
+                detail.setTrainerComments(null);
+                detail.setTraineeStatus(null);
+                detail.setTraineeComments(null);
+                detail.setUpdatedAt(new Date());
+                detail.setUpdatedBy(currentUser);
+                detailRepo.save(detail);
+            }
             assignment.setCurrentStatus("TRAINING STARTED");
             assignment.setTrainingStartedAt(new Date());
             assignment.setUpdatedBy(currentUser);

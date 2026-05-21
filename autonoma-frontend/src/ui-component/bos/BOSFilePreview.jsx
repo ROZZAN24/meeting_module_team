@@ -115,6 +115,7 @@ export default function BOSFilePreview({
   const [loading, setLoading] = useState(false);
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
+  const [localBlobUrl, setLocalBlobUrl] = useState('');
 
   // Resolve props
   const currentFile = file || {};
@@ -123,6 +124,26 @@ export default function BOSFilePreview({
   const category = getFileCategory(fileName);
   const CategoryIcon = getCategoryIcon(category);
   const categoryColor = getCategoryColor(category);
+
+  // Manage local blob URL lifecycle for non-server files
+  useEffect(() => {
+    if (!open) return;
+    let urlToRevoke = '';
+    if (!directUrl && !isServer) {
+      const fileObj = currentFile instanceof File ? currentFile : currentFile.file;
+      if (fileObj instanceof File) {
+        const url = URL.createObjectURL(fileObj);
+        setLocalBlobUrl(url);
+        urlToRevoke = url;
+      }
+    }
+    return () => {
+      if (urlToRevoke) {
+        URL.revokeObjectURL(urlToRevoke);
+        setLocalBlobUrl('');
+      }
+    };
+  }, [open, directUrl, isServer, currentFile]);
 
   // Strip UUID prefix for display & Truncate Middle
   const getDisplayName = (name, maxLength = 35) => {
@@ -145,7 +166,7 @@ export default function BOSFilePreview({
   };
   const displayName = getDisplayName(fileName);
 
-  const viewUrl = directUrl || (isServer ? getFileViewUrl(currentFile.serverFileName || currentFile.name) : '');
+  const viewUrl = directUrl || (isServer ? getFileViewUrl(currentFile.serverFileName || currentFile.name) : localBlobUrl);
   const downloadUrl = isServer ? getFileDownloadUrl(currentFile.serverFileName || currentFile.name) : viewUrl;
 
   const currentIndex = allFiles.findIndex(f => (f.serverFileName || f.name) === (currentFile.serverFileName || currentFile.name));
@@ -180,8 +201,14 @@ export default function BOSFilePreview({
     setError('');
 
     try {
-      const response = await axios.get(viewUrl, { responseType: 'arraybuffer' });
-      const arrayBuffer = response.data;
+      let arrayBuffer;
+      if (viewUrl.startsWith('blob:')) {
+        const blobRes = await fetch(viewUrl);
+        arrayBuffer = await blobRes.arrayBuffer();
+      } else {
+        const response = await axios.get(viewUrl, { responseType: 'arraybuffer' });
+        arrayBuffer = response.data;
+      }
 
       // Defensive check: Very small buffers (e.g. < 1KB) are likely JSON error messages 
       // or invalid files, as docx/xlsx headers alone are usually larger.
@@ -223,8 +250,15 @@ export default function BOSFilePreview({
     setError('');
 
     try {
-      const response = await axios.get(viewUrl, { responseType: 'text' });
-      setContent(`<pre style="white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:13px;line-height:1.6;padding:16px;">${response.data}</pre>`);
+      let textData;
+      if (viewUrl.startsWith('blob:')) {
+        const blobRes = await fetch(viewUrl);
+        textData = await blobRes.text();
+      } else {
+        const response = await axios.get(viewUrl, { responseType: 'text' });
+        textData = response.data;
+      }
+      setContent(`<pre style="white-space:pre-wrap;word-break:break-word;font-family:monospace;font-size:13px;line-height:1.6;padding:16px;">${textData}</pre>`);
     } catch (err) {
       setError('Failed to load text file.');
     } finally {

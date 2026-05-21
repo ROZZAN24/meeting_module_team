@@ -62,7 +62,7 @@ public class InductionTrainingController {
      * Start training: creates detail rows from InductionMaster criteria.
      */
     @PostMapping("/{assignmentId}/start")
-    @RequirePagePermission(pageCode = "HRA_IND_02", action = "write")
+    @RequirePagePermission(pageCode = "M2160", action = "write")
     public ResponseEntity<?> startTraining(@PathVariable Long assignmentId, Principal principal) {
         try {
             String currentUser = authHelper.getUserId(principal);
@@ -78,7 +78,7 @@ public class InductionTrainingController {
      * Save trainer progress (batch update items).
      */
     @PutMapping("/{assignmentId}/details")
-    @RequirePagePermission(pageCode = "HRA_IND_02", action = "write")
+    @RequirePagePermission(pageCode = "M2160", action = "write")
     public ResponseEntity<?> saveProgress(
             @PathVariable Long assignmentId,
             @RequestBody List<InductionTrainingDetail> updates,
@@ -97,7 +97,7 @@ public class InductionTrainingController {
      * Mark training as given: validates all items + calculates rating.
      */
     @PostMapping("/{assignmentId}/complete")
-    @RequirePagePermission(pageCode = "HRA_IND_02", action = "write")
+    @RequirePagePermission(pageCode = "M2160", action = "write")
     public ResponseEntity<?> completeTraining(@PathVariable Long assignmentId, Principal principal) {
         try {
             String currentUser = authHelper.getUserId(principal);

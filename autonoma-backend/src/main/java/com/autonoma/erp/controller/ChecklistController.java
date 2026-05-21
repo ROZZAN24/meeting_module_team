@@ -90,12 +90,13 @@ public class ChecklistController {
             @RequestParam(required = false) String taskType,
             @RequestParam(required = false) String currentUser,
             @RequestParam(defaultValue = "false") boolean excludeCompleted,
+            @RequestParam(defaultValue = "false") boolean excludePending,
             @RequestParam(required = false) String dualCheck,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, taskType, currentUser, excludeCompleted, dualCheck, pageable));
+        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, taskType, currentUser, excludeCompleted, excludePending, dualCheck, pageable));
     }
 
     @PostMapping("/assign")
