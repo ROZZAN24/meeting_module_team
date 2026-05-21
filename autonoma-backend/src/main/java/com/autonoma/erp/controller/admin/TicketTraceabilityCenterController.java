@@ -27,6 +27,8 @@ public class TicketTraceabilityCenterController {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory
             .getLogger(TicketTraceabilityCenterController.class);
 
+    private static final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
     @Autowired
     private TicketTraceabilityCenterRepository ticketRepository;
 
@@ -145,14 +147,7 @@ public class TicketTraceabilityCenterController {
             TicketTraceabilityCenter savedTicket = ticketRepository.save(ticket);
 
             // Log status history transition
-            SupportTicketStatusHistory history = SupportTicketStatusHistory.builder()
-                    .ticketRowId(savedTicket.getRowId())
-                    .fromStatus(null)
-                    .toStatus(savedTicket.getTicketStatus())
-                    .updatedBy(getCurrentUser())
-                    .comment("Ticket created")
-                    .build();
-            statusHistoryRepository.save(history);
+            logStatusHistory(savedTicket.getRowId(), "Ticket Created", ticket.getDescription(), null, savedTicket.getTicketStatus(), null, null);
 
             // Move files and log attachments using helper method
             List<String> finalAttachments = moveTempFiles(ticket.getTempAttachments(), ticketId, savedTicket.getRowId(), "Attachment", "Attachments");
@@ -231,14 +226,7 @@ public class TicketTraceabilityCenterController {
                 String newAssignee = ticketDetails.getAssignedTo();
                 if (oldAssignee == null || !oldAssignee.equalsIgnoreCase(newAssignee)) {
                     existingTicket.setAssignedTo(newAssignee);
-                    SupportTicketStatusHistory history = SupportTicketStatusHistory.builder()
-                            .ticketRowId(existingTicket.getRowId())
-                            .fromStatus(oldStatus)
-                            .toStatus(oldStatus)
-                            .updatedBy(currentUserId)
-                            .comment("Reassigned to " + newAssignee)
-                            .build();
-                    statusHistoryRepository.save(history);
+                    logStatusHistory(existingTicket.getRowId(), "Ticket Reassigned", "Reassigned to " + newAssignee, oldStatus, oldStatus, newAssignee, null);
                 }
             }
             if (ticketDetails.getAssignedBy() != null)
@@ -252,8 +240,22 @@ public class TicketTraceabilityCenterController {
 
             if (ticketDetails.getDueDate() != null)
                 existingTicket.setDueDate(ticketDetails.getDueDate());
-            if (ticketDetails.getTargetDate() != null)
-                existingTicket.setTargetDate(ticketDetails.getTargetDate());
+            if (ticketDetails.getTargetDate() != null) {
+                Date oldTargetDate = existingTicket.getTargetDate();
+                Date newTargetDate = ticketDetails.getTargetDate();
+                boolean targetDateChanged = false;
+                if (oldTargetDate == null && newTargetDate != null) {
+                    targetDateChanged = true;
+                } else if (oldTargetDate != null && newTargetDate != null && !oldTargetDate.equals(newTargetDate)) {
+                    targetDateChanged = true;
+                }
+                if (targetDateChanged) {
+                    existingTicket.setTargetDate(newTargetDate);
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+                    String changeStr = (oldTargetDate == null ? "None" : sdf.format(oldTargetDate)) + " -> " + sdf.format(newTargetDate);
+                    logStatusHistory(existingTicket.getRowId(), "Target Date Updated", "Target date updated to " + sdf.format(newTargetDate), oldStatus, oldStatus, null, changeStr);
+                }
+            }
             if (ticketDetails.getTakenTime() != null)
                 existingTicket.setTakenTime(ticketDetails.getTakenTime());
             if (ticketDetails.getDueDateReason() != null)
@@ -325,14 +327,13 @@ public class TicketTraceabilityCenterController {
                             && !ticketDetails.getTakenTime().trim().isEmpty()) {
                         transitionComment = transitionComment + " | Taken Time: " + ticketDetails.getTakenTime().trim();
                     }
-                    SupportTicketStatusHistory history = SupportTicketStatusHistory.builder()
-                            .ticketRowId(existingTicket.getRowId())
-                            .fromStatus(oldStatus)
-                            .toStatus(newStatus)
-                            .updatedBy(currentUserId)
-                            .comment(transitionComment)
-                            .build();
-                    statusHistoryRepository.save(history);
+                    String activityName = "Status Changed";
+                    if ("Resolved".equalsIgnoreCase(newStatus)) {
+                        activityName = "Ticket Resolved";
+                    } else if ("Closed".equalsIgnoreCase(newStatus)) {
+                        activityName = "Ticket Closed";
+                    }
+                    logStatusHistory(existingTicket.getRowId(), activityName, transitionComment, oldStatus, newStatus, null, null);
                 }
             }
 
@@ -402,6 +403,9 @@ public class TicketTraceabilityCenterController {
             }
 
             SupportTicketComment savedComment = commentRepository.save(comment);
+
+            // Log comment into status history
+            logStatusHistory(rowId, "Comment Added", comment.getComments(), null, null, null, null);
 
             // Log comment into status history if it represents a resolution update
             if ("Resolution Update".equalsIgnoreCase(comment.getCommentType())) {
@@ -763,7 +767,10 @@ public class TicketTraceabilityCenterController {
 
     @PostMapping("/transcribe")
     @Operation(summary = "Transcribe uploaded voice recording")
-    public ResponseEntity<?> transcribeVoiceRecording(@RequestParam("file") MultipartFile file, @RequestParam(value = "language", required = false) String language) {
+    public ResponseEntity<?> transcribeVoiceRecording(
+            @RequestParam("file") MultipartFile file, 
+            @RequestParam(value = "language", required = false) String language,
+            @RequestParam(value = "transcribedText", required = false) String transcribedText) {
         if (file == null || file.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Audio file is empty or not provided."));
         }
@@ -784,56 +791,55 @@ public class TicketTraceabilityCenterController {
         }
         
         try {
-            // Simulate speech processing delay - reduced to 50ms for performance
             Thread.sleep(50);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
         
-        String lang = (language != null) ? language.toLowerCase() : "";
-        String fn = originalFilename.toLowerCase();
-        
-        String targetLang = lang;
-        if (targetLang.isEmpty()) {
-            if (fn.contains("tamil")) targetLang = "ta-in";
-            else if (fn.contains("hindi")) targetLang = "hi-in";
-            else if (fn.contains("spanish")) targetLang = "es-es";
-            else if (fn.contains("french")) targetLang = "fr-fr";
-            else if (fn.contains("german")) targetLang = "de-de";
-            else if (fn.contains("telugu")) targetLang = "te-in";
-            else if (fn.contains("kannada")) targetLang = "kn-in";
-            else if (fn.contains("malayalam")) targetLang = "ml-in";
-            else if (fn.contains("bengali")) targetLang = "bn-in";
-            else targetLang = "en-in";
-        }
-        
-        String transcribedText;
-        if (targetLang.contains("ta")) {
-            transcribedText = "லாகின் செய்யும்போது எரர் வருகிறது. Authentication is failing on the main portal, please check and resolve this login error as soon as possible.";
-        } else if (targetLang.contains("hi")) {
-            transcribedText = "लॉगिन करते समय त्रुटि आ रही है. Database connection issue is observed in checkout process. Kindly check.";
-        } else if (targetLang.contains("es")) {
-            transcribedText = "Hay un problema de conexión con la base de datos al iniciar sesión. Por favor revise el pool de conexiones.";
-        } else if (targetLang.contains("fr")) {
-            transcribedText = "Il y a un problème de connexion à la base de données lors de la connexion. Veuillez vérifier le pool de connexions.";
-        } else if (targetLang.contains("de")) {
-            transcribedText = "Beim Anmelden tritt ein Datenbankverbindungsproblem auf. Bitte überprüfen Sie den Connection Pool.";
-        } else if (targetLang.contains("te")) {
-            transcribedText = "లాగిన్ చేసేటప్పుడు డేటాబేస్ కనెక్షన్ సమస్య వస్తోంది. దయచేసి కనెక్షన్ పూల్ తనిఖీ చేయండి.";
-        } else if (targetLang.contains("kn")) {
-            transcribedText = "ಲಾಗಿನ್ ಮಾಡುವಾಗ ಡೇಟಾಬೇಸ್ ಸಂಪರ್ಕದ ಸಮಸ್ಯೆ ಉಂಟಾಗಿದೆ. ದಯವಿಟ್ಟು ಸಂಪರ್ಕ ಪೂಲ್ ಪರಿಶೀಲಿಸಿ.";
-        } else if (targetLang.contains("ml")) {
-            transcribedText = "ലോഗിൻ ചെയ്യുമ്പോൾ ഡാറ്റാബേസ് കണക്ഷൻ പ്രശ്നം ഉണ്ടാകുന്നു. ദയവായി കണക്ഷൻ പൂൾ പരിശോധിക്കുക.";
-        } else if (targetLang.contains("bn")) {
-            transcribedText = "লগইন করার সময় ডাটাবেস সংযোগের সমস্যা হচ্ছে। অনুগ্রহ করে সংযোগ পুল পরীক্ষা করুন।";
-        } else {
-            transcribedText = "The application is throwing an exception during checkout, please check the logs and fix database pool configuration.";
-        }
+        String resultText = (transcribedText != null) ? transcribedText : "";
         
         return ResponseEntity.ok(Map.of(
-            "text", transcribedText,
+            "text", resultText,
             "filename", originalFilename,
-            "detectedLanguage", targetLang
+            "detectedLanguage", (language != null) ? language : "en-in"
         ));
+    }
+
+    private void logStatusHistory(Integer ticketRowId, String activityName, String commentText, String fromStatus, String toStatus, String assignedUser, String targetDateChanges) {
+        try {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("activityName", activityName);
+            payload.put("comment", commentText != null ? commentText : "");
+            payload.put("fromStatus", fromStatus);
+            payload.put("toStatus", toStatus);
+            payload.put("assignedUser", assignedUser);
+            payload.put("targetDateChanges", targetDateChanges);
+            
+            String jsonComment = objectMapper.writeValueAsString(payload);
+            
+            String finalFrom = fromStatus;
+            String finalTo = toStatus;
+            
+            if (finalTo == null) {
+                Optional<TicketTraceabilityCenter> tOpt = ticketRepository.findById(ticketRowId);
+                if (tOpt.isPresent()) {
+                    finalTo = tOpt.get().getTicketStatus();
+                }
+            }
+            if (finalTo == null) {
+                finalTo = "Open";
+            }
+            
+            SupportTicketStatusHistory history = SupportTicketStatusHistory.builder()
+                    .ticketRowId(ticketRowId)
+                    .fromStatus(finalFrom)
+                    .toStatus(finalTo)
+                    .updatedBy(getCurrentUser())
+                    .comment(jsonComment)
+                    .build();
+            statusHistoryRepository.save(history);
+        } catch (Exception e) {
+            log.error("Failed to log status history for ticket ID: " + ticketRowId, e);
+        }
     }
 }
