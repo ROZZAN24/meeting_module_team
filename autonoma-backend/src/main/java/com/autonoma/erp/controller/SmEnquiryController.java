@@ -6,6 +6,7 @@ import com.autonoma.erp.repository.SmEnquiryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,12 +41,14 @@ public class SmEnquiryController {
     }
 
     @Operation(summary = "Create a new enquiry")
+    @RequirePagePermission(pageCode = "SM1120", action = "write")
     @PostMapping
     public ResponseEntity<SmEnquiry> createEnquiry(@RequestBody SmEnquiry enquiry) {
         return ResponseEntity.ok(enquiryService.saveEnquiry(enquiry));
     }
 
     @Operation(summary = "Update an existing enquiry")
+    @RequirePagePermission(pageCode = "SM1120", action = "write")
     @PutMapping("/{id}")
     public ResponseEntity<SmEnquiry> updateEnquiry(@PathVariable Long id, @RequestBody SmEnquiry enquiryDetails) {
         return enquiryRepository.findById(id)
@@ -71,6 +74,7 @@ public class SmEnquiryController {
     }
 
     @Operation(summary = "Delete an enquiry")
+    @RequirePagePermission(pageCode = "SM1120", action = "delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEnquiry(@PathVariable Long id) {
         enquiryService.deleteEnquiry(id);

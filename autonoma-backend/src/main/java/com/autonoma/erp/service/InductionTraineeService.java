@@ -29,6 +29,9 @@ public class InductionTraineeService {
      * Only shows records with currentStatus = 'TRAINING GIVEN'.
      */
     public List<InductionAssignment> getForTrainee(String empCode) {
+        if ("*".equals(empCode)) {
+            return assignmentRepo.findAllTraineeRecords();
+        }
         return assignmentRepo.findTraineeRecords(empCode);
     }
 

@@ -9,6 +9,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useLookups from 'hooks/useLookups';
 import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import MomApprovalDialog from './MomApprovalDialog';
 
 const columns = [
@@ -28,6 +29,7 @@ export default function MomApprovalList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_MOM_APPROVAL);
   const lookups = useLookups(['EMPLOYEES']);
 
   const [rows, setRows] = useState([]);
@@ -176,7 +178,7 @@ export default function MomApprovalList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="MOM_Approval"
             columns={[
@@ -186,7 +188,7 @@ export default function MomApprovalList() {
               { header: 'Target Date', key: 'targetDate' },
               { header: 'Status', key: 'status' }
             ]}
-          />
+          />}
         </Stack>
       }
     >

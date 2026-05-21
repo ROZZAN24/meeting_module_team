@@ -28,13 +28,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
+import useAuth from 'hooks/useAuth';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Seq No', 'Checking Point', 'Category', 'Frequency', 'Department',
   'Effective From', 'Days', 'Expire Date', 'Stock Link',
-  'Created Date', 'Created By', 'Verify Status', 'Verified By', 'Verified Date'
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE',
+  'Verify Status', 'Verified By', 'Verified Date'
 ];
 
 const DEPARTMENTS = [
@@ -63,12 +66,42 @@ const tableCols = [
   { id: 'days', label: 'Days' },
   { id: 'expireDate', label: 'Expire Date' },
   { id: 'stockLink', label: 'Stock Link' },
-  { id: 'createdDate', label: 'Created Date' },
-  { id: 'createdBy', label: 'Created By' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
   { id: 'verifiedDate', label: 'Verified Date' }
 ];
+
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
 
 const exportColumns = [
   { header: 'Seq No', key: 'seqNo' },
@@ -76,15 +109,17 @@ const exportColumns = [
   { header: 'Category', key: 'category' },
   { header: 'Frequency', key: 'frequency' },
   { header: 'Department', key: (r) => (r.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Effective From', key: 'effectiveFrom' },
+  { header: 'Effective From', key: (r) => formatDate(r.effectiveFrom) },
   { header: 'Days', key: 'reminderDays' },
-  { header: 'Expire Date', key: 'expiryDate' },
+  { header: 'Expire Date', key: (r) => formatDate(r.expiryDate) },
   { header: 'Stock Link', key: 'stockLink' },
-  { header: 'Created Date', key: 'createdDate' },
-  { header: 'Created By', key: 'createdBy' },
+  { header: 'CREATED USER', key: 'createdBy' },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
+  { header: 'UPDATED USER', key: 'updatedBy' },
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.updatedDate) },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
-  { header: 'Verified Date', key: 'verifiedDate' }
+  { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) }
 ];
 
 const filterConfig = [
@@ -160,6 +195,7 @@ function StatusChip({ status }) {
 
 export default function CheckListVerify() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -173,6 +209,7 @@ export default function CheckListVerify() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_VERIFY);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ status:true, category:true, department:false, searchBy:false });
@@ -262,7 +299,7 @@ export default function CheckListVerify() {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: remarks || (status === 'Rejected' ? 'Rejected by verifier' : 'Verified')
       });
       fetchChecklists();
@@ -279,7 +316,7 @@ export default function CheckListVerify() {
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -360,15 +397,17 @@ export default function CheckListVerify() {
                   <TableCell>{row.category}</TableCell>
                   <TableCell>{row.frequency}</TableCell>
                   <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{row.effectiveFrom}</TableCell>
+                  <TableCell>{formatDate(row.effectiveFrom)}</TableCell>
                   <TableCell>{row.reminderDays}</TableCell>
-                  <TableCell>{row.expiryDate}</TableCell>
+                  <TableCell>{formatDate(row.expiryDate)}</TableCell>
                   <TableCell>{row.stockLink}</TableCell>
-                  <TableCell>{row.createdDate ? new Date(row.createdDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.createdBy}</TableCell>
+                  <TableCell>{row.createdBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.createdAt || row.createdDate)}</TableCell>
+                  <TableCell>{row.updatedBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.updatedDate)}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
                   <TableCell>{row.verifiedBy}</TableCell>
-                  <TableCell>{row.verifiedDate}</TableCell>
+                  <TableCell>{formatDate(row.verifiedDate)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

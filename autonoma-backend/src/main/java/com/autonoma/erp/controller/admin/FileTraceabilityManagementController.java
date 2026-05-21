@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.FileTraceabilityManagement;
 import com.autonoma.erp.repository.FileTraceabilityManagementRepository;
 import com.autonoma.erp.model.admin.BosPage;
@@ -88,6 +90,9 @@ public class FileTraceabilityManagementController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "AD1170", action = "write")
     @Operation(summary = "Log Export Event", description = "Stores information when a user exports a file (excel or pdf)")
     public ResponseEntity<?> logExport(@RequestBody Map<String, Object> payload) {
         log.info("Logging export event with payload: {}", payload);

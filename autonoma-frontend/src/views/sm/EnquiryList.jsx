@@ -13,6 +13,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
 import { useSelector, useDispatch } from 'react-redux';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| SM - ENQUIRY MANAGEMENT (BOS SOP COMPLIANT) ||============================== //
 
@@ -33,6 +34,7 @@ const columns = [
 ];
 
 export default function EnquiryList() {
+  const perms = usePagePermissions(PAGE_CODES.SM_ENQUIRY);
   const dispatch = useDispatch();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -143,7 +145,7 @@ return (
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="SM_Enquiries"
             columns={[
@@ -153,12 +155,12 @@ return (
               { header: 'Priority', key: 'priority' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -169,9 +171,9 @@ return (
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddEnquiryDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

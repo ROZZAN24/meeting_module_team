@@ -13,6 +13,7 @@ import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| SM - QUOTATION MANAGEMENT (BOS SOP COMPLIANT) ||============================== //
 
@@ -30,6 +31,7 @@ const columns = [
 ];
 
 export default function QuotationList() {
+  const perms = usePagePermissions(PAGE_CODES.SM_QUOTATION);
   const dispatch = useDispatch();
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -111,7 +113,7 @@ export default function QuotationList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="SM_Quotations"
             columns={[
@@ -121,12 +123,12 @@ export default function QuotationList() {
               { header: 'Amount', key: 'totalAmount' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Quotation', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Quotation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -138,9 +140,9 @@ export default function QuotationList() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddQuotationDialog open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

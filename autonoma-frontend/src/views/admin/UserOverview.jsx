@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // material-ui
@@ -49,6 +49,7 @@ import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import useAuth from 'hooks/useAuth';
 import getCroppedImg from 'utils/cropImage';
+import { getFaceDescriptor } from 'utils/faceApi';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
@@ -62,7 +63,9 @@ import {
   IconUserPlus,
   IconCircleCheckFilled,
   IconCircleXFilled,
-  IconCrop
+  IconCrop,
+  IconCamera,
+  IconCameraOff
 } from '@tabler/icons-react';
 
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
@@ -91,6 +94,79 @@ const UserOverview = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isCropOpen, setIsCropOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Camera States
+  const [cameraActive, setCameraActive] = useState(false);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const startCamera = async () => {
+    try {
+      setCameraActive(true);
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320 } });
+      streamRef.current = stream;
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 100);
+    } catch (err) {
+      console.error("Error accessing camera for registration:", err);
+      dispatch(openSnackbar({ open: true, message: 'Could not access webcam for face registration', variant: 'alert', severity: 'error' }));
+      setCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setCameraActive(false);
+  };
+
+  const captureFace = async (setFieldValue) => {
+    if (videoRef.current) {
+      try {
+        const descriptorArray = await getFaceDescriptor(videoRef.current);
+        const faceDescriptor = descriptorArray ? JSON.stringify(descriptorArray) : null;
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 160;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, 160, 160);
+        const dataUrl = canvas.toDataURL('image/jpeg');
+
+        setFieldValue('faceImage', dataUrl);
+        setFieldValue('faceDescriptor', faceDescriptor || '');
+
+        stopCamera();
+        if (faceDescriptor) {
+          dispatch(openSnackbar({ open: true, message: 'Face snapshot & biometrics captured successfully', variant: 'alert', severity: 'success' }));
+        } else {
+          dispatch(openSnackbar({ open: true, message: 'Snapshot captured, but no face detected clearly.', variant: 'alert', severity: 'warning' }));
+        }
+      } catch (err) {
+        console.error("Error capturing face descriptor:", err);
+        dispatch(openSnackbar({ open: true, message: 'Failed to process face biometrics.', variant: 'alert', severity: 'error' }));
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!open) {
+      stopCamera();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   const getErrorMessage = (err) => {
     if (typeof err === 'string') return err;
@@ -175,6 +251,7 @@ const UserOverview = () => {
     setOpen(false);
     setEditingUser(null);
     setShowPassword(false);
+    stopCamera();
   };
 
   const handleEdit = async (user) => {
@@ -479,6 +556,9 @@ const UserOverview = () => {
             imgName: editingUser?.imgName || '',
             isBosAdmin: editingUser?.isBosAdmin ?? 0,
             mappedDivisionIds: editingUser?.mappedDivisionIds || [],
+            faceImage: editingUser?.faceImage || '',
+            faceDescriptor: editingUser?.faceDescriptor || '',
+            authMethod: editingUser?.authMethod || 'PASSWORD',
             submit: null
           }}
           validationSchema={Yup.object().shape({
@@ -491,9 +571,26 @@ const UserOverview = () => {
             try {
               let savedUserId = values.userId;
               if (editingUser) {
-                await axios.put(`/api/users/update/${editingUser.userId}`, { empId: Number(values.empId), password: values.password, status: Number(values.status), imgName: values.imgName });
+                await axios.put(`/api/users/update/${editingUser.userId}`, {
+                  empId: Number(values.empId),
+                  password: values.password,
+                  status: Number(values.status),
+                  imgName: values.imgName,
+                  faceImage: values.faceImage,
+                  faceDescriptor: values.faceDescriptor,
+                  authMethod: values.authMethod
+                });
               } else {
-                await axios.post('/api/users/create', { userId: values.userId, empId: Number(values.empId), password: values.password, status: Number(values.status), imgName: values.imgName });
+                await axios.post('/api/users/create', {
+                  userId: values.userId,
+                  empId: Number(values.empId),
+                  password: values.password,
+                  status: Number(values.status),
+                  imgName: values.imgName,
+                  faceImage: values.faceImage,
+                  faceDescriptor: values.faceDescriptor,
+                  authMethod: values.authMethod
+                });
               }
 
               await axios.post(`/api/users/${savedUserId}/mappings`, {
@@ -603,10 +700,75 @@ const UserOverview = () => {
                         />
                         <TextField fullWidth label="User ID" name="userId" value={values.userId} onChange={handleChange} onBlur={handleBlur} disabled={Boolean(editingUser)} error={Boolean(touched.userId && errors.userId)} helperText={touched.userId && errors.userId} />
                         <TextField fullWidth label={editingUser ? 'Update Password' : 'Password'} name="password" placeholder={editingUser ? 'Leave blank to keep current password' : ''} type={showPassword ? 'text' : 'password'} value={values.password} onChange={handleChange} onBlur={handleBlur} error={Boolean(touched.password && errors.password)} helperText={(touched.password && errors.password) || (editingUser ? 'Leave blank to keep existing credentials' : '')} InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={handleClickShowPassword}>{showPassword ? <Visibility /> : <VisibilityOff />}</IconButton></InputAdornment> }} />
-                        <TextField select fullWidth label="Account Status" name="status" value={values.status} onChange={handleChange} onBlur={handleBlur}>
-                          <MenuItem value={1}>Active</MenuItem>
-                          <MenuItem value={0}>Suspended</MenuItem>
-                        </TextField>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <TextField select fullWidth label="Account Status" name="status" value={values.status} onChange={handleChange} onBlur={handleBlur}>
+                              <MenuItem value={1}>Active</MenuItem>
+                              <MenuItem value={0}>Suspended</MenuItem>
+                            </TextField>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField select fullWidth label="Preferred Login Method" name="authMethod" value={values.authMethod || 'PASSWORD'} onChange={handleChange} onBlur={handleBlur}>
+                              <MenuItem value="PASSWORD">Password Only</MenuItem>
+                              <MenuItem value="FACE">Face ID Only</MenuItem>
+                              <MenuItem value="BOTH">Password or Face ID</MenuItem>
+                            </TextField>
+                          </Grid>
+                        </Grid>
+
+                        <Box sx={{ pt: 2, borderTop: '1px solid #eef2f6' }}>
+                          <Typography variant="subtitle1" fontWeight={800} color="secondary.main" sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                            Face ID Biometric Registration
+                          </Typography>
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                              {cameraActive ? (
+                                <Box sx={{ position: 'relative', width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '3px solid', borderColor: 'secondary.main' }}>
+                                  <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </Box>
+                              ) : (
+                                <Avatar 
+                                  src={values.faceImage || null} 
+                                  sx={{ width: 100, height: 100, border: '3px solid', borderColor: values.faceImage ? 'success.main' : 'grey.300', bgcolor: 'grey.100' }}
+                                >
+                                  <IconPhoto size={36} />
+                                </Avatar>
+                              )}
+                            </Grid>
+                            <Grid item xs={12} sm={9}>
+                              <Stack spacing={1.5}>
+                                <Typography variant="body2" color="textSecondary">
+                                  {values.faceImage 
+                                    ? 'Face biometric registered. You can use Face ID to sign in.' 
+                                    : 'No face registered yet. Turn on the camera to scan and register.'}
+                                </Typography>
+                                <Stack direction="row" spacing={1}>
+                                  {cameraActive ? (
+                                    <>
+                                      <Button size="small" variant="contained" color="success" type="button" onClick={() => captureFace(setFieldValue)}>
+                                        Capture Face
+                                      </Button>
+                                      <Button size="small" variant="outlined" color="error" type="button" onClick={stopCamera}>
+                                        Cancel
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Button size="small" variant="contained" color="primary" type="button" onClick={startCamera}>
+                                        {values.faceImage ? 'Re-Register Face' : 'Register Face'}
+                                      </Button>
+                                      {values.faceImage && (
+                                        <Button size="small" variant="text" color="error" type="button" onClick={() => setFieldValue('faceImage', '')}>
+                                          Clear
+                                        </Button>
+                                      )}
+                                    </>
+                                  )}
+                                </Stack>
+                              </Stack>
+                            </Grid>
+                          </Grid>
+                        </Box>
 
                         <Box sx={{ pt: 2, borderTop: '1px solid #eef2f6' }}>
                           <Typography variant="subtitle1" fontWeight={800} color="secondary.main" sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.75rem' }}>

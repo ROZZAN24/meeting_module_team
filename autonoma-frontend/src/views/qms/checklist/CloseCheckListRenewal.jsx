@@ -31,10 +31,25 @@ import useAuth from 'hooks/useAuth';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
-  '#', 'Task Type', 'Seq.No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Next Due Date', 'Status', 'Attended Date', 'Attended By', 'Verification Required', 'Photo Required', 'Created Date', 'Created By'
+  '#',
+  'Seq.No',
+  'Checking Point',
+  'Frequency',
+  'Category',
+  'Assign Type',
+  'Photo Required',
+  'Verification Required',
+  'Assign Date',
+  'Next Renewal Date',
+  'Assign To',
+  'Verification Status',
+  'Created User',
+  'Created Date',
+  'Updated User',
+  'Updated Date'
 ];
 
 const STATUS_OPTIONS = [
@@ -73,36 +88,70 @@ const tableCols = [
   { id: 'category', label: 'Category' },
   { id: 'frequency', label: 'Frequency' },
   { id: 'department', label: 'Dept' },
+  { id: 'stockLink', label: 'Stock Link' },
+  { id: 'itemCode', label: 'Item Code' },
+  { id: 'qty', label: 'Quantity' },
+  { id: 'assignedTo', label: 'Assign To' },
   { id: 'assignedDate', label: 'Date' },
   { id: 'checklistDate', label: 'Checklist Date' },
+  { id: 'expireDate', label: 'Expire Date' },
   { id: 'nextDueDate', label: 'Next Due Date' },
   { id: 'status', label: 'Status' },
   { id: 'attendedDate', label: 'Attended Date' },
   { id: 'attendedBy', label: 'Attended By' },
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'photoRequired', label: 'Photo Required' },
-  { id: 'createdDate', label: 'Created Date' },
-  { id: 'createdBy', label: 'Created By' }
+  { id: 'carryForward', label: 'Carry Forward' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
+
 const exportColumns = [
-  { header: 'Task Type', key: (r) => r.assignType || 'Mine' },
   { header: 'Seq.No', key: (r) => r.checklist?.seqNo },
   { header: 'Checking Point', key: (r) => r.checklist?.checkingPoint },
-  { header: 'Descriptions', key: (r) => r.checklist?.description },
-  { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
-  { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
-  { header: 'Checklist Date', key: 'checklistDate' },
-  { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
-  { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
-  { header: 'Attended Date', key: 'attendedDate' },
-  { header: 'Attended By', key: 'attendedBy' },
-  { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
+  { header: 'Category', key: (r) => r.checklist?.category },
+  { header: 'Assign Type', key: (r) => r.assignType || 'Mine' },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
-  { header: 'Created Date', key: (r) => r.checklist?.createdDate ? new Date(r.checklist.createdDate).toLocaleDateString() : '' },
-  { header: 'Created By', key: (r) => r.checklist?.createdBy }
+  { header: 'Verification Required', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
+  { header: 'Assign Date', key: (r) => formatDate(r.assignedDate) },
+  { header: 'Next Renewal Date', key: (r) => r.checklist?.nextDueDate || formatDate(r.checklist?.expiryDate) },
+  { header: 'Assign To', key: (r) => r.assignedTo },
+  { header: 'Verification Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
+  { header: 'Created User', key: (r) => r.checklist?.createdBy },
+  { header: 'Created Date', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
+  { header: 'Updated User', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'Updated Date', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
 const filterConfig = [
@@ -176,8 +225,8 @@ function FilterSection({ title, open, onToggle, children }) {
 }
 
 function StatusChip({ status }) {
-  const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning' };
-  const label = typeof status === 'object' ? status?.name : status;
+  const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
+  let label = typeof status === 'object' ? status?.name : status;
   return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
 }
 
@@ -197,6 +246,7 @@ export default function CloseCheckListRenewal() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_CLOSE);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
@@ -253,6 +303,7 @@ export default function CloseCheckListRenewal() {
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.name || user?.id || undefined,
+        excludePending: false,
 
         // Add-on filters
         seqNo: filters.seqNo || undefined,
@@ -299,12 +350,44 @@ export default function CloseCheckListRenewal() {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: `Status updated to ${status}`
       });
       fetchAssignments();
     } catch (error) {
       console.error('Failed to update assignment status:', error);
+    }
+  };
+
+  const handleSaveExecution = async (formData) => {
+    if (!selectedRowId) return;
+    try {
+      const uploadedFileNames = [];
+      for (const f of formData.actualFiles) {
+        if (f.isServer) {
+          uploadedFileNames.push(f.serverFileName || f.name);
+        } else if (f.file) {
+          const upFormData = new FormData();
+          upFormData.append('file', f.file);
+          const res = await axios.post('/api/files/upload', upFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          uploadedFileNames.push(res.data);
+        }
+      }
+
+      await axios.post('/api/qms/checklist/verify', {
+        assignmentId: selectedRowId,
+        status: formData.status || 'Completed',
+        verifiedBy: user?.name || user?.id || 'Executor',
+        remarks: formData.remarks || '',
+        actualFiles: uploadedFileNames
+      });
+
+      setDialogOpen(false);
+      fetchAssignments();
+    } catch (error) {
+      console.error('Failed to save execution:', error);
     }
   };
 
@@ -316,7 +399,7 @@ export default function CloseCheckListRenewal() {
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>
-          <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -393,23 +476,21 @@ export default function CloseCheckListRenewal() {
                   sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
-                  <TableCell>{row.assignType || 'Mine'}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>
                   <TableCell>{row.checklist?.checkingPoint}</TableCell>
-                  <TableCell>{row.checklist?.description}</TableCell>
-                  <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
-                  <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.checklistDate}</TableCell>
-                  <TableCell>{row.checklist?.nextDueDate}</TableCell>
+                  <TableCell>{row.checklist?.category}</TableCell>
+                  <TableCell>{row.assignType || 'Mine'}</TableCell>
+                  <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                  <TableCell>{formatDate(row.assignedDate)}</TableCell>
+                  <TableCell>{row.checklist?.nextDueDate || formatDate(row.checklist?.expiryDate)}</TableCell>
+                  <TableCell>{row.assignedTo || '-'}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{row.attendedDate}</TableCell>
-                  <TableCell>{row.attendedBy}</TableCell>
-                  <TableCell>{row.checklist?.verificationRequired}</TableCell>
-                  <TableCell>{row.checklist?.photoRequired}</TableCell>
-                  <TableCell>{row.checklist?.createdDate ? new Date(row.checklist.createdDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.checklist?.createdBy}</TableCell>
+                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
+                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -472,11 +553,11 @@ export default function CloseCheckListRenewal() {
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
             <Box sx={{ mb: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>From</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>To</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
           </FilterSection>
           <Divider />
@@ -507,7 +588,8 @@ export default function CloseCheckListRenewal() {
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}
         data={activeRow}
-        isExecution={false}
+        isExecution={true}
+        onSave={handleSaveExecution}
       />
     </MainCard>
   );

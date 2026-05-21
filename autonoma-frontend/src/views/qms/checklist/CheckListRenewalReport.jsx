@@ -29,8 +29,12 @@ import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
-const columns = ['#', 'Category', 'Check Point', 'Dept', 'Level', 'Frequency', 'Stock Link', 'Comments', 'Verification Required', 'Assigned To', 'Assigned By', 'Status'];
+const columns = [
+  '#', 'Category', 'Check Point', 'Dept', 'Level', 'Frequency', 'Stock Link', 'Comments', 'Verification Required', 'Assigned To', 'Assigned By',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE', 'Status'
+];
 
 const DEPARTMENTS = [
   'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT',
@@ -67,20 +71,56 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'assignedBy', label: 'Assigned By' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'status', label: 'Status' }
 ];
+
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
 
 const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Check Point', key: (r) => r.checklist?.checkingPoint },
   { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Level', key: () => '' },
+  { header: 'Level', key: (r) => r.checklist?.levelIds || '' },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
   { header: 'Stock Link', key: (r) => r.checklist?.stockLink },
   { header: 'Comments', key: 'remarks' },
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Assigned To', key: 'assignedTo' },
   { header: 'Assigned By', key: 'assignedBy' },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
+  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
@@ -170,6 +210,7 @@ export default function CheckListRenewalReport() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_REPORT);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ dateRange:true, considerDate:false, status:true });
@@ -264,7 +305,7 @@ export default function CheckListRenewalReport() {
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -343,13 +384,17 @@ export default function CheckListRenewalReport() {
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.checkingPoint}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell></TableCell>
+                  <TableCell>{row.checklist?.levelIds || '-'}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{row.checklist?.stockLink}</TableCell>
                   <TableCell>{row.remarks}</TableCell>
                   <TableCell>{row.checklist?.verificationRequired}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
                   <TableCell>{row.assignedBy}</TableCell>
+                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
+                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                 </TableRow>
               ))}
@@ -405,11 +450,11 @@ export default function CheckListRenewalReport() {
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
             <Box sx={{ mb: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>From Date</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>To Date</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
           </FilterSection>
           <Divider />

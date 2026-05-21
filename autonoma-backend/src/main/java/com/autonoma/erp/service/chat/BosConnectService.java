@@ -260,6 +260,30 @@ public class BosConnectService {
             memberRepository.save(mem);
         }
 
+        // Calculate Seen status for messages!
+        // Find other members in this channel to see their lastReadMessageId
+        List<CommChannelMember> allMembers = memberRepository.findByChannelId(channelId);
+        List<CommChannelMember> otherMembers = allMembers.stream()
+                .filter(m -> !m.getUserId().equals(userId))
+                .collect(Collectors.toList());
+
+        for (CommMessage msg : msgs) {
+            // For a message sent by the current user, it is seen if at least one other member has read it!
+            if (msg.getSenderId().equals(userId)) {
+                boolean seenByAnyOther = false;
+                for (CommChannelMember other : otherMembers) {
+                    if (other.getLastReadMessageId() != null && other.getLastReadMessageId() >= msg.getId()) {
+                        seenByAnyOther = true;
+                        break;
+                    }
+                }
+                msg.setIsSeen(seenByAnyOther);
+            } else {
+                // Sent by someone else, so it's always seen since the current user just loaded the messages!
+                msg.setIsSeen(true);
+            }
+        }
+
         return msgs;
     }
 
@@ -505,21 +529,25 @@ public class BosConnectService {
         List<String> replies = new ArrayList<>();
 
         if (msgs.isEmpty()) {
-            replies.addAll(Arrays.asList("Hello!", "How can I help you?", "Good morning"));
+            replies.addAll(Arrays.asList("Hello!", "How can I help you?", "Good morning", "Hi team!", "Let's start the chat."));
         } else {
             CommMessage last = msgs.get(msgs.size() - 1);
             String text = last.getMessageContent() != null ? last.getMessageContent().toLowerCase() : "";
 
             if (text.contains("hi") || text.contains("hello") || text.contains("hey")) {
-                replies.addAll(Arrays.asList("Hello!", "Hey, how are you?", "Good day!"));
+                replies.addAll(Arrays.asList("Hello!", "Hey, how are you?", "Good day!", "Hi! Hope you're doing well.", "Hello team! What's the status?"));
             } else if (text.contains("meeting") || text.contains("schedule")) {
-                replies.addAll(Arrays.asList("Count me in!", "What time?", "Let's schedule it."));
+                replies.addAll(Arrays.asList("Count me in!", "What time?", "Let's schedule it.", "Sure, please send the invite link.", "I'll join in 5 minutes."));
             } else if (text.contains("approve") || text.contains("grn") || text.contains("prefix")) {
-                replies.addAll(Arrays.asList("Approved! Thank you.", "I will check the prefix now.", "Please raise the draft."));
+                replies.addAll(Arrays.asList("Approved! Thank you.", "I will check the prefix now.", "Please raise the draft.", "Looks good, go ahead.", "Can you double check the account year?"));
             } else if (text.contains("file") || text.contains("doc") || text.contains("report")) {
-                replies.addAll(Arrays.asList("Got the file, thanks!", "I will review this today.", "Looks good!"));
+                replies.addAll(Arrays.asList("Got the file, thanks!", "I will review this today.", "Looks good!", "Can you share the editable format?", "Thanks for sending the document."));
+            } else if (text.contains("inventory") || text.contains("stock")) {
+                replies.addAll(Arrays.asList("Thanks for the inventory report.", "I'll verify the stock levels.", "Blade capacity is low, please raise PO.", "Excellent capacity summary.", "Let's check the master division records."));
+            } else if (text.contains("thanks") || text.contains("thank you")) {
+                replies.addAll(Arrays.asList("You're very welcome!", "Glad to help!", "Anytime!", "No problem at all!", "My pleasure!"));
             } else {
-                replies.addAll(Arrays.asList("Got it.", "Perfect, thanks for the update.", "I will look into this."));
+                replies.addAll(Arrays.asList("Got it.", "Perfect, thanks for the update.", "I will look into this.", "Okay, I'll update you soon.", "Thank you so much!"));
             }
         }
 
@@ -545,7 +573,7 @@ public class BosConnectService {
         }
 
         UserCredential user = userOpt.get();
-        String empName = userId;
+        String empName = userId; // Keep BOS User ID
         String deptName = "General Admin";
         String desName = "BOS Staff";
         String imgName = user.getImgName() != null ? user.getImgName() : "default_avatar.png";
@@ -554,7 +582,7 @@ public class BosConnectService {
             Optional<EmployeeMaster> empOpt = employeeRepository.findById(user.getEmpId());
             if (empOpt.isPresent()) {
                 EmployeeMaster emp = empOpt.get();
-                empName = emp.getEmployeeName();
+                // Do not collapse userId to employeeName
                 if (emp.getDepartment() != null) {
                     deptName = emp.getDepartment().getDepartmentName();
                 }
@@ -586,13 +614,6 @@ public class BosConnectService {
     }
 
     private String getEmployeeName(String userId) {
-        Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
-        if (userOpt.isPresent() && userOpt.get().getEmpId() != null) {
-            Optional<EmployeeMaster> empOpt = employeeRepository.findById(userOpt.get().getEmpId());
-            if (empOpt.isPresent()) {
-                return empOpt.get().getEmployeeName();
-            }
-        }
-        return userId;
+        return userId; // Return BOS User ID directly to prevent collapsing
     }
 }

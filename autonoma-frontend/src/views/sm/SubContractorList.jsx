@@ -3,6 +3,7 @@ import { Typography, Button, Stack, Tooltip, IconButton, useTheme } from '@mui/m
 import { IconFileDownload, IconRefresh, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -38,6 +39,7 @@ export default function SubContractorList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.VEN_SUBCONTRACTOR);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [rows, setRows] = useState([]);
@@ -171,7 +173,7 @@ export default function SubContractorList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Sub_Contractor_Master"
             columns={[
@@ -180,12 +182,12 @@ export default function SubContractorList() {
               { header: 'Email', key: 'email' },
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Sub Contractor', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Create New Sub Contractor', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >
@@ -198,11 +200,11 @@ export default function SubContractorList() {
         loading={loading}
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleOpenEdit}
+        onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
         onClickRow={handleRowClick}
         selectedRowId={selectedListRow?.id}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onEditRow={perms.write ? handleOpenEdit : undefined}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <AddSubContractorDialog key={selectedRow?.id || 'new'} open={dialogOpen} handleClose={handleCloseDialog} initialData={selectedRow} readOnly={isReadOnly} />

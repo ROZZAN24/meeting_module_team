@@ -9,6 +9,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import AttendanceEntryDialog from './AttendanceEntryDialog';
 
 const columns = [
@@ -24,6 +25,7 @@ export default function AttendanceList() {
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_ATTENDANCE);
 
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -151,7 +153,7 @@ export default function AttendanceList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Meeting_User_Attendance"
             columns={[
@@ -185,12 +187,12 @@ export default function AttendanceList() {
               }},
               { header: 'Status', key: 'status' }
             ]}
-          />
-          <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
+          />}
+          {perms.write && <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={() => { setSelectedRow(null); setDialogOpen(true); }} sx={btnNew}>
               + New
             </Button>
-          </Tooltip>
+          </Tooltip>}
         </Stack>
       }
     >

@@ -19,23 +19,83 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
+import useAuth from 'hooks/useAuth';
 import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+
+const isDepartmentMatch = (allowedDepts, empDeptName) => {
+  if (!allowedDepts || !allowedDepts.length) return true;
+  if (!empDeptName) return false;
+  
+  const cleanEmpDept = empDeptName.toUpperCase().trim();
+  
+  // Custom mapping rules for QMS checklist codes vs HRM department names
+  const mappings = {
+    'HRA': ['HUMAN RESOURCES', 'HR', 'HR/ADMIN'],
+    'HR/ADMIN': ['HUMAN RESOURCES', 'HR', 'HRA'],
+    'HUMAN RESOURCES': ['HRA', 'HR', 'HR/ADMIN'],
+    'QUALITY': ['QUALITY MANAGEMENT', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
+    'QUALITY MANAGEMENT': ['QUALITY', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
+    'IT': ['INFORMATION TECHNOLOGY'],
+    'INFORMATION TECHNOLOGY': ['IT'],
+    'FINANCE': ['FINANCE & ACCOUNTS', 'FINANCE AND ACCOUNTS', 'ACCOUNTS'],
+    'FINANCE & ACCOUNTS': ['FINANCE', 'ACCOUNTS'],
+    'MARKETING': ['SALES & MARKETING', 'SALES AND MARKETING', 'SALES'],
+    'SALES & MARKETING': ['MARKETING', 'SALES']
+  };
+
+  return allowedDepts.some(allowedDept => {
+    const cleanAllowed = allowedDept.toUpperCase().trim();
+    if (cleanAllowed === cleanEmpDept) return true;
+    if (mappings[cleanAllowed] && mappings[cleanAllowed].includes(cleanEmpDept)) return true;
+    if (mappings[cleanEmpDept] && mappings[cleanEmpDept].includes(cleanAllowed)) return true;
+    return cleanAllowed.includes(cleanEmpDept) || cleanEmpDept.includes(cleanAllowed);
+  });
+};
 
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS']);
+  const { user } = useAuth();
+  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS']);
   
   // Get allowed department names for this checklist
   const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
+  const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
   
-  // Filter employees whose department matches one of the checklist's departments
-  const filteredEmployees = (lookups.employees || []).filter(emp => {
-    if (!allowedDeptNames.length) return true; // If no departments specified, show all (fallback)
-    const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
-    return empDept && allowedDeptNames.includes(empDept.departmentName);
+  // Filter employees whose department matches one of the checklist's departments,
+  // and who are active, completed induction, and have credentials created.
+  let filteredEmployees = (lookups.employees || []).filter(emp => {
+    // 1. Same department (if checklist has allowed departments)
+    if (allowedDeptNames.length > 0) {
+      const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
+      if (!empDept || !isDepartmentMatch(allowedDeptNames, empDept.departmentName)) {
+        return false;
+      }
+    }
+    // 2. Active status
+    if (emp.status !== 'Active') {
+      return false;
+    }
+    // 3. Induction completed
+    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') {
+      return false;
+    }
+    // 4. Credentials created (exists in user list)
+    if (!userEmpIds.includes(Number(emp.id))) {
+      return false;
+    }
+    return true;
   });
+
+  // Fallback: If no employees match the checklist's department, show all employees who are active, induction completed, and credentialed.
+  if (filteredEmployees.length === 0) {
+    filteredEmployees = (lookups.employees || []).filter(emp => {
+      return emp.status === 'Active' && 
+             emp.inductionStatus?.toUpperCase() === 'COMPLETED' && 
+             userEmpIds.includes(Number(emp.id));
+    });
+  }
 
   const employeeOptions = filteredEmployees.map(e => ({
     label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})${e.status !== 'Active' ? ' - INACTIVE' : ''}`,
@@ -108,7 +168,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
         checklistId: checklistId,
         assignedTo: formData.assignTo,
         assignType: formData.assignType,
-        assignedBy: 'Current User' // TODO: Get from auth context
+        assignedBy: user?.name || user?.id || 'Admin'
       });
 
       if (res.data?.remarks === 'DUPLICATE_ASSIGNMENT') {

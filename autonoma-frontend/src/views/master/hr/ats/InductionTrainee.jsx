@@ -41,6 +41,7 @@ import {
   errorStyle
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION TRAINEE (EMPLOYEE PAGE) ||============================== //
 
@@ -79,6 +80,7 @@ const columns = [
 export default function InductionTrainee() {
   const theme = useTheme();
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINEE);
   const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
@@ -210,11 +212,11 @@ export default function InductionTrainee() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
+          {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Induction_Trainee"
             columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />
+          />}
         </Stack>
       }
     >

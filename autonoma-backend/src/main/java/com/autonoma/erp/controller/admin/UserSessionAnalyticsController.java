@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.UserSessionActivity;
 import com.autonoma.erp.service.admin.UserSessionService;
 
@@ -18,6 +20,9 @@ public class UserSessionAnalyticsController {
     private UserSessionService userSessionService;
 
     @PostMapping("/record-entry")
+
+
+    @RequirePagePermission(pageCode = "AD1160", action = "write")
     public void recordEntry(@RequestBody Map<String, String> data) {
         String userId = data.get("userId");
         String pageName = data.get("pageName");
@@ -26,6 +31,9 @@ public class UserSessionAnalyticsController {
     }
 
     @PostMapping("/record-exit")
+
+
+    @RequirePagePermission(pageCode = "AD1160", action = "write")
     public void recordExit(@RequestBody Map<String, String> data) {
         String userId = data.get("userId");
         userSessionService.recordPageExit(userId);
@@ -47,6 +55,9 @@ public class UserSessionAnalyticsController {
     }
 
     @PostMapping("/terminate")
+
+
+    @RequirePagePermission(pageCode = "AD1160", action = "write")
     public void terminateSession(@RequestBody Map<String, String> data) {
         String userId = data.get("userId");
         userSessionService.terminateSession(userId);

@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller.admin;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.admin.AppPreference;
 import com.autonoma.erp.service.admin.AppPreferenceService;
 
@@ -32,6 +34,9 @@ public class AppPreferenceController {
     }
 
     @PostMapping("/create")
+
+
+    @RequirePagePermission(pageCode = "AD1220", action = "write")
     public AppPreference createPreference(@RequestBody AppPreference preference) {
         preference.setCreatedDate(new Date());
         if (preference.getCreatedBy() == null || preference.getCreatedBy().isEmpty()) {
@@ -41,6 +46,9 @@ public class AppPreferenceController {
     }
 
     @PutMapping("/update/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1220", action = "write")
     public ResponseEntity<AppPreference> updatePreference(@PathVariable Integer id,
             @RequestBody AppPreference preferenceDetails) {
         Optional<AppPreference> optionalPreference = service.findById(id);
@@ -60,6 +68,9 @@ public class AppPreferenceController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "AD1220", action = "delete")
     public ResponseEntity<Void> deletePreference(@PathVariable Integer id) {
         Optional<AppPreference> preference = service.findById(id);
         if (preference.isPresent()) {

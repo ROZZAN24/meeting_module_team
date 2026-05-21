@@ -13,7 +13,14 @@ import {
   MenuItem,
   Button,
   Chip,
-  Divider
+  Divider,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper
 } from '@mui/material';
 import {
   IconRefresh,
@@ -40,6 +47,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
@@ -113,7 +121,7 @@ const INITIAL_STATE = {
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
-const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED'];
+const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
 const VALIDATION_RULES = [
   { field: 'empCode', label: 'Employee', required: true },
@@ -140,6 +148,7 @@ const InductionAssignment = () => {
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
 
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
@@ -281,8 +290,10 @@ const InductionAssignment = () => {
         const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : (emp?.department || a.department);
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : (emp?.designation || a.designation);
         finalRows.push({ 
-          ...a, 
           ...emp, 
+          ...a, 
+          id: a.id,
+          employeeId: emp?.id,
           department: empDept,
           designation: empDesig,
           isVirtual: false 
@@ -293,6 +304,8 @@ const InductionAssignment = () => {
         if (!assignments.some(a => a.empCode === emp.empCode)) {
           finalRows.push({ 
             ...emp, 
+            id: null,
+            employeeId: emp.id,
             empName: emp.employeeName,
             department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
             designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
@@ -365,9 +378,10 @@ const InductionAssignment = () => {
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
-      console.error('Save error details:', error.response?.data);
-      const serverMsg = error.response?.data;
-      const message = typeof serverMsg === 'string' ? serverMsg : (serverMsg?.message || 'Failed to save');
+      console.error('Save error details:', error);
+      const message = typeof error === 'string'
+        ? error
+        : (error.response?.data?.message || error.response?.data || error.message || error.error || 'Failed to save');
       
       dispatch(openSnackbar({ 
         open: true, 
@@ -406,11 +420,11 @@ const InductionAssignment = () => {
             </IconButton>
           </Tooltip>
 
-          <BOSExportButton 
+          {perms.export && <BOSExportButton 
             data={resolvedRows} 
             filename="Induction_Summary" 
             columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
-          />
+          />}
         </Stack>
       }
     >
@@ -472,8 +486,8 @@ const InductionAssignment = () => {
                 sx={errorStyle(!!errors.inductionRound)}
               >
                 <MenuItem value="">-SELECT-</MenuItem>
-                {departments.map(d => (
-                  <MenuItem key={d.id} value={d.departmentName}>{d.departmentName}</MenuItem>
+                {ROUND_OPTIONS.map(r => (
+                  <MenuItem key={r} value={r}>{r}</MenuItem>
                 ))}
               </BOSTextField>
             </Box>
@@ -487,6 +501,7 @@ const InductionAssignment = () => {
                 value={formData.inductionDate}
                 onChange={handleInputChange}
                 required
+                inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
                 sx={errorStyle(!!errors.inductionDate)}
@@ -521,8 +536,20 @@ const InductionAssignment = () => {
                 <MenuItem value="">-Select-</MenuItem>
                 {employees
                   .filter(emp => {
+                    if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
+                    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
                     const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
-                    return emp.isInductionEligible === 'YES' && empDept === formData.inductionRound;
+                    const round = formData.inductionRound;
+                    if (round === 'HR') {
+                      return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
+                    }
+                    if (round === 'QMS') {
+                      return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT'].includes(empDept?.toUpperCase());
+                    }
+                    if (round === 'DEPARTMENT') {
+                      return empDept?.toLowerCase() === formData.department?.toLowerCase();
+                    }
+                    return true;
                   })
                   .map(emp => (
                     <MenuItem key={emp.id} value={emp.employeeName}>
@@ -553,25 +580,60 @@ const InductionAssignment = () => {
         {/* History Table */}
         <Box sx={{ mt: 4 }}>
           <Typography variant="h5" sx={{ mb: 2, color: 'primary.main', fontWeight: 600 }}>Induction History</Typography>
-          <BOSDataTable
-            columns={[
-              { id: 'index', label: '#', minWidth: 40 },
-              { id: 'screeningLevel', label: 'Screening Level' },
-              { id: 'inductionRound', label: 'Round' },
-              { id: 'inductionDate', label: 'Date', render: (r) => `${r.inductionDate} ${r.inductionTime}` },
-              { id: 'trainerName', label: 'Induction by' },
-              { id: 'currentStatus', label: 'Induction Status', render: (r) => (
-                <Chip label={r.currentStatus} size="small" color={r.currentStatus === 'REJECTED' ? 'error' : 'primary'} />
-              )},
-              { id: 'rescheduled', label: 'Rescheduled', render: () => 'NO' },
-              { id: 'createdBy', label: 'Created By' },
-              { id: 'inductionStatus', label: 'Status', render: (r) => (
-                <Chip label={r.inductionStatus} size="small" variant="outlined" color={r.inductionStatus === 'ACTIVE' ? 'success' : 'default'} />
-              )}
-            ]}
-            rows={history.map((h, i) => ({ ...h, index: i + 1 }))}
-            pagination={false}
-          />
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'primary.light' }}>
+                  <TableCell sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Screening Level</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Round</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Induction by</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Induction Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Rescheduled</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Created By</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {history.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center" sx={{ py: 2, fontStyle: 'italic', color: 'text.secondary' }}>
+                      No history found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  history.map((h, i) => (
+                    <TableRow key={h.id || i} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{h.screeningLevel || '-'}</TableCell>
+                      <TableCell>{h.inductionRound || '-'}</TableCell>
+                      <TableCell>{h.inductionDate ? `${h.inductionDate} ${h.inductionTime || ''}` : '-'}</TableCell>
+                      <TableCell>{h.trainerName || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={h.currentStatus || 'PENDING'} 
+                          size="small" 
+                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')} 
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </TableCell>
+                      <TableCell>NO</TableCell>
+                      <TableCell>{h.createdBy || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={h.inductionStatus || 'ACTIVE'} 
+                          size="small" 
+                          variant="outlined" 
+                          color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Box>
       </BOSFormDialog>
     </MainCard>

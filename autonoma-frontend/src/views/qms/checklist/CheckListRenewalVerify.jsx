@@ -26,15 +26,20 @@ import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
+import useLookups from 'hooks/useLookups';
 import { BOSExportButton } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   '#', 'Task Type', 'Seq No', 'Checking Point', 'Descriptions', 'Category', 'Frequency', 'Dept',
-  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check'
+  'Date', 'Checklist Date', 'Status', 'Next Due Date', 'Assigned To', 'Dual Check',
+  'Verification Required', 'Photo Required',
+  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE'
 ];
 
 const STATUS_OPTIONS = ['Pending for Verified', 'Pending for Accepted', 'Verified', 'Rejected', 'Not Accepted', 'Accepted', 'Missed'];
@@ -77,8 +82,40 @@ const tableCols = [
   { id: 'status', label: 'Status' },
   { id: 'nextDueDate', label: 'Next Due Date' },
   { id: 'assignedTo', label: 'Assigned To' },
-  { id: 'dualCheck', label: 'Dual Check' }
+  { id: 'dualCheck', label: 'Dual Check' },
+  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdDate', label: 'CREATED DATE' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
+
+const formatDate = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    let d;
+    if (typeof dateVal === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateVal)) {
+        const [yyyy, mm, dd] = dateVal.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      if (dateVal.includes('T')) {
+        const datePart = dateVal.split('T')[0];
+        const [yyyy, mm, dd] = datePart.split('-');
+        return `${dd}/${mm}/${yyyy}`;
+      }
+      d = new Date(dateVal);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '-';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  } catch (e) {
+    return '-';
+  }
+};
 
 const exportColumns = [
   { header: 'Task Type', key: (r) => r.assignType || 'Mine' },
@@ -88,12 +125,18 @@ const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Frequency', key: (r) => r.checklist?.frequency },
   { header: 'Dept', key: (r) => (r.checklist?.departments || []).map(d => d.departmentName).join(', ') },
-  { header: 'Date', key: (r) => r.assignedDate ? new Date(r.assignedDate).toLocaleDateString() : '' },
-  { header: 'Checklist Date', key: 'checklistDate' },
+  { header: 'Date', key: (r) => formatDate(r.assignedDate) },
+  { header: 'Checklist Date', key: (r) => formatDate(r.checklistDate) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
-  { header: 'Next Due Date', key: (r) => r.checklist?.nextDueDate },
+  { header: 'Next Due Date', key: (r) => formatDate(r.checklist?.nextDueDate) },
   { header: 'Assigned To', key: 'assignedTo' },
-  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck || 'NO' }
+  { header: 'Dual Check', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
+  { header: 'Verification Required', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
+  { header: 'Photo Required', key: (r) => r.checklist?.photoRequired || 'NO' },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
+  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
 const filterConfig = [
@@ -184,6 +227,7 @@ function StatusChip({ status }) {
 export default function CheckListRenewalVerify() {
   const { user } = useAuth();
   const dispatch = useDispatch();
+  const { employees = [] } = useLookups(['EMPLOYEES']);
   const [rows, setRows] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [page, setPage] = useState(0);
@@ -198,6 +242,7 @@ export default function CheckListRenewalVerify() {
   const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
+  const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_RENEWAL_VERIFY);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false, dualCheck: false });
@@ -256,6 +301,7 @@ export default function CheckListRenewalVerify() {
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.name || user?.id || undefined,
+        excludePending: true,
 
         // Add-on filters
         seqNo: filters.seqNo || undefined,
@@ -298,18 +344,94 @@ export default function CheckListRenewalVerify() {
 
   const handleVerify = async (status, remarks) => {
     if (!selectedRowId) return;
+    if (!activeRow) return;
+
+    // ── Mapped Vertical Head Validation ──
+    const assigneeName = activeRow.assignedTo;
+    if (assigneeName) {
+      const assignee = (employees || []).find((emp) => {
+        const fullName = `${emp.firstName || ''} ${emp.lastName || ''}`.toLowerCase().trim();
+        return fullName === assigneeName.toLowerCase().trim();
+      });
+
+      if (!assignee) {
+        if (user?.isBosAdmin !== 1) {
+          dispatch(openSnackbar({
+            open: true,
+            message: `Assignee '${assigneeName}' not found in Employee Master. Only an administrator can verify.`,
+            variant: 'alert',
+            alert: { variant: 'filled' },
+            severity: 'error',
+            close: false
+          }));
+          return;
+        }
+      } else {
+        try {
+          const mappingRes = await axios.get(`/api/master/employee/manager-mapping/${assignee.id}`);
+          const mapping = mappingRes.data;
+          
+          const isVerticalHead = mapping && mapping.verticalHeadId && (
+            String(user?.empId) === String(mapping.verticalHeadId) ||
+            (employees || []).find(emp => String(emp.id) === String(mapping.verticalHeadId))?.firstName?.toLowerCase() === user?.name?.split(' ')[0]?.toLowerCase()
+          );
+
+          if (!isVerticalHead && user?.isBosAdmin !== 1) {
+            dispatch(openSnackbar({
+              open: true,
+              message: `Only the mapped Vertical Head of '${assigneeName}' can verify or reject this record!`,
+              variant: 'alert',
+              alert: { variant: 'filled' },
+              severity: 'error',
+              close: false
+            }));
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to verify manager mapping:', err);
+          if (user?.isBosAdmin !== 1) {
+            dispatch(openSnackbar({
+              open: true,
+              message: 'Failed to validate manager permissions. Only administrators can bypass.',
+              variant: 'alert',
+              alert: { variant: 'filled' },
+              severity: 'error',
+              close: false
+            }));
+            return;
+          }
+        }
+      }
+    }
+
     try {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
         status: status,
-        verifiedBy: user?.name || user?.id || 'Current User',
+        verifiedBy: user?.name || user?.id || 'Admin',
         remarks: remarks || `Verification action: ${status}`
       });
+      dispatch(openSnackbar({
+        open: true,
+        message: `Task successfully ${status === 'Verified' ? 'verified' : 'rejected'}!`,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'success',
+        close: false
+      }));
       setDialogOpen(false);
       setVerifyRemarks('');
       fetchAssignments();
     } catch (error) {
       console.error('Verification failed:', error);
+      dispatch(openSnackbar({
+        open: true,
+        message: error?.response?.data?.message || 'Verification action failed.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 
@@ -319,7 +441,7 @@ export default function CheckListRenewalVerify() {
     <MainCard title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -406,12 +528,18 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{row.assignedDate ? new Date(row.assignedDate).toLocaleDateString() : ''}</TableCell>
-                  <TableCell>{row.checklistDate}</TableCell>
+                  <TableCell>{formatDate(row.assignedDate)}</TableCell>
+                  <TableCell>{formatDate(row.checklistDate)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{row.checklist?.nextDueDate}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.nextDueDate)}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
-                  <TableCell>{row.checklist?.dualCheck || 'NO'}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                  <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
+                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -473,11 +601,11 @@ export default function CheckListRenewalVerify() {
           <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
             <Box sx={{ mb: 1.5 }}>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>From</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>To</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} inputProps={{ min: new Date().toISOString().split('T')[0] }} />
+              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} />
             </Box>
           </FilterSection>
           <Divider />
@@ -525,7 +653,7 @@ export default function CheckListRenewalVerify() {
         open={dialogOpen}
         handleClose={() => { setDialogOpen(false); setVerifyRemarks(''); }}
         data={activeRow}
-        onVerify={(remarks) => handleVerify('Accepted', remarks)}
+        onVerify={(remarks) => handleVerify('Verified', remarks)}
         onReject={(remarks) => handleVerify('Rejected', remarks)}
         onNotAccept={(remarks) => handleVerify('Not Accepted', remarks)}
         isExecution={false}
