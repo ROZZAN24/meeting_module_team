@@ -180,7 +180,7 @@ export default function TicketManagement({ viewType }) {
   const [formType, setFormType] = useState('Internal');
   const [formTitle, setFormTitle] = useState('');
   const [formCategory, setFormCategory] = useState('');
-  const [formPageName, setFormPageName] = useState('');
+  const [formPage, setFormPage] = useState(null);
 
   // Reporter/Employee Info
   const [formEmpCode, setFormEmpCode] = useState('');
@@ -1189,25 +1189,7 @@ export default function TicketManagement({ viewType }) {
   };
 
   // Autocomplete lists for Module and Screen Name
-  const modulesList = useMemo(() => {
-    const mods = new Set();
-    pagesData.forEach(p => {
-      if (p.module && p.module.modName) {
-        mods.add(p.module.modName);
-      }
-    });
-    return Array.from(mods).sort();
-  }, [pagesData]);
-
-  const availablePages = useMemo(() => {
-    if (!formCategory) {
-      return Array.from(new Set(pagesData.map(p => p.pageName))).sort();
-    }
-    const filtered = pagesData.filter(
-      p => p.module && p.module.modName && p.module.modName.toLowerCase() === formCategory.toLowerCase()
-    );
-    return Array.from(new Set(filtered.map(p => p.pageName))).sort();
-  }, [pagesData, formCategory]);
+  // Logic simplified, we use pagesData directly for Autocomplete
 
   // File uploads
   const handleFileUpload = async (event, isComment = false) => {
@@ -1274,8 +1256,9 @@ export default function TicketManagement({ viewType }) {
     const payload = {
       ticketType: formType,
       title: formTitle,
-      moduleName: formCategory,
-      pageName: formPageName,
+      moduleName: null,
+      pageName: null,
+      pageId: formPage?.pageId || null,
       employeeCode: formEmpCode || user?.empId || '',
       employeeName: formEmpName || user?.name || user?.username || '',
       email: formEmail,
@@ -1469,7 +1452,7 @@ export default function TicketManagement({ viewType }) {
     setFormType('Internal');
     setFormTitle('');
     setFormCategory('');
-    setFormPageName('');
+    setFormPage(null);
     setFormDesc('');
     setFormPriority('Select');
     setFormSeverity('Medium');
@@ -1769,6 +1752,16 @@ export default function TicketManagement({ viewType }) {
     );
   };
 
+  const getPageDisplay = (t) => {
+    if (t.pageId && pagesData.length > 0) {
+      const p = pagesData.find(page => page.pageId === t.pageId);
+      if (p) {
+        return `${p.module?.modName || 'System'} > ${p.pageName}`;
+      }
+    }
+    return `${t.moduleName || 'System'} ${t.pageName ? `> ${t.pageName}` : ''}`;
+  };
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* ── TOP HEADER SECTION ── */}
@@ -1931,7 +1924,7 @@ export default function TicketManagement({ viewType }) {
                         <TableCell>
                           <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t.title}</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {t.moduleName || 'System'} {t.pageName ? `> ${t.pageName}` : ''}
+                            {getPageDisplay(t)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -2032,7 +2025,7 @@ export default function TicketManagement({ viewType }) {
                         <TableCell>
                           <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t.title}</Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {t.moduleName || 'System'} {t.pageName ? `> ${t.pageName}` : ''}
+                            {getPageDisplay(t)}
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ minWidth: 220 }}>
@@ -2215,33 +2208,19 @@ export default function TicketManagement({ viewType }) {
                       <MenuItem value="Mobile">Mobile</MenuItem>
                     </TextField>
                   </Box>
-                  <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formCategory, 'Module Name', 90)}px` }}>
+                  <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formPage?.pageName, 'Screen / Page Name', 90)}px` }}>
                     <Autocomplete
-                      freeSolo
-                      options={modulesList}
-                      value={formCategory}
+                      options={pagesData || []}
+                      getOptionLabel={(option) => {
+                        if (!option) return '';
+                        return option.pageCode ? `${option.pageCode} / ${option.pageName}` : (option.pageName || '');
+                      }}
+                      isOptionEqualToValue={(option, value) => option?.pageId === value?.pageId}
+                      value={formPage}
                       onChange={(event, newValue) => {
-                        setFormCategory(newValue || '');
-                        setFormPageName('');
+                        setFormPage(newValue);
                       }}
-                      onInputChange={(event, newInputValue) => {
-                        setFormCategory(newInputValue);
-                      }}
-                      renderInput={(params) => <TextField {...params} label="Module Name" placeholder="Select or type..." />}
-                    />
-                  </Box>
-                  <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formPageName, 'Screen / Page Name', 90)}px` }}>
-                    <Autocomplete
-                      freeSolo
-                      options={availablePages}
-                      value={formPageName}
-                      onChange={(event, newValue) => {
-                        setFormPageName(newValue || '');
-                      }}
-                      onInputChange={(event, newInputValue) => {
-                        setFormPageName(newInputValue);
-                      }}
-                      renderInput={(params) => <TextField {...params} label="Screen / Page Name" placeholder="Select or type..." />}
+                      renderInput={(params) => <TextField {...params} label={`Screen / Page Name (${pagesData ? pagesData.length : 0})`} placeholder="Select..." />}
                     />
                   </Box>
                 </Box>

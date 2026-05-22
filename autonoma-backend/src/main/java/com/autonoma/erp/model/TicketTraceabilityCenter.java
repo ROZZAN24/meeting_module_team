@@ -36,6 +36,9 @@ public class TicketTraceabilityCenter {
     @Column(name = "page_name", length = 100)
     private String pageName;
 
+    @Column(name = "page_id")
+    private Integer pageId;
+
     @Column(name = "employee_code", length = 50)
     private String employeeCode;
 
