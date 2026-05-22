@@ -1638,7 +1638,12 @@ export default function TicketManagement({ viewType }) {
     if (!selectedTicket) return null;
 
     const roadmapEvents = ticketTimeline && ticketTimeline.length > 0
-      ? ticketTimeline
+      ? ticketTimeline.filter(event => {
+          if (!event.fromStatus) return true;
+          if (event.fromStatus !== event.toStatus) return true;
+          if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
+          return false;
+        })
       : [{
         id: 'temp-created',
         toStatus: selectedTicket.ticketStatus,
@@ -1665,7 +1670,7 @@ export default function TicketManagement({ viewType }) {
             } else if (isReassign) {
               titleText = event.comment;
             } else {
-              titleText = event.fromStatus
+              titleText = event.fromStatus && event.fromStatus !== event.toStatus
                 ? `Status: ${event.fromStatus} → ${event.toStatus}`
                 : `Status: ${event.toStatus}`;
             }
@@ -3180,7 +3185,7 @@ export default function TicketManagement({ viewType }) {
                                     <Box key={item.id} sx={{ p: 2, border: '1px solid #eef2f6', borderRadius: '8px', bgcolor: '#fff', transition: 'all 0.2s', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } }}>
                                       <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
                                         <Chip
-                                          label={item.fromStatus ? `${item.fromStatus} → ${item.toStatus}` : item.toStatus}
+                                          label={item.fromStatus && item.fromStatus !== item.toStatus ? `${item.fromStatus} → ${item.toStatus}` : item.toStatus}
                                           size="small"
                                           color="secondary"
                                           variant="outlined"
@@ -3193,11 +3198,27 @@ export default function TicketManagement({ viewType }) {
                                       <Typography variant="body2" sx={{ fontSize: '0.825rem', color: 'text.primary', mb: item.comment ? 1 : 0 }}>
                                         Updated by: <span style={{ fontWeight: 700, color: '#673ab7' }}>{item.updatedBy}</span>
                                       </Typography>
-                                      {item.comment && (
-                                        <Typography variant="body2" sx={{ p: 1.25, bgcolor: '#f8fafc', borderLeft: '4px solid #673ab7', borderRadius: '4px', fontStyle: 'italic', color: 'text.secondary', fontSize: '0.8rem' }}>
-                                          "{item.comment}"
-                                        </Typography>
-                                      )}
+                                      {item.comment && (() => {
+                                        let textToDisplay = item.comment;
+                                        let isHtml = false;
+                                        try {
+                                          const parsed = JSON.parse(item.comment);
+                                          if (parsed && parsed.comment) {
+                                            textToDisplay = parsed.comment;
+                                            isHtml = true;
+                                          }
+                                        } catch (e) {}
+                                        if (isHtml || textToDisplay.includes('<p>')) {
+                                          return (
+                                            <Box sx={{ p: 1.25, bgcolor: '#f8fafc', borderLeft: '4px solid #673ab7', borderRadius: '4px', fontStyle: 'italic', color: 'text.secondary', fontSize: '0.8rem', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                                          );
+                                        }
+                                        return (
+                                          <Typography variant="body2" sx={{ p: 1.25, bgcolor: '#f8fafc', borderLeft: '4px solid #673ab7', borderRadius: '4px', fontStyle: 'italic', color: 'text.secondary', fontSize: '0.8rem' }}>
+                                            "{textToDisplay}"
+                                          </Typography>
+                                        );
+                                      })()}
                                     </Box>
                                   ))}
                                 </Stack>
@@ -3346,16 +3367,32 @@ export default function TicketManagement({ viewType }) {
                                   top: 5
                                 }} />
                                 <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                  {item.fromStatus ? `${item.fromStatus} → ${item.toStatus}` : `Transition to ${item.toStatus}`}
+                                  {item.fromStatus && item.fromStatus !== item.toStatus ? `${item.fromStatus} → ${item.toStatus}` : (item.toStatus ? `Status: ${item.toStatus}` : 'Updated')}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                                   By {item.updatedBy} at {format(new Date(item.updatedAt), 'dd/MM/yyyy HH:mm')}
                                 </Typography>
-                                {item.comment && (
-                                  <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
-                                    Comment: {item.comment}
-                                  </Typography>
-                                )}
+                                {item.comment && (() => {
+                                  let textToDisplay = item.comment;
+                                  let isHtml = false;
+                                  try {
+                                    const parsed = JSON.parse(item.comment);
+                                    if (parsed && parsed.comment) {
+                                      textToDisplay = parsed.comment;
+                                      isHtml = true;
+                                    }
+                                  } catch (e) {}
+                                  if (isHtml || textToDisplay.includes('<p>')) {
+                                    return (
+                                      <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                                    );
+                                  }
+                                  return (
+                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary' }}>
+                                      "{textToDisplay}"
+                                    </Typography>
+                                  );
+                                })()}
                               </Box>
                             ))}
                           </Stack>
