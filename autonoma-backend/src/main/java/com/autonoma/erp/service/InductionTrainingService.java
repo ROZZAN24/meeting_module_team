@@ -24,6 +24,9 @@ public class InductionTrainingService {
     @Autowired
     private EmployeeMasterRepository empRepo;
 
+    @Autowired
+    private DepartmentRepository departmentRepo;
+
     /**
      * Get assignments for a specific trainer (login-filtered).
      */
@@ -101,12 +104,28 @@ public class InductionTrainingService {
 
         // Filter by department and level if the employee has those set
         String empDept = assignment.getDepartment();
+        String deptIdStr = null;
+        if (empDept != null && !empDept.trim().isEmpty()) {
+            Optional<Department> deptOpt = departmentRepo.findAll().stream()
+                    .filter(d -> d.getDepartmentName() != null && (d.getDepartmentName().equalsIgnoreCase(empDept) || d.getDepartmentNo().equalsIgnoreCase(empDept)))
+                    .findFirst();
+            if (deptOpt.isPresent()) {
+                deptIdStr = String.valueOf(deptOpt.get().getId());
+            }
+        }
+
+        final String finalDeptIdStr = deptIdStr;
         criteria = criteria.stream()
                 .filter(c -> {
                     // Department match: criteria departmentCodes contains the employee's department
                     if (c.getDepartmentCodes() != null && empDept != null && !empDept.isEmpty()) {
                         // departmentCodes is comma-separated
-                        return c.getDepartmentCodes().contains(empDept) || c.getDepartmentCodes().equalsIgnoreCase("ALL");
+                        List<String> codes = Arrays.stream(c.getDepartmentCodes().split(","))
+                                .map(String::trim)
+                                .collect(Collectors.toList());
+                        return codes.contains(empDept) || 
+                               (finalDeptIdStr != null && codes.contains(finalDeptIdStr)) || 
+                               c.getDepartmentCodes().equalsIgnoreCase("ALL");
                     }
                     return true; // If no department filter, include all
                 })

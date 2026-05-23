@@ -22,9 +22,11 @@ import { MenuOrientation } from 'config';
 import useConfig from 'hooks/useConfig';
 
 // assets
-import { IconMenu2, IconCalculator } from '@tabler/icons-react';
+import { IconMenu2, IconCalculator, IconLogout } from '@tabler/icons-react';
 import WeightCalculator from 'ui-component/WeightCalculator';
 import SessionInfoBadge from 'ui-component/SessionInfoBadge';
+import useAuth from 'hooks/useAuth';
+import Tooltip from '@mui/material/Tooltip';
 
 // ==============================|| MAIN NAVBAR / HEADER ||============================== //
 
@@ -37,6 +39,14 @@ export default function Header() {
   } = useConfig();
   const { menuMaster } = useGetMenuMaster();
   const [calcOpen, setCalcOpen] = useState(false);
+  const { logout } = useAuth();
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (err) {
+      console.error(err);
+    }
+  };
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downMD;
 
@@ -124,6 +134,40 @@ export default function Header() {
         </Avatar>
       </Box>
       <WeightCalculator open={calcOpen} handleClose={() => setCalcOpen(false)} />
+
+      {/* Logout Button */}
+      <Box sx={{ ml: 1, display: { xs: 'none', md: 'block' } }}>
+        <Tooltip title="Logout" placement="bottom" arrow>
+          <Avatar
+            variant="rounded"
+            sx={{
+              ...theme.typography.commonAvatar,
+              ...theme.typography.mediumAvatar,
+              transition: 'all .2s ease-in-out',
+              color: '#d32f2f',
+              background: '#ffebee',
+              '&:hover': {
+                color: '#fff',
+                background: '#d32f2f',
+                boxShadow: '0 4px 12px rgba(211,47,47,0.4)'
+              },
+              ...theme.applyStyles('dark', {
+                color: '#ef9a9a',
+                background: 'rgba(211,47,47,0.15)',
+                '&:hover': {
+                  color: '#fff',
+                  background: '#c62828',
+                  boxShadow: '0 4px 12px rgba(211,47,47,0.5)'
+                }
+              })
+            }}
+            onClick={handleLogout}
+            aria-label="logout"
+          >
+            <IconLogout stroke={1.5} size="20px" />
+          </Avatar>
+        </Tooltip>
+      </Box>
 
       {/* mobile header */}
       <Box sx={{ display: { xs: 'block', sm: 'none' } }}>

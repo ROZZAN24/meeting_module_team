@@ -40,6 +40,15 @@ public class AuditCriteriaController {
         return auditCriteriaService.save(auditCriteria);
     }
 
+    @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1130", action = "write")
+    @Operation(summary = "Update Audit Criteria", description = "Updates an existing audit criteria")
+    public ResponseEntity<AuditCriteria> updateAuditCriteria(@PathVariable Long id, @RequestBody AuditCriteria auditCriteria) {
+        auditCriteria.setId(id);
+        log.info("Updating audit criteria with ID {}: {}", id, auditCriteria);
+        return ResponseEntity.ok(auditCriteriaService.save(auditCriteria));
+    }
+
     @GetMapping("/by-type/{auditType}")
     public List<AuditCriteria> getByAuditType(@PathVariable String auditType) {
         log.info("Fetching audit criteria for type: {}", auditType);

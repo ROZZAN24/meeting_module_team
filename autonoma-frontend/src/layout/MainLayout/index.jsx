@@ -30,6 +30,7 @@ import useConfig from 'hooks/useConfig';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { RibbonProvider, useRibbon } from 'contexts/RibbonContext';
 import { IconAlertCircle } from '@tabler/icons-react';
+import FaceWatchdogGuard from 'ui-component/FaceWatchdogGuard';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
@@ -188,6 +189,7 @@ function MainLayoutInner() {
   if (menuMasterLoading) return <Loader />;
 
   return (
+    <FaceWatchdogGuard>
     <Box sx={{ display: 'flex' }}>
 
       {/* header */}
@@ -303,6 +305,7 @@ function MainLayoutInner() {
       <Customization />
       <BOSConnect />
     </Box>
+    </FaceWatchdogGuard>
   );
 }
 
