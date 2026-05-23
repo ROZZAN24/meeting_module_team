@@ -89,6 +89,7 @@ public class UserController {
             user.setFaceImage(userDetails.getFaceImage());
             user.setAuthMethod(userDetails.getAuthMethod());
             user.setFaceDescriptor(userDetails.getFaceDescriptor());
+            user.setAutoLogoutOnFaceAbsence(userDetails.getAutoLogoutOnFaceAbsence());
 
             if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
                 // Prevent double-encoding if the frontend sends back the existing encrypted hash
