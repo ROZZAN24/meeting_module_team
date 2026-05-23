@@ -21,10 +21,12 @@ public class BosPage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "mod_id", nullable = false)
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private BosModule module;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "sub_mod_id")
+    @org.hibernate.annotations.NotFound(action = org.hibernate.annotations.NotFoundAction.IGNORE)
     private BosSubModule subModule;
 
     @Column(name = "page_code", columnDefinition = "NVARCHAR(10)")
