@@ -294,7 +294,7 @@ export default function CheckListVerify() {
   };
 
   const handleVerify = async (status, remarks = '') => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     try {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRowId,
@@ -393,7 +393,17 @@ export default function CheckListVerify() {
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.seqNo}</TableCell>
-                  <TableCell>{row.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{row.category}</TableCell>
                   <TableCell>{row.frequency}</TableCell>
                   <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>

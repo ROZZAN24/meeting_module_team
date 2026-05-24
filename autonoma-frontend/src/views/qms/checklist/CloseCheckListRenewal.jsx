@@ -345,7 +345,7 @@ export default function CloseCheckListRenewal() {
   };
 
   const handleUpdateStatus = async (status) => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     try {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
@@ -360,7 +360,7 @@ export default function CloseCheckListRenewal() {
   };
 
   const handleSaveExecution = async (formData) => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     try {
       const uploadedFileNames = [];
       for (const f of formData.actualFiles) {
@@ -398,7 +398,6 @@ export default function CloseCheckListRenewal() {
       title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>
           {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }
@@ -477,7 +476,17 @@ export default function CloseCheckListRenewal() {
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>
-                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checklist?.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checklist.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.assignType || 'Mine'}</TableCell>
