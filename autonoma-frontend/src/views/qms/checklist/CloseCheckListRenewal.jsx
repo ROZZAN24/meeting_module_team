@@ -227,7 +227,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
   let label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Pending'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CloseCheckListRenewal() {
@@ -302,7 +310,8 @@ export default function CloseCheckListRenewal() {
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
-        currentUser: user?.name || user?.id || undefined,
+        currentUser: user?.id || undefined,
+        excludeCompleted: true,
         excludePending: false,
 
         // Add-on filters
@@ -312,9 +321,25 @@ export default function CloseCheckListRenewal() {
         frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
         stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined
       };
+
+      // If no explicit date range is set, default toDate to today to hide future auto-generated tasks
+      if (!params.fromDate && !params.toDate) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        params.toDate = `${yyyy}-${mm}-${dd}`;
+      }
+
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+        // Additional client-side filter: exclude any remaining finalized statuses
+        const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed'];
+        const filteredRows = response.data.content.filter((r) => {
+          const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
+          return !finalizedStatuses.includes(statusName);
+        });
+        setRows(filteredRows);
+        setTotalElements(filteredRows.length);
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
     } finally {

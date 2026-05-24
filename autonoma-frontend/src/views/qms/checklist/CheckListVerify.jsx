@@ -190,7 +190,16 @@ function StatusChip({ status }) {
     'Pending for Verify': { color: 'warning', icon: null }
   };
   const cfg = map[status] || { color: 'default', icon: null };
-  return <Chip label={status} size="small" color={cfg.color} icon={cfg.icon} variant="outlined" />;
+  return (
+    <Chip
+      label={status}
+      size="small"
+      color={cfg.color}
+      icon={cfg.icon}
+      variant="outlined"
+      sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListVerify() {

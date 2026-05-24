@@ -357,7 +357,14 @@ public class ChecklistService {
 
             // Task Type Logic (SOP Item 8)
             if ("Mine".equalsIgnoreCase(taskType) && currentUser != null) {
-                predicates.add(cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase()));
+                // Show assignments that are either:
+                // 1. Assigned to the current user (their own tasks), OR
+                // 2. In a pending verification/acceptance state (tasks completed by others
+                //    that need the current user — as admin/manager — to verify)
+                Join<ChecklistAssignment, StatusMaster> mineStatusJoin = root.join("status", JoinType.LEFT);
+                Predicate assignedToMe = cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase());
+                Predicate pendingVerification = mineStatusJoin.get("name").in("Pending for Verified", "Pending for Accepted");
+                predicates.add(cb.or(assignedToMe, pendingVerification));
             } else if ("Team".equalsIgnoreCase(taskType)) {
                 // For simplicity, we assume 'Team' means tasks for the user's department.
                 // This would normally involve joining with Employee departments.

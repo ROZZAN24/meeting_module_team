@@ -192,7 +192,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Open': 'info', 'Pending for Verified': 'warning', 'Verified': 'success' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Open'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Open'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListRenewalReport() {

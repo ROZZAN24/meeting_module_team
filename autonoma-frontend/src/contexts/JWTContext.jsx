@@ -27,10 +27,10 @@ const initialState = {
 };
 
 function setSessionContext(tenantId, divisionId, companyName, divisionName) {
-  if (tenantId) sessionStorage.setItem('tenantId', tenantId); else sessionStorage.removeItem('tenantId');
-  if (divisionId) sessionStorage.setItem('divisionId', String(divisionId)); else sessionStorage.removeItem('divisionId');
-  if (companyName) sessionStorage.setItem('companyName', companyName); else sessionStorage.removeItem('companyName');
-  if (divisionName) sessionStorage.setItem('divisionName', divisionName); else sessionStorage.removeItem('divisionName');
+  if (tenantId) localStorage.setItem('tenantId', tenantId); else localStorage.removeItem('tenantId');
+  if (divisionId) localStorage.setItem('divisionId', String(divisionId)); else localStorage.removeItem('divisionId');
+  if (companyName) localStorage.setItem('companyName', companyName); else localStorage.removeItem('companyName');
+  if (divisionName) localStorage.setItem('divisionName', divisionName); else localStorage.removeItem('divisionName');
 }
 
 function verifyToken(serviceToken) {
@@ -50,10 +50,10 @@ function verifyToken(serviceToken) {
 
 function setSession(serviceToken) {
   if (serviceToken) {
-    sessionStorage.setItem('serviceToken', serviceToken);
+    localStorage.setItem('serviceToken', serviceToken);
     axios.defaults.headers.common.Authorization = `Bearer ${serviceToken}`;
   } else {
-    sessionStorage.removeItem('serviceToken');
+    localStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
     setSessionContext(null, null, null, null);
   }
@@ -161,13 +161,13 @@ export function JWTProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const serviceToken = window.sessionStorage.getItem('serviceToken');
+        const serviceToken = window.localStorage.getItem('serviceToken');
         if (serviceToken && verifyToken(serviceToken)) {
           setSession(serviceToken);
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          // Keep sessionStorage in sync so SessionInfoBadge reads correctly
+          // Keep localStorage in sync so other tabs can read the context
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,

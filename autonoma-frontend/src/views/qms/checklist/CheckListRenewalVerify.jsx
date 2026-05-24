@@ -221,7 +221,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', Verified: 'success', Rejected: 'error', 'Not Accepted': 'error', Accepted: 'success', Missed: 'error' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Pending'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListRenewalVerify() {
