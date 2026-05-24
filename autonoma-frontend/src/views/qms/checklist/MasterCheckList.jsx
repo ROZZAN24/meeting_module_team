@@ -212,6 +212,8 @@ export default function MasterCheckList() {
   const [loading,          setLoading]          = useState(false);
   const [selectedRow,      setSelectedRow]      = useState(null);
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
+  const [cursorPos,        setCursorPos]        = useState({ x: 0, y: 0 });
+  const [showDoubleTap,    setShowDoubleTap]    = useState(false);
 
   // Register global filter bar config
   useEffect(() => {
@@ -375,6 +377,12 @@ export default function MasterCheckList() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardList size={24} />
@@ -459,6 +467,32 @@ export default function MasterCheckList() {
         </Stack>
       }
     >
+      {/* ── Cursor-following 'Double tap' label ── */}
+      {showDoubleTap && (
+        <Box
+          sx={{
+            position: 'fixed',
+            left: cursorPos.x + 14,
+            top: cursorPos.y - 28,
+            bgcolor: 'grey.800',
+            color: '#fff',
+            px: 1,
+            py: 0.3,
+            borderRadius: 1,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            pointerEvents: 'none',
+            zIndex: 9999,
+            letterSpacing: 0.4,
+            userSelect: 'none',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Double tap
+        </Box>
+      )}
+
       <BOSDataTable
         columns={columns}
         rows={resolvedRows}
@@ -475,6 +509,9 @@ export default function MasterCheckList() {
         }}
         selectedRowId={selectedRow?.id}
         actionColumn={actionColumn}
+        onRowMouseEnter={() => setShowDoubleTap(true)}
+        onRowMouseLeave={() => setShowDoubleTap(false)}
+        onRowMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
       />
 
       <AddCheckListDialog

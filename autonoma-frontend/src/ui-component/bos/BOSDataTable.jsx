@@ -44,7 +44,10 @@ export default function BOSDataTable({
   selectedRowId,
   renderCell,
   sx = {},
-  id
+  id,
+  onRowMouseEnter,
+  onRowMouseLeave,
+  onRowMouseMove
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
@@ -259,6 +262,9 @@ export default function BOSDataTable({
                     sx={rowSx} 
                     onClick={() => onClickRow?.(row)}
                     onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
+                    onMouseEnter={(e) => onRowMouseEnter?.(e, row)}
+                    onMouseLeave={(e) => onRowMouseLeave?.(e, row)}
+                    onMouseMove={(e) => onRowMouseMove?.(e, row)}
                   >
                   {columns.map((col) => (
                     <TableCell
