@@ -5,12 +5,6 @@ import {
   Typography,
   Stack,
   Avatar,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   useTheme,
   LinearProgress,
@@ -30,13 +24,15 @@ import {
   IconActivity, IconClock, IconBrowser, IconUser,
   IconRefresh, IconSearch, IconPower, IconTerminal2,
   IconCpu, IconBolt, IconArrowUpRight, IconTarget,
-  IconChartDots, IconLayoutGrid, IconCircleCheck, IconTrendingUp
+  IconCircleCheck, IconTrendingUp
 } from '@tabler/icons-react';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
@@ -97,6 +93,7 @@ const PremiumStatCard = ({ title, value, icon, color, trend, subtitle }) => {
 const UserSessionAnalytics = () => {
   const theme = useTheme();
   const { user } = useAuth();
+  const perms = usePagePermissions(PAGE_CODES.AD_SESSION_ANALYTICS);
   const isSuperUser = user?.isBosAdmin === 1;
 
   const [loading, setLoading] = useState(true);
@@ -116,6 +113,9 @@ const UserSessionAnalytics = () => {
   const [userList, setUserList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
+  
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const selectedUserImg = useMemo(() => {
     if (!selectedUser || allUsers.length === 0) return null;
@@ -208,11 +208,74 @@ const UserSessionAnalytics = () => {
     return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
   };
 
-  const getEfficiencyLabel = (score) => {
-    if (score >= 90) return { text: 'Elite Performance', color: '#6366f1', icon: <IconTarget size={18} /> };
-    if (score >= 75) return { text: 'Optimal Focus', color: '#10b981', icon: <IconCircleCheck size={18} /> };
-    if (score >= 50) return { text: 'Balanced Usage', color: '#f59e0b', icon: <IconActivity size={18} /> };
-    return { text: 'Idle Warning', color: '#ef4444', icon: <IconPower size={18} /> };
+  const columns = useMemo(() => [
+    { id: 'userId', label: 'USER', bold: true },
+    { id: 'pageName', label: 'TARGET MODULE' },
+    { id: 'entryTime', label: 'In TIME' },
+    { id: 'exitTime', label: 'EXIT TIME' },
+    { id: 'durationMs', label: 'ENGAGEMENT TIME' },
+    { id: 'status', label: 'FLOW STATUS' }
+  ], []);
+
+  const handleRenderCell = (col, log, idx) => {
+    if (col.id === 'userId') {
+      return (
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar
+            src={log.userImage ? `${API_BASE}/api/users/image/${log.userImage}` : ''}
+            sx={{ width: 32, height: 32, fontSize: '0.8rem', bgcolor: alpha('#8b5cf6', 0.1), color: '#8b5cf6', fontWeight: 800 }}
+          >
+            {log.userId?.charAt(0)}
+          </Avatar>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{log.userId}</Typography>
+        </Stack>
+      );
+    }
+    if (col.id === 'pageName') {
+      return (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>{log.pageName}</Typography>
+          <Typography variant="caption" color="textSecondary">{log.pageUrl}</Typography>
+        </Box>
+      );
+    }
+    if (col.id === 'entryTime') {
+      return (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(log.entryTime).toLocaleDateString()}</Typography>
+          <Typography variant="caption" color="textSecondary">{new Date(log.entryTime).toLocaleTimeString()}</Typography>
+        </Box>
+      );
+    }
+    if (col.id === 'exitTime') {
+      return log.exitTime ? (
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(log.exitTime).toLocaleDateString()}</Typography>
+          <Typography variant="caption" color="textSecondary">{new Date(log.exitTime).toLocaleTimeString()}</Typography>
+        </Box>
+      ) : (
+        <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>Ongoing...</Typography>
+      );
+    }
+    if (col.id === 'durationMs') {
+      return (
+        <Typography variant="subtitle2" sx={{ color: '#6366f1', fontWeight: 800 }}>{formatDuration(log.durationMs)}</Typography>
+      );
+    }
+    if (col.id === 'status') {
+      return (
+        <Chip
+          label={log.isIdle ? 'IDLE LOG' : (log.exitTime ? 'ARCHIVED' : 'ACTIVE')}
+          size="small"
+          sx={{
+            fontWeight: 900, fontSize: '0.65rem', height: 22,
+            bgcolor: log.isIdle ? alpha('#ec4899', 0.1) : (log.exitTime ? alpha('#94a3b8', 0.1) : alpha('#10b981', 0.1)),
+            color: log.isIdle ? '#ec4899' : (log.exitTime ? '#64748b' : '#10b981')
+          }}
+        />
+      );
+    }
+    return null;
   };
 
   return (
@@ -404,71 +467,38 @@ const UserSessionAnalytics = () => {
           }}>
             <Box sx={{ p: 3, px: 4, borderBottom: '1px solid', borderColor: '#f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h3" fontWeight={900}>Comprehensive Audit Trail</Typography>
-              <Button size="small" variant="text" sx={{ fontWeight: 700 }}>Export Data</Button>
+              {perms.export && (
+                <BOSExportButton
+                  data={filteredData}
+                  filename="User_Session_Analytics"
+                  pageCode={PAGE_CODES.AD_SESSION_ANALYTICS}
+                  pageName="User Session Analytics"
+                  columns={[
+                    { header: 'User', key: 'userId' },
+                    { header: 'Target Module', key: 'pageName' },
+                    { header: 'Page URL', key: 'pageUrl' },
+                    { header: 'In Time', key: 'entryTime' },
+                    { header: 'Exit Time', key: 'exitTime' },
+                    { header: 'Duration (ms)', key: 'durationMs' }
+                  ]}
+                  size="small"
+                  sx={{ py: 0.5 }}
+                />
+              )}
             </Box>
-            <TableContainer sx={{ maxHeight: 450, overflow: 'auto' }}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow sx={{ '& th': { bgcolor: '#f8fafc', fontWeight: 900, color: '#64748b', fontSize: '0.75rem', py: 2.5 } }}>
-                    <TableCell sx={{ pl: 4 }}>USER</TableCell>
-                    <TableCell>TARGET MODULE</TableCell>
-                    <TableCell>In TIME</TableCell>
-                    <TableCell>EXIT TIME</TableCell>
-                    <TableCell>ENGAGEMENT TIME</TableCell>
-                    <TableCell align="center">FLOW STATUS</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredData.map((log) => (
-                    <TableRow key={log.id} hover sx={{ '& td': { py: 2.5, borderBottom: '1px solid #f1f5f9' } }}>
-                      <TableCell sx={{ pl: 4 }}>
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Avatar
-                            src={log.userImage ? `${API_BASE}/api/users/image/${log.userImage}` : ''}
-                            sx={{ width: 32, height: 32, fontSize: '0.8rem', bgcolor: alpha('#8b5cf6', 0.1), color: '#8b5cf6', fontWeight: 800 }}
-                          >
-                            {log.userId?.charAt(0)}
-                          </Avatar>
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{log.userId}</Typography>
-                        </Stack>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{log.pageName}</Typography>
-                        <Typography variant="caption" color="textSecondary">{log.pageUrl}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(log.entryTime).toLocaleDateString()}</Typography>
-                        <Typography variant="caption" color="textSecondary">{new Date(log.entryTime).toLocaleTimeString()}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        {log.exitTime ? (
-                          <>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{new Date(log.exitTime).toLocaleDateString()}</Typography>
-                            <Typography variant="caption" color="textSecondary">{new Date(log.exitTime).toLocaleTimeString()}</Typography>
-                          </>
-                        ) : (
-                          <Typography variant="caption" color="textSecondary" sx={{ fontStyle: 'italic' }}>Ongoing...</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle2" sx={{ color: '#6366f1', fontWeight: 800 }}>{formatDuration(log.durationMs)}</Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          label={log.isIdle ? 'IDLE LOG' : (log.exitTime ? 'ARCHIVED' : 'ACTIVE')}
-                          size="small"
-                          sx={{
-                            fontWeight: 900, fontSize: '0.65rem', height: 22,
-                            bgcolor: log.isIdle ? alpha('#ec4899', 0.1) : (log.exitTime ? alpha('#94a3b8', 0.1) : alpha('#10b981', 0.1)),
-                            color: log.isIdle ? '#ec4899' : (log.exitTime ? '#64748b' : '#10b981')
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <BOSDataTable
+              columns={columns}
+              data={filteredData}
+              loading={loading}
+              showActions={false}
+              totalCount={filteredData.length}
+              page={page}
+              size={rowsPerPage}
+              onPageChange={setPage}
+              onSizeChange={setRowsPerPage}
+              renderCell={handleRenderCell}
+              sx={{ border: 'none' }}
+            />
           </Paper>
         </Grid>
       </Grid>

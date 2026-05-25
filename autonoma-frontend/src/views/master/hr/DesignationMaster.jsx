@@ -59,7 +59,45 @@ export default function DesignationMaster() {
     }
   }, []);
 
-  useEffect(() => { fetchDesignations(); }, [fetchDesignations]);
+  useEffect(() => {
+    fetchDesignations();
+  }, [fetchDesignations]);
+
+  useEffect(() => {
+    const config = [
+      {
+        id: 'appearInCompetency',
+        label: 'Competency Tracking',
+        type: 'select',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'YES', label: 'YES' },
+          { value: 'NO', label: 'NO' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'Active', label: 'Active' },
+          { value: 'In Active', label: 'In Active' },
+          { value: 'Suspended', label: 'Suspended' }
+        ],
+        defaultValue: 'All'
+      },
+      { id: 'experience', label: 'Experience', type: 'text', placeholder: 'Search by Experience...' },
+      { id: 'qualification', label: 'Min Qualification', type: 'text', placeholder: 'Search by Qualification...' },
+      { id: 'createdDate', label: 'Created Date', type: 'date' },
+      { id: 'updatedDate', label: 'Updated Date', type: 'date' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [dispatch]);
 
   const handleOpenAdd = () => { setSelectedRow(null); setDialogOpen(true); };
   const handleOpenEdit = (row) => { setSelectedRow(row); setDialogOpen(true); };

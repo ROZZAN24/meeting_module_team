@@ -35,18 +35,47 @@ public class AuditCriteriaController {
     @PostMapping
     @RequirePagePermission(pageCode = "M1130", action = "write")
     @Operation(summary = "Create/Update Audit Criteria", description = "Creates a new audit criteria or updates an existing one")
-    public AuditCriteria createAuditCriteria(@RequestBody AuditCriteria auditCriteria) {
+    public ResponseEntity<?> createAuditCriteria(@RequestBody AuditCriteria auditCriteria) {
         log.info("Saving audit criteria: {}", auditCriteria);
-        return auditCriteriaService.save(auditCriteria);
+    if (auditCriteria.getSeqNo() != null && auditCriteriaRepository.existsBySeqNoIgnoreCase(auditCriteria.getSeqNo().trim())) {
+            return ResponseEntity.badRequest().body("Duplicate Seq No: A record with this sequence number already exists.");
+        }
+        if (auditCriteria.getClause() != null && !auditCriteria.getClause().trim().isEmpty() &&
+            auditCriteria.getAuditType() != null &&
+            auditCriteriaRepository.existsByClauseIgnoreCaseAndAuditTypeIgnoreCase(auditCriteria.getClause().trim(), auditCriteria.getAuditType().trim())) {
+            return ResponseEntity.badRequest().body("Duplicate: A record with the same Clause and Audit Type already exists.");
+        }
+        auditCriteria.setUpdatedBy(null);
+        auditCriteria.setUpdatedDate(null);
+        AuditCriteria saved = auditCriteriaService.save(auditCriteria);
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")
     @RequirePagePermission(pageCode = "M1130", action = "write")
     @Operation(summary = "Update Audit Criteria", description = "Updates an existing audit criteria")
-    public ResponseEntity<AuditCriteria> updateAuditCriteria(@PathVariable Long id, @RequestBody AuditCriteria auditCriteria) {
-        auditCriteria.setId(id);
+    public ResponseEntity<?> updateAuditCriteria(@PathVariable Long id, @RequestBody AuditCriteria auditCriteria) {
         log.info("Updating audit criteria with ID {}: {}", id, auditCriteria);
-        return ResponseEntity.ok(auditCriteriaService.save(auditCriteria));
+        AuditCriteria existing = auditCriteriaRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+        if (auditCriteria.getSeqNo() != null && auditCriteriaRepository.existsBySeqNoIgnoreCaseAndIdNot(auditCriteria.getSeqNo().trim(), id)) {
+            return ResponseEntity.badRequest().body("Duplicate Seq No: A record with this sequence number already exists.");
+        }
+        if (auditCriteria.getClause() != null && !auditCriteria.getClause().trim().isEmpty() &&
+            auditCriteria.getAuditType() != null &&
+            auditCriteriaRepository.existsByClauseIgnoreCaseAndAuditTypeIgnoreCaseAndIdNot(auditCriteria.getClause().trim(), auditCriteria.getAuditType().trim(), id)) {
+            return ResponseEntity.badRequest().body("Duplicate: A record with the same Clause and Audit Type already exists.");
+        }
+        
+        // Preserve created info
+        auditCriteria.setId(id);
+        auditCriteria.setCreatedBy(existing.getCreatedBy());
+        auditCriteria.setCreatedDate(existing.getCreatedDate());
+        
+        AuditCriteria saved = auditCriteriaService.save(auditCriteria);
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping("/by-type/{auditType}")

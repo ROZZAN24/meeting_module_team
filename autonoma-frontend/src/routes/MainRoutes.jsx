@@ -273,6 +273,7 @@ const NpdModelMaster = Loadable(lazy(() => import('views/npd/Model/ModelMaster')
 const NpdCapacityMaster = Loadable(lazy(() => import('views/npd/Capacity/CapacityMaster')));
 const NpdWindFarmMaster = Loadable(lazy(() => import('views/npd/WindFarm/WindFarmMaster')));
 const NpdModelNameMaster = Loadable(lazy(() => import('views/qms/ModelName/ModelNameMaster')));
+const NpdProcessMaster = Loadable(lazy(() => import('views/master/npd/product/ProcessMaster')));
 const NpdUomMaster = Loadable(lazy(() => import('views/qms/Uom/UomMaster')));
 
 // ==============================|| MAIN ROUTING ||============================== //
@@ -992,6 +993,10 @@ const MainRoutes = {
     {
       path: '/master/npd/product-capacity',
       element: <NpdCapacityMaster />
+    },
+    {
+      path: '/master/npd/product-process',
+      element: <NpdProcessMaster />
     },
     {
       path: '/master/npd/wind-farm',

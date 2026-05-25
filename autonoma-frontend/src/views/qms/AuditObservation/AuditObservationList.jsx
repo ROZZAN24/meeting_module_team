@@ -24,7 +24,7 @@ const columns = [
   { id: 'departmentName', label: 'Dept Name', minWidth: 150 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
-  { id: 'ncrCount', label: 'NCR', minWidth: 80 },
+  { id: 'ncrCount', label: 'NC', minWidth: 80 },
   { id: 'ofiCount', label: 'OFI', minWidth: 80 },
   { id: 'auditScore', label: 'Score', minWidth: 80 },
   { id: 'status', label: 'Status', minWidth: 100 }
@@ -204,7 +204,7 @@ export default function AuditObservationList() {
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={perms.write ? handleOpenEdit : undefined}
-        onDeleteRow={(row) => { setDeleteTarget(row); setDeleteDialogOpen(true); }}
+        onDeleteRow={perms.delete ? (row) => { setDeleteTarget(row); setDeleteDialogOpen(true); } : undefined}
         renderCell={renderCell}
       />
 

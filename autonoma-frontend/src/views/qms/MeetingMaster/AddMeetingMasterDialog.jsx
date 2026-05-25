@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { MenuItem, Autocomplete, Chip } from '@mui/material';
-import { BOSFormDialog, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { useLookups } from 'hooks/useLookups';
 
@@ -101,51 +100,30 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item }) => {
         required
       />
       
-      <Autocomplete
+      <BOSAutocomplete
         multiple
+        label="Employee Name"
+        name="employeeName"
         options={employees.filter(emp => users.some(u => u.empId === emp.id))}
         getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
         value={employees.filter(emp => form.employeeName?.some(val => val.split(' - ')[0] === emp.empCode))}
-        onChange={(e, newValue) => {
+        onChange={(newValue) => {
           setForm(p => ({ ...p, employeeName: newValue.map(v => `${v.empCode} - ${v.employeeName}`) }));
           if (errors.employeeName) clearErrors('employeeName');
         }}
-        renderTags={(value, getTagProps) =>
-          value.map((option, index) => {
-            const { key, ...tagProps } = getTagProps({ index });
-            return (
-              <Chip
-                key={key}
-                label={option.employeeName}
-                color="primary"
-                variant="filled"
-                size="small"
-                {...tagProps}
-              />
-            );
-          })
-        }
-        renderInput={(params) => (
-          <BOSTextField
-            {...params}
-            label="Employee Name"
-            required
-            error={!!errors.employeeName}
-            helperText={errors.employeeName}
-          />
-        )}
+        required
+        error={!!errors.employeeName}
+        helperText={errors.employeeName}
       />
 
-      <BOSTextField
-        select
+      <BOSAutocomplete
         name="status"
         label="Status"
         value={form.status || 'ACTIVE'}
-        onChange={h}
-      >
-        <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-        <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-      </BOSTextField>
+        options={['ACTIVE', 'INACTIVE']}
+        onChange={(newValue) => setForm(p => ({ ...p, status: newValue }))}
+        required
+      />
     </BOSFormDialog>
   );
 };

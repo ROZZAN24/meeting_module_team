@@ -50,6 +50,8 @@ import { openSnackbar } from 'store/slices/snackbar';
 import useAuth from 'hooks/useAuth';
 import getCroppedImg from 'utils/cropImage';
 import { getFaceDescriptor } from 'utils/faceApi';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { BOSDataTable } from 'ui-component/bos';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
@@ -75,6 +77,9 @@ const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').r
 const UserOverview = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
+
+  const perms = usePagePermissions(PAGE_CODES.AD_USER_CREDENTIALS);
+
   const [users, setUsers] = useState([]);
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -346,22 +351,24 @@ const UserOverview = () => {
         </Stack>
 
         <Stack direction="row" spacing={2} alignItems="center">
-          <Button
-            variant="contained"
-            startIcon={<IconUserPlus size={18} />}
-            onClick={handleClickOpen}
-            sx={{
-              height: 40,
-              borderRadius: '8px',
-              bgcolor: '#673ab7',
-              '&:hover': { bgcolor: '#5e35b1' },
-              px: 3,
-              fontWeight: 700,
-              boxShadow: 'none'
-            }}
-          >
-            New User
-          </Button>
+          {perms.write && (
+            <Button
+              variant="contained"
+              startIcon={<IconUserPlus size={18} />}
+              onClick={handleClickOpen}
+              sx={{
+                height: 40,
+                borderRadius: '8px',
+                bgcolor: '#673ab7',
+                '&:hover': { bgcolor: '#5e35b1' },
+                px: 3,
+                fontWeight: 700,
+                boxShadow: 'none'
+              }}
+            >
+              New User
+            </Button>
+          )}
         </Stack>
       </Box>
 
@@ -376,172 +383,151 @@ const UserOverview = () => {
         bgcolor: 'white',
         minHeight: 0
       }}>
-        <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#ccc', fontSize: '0.7rem', py: 2.5, width: 50 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>User Identity</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Linked Employee</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Divisions</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Account Status</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5, width: 120 }}>Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                    <CircularProgress size={32} thickness={5} />
-                    <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>Synchronizing...</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : paginatedUsers.length > 0 ? (
-                paginatedUsers.map((row, idx) => (
-                  <TableRow
-                    key={row.userId}
-                    onDoubleClick={() => handleEdit(row)}
+        {(() => {
+          const columns = [
+            { id: 'index', label: '#' },
+            {
+              id: 'userId',
+              label: 'User Identity',
+              render: (row) => (
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Tooltip
+                    title={row.imgName ? (
+                      <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'white', borderRadius: 2 }}>
+                        <img src={`${API_BASE}/api/users/image/${row.imgName}`} alt="Profile" style={{ maxWidth: 200, maxHeight: 200, borderRadius: 4, display: 'block' }} />
+                      </Paper>
+                    ) : null}
+                    arrow
+                  >
+                    <Avatar
+                      src={row.imgName ? `${API_BASE}/api/users/image/${row.imgName}` : ''}
+                      sx={{ width: 42, height: 42, border: '1px solid #eee', bgcolor: 'primary.light', color: 'primary.dark', cursor: row.imgName ? 'pointer' : 'default' }}
+                    >
+                      {row.userId.charAt(0).toUpperCase()}
+                    </Avatar>
+                  </Tooltip>
+                  <Box>
+                    <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.userId}</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.6rem' }}>LOGIN ENABLED</Typography>
+                  </Box>
+                </Stack>
+              )
+            },
+            {
+              id: 'empId',
+              label: 'Linked Employee',
+              render: (row) => (
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>
+                    {employeeMap[row.empId]?.employeeName || `Employee: ${row.empId}`}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.6rem' }}>
+                    CODE: {employeeMap[row.empId]?.empCode || 'N/A'}
+                  </Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'divisions',
+              label: 'Authorized Divisions',
+              render: (row) => {
+                const mapping = userMappingsMap[row.userId];
+                if (!mapping) return <Typography variant="caption" color="text.disabled">—</Typography>;
+                if (mapping.isBosAdmin === 1) return (
+                  <Chip label="BOS Admin" size="small" sx={{ bgcolor: '#ede7f6', color: '#673ab7', fontWeight: 800, fontSize: '0.65rem', borderRadius: '6px' }} />
+                );
+                const divIds = mapping.mappedDivisionIds || [];
+                if (divIds.length === 0) return <Typography variant="caption" color="text.disabled">No divisions</Typography>;
+                return (
+                  <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+                    {divIds.slice(0, 3).map(id => (
+                      <Chip
+                        key={id}
+                        label={divisionMap[id]?.divisionName || `Div ${id}`}
+                        size="small"
+                        sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: '0.62rem', borderRadius: '6px', mb: 0.5 }}
+                      />
+                    ))}
+                    {divIds.length > 3 && (
+                      <Tooltip title={divIds.slice(3).map(id => divisionMap[id]?.divisionName || `Div ${id}`).join(', ')} arrow>
+                        <Chip label={`+${divIds.length - 3}`} size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 700, fontSize: '0.62rem', borderRadius: '6px', mb: 0.5 }} />
+                      </Tooltip>
+                    )}
+                  </Stack>
+                );
+              }
+            },
+            {
+              id: 'status',
+              label: 'Account Status',
+              render: (row) => (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {row.status === 1 ? (
+                    <IconCircleCheckFilled size={18} color="#4caf50" />
+                  ) : (
+                    <IconCircleXFilled size={18} color="#f44336" />
+                  )}
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: row.status === 1 ? '#4caf50' : '#f44336', fontSize: '0.7rem' }}>
+                    {row.status === 1 ? 'ACTIVE' : 'SUSPENDED'}
+                  </Typography>
+                </Stack>
+              )
+            }
+          ];
+
+          const actionColumn = {
+            render: (row) => (
+              <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                <Tooltip title="Modify Account" arrow>
+                  <IconButton
+                    onClick={() => handleEdit(row)}
                     sx={{
-                      '& td': { py: 1.5, borderBottom: '1px solid #f8fafc' },
-                      '&:hover': { bgcolor: '#f1f5f9 !important' },
-                      bgcolor: idx % 2 === 0 ? 'white' : '#f9fbff',
-                      cursor: 'pointer'
+                      bgcolor: alpha('#2196f3', 0.1),
+                      color: '#2196f3',
+                      borderRadius: '6px',
+                      p: 0.5,
+                      '&:hover': { bgcolor: '#2196f3', color: 'white' }
                     }}
                   >
-                    <TableCell sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.75rem' }}>{page * rowsPerPage + idx + 1}</TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Tooltip
-                          title={row.imgName ? (
-                            <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'white', borderRadius: 2 }}>
-                              <img src={`${API_BASE}/api/users/image/${row.imgName}`} alt="Profile" style={{ maxWidth: 200, maxHeight: 200, borderRadius: 4, display: 'block' }} />
-                            </Paper>
-                          ) : null}
-                          arrow
-                        >
-                          <Avatar
-                            src={row.imgName ? `${API_BASE}/api/users/image/${row.imgName}` : ''}
-                            sx={{ width: 42, height: 42, border: '1px solid #eee', bgcolor: 'primary.light', color: 'primary.dark', cursor: row.imgName ? 'pointer' : 'default' }}
-                          >
-                            {row.userId.charAt(0).toUpperCase()}
-                          </Avatar>
-                        </Tooltip>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.userId}</Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.6rem' }}>LOGIN ENABLED</Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>
-                          {employeeMap[row.empId]?.employeeName || `Employee: ${row.empId}`}
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', fontSize: '0.6rem' }}>
-                          CODE: {employeeMap[row.empId]?.empCode || 'N/A'}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 220 }}>
-                      {(() => {
-                        const mapping = userMappingsMap[row.userId];
-                        if (!mapping) return <Typography variant="caption" color="text.disabled">—</Typography>;
-                        if (mapping.isBosAdmin === 1) return (
-                          <Chip label="BOS Admin" size="small" sx={{ bgcolor: '#ede7f6', color: '#673ab7', fontWeight: 800, fontSize: '0.65rem', borderRadius: '6px' }} />
-                        );
-                        const divIds = mapping.mappedDivisionIds || [];
-                        if (divIds.length === 0) return <Typography variant="caption" color="text.disabled">No divisions</Typography>;
-                        return (
-                          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                            {divIds.slice(0, 3).map(id => (
-                              <Chip
-                                key={id}
-                                label={divisionMap[id]?.divisionName || `Div ${id}`}
-                                size="small"
-                                sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 700, fontSize: '0.62rem', borderRadius: '6px', mb: 0.5 }}
-                              />
-                            ))}
-                            {divIds.length > 3 && (
-                              <Tooltip title={divIds.slice(3).map(id => divisionMap[id]?.divisionName || `Div ${id}`).join(', ')} arrow>
-                                <Chip label={`+${divIds.length - 3}`} size="small" sx={{ bgcolor: '#f1f5f9', color: '#64748b', fontWeight: 700, fontSize: '0.62rem', borderRadius: '6px', mb: 0.5 }} />
-                              </Tooltip>
-                            )}
-                          </Stack>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        {row.status === 1 ? (
-                          <IconCircleCheckFilled size={18} color="#4caf50" />
-                        ) : (
-                          <IconCircleXFilled size={18} color="#f44336" />
-                        )}
-                        <Typography variant="caption" sx={{ fontWeight: 800, color: row.status === 1 ? '#4caf50' : '#f44336', fontSize: '0.7rem' }}>
-                          {row.status === 1 ? 'ACTIVE' : 'SUSPENDED'}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Stack direction="row" spacing={1} justifyContent="center">
-                        <Tooltip title="Modify Account" arrow>
-                          <IconButton
-                            onClick={() => handleEdit(row)}
-                            sx={{
-                              bgcolor: alpha('#2196f3', 0.1),
-                              color: '#2196f3',
-                              borderRadius: '6px',
-                              p: 0.5,
-                              '&:hover': { bgcolor: '#2196f3', color: 'white' }
-                            }}
-                          >
-                            <IconPencil size={18} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Revoke Access" arrow>
-                          <IconButton
-                            onClick={() => handleDelete(row.userId)}
-                            sx={{
-                              bgcolor: alpha('#f44336', 0.1),
-                              color: '#f44336',
-                              borderRadius: '6px',
-                              p: 0.5,
-                              '&:hover': { bgcolor: '#f44336', color: 'white' }
-                            }}
-                          >
-                            <IconTrash size={18} />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                    <Typography variant="h5" color="textSecondary">No credentials found</Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[50, 100]}
-          component="div"
-          count={filteredUsers.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={(e, p) => setPage(p)}
-          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-          sx={{
-            borderTop: '1px solid #f1f5f9',
-            bgcolor: '#fff',
-            flexShrink: 0,
-            '& .MuiTablePagination-toolbar': { p: 0, minHeight: '40px !important' },
-            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { m: 0, fontSize: '0.75rem' }
-          }}
-        />
+                    {perms.write ? <IconPencil size={18} /> : <Visibility size={18} />}
+                  </IconButton>
+                </Tooltip>
+                {perms.delete && (
+                  <Tooltip title="Revoke Access" arrow>
+                    <IconButton
+                      onClick={() => handleDelete(row.userId)}
+                      sx={{
+                        bgcolor: alpha('#f44336', 0.1),
+                        color: '#f44336',
+                        borderRadius: '6px',
+                        p: 0.5,
+                        '&:hover': { bgcolor: '#f44336', color: 'white' }
+                      }}
+                    >
+                      <IconTrash size={18} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Stack>
+            )
+          };
+
+          return (
+            <BOSDataTable
+              columns={columns}
+              data={filteredUsers}
+              page={page}
+              size={rowsPerPage}
+              totalCount={filteredUsers.length}
+              onPageChange={setPage}
+              onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
+              showActions={true}
+              actionColumn={actionColumn}
+              loading={loading}
+              onDoubleClickRow={handleEdit}
+            />
+          );
+        })()}
       </Box>
 
       {/* ── MODAL DIALOG ── */}
@@ -601,7 +587,12 @@ const UserOverview = () => {
                 isBosAdmin: values.isBosAdmin
               });
 
-              if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) updateProfile({ imgName: values.imgName });
+              if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) {
+                updateProfile({
+                  imgName: values.imgName,
+                  autoLogoutOnFaceAbsence: Number(values.autoLogoutOnFaceAbsence)
+                });
+              }
               dispatch(openSnackbar({ open: true, message: `User ${editingUser ? 'updated' : 'created'} successfully`, variant: 'alert', severity: 'success' }));
               setOpen(false);
               await fetchUsers();
@@ -627,23 +618,25 @@ const UserOverview = () => {
                       </Stack>
                     </Box>
                     <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        disabled={isSubmitting}
-                        sx={{
-                          bgcolor: 'white',
-                          color: 'secondary.main',
-                          fontWeight: 800,
-                          px: 3,
-                          borderRadius: '8px',
-                          '&:hover': {
-                            bgcolor: 'rgba(255,255,255,0.9)',
-                          }
-                        }}
-                      >
-                        {isSubmitting ? 'Saving...' : editingUser ? 'Save' : 'Create'}
-                      </Button>
+                      {perms.write && (
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          disabled={isSubmitting}
+                          sx={{
+                            bgcolor: 'white',
+                            color: 'secondary.main',
+                            fontWeight: 800,
+                            px: 3,
+                            borderRadius: '8px',
+                            '&:hover': {
+                              bgcolor: 'rgba(255,255,255,0.9)',
+                            }
+                          }}
+                        >
+                          {isSubmitting ? 'Saving...' : editingUser ? 'Save' : 'Create'}
+                        </Button>
+                      )}
                       <IconButton onClick={handleClose} sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
                         <IconX size={20} />
                       </IconButton>
@@ -708,6 +701,12 @@ const UserOverview = () => {
                             <TextField select fullWidth label="Account Status" name="status" value={values.status} onChange={handleChange} onBlur={handleBlur}>
                               <MenuItem value={1}>Active</MenuItem>
                               <MenuItem value={0}>Suspended</MenuItem>
+                            </TextField>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField select fullWidth label="BOS Admin Privilege" name="isBosAdmin" value={values.isBosAdmin} onChange={handleChange} onBlur={handleBlur}>
+                              <MenuItem value={1}>YES</MenuItem>
+                              <MenuItem value={0}>NO</MenuItem>
                             </TextField>
                           </Grid>
                           <Grid item xs={12} sm={6}>

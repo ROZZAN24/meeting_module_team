@@ -16,7 +16,6 @@ import {
   Avatar,
   IconButton,
   Tooltip,
-  TextField,
   CircularProgress,
   alpha,
   Switch,
@@ -30,6 +29,16 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useAuth from 'hooks/useAuth';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { 
+  BOSTextField, 
+  tableContainerSx, 
+  tableHeadCellSx, 
+  getTableRowSx, 
+  tableActionEditSx, 
+  tableActionDeleteSx, 
+  getStatusChipSx 
+} from 'ui-component/bos';
 
 // assets
 import {
@@ -72,6 +81,7 @@ const PrefixCredentials = () => {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const { user } = useAuth();
+  const perms = usePagePermissions(PAGE_CODES.AD_PREFIX_CREDENTIALS);
   const searchQuery = useSelector((state) => state.search.query);
 
   const getErrorMessage = (err) => {
@@ -287,7 +297,7 @@ const PrefixCredentials = () => {
       else if (field.endsWith('Digit')) placeholder = '6';
 
       return (
-        <TextField
+        <BOSTextField
           fullWidth
           size="small"
           variant="standard"
@@ -299,7 +309,7 @@ const PrefixCredentials = () => {
           InputLabelProps={{ shrink: true }}
           inputProps={{
             maxLength: field === 'accountYear' ? 9 : (type === 'number' ? 10 : 20),
-            style: { fontSize: '0.7rem', fontWeight: 700, color: '#1a223f', padding: '4px 0' }
+            style: { fontSize: '0.7rem', fontWeight: 700, padding: '4px 0' }
           }}
           sx={{ '& .MuiInput-underline:before': { borderBottomColor: alpha(theme.palette.primary.main, 0.2) } }}
         />
@@ -402,7 +412,7 @@ const PrefixCredentials = () => {
             variant="contained"
             startIcon={<IconPlus size={18} />}
             onClick={handleAddRow}
-            disabled={isAdding || editIdx !== -1}
+            disabled={isAdding || editIdx !== -1 || !perms.write}
             sx={{
               height: 40,
               borderRadius: '8px',
@@ -545,7 +555,7 @@ const PrefixCredentials = () => {
                                   <IconButton
                                     size="small"
                                     onClick={() => handleEditRow(idx, row)}
-                                    disabled={isAdding || editIdx !== -1}
+                                    disabled={isAdding || editIdx !== -1 || !perms.write}
                                     sx={{
                                       bgcolor: alpha('#2196f3', 0.1),
                                       color: '#2196f3',
@@ -557,7 +567,7 @@ const PrefixCredentials = () => {
                                     <IconPencil size={16} />
                                   </IconButton>
                                 </Tooltip>
-                                {user?.isBosAdmin === 1 && (
+                                {perms.delete && user?.isBosAdmin === 1 && (
                                   <Tooltip title="Delete" arrow>
                                     <IconButton
                                       size="small"

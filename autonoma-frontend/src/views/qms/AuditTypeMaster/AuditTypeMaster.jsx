@@ -220,7 +220,7 @@ export default function AuditTypeMaster() {
         renderCell={(col, row) => {
           const val = row[col.id];
           if (col.id === 'index') return rows.indexOf(row) + 1;
-          if (col.id === 'createdBy' || col.id === 'updatedBy') return val || 'Admin';
+          if (col.id === 'createdBy' || col.id === 'updatedBy') return val || '-';
           if (col.id.toLowerCase().includes('date')) {
             if (!val) return '-';
             try { return format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch { return '-'; }

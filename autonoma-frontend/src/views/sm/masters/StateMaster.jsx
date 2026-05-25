@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, TextField, MenuItem
+  DialogActions, MenuItem
 } from '@mui/material';
 import { IconMapPin, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
+import { setFilterConfig } from 'store/slices/search';
+import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
+import { useSelector, useDispatch } from 'react-redux';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
@@ -25,6 +27,8 @@ const columns = [
 export default function StateMaster() {
   const [rows, setRows] = useState([]);
   const perms = usePagePermissions(PAGE_CODES.LOG_STATE);
+  const dispatch = useDispatch();
+  const globalQuery = useSelector((state) => state.search.query);
   const [countries, setCountries] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -118,6 +122,27 @@ export default function StateMaster() {
     }
   };
 
+  useEffect(() => {
+    const config = [
+      { id: 'stateName', label: 'State Name', type: 'text' },
+      { id: 'stateCode', label: 'State Code', type: 'text' },
+      { id: 'countryName', label: 'Country Name', type: 'text' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => dispatch(setFilterConfig(null));
+  }, [dispatch]);
+
+  const filteredRows = useMemo(() => {
+    const q = (globalQuery || '').toLowerCase();
+    const sourceRows = rows || [];
+    if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
+    return sourceRows.filter(row =>
+      (row.stateName && row.stateName.toString().toLowerCase().includes(q)) ||
+      (row.stateCode && row.stateCode.toString().toLowerCase().includes(q)) ||
+      (row.countryName && row.countryName.toString().toLowerCase().includes(q))
+    ).map((r, i) => ({ ...r, index: i + 1 }));
+  }, [rows, globalQuery]);
+
   return (
     <MainCard
       title={
@@ -138,15 +163,17 @@ export default function StateMaster() {
               { header: 'Status', key: 'status' }
             ]}
           />}
-          <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
-            New State
-          </Button>
+          {perms.write && (
+            <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
+              New State
+            </Button>
+          )}
         </Stack>
       }
     >
       <BOSDataTable
         columns={columns}
-        rows={rows}
+        rows={filteredRows}
         page={page}
         size={size}
         totalCount={rows.length}
@@ -160,8 +187,9 @@ export default function StateMaster() {
         <DialogTitle>{editId ? 'Edit State' : 'New State'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
+            <BOSTextField
               select
+              disabled={!perms.write}
               label="Country Name"
               fullWidth
               value={formData.countryName}
@@ -174,21 +202,24 @@ export default function StateMaster() {
                   <MenuItem key={c.id} value={c.country}>{c.country}</MenuItem>
                 ))
               }
-            </TextField>
-            <TextField
+            </BOSTextField>
+            <BOSTextField
+              disabled={!perms.write}
               label="State Name"
               fullWidth
               value={formData.stateName}
               onChange={(e) => setFormData({ ...formData, stateName: e.target.value })}
             />
-            <TextField
+            <BOSTextField
+              disabled={!perms.write}
               label="State Code"
               fullWidth
               value={formData.stateCode}
               onChange={(e) => setFormData({ ...formData, stateCode: e.target.value })}
             />
-            <TextField
+            <BOSTextField
               select
+              disabled={!perms.write}
               label="Status"
               fullWidth
               value={formData.status}
@@ -196,14 +227,16 @@ export default function StateMaster() {
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="InActive">InActive</MenuItem>
-            </TextField>
+            </BOSTextField>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
-            Save
-          </Button>
+          {perms.write && (
+            <Button variant="contained" onClick={handleSubmit}>
+              Save
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

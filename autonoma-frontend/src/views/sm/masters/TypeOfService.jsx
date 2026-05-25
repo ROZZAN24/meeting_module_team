@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, TextField, MenuItem
+  DialogActions, MenuItem
 } from '@mui/material';
 import { IconSettings, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -87,6 +87,8 @@ export default function TypeOfService() {
       fetchRows();
     } catch (err) {
       console.error(err);
+      const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
+      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
     }
   };
 
@@ -108,12 +110,6 @@ export default function TypeOfService() {
     }
   };
 
-  const formattedRows = rows.map((row, index) => ({
-    ...row,
-    index: index + 1
-  }));
-
-  
   useEffect(() => {
     const config = [
       { id: 'serviceCode', label: 'Service Code', type: 'text' },
@@ -125,14 +121,15 @@ export default function TypeOfService() {
 
   const filteredRows = useMemo(() => {
     const q = (globalQuery || '').toLowerCase();
-    const sourceRows = typeof resolvedRows !== 'undefined' ? resolvedRows : rows; // handle if resolvedRows exists (like SupplierList)
+    const sourceRows = rows || [];
     if (!q) return sourceRows.map((r, i) => ({ ...r, index: i + 1 }));
     return sourceRows.filter(row =>
       (row.serviceCode && row.serviceCode.toString().toLowerCase().includes(q)) ||
       (row.serviceName && row.serviceName.toString().toLowerCase().includes(q))
     ).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalQuery]);
-return (
+
+  return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -143,7 +140,7 @@ return (
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           {perms.export && <BOSExportButton
-            data={formattedRows}
+            data={rows}
             filename="Type_Of_Service"
             columns={[
               { header: 'Service Code', key: 'serviceCode' },
@@ -151,9 +148,11 @@ return (
               { header: 'Status', key: 'status' }
             ]}
           />}
-          <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
-            New Service Type
-          </Button>
+          {perms.write && (
+            <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
+              New Service Type
+            </Button>
+          )}
         </Stack>
       }
     >
@@ -172,19 +171,22 @@ return (
         <DialogTitle>{editId ? 'Edit Service Type' : 'New Service Type'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
+            <BOSTextField
+              disabled={!perms.write}
               label="Service Code"
               fullWidth
               value={formData.serviceCode}
               onChange={(e) => setFormData({ ...formData, serviceCode: e.target.value })}
             />
-            <TextField
+            <BOSTextField
+              disabled={!perms.write}
               label="Service Name"
               fullWidth
               value={formData.serviceName}
               onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
             />
-            <TextField
+            <BOSTextField
+              disabled={!perms.write}
               label="Description"
               fullWidth
               multiline
@@ -192,8 +194,9 @@ return (
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
-            <TextField
+            <BOSTextField
               select
+              disabled={!perms.write}
               label="Status"
               fullWidth
               value={formData.status}
@@ -201,14 +204,16 @@ return (
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="InActive">InActive</MenuItem>
-            </TextField>
+            </BOSTextField>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
-            Save
-          </Button>
+          {perms.write && (
+            <Button variant="contained" onClick={handleSubmit}>
+              Save
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

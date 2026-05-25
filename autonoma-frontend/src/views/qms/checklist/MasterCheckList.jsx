@@ -336,6 +336,34 @@ export default function MasterCheckList() {
     'escape': () => { if (dialogOpen) setDialogOpen(false); }
   });
 
+  // ── Make Checking Point a clickable blue link that opens the edit dialog ─────
+  const tableColumns = useMemo(() => columns.map((col) => (
+    col.id === 'checkingPoint'
+      ? {
+          ...col,
+          render: (row) => {
+            const text = row.checkingPoint;
+            if (!text) return '-';
+            return (
+              <Box
+                component="span"
+                onClick={(e) => { e.stopPropagation(); handleOpenEdit(row); }}
+                sx={{
+                  color: 'primary.main',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  '&:hover': { color: 'primary.dark' }
+                }}
+              >
+                {text}
+              </Box>
+            );
+          }
+        }
+      : col
+  )), [rows]);
+
   // ── Custom action column (Amendment + Assign) ─────────────────────────────────
   const actionColumn = {
     label: 'Actions',
@@ -460,7 +488,7 @@ export default function MasterCheckList() {
       }
     >
       <BOSDataTable
-        columns={columns}
+        columns={tableColumns}
         rows={resolvedRows}
         page={page}
         size={size}

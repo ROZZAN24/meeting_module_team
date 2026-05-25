@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useEffect, useMemo, Activity } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 // third party
 import { IntlProvider } from 'react-intl';
@@ -27,7 +27,7 @@ export default function Locales({ children }) {
   const {
     state: { i18n }
   } = useConfig();
-  const [messages, setMessages] = useState();
+  const [messages, setMessages] = useState({});
 
   const localeDataPromise = useMemo(() => loadLocaleData(i18n), [i18n]);
   useEffect(() => {
@@ -36,14 +36,11 @@ export default function Locales({ children }) {
     });
   }, [localeDataPromise]);
 
+  // Always render children; use empty messages as fallback until locale data loads
   return (
-    <>
-      <Activity mode={messages ? 'visible' : 'hidden'}>
-        <IntlProvider locale={i18n} defaultLocale="en" messages={messages}>
-          {children}
-        </IntlProvider>
-      </Activity>
-    </>
+    <IntlProvider locale={i18n} defaultLocale="en" messages={messages}>
+      {children}
+    </IntlProvider>
   );
 }
 

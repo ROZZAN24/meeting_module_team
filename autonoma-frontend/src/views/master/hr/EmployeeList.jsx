@@ -18,6 +18,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import { BOSDataTable, BOSExportButton, BOSFormSection, btnExport, btnNew, getPhotoUrl, btnSave, btnCancel } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import { useLookups } from 'hooks/useLookups';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| EMPLOYEE MASTER LIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -43,6 +44,7 @@ const columns = [
 export default function EmployeeList() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const perms = usePagePermissions(PAGE_CODES.EMP_MASTER);
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
 
@@ -307,34 +309,40 @@ export default function EmployeeList() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
-            data={resolvedRows}
-            filename="Employee_Master"
-            columns={[
-              { header: 'Emp Code', key: 'empCode' },
-              { header: 'First Name', key: 'firstName' },
-              { header: 'Last Name', key: 'lastName' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />
-          <Button 
-            variant="contained" 
-            color="secondary" 
-            size="medium" 
-            onClick={handleMapManagerOpen} 
-            sx={{
-              ...btnNew,
-              backgroundColor: 'secondary.main',
-              '&:hover': { backgroundColor: 'secondary.dark' }
-            }}
-          >
-            Map Manager
-          </Button>
-          <Tooltip title={shortcutTooltip('Create New Employee', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
+          {perms.export && (
+            <BOSExportButton
+              data={resolvedRows}
+              filename="Employee_Master"
+              columns={[
+                { header: 'Emp Code', key: 'empCode' },
+                { header: 'First Name', key: 'firstName' },
+                { header: 'Last Name', key: 'lastName' },
+                { header: 'Status', key: 'status' }
+              ]}
+            />
+          )}
+          {perms.write && (
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              size="medium" 
+              onClick={handleMapManagerOpen} 
+              sx={{
+                ...btnNew,
+                backgroundColor: 'secondary.main',
+                '&:hover': { backgroundColor: 'secondary.dark' }
+              }}
+            >
+              Map Manager
             </Button>
-          </Tooltip>
+          )}
+          {perms.write && (
+            <Tooltip title={shortcutTooltip('Create New Employee', 'Ctrl + N')}>
+              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
+                + New
+              </Button>
+            </Tooltip>
+          )}
         </Stack>
       }
     >
@@ -347,8 +355,8 @@ export default function EmployeeList() {
         onPageChange={(p) => setPage(p)}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleOpenEdit}
-        onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onEditRow={perms.write ? handleOpenEdit : null}
+        onDeleteRow={perms.delete ? handleDeleteClick : null}
         onClickRow={handleRowClick}
         selectedRowId={selectedRow?.id}
         renderCell={null}

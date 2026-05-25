@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // material-ui
@@ -98,8 +98,35 @@ export default function NavCollapse({ menu, level, parentId }) {
     }
   };
 
+  const timeoutRef = useRef(null);
+
   const handleHover = (event) => {
     setAnchorEl(event?.currentTarget);
+  };
+
+  const handleMouseEnterHorizontal = (event) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setAnchorEl(event?.currentTarget);
+  };
+
+  const handleMouseLeaveHorizontal = () => {
+    timeoutRef.current = setTimeout(() => {
+      setOpen(false);
+      if (!menu.url) {
+        setSelected(null);
+      }
+      setAnchorEl(null);
+    }, 200); // 200ms delay to seamlessly cross any gap
+  };
+
+  const handlePopperMouseEnterHorizontal = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   };
 
   const openMini = Boolean(anchorEl);
@@ -205,7 +232,7 @@ export default function NavCollapse({ menu, level, parentId }) {
             className={anchorEl ? 'Mui-selected' : ''}
             onClick={handleClickMini}
           >
-            <Activity mode={menuIcon ? 'visible' : 'hidden'}>
+            {menuIcon && (
               <ListItemIcon
                 sx={{
                   minWidth: level === 1 ? 36 : 18,
@@ -242,7 +269,7 @@ export default function NavCollapse({ menu, level, parentId }) {
               >
                 {menuIcon}
               </ListItemIcon>
-            </Activity>
+            )}
             {(drawerOpen || (!drawerOpen && level !== 1)) && (
               <Tooltip title={<FormattedMessage id={menu.title} />} disableHoverListener={!hoverStatus}>
                 <ListItemText
@@ -290,7 +317,7 @@ export default function NavCollapse({ menu, level, parentId }) {
               <IconChevronDown stroke={1.5} size="16px" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
             )}
 
-            <Activity mode={!drawerOpen ? 'visible' : 'hidden'}>
+            {!drawerOpen && (
               <Popper
                 open={openMini}
                 anchorEl={anchorEl}
@@ -334,12 +361,12 @@ export default function NavCollapse({ menu, level, parentId }) {
                   </Transitions>
                 )}
               </Popper>
-            </Activity>
+            )}
           </ListItemButton>
 
-          <Activity mode={drawerOpen ? 'visible' : 'hidden'}>
+          {drawerOpen && (
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <Activity mode={open ? 'visible' : 'hidden'}>
+              {open && (
                 <List
                   disablePadding
                   sx={{
@@ -359,35 +386,79 @@ export default function NavCollapse({ menu, level, parentId }) {
                 >
                   {menus}
                 </List>
-              </Activity>
+              )}
             </Collapse>
-          </Activity>
+          )}
         </>
       ) : (
-        <ListItemButton
-          id={`boundary-${popperId}`}
-          disableRipple
-          selected={isSelected}
-          onMouseEnter={handleHover}
-          onMouseLeave={handleClosePopper}
-          onClick={handleHover}
-          aria-describedby={popperId}
-          className={anchorEl ? 'Mui-selected' : ''}
+        <Box
+          onMouseEnter={handleMouseEnterHorizontal}
+          onMouseLeave={handleMouseLeaveHorizontal}
+          sx={{ display: 'flex', alignItems: 'center', height: '100%' }}
         >
-          <Activity mode={menuIcon ? 'visible' : 'hidden'}>
-            <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
-          </Activity>
-          <ListItemText
-            sx={{ mb: 0.25 }}
-            primary={
-              <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
-                <FormattedMessage id={menu.title} />
-              </Typography>
-            }
-          />
-          {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
+          {menu.pageCode ? (
+            <Tooltip
+              title={`Code: ${menu.pageCode}`}
+              placement="left"
+              disableInteractive
+              arrow
+              slotProps={{
+                popper: {
+                  sx: {
+                    zIndex: 2500
+                  }
+                }
+              }}
+            >
+              <ListItemButton
+                id={`boundary-${popperId}`}
+                disableRipple
+                selected={isSelected}
+                onClick={handleMouseEnterHorizontal}
+                aria-describedby={popperId}
+                className={anchorEl ? 'Mui-selected' : ''}
+                sx={{ height: '100%' }}
+              >
+                {menuIcon && (
+                  <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
+                )}
+                <ListItemText
+                  sx={{ mb: 0.25 }}
+                  primary={
+                    <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+                      <FormattedMessage id={menu.title} />
+                    </Typography>
+                  }
+                />
+                {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
+              </ListItemButton>
+            </Tooltip>
+          ) : (
+            <ListItemButton
+              id={`boundary-${popperId}`}
+              disableRipple
+              selected={isSelected}
+              onClick={handleMouseEnterHorizontal}
+              aria-describedby={popperId}
+              className={anchorEl ? 'Mui-selected' : ''}
+              sx={{ height: '100%' }}
+            >
+              {menuIcon && (
+                <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
+              )}
+              <ListItemText
+                sx={{ mb: 0.25 }}
+                primary={
+                  <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+                    <FormattedMessage id={menu.title} />
+                  </Typography>
+                }
+              />
+              {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
+            </ListItemButton>
+          )}
 
-          <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+          {anchorEl && (
             <PopperStyled
               id={popperId}
               open={openMini}
@@ -396,6 +467,8 @@ export default function NavCollapse({ menu, level, parentId }) {
               style={{
                 zIndex: 2001
               }}
+              onMouseEnter={handlePopperMouseEnterHorizontal}
+              onMouseLeave={handleMouseLeaveHorizontal}
               modifiers={[
                 {
                   name: 'offset',
@@ -409,11 +482,22 @@ export default function NavCollapse({ menu, level, parentId }) {
                 <Transitions in={openMini} {...TransitionProps}>
                   <Paper
                     sx={{
-                      overflow: 'hidden',
+                      overflow: 'visible',
                       mt: 1.5,
                       py: 0.5,
                       boxShadow: theme.shadows[8],
-                      backgroundImage: 'none'
+                      backgroundImage: 'none',
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: -12,
+                        bottom: -12,
+                        left: -20, // Bridges the horizontal gap between parent item and deep submenu Popper
+                        width: 20,
+                        bgcolor: 'transparent',
+                        zIndex: 1
+                      }
                     }}
                   >
                     <ClickAwayListener onClickAway={handleClosePopper}>
@@ -423,8 +507,8 @@ export default function NavCollapse({ menu, level, parentId }) {
                 </Transitions>
               )}
             </PopperStyled>
-          </Activity>
-        </ListItemButton>
+          )}
+        </Box>
       )}
     </>
   );
