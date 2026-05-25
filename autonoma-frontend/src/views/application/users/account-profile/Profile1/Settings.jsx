@@ -37,6 +37,7 @@ export default function Settings() {
   const watchdogEnabled = watchdog?.enabled ?? false;
   const facePresent = watchdog?.facePresent ?? null;
   const countdown = watchdog?.countdown ?? null;
+  const isFeatureAllowed = watchdog?.isFeatureAllowed ?? false;
 
   const handleWatchdogToggle = (e) => {
     watchdog?.setEnabled(e.target.checked);
@@ -95,19 +96,28 @@ export default function Settings() {
             <Box sx={{ flex: 1 }}>
               <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
                 <IconFaceId size={18} stroke={1.5} />
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: isFeatureAllowed ? 'inherit' : 'text.disabled' }}>
                   Auto-Logout on Face Absence
                 </Typography>
               </Stack>
               <Typography variant="body2" color="text.secondary">
-                If your face is not detected for <strong>30 seconds</strong>, you will be
-                automatically signed out to protect your session.
+                {isFeatureAllowed ? (
+                  <>
+                    If your face is not detected for <strong>30 seconds</strong>, you will be
+                    automatically signed out to protect your session.
+                  </>
+                ) : (
+                  <span style={{ color: '#f44336', fontWeight: 600 }}>
+                    This feature is currently disabled by your system administrator.
+                  </span>
+                )}
               </Typography>
             </Box>
             <Switch
               id="face-watchdog-toggle"
               checked={watchdogEnabled}
               onChange={handleWatchdogToggle}
+              disabled={!isFeatureAllowed}
               color="primary"
             />
           </Stack>

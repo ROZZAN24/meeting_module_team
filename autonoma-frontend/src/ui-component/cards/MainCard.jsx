@@ -13,7 +13,13 @@ import { ThemeMode } from 'config';
 
 // constant
 const headerStyle = {
-  '& .MuiCardHeader-action': { mr: 0 }
+  '& .MuiCardHeader-action': { 
+    mr: 0,
+    my: 0,
+    alignSelf: 'center'
+  },
+  py: 1.5,
+  px: 3
 };
 
 export default function MainCard({
@@ -59,7 +65,14 @@ export default function MainCard({
 
       {/* card content */}
       {content && (
-        <CardContent sx={contentSX} className={contentClass}>
+        <CardContent 
+          sx={{ 
+            p: 2, 
+            '&:last-child': { pb: 2 },
+            ...contentSX 
+          }} 
+          className={contentClass}
+        >
           {children}
         </CardContent>
       )}

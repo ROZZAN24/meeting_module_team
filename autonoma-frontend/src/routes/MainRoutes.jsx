@@ -11,6 +11,7 @@ import { loader as productsLoader, productLoader } from 'api/products';
 // dashboard routing
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard/Default')));
 const DashboardAnalytics = Loadable(lazy(() => import('views/dashboard/Analytics')));
+const UserTaskQueue = Loadable(lazy(() => import('views/dashboard/UserTaskQueue')));
 
 // widget routing
 const WidgetStatistics = Loadable(lazy(() => import('views/widget/Statistics')));
@@ -195,6 +196,7 @@ const AuditTrailPage = Loadable(lazy(() => import('views/admin/AuditTrailPage'))
 const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
 const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 const TicketManagement = Loadable(lazy(() => import('views/admin/TicketManagement')));
+const DataMigration = Loadable(lazy(() => import('views/admin/DataMigration')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -328,6 +330,10 @@ const MainRoutes = {
     {
       path: '/admin/file-traceability-hub',
       element: <FileTraceabilityHub />
+    },
+    {
+      path: '/admin/data-migration',
+      element: <DataMigration />
     },
     {
       path: '/admin/division',
@@ -888,6 +894,10 @@ const MainRoutes = {
     {
       path: '/dashboard/analytics',
       element: <DashboardAnalytics />
+    },
+    {
+      path: '/dashboard/user-task-queue',
+      element: <UserTaskQueue />
     },
     {
       path: '/dashboard/invoice',

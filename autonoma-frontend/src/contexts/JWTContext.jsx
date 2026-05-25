@@ -85,7 +85,17 @@ export function JWTProvider({ children }) {
             setMode(dbSettings.themeMode);
           }
         }
-        
+
+        // For i18n: prefer the value already in localStorage (set by the user
+        // just before a language-change reload) over the DB value. The DB value
+        // lags behind because the save-to-DB effect runs after the reload fires.
+        const STORAGE_KEY = 'berry-config-vite-js';
+        let localI18n = null;
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) localI18n = JSON.parse(stored)?.i18n || null;
+        } catch (_) {}
+
         const mappedSettings = {
           menuOrientation: dbSettings.menuOrientation,
           miniDrawer: dbSettings.miniDrawer,
@@ -93,9 +103,11 @@ export function JWTProvider({ children }) {
           borderRadius: dbSettings.borderRadius,
           outlinedFilled: dbSettings.outlinedFilled,
           presetColor: dbSettings.presetColor,
-          i18n: dbSettings.i18n,
+          // Use localStorage i18n if present; fall back to DB value
+          i18n: localI18n || dbSettings.i18n,
           themeDirection: dbSettings.themeDirection,
-          container: dbSettings.container
+          container: dbSettings.container,
+          dashboardLayout: dbSettings.dashboardLayout || 'glass'
         };
         
         setConfigState((prev) => ({

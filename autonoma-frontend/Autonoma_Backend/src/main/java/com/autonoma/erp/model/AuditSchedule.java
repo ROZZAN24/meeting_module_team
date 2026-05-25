@@ -89,14 +89,14 @@ public class AuditSchedule {
     
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt = new Date();
+    private Date createdDate = new Date();
     
     @Column(name = "updated_by")
     private String updatedBy;
     
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
 
     @OneToMany(mappedBy = "auditSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditScheduleCriteria> criteriaList = new ArrayList<>();
@@ -149,22 +149,22 @@ public class AuditSchedule {
     public void setNcrApprovedByDetails(String ncrApprovedByDetails) { this.ncrApprovedByDetails = ncrApprovedByDetails; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public Date getCreatedDate() { return createdDate; }
+    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public Date getUpdatedDate() { return updatedDate; }
+    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
     public List<AuditScheduleCriteria> getCriteriaList() { return criteriaList; }
     public void setCriteriaList(List<AuditScheduleCriteria> criteriaList) { this.criteriaList = criteriaList; }
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        createdDate = new Date();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = new Date();
+        updatedDate = new Date();
     }
 }

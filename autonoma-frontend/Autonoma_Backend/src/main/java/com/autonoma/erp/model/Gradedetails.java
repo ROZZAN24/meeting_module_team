@@ -1,34 +1,33 @@
 package com.autonoma.erp.model;
 
+import java.util.Date;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Date;
 
 @Entity
-@Table(name = "hrm_department_master")
+@Table(name = "hrm_grade_detail")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Department {
+public class Gradedetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
-    @Column(name = "dept_no", nullable = false, length = 50)
-    private String departmentNo = "";
-
-    @Column(name = "dept_name", nullable = false, length = 100)
-    private String departmentName;
-
-    @Column(name = "nda_certificate", length = 10)
-    private String ndaCertificate = "No";
+    @Column(name = "grade_code", length = 50)
+    private String gradeCode;
 
     @Column(name = "seq_no")
-    private Integer sequenceNo = 0;
+    private String sequenceNo;
 
-    @Column(name = "status")
+    @Column(name = "grade_name", length = 100)
+    private String gradeName;
+
+    @Column(name = "status", length = 20)
     private String status = "Active";
 
     @Column(name = "created_by")
@@ -36,26 +35,23 @@ public class Department {
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
-        if (createdBy == null) {
-            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
-        }
+        createdDate = new Date();
+        if (status == null) status = "Active";
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = new Date();
-        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        updatedDate = new Date();
     }
 }

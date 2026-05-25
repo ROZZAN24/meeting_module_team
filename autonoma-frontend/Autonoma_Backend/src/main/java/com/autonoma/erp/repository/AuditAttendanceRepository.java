@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface AuditAttendanceRepository extends JpaRepository<AuditAttendance, Long> {
     List<AuditAttendance> findByAuditScheduleNo(String auditScheduleNo);
+    java.util.Optional<AuditAttendance> findByAuditScheduleNoAndEmployeeCode(String auditScheduleNo, String employeeCode);
 }

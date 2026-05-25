@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.NcrOfiMaster;
 import com.autonoma.erp.service.NcrOfiService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +49,9 @@ public class NcrOfiController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "QM1240", action = "write")
     public ResponseEntity<?> create(HttpServletRequest request) {
         try {
             MultipartHttpServletRequest multipartRequest;
@@ -80,12 +85,18 @@ public class NcrOfiController {
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "QM1250", action = "write")
     public NcrOfiMaster update(@PathVariable Integer id, @RequestBody NcrOfiMaster ncrOfi) {
         ncrOfi.setId(id);
         return ncrOfiService.saveNcrOfi(ncrOfi);
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "QM1240", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Integer id) {
         ncrOfiService.deleteNcrOfi(id);
         return ResponseEntity.ok().build();

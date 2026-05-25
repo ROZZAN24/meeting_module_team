@@ -1,4 +1,4 @@
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // material-ui
 import AppBar from '@mui/material/AppBar';
@@ -81,13 +81,13 @@ export default function MobileSection() {
           <ClickAwayListener onClickAway={handleClose}>
             <Transitions type="zoom" in={open} {...TransitionProps} sx={{ transformOrigin: 'top right' }}>
               <Paper>
-                <Activity mode={open ? 'visible' : 'hidden'}>
+                {open && (
                   <AppBar color="inherit">
                     <Toolbar sx={{ py: 2.75 }}>
                       <LocalizationSection />
                     </Toolbar>
                   </AppBar>
-                </Activity>
+                )}
               </Paper>
             </Transitions>
           </ClickAwayListener>

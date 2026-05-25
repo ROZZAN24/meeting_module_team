@@ -24,7 +24,7 @@ public class SmPriceMasterService {
 
     public SmPriceMaster saveMaster(SmPriceMaster master) {
         if (master.getCreatedBy() == null) {
-            master.setCreatedBy("admin");
+            master.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
         if (master.getMasterNo() == null || master.getMasterNo().isEmpty()) {
             Long maxId = priceMasterRepository.findMaxId().orElse(0L);
@@ -41,3 +41,4 @@ public class SmPriceMasterService {
         return priceMasterRepository.count();
     }
 }
+

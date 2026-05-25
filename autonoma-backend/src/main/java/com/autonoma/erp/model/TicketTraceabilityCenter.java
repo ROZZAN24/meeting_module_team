@@ -92,6 +92,9 @@ public class TicketTraceabilityCenter {
     @Column(name = "taken_time", length = 100)
     private String takenTime;
 
+    @Column(name = "rework_time", length = 100)
+    private String reworkTime;
+
     @Column(name = "assigned_hours", length = 50)
     private String assignedHours;
 

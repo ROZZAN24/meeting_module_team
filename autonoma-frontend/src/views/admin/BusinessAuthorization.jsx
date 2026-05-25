@@ -32,6 +32,8 @@ import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { BOSDataTable } from 'ui-component/bos';
 
 // Search Configuration for this page
 const businessAuthSearchConfig = [
@@ -43,6 +45,8 @@ const businessAuthSearchConfig = [
 const BusinessAuthorization = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
+
+  const perms = usePagePermissions(PAGE_CODES.AD_BUSINESS_AUTH);
 
   const [pageData, setPageData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -217,27 +221,27 @@ const BusinessAuthorization = () => {
           </Box>
         </Stack>
 
-        <Button
-          variant="contained"
-          color="secondary"
-          startIcon={<IconDeviceFloppy size={18} />}
-          onClick={handleSaveAll}
-          disabled={pageData.length === 0}
-          sx={{
-            height: 40,
-            borderRadius: '8px',
-            bgcolor: theme.palette.secondary.main,
-            '&:hover': { bgcolor: theme.palette.secondary.dark },
-            px: 3,
-            fontWeight: 700,
-            boxShadow: 'none'
-          }}
-        >
-          Save All Changes
-        </Button>
-      </Box>
-
-      {/* ── TABLE SECTION ── */}
+        {perms.write && (
+          <Button
+            variant="contained"
+            color="secondary"
+            startIcon={<IconDeviceFloppy size={18} />}
+            onClick={handleSaveAll}
+            disabled={pageData.length === 0}
+            sx={{
+              height: 40,
+              borderRadius: '8px',
+              bgcolor: theme.palette.secondary.main,
+              '&:hover': { bgcolor: theme.palette.secondary.dark },
+              px: 3,
+              fontWeight: 700,
+              boxShadow: 'none'
+            }}
+          >
+            Save All Changes
+          </Button>
+        )}
+            {/* ── TABLE SECTION ── */}
       <Box sx={{
         flexGrow: 1,
         display: 'flex',
@@ -248,148 +252,118 @@ const BusinessAuthorization = () => {
         bgcolor: 'white',
         minHeight: 0
       }}>
-        <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#ccc', fontSize: '0.7rem', py: 2.5, width: 50 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Module & Sub Module</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Page Identity</TableCell>
-                <TableCell align="center" sx={{
-                  fontWeight: 800,
-                  bgcolor: alpha(theme.palette.info.main, 0.04),
-                  color: theme.palette.info.main,
-                  fontSize: '0.7rem',
-                  py: 1,
-                  borderBottom: `2px solid ${theme.palette.info.main}`
-                }}>
-                  <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
-                    <Checkbox
-                      size="small"
-                      indeterminate={isSomeEnabled}
-                      checked={isAllEnabled}
-                      onChange={(e) => handleEnableAll(e.target.checked)}
-                      sx={{ color: theme.palette.info.main, p: 0 }}
-                    />
-                    <Typography variant="caption" sx={{ fontWeight: 900, fontSize: '0.65rem' }}>Enable All</Typography>
+        {(() => {
+          const columns = [
+            { id: 'index', label: '#' },
+            {
+              id: 'module',
+              label: 'Module & Sub Module',
+              render: (row) => (
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#673ab7', textTransform: 'uppercase', fontSize: '0.7rem', lineHeight: 1.2 }}>
+                    {row.module?.modName}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem' }}>
+                    {row.subModule?.subModName || 'Main Module'}
+                  </Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'pageName',
+              label: 'Page Identity',
+              render: (row) => (
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>
+                    {row.pageName}
+                  </Typography>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#2196f3', fontSize: '0.65rem' }}>
+                      ID: {row.pageId}
+                    </Typography>
+                    {row.pageCode && (
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem', bgcolor: '#f1f5f9', px: 0.5, borderRadius: '4px' }}>
+                        {row.pageCode}
+                      </Typography>
+                    )}
                   </Stack>
-                </TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5, width: 100 }}>Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
-                    <CircularProgress size={32} thickness={5} />
-                    <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>Synchronizing Matrix...</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : filteredData.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 10 }}>
-                    <Typography variant="h5" color="textSecondary">No pages matching your search</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedData.map((row, idx) => {
-                  const globalIdx = pageData.findIndex(item => item.pageId === row.pageId);
-                  const displayIdx = page * rowsPerPage + idx + 1;
-                  return (
-                    <TableRow
-                      key={row.pageId}
-                      sx={{
-                        '& td': { py: 1.5, borderBottom: '1px solid #f8fafc' },
-                        '&:hover': { bgcolor: '#f1f5f9 !important' },
-                        bgcolor: idx % 2 === 0 ? 'white' : '#f9fbff'
-                      }}
-                    >
-                      <TableCell sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.75rem' }}>{displayIdx}</TableCell>
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: '#673ab7', textTransform: 'uppercase', fontSize: '0.7rem', lineHeight: 1.2 }}>
-                            {row.module?.modName}
-                          </Typography>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem' }}>
-                            {row.subModule?.subModName || 'Main Module'}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem', lineHeight: 1.2 }}>
-                            {row.pageName}
-                          </Typography>
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: '#2196f3', fontSize: '0.65rem' }}>
-                              ID: {row.pageId}
-                            </Typography>
-                            {row.pageCode && (
-                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem', bgcolor: '#f1f5f9', px: 0.5, borderRadius: '4px' }}>
-                                {row.pageCode}
-                              </Typography>
-                            )}
-                          </Stack>
-                        </Box>
-                      </TableCell>
-
-                      <TableCell align="center">
-                        <Checkbox
-                          checked={row.enabled === 1}
-                          onChange={() => handleCheckboxChange(globalIdx)}
-                          icon={<IconX size={18} color="#cbd5e1" />}
-                          checkedIcon={<IconCheck size={18} color="#4caf50" />}
-                          sx={{
-                            p: 0,
-                            transition: 'transform 0.1s',
-                            '&:hover': { transform: 'scale(1.2)' },
-                            '&.Mui-checked': { color: '#4caf50' }
-                          }}
-                        />
-                      </TableCell>
-
-                      <TableCell align="center">
-                        <Tooltip title="Commit Change" arrow>
-                          <IconButton
-                            onClick={() => handleSaveRow(row)}
-                            sx={{
-                              bgcolor: alpha(theme.palette.primary.main, 0.08),
-                              color: theme.palette.primary.main,
-                              borderRadius: '6px',
-                              p: 0.5,
-                              '&:hover': { bgcolor: theme.palette.primary.main, color: 'white' }
-                            }}
-                          >
-                            <IconDeviceFloppy size={18} />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50, 100]}
-          component="div"
-          count={filteredData.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          sx={{
-            borderTop: '1px solid #eef2f6',
-            bgcolor: '#f8fafc',
-            '& .MuiTablePagination-toolbar': { minHeight: 45 },
-            '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-              fontWeight: 700,
-              color: '#94a3b8',
-              fontSize: '0.75rem'
+                </Box>
+              )
+            },
+            {
+              id: 'enabled',
+              label: (
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="center">
+                  <Checkbox
+                    size="small"
+                    indeterminate={isSomeEnabled}
+                    checked={isAllEnabled}
+                    disabled={!perms.write}
+                    onChange={(e) => perms.write && handleEnableAll(e.target.checked)}
+                    sx={{ color: '#fff', '&.MuiCheckbox-indeterminate': { color: '#fff' }, '&.Mui-checked': { color: '#fff' }, p: 0 }}
+                  />
+                  <Typography variant="caption" sx={{ fontWeight: 900, fontSize: '0.65rem', color: '#fff' }}>Enable All</Typography>
+                </Stack>
+              ),
+              render: (row) => {
+                const globalIdx = pageData.findIndex(item => item.pageId === row.pageId);
+                return (
+                  <Checkbox
+                    checked={row.enabled === 1}
+                    onChange={() => perms.write && handleCheckboxChange(globalIdx)}
+                    disabled={!perms.write}
+                    icon={<IconX size={18} color="#cbd5e1" />}
+                    checkedIcon={<IconCheck size={18} color="#4caf50" />}
+                    sx={{
+                      p: 0,
+                      transition: 'transform 0.1s',
+                      '&:hover': { transform: 'scale(1.2)' },
+                      '&.Mui-checked': { color: '#4caf50' }
+                    }}
+                  />
+                );
+              }
             }
-          }}
-        />
+          ];
+
+          const actionColumn = {
+            render: (row) => (
+              <Tooltip title="Commit Change" arrow>
+                <span>
+                  <IconButton
+                    onClick={() => handleSaveRow(row)}
+                    disabled={!perms.write}
+                    sx={{
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      color: theme.palette.primary.main,
+                      borderRadius: '6px',
+                      p: 0.5,
+                      '&:hover': { bgcolor: theme.palette.primary.main, color: 'white' }
+                    }}
+                  >
+                    <IconDeviceFloppy size={18} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )
+          };
+
+          return (
+            <BOSDataTable
+              columns={columns}
+              data={filteredData}
+              page={page}
+              size={rowsPerPage}
+              totalCount={filteredData.length}
+              onPageChange={setPage}
+              onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
+              showActions={true}
+              actionColumn={actionColumn}
+              loading={loading}
+            />
+          );
+        })()}
+      </Box>
       </Box>
     </Box>
   );

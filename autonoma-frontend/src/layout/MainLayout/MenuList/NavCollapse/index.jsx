@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // material-ui
@@ -98,8 +98,35 @@ export default function NavCollapse({ menu, level, parentId }) {
     }
   };
 
+  const timeoutRef = useRef(null);
+
   const handleHover = (event) => {
     setAnchorEl(event?.currentTarget);
+  };
+
+  const handleMouseEnterHorizontal = (event) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setAnchorEl(event?.currentTarget);
+  };
+
+  const handleMouseLeaveHorizontal = () => {
+    timeoutRef.current = setTimeout(() => {
+      setOpen(false);
+      if (!menu.url) {
+        setSelected(null);
+      }
+      setAnchorEl(null);
+    }, 200); // 200ms delay to seamlessly cross any gap
+  };
+
+  const handlePopperMouseEnterHorizontal = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   };
 
   const openMini = Boolean(anchorEl);
@@ -429,9 +456,9 @@ export default function NavCollapse({ menu, level, parentId }) {
         <>
           {verticalButton}
 
-          <Activity mode={drawerOpen ? 'visible' : 'hidden'}>
+          {drawerOpen && (
             <Collapse in={open} timeout="auto" unmountOnExit>
-              <Activity mode={open ? 'visible' : 'hidden'}>
+              {open && (
                 <List
                   disablePadding
                   sx={{
@@ -451,9 +478,9 @@ export default function NavCollapse({ menu, level, parentId }) {
                 >
                   {menus}
                 </List>
-              </Activity>
+              )}
             </Collapse>
-          </Activity>
+          )}
         </>
       ) : (
         horizontalButton

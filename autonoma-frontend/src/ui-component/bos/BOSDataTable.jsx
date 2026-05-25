@@ -2,13 +2,13 @@ import PropTypes from 'prop-types';
 import {
   Box, Table, TableBody, TableCell, TableContainer, TableHead,
   TableRow, Paper, IconButton, Tooltip, TablePagination, Stack,
-  Chip, Typography, useTheme
+  Chip, Typography, useTheme, alpha
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { setTableConfig } from 'store/slices/search';
 import {
   tableContainerSx, tableHeadCellSx, getTableRowSx,
@@ -45,11 +45,12 @@ export default function BOSDataTable({
   renderCell,
   sx = {},
   id,
-  disableFilters = false
+  disableSearchFilter = false
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
   const dispatch = useDispatch();
+  const [localSelectedId, setLocalSelectedId] = useState(null);
 
   useEffect(() => {
     if (columns && rows) {
@@ -79,112 +80,8 @@ export default function BOSDataTable({
     return Boolean(onEditRow || onDeleteRow || actionColumn);
   }, [showActionsProp, onEditRow, onDeleteRow, actionColumn]);
 
-  const searchQueryVal = useSelector((state) => state.search?.query || '');
-  const globalFiltersVal = useSelector((state) => state.search?.filters || {});
-
-  const searchQuery = disableFilters ? '' : searchQueryVal;
-  const globalFilters = disableFilters ? {} : globalFiltersVal;
-
-  const filteredRows = useMemo(() => {
-    if (!rows || rows.length === 0) return [];
-
-    return rows.filter((row) => {
-      // 1. Dynamic Filters from Search Popover (Only apply filters relevant to this table's columns)
-      if (globalFilters) {
-        const getResolvedValue = (colId, row) => {
-          let val = row[colId];
-          if (val === undefined || val === null) {
-            const snakeCaseId = colId.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-            val = row[snakeCaseId];
-            if (val === undefined || val === null || val === '') {
-              if (colId === 'createdDate') val = row['createdAt'] || row['created_at'];
-              if (colId === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
-              if (colId === 'createdBy') val = row['created_by'];
-              if (colId === 'updatedBy') val = row['updated_by'];
-            }
-          }
-          return val;
-        };
-
-        for (const col of columns) {
-          if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') continue;
-
-          // Check if it's a date field
-          const isDateField = (col.id.toLowerCase().includes('date') || 
-                             col.id.endsWith('At') || 
-                             col.id.endsWith('_at') || 
-                             col.id === 'entryDate' ||
-                             col.id === 'invoiceDate') &&
-                            !(col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category'));
-
-          if (isDateField) {
-            const startVal = globalFilters[`${col.id}Start`];
-            const endVal = globalFilters[`${col.id}End`];
-            
-            if ((startVal && startVal !== 'All' && startVal !== '') || (endVal && endVal !== 'All' && endVal !== '')) {
-              const cellVal = getResolvedValue(col.id, row);
-              if (!cellVal) return false;
-              
-              const rowDate = new Date(cellVal);
-              if (isNaN(rowDate.getTime())) return false;
-              
-              if (startVal && startVal !== 'All' && startVal !== '') {
-                const startDate = new Date(startVal + 'T00:00:00');
-                if (!isNaN(startDate.getTime()) && rowDate < startDate) {
-                  return false;
-                }
-              }
-              if (endVal && endVal !== 'All' && endVal !== '') {
-                const endDate = new Date(endVal + 'T23:59:59');
-                if (!isNaN(endDate.getTime()) && rowDate > endDate) {
-                  return false;
-                }
-              }
-            }
-          } else {
-            const fVal = globalFilters[col.id];
-            if (fVal !== undefined && fVal !== null && fVal !== '' && fVal !== 'All') {
-              const cellVal = getResolvedValue(col.id, row);
-              const filterVal = String(fVal).toLowerCase().trim();
-              const rowVal = String(cellVal !== undefined && cellVal !== null ? cellVal : '').toLowerCase().trim();
-              
-              if (filterVal && !rowVal.includes(filterVal)) {
-                return false;
-              }
-            }
-          }
-        }
-
-        // Special check for 'status' or 'accountStatus' if it's not one of the columns
-        if (globalFilters.status !== undefined && globalFilters.status !== null && globalFilters.status !== '' && globalFilters.status !== 'All') {
-          const hasStatusCol = columns.some(col => col.id === 'status' || col.id === 'accountStatus');
-          if (!hasStatusCol) {
-            const statusVal = String(globalFilters.status).toLowerCase().trim();
-            const rowStatus = String(row.status || row.accountStatus || '').toLowerCase().trim();
-            if (statusVal && !rowStatus.includes(statusVal)) {
-              return false;
-            }
-          }
-        }
-      }
-
-      // 2. Global Query (Main text box)
-      if (searchQuery) {
-        const queryLower = searchQuery.toLowerCase();
-        return columns.some((col) => {
-          if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') return false;
-          const val = row[col.id];
-          if (val == null) return false;
-          if (typeof val === 'object') {
-            return String(val.name || val.label || val.id || '').toLowerCase().includes(queryLower);
-          }
-          return String(val).toLowerCase().includes(queryLower);
-        });
-      }
-
-      return true;
-    });
-  }, [rows, searchQuery, globalFilters, columns]);
+  const searchQuery = useSelector((state) => state.search?.query || '');
+  const globalFilters = useSelector((state) => state.search?.filters || {});
 
   const formatDate = (d) => {
     if (!d) return '-';
@@ -196,6 +93,94 @@ export default function BOSDataTable({
       return '-'; 
     }
   };
+
+  const getCellDisplayValue = (col, row, idx) => {
+    let val = row[col.id];
+    
+    if (val === undefined || val === null) {
+      // 1. Standard camelCase to snake_case (e.g. updatedBy -> updated_by)
+      const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+      val = row[snakeCaseId];
+      
+      // 2. Audit-Specific Fallbacks (The "Big 4")
+      if (val === undefined || val === null || val === '') {
+        if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
+        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
+        if (col.id === 'createdBy') val = row['created_by'];
+        if (col.id === 'updatedBy') val = row['updated_by'];
+      }
+    }
+
+    if (col.id === 'index') return String((page * size) + (idx + 1));
+
+    if (col.id === 'status' || col.id === 'accountStatus') {
+      let statusText = 'Inactive';
+      if (val === 1 || val === 'Active' || val === 'ACTIVE') statusText = 'Active';
+      else if (val === 'Suspended' || val === 'SUSPENDED') statusText = 'Suspended';
+      else if (val === 0 || val === 'Inactive' || val === 'INACTIVE' || val === 'InActive' || val === 'In Active') statusText = 'Inactive';
+      else if (val !== null && val !== undefined && val !== '') statusText = String(val);
+      return statusText;
+    }
+
+    // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
+    const isDateField = col.id.toLowerCase().includes('date') || 
+                       col.id.endsWith('At') || 
+                       col.id.endsWith('_at') || 
+                       col.id === 'entryDate' ||
+                       col.id === 'invoiceDate';
+    
+    // Explicitly exclude false positives like 'state' or 'category'
+    const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
+
+    if (isDateField && !isFalsePositive) {
+      return formatDate(val);
+    }
+    
+    // Handle Boolean values (Yes/No)
+    if (typeof val === 'boolean') return val ? 'Yes' : 'No';
+    
+    if (typeof val === 'object' && val !== null) {
+      return val.name || val.label || val.id || '-';
+    }
+    return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
+  };
+
+  const filteredRows = useMemo(() => {
+    if (!rows || rows.length === 0) return [];
+    if (disableSearchFilter) return rows;
+
+    return rows.filter((row, idx) => {
+      // 1. Dynamic Filters from Search Popover (Only apply filters relevant to this table's columns)
+      if (globalFilters) {
+        for (const [key, fVal] of Object.entries(globalFilters)) {
+          if (fVal === undefined || fVal === null || fVal === '' || fVal === 'All') continue;
+          
+          // Check if this filter key exists in our columns
+          const col = columns.find(c => c.id === key);
+          if (!col && key !== 'status') continue; 
+
+          const filterVal = String(fVal).toLowerCase().trim();
+          const displayVal = col ? getCellDisplayValue(col, row, idx).toLowerCase().trim() : String(row[key] || '').toLowerCase().trim();
+          
+          if (filterVal && !displayVal.includes(filterVal)) {
+            return false;
+          }
+        }
+      }
+
+      // 2. Global Query (Main text box)
+      if (searchQuery) {
+        const queryLower = searchQuery.toLowerCase();
+        return columns.some((col) => {
+          if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') return false;
+          const displayVal = getCellDisplayValue(col, row, idx).toLowerCase();
+          return displayVal.includes(queryLower);
+        });
+      }
+
+      return true;
+    });
+  }, [rows, searchQuery, globalFilters, columns, disableSearchFilter, page, size]);
 
   const defaultRenderCell = (col, row, idx) => {
     if (col.render) return col.render(row, idx);
@@ -235,9 +220,7 @@ export default function BOSDataTable({
     }
 
     if (col.id === 'status' || col.id === 'accountStatus') {
-      let statusText = 'Inactive';
-      if (val === 1 || val === 'Active' || val === 'ACTIVE') statusText = 'Active';
-      else if (val === 0 || val === 'Inactive' || val === 'INACTIVE' || val === 'InActive') statusText = 'Inactive';
+      const statusText = getCellDisplayValue(col, row, idx);
       return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText)} />;
     }
 
@@ -264,16 +247,18 @@ export default function BOSDataTable({
     return (val !== null && val !== undefined && val !== '') ? String(val) : '-';
   };
 
+  const activeSelectedId = selectedRowId !== undefined && selectedRowId !== null ? selectedRowId : localSelectedId;
+
+  const { 
+    height = 'calc(100vh - 185px)', 
+    maxHeight, 
+    minHeight, 
+    ...restSx 
+  } = sx;
+
   return (
-    <Box sx={{ 
-      display: 'flex', 
-      flexDirection: 'column', 
-      height: sx.height || 'calc(100vh - 185px)', 
-      maxHeight: sx.maxHeight || 'none',
-      minHeight: sx.minHeight || 'none',
-      overflow: 'hidden' 
-    }}>
-      <TableContainer component={Paper} sx={{ ...tableContainerSx, flexGrow: 1, height: 'auto', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, ...sx, height: 'auto', maxHeight: 'none' }} id={id}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height, maxHeight, minHeight, overflow: 'hidden' }}>
+      <TableContainer component={Paper} sx={{ ...tableContainerSx, flexGrow: 1, height: '100%', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, ...restSx }} id={id}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
@@ -315,21 +300,36 @@ export default function BOSDataTable({
               </TableRow>
             ) : (
               filteredRows?.slice(page * size, page * size + size).map((row, idx) => {
-                const isSelected = selectedRowId === row.id;
+                const rowId = row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`;
+                const isSelected = activeSelectedId === rowId || activeSelectedId === row.id;
+                
                 const rowSx = {
-                  ...baseRowSx,
-                  ...(isSelected ? { 
-                    bgcolor: isDark ? 'primary.darker' : 'primary.light',
-                    '& td': { borderBottom: '1px solid', borderColor: 'primary.main' }
-                  } : {})
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  bgcolor: isSelected 
+                    ? (isDark ? alpha(theme.palette.primary.main, 0.25) : alpha(theme.palette.primary.main, 0.12))
+                    : (idx % 2 === 1 ? (isDark ? '#161b22' : '#fafafa') : (isDark ? 'background.paper' : '#ffffff')),
+                  '& td': { 
+                    borderBottom: '1px solid', 
+                    borderColor: isSelected ? theme.palette.primary.main : 'divider', 
+                    py: 1.5 // Ensure padding doesn't shrink!
+                  },
+                  '&:hover': {
+                    bgcolor: isSelected 
+                      ? (isDark ? alpha(theme.palette.primary.main, 0.3) : alpha(theme.palette.primary.main, 0.16)) + ' !important'
+                      : (isDark ? alpha(theme.palette.primary.main, 0.15) : alpha(theme.palette.primary.main, 0.05)) + ' !important'
+                  }
                 };
 
                 return (
                   <TableRow 
-                    key={row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`}
+                    key={rowId}
                     hover 
                     sx={rowSx} 
-                    onClick={() => onClickRow?.(row)}
+                    onClick={() => {
+                      setLocalSelectedId(rowId);
+                      onClickRow?.(row);
+                    }}
                     onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
                   >
                   {columns.map((col) => (
@@ -388,8 +388,10 @@ export default function BOSDataTable({
         </Table>
       </TableContainer>
       <Box sx={{ 
-        py: 0.5, 
+        py: 0, 
         px: 1.5, 
+        minHeight: '36px',
+        height: '36px',
         display: 'grid',
         gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
@@ -399,10 +401,10 @@ export default function BOSDataTable({
         borderBottomLeftRadius: '16px',
         borderBottomRightRadius: '16px'
       }}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           {footerActions}
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <TablePagination
             rowsPerPageOptions={[5, 10, 25, 50]}
             component="div"
@@ -441,7 +443,7 @@ export default function BOSDataTable({
             }}
           />
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }} />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }} />
       </Box>
     </Box>
   );
@@ -465,5 +467,6 @@ BOSDataTable.propTypes = {
   actionColumn: PropTypes.object,
   renderCell: PropTypes.func,
   footerActions: PropTypes.node,
-  id: PropTypes.string
+  id: PropTypes.string,
+  disableSearchFilter: PropTypes.bool
 };

@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "SM_PAYMENT_TERMS")
+@Table(name = "sm_payment_terms")
 @Data
 public class PaymentTerm {
     @Id
@@ -23,6 +23,18 @@ public class PaymentTerm {
     @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
-    @Column(name = "STATUS", length = 20)
-    private String status;
+    @Column(name = "STATUS")
+    private String status = "Active";
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_at")
+    private java.time.LocalDateTime createdAt;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    private java.time.LocalDateTime updatedAt;
 }

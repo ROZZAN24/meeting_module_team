@@ -301,13 +301,14 @@ export default function BOSExportButton({
                   <Box sx={{ flexGrow: 1 }}>
                     <BOSDataTable
                       columns={previewColumns}
-                      rows={previewRows.slice(page * sizePerPage, page * sizePerPage + sizePerPage)}
+                      rows={previewRows}
                       page={page}
                       size={sizePerPage}
                       totalCount={previewRows.length}
                       onPageChange={setPage}
                       onSizeChange={setSizePerPage}
                       showActions={false}
+                      disableSearchFilter={true}
                       sx={{
                         '& th': {
                           bgcolor: '#fff !important',

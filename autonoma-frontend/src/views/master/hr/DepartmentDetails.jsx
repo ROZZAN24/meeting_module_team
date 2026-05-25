@@ -65,7 +65,44 @@ export default function DepartmentDetails() {
     }
   }, []);
 
-  useEffect(() => { fetchDepartments(); }, [fetchDepartments]);
+  useEffect(() => {
+    fetchDepartments();
+  }, [fetchDepartments]);
+
+  useEffect(() => {
+    const config = [
+      {
+        id: 'ndaCertificate',
+        label: 'NDA Required',
+        type: 'select',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'Yes', label: 'Yes' },
+          { value: 'No', label: 'No' }
+        ],
+        defaultValue: 'All'
+      },
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'All', label: 'All' },
+          { value: 'Active', label: 'Active' },
+          { value: 'In Active', label: 'In Active' },
+          { value: 'Suspended', label: 'Suspended' }
+        ],
+        defaultValue: 'All'
+      },
+      { id: 'sequenceNo', label: 'Org Sequence', type: 'text', placeholder: 'Sequence No...' },
+      { id: 'createdDate', label: 'Created Date', type: 'date' },
+      { id: 'updatedDate', label: 'Updated Date', type: 'date' }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [dispatch]);
 
   const handleOpenAdd = () => { setSelectedRow(null); setIsReadOnly(false); setDialogOpen(true); };
   const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };

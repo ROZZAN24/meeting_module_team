@@ -67,12 +67,23 @@ public class AuthController {
     public ResponseEntity<?> checkCredentials(@RequestBody LoginRequest loginRequest) {
         // Step 1: Validate credentials from master database
         com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
-        Optional<UserCredential> userOpt = userRepository.findByUserId(loginRequest.getUsername());
+        String usernameInput = loginRequest.getUsername();
+        Optional<UserCredential> userOpt = userRepository.findByUserId(usernameInput);
+        if (!userOpt.isPresent()) {
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getUserId().equalsIgnoreCase(usernameInput))
+                    .findFirst();
+        }
 
         if (userOpt.isPresent() && passwordEncoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
             UserCredential user = userOpt.get();
             if (user.getStatus() != null && user.getStatus() != 1) {
                 return ResponseEntity.status(403).body(Map.of("message", "Account is inactive"));
+            }
+
+            // Validate Preferred Auth Method
+            if (user.getAuthMethod() != null && "FACE".equalsIgnoreCase(user.getAuthMethod())) {
+                return ResponseEntity.status(403).body(Map.of("message", "Password login is disabled for this account. Please use Face ID."));
             }
 
             // Step 2: Fetch mapped companies and divisions
@@ -220,6 +231,13 @@ public class AuthController {
                     return ResponseEntity.status(403).body(error);
                 }
 
+                // Validate Preferred Auth Method
+                if (user.getAuthMethod() != null && "FACE".equalsIgnoreCase(user.getAuthMethod())) {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("message", "Password login is disabled for this account. Please use Face ID.");
+                    return ResponseEntity.status(403).body(error);
+                }
+
                 // License Check
                 java.util.List<com.autonoma.erp.model.admin.CompanyCredential> configs = companyCredentialRepository
                         .findAll();
@@ -276,6 +294,7 @@ public class AuthController {
                 userMap.put("imgName", user.getImgName());
                 userMap.put("isBosAdmin", user.getIsBosAdmin());
                 userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
+                userMap.put("faceDescriptor", user.getFaceDescriptor());
 
                 enrichUserMapWithTenantInfo(userMap);
 
@@ -321,6 +340,7 @@ public class AuthController {
                         userMap.put("imgName", user.getImgName());
                         userMap.put("isBosAdmin", user.getIsBosAdmin());
                         userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
+                        userMap.put("faceDescriptor", user.getFaceDescriptor());
 
                         enrichUserMapWithTenantInfo(userMap);
 
@@ -522,6 +542,13 @@ public class AuthController {
         }
 
         if (matchedUser != null) {
+            // Validate Preferred Auth Method
+            if (matchedUser.getAuthMethod() != null && "PASSWORD".equalsIgnoreCase(matchedUser.getAuthMethod())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Face ID login is disabled for this account. Please use Password login.");
+                return ResponseEntity.status(403).body(error);
+            }
+
             java.util.List<Map<String, Object>> matches = new java.util.ArrayList<>();
 
             java.util.List<com.autonoma.erp.model.admin.UserCompanyMapping> compMappings = userCompanyMappingRepository
@@ -655,6 +682,13 @@ public class AuthController {
 
         if (matchedUser != null) {
             UserCredential user = matchedUser;
+            // Validate Preferred Auth Method
+            if (user.getAuthMethod() != null && "PASSWORD".equalsIgnoreCase(user.getAuthMethod())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Face ID login is disabled for this account. Please use Password login.");
+                return ResponseEntity.status(403).body(error);
+            }
+
             if (user.getStatus() != null && user.getStatus() != 1) {
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "Account is inactive");
@@ -710,6 +744,7 @@ public class AuthController {
             userMap.put("imgName", user.getImgName());
             userMap.put("isBosAdmin", user.getIsBosAdmin());
             userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
+            userMap.put("faceDescriptor", user.getFaceDescriptor());
 
             enrichUserMapWithTenantInfo(userMap);
             response.put("user", userMap);

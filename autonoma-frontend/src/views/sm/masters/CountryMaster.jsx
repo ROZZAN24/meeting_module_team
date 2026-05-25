@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
   Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, TextField, MenuItem
+  DialogActions, MenuItem
 } from '@mui/material';
 import { IconWorld, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -103,7 +103,6 @@ export default function CountryMaster() {
     }
   };
 
-  
   useEffect(() => {
     const config = [
       { id: 'country', label: 'Country', type: 'text' }
@@ -120,7 +119,8 @@ export default function CountryMaster() {
       (row.country && row.country.toString().toLowerCase().includes(q))
     ).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalQuery]);
-return (
+
+  return (
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -138,9 +138,11 @@ return (
               { header: 'Status', key: 'status' }
             ]}
           />}
-          <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
-            New Country
-          </Button>
+          {perms.write && (
+            <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
+              New Country
+            </Button>
+          )}
         </Stack>
       }
     >
@@ -159,14 +161,16 @@ return (
         <DialogTitle>{editId ? 'Edit Country' : 'New Country'}</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField
+            <BOSTextField
+              disabled={!perms.write}
               label="Country"
               fullWidth
               value={formData.country}
               onChange={(e) => setFormData({ ...formData, country: e.target.value })}
             />
-            <TextField
+            <BOSTextField
               select
+              disabled={!perms.write}
               label="Status"
               fullWidth
               value={formData.status}
@@ -174,14 +178,16 @@ return (
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="InActive">InActive</MenuItem>
-            </TextField>
+            </BOSTextField>
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSubmit}>
-            Save
-          </Button>
+          {perms.write && (
+            <Button variant="contained" onClick={handleSubmit}>
+              Save
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 

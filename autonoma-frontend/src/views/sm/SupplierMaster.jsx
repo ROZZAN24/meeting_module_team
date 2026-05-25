@@ -4,7 +4,7 @@ import { Grid, Box, Button, Typography, Stack, MenuItem, useTheme, Tooltip, Auto
 import { 
   IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, 
   IconUser, IconMapPin, IconBusinessplan, IconBuildingBank, IconTruckDelivery, 
-  IconFiles, IconPhone
+  IconFiles
 } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { 
@@ -26,6 +26,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { YES_NO_OPTIONS, STATUS_OPTIONS } from 'utils/constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const INITIAL = {
   supplierCode: '',
@@ -88,6 +89,7 @@ export default function SupplierMaster() {
   const [searchParams] = useSearchParams();
   const { id: pathId } = useParams();
   const supplierId = pathId || searchParams.get('id');
+  const perms = usePagePermissions(PAGE_CODES.VEN_SUPPLIER);
   const { errors, validate, clearErrors } = useBOSValidation();
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
@@ -233,16 +235,8 @@ export default function SupplierMaster() {
         dispatch(openSnackbar({ open: true, message: 'Supplier created!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
         navigate(`/sm/suppliers/create?id=${data.id}`, { replace: true });
       }
-    } catch (error) {
-      const msg = error.response?.data?.message || error.response?.data || 'Failed to save supplier.';
-      dispatch(openSnackbar({ 
-        open: true, 
-        message: typeof msg === 'string' ? msg : 'Failed to save supplier.', 
-        variant: 'alert', 
-        alert: { variant: 'filled' }, 
-        severity: 'error', 
-        close: false 
-      }));
+    } catch (e) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to save supplier.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     } finally { setLoading(false); }
   };
 
@@ -284,9 +278,9 @@ export default function SupplierMaster() {
       secondary={
         <Stack direction="row" spacing={1.5}>
           <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/sm/suppliers')} sx={btnCancel}>Back</Button></Tooltip>
-          {supplierId && <Tooltip title={shortcutTooltip('Delete', 'Ctrl + D')}><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
-          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={handleClear} sx={btnClear}>Clear</Button></Tooltip>
-          <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
+          {supplierId && perms.delete && <Tooltip title={shortcutTooltip('Delete', 'Ctrl + D')}><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
+          {perms.write && <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={handleClear} sx={btnClear}>Clear</Button></Tooltip>}
+          {perms.write && <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>}
         </Stack>
       }
     >
@@ -294,30 +288,30 @@ export default function SupplierMaster() {
         <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Identity & Contact">
           <Grid container spacing={2.5}>
             <R><BOSTextField name="supplierCode" label="Supplier Code" value={form.supplierCode} onChange={h} disabled inputProps={{ readOnly: true }} sx={{ '& .MuiInputBase-input': { fontWeight: 700, color: 'primary.main' } }} /></R>
-            <R><BOSTextField name="gstNo" label="GST No" value={form.gstNo} onChange={h} /></R>
-            <R><BOSTextField name="supplierName" label="Supplier Name" value={form.supplierName} onChange={h} required error={!!errors.supplierName} helperText={errors.supplierName} /></R>
-            <R><BOSTextField name="ledgerName" label="Ledger Name" value={form.ledgerName} onChange={h} /></R>
-            <R><BOSTextField name="shortName" label="Short Name" value={form.shortName} onChange={h} /></R>
-            <R><BOSTextField name="supplierPrintName" label="Supplier Print Name" value={form.supplierPrintName} onChange={h} /></R>
-            <R><BOSTextField name="mobileNo" label="Mobile No" value={form.mobileNo} onChange={h} /></R>
-            <R><BOSTextField name="contactPerson" label="Contact Person" value={form.contactPerson} onChange={h} /></R>
-            <R><BOSTextField name="emailId" label="Email Id" value={form.emailId} onChange={h} /></R>
-            <R lg={6}><BOSTextField name="website" label="Website" value={form.website} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="gstNo" label="GST No" value={form.gstNo} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="supplierName" label="Supplier Name" value={form.supplierName} onChange={h} required error={!!errors.supplierName} helperText={errors.supplierName} /></R>
+            <R><BOSTextField disabled={!perms.write} name="ledgerName" label="Ledger Name" value={form.ledgerName} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="shortName" label="Short Name" value={form.shortName} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="supplierPrintName" label="Supplier Print Name" value={form.supplierPrintName} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="mobileNo" label="Mobile No" value={form.mobileNo} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="contactPerson" label="Contact Person" value={form.contactPerson} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="emailId" label="Email Id" value={form.emailId} onChange={h} /></R>
+            <R lg={6}><BOSTextField disabled={!perms.write} name="website" label="Website" value={form.website} onChange={h} /></R>
           </Grid>
         </BOSFormSection>
 
         <BOSFormSection icon={<IconMapPin size={20} color={theme.palette.primary.main} />} title="Location Details">
           <Grid container spacing={3}>
             <Grid item xs={12} lg={6}>
-              <BOSTextField fullWidth name="address" label="Address" value={form.address} onChange={h} multiline rows={5} placeholder="Enter supplier address..." />
+              <BOSTextField disabled={!perms.write} fullWidth name="address" label="Address" value={form.address} onChange={h} multiline rows={5} placeholder="Enter supplier address..." />
             </Grid>
             <Grid item xs={12} lg={6}>
-              <Grid container spacing={2.5}>
-                <R lg={12} md={12}><BOSTextField fullWidth name="city" label="City" value={form.city} onChange={h} /></R>
-                <R lg={12} md={12}><Autocomplete fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></R>
-                <R lg={12} md={12}><Autocomplete fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} disabled={!form.country} /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" /></R>
-                <R lg={6} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
+              <Grid container spacing={2}>
+                <R lg={6} md={6}><BOSTextField disabled={!perms.write} fullWidth name="city" label="City" value={form.city} onChange={h} /></R>
+                <R lg={6} md={6}><Autocomplete disabled={!perms.write} fullWidth value={form.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="Country" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />} /></R>
+                <R lg={6} md={6}><Autocomplete disabled={!perms.write || !form.country} fullWidth value={form.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="State Name" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />} noOptionsText={form.country ? 'No states found' : 'Select country first'} /></R>
+                <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={form.stateCode} onChange={h} disabled placeholder="Auto-filled" InputLabelProps={{ shrink: true }} /></R>
+                <R lg={12} md={12}><BOSTextField disabled={!perms.write} fullWidth name="pincode" label="Pin Code" value={form.pincode} onChange={h} /></R>
               </Grid>
             </Grid>
           </Grid>
@@ -327,30 +321,30 @@ export default function SupplierMaster() {
           <Grid container spacing={2.5}>
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <BOSTextField name="panNo" label="PAN No" value={form.panNo} onChange={h} fullWidth />
-                <BOSFileUpload files={panFile} onChange={setPanFile} module="SALES_SUPPLIER" label="PAN" compact multiple={false} />
+                <BOSTextField disabled={!perms.write} name="panNo" label="PAN No" value={form.panNo} onChange={h} fullWidth />
+                <BOSFileUpload disabled={!perms.write} files={panFile} onChange={setPanFile} module="SALES_SUPPLIER" label="PAN" compact multiple={false} />
               </Stack>
             </Grid>
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <BOSTextField name="msmeNo" label="MSME No" value={form.msmeNo} onChange={h} fullWidth />
-                <BOSFileUpload files={msmeFile} onChange={setMsmeFile} module="SALES_SUPPLIER" label="MSME" compact multiple={false} />
+                <BOSTextField disabled={!perms.write} name="msmeNo" label="MSME No" value={form.msmeNo} onChange={h} fullWidth />
+                <BOSFileUpload disabled={!perms.write} files={msmeFile} onChange={setMsmeFile} module="SALES_SUPPLIER" label="MSME" compact multiple={false} />
               </Stack>
             </Grid>
             <Grid item xs={12} sm={6} md={4} lg={3}>
               <Stack direction="row" spacing={1} alignItems="center">
-                <BOSTextField name="isoNo" label="ISO No" value={form.isoNo} onChange={h} fullWidth />
-                <BOSFileUpload files={isoFile} onChange={setIsoFile} module="SALES_SUPPLIER" label="ISO" compact multiple={false} />
+                <BOSTextField disabled={!perms.write} name="isoNo" label="ISO No" value={form.isoNo} onChange={h} fullWidth />
+                <BOSFileUpload disabled={!perms.write} files={isoFile} onChange={setIsoFile} module="SALES_SUPPLIER" label="ISO" compact multiple={false} />
               </Stack>
             </Grid>
-            <R><BOSTextField name="isoExpiryDate" label="ISO Expiry Date" value={form.isoExpiryDate} onChange={h} type="date" InputLabelProps={{ shrink: true }} /></R>
+            <R><BOSTextField disabled={!perms.write} name="isoExpiryDate" label="ISO Expiry Date" value={form.isoExpiryDate} onChange={h} type="date" InputLabelProps={{ shrink: true }} /></R>
             <R>
-              <BOSTextField name="approvedSupplier" label="Approved Supplier" value={form.approvedSupplier} onChange={h} select>
+              <BOSTextField disabled={!perms.write} name="approvedSupplier" label="Approved Supplier" value={form.approvedSupplier} onChange={h} select>
                 {YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
-              <BOSTextField name="ndaRequired" label="NDA Required" value={form.ndaRequired} onChange={h} select>
+              <BOSTextField disabled={!perms.write} name="ndaRequired" label="NDA Required" value={form.ndaRequired} onChange={h} select>
                 {YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </BOSTextField>
             </R>
@@ -369,12 +363,12 @@ export default function SupplierMaster() {
               </Box>
             </Grid>
             <R>
-              <BOSTextField name="primeSupplier" label="Prime Supplier" value={form.primeSupplier} onChange={h} select>
+              <BOSTextField disabled={!perms.write} name="primeSupplier" label="Prime Supplier" value={form.primeSupplier} onChange={h} select>
                 {YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
-              <BOSTextField name="isAuditorConsultant" label="Is Auditor/Consultant" value={form.isAuditorConsultant} onChange={h} select>
+              <BOSTextField disabled={!perms.write} name="isAuditorConsultant" label="Is Auditor/Consultant" value={form.isAuditorConsultant} onChange={h} select>
                 {YES_NO_OPTIONS.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
               </BOSTextField>
             </R>
@@ -383,27 +377,35 @@ export default function SupplierMaster() {
 
         <BOSFormSection icon={<IconBuildingBank size={20} color={theme.palette.primary.main} />} title="Banking Details">
           <Grid container spacing={2.5}>
-            <R><BOSTextField name="accountNo" label="Account No" value={form.accountNo} onChange={h} /></R>
-            <R><BOSTextField name="accountName" label="Account Name" value={form.accountName} onChange={h} /></R>
-            <R><BOSTextField name="bankName" label="Bank Name" value={form.bankName} onChange={h} /></R>
-            <R><BOSTextField name="branchName" label="Branch Name" value={form.branchName} onChange={h} /></R>
-            <R><BOSTextField name="ifscCode" label="IFSC Code" value={form.ifscCode} onChange={h} /></R>
-            <R><BOSTextField name="swiftCode" label="Swift Code" value={form.swiftCode} onChange={h} /></R>
-            <R><BOSTextField name="accountType" label="Account Type" value={form.accountType} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="accountNo" label="Account No" value={form.accountNo} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="accountName" label="Account Name" value={form.accountName} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="bankName" label="Bank Name" value={form.bankName} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="branchName" label="Branch Name" value={form.branchName} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="ifscCode" label="IFSC Code" value={form.ifscCode} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="swiftCode" label="Swift Code" value={form.swiftCode} onChange={h} /></R>
+            <R><BOSTextField disabled={!perms.write} name="accountType" label="Account Type" value={form.accountType} onChange={h} /></R>
           </Grid>
         </BOSFormSection>
 
-        <BOSFormSection icon={<IconTruckDelivery size={20} color={theme.palette.primary.main} />} title="Terms & Logistics">
-          <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
+        <BOSFormSection icon={<IconTruckDelivery size={20} color={theme.palette.primary.main} />} title="Terms & Status">
+          <Grid container spacing={3}>
             <R lg={4} md={6}>
-              <Autocomplete fullWidth value={form.currency || null} onChange={handleAC('currency')} options={currencies.map(c => c.currencyCode)} renderOption={(props, option) => { const { key, ...optionProps } = props; const c = currencies.find(x => x.currencyCode === option); return (<li key={key} {...optionProps}><Typography variant="body2"><b>{option}</b> - {c?.currencyName}</Typography></li>); }} renderInput={(params) => <BOSTextField {...params} label="Currency" sx={acSx} required />} />
+              <Autocomplete disabled={!perms.write} fullWidth value={form.currency || null} onChange={handleAC('currency')} options={currencies.map(c => c.currencyCode)} renderOption={(props, option) => { const { key, ...optionProps } = props; const c = currencies.find(x => x.currencyCode === option); return (<li key={key} {...optionProps}><Typography variant="body2"><b>{option}</b> - {c?.currencyName}</Typography></li>); }} renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="Currency" sx={acSx} required />} />
             </R>
-            <R lg={4} md={6}><Autocomplete fullWidth value={form.typeOfService || null} onChange={handleAC('typeOfService')} options={typesOfService.map(s => s.serviceName)} renderInput={(params) => <BOSTextField {...params} label="Type Of Service" sx={acSx} />} /></R>
-            <R lg={4} md={6}><Autocomplete fullWidth value={form.paymentTerms || null} onChange={handleAC('paymentTerms')} options={paymentTerms.map(p => p.termName)} renderInput={(params) => <BOSTextField {...params} label="Payment Terms" sx={acSx} />} /></R>
-            <R lg={4} md={6}><Autocomplete fullWidth value={form.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTerms.map(t => t.termName)} renderInput={(params) => <BOSTextField {...params} label="Delivery Terms" sx={acSx} />} /></R>
-            <R lg={4} md={6}><BOSTextField fullWidth name="freightRequired" label="Freight Required" value={form.freightRequired} onChange={h} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
-            <R lg={4} md={6}><BOSTextField fullWidth name="dueDays" label="Due Days" value={form.dueDays} onChange={h} type="number" /></R>
-            <R lg={4} md={6}><BOSTextField fullWidth name="status" label="Status" value={form.status} onChange={h} select><MenuItem value="Active">Active</MenuItem><MenuItem value="Inactive">Inactive</MenuItem></BOSTextField></R>
+            <R lg={4} md={6}><Autocomplete disabled={!perms.write} fullWidth value={form.typeOfService || null} onChange={handleAC('typeOfService')} options={typesOfService.map(s => s.serviceName)} renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="Type Of Service" sx={acSx} />} /></R>
+            <R lg={4} md={6}><Autocomplete disabled={!perms.write} fullWidth value={form.paymentTerms || null} onChange={handleAC('paymentTerms')} options={paymentTerms.map(p => p.termName)} renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="Payment Terms" sx={acSx} />} /></R>
+            <R lg={4} md={6}><Autocomplete disabled={!perms.write} fullWidth value={form.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTerms.map(t => t.termName)} renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="Delivery Terms" sx={acSx} />} /></R>
+            <R lg={4} md={4}><BOSTextField disabled={!perms.write} fullWidth name="freightRequired" label="Freight Required" value={form.freightRequired} onChange={h} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
+            <R lg={4} md={4}><BOSTextField disabled={!perms.write} fullWidth name="dueDays" label="Due Days" value={form.dueDays} onChange={h} type="number" /></R>
+            <R lg={12} md={12}>
+              <Autocomplete disabled={!perms.write}
+                fullWidth
+                value={form.status || null}
+                onChange={handleAC('status')}
+                options={['Active', 'Inactive']}
+                renderInput={(params) => <BOSTextField disabled={!perms.write} {...params} label="Status" sx={acSx} InputLabelProps={{ shrink: true, ...params.InputLabelProps }} />}
+              />
+            </R>
           </Grid>
         </BOSFormSection>
 
@@ -419,7 +421,7 @@ export default function SupplierMaster() {
         )}
 
         <BOSFormSection icon={<IconFiles size={22} color={theme.palette.primary.main} />} title="Standard Attachments">
-          <BOSFileUpload 
+          <BOSFileUpload disabled={!perms.write} 
             files={uploadedFiles} 
             onChange={setUploadedFiles} 
             module="SALES_SUPPLIER"
