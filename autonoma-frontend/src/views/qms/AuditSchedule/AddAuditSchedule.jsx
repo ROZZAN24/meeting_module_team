@@ -237,8 +237,9 @@ export default function AddAuditSchedule() {
       setFormData((prev) => {
         const updateField = (val) => {
           if (!val) return '';
-          const code = val.includes(' - ') ? val.split(' - ')[1] : val;
-          const match = employees.find(emp => String(emp.empCode || emp.employeeCode || emp.id) === String(code));
+          const valStr = String(val);
+          const code = valStr.includes(' - ') ? valStr.split(' - ')[1] : valStr;
+          const match = employees.find(emp => String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code));
           if (match) {
             const fName = match.firstName || '';
             const lName = match.lastName || '';
@@ -453,7 +454,7 @@ export default function AddAuditSchedule() {
   const availableCriteria = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
     const selectedDept = formData.department;
-    return masterCriteria.filter((c) => {
+    return (masterCriteria || []).filter(c => c).filter((c) => {
       const criteriaTypes = c.auditType ? c.auditType.split(', ') : [];
       const criteriaDepts = c.department ? c.department.split(', ') : [];
       
@@ -469,7 +470,7 @@ export default function AddAuditSchedule() {
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
     return selectedTypes.reduce((acc, typeName) => {
-      const match = auditTypes.find(t => t.auditType === typeName);
+      const match = (auditTypes || []).find(t => t?.auditType === typeName);
       return acc + (match?.criteriaMinCount || 0);
     }, 0);
   }, [formData.auditType, auditTypes]);
@@ -585,9 +586,9 @@ export default function AddAuditSchedule() {
               {/* Dynamic Field: Customer Name for Customer Audit */}
               {category === 'CUSTOMER_AUDIT' && (
                 <Autocomplete
-                  options={customers}
-                  getOptionLabel={(option) => option.customerName || ''}
-                  value={customers.find((c) => c.customerName === formData.customerName) || null}
+                  options={customers || []}
+                  getOptionLabel={(option) => option?.customerName || ''}
+                  value={(customers || []).find((c) => c?.customerName === formData.customerName) || null}
                   onChange={(event, newValue) => {
                     setFormData((prev) => ({
                       ...prev,
@@ -702,9 +703,9 @@ export default function AddAuditSchedule() {
               {/* Dynamic Field: Contact Name */}
               {category === 'CUSTOMER_AUDIT' && (
                 <Autocomplete
-                  options={contacts.filter(c => (c.groupName === formData.customerName && c.status === 'Active') || c.contactName === formData.contactName)}
-                  getOptionLabel={(option) => option.contactName || ''}
-                  value={contacts.find(c => c.contactName === formData.contactName) || null}
+                  options={(contacts || []).filter(c => c && ((c.groupName === formData.customerName && c.status === 'Active') || c.contactName === formData.contactName))}
+                  getOptionLabel={(option) => option?.contactName || ''}
+                  value={(contacts || []).find(c => c?.contactName === formData.contactName) || null}
                   onChange={(event, newValue) => {
                     setFormData((prev) => ({
                       ...prev,
@@ -829,10 +830,10 @@ export default function AddAuditSchedule() {
                   helperText={errors.coOrdinator}
                 >
                   <MenuItem value="">-Select-</MenuItem>
-                  {employees.filter(emp => {
+                  {(employees || []).filter(emp => emp).filter(emp => {
                     if (emp.status !== 'Active') return false;
                     if (!formData.department) return false;
-                    const empDept = departments.find(d => String(d.id) === String(emp.departmentId));
+                    const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
                     return empDept?.departmentName === formData.department;
                   }).map(emp => {
                     const fName = emp.firstName || '';
@@ -873,13 +874,13 @@ export default function AddAuditSchedule() {
                 const name = value ? value.split(' - ')[0] : '-';
                 const code = value ? value.split(' - ')[1] || '-' : '-';
 
-                const filteredEmployees = employees.filter(emp => {
+                const filteredEmployees = (employees || []).filter(emp => emp).filter(emp => {
                   if (emp.status !== 'Active') return false;
 
                   if (person.field === 'auditor') return emp.isAuditor === 'YES';
                   if (person.field === 'auditee') {
                     if (!formData.department) return false;
-                    const empDept = departments.find(d => String(d.id) === String(emp.departmentId));
+                    const empDept = (departments || []).find(d => d && String(d.id) === String(emp.departmentId));
                     return emp.isAuditee === 'YES' && empDept?.departmentName === formData.department;
                   }
                   if (person.field === 'ncrApprovedBy') return emp.isNcrApprover === 'YES';
@@ -887,6 +888,7 @@ export default function AddAuditSchedule() {
                 });
 
                 const getEmpLabel = (emp) => {
+                  if (!emp) return '';
                   const fName = emp.firstName || '';
                   const lName = emp.lastName || '';
                   const empName = emp.employeeName || '';
@@ -907,20 +909,20 @@ export default function AddAuditSchedule() {
                 const selectedEmp = filteredEmployees.find(emp => {
                   const label = getEmpLabel(emp);
                   if (label === value) return true;
-                  if (value && value.includes(' - ')) {
-                    const code = value.split(' - ')[1];
-                    return String(emp.empCode || emp.employeeCode || emp.id) === String(code);
+                  if (value && String(value).includes(' - ')) {
+                    const code = String(value).split(' - ')[1];
+                    return String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code);
                   }
                   return false;
                 });
                 
-                const empDeptName = selectedEmp ? (departments.find(d => String(d.id) === String(selectedEmp.departmentId))?.departmentName || '-') : '-';
+                const empDeptName = selectedEmp ? ((departments || []).find(d => d && String(d.id) === String(selectedEmp.departmentId))?.departmentName || '-') : '-';
                 
                 // Resolution for Level (using levels or designations lookup)
                 let empLevel = '-';
                 if (selectedEmp) {
-                  const levelMatch = levels.find(l => String(l.rowId || l.id) === String(selectedEmp.empLevelId));
-                  const desigMatch = designations.find(d => String(d.id) === String(selectedEmp.designationId));
+                  const levelMatch = (levels || []).find(l => l && String(l.rowId || l.id) === String(selectedEmp.empLevelId));
+                  const desigMatch = (designations || []).find(d => d && String(d.id) === String(selectedEmp.designationId));
                   empLevel = levelMatch?.level || desigMatch?.designationName || '-';
                 }
 
@@ -1059,7 +1061,7 @@ export default function AddAuditSchedule() {
             ]}
             rows={availableCriteria}
             page={0}
-            size={availableCriteria.length}
+            size={999}
             onPageChange={() => {}}
             onSizeChange={() => {}}
             showActions={false}
