@@ -283,8 +283,16 @@ export default function CheckListRenewalReport() {
         assignedBy: filters.assignedBy || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      let displayRows = response.data.content || [];
+      if (filters.status === 'All') {
+        const excludedStatuses = ['Pending', 'Started', 'Pending for Verified', 'Pending for Accepted'];
+        displayRows = displayRows.filter((r) => {
+          const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
+          return !excludedStatuses.includes(statusName);
+        });
+      }
+      setRows(displayRows);
+      setTotalElements(displayRows.length);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
     } finally {

@@ -310,7 +310,7 @@ export default function CloseCheckListRenewal() {
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
-        currentUser: user?.id || undefined,
+        currentUser: user?.name || user?.id || undefined,
         excludeCompleted: true,
         excludePending: false,
 
