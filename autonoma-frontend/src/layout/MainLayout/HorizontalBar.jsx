@@ -211,6 +211,7 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
         <Tooltip 
           title={`Code: ${item.pageCode}`} 
           placement="top" 
+          disableInteractive
           arrow
           slotProps={{
             popper: {
@@ -248,43 +249,45 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
             }
           ]}
         >
-          <Paper 
-            sx={{ 
-              boxShadow: theme.shadows[8], 
-              py: 0.5, 
-              minWidth: 190, 
-              backgroundImage: 'none',
-              position: 'relative',
-              overflow: 'visible',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: -12, // Bridges the 8px offset gap perfectly
-                left: 0,
-                right: 0,
-                height: 12,
-                bgcolor: 'transparent',
-                zIndex: 1
-              }
-            }}
-          >
-            <List dense disablePadding>
-              {item.children.map((menu) => {
-                switch (menu.type) {
-                  case 'collapse':
-                    return <NavCollapse key={menu.id} menu={menu} level={1} />;
-                  case 'item':
-                    return <NavItem key={menu.id} item={menu} level={1} />;
-                  default:
-                    return (
-                      <Typography key={menu.id} variant="h6" color="error" align="center">
-                        Menu Items Error
-                      </Typography>
-                    );
+          <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+            <Paper 
+              sx={{ 
+                boxShadow: theme.shadows[8], 
+                py: 0.5, 
+                minWidth: 190, 
+                backgroundImage: 'none',
+                position: 'relative',
+                overflow: 'visible',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -12, // Bridges the 8px offset gap perfectly
+                  left: 0,
+                  right: 0,
+                  height: 12,
+                  bgcolor: 'transparent',
+                  zIndex: 1
                 }
-              })}
-            </List>
-          </Paper>
+              }}
+            >
+              <List dense disablePadding>
+                {item.children.map((menu) => {
+                  switch (menu.type) {
+                    case 'collapse':
+                      return <NavCollapse key={menu.id} menu={menu} level={1} />;
+                    case 'item':
+                      return <NavItem key={menu.id} item={menu} level={1} />;
+                    default:
+                      return (
+                        <Typography key={menu.id} variant="h6" color="error" align="center">
+                          Menu Items Error
+                        </Typography>
+                      );
+                  }
+                })}
+              </List>
+            </Paper>
+          </ClickAwayListener>
         </Popper>
       )}
     </Box>

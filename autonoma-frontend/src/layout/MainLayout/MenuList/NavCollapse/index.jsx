@@ -400,6 +400,7 @@ export default function NavCollapse({ menu, level, parentId }) {
             <Tooltip
               title={`Code: ${menu.pageCode}`}
               placement="left"
+              disableInteractive
               arrow
               slotProps={{
                 popper: {
