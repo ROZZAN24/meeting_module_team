@@ -21,28 +21,26 @@ public class EmployeeDependent {
     private Long employeeId;
 
     @Column(name = "relation_name", length = 100)
-    private String relationName;
-
-    @Column(length = 50)
-    private String relation;
+    private String name;
 
     @Column(length = 20)
     private String gender;
 
-    @Column(name = "marital_status", length = 30)
-    private String maritalStatus;
+    @Column(name = "date_of_birth")
+    @Temporal(TemporalType.DATE)
+    private Date dob;
 
-    @Column(name = "aadhar_id", length = 20)
-    private String aadharId;
+    @Column(length = 50)
+    private String relationship;
+
+    @Column(length = 100)
+    private String occupation;
+
+    @Column(name = "blood_group", length = 20)
+    private String bloodGroup;
 
     @Column(name = "contact_number1", length = 20)
-    private String contactNumber1;
-
-    @Column(name = "contact_number2", length = 20)
-    private String contactNumber2;
-
-    @Column(name = "contact_address", length = 500)
-    private String contactAddress;
+    private String contactNo;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;

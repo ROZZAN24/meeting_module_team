@@ -31,5 +31,8 @@ public interface InductionAssignmentRepository extends JpaRepository<InductionAs
     // === Check if all rounds are completed for an employee ===
     @Query("SELECT COUNT(a) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus != 'COMPLETED'")
     long countIncompleteByEmpCode(@org.springframework.data.repository.query.Param("empCode") String empCode);
+
+    @Query("SELECT COUNT(DISTINCT a.screeningLevel) FROM InductionAssignment a WHERE a.empCode = :empCode AND a.inductionStatus = 'ACTIVE' AND a.currentStatus = 'COMPLETED'")
+    long countCompletedLevelsByEmpCode(@org.springframework.data.repository.query.Param("empCode") String empCode);
 }
 

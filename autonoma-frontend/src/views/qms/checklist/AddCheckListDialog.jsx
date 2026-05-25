@@ -14,7 +14,7 @@ import axios from 'utils/axios';
 import useLookups from 'hooks/useLookups';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview, BOSAutocomplete } from 'ui-component/bos';
 
 // ── Top-level so it never remounts on parent re-render ────────────────────────
 const FileItem = ({ file, onPreview, onRemove }) => (
@@ -170,8 +170,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [stockLink, setStockLink] = useState('');
-  const [photoRequired, setPhotoRequired] = useState('');
+  const [stockLink, setStockLink] = useState('NO');
+  const [photoRequired, setPhotoRequired] = useState('NO');
   const [dualCheck, setDualCheck] = useState('');
   const [carryForward, setCarryForward] = useState('');
   const [amendmentReason, setAmendmentReason] = useState('');
@@ -261,8 +261,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setRepeatEveryUnit(initialData.repeatEveryUnit || '');
         setDescription(initialData.description || '');
         setDepartment((initialData.departments || []).map(d => d.departmentName));
-        setStockLink(initialData.stockLink || '');
-        setPhotoRequired(initialData.photoRequired || '');
+        setStockLink(initialData.stockLink || 'NO');
+        setPhotoRequired(initialData.photoRequired || 'NO');
         setDualCheck(initialData.category === 'RENEWAL' ? (initialData.verificationRequired || '') : (initialData.dualCheck || ''));
         setCarryForward(initialData.carryForward || '');
         setAmendmentReason(initialData.amendmentReason || '');
@@ -274,7 +274,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
         setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
         setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-        setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
+        setStockLink('NO'); setPhotoRequired('NO'); setDualCheck(''); setCarryForward('');
         setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
         setLevelIds([]);
@@ -475,32 +475,111 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   const sidebarContent = (
     <Stack spacing={3}>
-      <Paper sx={{ p: 2.5, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light' }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-          <IconInfoCircle size={20} color={theme.palette.primary.main} />
-          <Typography variant="subtitle2" color="primary.main" fontWeight={700}>Audit Log</Typography>
-        </Stack>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>System ID: {initialData?.id || 'Draft'}</Typography>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>Sequence: {seqNo || '-'}</Typography>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>Created By: {initialData?.createdBy || '-'}</Typography>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>Created Date: {formatDateForInput(initialData?.createdAt) || '-'}</Typography>
-        {initialData?.updatedAt && (
-          <Typography variant="caption" display="block">Last Updated: {formatDateForInput(initialData.updatedAt)}</Typography>
-        )}
-      </Paper>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Uploaded Files</Typography>
+          {!isViewOnly && (
+            <Button
+              component="label"
+              variant="contained"
+              size="small"
+              startIcon={<IconCloudUpload size={16} />}
+              sx={{
+                textTransform: 'none',
+                borderRadius: '8px',
+                bgcolor: 'primary.main', 
+                '&:hover': { bgcolor: 'primary.dark' }
+              }}
+            >
+              Upload File
+              <input type="file" hidden multiple onChange={handleFileUpload} />
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ 
+          height: 200, 
+          bgcolor: 'background.paper', 
+          border: '1px dashed', 
+          borderColor: 'divider',
+          borderRadius: '10px', 
+          p: 3,
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          gap: 1.5,
+          overflowY: 'auto'
+        }}>
+          {uploadedFiles.length === 0 ? (
+            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <IconCloudUpload size={48} stroke={1.5} color={theme.palette.primary.main} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file uploaded yet</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {uploadedFiles.map((f, i) => (
+                <FileItem
+                  key={i} file={f}
+                  onPreview={handlePreviewOpen}
+                  onRemove={isViewOnly ? undefined : handleRemoveFile}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
 
-      <Paper sx={{ p: 2.5, bgcolor: 'secondary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'secondary.light' }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-          <IconAlertCircle size={20} color={theme.palette.secondary.main} />
-          <Typography variant="subtitle2" color="secondary.main" fontWeight={700}>SOP Guidelines</Typography>
-        </Stack>
-        <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-          Ensure all standard checking points and descriptions are entered clearly.
-        </Typography>
-        <Typography variant="caption" display="block">
-          For renewal categories, expiry dates and reminder thresholds are mandatory.
-        </Typography>
-      </Paper>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Scanned Files</Typography>
+          {!isViewOnly && (
+            <Button
+              component="label"
+              variant="contained"
+              size="small"
+              startIcon={<IconCamera size={16} />}
+              sx={{
+                textTransform: 'none',
+                borderRadius: '8px',
+                bgcolor: 'secondary.main',
+                '&:hover': { bgcolor: 'secondary.dark' }
+              }}
+            >
+              Scan & Upload
+              <input type="file" hidden multiple accept="image/*" onChange={handleScanUpload} />
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ 
+          height: 200, 
+          bgcolor: 'background.paper', 
+          border: '1px dashed', 
+          borderColor: 'divider',
+          borderRadius: '10px', 
+          p: 3,
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          gap: 1.5,
+          overflowY: 'auto'
+        }}>
+          {scannedFiles.length === 0 ? (
+            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <IconFileDescription size={48} stroke={1.5} color={theme.palette.secondary.main} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file scanned yet</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {scannedFiles.map((f, i) => (
+                <FileItem key={i} file={f} onPreview={handlePreviewOpen} onRemove={isViewOnly ? undefined : handleRemoveScannedFile} />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
     </Stack>
   );
 
@@ -542,18 +621,15 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               required
             />
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Category"
               value={category}
-              onChange={e => setCategory(e.target.value)}
+              options={['RENEWAL', 'CHECK LIST']}
+              onChange={val => setCategory(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="RENEWAL">RENEWAL</MenuItem>
-              <MenuItem value="CHECK LIST">CHECK LIST</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
           </Box>
 
           {category === 'RENEWAL' && (
@@ -701,64 +777,51 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
             {category !== 'RENEWAL' && (
-              <BOSTextField
-                select
+              <BOSAutocomplete
                 label="Frequency"
                 value={frequency}
-                onChange={e => setFrequency(e.target.value)}
+                options={['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY','CUSTOM']}
+                onChange={val => setFrequency(val)}
                 required
                 disabled={isViewOnly}
-              >
-                <MenuItem value=""><em>-Select-</em></MenuItem>
-                {['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY', 'CUSTOM'].map(f => (
-                  <MenuItem key={f} value={f}>{f}</MenuItem>
-                ))}
-              </BOSTextField>
+                autoHighlight
+              />
             )}
 
             {category !== 'RENEWAL' && (frequency === 'WEEKLY' || frequency === 'CUSTOM') && (
               <Box sx={{ p: 2.5, border: '1px dashed', borderColor: 'primary.light', borderRadius: 2, bgcolor: 'background.paper', display: 'flex', gap: 2.5, alignItems: 'center' }}>
                 {frequency === 'WEEKLY' && (
-                  <BOSTextField
-                    select
+                  <BOSAutocomplete
                     label="Week Day"
                     value={weekDays}
-                    onChange={e => setWeekDays(e.target.value)}
+                    options={WEEK_DAYS}
+                    onChange={val => setWeekDays(val)}
                     required
                     disabled={isViewOnly}
                     sx={{ minWidth: 200 }}
-                  >
-                    <MenuItem value=""><em>-Select-</em></MenuItem>
-                    {WEEK_DAYS.map(day => (
-                      <MenuItem key={day} value={day}>{day}</MenuItem>
-                    ))}
-                  </BOSTextField>
+                    autoHighlight
+                  />
                 )}
                 {frequency === 'CUSTOM' && (
                   <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center', width: '100%' }}>
-                    <BOSTextField 
+                    <BOSTextField
                       label="Repeat Every"
                       type="number"
                       placeholder="e.g. 2"
-                      value={repeatEveryValue} 
-                      onChange={e => setRepeatEveryValue(e.target.value)} 
+                      value={repeatEveryValue}
+                      onChange={e => setRepeatEveryValue(e.target.value)}
                       required
                       disabled={isViewOnly}
                     />
-                    <BOSTextField
-                      select
+                    <BOSAutocomplete
                       label="Unit"
-                      value={repeatEveryUnit} 
-                      onChange={e => setRepeatEveryUnit(e.target.value)} 
+                      value={repeatEveryUnit}
+                      options={['DAYS','WEEKS','MONTHS','YEARS']}
+                      onChange={val => setRepeatEveryUnit(val)}
                       required
                       disabled={isViewOnly}
-                    >
-                      <MenuItem value=""><em>-Select-</em></MenuItem>
-                      <MenuItem value="DAYS">DAYS</MenuItem>
-                      <MenuItem value="WEEKS">WEEKS</MenuItem>
-                      <MenuItem value="MONTHS">MONTHS</MenuItem>
-                      <MenuItem value="YEARS">YEARS</MenuItem>
-                    </BOSTextField>
+                      autoHighlight
+                    />
                   </Box>
                 )}
               </Box>
@@ -766,73 +829,59 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 3 }}>
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Stock Link ?"
               value={stockLink}
-              onChange={e => setStockLink(e.target.value)}
+              options={['YES', 'NO']}
+              onChange={val => setStockLink(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="YES">YES</MenuItem>
-              <MenuItem value="NO">NO</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Photo Required ?"
               value={photoRequired}
-              onChange={e => setPhotoRequired(e.target.value)}
+              options={['YES', 'NO']}
+              onChange={val => setPhotoRequired(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="YES">YES</MenuItem>
-              <MenuItem value="NO">NO</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label={category === 'RENEWAL' ? 'Verification Required ?' : 'Dual Check ?'}
               value={dualCheck}
-              onChange={e => setDualCheck(e.target.value)}
+              options={['YES', 'NO']}
+              onChange={val => setDualCheck(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="YES">YES</MenuItem>
-              <MenuItem value="NO">NO</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
             {category !== 'RENEWAL' && (
-              <BOSTextField
-                select
+              <BOSAutocomplete
                 label="Carry Forward ?"
                 value={carryForward}
-                onChange={e => setCarryForward(e.target.value)}
+                options={['YES', 'NO']}
+                onChange={val => setCarryForward(val)}
                 required
                 disabled={isViewOnly}
-              >
-                <MenuItem value=""><em>-Select-</em></MenuItem>
-                <MenuItem value="YES">YES</MenuItem>
-                <MenuItem value="NO">NO</MenuItem>
-              </BOSTextField>
+                autoHighlight
+              />
             )}
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Status"
               value={status}
-              onChange={e => setStatus(e.target.value)}
+              options={['Active', 'Inactive']}
+              onChange={val => setStatus(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">In Active</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
           </Box>
 
           {isAmendment && (
@@ -849,124 +898,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           )}
         </BOSFormSection>
 
-        <BOSFormSection
-          icon={<IconCloudUpload size={22} color={theme.palette.primary.main} />}
-          title="Reference Files & Attachments"
-        >
-          <Grid container spacing={3}>
-            {/* Uploaded Files box */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Uploaded Files</Typography>
-                  {!isViewOnly && (
-                    <Button
-                      component="label"
-                      variant="contained"
-                      size="small"
-                      startIcon={<IconCloudUpload size={16} />}
-                      sx={{
-                        textTransform: 'none',
-                        borderRadius: '8px',
-                        bgcolor: 'primary.main', 
-                        '&:hover': { bgcolor: 'primary.dark' }
-                      }}
-                    >
-                      Upload File
-                      <input type="file" hidden multiple onChange={handleFileUpload} />
-                    </Button>
-                  )}
-                </Box>
-                <Box sx={{ 
-                  height: 200, 
-                  bgcolor: 'background.paper', 
-                  border: '1px dashed', 
-                  borderColor: 'divider',
-                  borderRadius: '10px', 
-                  p: 3,
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: 1.5,
-                  overflowY: 'auto'
-                }}>
-                  {uploadedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                      <IconCloudUpload size={48} stroke={1.5} color={theme.palette.primary.main} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file uploaded yet</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {uploadedFiles.map((f, i) => (
-                        <FileItem
-                          key={i} file={f}
-                          onPreview={handlePreviewOpen}
-                          onRemove={isViewOnly ? undefined : handleRemoveFile}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Grid>
 
-            {/* Scanned Files box */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Scanned Files</Typography>
-                  {!isViewOnly && (
-                    <Button
-                      component="label"
-                      variant="contained"
-                      size="small"
-                      startIcon={<IconCamera size={16} />}
-                      sx={{
-                        textTransform: 'none',
-                        borderRadius: '8px',
-                        bgcolor: 'secondary.main',
-                        '&:hover': { bgcolor: 'secondary.dark' }
-                      }}
-                    >
-                      Scan & Upload
-                      <input type="file" hidden multiple accept="image/*" onChange={handleScanUpload} />
-                    </Button>
-                  )}
-                </Box>
-                <Box sx={{ 
-                  height: 200, 
-                  bgcolor: 'background.paper', 
-                  border: '1px dashed', 
-                  borderColor: 'divider',
-                  borderRadius: '10px', 
-                  p: 3,
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: 1.5,
-                  overflowY: 'auto'
-                }}>
-                  {scannedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                      <IconFileDescription size={48} stroke={1.5} color={theme.palette.secondary.main} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file scanned yet</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {scannedFiles.map((f, i) => (
-                        <FileItem key={i} file={f} onPreview={handlePreviewOpen} onRemove={isViewOnly ? undefined : handleRemoveScannedFile} />
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-        </BOSFormSection>
       </BOSFormDialog>
 
       {/* ── BOS File Preview Dialog ── */}

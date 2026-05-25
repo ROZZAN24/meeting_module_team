@@ -312,9 +312,10 @@ export default function InductionTraining() {
         title="Induction Training Process"
         fullWidth
         maxWidth="xl"
-        onSave={handleSaveProgress}
+        onSave={perms.write ? handleSaveProgress : null}
+        isViewOnly={!perms.write}
         saveLabel="Save Progress"
-        extraActions={
+        extraActions={perms.write && (
           <Button
             variant="contained"
             color="success"
@@ -325,7 +326,7 @@ export default function InductionTraining() {
           >
             Complete Training ({completedCount}/{totalCount})
           </Button>
-        }
+        )}
       >
         {selectedAssignment && (
           <>
@@ -390,6 +391,7 @@ export default function InductionTraining() {
                             size="small"
                             value={detail.trainerStatus || 'PENDING'}
                             onChange={(e) => updateDetail(detail.id, 'trainerStatus', e.target.value)}
+                            disabled={!perms.write}
                             fullWidth
                             sx={{ minWidth: 120 }}
                           >
@@ -402,6 +404,7 @@ export default function InductionTraining() {
                             <Rating
                               value={detail.skillRating || 0}
                               onChange={(e, newValue) => updateDetail(detail.id, 'skillRating', newValue)}
+                              readOnly={!perms.write}
                               size="small"
                               max={5}
                             />
@@ -417,6 +420,7 @@ export default function InductionTraining() {
                             maxRows={3}
                             value={detail.trainerComments || ''}
                             onChange={(e) => updateDetail(detail.id, 'trainerComments', e.target.value)}
+                            disabled={!perms.write}
                             placeholder="Comments..."
                             fullWidth
                           />

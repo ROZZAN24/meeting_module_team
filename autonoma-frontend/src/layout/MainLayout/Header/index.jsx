@@ -9,13 +9,13 @@ import Box from '@mui/material/Box';
 // project imports
 import LogoSection from '../LogoSection';
 import SearchSection from './SearchSection';
+import PageSearchSection from './PageSearchSection';
 import MobileSection from './MobileSection';
 import ProfileSection from './ProfileSection';
 import LocalizationSection from './LocalizationSection';
 import MegaMenuSection from './MegaMenuSection';
 import FullScreenSection from './FullScreenSection';
 import NotificationSection from './NotificationSection';
-import VoiceAssistant from './VoiceAssistant';
 
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation } from 'config';
@@ -57,38 +57,40 @@ export default function Header() {
         <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
           <LogoSection />
         </Box>
-        <Avatar
-            variant="rounded"
-            sx={{
-              ...theme.typography.commonAvatar,
-              ...theme.typography.mediumAvatar,
-              overflow: 'hidden',
-              transition: 'all .2s ease-in-out',
-              color: theme.vars.palette.secondary.dark,
-              background: theme.vars.palette.secondary.light,
-              '&:hover': {
-                color: theme.vars.palette.secondary.light,
-                background: theme.vars.palette.secondary.dark
-              },
-              ...theme.applyStyles('dark', {
-                color: theme.vars.palette.secondary.main,
-                background: theme.vars.palette.dark.main,
+        {!isHorizontal && (
+          <Avatar
+              variant="rounded"
+              sx={{
+                ...theme.typography.commonAvatar,
+                ...theme.typography.mediumAvatar,
+                overflow: 'hidden',
+                transition: 'all .2s ease-in-out',
+                color: theme.vars.palette.secondary.dark,
+                background: theme.vars.palette.secondary.light,
                 '&:hover': {
                   color: theme.vars.palette.secondary.light,
-                  background: theme.vars.palette.secondary.main
-                }
-              })
-            }}
-            onClick={() => handlerDrawerOpen(!drawerOpen)}
-          >
-            <IconMenu2 stroke={1.5} size="20px" />
-          </Avatar>
+                  background: theme.vars.palette.secondary.dark
+                },
+                ...theme.applyStyles('dark', {
+                  color: theme.vars.palette.secondary.main,
+                  background: theme.vars.palette.dark.main,
+                  '&:hover': {
+                    color: theme.vars.palette.secondary.light,
+                    background: theme.vars.palette.secondary.main
+                  }
+                })
+              }}
+              onClick={() => handlerDrawerOpen(!drawerOpen)}
+            >
+              <IconMenu2 stroke={1.5} size="20px" />
+            </Avatar>
+        )}
       </Box>
 
       {/* Global Header Search + Session Context */}
       <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2, gap: 1.5 }}>
         <SearchSection />
-        <VoiceAssistant />
+        <PageSearchSection />
         <SessionInfoBadge />
       </Box>
 

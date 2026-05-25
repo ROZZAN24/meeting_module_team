@@ -24,7 +24,7 @@ public class SmQuotationService {
 
     public SmQuotation saveQuotation(SmQuotation quotation) {
         if (quotation.getCreatedBy() == null) {
-            quotation.setCreatedBy("admin");
+            quotation.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
         if (quotation.getQuotationNo() == null || quotation.getQuotationNo().isEmpty()) {
             Long maxId = quotationRepository.findMaxId().orElse(0L);
@@ -45,3 +45,4 @@ public class SmQuotationService {
         return quotationRepository.findByStatus(status).size();
     }
 }
+

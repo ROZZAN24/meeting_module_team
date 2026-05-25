@@ -434,6 +434,7 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
+        showActions={false}
       />
 
       <BOSFormDialog
@@ -442,11 +443,12 @@ const InductionAssignment = () => {
         title={formData.id ? 'Update Induction Process' : 'Assign Induction Process'}
         fullWidth
         maxWidth="md"
-        onSave={handleSave}
-        onClear={() => {
+        onSave={perms.write ? handleSave : null}
+        onClear={perms.write ? () => {
           setFormData(INITIAL_STATE);
           setErrors({});
-        }}
+        } : null}
+        isViewOnly={!perms.write}
       >
         {/* Summary Header */}
         <Box sx={{ bgcolor: 'primary.light', p: 2, borderRadius: 2, mb: 3, display: 'flex', flexWrap: 'wrap', gap: 4, border: '1px solid', borderColor: 'primary.main' }}>
@@ -466,6 +468,7 @@ const InductionAssignment = () => {
                 value={formData.screeningLevel}
                 onChange={handleInputChange}
                 required
+                disabled={!perms.write}
                 error={!!errors.screeningLevel}
                 sx={errorStyle(!!errors.screeningLevel)}
               >
@@ -482,6 +485,7 @@ const InductionAssignment = () => {
                 value={formData.inductionRound}
                 onChange={handleInputChange}
                 required
+                disabled={!perms.write}
                 error={!!errors.inductionRound}
                 sx={errorStyle(!!errors.inductionRound)}
               >
@@ -501,6 +505,7 @@ const InductionAssignment = () => {
                 value={formData.inductionDate}
                 onChange={handleInputChange}
                 required
+                disabled={!perms.write}
                 inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
@@ -515,6 +520,7 @@ const InductionAssignment = () => {
                 value={formData.inductionTime}
                 onChange={handleInputChange}
                 required
+                disabled={!perms.write}
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionTime}
                 sx={errorStyle(!!errors.inductionTime)}
@@ -530,6 +536,7 @@ const InductionAssignment = () => {
                 value={formData.trainerName}
                 onChange={handleInputChange}
                 required
+                disabled={!perms.write}
                 error={!!errors.trainerName}
                 sx={errorStyle(!!errors.trainerName)}
               >
@@ -566,6 +573,7 @@ const InductionAssignment = () => {
                 value={formData.currentStatus}
                 onChange={handleInputChange}
                 required
+                disabled={!perms.write}
                 error={!!errors.currentStatus}
                 sx={errorStyle(!!errors.currentStatus)}
               >

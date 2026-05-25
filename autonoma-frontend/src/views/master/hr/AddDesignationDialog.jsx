@@ -94,7 +94,7 @@ export default function AddDesignationDialog({ open, handleClose, initialData, r
       dispatch(openSnackbar({ open: true, message: `Designation ${initialData ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
       handleClose(true);
     } catch (error) {
-      const msg = error.response?.data || 'Failed to save designation';
+      const msg = typeof error === 'string' ? error : (error?.message || 'Failed to save designation');
       dispatch(openSnackbar({ 
         open: true, 
         message: typeof msg === 'string' ? msg : 'Failed to save designation', 

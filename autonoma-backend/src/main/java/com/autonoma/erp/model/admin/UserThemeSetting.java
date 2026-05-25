@@ -45,6 +45,9 @@ public class UserThemeSetting {
     @Column(name = "container")
     private Boolean container = false;
 
+    @Column(name = "dashboard_layout", columnDefinition = "NVARCHAR(20)")
+    private String dashboardLayout = "glass";
+
     @Column(name = "face_login_enabled")
     private Boolean faceLoginEnabled = false;
 

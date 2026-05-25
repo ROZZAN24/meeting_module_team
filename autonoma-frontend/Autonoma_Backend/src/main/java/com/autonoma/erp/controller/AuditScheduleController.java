@@ -5,6 +5,7 @@ import com.autonoma.erp.service.AuditScheduleService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -35,6 +36,7 @@ public class AuditScheduleController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "QM1210", action = "write")
     @Operation(summary = "Create Audit Schedule", description = "Saves a new audit schedule with criteria and personnel")
     public AuditSchedule createAuditSchedule(@RequestBody AuditSchedule auditSchedule) {
         logger.info("Attempting to create Audit Schedule: {}", auditSchedule.getScheduleNo());
@@ -49,6 +51,7 @@ public class AuditScheduleController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1210", action = "write")
     public ResponseEntity<AuditSchedule> updateAuditSchedule(
             @PathVariable Long id, @RequestBody AuditSchedule auditSchedule) {
         try {
@@ -60,6 +63,7 @@ public class AuditScheduleController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1210", action = "delete")
     public ResponseEntity<Void> deleteAuditSchedule(@PathVariable Long id) {
         service.deleteAuditSchedule(id);
         return ResponseEntity.ok().build();

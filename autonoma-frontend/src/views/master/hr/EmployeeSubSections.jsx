@@ -6,7 +6,8 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
-import { autoUploadFile } from 'utils/upload-helper';
+import { autoUploadFile, getFileDownloadUrl } from 'utils/upload-helper';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
 const API = API_PATHS.HRM.EMPLOYEES;
 const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
@@ -72,44 +73,47 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
         );
       return (
         <R key={f.name || i} lg={f.lg || 4}>
-            {f.select ? (
-              <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled || f.disabled}>
-                {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-              </BOSTextField>
-            ) : f.type === 'file' ? (
-              <BOSFileUpload
-                files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
-                onChange={(files) => upload(f.name, files)}
-                module="HRA_PROFILE"
-                multiple={false}
-                maxFiles={1}
-                compact={true}
-                label={f.label}
-                disabled={disabled || f.disabled}
-              />
-            ) : f.type === 'date' ? (
-              <BOSDatePicker
-                name={f.name}
-                label={f.label}
-                value={form[f.name] || ''}
-                onChange={h}
-                disabled={disabled || f.disabled}
-                required={f.required}
-              />
-            ) : (
-              <BOSTextField 
-                name={f.name} 
-                label={f.label} 
-                value={form[f.name] || ''} 
-                onChange={h} 
-                type={f.type || 'text'} 
-                maxLength={f.max} 
-                disabled={disabled || f.disabled} 
-                multiline={f.multiline} 
-                rows={f.rows}
-                required={f.required}
-              />
-            )}
+            {(() => {
+              const isFldDisabled = disabled || (typeof f.disabled === 'function' ? f.disabled(form) : f.disabled);
+              return f.select ? (
+                <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={isFldDisabled}>
+                  {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                </BOSTextField>
+              ) : f.type === 'file' ? (
+                <BOSFileUpload
+                  files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
+                  onChange={(files) => upload(f.name, files)}
+                  module="HRA_PROFILE"
+                  multiple={false}
+                  maxFiles={1}
+                  compact={true}
+                  label={f.label}
+                  disabled={isFldDisabled}
+                />
+              ) : f.type === 'date' ? (
+                <BOSDatePicker
+                  name={f.name}
+                  label={f.label}
+                  value={form[f.name] || ''}
+                  onChange={h}
+                  disabled={isFldDisabled}
+                  required={f.required}
+                />
+              ) : (
+                <BOSTextField 
+                  name={f.name} 
+                  label={f.label} 
+                  value={form[f.name] || ''} 
+                  onChange={h} 
+                  type={f.type || 'text'} 
+                  maxLength={f.max} 
+                  disabled={isFldDisabled} 
+                  multiline={f.multiline} 
+                  rows={f.rows}
+                  required={f.required}
+                />
+              );
+            })()}
           </R>
         );
       })}
@@ -139,18 +143,37 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
   );
 }
 
-function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
+function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, transformRow, transformPayload, validation, onFormChange }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const [rows, setRows] = useState([]);
   const [form, setForm] = useState({});
-  const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTargetRow, setDeleteTargetRow] = useState(null);
+
+  const h = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => {
+      let next = { ...p, [name]: value };
+      if (onFormChange) {
+        next = onFormChange(name, value, next);
+      }
+      return next;
+    });
+  };
+
   const disabled = !employeeId;
 
   const load = useCallback(() => {
     if (!employeeId) return;
-    axios.get(`${API}/${employeeId}/${endpoint}`).then(({ data }) => setRows(data || [])).catch(() => {});
-  }, [employeeId, endpoint]);
+    axios.get(`${API}/${employeeId}/${endpoint}`)
+      .then(({ data }) => {
+        const resolved = transformRow && Array.isArray(data) ? data.map(transformRow) : (data || []);
+        setRows(resolved);
+      })
+      .catch(() => {});
+  }, [employeeId, endpoint, transformRow]);
+
   useEffect(() => { load(); }, [load]);
 
   const upload = (field, files) => {
@@ -171,18 +194,33 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
       return;
     }
 
+    if (validation && !validation(form)) return;
+
     try { 
-      await axios.post(`${API}/${employeeId}/${endpoint}`, form); 
+      const payload = transformPayload ? transformPayload(form) : form;
+      await axios.post(`${API}/${employeeId}/${endpoint}`, payload); 
       setForm({}); 
       load(); 
       snack(dispatch, `${title} record added successfully!`); 
     }
     catch { snack(dispatch, 'Failed to save record. Please check required fields.', 'error'); }
   };
-  const del = async (row) => {
-    if (!employeeId) return;
-    try { await axios.delete(`${API}/${endpoint}/${row.id}`); load(); snack(dispatch, 'Deleted!'); }
+
+  const handleDeleteConfirm = async () => {
+    if (!employeeId || !deleteTargetRow) return;
+    try { 
+      await axios.delete(`${API}/${endpoint}/${deleteTargetRow.id}`); 
+      load(); 
+      snack(dispatch, 'Deleted!'); 
+      setDeleteOpen(false);
+      setDeleteTargetRow(null);
+    }
     catch { snack(dispatch, 'Failed to delete', 'error'); }
+  };
+
+  const handleDeleteClick = (row) => {
+    setDeleteTargetRow(row);
+    setDeleteOpen(true);
   };
 
   return (
@@ -226,15 +264,26 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols }) {
         <BOSDataTable
           columns={tableCols}
           rows={rows}
-          onDeleteRow={del}
+          onDeleteRow={handleDeleteClick}
+          sx={{ height: 250 }}
         />
       )}
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onClose={() => { setDeleteOpen(false); setDeleteTargetRow(null); }}
+        onConfirm={handleDeleteConfirm}
+        title={`Delete ${title}`}
+        message={`Are you sure you want to delete this ${title.toLowerCase()} record?`}
+        itemName={deleteTargetRow ? (deleteTargetRow.name || deleteTargetRow.assetName || deleteTargetRow.companyName || deleteTargetRow.education || 'Record') : ''}
+      />
     </BOSFormSection>
   );
 }
 
 export default function EmployeeSubSections({ employeeId, onPreview }) {
   const theme = useTheme();
+  const dispatch = useDispatch();
   const pc = theme.palette.primary.main;
   const sc = theme.palette.secondary.main;
   const wc = theme.palette.warning.main;
@@ -256,7 +305,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
       <Section1to1 title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} onPreview={onPreview} fields={[
         { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
         { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'] },
-        { name: 'marriageDate', label: 'Married Date', type: 'date', hideIf: (f) => f.maritalStatus !== 'MARRIED', required: true }, 
+        { name: 'marriageDate', label: 'Married Date', type: 'date', disabled: (f) => f.maritalStatus !== 'MARRIED', required: true }, 
         { name: 'birthDate', label: 'DOB', type: 'date' },
         { name: 'dateOfJoining', label: 'DOJ', type: 'date', disabled: true }, 
         { name: 'nationality', label: 'Nationality', max: 100 },
@@ -266,8 +315,8 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         { name: 'shirtSize', label: 'Shirt Size', select: true, options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
         { name: 'pantSize', label: 'Pant Size', max: 20 },
         { name: 'shoeSize', label: 'Shoe Size', max: 20 },
-        { name: 'height', label: 'Height', type: 'number' },
-        { name: 'weight', label: 'Weight', type: 'number' }
+        { name: 'height', label: 'Height', type: 'number', lg: 6 },
+        { name: 'weight', label: 'Weight', type: 'number', lg: 6 }
       ]} />
 
       {/* 6. ADDRESS DETAILS */}
@@ -282,14 +331,30 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
       </BOSFormSection>
 
       {/* 7. ID DETAILS */}
-      <Section1to1 title="ID Details" icon={<IconEPassport size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
-        { name: 'aadharNumber', label: 'Aadhar No', max: 12 },
-        { name: 'drivingLicenseNumber', label: 'Driving License No', max: 50 },
-        { name: 'passportNumber', label: 'Passport No', max: 50 },
-        { name: 'passportIssueCity', label: 'Place Of Issue', max: 100 },
-        { name: 'licenseExpiryDate', label: 'Date Of Expiry', type: 'date' },
-        { name: 'loanInstallmentAmount', label: 'Loan Installment Amount', type: 'number' }
-      ]} />
+      <Section1to1 
+        title="ID Details" 
+        icon={<IconEPassport size={20} color={pc} />} 
+        endpoint="personal" 
+        employeeId={employeeId} 
+        validation={(form) => {
+          if (!form.aadharNumber) {
+            snack(dispatch, 'Aadhar No is mandatory.', 'error');
+            return false;
+          }
+          if (!/^\d{12}$/.test(form.aadharNumber)) {
+            snack(dispatch, 'Aadhar No must be exactly 12 digits.', 'error');
+            return false;
+          }
+          return true;
+        }}
+        fields={[
+          { name: 'aadharNumber', label: 'Aadhar No *', max: 12, required: true },
+          { name: 'drivingLicenseNumber', label: 'Driving License No', max: 50 },
+          { name: 'passportNumber', label: 'Passport No', max: 50 },
+          { name: 'passportIssueCity', label: 'Place Of Issue', max: 100 },
+          { name: 'licenseExpiryDate', label: 'Date Of Expiry', type: 'date' },
+          { name: 'loanInstallmentAmount', label: 'Loan Installment Amount', type: 'number' }
+        ]} />
 
       {/* 8. STATUTORY DETAILS */}
       <Section1to1 title="Statutory Details" icon={<IconShieldCheck size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
@@ -311,7 +376,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
       {/* 10. QUALIFICATION DETAILS */}
       <Section1toN title="Qualification Details" icon={<IconSchool size={20} color={pc} />} endpoint="education" employeeId={employeeId}
         fields={[
-          { name: 'education', label: 'Qualification', max: 100 }, 
+          { name: 'education', label: 'Qualification', select: true, options: ['10th / SSLC', '12th / HSC', 'DIPLOMA', 'UG', 'PG', 'ITI', 'OTHERS'] }, 
           { name: 'institutionName', label: 'Institution', max: 255 },
           { name: 'university', label: 'University', max: 255 },
           { name: 'yearOfPassing', label: 'Year Of Passing', max: 10 }, 
@@ -322,7 +387,22 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
           { id: 'education', label: 'Qualification', minWidth: 140 }, 
           { id: 'institutionName', label: 'Institution', minWidth: 150 }, 
           { id: 'yearOfPassing', label: 'Year', minWidth: 80 }, 
-          { id: 'percentageGrade', label: '% / Grade', minWidth: 100 }
+          { id: 'percentageGrade', label: '% / Grade', minWidth: 100 },
+          {
+            id: 'certificateFile',
+            label: 'Certificate',
+            minWidth: 180,
+            renderCell: (val) => {
+              if (!val) return '-';
+              const fileName = val.split('/').pop();
+              return (
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="text" onClick={() => onPreview && onPreview(val, fileName)}>View</Button>
+                  <Button size="small" variant="text" component="a" href={getFileDownloadUrl(val)} target="_blank" download>Download</Button>
+                </Stack>
+              );
+            }
+          }
         ]}
       />
 
@@ -340,7 +420,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         { name: 'pfEmployee', label: 'PF Employee', type: 'number' },
         { name: 'esiEmployee', label: 'ESI Employee', type: 'number' },
         { name: 'professionalTax', label: 'Professional tax', type: 'number' },
-        { name: 'pfDocument', label: 'Upload PF Document', type: 'file' }
+        { name: 'pfDocument', label: 'Upload PF Document', type: 'file', lg: 12 }
       ]} />
 
       {/* 12. CTC DETAILS */}
@@ -380,38 +460,107 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
 
       {/* 13. WORK EXPERIENCE */}
       <Section1toN title="Work Experience" icon={<IconBriefcase size={20} color={pc} />} endpoint="experience" employeeId={employeeId}
+        transformRow={(row) => ({ ...row, designation: row.location })}
+        transformPayload={(f) => ({ ...f, location: f.designation })}
         fields={[
           { name: 'companyName', label: 'Company Name', max: 255 }, 
           { name: 'designation', label: 'Designation', max: 100 },
           { name: 'fromDate', label: 'From Date', type: 'date' }, { name: 'toDate', label: 'To Date', type: 'date' },
           { name: 'totalExperience', label: 'Experience', max: 100 },
           { name: 'lastSalary', label: 'Salary', type: 'number' },
-          { name: 'leavingReason', label: 'Reason For Leaving', max: 255 }
+          { name: 'leavingReason', label: 'Reason For Leaving', max: 255 },
+          { name: 'experienceDocument', label: 'Experience Document', type: 'file' }
         ]}
         tableCols={[
           { id: 'companyName', label: 'Company', minWidth: 200 }, 
           { id: 'designation', label: 'Designation', minWidth: 150 }, 
           { id: 'fromDate', label: 'From', minWidth: 100 }, 
-          { id: 'toDate', label: 'To', minWidth: 100 }
+          { id: 'toDate', label: 'To', minWidth: 100 },
+          {
+            id: 'experienceDocument',
+            label: 'Document',
+            minWidth: 180,
+            renderCell: (val) => {
+              if (!val) return '-';
+              const fileName = val.split('/').pop();
+              return (
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="text" onClick={() => onPreview && onPreview(val, fileName)}>View</Button>
+                  <Button size="small" variant="text" component="a" href={getFileDownloadUrl(val)} target="_blank" download>Download</Button>
+                </Stack>
+              );
+            }
+          }
         ]}
       />
 
       {/* 14. FAMILY DETAILS */}
       <Section1toN title="Family Details" icon={<IconUsers size={20} color={pc} />} endpoint="dependent" employeeId={employeeId}
+        transformRow={(row) => {
+          if (row.dob) {
+            const birthDate = new Date(row.dob);
+            if (!isNaN(birthDate.getTime())) {
+              const today = new Date();
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const m = today.getMonth() - birthDate.getMonth();
+              if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              return { ...row, age: age >= 0 ? age : 0 };
+            }
+          }
+          return row;
+        }}
+        onFormChange={(name, value, next) => {
+          if (name === 'dob' && value) {
+            const birthDate = new Date(value);
+            if (!isNaN(birthDate.getTime())) {
+              const today = new Date();
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const m = today.getMonth() - birthDate.getMonth();
+              if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              next.age = age >= 0 ? age : 0;
+            }
+          }
+          return next;
+        }}
+        validation={(f) => {
+          if (!f.name) {
+            snack(dispatch, 'Name is mandatory.', 'error');
+            return false;
+          }
+          if (!f.relationship) {
+            snack(dispatch, 'Relationship is mandatory.', 'error');
+            return false;
+          }
+          if (!f.contactNo) {
+            snack(dispatch, 'Contact No is mandatory.', 'error');
+            return false;
+          }
+          const phoneRegex = /^[0-9+\s()-]+$/;
+          if (!phoneRegex.test(f.contactNo)) {
+            snack(dispatch, 'Contact No contains invalid characters.', 'error');
+            return false;
+          }
+          return true;
+        }}
         fields={[
-          { name: 'name', label: 'Name', max: 100 },
+          { name: 'name', label: 'Name *', max: 100 },
           { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
           { name: 'dob', label: 'DOB', type: 'date' },
-          { name: 'age', label: 'Age', type: 'number' },
-          { name: 'relationship', label: 'Relationship', select: true, options: ['FATHER', 'MOTHER', 'SPOUSE', 'CHILD', 'SIBLING'] },
+          { name: 'age', label: 'Age', type: 'number', disabled: true },
+          { name: 'relationship', label: 'Relationship *', select: true, options: ['FATHER', 'MOTHER', 'SPOUSE', 'CHILD', 'SIBLING'] },
           { name: 'occupation', label: 'Occupation', max: 100 },
           { name: 'bloodGroup', label: 'Blood Group', select: true, options: ['O+ve', 'O-ve', 'A+ve', 'A-ve', 'B+ve', 'B-ve', 'AB+ve', 'AB-ve'] },
-          { name: 'contactNo', label: 'Contract No', max: 20 }
+          { name: 'contactNo', label: 'Contact No *', max: 20 }
         ]}
         tableCols={[
           { id: 'name', label: 'Name', minWidth: 150 }, 
           { id: 'relationship', label: 'Relation', minWidth: 100 }, 
-          { id: 'contactNo', label: 'Contact', minWidth: 120 }
+          { id: 'contactNo', label: 'Contact', minWidth: 120 },
+          { id: 'age', label: 'Age', minWidth: 80 }
         ]}
       />
 
@@ -422,12 +571,14 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
           { name: 'issueDate', label: 'Asset Issue Date', type: 'date' },
           { name: 'condition', label: 'Condition of Asset', select: true, options: ['NEW', 'GOOD', 'USED', 'DAMAGED'] },
           { name: 'qty', label: 'QTY', type: 'number' },
-          { name: 'serialNo', label: 'Serial No', max: 100 }
+          { name: 'serialNo', label: 'Serial No', max: 100 },
+          { name: 'assetValue', label: 'Asset Value', type: 'number' }
         ]}
         tableCols={[
           { id: 'assetName', label: 'Asset Name', minWidth: 150 }, 
           { id: 'issueDate', label: 'Asset Issue Date', minWidth: 100 }, 
-          { id: 'serialNo', label: 'Serial No', minWidth: 150 }
+          { id: 'serialNo', label: 'Serial No', minWidth: 150 },
+          { id: 'assetValue', label: 'Asset Value', minWidth: 120 }
         ]}
       />
 

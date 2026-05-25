@@ -122,17 +122,21 @@ public class InductionTraineeService {
 
     /**
      * Checks if ALL active induction rounds for an employee are COMPLETED.
-     * If so, updates EmployeeMaster.inductionStatus = 'COMPLETED'.
+     * If so, and minimum 2 levels are completed, updates EmployeeMaster.inductionStatus = 'COMPLETED'
+     * and status = 'Active'.
      */
     private void checkAndCompleteInduction(String empCode) {
         long incompleteCount = assignmentRepo.countIncompleteByEmpCode(empCode);
         if (incompleteCount == 0) {
-            // All rounds completed — update EmployeeMaster
-            empRepo.findByEmpCode(empCode).ifPresent(emp -> {
-                emp.setInductionStatus("COMPLETED");
-                emp.setUpdatedAt(new Date());
-                empRepo.save(emp);
-            });
+            long completedLevels = assignmentRepo.countCompletedLevelsByEmpCode(empCode);
+            if (completedLevels >= 2) {
+                empRepo.findByEmpCode(empCode).ifPresent(emp -> {
+                    emp.setInductionStatus("COMPLETED");
+                    emp.setStatus("Active");
+                    emp.setUpdatedAt(new Date());
+                    empRepo.save(emp);
+                });
+            }
         }
     }
 }

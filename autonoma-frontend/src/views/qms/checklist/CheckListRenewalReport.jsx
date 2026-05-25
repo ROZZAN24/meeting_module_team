@@ -388,7 +388,17 @@ export default function CheckListRenewalReport() {
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
-                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checklist?.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checklist.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
                   <TableCell>{row.checklist?.levelIds || '-'}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>

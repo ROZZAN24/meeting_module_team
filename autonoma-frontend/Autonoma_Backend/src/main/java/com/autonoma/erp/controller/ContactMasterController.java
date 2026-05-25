@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.ContactMaster;
 import com.autonoma.erp.service.ContactMasterService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,11 +32,17 @@ public class ContactMasterController {
     }
 
     @PostMapping
+
+
+    @RequirePagePermission(pageCode = "M5120", action = "write")
     public ContactMaster createContact(@RequestBody ContactMaster contact) {
         return service.saveContact(contact);
     }
 
     @PutMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5120", action = "write")
     public ResponseEntity<ContactMaster> updateContact(@PathVariable Long id, @RequestBody ContactMaster contactDetails) {
         return service.getContactById(id)
                 .map(contact -> {
@@ -56,6 +64,9 @@ public class ContactMasterController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5120", action = "delete")
     public ResponseEntity<Void> deleteContact(@PathVariable Long id) {
         service.deleteContact(id);
         return ResponseEntity.ok().build();

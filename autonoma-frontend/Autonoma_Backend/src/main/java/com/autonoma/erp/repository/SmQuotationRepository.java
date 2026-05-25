@@ -17,4 +17,7 @@ public interface SmQuotationRepository extends JpaRepository<SmQuotation, Long> 
 
     @Query("SELECT MAX(q.id) FROM SmQuotation q")
     Optional<Long> findMaxId();
+
+    boolean existsByQuotationNo(String quotationNo);
+    boolean existsByQuotationNoAndIdNot(String quotationNo, Long id);
 }

@@ -1,7 +1,9 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
 
-// material-ui
-import Alert from '@mui/material/Alert';
+// project imports
+import MaintenanceError from 'views/pages/maintenance/Error';
+import MaintenanceUnderConstruction from 'views/pages/maintenance/UnderConstruction';
+import MaintenanceError500 from 'views/pages/maintenance/Error500';
 
 // ==============================|| ELEMENT ERROR - COMMON ||============================== //
 
@@ -11,21 +13,27 @@ export default function ErrorBoundary() {
 
   if (isRouteErrorResponse(error)) {
     if (error.status === 404) {
-      return <Alert severity="error">Error 404 - This page doesn't exist!</Alert>;
+      return <MaintenanceError />;
     }
 
     if (error.status === 401) {
-      return <Alert severity="error">Error 401 - You aren't authorized to see this</Alert>;
+      return <MaintenanceError500 />;
     }
 
     if (error.status === 503) {
-      return <Alert severity="error">Error 503 - Looks like our API is down</Alert>;
+      return <MaintenanceError500 />;
     }
 
     if (error.status === 418) {
-      return <Alert severity="error">Error 418 - Contact administrator</Alert>;
+      return <MaintenanceError500 />;
     }
   }
 
-  return <Alert severity="error">Under Maintenance</Alert>;
+  // If there's an actual exception/error object (not undefined), it is a system crash (Error 500)
+  if (error) {
+    return <MaintenanceError500 />;
+  }
+
+  // Otherwise, it was rendered directly as the wildcard path element (unimplemented route)
+  return <MaintenanceUnderConstruction />;
 }
