@@ -52,11 +52,22 @@ export default function BOSAutocomplete({
   noOptionsText = 'No options',
   placeholder,
   size = 'small',
+  getOptionLabel,
   ...rest
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
+
+  // Helper to resolve display label (respecting custom getOptionLabel prop)
+  const getDisplayLabel = (option) => {
+    if (option === null || option === undefined) return '';
+    if (option === 'Select All' || (option && option.isSelectAll)) return 'Select All';
+    if (getOptionLabel) {
+      return getOptionLabel(option);
+    }
+    return getLabelOf(option);
+  };
 
   // 1. Resolve raw/primitive value to corresponding option items
   const getResolvedValue = () => {
@@ -136,8 +147,7 @@ export default function BOSAutocomplete({
         return getValueOf(option) === getValueOf(val);
       }}
       getOptionLabel={(option) => {
-        if (option && (option === 'Select All' || option.isSelectAll)) return 'Select All';
-        return getLabelOf(option);
+        return getDisplayLabel(option);
       }}
       renderOption={(props, option, { selected }) => {
         // Extract key from props if present to ensure proper list keying
@@ -161,7 +171,7 @@ export default function BOSAutocomplete({
           );
         }
 
-        const label = getLabelOf(option);
+        const label = getDisplayLabel(option);
         return (
           <li key={key || getValueOf(option)} {...otherProps}>
             {multiple && (
@@ -181,7 +191,7 @@ export default function BOSAutocomplete({
           return (
             <Chip
               key={key || getValueOf(option)}
-              label={getLabelOf(option)}
+              label={getDisplayLabel(option)}
               size="small"
               variant="outlined"
               sx={{
