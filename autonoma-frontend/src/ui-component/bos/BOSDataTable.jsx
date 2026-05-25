@@ -388,8 +388,10 @@ export default function BOSDataTable({
         </Table>
       </TableContainer>
       <Box sx={{ 
-        py: 0.5, 
+        py: 0, 
         px: 1.5, 
+        minHeight: '36px',
+        height: '36px',
         display: 'grid',
         gridTemplateColumns: '1fr auto 1fr',
         alignItems: 'center',
@@ -399,10 +401,10 @@ export default function BOSDataTable({
         borderBottomLeftRadius: '16px',
         borderBottomRightRadius: '16px'
       }}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
           {footerActions}
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <TablePagination
             rowsPerPageOptions={[5, 10, 25, 50]}
             component="div"
@@ -441,7 +443,7 @@ export default function BOSDataTable({
             }}
           />
         </Box>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }} />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }} />
       </Box>
     </Box>
   );

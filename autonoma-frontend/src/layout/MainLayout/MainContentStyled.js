@@ -13,8 +13,8 @@ const MainContentStyled = styled('main', {
   shouldForwardProp: (prop) => prop !== 'open' && prop !== 'menuOrientation' && prop !== 'borderRadius' && prop !== 'ribbonOpen'
 })(({ theme, open, menuOrientation, borderRadius, ribbonOpen }) => {
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL;
-  // Header is 71px. Compact bar is 62px. Ribbon is 86px.
-  const hMargin = isHorizontal ? (ribbonOpen ? 71 + RIBBON_H : 133) : 88;
+  // Header is 64px. Compact bar is 62px. Ribbon is 96px.
+  const hMargin = isHorizontal ? (ribbonOpen ? 64 + RIBBON_H : 126) : 88;
 
   return {
     backgroundColor: theme.vars.palette.grey[100],

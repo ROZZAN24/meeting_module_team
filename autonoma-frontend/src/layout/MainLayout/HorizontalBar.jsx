@@ -121,83 +121,111 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
     }
   };
 
-  return (
-    <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} sx={{ height: '100%' }}>
-      <ButtonBase
-        onClick={handleClick}
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: isGroup ? 'center' : 'flex-start',
-          px: 0.75,
-          pt: isGroup ? 0 : 0.75,
-          pb: isGroup ? 0 : 0.25,
-          minWidth: isGroup ? 52 : 46,
-          maxWidth: 80,
-          height: '100%',
-          borderRadius: isGroup ? '12px' : '8px',
-          color: open 
-            ? colors.main 
-            : isGroup 
-              ? colors.main 
-              : 'text.secondary',
-          background: open 
-            ? `linear-gradient(135deg, ${alpha(colors.main, 0.15)} 0%, ${alpha(colors.main, 0.05)} 100%)` 
-            : isGroup 
-              ? `linear-gradient(135deg, ${alpha(colors.main, 0.08)} 0%, ${alpha(colors.main, 0.02)} 100%)` 
-              : 'transparent',
-          border: isGroup 
-            ? `1px solid ${alpha(colors.main, 0.12)}` 
-            : '1px solid transparent',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          '&:hover': { 
-            background: isGroup 
-              ? `linear-gradient(135deg, ${alpha(colors.main, 0.16)} 0%, ${alpha(colors.main, 0.06)} 100%)` 
-              : alpha(colors.main, 0.06),
-            borderColor: isGroup ? colors.main : 'transparent',
-            color: colors.main,
-            transform: 'translateY(-2px)',
-            boxShadow: isGroup ? `0 6px 16px -4px ${alpha(colors.main, 0.35)}` : 'none',
-            '& .child-icon': {
-              transform: 'scale(1.08)',
-              color: colors.main
-            }
-          }
+  const innerContent = (
+    <>
+      <Box 
+        className="child-icon"
+        sx={{ 
+          mb: !isGroup ? 0.5 : 0, 
+          lineHeight: 0,
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          color: open || isGroup ? colors.main : 'text.secondary'
         }}
       >
-        <Box 
-          className="child-icon"
-          sx={{ 
-            mb: !isGroup ? 0.5 : 0, 
-            lineHeight: 0,
-            transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            color: open || isGroup ? colors.main : 'text.secondary'
+        {Icon && <Icon stroke={isGroup ? 1.5 : 1.8} size={isGroup ? '28px' : '20px'} />}
+      </Box>
+      {!isGroup && (
+        <Typography
+          sx={{
+            fontSize: '0.6rem',
+            lineHeight: 1.1,
+            textAlign: 'center',
+            maxWidth: 70,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'normal',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            color: 'inherit'
+          }}
+          title={item.title}
+        >
+          {item.title}
+        </Typography>
+      )}
+    </>
+  );
+
+  const buttonBaseContent = (
+    <ButtonBase
+      onClick={handleClick}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: isGroup ? 'center' : 'flex-start',
+        px: 0.75,
+        pt: isGroup ? 0 : 0.75,
+        pb: isGroup ? 0 : 0.25,
+        minWidth: isGroup ? 52 : 46,
+        maxWidth: 80,
+        height: '100%',
+        borderRadius: isGroup ? '12px' : '8px',
+        color: open 
+          ? colors.main 
+          : isGroup 
+            ? colors.main 
+            : 'text.secondary',
+        background: open 
+          ? `linear-gradient(135deg, ${alpha(colors.main, 0.15)} 0%, ${alpha(colors.main, 0.05)} 100%)` 
+          : isGroup 
+            ? `linear-gradient(135deg, ${alpha(colors.main, 0.08)} 0%, ${alpha(colors.main, 0.02)} 100%)` 
+            : 'transparent',
+        border: isGroup 
+          ? `1px solid ${alpha(colors.main, 0.12)}` 
+          : '1px solid transparent',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        '&:hover': { 
+          background: isGroup 
+            ? `linear-gradient(135deg, ${alpha(colors.main, 0.16)} 0%, ${alpha(colors.main, 0.06)} 100%)` 
+            : alpha(colors.main, 0.06),
+          borderColor: isGroup ? colors.main : 'transparent',
+          color: colors.main,
+          transform: 'translateY(-2px)',
+          boxShadow: isGroup ? `0 6px 16px -4px ${alpha(colors.main, 0.35)}` : 'none',
+          '& .child-icon': {
+            transform: 'scale(1.08)',
+            color: colors.main
+          }
+        }
+      }}
+    >
+      {innerContent}
+    </ButtonBase>
+  );
+
+  return (
+    <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} sx={{ height: '100%' }}>
+      {item.pageCode ? (
+        <Tooltip 
+          title={`Code: ${item.pageCode}`} 
+          placement="top" 
+          disableInteractive
+          arrow
+          slotProps={{
+            popper: {
+              sx: {
+                zIndex: 2500
+              }
+            }
           }}
         >
-          {Icon && <Icon stroke={isGroup ? 1.5 : 1.8} size={isGroup ? '28px' : '20px'} />}
-        </Box>
-        {!isGroup && (
-          <Typography
-            sx={{
-              fontSize: '0.6rem',
-              lineHeight: 1.1,
-              textAlign: 'center',
-              maxWidth: 70,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'normal',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              color: 'inherit'
-            }}
-            title={item.title}
-          >
-            {item.title}
-          </Typography>
-        )}
-      </ButtonBase>
+          {buttonBaseContent}
+        </Tooltip>
+      ) : (
+        buttonBaseContent
+      )}
 
       {hasChildren && (
         <Popper
@@ -205,6 +233,13 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
           anchorEl={anchorEl}
           placement="bottom-start"
           sx={{ zIndex: 2001 }}
+          onMouseEnter={() => {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={handleMouseLeave}
           modifiers={[
             {
               name: 'offset',
@@ -214,24 +249,45 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
             }
           ]}
         >
-          <Paper sx={{ boxShadow: theme.shadows[8], py: 0.5, minWidth: 190, backgroundImage: 'none' }}>
-            <List dense disablePadding>
-              {item.children.map((menu) => {
-                switch (menu.type) {
-                  case 'collapse':
-                    return <NavCollapse key={menu.id} menu={menu} level={1} />;
-                  case 'item':
-                    return <NavItem key={menu.id} item={menu} level={1} />;
-                  default:
-                    return (
-                      <Typography key={menu.id} variant="h6" color="error" align="center">
-                        Menu Items Error
-                      </Typography>
-                    );
+          <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+            <Paper 
+              sx={{ 
+                boxShadow: theme.shadows[8], 
+                py: 0.5, 
+                minWidth: 190, 
+                backgroundImage: 'none',
+                position: 'relative',
+                overflow: 'visible',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: -12, // Bridges the 8px offset gap perfectly
+                  left: 0,
+                  right: 0,
+                  height: 12,
+                  bgcolor: 'transparent',
+                  zIndex: 1
                 }
-              })}
-            </List>
-          </Paper>
+              }}
+            >
+              <List dense disablePadding>
+                {item.children.map((menu) => {
+                  switch (menu.type) {
+                    case 'collapse':
+                      return <NavCollapse key={menu.id} menu={menu} level={1} />;
+                    case 'item':
+                      return <NavItem key={menu.id} item={menu} level={1} />;
+                    default:
+                      return (
+                        <Typography key={menu.id} variant="h6" color="error" align="center">
+                          Menu Items Error
+                        </Typography>
+                      );
+                  }
+                })}
+              </List>
+            </Paper>
+          </ClickAwayListener>
         </Popper>
       )}
     </Box>
@@ -365,7 +421,7 @@ export default function HorizontalBar() {
     <ElevationScroll>
       <AppBar
         sx={(theme) => ({
-          top: 71,
+          top: 64,
           bgcolor: 'rgba(255, 255, 255, 0.75)',
           backdropFilter: 'blur(16px)',
           width: '100%',

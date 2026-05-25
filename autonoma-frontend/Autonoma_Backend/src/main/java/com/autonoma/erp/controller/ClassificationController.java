@@ -13,7 +13,7 @@ public class ClassificationController {
 
     @Autowired private CategoryMasterRepository categoryRepo;
     @Autowired private LevelMasterRepository levelRepo;
-    @Autowired private EmployeeTypeMasterRepository typeRepo;
+
 
     @GetMapping("/categories")
     public List<CategoryMaster> getCategories() { return categoryRepo.findAll(); }
@@ -21,6 +21,5 @@ public class ClassificationController {
     @GetMapping("/levels")
     public List<LevelMaster> getLevels() { return levelRepo.findAll(); }
 
-    @GetMapping("/employee-types")
-    public List<EmployeeTypeMaster> getTypes() { return typeRepo.findAll(); }
+
 }

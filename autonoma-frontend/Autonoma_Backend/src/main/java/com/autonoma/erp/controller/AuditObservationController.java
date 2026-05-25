@@ -7,6 +7,7 @@ import com.autonoma.erp.dto.NcrOfiDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -29,6 +30,7 @@ public class AuditObservationController {
     private com.autonoma.erp.service.NcrOfiService ncrOfiService;
 
     @PostMapping("/ncr/submit")
+    @RequirePagePermission(pageCode = "QM1240", action = "write")
     @Operation(summary = "Submit NCR Closure", description = "Saves corrective actions and updates finding status")
     public ResponseEntity<?> submitNcrClosure(@RequestBody java.util.Map<String, Object> payload) {
         try {
@@ -63,7 +65,7 @@ public class AuditObservationController {
         dto.setObservationId(detail.getAuditObservation() != null ? detail.getAuditObservation().getId().intValue() : null);
         dto.setObservationNo(detail.getAuditObservation() != null ? detail.getAuditObservation().getObservationNo() : null);
         dto.setObservationDate(detail.getAuditObservation() != null ? detail.getAuditObservation().getObservationDate() : null);
-        dto.setCreatedDate(detail.getAuditObservation() != null ? detail.getAuditObservation().getCreatedAt() : null);
+        dto.setCreatedDate(detail.getAuditObservation() != null ? detail.getAuditObservation().getCreatedDate() : null);
         dto.setAuditScheduleNo(detail.getAuditObservation() != null ? detail.getAuditObservation().getAuditScheduleNo() : null);
         dto.setAuditType(detail.getAuditObservation() != null ? detail.getAuditObservation().getAuditType() : null);
         dto.setDepartmentName(detail.getAuditObservation() != null ? detail.getAuditObservation().getDepartmentName() : null);
@@ -100,9 +102,10 @@ public class AuditObservationController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "QM1230", action = "write")
     @Operation(summary = "Create Observation", description = "Saves a new audit observation with findings details")
     public AuditObservation create(@RequestBody AuditObservation observation) {
-        if (observation.getCreatedBy() == null) observation.setCreatedBy("Admin");
+        if (observation.getCreatedBy() == null) observation.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         
         // Sync bi-directional relationship
         if (observation.getDetails() != null) {
@@ -115,6 +118,7 @@ public class AuditObservationController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1230", action = "write")
     public ResponseEntity<AuditObservation> update(@PathVariable Long id, @RequestBody AuditObservation details) {
         return auditObservationRepository.findById(id)
                 .map(observation -> {
@@ -131,7 +135,7 @@ public class AuditObservationController {
                     observation.setOfiCount(details.getOfiCount());
                     observation.setComplianceCount(details.getComplianceCount());
                     observation.setNcrCount(details.getNcrCount());
-                    observation.setUpdatedBy("Admin");
+                    observation.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
 
                     // Handle details update (clear and re-add for simplicity in this standard)
                     observation.getDetails().clear();
@@ -147,6 +151,7 @@ public class AuditObservationController {
     }
     
     @PutMapping("/ncr/approve/{detailId}")
+    @RequirePagePermission(pageCode = "QM1250", action = "approval")
     @Operation(summary = "Approve NCR Closure", description = "Approves the corrective action and closes the finding")
     public ResponseEntity<?> approveNcr(@PathVariable Integer detailId) {
         try {
@@ -158,6 +163,7 @@ public class AuditObservationController {
     }
 
     @PutMapping("/ncr/reject/{detailId}")
+    @RequirePagePermission(pageCode = "QM1250", action = "approval")
     @Operation(summary = "Reject NCR Closure", description = "Rejects the closure and sends back to owner")
     public ResponseEntity<?> rejectNcr(@PathVariable Integer detailId, @RequestParam(required = false) String remarks) {
         try {
@@ -169,6 +175,7 @@ public class AuditObservationController {
     }
 
     @PutMapping("/ncr/rework/{detailId}")
+    @RequirePagePermission(pageCode = "QM1250", action = "approval")
     @Operation(summary = "Request Rework", description = "Sends finding back for corrective action rework")
     public ResponseEntity<?> reworkNcr(@PathVariable Integer detailId, @RequestParam(required = false) String remarks) {
         try {
@@ -180,6 +187,7 @@ public class AuditObservationController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "QM1230", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         return auditObservationRepository.findById(id)
                 .map(observation -> {
@@ -214,3 +222,4 @@ public class AuditObservationController {
         }
     }
 }
+

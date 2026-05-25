@@ -24,10 +24,10 @@ const columns = [
 ];
 
 export default function DeliveryTerms() {
-  const [rows, setRows] = useState([]);
-  const perms = usePagePermissions(PAGE_CODES.LOG_DELIVERY_TERMS);
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
+  const [rows, setRows] = useState([]);
+  const perms = usePagePermissions(PAGE_CODES.LOG_DELIVERY_TERMS);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);
@@ -89,6 +89,8 @@ export default function DeliveryTerms() {
       fetchRows();
     } catch (err) {
       console.error(err);
+      const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
+      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
     }
   };
 

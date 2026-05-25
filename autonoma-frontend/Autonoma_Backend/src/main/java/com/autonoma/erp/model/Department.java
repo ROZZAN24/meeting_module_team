@@ -16,8 +16,8 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "dept_no", nullable = false)
-    private Integer departmentNo = 0;
+    @Column(name = "dept_no", nullable = false, length = 50)
+    private String departmentNo = "";
 
     @Column(name = "dept_name", nullable = false, length = 100)
     private String departmentName;
@@ -36,44 +36,26 @@ public class Department {
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private Date createdAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     @Column(name = "updated_at")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private Date updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = new Date();
+        if (createdBy == null) {
+            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = new Date();
+        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
-
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public Integer getDepartmentNo() { return departmentNo; }
-    public void setDepartmentNo(Integer departmentNo) { this.departmentNo = departmentNo; }
-    public String getDepartmentName() { return departmentName; }
-    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
-    public String getNdaCertificate() { return ndaCertificate; }
-    public void setNdaCertificate(String ndaCertificate) { this.ndaCertificate = ndaCertificate; }
-    public Integer getSequenceNo() { return sequenceNo; }
-    public void setSequenceNo(Integer sequenceNo) { this.sequenceNo = sequenceNo; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
-    public String getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
 }

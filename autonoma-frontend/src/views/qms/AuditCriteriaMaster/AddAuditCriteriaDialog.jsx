@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import {
   Stack,
@@ -9,27 +9,31 @@ import {
   Typography,
   IconButton,
   MenuItem,
-  useTheme
+  useTheme,
+  InputAdornment
 } from '@mui/material';
 import {
   IconTrash,
   IconPlus,
   IconPaperclip,
-  IconSettings
+  IconSettings,
+  IconMicrophone,
+  IconMicrophoneOff
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileGallery } from 'ui-component/bos';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileUpload } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 import useAuth from 'hooks/useAuth';
-import { autoUploadFile } from 'utils/upload-helper';
 
 // ==============================|| AUDIT CRITERIA - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
 const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = false, nextSeq = '' }) => {
   const theme = useTheme();
+  const dispatch = useDispatch();
   
-  const fileInputRef = React.useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     seqNo: '',
@@ -43,8 +47,106 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   const { user } = useAuth();
   const { auditTypes = [], departments: deptLookups = [] } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS']);
   const [attachments, setAttachments] = useState([]);
-  const [docDetails, setDocDetails] = useState('');
-  const [currentFile, setCurrentFile] = useState(null);
+
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recog = new SpeechRecognition();
+    recog.continuous = false;
+    recog.interimResults = false;
+    recog.lang = 'en-US';
+
+    recog.onstart = () => {
+      setIsListening(true);
+    };
+
+    recog.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        const cleaned = transcript
+          .replace(/^[.,\/#!$%\^&\*;:{}=\-_`~()?"']+|[.,\/#!$%\^&\*;:{}=\-_`~()?"']+$/g, '')
+          .trim()
+          .toUpperCase();
+        setFormData((prev) => ({
+          ...prev,
+          criteriaText: prev.criteriaText ? `${prev.criteriaText} ${cleaned}` : cleaned
+        }));
+      }
+      setIsListening(false);
+    };
+
+    recog.onerror = (event) => {
+      console.error('Speech recognition error in dialog', event.error);
+      setIsListening(false);
+
+      let errorMsg = 'Error during voice recognition. Please try again.';
+      if (event.error === 'not-allowed') {
+        errorMsg = 'Microphone permission denied. Please allow microphone access in your browser address bar/settings.';
+      } else if (event.error === 'no-speech') {
+        errorMsg = 'No speech detected. Please speak clearly into the microphone.';
+      } else if (event.error === 'network') {
+        errorMsg = 'Network error. Speech recognition requires an active internet connection.';
+      } else if (event.error === 'audio-capture') {
+        errorMsg = 'No microphone detected. Please connect a mic and try again.';
+      }
+
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: errorMsg,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: event.error === 'no-speech' ? 'info' : 'error',
+          close: false
+        })
+      );
+    };
+
+    recog.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recog;
+
+    return () => {
+      recog.onstart = null;
+      recog.onresult = null;
+      recog.onerror = null;
+      recog.onend = null;
+      try { recog.abort(); } catch (_) {}
+      recognitionRef.current = null;
+    };
+  }, [dispatch]);
+
+  const handleMicClick = (e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const recog = recognitionRef.current;
+    if (isListening) {
+      if (recog) recog.stop();
+    } else {
+      if (recog) {
+        try { recog.start(); } catch (err) { console.warn('Mic start error:', err); }
+      } else {
+        dispatch(
+          openSnackbar({
+            open: true,
+            message: 'Speech Recognition is not supported by your browser.',
+            variant: 'alert',
+            alert: { variant: 'filled' },
+            severity: 'warning',
+            close: false
+          })
+        );
+      }
+    }
+  };
 
   useEffect(() => {
     if (initialData) {
@@ -151,12 +253,12 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         attachmentInfo: JSON.stringify(updatedAttachments.map(att => ({
           id: att.id,
           fileName: att.fileName,
-          fileType: att.fileType,
+          fileType: att.fileType || 'FILE',
           serverFileName: att.serverFileName,
-          docDetails: att.docDetails
+          docDetails: att.docDetails || ''
         }))),
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdBy: formData.id ? formData.createdBy : (user?.empId || '1001'),
+        updatedBy: user?.empId || '1001'
       };
 
       if (formData.id) {
@@ -167,37 +269,12 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit criteria:', error);
-      alert('Error saving data. Please try again.');
+      if (error.response?.data && typeof error.response.data === 'string') {
+        alert(error.response.data);
+      } else {
+        alert('Error saving data. Please try again.');
+      }
     }
-  };
-
-  const handleAddFile = async () => {
-    if (!currentFile) return;
-    
-    try {
-      // autoUploadFile automatically detects 'QMS' from the URL
-      const uploadedPath = await autoUploadFile(currentFile);
-
-      const newAttachment = {
-        id: Date.now() + Math.random(),
-        fileName: currentFile.name,
-        fileType: currentFile.type.split('/')[1]?.toUpperCase() || 'FILE',
-        serverFileName: uploadedPath,
-        docDetails: docDetails,
-        isLoaded: true
-      };
-
-      setAttachments([...attachments, newAttachment]);
-      setCurrentFile(null);
-      setDocDetails('');
-    } catch (error) {
-      console.error('File upload failed:', error);
-      alert('Failed to upload file.');
-    }
-  };
-
-  const handleRemoveAttachment = (id) => {
-    setAttachments(attachments.filter((a) => a.id !== id));
   };
 
   const isViewOnly = readOnly && !isEditing;
@@ -210,7 +287,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       onDelete={handleDelete}
       onClear={handleClear}
       onEditClick={() => setIsEditing(true)}
-      title={initialData ? 'Edit Audit Criteria' : 'New Audit Criteria'}
+      title={initialData ? 'Edit Audit Criteria' : 'Audit Criteria'}
       isViewOnly={isViewOnly}
       hasId={!!formData.id}
       maxWidth="lg"
@@ -275,6 +352,38 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               onChange={handleChange}
               disabled={isViewOnly}
               required
+              InputProps={{
+                endAdornment: !isViewOnly && (
+                  <InputAdornment position="end" sx={{ alignSelf: 'flex-start', mt: 1 }}>
+                     <IconButton
+                      color={isListening ? 'error' : 'primary'}
+                      onClick={(e) => handleMicClick(e)}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      sx={{
+                        animation: isListening ? 'pulse 1.5s infinite' : 'none',
+                        '@keyframes pulse': {
+                          '0%': { transform: 'scale(1)' },
+                          '50%': { transform: 'scale(1.2)' },
+                          '100%': { transform: 'scale(1)' }
+                        }
+                      }}
+                    >
+                      {isListening ? <IconMicrophoneOff size={20} /> : <IconMicrophone size={20} />}
+                    </IconButton>
+                  </InputAdornment>
+                )
+              }}
             />
 
             <Autocomplete
@@ -316,24 +425,13 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, height: '100%' }}>
           <BOSFormSection title="Attachments" icon={<IconPaperclip size={20} color={theme.palette.secondary.main} />}>
-            <Box sx={{ mt: 1 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 2, alignItems: 'center', mb: 2 }}>
-                <BOSTextField
-                  label="Doc Details"
-                  value={docDetails}
-                  onChange={(e) => setDocDetails(e.target.value)}
-                  disabled={isViewOnly}
-                />
-                <Button variant="contained" color="primary" onClick={handleAddFile} disabled={isViewOnly || !currentFile} sx={{ height: 40 }}>
-                  Upload
-                </Button>
-              </Box>
-              <Button component="label" variant="outlined" startIcon={<IconPaperclip size={18} />} disabled={isViewOnly} fullWidth sx={{ mb: 3 }}>
-                {currentFile ? currentFile.name : 'Select File'}
-                <input type="file" hidden onChange={(e) => setCurrentFile(e.target.files[0])} />
-              </Button>
-              <BOSFileGallery files={attachments} onRemove={(idx) => handleRemoveAttachment(attachments[idx].id)} isEditing={!isViewOnly} />
-            </Box>
+            <BOSFileUpload
+              files={attachments}
+              onChange={setAttachments}
+              module="QMS"
+              multiple={true}
+              disabled={isViewOnly}
+            />
           </BOSFormSection>
         </Box>
       </Box>

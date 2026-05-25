@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface DeliveryTermRepository extends JpaRepository<DeliveryTerm, Long> {
+    boolean existsByTermNameIgnoreCase(String termName);
 }

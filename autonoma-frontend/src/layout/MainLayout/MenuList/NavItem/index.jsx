@@ -155,7 +155,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                       ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
                     }}
                   >
-                    <FormattedMessage id={item.title} />
+                    <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
                   </Typography>
                 }
                 secondary={
@@ -195,6 +195,88 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
             />
           )}
         </ListItemButton>
+      ) : item.pageCode ? (
+        <Tooltip
+          title={`Code: ${item.pageCode}`}
+          placement="left"
+          disableInteractive
+          arrow
+          slotProps={{
+            popper: {
+              sx: {
+                zIndex: 2500
+              }
+            }
+          }}
+        >
+          <ListItemButton
+            component={Link}
+            to={item.url}
+            target={itemTarget}
+            disabled={item.disabled}
+            sx={{
+              borderRadius: isParents ? `${borderRadius}px` : 0,
+              mb: isParents ? 0 : 0.5,
+              alignItems: 'flex-start',
+              backgroundColor: level > 1 ? 'transparent !important' : 'inherit',
+              py: 1,
+              pl: 2,
+              mr: isParents ? 1 : 0
+            }}
+            selected={isSelected}
+            onClick={() => itemHandler()}
+          >
+            <ListItemIcon
+              sx={{
+                my: 'auto',
+                minWidth: !item?.icon ? 18 : 36
+              }}
+            >
+              {itemIcon}
+            </ListItemIcon>
+
+            <ListItemText
+              sx={{ mb: 0.25 }}
+              primary={
+                <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
+                  <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+                </Typography>
+              }
+              secondary={
+                item.caption && (
+                  <Typography
+                    gutterBottom
+                    component="span"
+                    sx={{
+                      display: 'block',
+                      fontSize: '0.6875rem',
+                      fontWeight: 500,
+                      color: 'text.secondary',
+                      textTransform: 'capitalize',
+                      lineHeight: 1.66
+                    }}
+                  >
+                    {item.caption}
+                  </Typography>
+                )
+              }
+            />
+
+            {item.chip && (
+              <Chip
+                color={item.chip?.color}
+                variant={item.chip?.variant}
+                size={item.chip?.size}
+                label={item.chip?.label}
+                avatar={
+                  item.chip?.avatar ? (
+                    <Avatar>{item.chip?.avatar}</Avatar>
+                  ) : undefined
+                }
+              />
+            )}
+          </ListItemButton>
+        </Tooltip>
       ) : (
         <ListItemButton
           component={Link}
@@ -226,7 +308,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
             sx={{ mb: 0.25 }}
             primary={
               <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                <FormattedMessage id={item.title} />
+                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
               </Typography>
             }
             secondary={

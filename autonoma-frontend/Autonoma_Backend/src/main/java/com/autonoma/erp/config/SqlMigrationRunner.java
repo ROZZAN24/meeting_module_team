@@ -179,7 +179,30 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 Integer.class,
                 fileName);
 
-        return count != null && count > 0;
+        if (count != null && count > 0) {
+            return true;
+        }
+
+        // Backward compatibility: If the file is date-prefixed (e.g. 20260512_V3.4_1__...),
+        // check if it has already been executed under its old unprefixed name.
+        if (fileName != null && fileName.matches("^\\d{8}_.*")) {
+            String suffixName = fileName.substring(9); // strip YYYYMMDD_ (9 chars)
+            Integer suffixCount = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM ERP_EXECUTED_SCRIPTS WHERE SCRIPT_NAME = ?",
+                    Integer.class,
+                    suffixName);
+            if (suffixCount != null && suffixCount > 0) {
+                // Self-healing: mark the new prefixed name as executed to prevent redundant queries in the future
+                try {
+                    markAsExecuted(fileName);
+                } catch (Exception e) {
+                    // Ignore constraint/duplicate issues
+                }
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void markAsExecuted(String fileName) {

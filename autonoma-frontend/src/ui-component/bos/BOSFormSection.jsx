@@ -36,7 +36,7 @@ export default function BOSFormSection({ icon, title, children, defaultOpen = tr
         </IconButton>
       </Box>
       <Collapse in={isOpen} sx={{ '& .MuiCollapse-wrapper': { overflow: 'visible' }, '& .MuiCollapse-wrapperInner': { overflow: 'visible' } }}>
-        <Box sx={{ p: 3, ...contentSx }}>
+        <Box sx={{ p: 2.5, ...contentSx }}>
           <Stack spacing={2.5} sx={{ width: '100%' }}>
             {children}
           </Stack>

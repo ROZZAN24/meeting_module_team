@@ -26,6 +26,9 @@ public class EmployeeEducation {
     @Column(name = "institution_name", length = 255)
     private String institutionName;
 
+    @Column(length = 255)
+    private String university;
+
     @Column(length = 50)
     private String type;
 
@@ -35,8 +38,8 @@ public class EmployeeEducation {
     @Column(name = "percentage_grade", length = 20)
     private String percentageGrade;
 
-    @Column(length = 500)
-    private String documents;
+    @Column(name = "documents", length = 500)
+    private String certificateFile;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;

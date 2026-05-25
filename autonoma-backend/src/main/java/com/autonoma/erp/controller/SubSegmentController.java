@@ -1,7 +1,5 @@
 package com.autonoma.erp.controller;
 
-
-import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.SubSegment;
 import com.autonoma.erp.repository.SubSegmentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,30 +21,38 @@ public class SubSegmentController {
     }
 
     @PostMapping
-
-
-    @RequirePagePermission(pageCode = "M5280", action = "write")
-    public SubSegment create(@RequestBody SubSegment item) {
-        return repository.save(item);
+    public ResponseEntity<?> create(@RequestBody SubSegment item) {
+        if (repository.existsBySubSegmentCodeIgnoreCase(item.getSubSegmentCode())) {
+            return ResponseEntity.badRequest().body("Sub Segment Code already exists");
+        }
+        if (repository.existsBySubSegmentNameIgnoreCase(item.getSubSegmentName())) {
+            return ResponseEntity.badRequest().body("Sub Segment Name already exists");
+        }
+        return ResponseEntity.ok(repository.save(item));
     }
 
     @PutMapping("/{id}")
-
-
-    @RequirePagePermission(pageCode = "M5280", action = "write")
-    public ResponseEntity<SubSegment> update(@PathVariable Long id, @RequestBody SubSegment item) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody SubSegment item) {
         return repository.findById(id)
                 .map(existing -> {
-                    item.setId(id);
-                    return ResponseEntity.ok(repository.save(item));
+                    if (!existing.getSubSegmentCode().equalsIgnoreCase(item.getSubSegmentCode()) && repository.existsBySubSegmentCodeIgnoreCase(item.getSubSegmentCode())) {
+                        return ResponseEntity.badRequest().body("Sub Segment Code already exists");
+                    }
+                    if (!existing.getSubSegmentName().equalsIgnoreCase(item.getSubSegmentName()) && repository.existsBySubSegmentNameIgnoreCase(item.getSubSegmentName())) {
+                        return ResponseEntity.badRequest().body("Sub Segment Name already exists");
+                    }
+                    existing.setSegmentName(item.getSegmentName());
+                    existing.setSubSegmentCode(item.getSubSegmentCode());
+                    existing.setSubSegmentName(item.getSubSegmentName());
+                    existing.setSubSegmentDescription(item.getSubSegmentDescription());
+                    existing.setStatus(item.getStatus());
+                    existing.setUpdatedBy(item.getUpdatedBy());
+                    return ResponseEntity.ok(repository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
-
-
-    @RequirePagePermission(pageCode = "M5280", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();

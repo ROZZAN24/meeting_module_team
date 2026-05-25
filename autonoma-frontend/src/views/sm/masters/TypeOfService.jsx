@@ -26,8 +26,6 @@ const columns = [
 export default function TypeOfService() {
   const perms = usePagePermissions(PAGE_CODES.SM_TYPE_OF_SERVICE);
   const [rows, setRows] = useState([]);
-  const dispatch = useDispatch();
-  const globalQuery = useSelector((state) => state.search.query);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);
@@ -89,6 +87,8 @@ export default function TypeOfService() {
       fetchRows();
     } catch (err) {
       console.error(err);
+      const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
+      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
     }
   };
 

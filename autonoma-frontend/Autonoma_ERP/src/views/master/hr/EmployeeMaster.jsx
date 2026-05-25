@@ -56,7 +56,7 @@ const RULES = [
 
 // Shared field renderer using Grid for consistent layout
 // Shared field renderer using Grid for consistent layout - standardized to 4 columns for even spacing
-const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg} xl={4}>{children}</Grid>;
 
 export default function EmployeeMaster() {
   const theme = useTheme();

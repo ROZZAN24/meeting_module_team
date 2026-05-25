@@ -147,6 +147,7 @@ public class ChecklistService {
                     List<Predicate> orPredicates = new ArrayList<>();
                     orPredicates.add(cb.like(cb.lower(root.get("seqNo").as(String.class)), searchTerm));
                     orPredicates.add(cb.like(cb.lower(root.get("checkingPoint").as(String.class)), searchTerm));
+                    orPredicates.add(cb.like(cb.lower(root.get("description")), searchTerm));
                     orPredicates.add(cb.like(cb.lower(root.get("category").as(String.class)), searchTerm));
                     orPredicates.add(cb.like(cb.lower(root.get("frequency").as(String.class)), searchTerm));
                     orPredicates.add(cb.like(cb.lower(root.get("status").as(String.class)), searchTerm));

@@ -53,6 +53,9 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      clearErrors(name);
+    }
   };
 
   const handleClear = () => {
@@ -66,8 +69,8 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
     try {
       const payload = {
         ...formData,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        ...(formData.id ? { updatedBy: user?.name || 'Admin' } : {})
+        createdBy: formData.id ? formData.createdBy : (user?.empId || '1001'),
+        ...(formData.id ? { updatedBy: user?.empId || '1001' } : {})
       };
 
       if (formData.id) {
@@ -80,7 +83,14 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit area:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to save audit area.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errMsg = 'Failed to save audit area.';
+      if (error.response && error.response.data) {
+        errMsg = typeof error.response.data === 'string' ? error.response.data : (error.response.data.message || errMsg);
+      }
+      if (errMsg.toLowerCase().includes('already exists') || errMsg.toLowerCase().includes('duplicate')) {
+        setErrors({ description: errMsg });
+      }
+      dispatch(openSnackbar({ open: true, message: errMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 
@@ -107,7 +117,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
         onDelete={() => setDeleteOpen(true)}
         onClear={handleClear}
         onEditClick={() => setIsEditing(true)}
-        title={initialData ? 'Edit Audit Area' : 'New Audit Area'}
+        title={initialData ? 'Edit Audit Area' : 'Audit Area'}
         isViewOnly={isViewOnly}
         hasId={!!formData.id}
         maxWidth="md"

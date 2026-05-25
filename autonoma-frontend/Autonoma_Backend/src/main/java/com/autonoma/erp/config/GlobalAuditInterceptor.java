@@ -19,14 +19,15 @@ public class GlobalAuditInterceptor implements Interceptor {
 
     @Autowired
     @Lazy
-    private com.autonoma.erp.service.AuditTrailService auditTrailService;
+    private com.autonoma.erp.service.admin.AuditTrailService auditTrailService;
 
     @Autowired
     @Lazy
     private ObjectMapper objectMapper;
 
     @Override
-    public boolean onFlushDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames, Type[] types) {
+    public boolean onFlushDirty(Object entity, Serializable id, Object[] currentState, Object[] previousState,
+            String[] propertyNames, Type[] types) {
         if (shouldSkip(entity)) {
             return false;
         }
@@ -37,11 +38,11 @@ public class GlobalAuditInterceptor implements Interceptor {
 
         for (int i = 0; i < propertyNames.length; i++) {
             String propName = propertyNames[i];
-            
+
             // Skip standard audit columns as requested by the user
-            if (propName.equalsIgnoreCase("updatedBy") || propName.equalsIgnoreCase("createdBy") || 
-                propName.equalsIgnoreCase("updatedDate") || propName.equalsIgnoreCase("createdDate") ||
-                propName.equalsIgnoreCase("updated_at") || propName.equalsIgnoreCase("created_at")) {
+            if (propName.equalsIgnoreCase("updatedBy") || propName.equalsIgnoreCase("createdBy") ||
+                    propName.equalsIgnoreCase("updatedDate") || propName.equalsIgnoreCase("createdDate") ||
+                    propName.equalsIgnoreCase("updated_at") || propName.equalsIgnoreCase("created_at")) {
                 continue;
             }
 
@@ -69,14 +70,14 @@ public class GlobalAuditInterceptor implements Interceptor {
 
         String tableName = entity.getClass().getSimpleName();
         StringBuilder currValues = new StringBuilder();
-        
+
         for (int i = 0; i < propertyNames.length; i++) {
             String propName = propertyNames[i];
-            
+
             // Skip standard audit columns
-            if (propName.equalsIgnoreCase("updatedBy") || propName.equalsIgnoreCase("createdBy") || 
-                propName.equalsIgnoreCase("updatedDate") || propName.equalsIgnoreCase("createdDate") ||
-                propName.equalsIgnoreCase("updated_at") || propName.equalsIgnoreCase("created_at")) {
+            if (propName.equalsIgnoreCase("updatedBy") || propName.equalsIgnoreCase("createdBy") ||
+                    propName.equalsIgnoreCase("updatedDate") || propName.equalsIgnoreCase("createdDate") ||
+                    propName.equalsIgnoreCase("updated_at") || propName.equalsIgnoreCase("created_at")) {
                 continue;
             }
 
@@ -122,9 +123,9 @@ public class GlobalAuditInterceptor implements Interceptor {
             for (int i = 0; i < propertyNames.length; i++) {
                 String name = propertyNames[i].toLowerCase();
                 // Priority detection: name, code, title, number, no, id
-                if (name.contains("name") || name.contains("code") || name.contains("title") || 
-                    name.contains("no") || name.contains("number") || name.contains("id")) {
-                    
+                if (name.contains("name") || name.contains("code") || name.contains("title") ||
+                        name.contains("no") || name.contains("number") || name.contains("id")) {
+
                     if (state[i] != null && !state[i].toString().isEmpty()) {
                         String value = state[i].toString();
                         // If it's a 'name' or 'code', we prefer it immediately
@@ -141,42 +142,59 @@ public class GlobalAuditInterceptor implements Interceptor {
     }
 
     private boolean isChanged(Object oldVal, Object newVal) {
-        if (oldVal == null && newVal == null) return false;
-        if (oldVal == null || newVal == null) return true;
+        if (oldVal == null && newVal == null)
+            return false;
+        if (oldVal == null || newVal == null)
+            return true;
         return !oldVal.equals(newVal);
     }
 
     private boolean shouldSkip(Object entity) {
-        if (entity instanceof com.autonoma.erp.model.AuditTrail) {
+        if (entity instanceof com.autonoma.erp.model.admin.AuditTrail) {
             return true;
         }
-        
+
         String className = entity.getClass().getSimpleName();
         // Skip session monitoring and user activity data as requested
-        return className.equals("UserSession") || 
-               className.equals("UserSessionActivity") || 
-               className.equals("EmployeeActivity");
+        if (className.equals("UserSession") ||
+                className.equals("UserSessionActivity") ||
+                className.equals("EmployeeActivity")) {
+            return true;
+        }
+
+        // Skip chat/oneconnect messaging and channel details as requested
+        if (entity.getClass().getName().startsWith("com.autonoma.erp.model.chat") ||
+                className.equals("CommMessage") ||
+                className.equals("CommChannel") ||
+                className.equals("CommChannelMember") ||
+                className.equals("CommUserStatus")) {
+            return true;
+        }
+
+        return false;
     }
 
-    private void saveAuditTrail(String actionType, String tableName, String recordId, String prevVal, String currVal, String comments) {
+    private void saveAuditTrail(String actionType, String tableName, String recordId, String prevVal, String currVal,
+            String comments) {
         // Capture context in the current thread before moving to async
         String userId = AuditContextHolder.getUserId();
         String pageName = AuditContextHolder.getPageName();
-        
+
         // Ensure audit is only saved if the transaction commits successfully
         if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
             org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                new org.springframework.transaction.support.TransactionSynchronization() {
-                    @Override
-                    public void afterCommit() {
-                        // Hand off to async service ONLY after successful commit
-                        auditTrailService.saveAuditTrailAsync(actionType, tableName, recordId, prevVal, currVal, comments, userId, pageName);
-                    }
-                }
-            );
+                    new org.springframework.transaction.support.TransactionSynchronization() {
+                        @Override
+                        public void afterCommit() {
+                            // Hand off to async service ONLY after successful commit
+                            auditTrailService.saveAuditTrailAsync(actionType, tableName, recordId, prevVal, currVal,
+                                    comments, userId, pageName);
+                        }
+                    });
         } else {
             // If no active transaction (unlikely in this context), save directly/async
-            auditTrailService.saveAuditTrailAsync(actionType, tableName, recordId, prevVal, currVal, comments, userId, pageName);
+            auditTrailService.saveAuditTrailAsync(actionType, tableName, recordId, prevVal, currVal, comments, userId,
+                    pageName);
         }
     }
 }

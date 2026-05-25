@@ -35,8 +35,7 @@ const columns = [
   { id: 'seqNo', label: 'SEQ NO', minWidth: 80 },
   { id: 'clause', label: 'CLAUSE', minWidth: 80 },
   { id: 'criteriaDetails', label: 'CRITERIA DETAILS', minWidth: 250 },
-  { id: 'auditee', label: 'AUDITEE NAME', minWidth: 150 },
-  { id: 'ncrApprovedBy', label: 'NCR APPROVED BY', minWidth: 150 },
+  { id: 'ncrApprovedBy', label: 'NC APPROVED BY', minWidth: 150 },
   { id: 'attachmentReq', label: 'ATTACH REQ', minWidth: 100 },
   { id: 'observationStatus', label: 'OBR STATUS', minWidth: 100 },
   { id: 'ncrStatus', label: 'APPROVAL STATUS', minWidth: 130 },
@@ -86,8 +85,8 @@ export default function AuditNcrClose() {
       { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
-      { id: 'observationStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NCR', label: 'NCR' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NCR No' }], defaultValue: 'observationNo' }
+      { id: 'observationStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -169,7 +168,7 @@ export default function AuditNcrClose() {
       console.log('Files to upload:', uploadedFiles.map(f => f.name));
 
       await axios.post('/api/qms/ncr-ofi', submitData);
-      dispatch(openSnackbar({ open: true, message: 'NCR / OFI submitted for closure successfully!', severity: 'success' }));
+      dispatch(openSnackbar({ open: true, message: 'NC / OFI submitted for closure successfully!', severity: 'success' }));
       setDialogOpen(false);
       fetchData();
     } catch (e) {
@@ -186,7 +185,7 @@ export default function AuditNcrClose() {
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    if (col.id === 'observationStatus') return <Chip label={row.observationStatus} size="small" color={row.observationStatus === 'NCR' ? 'error' : 'warning'} />;
+    if (col.id === 'observationStatus') return <Chip label={row.observationStatus} size="small" color={row.observationStatus === 'NC' || row.observationStatus === 'NCR' ? 'error' : 'warning'} />;
     if (col.id === 'ncrStatus') {
         const status = row.ncrStatus || 'OPEN';
         return <Chip label={status.replace('_', ' ')} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
@@ -207,13 +206,13 @@ export default function AuditNcrClose() {
 
   return (
     <MainCard
-      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconCircleCheck size={24} /><Typography variant="h3">Close NCR / OFI Findings</Typography></Stack>}
+      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconCircleCheck size={24} /><Typography variant="h3">Close NC / OFI Findings</Typography></Stack>}
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
           {perms.export && <BOSExportButton
             data={rows}
-            filename="NCR_Closure_List"
+            filename="NC_Closure_List"
             columns={[
               { header: 'OBSERVATION NO', key: 'observationNo' },
               { header: 'OBSERVATION DATE', key: 'observationDate' },
@@ -227,14 +226,14 @@ export default function AuditNcrClose() {
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSaveClose} onClear={resetForm} title="Submit NCR / OFI for Closure" maxWidth="lg">
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSaveClose} onClear={resetForm} title="Submit NC / OFI for Closure" maxWidth="lg">
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.8fr 1.2fr' }, gap: 4, width: '100%' }}>
           
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <BOSFormSection title="Finding Summary" icon={<IconAlertTriangle size={20} color={theme.palette.error.main} />}>
               <Grid container spacing={3.5}>
                 <R lg={4}><BOSTextField label="Observation No" value={selectedFinding?.observationNo || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
-                <R lg={4}><BOSTextField label="NCR / OFI No" value={nextNcrNo || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
+                <R lg={4}><BOSTextField label="NC / OFI No" value={nextNcrNo || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
                 <R lg={4}><BOSTextField label="Observation Date" value={selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
                 <R lg={6}><BOSTextField label="Audit Type" value={selectedFinding?.auditType || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
                 <R lg={6}><BOSTextField label="Department" value={selectedFinding?.departmentName || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
@@ -281,7 +280,7 @@ export default function AuditNcrClose() {
                     color="primary.main"
                 />
                 <BOSPersonnelCard 
-                    title="NCR Approved By" 
+                    title="NC Approved By" 
                     name={selectedFinding?.ncrApprovedBy} 
                     empCode={getEmployeeDetails(selectedFinding?.ncrApprovedBy).empCode}
                     department={getEmployeeDetails(selectedFinding?.ncrApprovedBy).departmentName}
