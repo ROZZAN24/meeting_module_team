@@ -429,7 +429,7 @@ export default function CloseCheckListRenewal() {
       title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.write && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>}
+          {perms.write && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => setDialogOpen(true)} disabled={!selectedRowId}>Complete Task</Button>}
           {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }

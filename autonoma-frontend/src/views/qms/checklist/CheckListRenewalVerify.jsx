@@ -32,7 +32,7 @@ import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
 import { BOSExportButton } from 'ui-component/bos';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
+import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX, IconCheck } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
