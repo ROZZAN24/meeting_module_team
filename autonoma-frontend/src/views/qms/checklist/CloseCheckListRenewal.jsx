@@ -227,7 +227,19 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
   let label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip 
+      label={label || 'Pending'} 
+      size="small" 
+      color={colorMap[label] || 'default'} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CloseCheckListRenewal() {

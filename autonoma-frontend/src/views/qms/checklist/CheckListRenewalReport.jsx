@@ -192,7 +192,19 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Open': 'info', 'Pending for Verified': 'warning', 'Verified': 'success' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Open'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip 
+      label={label || 'Open'} 
+      size="small" 
+      color={colorMap[label] || 'default'} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CheckListRenewalReport() {

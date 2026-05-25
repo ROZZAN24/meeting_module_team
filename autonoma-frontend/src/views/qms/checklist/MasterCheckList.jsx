@@ -100,7 +100,7 @@ const columns = [
   { 
     id: 'verifyStatus', 
     label: 'Verify Status',   
-    minWidth: 140,
+    minWidth: 160,
     render: (row) => {
       const statusText = row.verifyStatus || 'Pending for Verify';
       const map = {
@@ -116,7 +116,11 @@ const columns = [
           color={cfg.color} 
           icon={cfg.icon} 
           variant="outlined" 
-          sx={{ fontWeight: 700 }}
+          sx={{ 
+            fontWeight: 700,
+            width: '160px',
+            justifyContent: 'center'
+          }}
         />
       );
     }

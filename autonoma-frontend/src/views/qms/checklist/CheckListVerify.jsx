@@ -190,7 +190,20 @@ function StatusChip({ status }) {
     'Pending for Verify': { color: 'warning', icon: null }
   };
   const cfg = map[status] || { color: 'default', icon: null };
-  return <Chip label={status} size="small" color={cfg.color} icon={cfg.icon} variant="outlined" />;
+  return (
+    <Chip 
+      label={status} 
+      size="small" 
+      color={cfg.color} 
+      icon={cfg.icon} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CheckListVerify() {
