@@ -3088,8 +3088,8 @@ export default function TicketManagement({ viewType }) {
                 variant="contained"
                 onClick={() => { resetForm(); setCreateOpen(true); }}
                 sx={{
-                  height: '70px',
-                  borderRadius: '12px',
+                  height: '46px',
+                  borderRadius: '8px',
                   bgcolor: '#673ab7',
                   '&:hover': { bgcolor: '#5e35b1' },
                   px: 3,
@@ -3097,7 +3097,6 @@ export default function TicketManagement({ viewType }) {
                   whiteSpace: 'nowrap',
                   boxShadow: '0 4px 14px 0 rgba(103,58,183,0.39)',
                   display: 'flex',
-                  flexDirection: 'column',
                   justifyContent: 'center',
                   alignItems: 'center'
                 }}
