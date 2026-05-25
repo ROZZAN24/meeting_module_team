@@ -323,7 +323,8 @@ export default function MasterCheckList() {
   };
 
   const handleAssign = (row) => {
-    if (row?.verifyStatus !== 'Verified') {
+    const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+    if (!isAdmin && row?.verifyStatus !== 'Verified') {
       dispatch(openSnackbar({ open: true, message: 'Only verified checklists can be assigned!', variant: 'alert', severity: 'warning' }));
       return;
     }
