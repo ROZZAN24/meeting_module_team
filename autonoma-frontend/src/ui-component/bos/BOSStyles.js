@@ -261,9 +261,10 @@ export const tableActionDeleteSx = {
 
 export const getStatusChipSx = (status) => {
   const isActive = ['ACTIVE', 'Active', 'active'].includes(status);
+  const isSuspended = ['SUSPENDED', 'Suspended', 'suspended'].includes(status);
   return {
-    bgcolor: isActive ? '#e8f5e9' : '#ffebee',
-    color: isActive ? '#2e7d32' : '#c62828',
+    bgcolor: isActive ? '#e8f5e9' : (isSuspended ? '#fffde7' : '#ffebee'),
+    color: isActive ? '#2e7d32' : (isSuspended ? '#f57f17' : '#c62828'),
     fontWeight: 700
   };
 };

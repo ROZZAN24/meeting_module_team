@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Activity, Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { matchPath, useLocation } from 'react-router-dom';
 
 // material-ui
@@ -132,11 +132,11 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
       {itemRem.url ? (
         <NavItem item={itemRem} level={1} />
       ) : (
-        <Activity mode={itemRem.title ? 'visible' : 'hidden'}>
+        itemRem.title ? (
           <Typography variant="caption" sx={{ pl: 2 }}>
             {itemRem.title} {itemRem.url}
           </Typography>
-        </Activity>
+        ) : null
       )}
       {itemRem?.elements?.map((menu) => {
         switch (menu?.type) {
@@ -205,9 +205,9 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
           </List>
 
           {/* group divider */}
-          <Activity mode={drawerOpen ? 'visible' : 'hidden'}>
+          {drawerOpen && (
             <Divider sx={{ mt: 0.25, mb: 1.25 }} />
-          </Activity>
+          )}
         </>
       ) : (
         <List sx={{ display: 'flex', alignItems: 'center' }}>
@@ -233,11 +233,11 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
             >
               {/* Icon and Sub-icons container */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Activity mode={itemIcon ? 'visible' : 'hidden'}>
+                {itemIcon && (
                   <ListItemIcon sx={{ minWidth: 0, color: isSelected ? 'primary.main' : 'inherit' }}>
                     {currentItem.id === lastItemId ? <IconMinusVertical stroke={1.5} size="20px" /> : itemIcon}
                   </ListItemIcon>
-                </Activity>
+                )}
 
                 {/* Sub-menu icons (max 5) */}
                 {currentItem.children && (
@@ -252,7 +252,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                   </Box>
                 )}
               </Box>{' '}
-              <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+              {anchorEl && (
                 <Popper
                   id={popperId}
                   open={openMini}
@@ -334,7 +334,7 @@ export default function NavGroup({ item, lastItem, remItems, lastItemId, selecte
                     </Transitions>
                   )}
                 </Popper>
-              </Activity>
+              )}
             </ListItemButton>
           </Tooltip>
           {currentItem.id !== lastItemId && (
