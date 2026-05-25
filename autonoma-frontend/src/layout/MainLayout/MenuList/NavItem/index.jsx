@@ -198,7 +198,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
       ) : item.pageCode ? (
         <Tooltip
           title={`Code: ${item.pageCode}`}
-          placement="top"
+          placement="left"
           arrow
           slotProps={{
             popper: {

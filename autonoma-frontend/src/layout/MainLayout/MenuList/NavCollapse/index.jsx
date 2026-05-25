@@ -399,7 +399,7 @@ export default function NavCollapse({ menu, level, parentId }) {
           {menu.pageCode ? (
             <Tooltip
               title={`Code: ${menu.pageCode}`}
-              placement="top"
+              placement="left"
               arrow
               slotProps={{
                 popper: {
