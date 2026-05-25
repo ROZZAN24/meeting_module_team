@@ -475,32 +475,111 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   const sidebarContent = (
     <Stack spacing={3}>
-      <Paper sx={{ p: 2.5, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light' }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-          <IconInfoCircle size={20} color={theme.palette.primary.main} />
-          <Typography variant="subtitle2" color="primary.main" fontWeight={700}>Audit Log</Typography>
-        </Stack>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>System ID: {initialData?.id || 'Draft'}</Typography>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>Sequence: {seqNo || '-'}</Typography>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>Created By: {initialData?.createdBy || '-'}</Typography>
-        <Typography variant="caption" display="block" sx={{ mb: 0.5 }}>Created Date: {formatDateForInput(initialData?.createdAt) || '-'}</Typography>
-        {initialData?.updatedAt && (
-          <Typography variant="caption" display="block">Last Updated: {formatDateForInput(initialData.updatedAt)}</Typography>
-        )}
-      </Paper>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Uploaded Files</Typography>
+          {!isViewOnly && (
+            <Button
+              component="label"
+              variant="contained"
+              size="small"
+              startIcon={<IconCloudUpload size={16} />}
+              sx={{
+                textTransform: 'none',
+                borderRadius: '8px',
+                bgcolor: 'primary.main', 
+                '&:hover': { bgcolor: 'primary.dark' }
+              }}
+            >
+              Upload File
+              <input type="file" hidden multiple onChange={handleFileUpload} />
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ 
+          height: 200, 
+          bgcolor: 'background.paper', 
+          border: '1px dashed', 
+          borderColor: 'divider',
+          borderRadius: '10px', 
+          p: 3,
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          gap: 1.5,
+          overflowY: 'auto'
+        }}>
+          {uploadedFiles.length === 0 ? (
+            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <IconCloudUpload size={48} stroke={1.5} color={theme.palette.primary.main} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file uploaded yet</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {uploadedFiles.map((f, i) => (
+                <FileItem
+                  key={i} file={f}
+                  onPreview={handlePreviewOpen}
+                  onRemove={isViewOnly ? undefined : handleRemoveFile}
+                />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
 
-      <Paper sx={{ p: 2.5, bgcolor: 'secondary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'secondary.light' }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
-          <IconAlertCircle size={20} color={theme.palette.secondary.main} />
-          <Typography variant="subtitle2" color="secondary.main" fontWeight={700}>SOP Guidelines</Typography>
-        </Stack>
-        <Typography variant="caption" display="block" sx={{ mb: 1 }}>
-          Ensure all standard checking points and descriptions are entered clearly.
-        </Typography>
-        <Typography variant="caption" display="block">
-          For renewal categories, expiry dates and reminder thresholds are mandatory.
-        </Typography>
-      </Paper>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Scanned Files</Typography>
+          {!isViewOnly && (
+            <Button
+              component="label"
+              variant="contained"
+              size="small"
+              startIcon={<IconCamera size={16} />}
+              sx={{
+                textTransform: 'none',
+                borderRadius: '8px',
+                bgcolor: 'secondary.main',
+                '&:hover': { bgcolor: 'secondary.dark' }
+              }}
+            >
+              Scan & Upload
+              <input type="file" hidden multiple accept="image/*" onChange={handleScanUpload} />
+            </Button>
+          )}
+        </Box>
+        <Box sx={{ 
+          height: 200, 
+          bgcolor: 'background.paper', 
+          border: '1px dashed', 
+          borderColor: 'divider',
+          borderRadius: '10px', 
+          p: 3,
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          gap: 1.5,
+          overflowY: 'auto'
+        }}>
+          {scannedFiles.length === 0 ? (
+            <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              <IconFileDescription size={48} stroke={1.5} color={theme.palette.secondary.main} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file scanned yet</Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
+            </Box>
+          ) : (
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {scannedFiles.map((f, i) => (
+                <FileItem key={i} file={f} onPreview={handlePreviewOpen} onRemove={isViewOnly ? undefined : handleRemoveScannedFile} />
+              ))}
+            </Box>
+          )}
+        </Box>
+      </Box>
     </Stack>
   );
 
@@ -819,124 +898,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           )}
         </BOSFormSection>
 
-        <BOSFormSection
-          icon={<IconCloudUpload size={22} color={theme.palette.primary.main} />}
-          title="Reference Files & Attachments"
-        >
-          <Grid container spacing={3}>
-            {/* Uploaded Files box */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Uploaded Files</Typography>
-                  {!isViewOnly && (
-                    <Button
-                      component="label"
-                      variant="contained"
-                      size="small"
-                      startIcon={<IconCloudUpload size={16} />}
-                      sx={{
-                        textTransform: 'none',
-                        borderRadius: '8px',
-                        bgcolor: 'primary.main', 
-                        '&:hover': { bgcolor: 'primary.dark' }
-                      }}
-                    >
-                      Upload File
-                      <input type="file" hidden multiple onChange={handleFileUpload} />
-                    </Button>
-                  )}
-                </Box>
-                <Box sx={{ 
-                  height: 200, 
-                  bgcolor: 'background.paper', 
-                  border: '1px dashed', 
-                  borderColor: 'divider',
-                  borderRadius: '10px', 
-                  p: 3,
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: 1.5,
-                  overflowY: 'auto'
-                }}>
-                  {uploadedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                      <IconCloudUpload size={48} stroke={1.5} color={theme.palette.primary.main} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file uploaded yet</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {uploadedFiles.map((f, i) => (
-                        <FileItem
-                          key={i} file={f}
-                          onPreview={handlePreviewOpen}
-                          onRemove={isViewOnly ? undefined : handleRemoveFile}
-                        />
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Grid>
 
-            {/* Scanned Files box */}
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Scanned Files</Typography>
-                  {!isViewOnly && (
-                    <Button
-                      component="label"
-                      variant="contained"
-                      size="small"
-                      startIcon={<IconCamera size={16} />}
-                      sx={{
-                        textTransform: 'none',
-                        borderRadius: '8px',
-                        bgcolor: 'secondary.main',
-                        '&:hover': { bgcolor: 'secondary.dark' }
-                      }}
-                    >
-                      Scan & Upload
-                      <input type="file" hidden multiple accept="image/*" onChange={handleScanUpload} />
-                    </Button>
-                  )}
-                </Box>
-                <Box sx={{ 
-                  height: 200, 
-                  bgcolor: 'background.paper', 
-                  border: '1px dashed', 
-                  borderColor: 'divider',
-                  borderRadius: '10px', 
-                  p: 3,
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  gap: 1.5,
-                  overflowY: 'auto'
-                }}>
-                  {scannedFiles.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-                      <IconFileDescription size={48} stroke={1.5} color={theme.palette.secondary.main} />
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>No file scanned yet</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
-                    </Box>
-                  ) : (
-                    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      {scannedFiles.map((f, i) => (
-                        <FileItem key={i} file={f} onPreview={handlePreviewOpen} onRemove={isViewOnly ? undefined : handleRemoveScannedFile} />
-                      ))}
-                    </Box>
-                  )}
-                </Box>
-              </Box>
-            </Grid>
-          </Grid>
-        </BOSFormSection>
       </BOSFormDialog>
 
       {/* ── BOS File Preview Dialog ── */}

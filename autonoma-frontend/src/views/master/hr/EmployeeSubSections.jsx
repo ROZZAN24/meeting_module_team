@@ -73,44 +73,47 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
         );
       return (
         <R key={f.name || i} lg={f.lg || 4}>
-            {f.select ? (
-              <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled || f.disabled}>
-                {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-              </BOSTextField>
-            ) : f.type === 'file' ? (
-              <BOSFileUpload
-                files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
-                onChange={(files) => upload(f.name, files)}
-                module="HRA_PROFILE"
-                multiple={false}
-                maxFiles={1}
-                compact={true}
-                label={f.label}
-                disabled={disabled || f.disabled}
-              />
-            ) : f.type === 'date' ? (
-              <BOSDatePicker
-                name={f.name}
-                label={f.label}
-                value={form[f.name] || ''}
-                onChange={h}
-                disabled={disabled || f.disabled}
-                required={f.required}
-              />
-            ) : (
-              <BOSTextField 
-                name={f.name} 
-                label={f.label} 
-                value={form[f.name] || ''} 
-                onChange={h} 
-                type={f.type || 'text'} 
-                maxLength={f.max} 
-                disabled={disabled || f.disabled} 
-                multiline={f.multiline} 
-                rows={f.rows}
-                required={f.required}
-              />
-            )}
+            {(() => {
+              const isFldDisabled = disabled || (typeof f.disabled === 'function' ? f.disabled(form) : f.disabled);
+              return f.select ? (
+                <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={isFldDisabled}>
+                  {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                </BOSTextField>
+              ) : f.type === 'file' ? (
+                <BOSFileUpload
+                  files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
+                  onChange={(files) => upload(f.name, files)}
+                  module="HRA_PROFILE"
+                  multiple={false}
+                  maxFiles={1}
+                  compact={true}
+                  label={f.label}
+                  disabled={isFldDisabled}
+                />
+              ) : f.type === 'date' ? (
+                <BOSDatePicker
+                  name={f.name}
+                  label={f.label}
+                  value={form[f.name] || ''}
+                  onChange={h}
+                  disabled={isFldDisabled}
+                  required={f.required}
+                />
+              ) : (
+                <BOSTextField 
+                  name={f.name} 
+                  label={f.label} 
+                  value={form[f.name] || ''} 
+                  onChange={h} 
+                  type={f.type || 'text'} 
+                  maxLength={f.max} 
+                  disabled={isFldDisabled} 
+                  multiline={f.multiline} 
+                  rows={f.rows}
+                  required={f.required}
+                />
+              );
+            })()}
           </R>
         );
       })}
@@ -302,7 +305,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
       <Section1to1 title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} onPreview={onPreview} fields={[
         { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
         { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'] },
-        { name: 'marriageDate', label: 'Married Date', type: 'date', hideIf: (f) => f.maritalStatus !== 'MARRIED', required: true }, 
+        { name: 'marriageDate', label: 'Married Date', type: 'date', disabled: (f) => f.maritalStatus !== 'MARRIED', required: true }, 
         { name: 'birthDate', label: 'DOB', type: 'date' },
         { name: 'dateOfJoining', label: 'DOJ', type: 'date', disabled: true }, 
         { name: 'nationality', label: 'Nationality', max: 100 },
@@ -312,8 +315,8 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         { name: 'shirtSize', label: 'Shirt Size', select: true, options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
         { name: 'pantSize', label: 'Pant Size', max: 20 },
         { name: 'shoeSize', label: 'Shoe Size', max: 20 },
-        { name: 'height', label: 'Height', type: 'number' },
-        { name: 'weight', label: 'Weight', type: 'number' }
+        { name: 'height', label: 'Height', type: 'number', lg: 6 },
+        { name: 'weight', label: 'Weight', type: 'number', lg: 6 }
       ]} />
 
       {/* 6. ADDRESS DETAILS */}
@@ -417,7 +420,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         { name: 'pfEmployee', label: 'PF Employee', type: 'number' },
         { name: 'esiEmployee', label: 'ESI Employee', type: 'number' },
         { name: 'professionalTax', label: 'Professional tax', type: 'number' },
-        { name: 'pfDocument', label: 'Upload PF Document', type: 'file' }
+        { name: 'pfDocument', label: 'Upload PF Document', type: 'file', lg: 12 }
       ]} />
 
       {/* 12. CTC DETAILS */}
