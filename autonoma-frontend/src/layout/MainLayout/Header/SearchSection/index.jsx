@@ -237,10 +237,17 @@ export default function SearchSection() {
       tableConfig.forEach(col => {
         if (!col || col.id === 'index' || col.id === 'photo' || col.id === 'actions') return;
         if (!list.find(f => f && f.id === col.id)) {
+          const isDateCol = (col.id.toLowerCase().includes('date') || 
+                             col.id.endsWith('At') || 
+                             col.id.endsWith('_at') || 
+                             col.id === 'entryDate' ||
+                             col.id === 'invoiceDate') &&
+                            !(col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category'));
+
           list.push({ 
             id: col.id, 
             label: col.label || col.id, 
-            type: col.options && col.options.length > 0 ? 'autocomplete' : 'text', 
+            type: isDateCol ? 'dateRange' : (col.options && col.options.length > 0 ? 'autocomplete' : 'text'), 
             isRequired: col.required,
             options: col.options || []
           });
@@ -524,23 +531,23 @@ export default function SearchSection() {
                                 <Stack direction="row" spacing={1} alignItems="center">
                                   <TextField
                                     type="date"
+                                    label="From"
                                     fullWidth size="small"
                                     variant="outlined"
                                     value={filters[`${field.id}Start`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-                                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
                                   <TextField
                                     type="date"
+                                    label="To"
                                     fullWidth size="small"
                                     variant="outlined"
                                     value={filters[`${field.id}End`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-                                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                 </Stack>
@@ -552,7 +559,6 @@ export default function SearchSection() {
                                   value={filters[field.id] || ''}
                                   onChange={(e) => handleFilterChange(field.id, e.target.value)}
                                   slotProps={{ inputLabel: { shrink: true } }}
-                                  inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                 />
                               ) : (
