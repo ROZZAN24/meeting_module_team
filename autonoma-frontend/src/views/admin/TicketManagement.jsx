@@ -39,7 +39,11 @@ import {
   Select,
   FormControl,
   OutlinedInput,
-  InputAdornment
+  InputAdornment,
+  Fab,
+  Tabs,
+  Tab,
+  Collapse
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 
@@ -83,6 +87,9 @@ import SettingsVoiceIcon from '@mui/icons-material/SettingsVoice';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import StopIcon from '@mui/icons-material/Stop';
 import ArchiveIcon from '@mui/icons-material/Archive';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -208,6 +215,28 @@ export default function TicketManagement({ viewType }) {
   const [previewFileData, setPreviewFileData] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [panelsOpen, setPanelsOpen] = useState({ part1: true, part2: true, part3: true });
+
+  const handleTogglePanel = (panelId) => {
+    setPanelsOpen((prev) => {
+      const newState = { ...prev, [panelId]: !prev[panelId] };
+      if (!newState.part1 && !newState.part2 && !newState.part3) {
+        showSnackbar('At least one section must remain open', 'warning');
+        return prev;
+      }
+      return newState;
+    });
+  };
+
+  const getDelayDays = (ticket) => {
+    if (!ticket || !ticket.targetDate) return 0;
+    if (['Closed', 'Resolved'].includes(ticket.ticketStatus)) return 0;
+    const target = new Date(ticket.targetDate);
+    const now = new Date();
+    const diffTime = now - target;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays > 0 ? diffDays : 0;
+  };
 
   // Tab State for Details Dialog
   const [tabValue, setTabValue] = useState(0);
@@ -531,7 +560,7 @@ export default function TicketManagement({ viewType }) {
       setTimeout(async () => {
         let sampleText = "";
         if (voiceLang === 'ta-IN') {
-          sampleText = "லாகিন செய்யும்போது எரர் வருகிறது. Authentication is failing on the main portal, please check and resolve this login error as soon as possible.";
+          sampleText = "லாகின செய்யும்போது எரர் வருகிறது. Authentication is failing on the main portal, please check and resolve this login error as soon as possible.";
         } else if (voiceLang === 'hi-IN') {
           sampleText = "लॉगिन करते समय त्रुटि आ रही है. Database connection issue is observed in checkout process. Kindly check.";
         } else if (voiceLang === 'es-ES') {
@@ -592,6 +621,12 @@ export default function TicketManagement({ viewType }) {
   const [accessLevel, setAccessLevel] = useState('Mine');
   const [raisedToFilter, setRaisedToFilter] = useState('');
   const [detailTakenTime, setDetailTakenTime] = useState('');
+  const [detailTakenHours, setDetailTakenHours] = useState('');
+  const [detailTakenMinutes, setDetailTakenMinutes] = useState('');
+  const [isDetailTakenTimeFocused, setIsDetailTakenTimeFocused] = useState(false);
+  const [detailTakenHoursFocused, setDetailTakenHoursFocused] = useState(false);
+  const [detailTakenMinutesFocused, setDetailTakenMinutesFocused] = useState(false);
+  const [detailReworkTime, setDetailReworkTime] = useState('');
 
   // Validation Popup Reason Dialog State
   const [reasonOpen, setReasonOpen] = useState(false);
@@ -712,7 +747,7 @@ export default function TicketManagement({ viewType }) {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, [currentViewType]);
 
-  // Handle Ctrl + S for ticket creation
+  // Handle Ctrl + S for ticket creation and update
   useEffect(() => {
     const handleSaveShortcut = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
@@ -723,25 +758,50 @@ export default function TicketManagement({ viewType }) {
           if (submitBtn && !submitBtn.disabled) {
             submitBtn.click();
           }
+        } else if (detailsOpen && !isSaving) {
+          e.preventDefault();
+          e.stopPropagation();
+          const updateBtn = document.getElementById('ticket-update-button');
+          if (updateBtn && !updateBtn.disabled) {
+            updateBtn.click();
+          }
         }
       }
     };
     window.addEventListener('keydown', handleSaveShortcut, { capture: true });
     return () => window.removeEventListener('keydown', handleSaveShortcut, { capture: true });
-  }, [createOpen, isSaving]);
+  }, [createOpen, detailsOpen, isSaving]);
 
   // When a ticket is selected, load its comments/timeline
   useEffect(() => {
     if (selectedTicket) {
       fetchTicketSubresources(selectedTicket.rowId);
-      setDetailStatus(selectedTicket.ticketStatus);
+      if (selectedTicket.ticketStatus === 'Reopened' && currentViewType === 'raised-for-me') {
+        setDetailStatus('Reopened');
+        setDetailTakenHours('');
+        setDetailTakenMinutes('');
+        setDetailTakenTime('');
+      } else {
+        setDetailStatus(selectedTicket.ticketStatus);
+      }
       setDetailAssignedTo(selectedTicket.assignedTo || '');
       setDetailDevName(selectedTicket.developerName || '');
       setDetailDevEmail(selectedTicket.developerEmail || '');
       setDetailDevMobile(selectedTicket.developerMobileNo || '');
       setDetailResolution(selectedTicket.resolutionSummary || '');
       setDetailRootCause(selectedTicket.rootCause || '');
-      setDetailTakenTime(selectedTicket.takenTime || '');
+      const rawTaken = selectedTicket.takenTime || '';
+      if (rawTaken) {
+         const tMins = parseDurationToMinutes(rawTaken);
+         setDetailTakenHours(String(Math.floor(tMins / 60)).padStart(2, '0'));
+         setDetailTakenMinutes(String(tMins % 60).padStart(2, '0'));
+         setDetailTakenTime(`${String(Math.floor(tMins / 60)).padStart(2, '0')}:${String(tMins % 60).padStart(2, '0')}`);
+      } else {
+         setDetailTakenHours('');
+         setDetailTakenMinutes('');
+         setDetailTakenTime('');
+      }
+      setDetailReworkTime('');
       setDetailTargetDate(selectedTicket.targetDate ? format(new Date(selectedTicket.targetDate), 'yyyy-MM-dd') : '');
       setIsReassigning(false);
 
@@ -752,6 +812,16 @@ export default function TicketManagement({ viewType }) {
       }
     }
   }, [selectedTicket]);
+
+  useEffect(() => {
+    if (detailTakenHours !== '' || detailTakenMinutes !== '') {
+      const h = detailTakenHours !== '' ? detailTakenHours : '00';
+      const m = detailTakenMinutes !== '' ? detailTakenMinutes : '00';
+      setDetailTakenTime(`${h}:${m}`);
+    } else {
+      setDetailTakenTime('');
+    }
+  }, [detailTakenHours, detailTakenMinutes]);
 
   useEffect(() => {
     if (isReassigning && detailDevName) {
@@ -1251,6 +1321,10 @@ export default function TicketManagement({ viewType }) {
   const parseDurationToMinutes = (str) => {
     if (!str) return 0;
     const clean = str.toLowerCase().replace(/\s+/g, '');
+    if (clean.includes(':')) {
+      const parts = clean.split(':');
+      return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+    }
     const dayMatch = clean.match(/([\d.]+)\s*d/);
     const hrMatch = clean.match(/([\d.]+)\s*h/);
     const minMatch = clean.match(/([\d.]+)\s*m/);
@@ -1464,62 +1538,126 @@ export default function TicketManagement({ viewType }) {
   const handleUpdateTicketDetails = async () => {
     if (!selectedTicket) return;
 
-    // Check if target date exceeds due date on update
-    const targetDateToCheck = currentViewType === 'raised-for-me' ? detailTargetDate : selectedTicket.targetDate;
-    if (targetDateToCheck && selectedTicket.dueDate) {
-      const tDate = new Date(targetDateToCheck).getTime();
-      const dDate = new Date(selectedTicket.dueDate).getTime();
-      if (tDate > dDate && !selectedTicket.dueDateReason && !dueDateReasonText) {
-        showSnackbar('Please provide a due date reason since target exceeds due date', 'warning');
-        return;
-      }
+    // Comments mandatory for ANY status change
+    if (!detailResolution || !detailResolution.trim()) {
+      showSnackbar('Comments are mandatory for every status change', 'error');
+      return;
     }
 
-    // Hold, Resolved or Closed validation
-    if (detailStatus === 'Closed' || detailStatus === 'Hold' || detailStatus === 'Resolved') {
-      if (detailStatus === 'Closed' && currentViewType !== 'raised-by-me') {
-        showSnackbar('Closing tickets is only allowed from Raised By Me screen', 'error');
-        return;
-      }
-      if (!detailResolution || !detailResolution.trim()) {
-        showSnackbar(`Please enter a comment in the Comments field to transition status to ${detailStatus}`, 'warning');
-        return;
-      }
-    }
-
-    // Resolved Taken Time validation
-    if (detailStatus === 'Resolved') {
-      if (!detailTakenTime || !detailTakenTime.trim()) {
-        showSnackbar('Please enter Taken Time (e.g. 2 hrs, 1 day) for Resolved status', 'warning');
-        return;
-      }
-    }
-
-    const payload = {
-      ticketStatus: detailStatus,
-      assignedTo: detailAssignedTo,
-      assignedBy: user?.name || user?.username || 'Admin',
-      developerName: detailDevName,
-      developerEmail: detailDevEmail,
-      developerMobileNo: detailDevMobile,
-      resolutionSummary: detailResolution,
-      takenTime: detailTakenTime
-    };
-
+    // ─── RAISED FOR ME RULES ───────────────────────────────────────────────
     if (currentViewType === 'raised-for-me') {
-      payload.targetDate = detailTargetDate ? new Date(detailTargetDate) : null;
-    }
-    if (dueDateReasonText) {
-      payload.dueDateReason = dueDateReasonText;
+      // TO BE TESTED: Taken Time mandatory
+      if (detailStatus === 'To Be Tested') {
+        const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
+        if (!detailTakenTime || !detailTakenTime.trim() || detailTakenTime === '00:00' || detailTakenTime === ':') {
+          showSnackbar(isReopenedTicket ? 'Rework Time is mandatory when status is To Be Tested' : 'Taken Time is mandatory when status is To Be Tested', 'warning');
+          return;
+        }
+      }
+
+      // Guard: CLOSED ticket
+      if (selectedTicket.ticketStatus === 'Closed') {
+        showSnackbar('This ticket is permanently closed', 'error');
+        return;
+      }
+
+      let newTakenTime = selectedTicket.takenTime || '';
+      let newReworkTime = selectedTicket.reworkTime || '';
+      
+      if (detailStatus === 'To Be Tested') {
+         const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
+         if (isReopenedTicket) {
+             const existRw = parseDurationToMinutes(selectedTicket.reworkTime || '');
+             const newRw = parseDurationToMinutes(detailTakenTime || '');
+             const totalRw = existRw + newRw;
+             newReworkTime = `${String(Math.floor(totalRw / 60)).padStart(2, '0')}:${String(totalRw % 60).padStart(2, '0')}`;
+         } else {
+             newTakenTime = detailTakenTime;
+         }
+      }
+
+      const payload = {
+        ticketStatus: detailStatus,
+        assignedTo: detailAssignedTo,
+        assignedBy: user?.name || user?.username || 'Admin',
+        developerName: detailDevName,
+        developerEmail: detailDevEmail,
+        developerMobileNo: detailDevMobile,
+        resolutionSummary: detailResolution,
+        takenTime: newTakenTime,
+        reworkTime: newReworkTime,
+        targetDate: detailTargetDate ? new Date(detailTargetDate) : null,
+      };
+
+      if (dueDateReasonText) {
+        payload.dueDateReason = dueDateReasonText;
+      }
+
+      try {
+        const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
+        setSelectedTicket(res.data);
+        setDetailResolution('');
+        setDetailTakenTime('');
+        setDetailReworkTime('');
+        await fetchTicketSubresources(selectedTicket.rowId);
+        showSnackbar('Ticket updated successfully!');
+        fetchTickets();
+      } catch (error) {
+        showSnackbar('Failed to update ticket workflow', 'error');
+      }
+      return;
     }
 
-    try {
-      const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
-      setSelectedTicket(res.data);
-      showSnackbar('Ticket updated successfully!');
-      fetchTickets();
-    } catch (err) {
-      showSnackbar('Failed to update ticket workflow', 'error');
+    // ─── RAISED BY ME RULES ────────────────────────────────────────────────
+    if (currentViewType === 'raised-by-me') {
+      // Guard: CLOSED ticket
+      if (selectedTicket.ticketStatus === 'Closed') {
+        showSnackbar('This ticket is permanently closed', 'error');
+        return;
+      }
+
+      // REOPEN: assigned user gets REWORK status
+      if (detailStatus === 'Reopened') {
+        const payload = {
+          ticketStatus: 'Reopened',
+          assignedUserStatus: 'Rework',  // signal backend to set assigned user's status to REWORK
+          resolutionSummary: detailResolution,
+        };
+        try {
+          const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
+          setSelectedTicket(res.data);
+          setDetailResolution('');
+          await fetchTicketSubresources(selectedTicket.rowId);
+          showSnackbar('Ticket reopened — assigned user status set to REWORK');
+          fetchTickets();
+        } catch (error) {
+          showSnackbar('Failed to reopen ticket', 'error');
+        }
+        return;
+      }
+
+      // COMPLETED: ticket final complete
+      if (detailStatus === 'Completed') {
+        const payload = {
+          ticketStatus: 'Completed',
+          resolutionSummary: detailResolution,
+          completedAt: new Date().toISOString(),
+        };
+        try {
+          const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
+          setSelectedTicket(res.data);
+          setDetailResolution('');
+          await fetchTicketSubresources(selectedTicket.rowId);
+          showSnackbar('Ticket marked as Completed!');
+          fetchTickets();
+        } catch (error) {
+          showSnackbar('Failed to complete ticket', 'error');
+        }
+        return;
+      }
+
+      // Default: current status view only — no action needed
+      showSnackbar('No changes to apply', 'info');
     }
   };
 
@@ -1683,19 +1821,19 @@ export default function TicketManagement({ viewType }) {
     const total = baseFilteredTickets.length;
     const open = baseFilteredTickets.filter(t => t.ticketStatus === 'Open').length;
     const inProgress = baseFilteredTickets.filter(t => t.ticketStatus === 'In Progress').length;
-    const resolved = baseFilteredTickets.filter(t => t.ticketStatus === 'Resolved').length;
-    const closed = baseFilteredTickets.filter(t => t.ticketStatus === 'Closed').length;
-    const reopened = baseFilteredTickets.filter(t => t.reopenedCount > 0).length;
+    const toBeTested = baseFilteredTickets.filter(t => t.ticketStatus === 'To Be Tested').length;
+    const reopened = baseFilteredTickets.filter(t => t.ticketStatus === 'Reopened' || (t.reopenedCount && t.reopenedCount > 0)).length;
+    const completed = baseFilteredTickets.filter(t => t.ticketStatus === 'Completed').length;
 
-    // Overdue is past due_date and status is not Resolved or Closed
+    // Overdue is past due_date and status is not Completed or Closed
     const now = new Date().getTime();
     const overdue = baseFilteredTickets.filter(t => {
       if (!t.dueDate) return false;
       const dTime = new Date(t.dueDate).getTime();
-      return dTime < now && t.ticketStatus !== 'Resolved' && t.ticketStatus !== 'Closed';
+      return dTime < now && t.ticketStatus !== 'Completed' && t.ticketStatus !== 'Closed';
     }).length;
 
-    return { total, open, inProgress, resolved, closed, reopened, overdue };
+    return { total, open, inProgress, toBeTested, reopened, completed, overdue };
   }, [baseFilteredTickets]);
 
   // Color mappings
@@ -1929,43 +2067,912 @@ export default function TicketManagement({ viewType }) {
     );
   }, [formPage, tickets]);
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      {/* ── TOP HEADER SECTION (Only for raised-for-me) ── */}
-      {currentViewType === 'raised-for-me' && (
-        <Box sx={{
-          bgcolor: 'white',
-          p: '12px 24px',
-          borderRadius: '12px',
-          border: '1px solid #eef2f6',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 2
-        }}>
-          <Stack direction="row" spacing={2.5} alignItems="center">
-            <Avatar sx={{ width: 50, height: 50, bgcolor: '#ede7f6', color: '#673ab7' }}>
-              <TicketIcon size={28} />
-            </Avatar>
-            <Box>
-              <Typography variant="h3" sx={{ fontWeight: 800, color: '#1a223f' }}>
-                Tickets Assigned To Me
-              </Typography>
-              <Typography variant="caption" sx={{ fontWeight: 700, color: '#9e9e9e', textTransform: 'uppercase', fontSize: '0.65rem' }}>
-                Raised For Me Workflow
+  if (selectedTicket && detailsOpen) {
+    const roadmapEvents = ticketTimeline && ticketTimeline.length > 0
+      ? ticketTimeline.filter(event => {
+        if (!event.fromStatus) return true;
+        if (event.fromStatus !== event.toStatus) return true;
+        if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
+        return false;
+      })
+      : [{
+        id: 'temp-created',
+        toStatus: selectedTicket.ticketStatus,
+        updatedBy: selectedTicket.employeeName || selectedTicket.createdBy,
+        updatedAt: selectedTicket.createdAt,
+        comment: 'Ticket created'
+      }];
+
+    if (selectedTicket.developerName) {
+      fetchDevWorkload(selectedTicket.developerName);
+    } else {
+      setDetailDevWorkloadTrail([]);
+    }
+
+    return (
+      <Box sx={{ flexGrow: 1, p: { xs: 2, md: 3 }, bgcolor: '#f4f6f8', minHeight: '100vh' }}>
+        {/* Header — compact single-line format */}
+        {(() => {
+          const estMins = parseDurationToMinutes(selectedTicket.assignedHours);
+          const actMins = parseDurationToMinutes(selectedTicket.takenTime);
+          const rwMins = parseDurationToMinutes(selectedTicket.reworkTime);
+          const totalSpent = actMins + rwMins;
+          const delayMins = estMins > 0 ? totalSpent - estMins : null;
+          const toHHMM = (m) => { const h = Math.floor(Math.abs(m) / 60); const mn = Math.abs(m) % 60; return `${String(h).padStart(2,'0')}:${String(mn).padStart(2,'0')}`; };
+          const delayStr = delayMins === null ? null : delayMins < 0 ? `-${toHHMM(-delayMins)}` : delayMins === 0 ? '00:00' : `+${toHHMM(delayMins)}`;
+          const delayColor = delayMins === null ? 'inherit' : delayMins < 0 ? '#16a34a' : delayMins === 0 ? '#d97706' : '#dc2626';
+          const sep = <Typography component="span" sx={{ color: '#cbd5e1', mx: 0.5 }}>|</Typography>;
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, pb: 1.5, borderBottom: '1px solid #e2e8f0', gap: 1.5, flexWrap: 'wrap' }}>
+              <Button startIcon={<ArrowBackIcon />} variant="outlined" onClick={() => { setDetailsOpen(false); setSelectedTicket(null); }} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, flexShrink: 0, height: 36 }}>Back</Button>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#1e293b', flexShrink: 0 }}>Ticket Details</Typography>
+              <Box sx={{ width: '1px', height: 20, bgcolor: '#cbd5e1', flexShrink: 0 }} />
+              <Typography variant="body2" sx={{ color: '#334155', fontWeight: 600 }}>
+                <strong>Ticket No:</strong> {selectedTicket.ticketId}
+                {sep}
+                <strong>Title:</strong> {selectedTicket.title}
+                {sep}
+                <strong>Target Date:</strong> {selectedTicket.targetDate ? format(new Date(selectedTicket.targetDate), 'dd/MM/yyyy') : '-'}
+                {sep}
+                <strong>Assigned Hrs:</strong> {selectedTicket.assignedHours ? (() => { const m = parseDurationToMinutes(selectedTicket.assignedHours); return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; })() : '-'}
+                {sep}
+                <strong>Complete Date:</strong> {selectedTicket.resolvedAt ? format(new Date(selectedTicket.resolvedAt), 'dd/MM/yyyy hh:mm aa') : '-'}
+                {delayStr && <>{sep}<strong>Delay Hrs:</strong> <span style={{ color: delayColor, fontWeight: 800 }}>{delayStr}</span></>}
               </Typography>
             </Box>
-          </Stack>
-          <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 'auto' }}>
-            <TextField select size="small" label="View Level" value={accessLevel} onChange={(e) => setAccessLevel(e.target.value)} sx={{ width: 240 }}>
-              <MenuItem value="Mine">Mine (Default)</MenuItem>
-              <MenuItem value="My Team">My Team</MenuItem>
-              <MenuItem value="My Company">My Company</MenuItem>
-            </TextField>
-          </Stack>
+          );
+        })()}
+
+        {/* NotebookLM Style Flexible Split Layout */}
+        <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 180px)' }}>
+          
+          {/* Part 1: Ticket Description (30%) */}
+          <Box sx={{ 
+            flex: panelsOpen.part1 ? 3 : '0 0 50px', 
+            transition: 'all 0.3s ease', 
+            borderRadius: '12px', border: '1px solid #e2e8f0', 
+            bgcolor: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+          }}>
+            <Box sx={{ p: 2, display: 'flex', justifyContent: panelsOpen.part1 ? 'space-between' : 'center', alignItems: 'center', borderBottom: '1px solid #eef2f6', cursor: 'pointer', bgcolor: panelsOpen.part1 ? '#fff' : '#f8fafc', height: panelsOpen.part1 ? 'auto' : '100%' }} onClick={() => handleTogglePanel('part1')}>
+              {panelsOpen.part1 ? (
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#1e293b' }}>Ticket Description</Typography>
+              ) : (
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, writingMode: 'vertical-rl', transform: 'rotate(180deg)', py: 2, letterSpacing: '1px', color: '#64748b' }}>Ticket Description</Typography>
+              )}
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePanel('part1'); }} sx={{ position: panelsOpen.part1 ? 'relative' : 'absolute', top: panelsOpen.part1 ? 0 : 16 }}>
+                {panelsOpen.part1 ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            <Collapse in={panelsOpen.part1} sx={{ flexGrow: 1, overflowY: 'auto' }}>
+              <Box sx={{ p: 3 }}>
+                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 120, mb: 3 }} dangerouslySetInnerHTML={{ __html: selectedTicket.description || '' }} />
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary">Severity</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.severityLevel || '-'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary">Source</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.sourceType || '-'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary">Module</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.moduleName || '-'}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="text.secondary">Screen Name</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.pageName || '-'}</Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="caption" color="text.secondary">Created By</Typography>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.employeeName || selectedTicket.createdBy || '-'}</Typography>
+                  </Grid>
+                  {selectedTicket.verifierName && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Verifier Name</Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.verifierName}</Typography>
+                    </Grid>
+                  )}
+                  {selectedTicket.verifierPhone && (
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Verifier Phone</Typography>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.verifierPhone}</Typography>
+                    </Grid>
+                  )}
+                </Grid>
+              </Box>
+            </Collapse>
+          </Box>
+
+          {/* Part 2: Workflow / Files (50%) */}
+          <Box sx={{ 
+            flex: panelsOpen.part2 ? 5 : '0 0 50px', 
+            transition: 'all 0.3s ease', 
+            borderRadius: '12px', border: '1px solid #e2e8f0', 
+            bgcolor: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+          }}>
+            <Box sx={{ p: 2, display: 'flex', justifyContent: panelsOpen.part2 ? 'space-between' : 'center', alignItems: 'center', borderBottom: '1px solid #eef2f6', cursor: 'pointer', bgcolor: panelsOpen.part2 ? '#fff' : '#f8fafc', height: panelsOpen.part2 ? 'auto' : '100%' }} onClick={() => handleTogglePanel('part2')}>
+              {panelsOpen.part2 ? (
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#1e293b' }}>Workflow & Files</Typography>
+              ) : (
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, writingMode: 'vertical-rl', transform: 'rotate(180deg)', py: 2, letterSpacing: '1px', color: '#64748b' }}>Workflow & Files</Typography>
+              )}
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePanel('part2'); }} sx={{ position: panelsOpen.part2 ? 'relative' : 'absolute', top: panelsOpen.part2 ? 0 : 16 }}>
+                {panelsOpen.part2 ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            <Collapse in={panelsOpen.part2} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+              {panelsOpen.part2 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                  <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
+                    <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} aria-label="workflow tabs">
+                      <Tab label="Workflow Management" sx={{ fontWeight: 600, textTransform: 'none', fontSize: '0.9rem' }} />
+                      <Tab label="Files & Attachments" sx={{ fontWeight: 600, textTransform: 'none', fontSize: '0.9rem' }} />
+                      <Tab label="Time Management" sx={{ fontWeight: 600, textTransform: 'none', fontSize: '0.9rem' }} />
+                    </Tabs>
+                  </Box>
+                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                    {tabValue === 0 && (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+                        {/* Scrollable form area */}
+                        <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+                          <Stack spacing={2.5}>
+
+                            {/* STATUS */}
+                            <Box sx={{ mb: 3 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status <span style={{color:'#dc2626'}}>*</span></Typography>
+                              {currentViewType === 'raised-for-me' ? (
+                                (() => {
+                                  const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
+                                  return (
+                                    <TextField
+                                      fullWidth select size="small"
+                                      value={detailStatus}
+                                      onChange={(e) => { 
+                                        setDetailStatus(e.target.value); 
+                                        setDetailResolution(''); 
+                                        setDetailTakenTime(''); 
+                                        setDetailTakenHours(''); 
+                                        setDetailTakenMinutes(''); 
+                                        setDetailReworkTime(''); 
+                                      }}
+                                      sx={{ mt: 0.5 }}
+                                    >
+                                      {!isReopenedTicket && <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'}>OPEN</MenuItem>}
+                                      {!isReopenedTicket && <MenuItem key="InProgress" value="In Progress">IN PROGRESS</MenuItem>}
+                                      <MenuItem key="ToBeTested" value="To Be Tested">TO BE TESTED</MenuItem>
+                                      {isReopenedTicket && <MenuItem key="Rework" value="Rework">REWORK</MenuItem>}
+                                      <MenuItem key="Reopened" value="Reopened" disabled>REOPEN</MenuItem>
+                                    </TextField>
+                                  );
+                                })()
+                              ) : (
+                                <TextField
+                                  fullWidth select size="small"
+                                  value={detailStatus}
+                                  onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setDetailTakenTime(''); }}
+                                  sx={{ mt: 0.5 }}
+                                >
+                                  <MenuItem key="current" value={selectedTicket.ticketStatus} disabled>{selectedTicket.ticketStatus.toUpperCase()} (Current Status)</MenuItem>
+                                  <MenuItem key="Reopened" value="Reopened">REOPEN</MenuItem>
+                                  <MenuItem key="Completed" value="Completed">COMPLETED</MenuItem>
+                                </TextField>
+                              )}
+                            </Box>
+
+                            {/* TAKEN TIME / REWORK TIME — only for TO BE TESTED (raised-for-me) */}
+                            {currentViewType === 'raised-for-me' && detailStatus === 'To Be Tested' && (() => {
+                              const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
+                              return (
+                                <Box>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{isReopenedTicket ? 'Rework Time' : 'Taken Time'} <span style={{color:'#dc2626'}}>*</span></Typography>
+                                  <FormControl sx={{ width: 'max-content', mt: 0.5 }} variant="outlined">
+                                    <OutlinedInput
+                                      notched={false}
+                                      inputProps={{ sx: { display: 'none' }, readOnly: true }}
+                                      sx={{ 
+                                        p: 0, height: '56px',
+                                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2', borderWidth: '2px' }
+                                      }}
+                                      onFocus={() => setIsDetailTakenTimeFocused(true)}
+                                      onBlur={(e) => { if (!e.relatedTarget) setIsDetailTakenTimeFocused(false); }}
+                                      startAdornment={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', p: '0 12px', gap: 1.5 }}>
+
+                                        <AccessTimeIcon sx={{ color: '#64748b', fontSize: 22 }} />
+                                        <Box sx={{ 
+                                          position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                          border: detailTakenHoursFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
+                                          bgcolor: detailTakenHoursFocused ? '#f0f7ff' : 'white',
+                                          borderRadius: '6px', width: '70px', height: '42px', cursor: 'pointer', transition: 'all 0.2s',
+                                          '&:hover': { borderColor: '#1976d2' }
+                                        }}>
+                                          <Select variant="standard" disableUnderline value={detailTakenHours || '00'}
+                                            onChange={(e) => { const val = e.target.value; setDetailTakenHours(val); if (val === '24') setDetailTakenMinutes('00'); setIsDetailTakenTimeFocused(true); }}
+                                            onOpen={() => setDetailTakenHoursFocused(true)} onClose={() => setDetailTakenHoursFocused(false)}
+                                            MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }} sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, zIndex: 1, cursor: 'pointer' }}>
+                                            {Array.from({ length: 25 }, (_, i) => { const val = String(i).padStart(2, '0'); return <MenuItem key={val} value={val}>{val}</MenuItem>; })}
+                                          </Select>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
+                                              <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{detailTakenHours || '00'}</Typography>
+                                              <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Hours</Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                              <IconButton size="small" sx={{ p: 0 }} onClick={(e) => { e.stopPropagation(); let h = parseInt(detailTakenHours || '0', 10); h = (h + 1) % 25; setDetailTakenHours(String(h).padStart(2, '0')); if (h === 24) setDetailTakenMinutes('00'); }}>
+                                                <KeyboardArrowUpIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                              </IconButton>
+                                              <IconButton size="small" sx={{ p: 0 }} onClick={(e) => { e.stopPropagation(); let h = parseInt(detailTakenHours || '0', 10); h = h - 1 < 0 ? 24 : h - 1; setDetailTakenHours(String(h).padStart(2, '0')); if (h === 24) setDetailTakenMinutes('00'); }}>
+                                                <KeyboardArrowDownIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                              </IconButton>
+                                            </Box>
+                                          </Box>
+                                        </Box>
+                                        <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: '#1e293b', pb: 0.5 }}>:</Typography>
+                                        <Box sx={{ 
+                                          position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                          border: detailTakenMinutesFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
+                                          bgcolor: detailTakenMinutesFocused ? '#f0f7ff' : 'white',
+                                          borderRadius: '6px', width: '70px', height: '42px', cursor: 'pointer', transition: 'all 0.2s',
+                                          '&:hover': { borderColor: '#1976d2' }
+                                        }}>
+                                          <Select variant="standard" disableUnderline value={detailTakenMinutes || '00'}
+                                            onChange={(e) => { setDetailTakenMinutes(e.target.value); setIsDetailTakenTimeFocused(true); }}
+                                            onOpen={() => setDetailTakenMinutesFocused(true)} onClose={() => setDetailTakenMinutesFocused(false)}
+                                            MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }} sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, zIndex: 1, cursor: 'pointer' }}>
+                                            {Array.from({ length: 60 }, (_, i) => { const val = String(i).padStart(2, '0'); return <MenuItem key={val} value={val} disabled={detailTakenHours === '24' && val !== '00'}>{val}</MenuItem>; })}
+                                          </Select>
+                                          <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
+                                              <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{detailTakenMinutes || '00'}</Typography>
+                                              <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Minutes</Typography>
+                                            </Box>
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                              <IconButton size="small" sx={{ p: 0 }} disabled={detailTakenHours === '24'} onClick={(e) => { e.stopPropagation(); if(detailTakenHours === '24') return; let m = parseInt(detailTakenMinutes || '0', 10); m = (m + 1) % 60; setDetailTakenMinutes(String(m).padStart(2, '0')); }}>
+                                                <KeyboardArrowUpIcon sx={{ fontSize: 14, color: detailTakenHours === '24' ? '#cbd5e1' : '#64748b' }} />
+                                              </IconButton>
+                                              <IconButton size="small" sx={{ p: 0 }} disabled={detailTakenHours === '24'} onClick={(e) => { e.stopPropagation(); if(detailTakenHours === '24') return; let m = parseInt(detailTakenMinutes || '0', 10); m = m - 1 < 0 ? 59 : m - 1; setDetailTakenMinutes(String(m).padStart(2, '0')); }}>
+                                                <KeyboardArrowDownIcon sx={{ fontSize: 14, color: detailTakenHours === '24' ? '#cbd5e1' : '#64748b' }} />
+                                              </IconButton>
+                                            </Box>
+                                          </Box>
+                                        </Box>
+                                      </Box>
+                                    }
+                                  />
+                                </FormControl>
+
+                              </Box>
+                            );
+                            })()}
+
+                            {/* COMMENTS */}
+                            <Box>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Comments <span style={{color:'#dc2626'}}>*</span></Typography>
+                              <TextField
+                                fullWidth multiline rows={5} size="small"
+                                placeholder="Required — provide update or reason for status change..."
+                                value={detailResolution}
+                                onChange={(e) => setDetailResolution(e.target.value)}
+                                sx={{ mt: 0.5 }}
+                              />
+                            </Box>
+
+                            {/* REASSIGN — only for raised-for-me */}
+                            {currentViewType === 'raised-for-me' && selectedTicket.ticketStatus !== 'Closed' && (
+                              <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '10px', p: 2, bgcolor: '#fafafa' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>Reassign Ticket</Typography>
+                                {isReassigning ? (
+                                  <Stack spacing={1.5}>
+                                    <Autocomplete
+                                      options={employeesList}
+                                      getOptionLabel={(option) => option.employeeName || ''}
+                                      value={employeesList.find(e => e.employeeName === detailAssignedTo) || null}
+                                      onChange={(event, newValue) => { setDetailAssignedTo(newValue ? newValue.employeeName : ''); }}
+                                      renderInput={(params) => (<TextField {...params} size="small" label="Select New Assignee" fullWidth />)}
+                                      sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff' } }}
+                                    />
+                                    <Button variant="outlined" color="secondary" fullWidth size="small" onClick={() => setIsReassigning(false)} sx={{ fontWeight: 700, borderRadius: '8px' }}>Cancel</Button>
+                                  </Stack>
+                                ) : (
+                                  <Button variant="outlined" color="secondary" fullWidth size="small" onClick={() => setIsReassigning(true)} sx={{ fontWeight: 700, borderRadius: '8px', height: 36 }}>+ Reassign</Button>
+                                )}
+                              </Box>
+                            )}
+
+                            {/* CLOSED NOTICE */}
+                            {selectedTicket.ticketStatus === 'Closed' && (
+                              <Alert severity="info">This ticket is permanently closed and cannot be edited.</Alert>
+                            )}
+
+                          </Stack>
+                        </Box>
+
+                        {/* Sticky Save Footer */}
+                        {selectedTicket.ticketStatus !== 'Closed' && (
+                          <Box sx={{ p: 2, pt: 1.5, pb: 3, borderTop: '1px solid #e2e8f0', bgcolor: '#fff', flexShrink: 0 }}>
+                            <Button
+                              id="ticket-update-button"
+                              variant="contained" color="secondary" fullWidth
+                              onClick={handleUpdateTicketDetails}
+                              sx={{ height: 46, fontWeight: 700, fontSize: '1rem', borderRadius: '8px' }}
+                            >
+                              Save
+                            </Button>
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+                    {/* placeholder to close original tab 0 box — replaced above */}
+                    {false && (
+                      <Box>
+                        <Box sx={{ p: 2, mb: 3 }}>
+                              <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Ticket Description</Typography>
+                              <Box
+                                sx={{
+                                  p: 2,
+                                  bgcolor: '#fafafa',
+                                  borderRadius: '8px',
+                                  border: '1px solid #eee',
+                                  minHeight: 120,
+                                  overflowY: 'auto'
+                                }}
+                                dangerouslySetInnerHTML={{ __html: selectedTicket.description }}
+                              />
+
+                              <Grid container spacing={2} sx={{ mt: 3 }}>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" color="text.secondary">Workflow Type</Typography>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.ticketType}</Typography>
+                                </Grid>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" color="text.secondary">Severity</Typography>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.severityLevel || 'Medium'}</Typography>
+                                </Grid>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" color="text.secondary">Source</Typography>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.sourceType || 'Portal'}</Typography>
+                                </Grid>
+
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" color="text.secondary">Module</Typography>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.moduleName || 'None'}</Typography>
+                                </Grid>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" color="text.secondary">Screen Name</Typography>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.pageName || 'None'}</Typography>
+                                </Grid>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" color="text.secondary">Created By</Typography>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.employeeName || selectedTicket.createdBy}</Typography>
+                                </Grid>
+
+                                {selectedTicket.takenTime && (
+                                  <Grid item xs={12}>
+                                    <Box sx={{
+                                      mt: 0.5,
+                                      pt: 1.5,
+                                      borderTop: '1px dashed #e2e8f0',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: 1.5,
+                                      flexWrap: 'wrap'
+                                    }}>
+                                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.7rem' }}>
+                                        Taken Time
+                                      </Typography>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'secondary.main', fontSize: '0.95rem' }}>
+                                        {selectedTicket.takenTime}
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+                                )}
+                              </Grid>
+                            </Box>
+                            <Box sx={{ p: 2, borderRadius: '12px', border: '1px solid #eef2f6', mb: 3 }}>
+                              
+                              <Stack spacing={3}>
+                                {/* Row 1: Status dropdown, Target Date, Taken Time (Stretch to 100% width) */}
+                                <Box sx={{ width: '100%' }}>
+                                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
+                                    <Box sx={{ flex: '1 1 240px', maxWidth: { sm: 300, xs: '100%' } }}>
+                                      <TextField
+                                        fullWidth
+                                        select
+                                        size="small"
+                                        label="Ticket Workflow Status"
+                                        value={detailStatus}
+                                        onChange={(e) => setDetailStatus(e.target.value)}
+                                      >
+                                        {currentViewType === 'raised-for-me' ? [
+                                          <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'}>Open</MenuItem>,
+                                          <MenuItem key="Reopened" value="Reopened" disabled={selectedTicket.ticketStatus !== 'Reopened'}>Reopened</MenuItem>,
+                                          <MenuItem key="Assigned" value="Assigned">Assigned</MenuItem>,
+                                          <MenuItem key="In Progress" value="In Progress">In Progress</MenuItem>,
+                                          <MenuItem key="Hold" value="Hold">Hold</MenuItem>,
+                                          <MenuItem key="Resolved" value="Resolved">Resolved</MenuItem>
+                                        ] : [
+                                          <MenuItem key="current" value={selectedTicket.ticketStatus}>{selectedTicket.ticketStatus}</MenuItem>,
+                                          selectedTicket.ticketStatus !== 'Closed' ? <MenuItem key="Closed" value="Closed">Closed</MenuItem> : null
+                                        ].filter(Boolean)}
+                                      </TextField>
+                                    </Box>
+
+                                    {currentViewType === 'raised-for-me' && (
+                                      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                        <TextField
+                                          fullWidth
+                                          size="small"
+                                          type="date"
+                                          label="Target Date"
+                                          InputLabelProps={{ shrink: true }}
+                                          value={detailTargetDate}
+                                          onChange={(e) => setDetailTargetDate(e.target.value)}
+                                          inputProps={{
+                                            min: todayStr,
+                                            onClick: (e) => { try { e.target.showPicker(); } catch (err) { } }
+                                          }}
+                                        />
+                                        <HtmlTooltip
+                                          title={
+                                            <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
+                                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
+                                                Developer Workload Details (Max 12h/day)
+                                              </Typography>
+                                              {renderWorkloadTrail(detailDevWorkloadTrail)}
+                                            </Box>
+                                          }
+                                          placement="top"
+                                          arrow
+                                        >
+                                          <IconButton size="small" sx={{ color: '#673ab7' }}>
+                                            <InfoOutlinedIcon fontSize="small" />
+                                          </IconButton>
+                                        </HtmlTooltip>
+                                      </Box>
+                                    )}
+
+                                    {currentViewType === 'raised-for-me' && (
+                                      <Box sx={{ flex: 1 }}>
+                                        <TextField
+                                          fullWidth
+                                          size="small"
+                                          label="Taken Time (e.g. 2 hrs, 1 day)"
+                                          value={detailTakenTime}
+                                          onChange={(e) => setDetailTakenTime(e.target.value)}
+                                        />
+                                      </Box>
+                                    )}
+                                  </Stack>
+                                </Box>
+
+                                {/* Row 2: Currently Assigned To text display (no input box) */}
+                                {(currentViewType === 'raised-for-me' || currentViewType === 'raised-by-me') && (
+                                  <Box sx={{ width: '100%' }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
+                                      Currently Assigned To
+                                    </Typography>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '1.05rem' }}>
+                                      {detailAssignedTo || 'Unassigned'}
+                                    </Typography>
+                                  </Box>
+                                )}
+
+                                {/* Row 3: Reassign controls / button on the next row (full width) */}
+                                {(currentViewType === 'raised-for-me' || currentViewType === 'raised-by-me') && (
+                                  <Box sx={{ width: '100%' }}>
+                                    {isReassigning ? (
+                                      <Stack spacing={2} sx={{ width: '100%' }}>
+                                        <Autocomplete
+                                          options={employeesList}
+                                          getOptionLabel={(option) => option.employeeName || ''}
+                                          value={employeesList.find(e => e.employeeName === detailAssignedTo) || null}
+                                          onChange={(event, newValue) => {
+                                            setDetailAssignedTo(newValue ? newValue.employeeName : '');
+                                          }}
+                                          renderInput={(params) => (
+                                            <TextField
+                                              {...params}
+                                              size="small"
+                                              label="Select New Assignee"
+                                              placeholder="Choose employee..."
+                                              fullWidth
+                                            />
+                                          )}
+                                          sx={{
+                                            width: '100%',
+                                            '& .MuiOutlinedInput-root': {
+                                              borderRadius: '8px',
+                                              bgcolor: '#fbfbfe'
+                                            }
+                                          }}
+                                        />
+                                        <Button
+                                          variant="outlined"
+                                          color="secondary"
+                                          onClick={() => setIsReassigning(false)}
+                                          sx={{ height: 40, width: '100%', fontWeight: 700, borderRadius: '8px' }}
+                                        >
+                                          Cancel Reassign
+                                        </Button>
+                                      </Stack>
+                                    ) : (
+                                      <Button
+                                        variant="outlined"
+                                        color="secondary"
+                                        onClick={() => setIsReassigning(true)}
+                                        sx={{ height: 40, width: '100%', fontWeight: 700, borderRadius: '8px' }}
+                                      >
+                                        Reassign Ticket
+                                      </Button>
+                                    )}
+                                  </Box>
+                                )}
+
+                                {/* Row 3: Developer Auto-fill details for external */}
+                                {selectedTicket.ticketType === 'External' && (currentViewType === 'raised-for-me' || currentViewType === 'raised-by-me') && isReassigning && (
+                                  <Box sx={{ width: '100%' }}>
+                                    <Divider sx={{ my: 1.5 }} />
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'secondary.main', mb: 1.5 }}>
+                                      Developer Contact Details
+                                    </Typography>
+                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
+                                      <Box sx={{ flex: 5 }}>
+                                        <Autocomplete
+                                          size="small"
+                                          options={employeesList}
+                                          getOptionLabel={(option) => option.employeeName || ''}
+                                          value={employeesList.find(e => e.employeeName === detailDevName) || null}
+                                          onChange={(event, selectedEmp) => {
+                                            if (selectedEmp) {
+                                              setDetailDevName(selectedEmp.employeeName || '');
+                                              setDetailDevEmail(selectedEmp.officeMail || '');
+                                              setDetailDevMobile('');
+                                              axios.get(`/api/master/employee/${selectedEmp.id}/contact`)
+                                                .then(c => {
+                                                  if (c.data?.mobile) setDetailDevMobile(c.data.mobile);
+                                                }).catch(() => { });
+                                            } else {
+                                              setDetailDevName('');
+                                              setDetailDevEmail('');
+                                              setDetailDevMobile('');
+                                            }
+                                          }}
+                                          renderInput={(params) => <TextField {...params} label="Assign Developer" />}
+                                          fullWidth
+                                        />
+                                      </Box>
+                                      <Box sx={{ flex: 4 }}>
+                                        <TextField fullWidth size="small" disabled label="Developer Email" value={detailDevEmail} />
+                                      </Box>
+                                      <Box sx={{ flex: 3 }}>
+                                        <TextField fullWidth size="small" disabled label="Developer Mobile" value={detailDevMobile} />
+                                      </Box>
+                                    </Stack>
+                                  </Box>
+                                )}
+
+                                {/* Row 4: Comments Box */}
+                                <Box sx={{ width: '100%' }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.secondary' }}>Comments</Typography>
+                                  <Box
+                                    sx={{
+                                      p: 1.5,
+                                      bgcolor: '#fafafa',
+                                      borderRadius: '8px',
+                                      border: '1px solid #eee',
+                                      transition: 'all 0.3s ease',
+                                      '&:hover': {
+                                        borderColor: '#ccc'
+                                      }
+                                    }}
+                                  >
+                                    <TextField
+                                      fullWidth
+                                      multiline
+                                      rows={6}
+                                      placeholder="Provide details/justification for status change..."
+                                      value={detailResolution}
+                                      onChange={(e) => setDetailResolution(e.target.value)}
+                                      variant="standard"
+                                      InputProps={{
+                                        disableUnderline: true,
+                                        style: { fontSize: '0.875rem' }
+                                      }}
+                                    />
+                                  </Box>
+                                </Box>
+
+                                {/* Row 5: Apply Changes Button & Reopen Ticket Banner */}
+                                <Box sx={{ width: '100%' }}>
+                                  <Button
+                                    variant="contained"
+                                    color="secondary"
+                                    fullWidth
+                                    onClick={handleUpdateTicketDetails}
+                                    sx={{ height: 48, fontWeight: 700, fontSize: '1rem', borderRadius: '8px' }}
+                                  >
+                                    Apply Changes
+                                  </Button>
+                                </Box>
+
+                                {detailStatus === 'Resolved' && selectedTicket.ticketStatus !== 'Closed' && currentViewType === 'raised-by-me' && (
+                                  <Box sx={{ width: '100%' }}>
+                                    <Alert severity="success" action={
+                                      <Button size="small" color="inherit" startIcon={<ReplayIcon />} onClick={() => setReopenOpen(true)}>
+                                        Reopen Ticket
+                                      </Button>
+                                    }>
+                                      This ticket is completed. You can reopen it if you require further investigation.
+                                    </Alert>
+                                  </Box>
+                                )}
+                              </Stack>
+                            </Box>
+                      </Box>
+                    )}
+                    {tabValue === 1 && (
+                      <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+                        <Stack spacing={2} sx={{ mb: 2 }}>
+                          {ticketAttachments.map((file) => {
+                            const isVoice = file.fileType === 'Voice Recording' ||
+                              /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
+                            return (
+                              <Box key={file.id} sx={{ p: 1.5, border: '1px solid #eee', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                  <Box sx={{ flexGrow: 1 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{file.fileName}</Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
+                                    </Typography>
+                                  </Box>
+                                  <Box sx={{ display: 'flex', gap: 1 }}>
+                                    {!isVoice && (
+                                      <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                        Preview
+                                      </Button>
+                                    )}
+                                    <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
+                                      Download
+                                    </Button>
+                                  </Box>
+                                </Box>
+                                {isVoice && (
+                                  <Box sx={{ width: '100%', mt: 0.5 }}>
+                                    <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '36px' }} />
+                                  </Box>
+                                )}
+                              </Box>
+                            );
+                          })}
+                        </Stack>
+                        <Divider sx={{ my: 2 }} />
+                        <Button component="label" variant="contained" fullWidth startIcon={<CloudUploadIcon />}>
+                          Upload File
+                          <input type="file" hidden onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              const fd = new FormData();
+                              fd.append('file', file);
+                              fd.append('module', 'Support');
+                              const r = await axios.post('/api/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                              handleAddDirectAttachment(r.data);
+                            }
+                          }} />
+                        </Button>
+                      </Box>
+                    )}
+                    {tabValue === 2 && (() => {
+                      const toHHMM = (mins) => {
+                        const h = Math.floor(Math.abs(mins) / 60);
+                        const m = Math.abs(mins) % 60;
+                        return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                      };
+                      const estimateMins = parseDurationToMinutes(selectedTicket.assignedHours);
+                      const actualMins = parseDurationToMinutes(selectedTicket.takenTime);
+                      const reworkMins = parseDurationToMinutes(selectedTicket.reworkTime);
+                      const totalSpentMins = actualMins + reworkMins;
+                      const diffMins = totalSpentMins - estimateMins;
+                      const delayColor = diffMins < 0 ? '#16a34a' : diffMins === 0 ? '#d97706' : '#dc2626';
+                      const delayLabel = diffMins < 0 ? `-${toHHMM(-diffMins)}` : diffMins === 0 ? '00:00' : `+${toHHMM(diffMins)}`;
+                      return (
+                        <Box sx={{ p: 2 }}>
+                          {/* Top 3 cards */}
+                          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                            <Box sx={{ flex: 1, p: 2.5, border: '1px solid #e2e8f0', borderRadius: '12px', bgcolor: '#f8fafc', textAlign: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>ESTIMATE TIME</Typography>
+                              <Typography variant="h4" sx={{ fontWeight: 800, color: '#1e293b', fontFamily: 'monospace' }}>{estimateMins > 0 ? toHHMM(estimateMins) : 'HH:MM'}</Typography>
+                              <Typography variant="caption" color="text.secondary">{selectedTicket.assignedHours || 'Not set'}</Typography>
+                            </Box>
+                            <Box sx={{ flex: 1, p: 2.5, border: '1px solid #bae6fd', borderRadius: '12px', bgcolor: '#f0f9ff', textAlign: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#0369a1', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>ACTUAL SPENT</Typography>
+                              <Typography variant="h4" sx={{ fontWeight: 800, color: '#0369a1', fontFamily: 'monospace' }}>{actualMins > 0 ? toHHMM(actualMins) : 'HH:MM'}</Typography>
+                              <Typography variant="caption" color="text.secondary">{selectedTicket.takenTime || 'Not recorded'}</Typography>
+                            </Box>
+                            <Box sx={{ flex: 1, p: 2.5, border: '1px solid #fde68a', borderRadius: '12px', bgcolor: '#fefce8', textAlign: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>REWORK</Typography>
+                              <Typography variant="h4" sx={{ fontWeight: 800, color: '#92400e', fontFamily: 'monospace' }}>{reworkMins > 0 ? toHHMM(reworkMins) : 'HH:MM'}</Typography>
+                              <Typography variant="caption" color="text.secondary">{ticketReopens.length > 0 ? `${ticketReopens.length} reopen(s)` : 'No rework'}</Typography>
+                            </Box>
+                          </Box>
+                          {/* Total + Delay Row */}
+                          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                            <Box sx={{ flex: 1, p: 2.5, border: '1px solid #e2e8f0', borderRadius: '12px', bgcolor: '#f8fafc', textAlign: 'center' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>TOTAL SPENT</Typography>
+                              <Typography variant="h5" sx={{ fontWeight: 800, color: '#334155', fontFamily: 'monospace' }}>{totalSpentMins > 0 ? toHHMM(totalSpentMins) : '-'}</Typography>
+                              <Typography variant="caption" color="text.secondary">Actual + Rework</Typography>
+                            </Box>
+                            {estimateMins > 0 && (
+                              <Box sx={{ flex: 1, p: 2.5, border: `2px solid ${delayColor}`, borderRadius: '12px', bgcolor: '#fff', textAlign: 'center' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: delayColor, textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>DELAY HOURS</Typography>
+                                <Typography variant="h5" sx={{ fontWeight: 800, color: delayColor, fontFamily: 'monospace' }}>{delayLabel}</Typography>
+                                <Typography variant="caption" sx={{ color: delayColor }}>{diffMins < 0 ? 'Under estimate ✓' : diffMins === 0 ? 'On estimate' : 'Over estimate ✗'}</Typography>
+                              </Box>
+                            )}
+                          </Box>
+                          {ticketReopens.length > 0 && (
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#334155' }}>Rework Breakdown</Typography>
+                              {ticketReopens.map((r, idx) => (
+                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: 1.5, mb: 1, border: '1px solid #fde68a', borderRadius: '8px', bgcolor: '#fefce8' }}>
+                                  <Box>
+                                    <Typography variant="caption" color="text.secondary">Reopen #{idx + 1}</Typography>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{r.reopenReason || 'No reason specified'}</Typography>
+                                  </Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, fontFamily: 'monospace', color: '#92400e' }}>{r.takenTime || r.reopenTiming || '-'}</Typography>
+                                </Box>
+                              ))}
+                            </Box>
+                          )}
+                        </Box>
+                      );
+                    })()}
+                  </Box>
+                </Box>
+              )}
+            </Collapse>
+          </Box>
+
+          {/* Part 3: Progress Roadmap (20%) */}
+          <Box sx={{ 
+            flex: panelsOpen.part3 ? 2 : '0 0 50px', 
+            transition: 'all 0.3s ease', 
+            borderRadius: '12px', border: '1px solid #e2e8f0', 
+            bgcolor: '#fff', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+          }}>
+            <Box sx={{ p: 2, display: 'flex', justifyContent: panelsOpen.part3 ? 'space-between' : 'center', alignItems: 'center', borderBottom: '1px solid #eef2f6', cursor: 'pointer', bgcolor: panelsOpen.part3 ? '#fff' : '#f8fafc', height: panelsOpen.part3 ? 'auto' : '100%' }} onClick={() => handleTogglePanel('part3')}>
+              {panelsOpen.part3 ? (
+                <Typography variant="h5" sx={{ fontWeight: 800, color: '#1e293b' }}>Progress Roadmap</Typography>
+              ) : (
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, writingMode: 'vertical-rl', transform: 'rotate(180deg)', py: 2, letterSpacing: '1px', color: '#64748b' }}>Progress Roadmap</Typography>
+              )}
+              <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePanel('part3'); }} sx={{ position: panelsOpen.part3 ? 'relative' : 'absolute', top: panelsOpen.part3 ? 0 : 16 }}>
+                {panelsOpen.part3 ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            <Collapse in={panelsOpen.part3} sx={{ flexGrow: 1, overflowY: 'auto' }}>
+              <Box sx={{ p: 3 }}>
+                <Box sx={{ p: 2, height: '100%' }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, display: 'none' }}></Typography>
+
+        <Box sx={{ position: 'relative', pl: 1 }}>
+          {roadmapEvents.map((event, idx) => {
+            const isLast = idx === roadmapEvents.length - 1;
+            const isReassign = event.comment && event.comment.startsWith('Reassigned to');
+
+            let titleText = '';
+            if (event.comment === 'Ticket created') {
+              titleText = 'Ticket Created';
+            } else if (isReassign) {
+              titleText = event.comment;
+            } else {
+              titleText = event.fromStatus && event.fromStatus !== event.toStatus
+                ? `Status: ${event.fromStatus} → ${event.toStatus}`
+                : `Status: ${event.toStatus}`;
+            }
+
+            return (
+              <Box key={event.id || idx} sx={{ display: 'flex', position: 'relative', pb: isLast ? 0 : 3 }}>
+                {!isLast && (
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      left: 11,
+                      top: 24,
+                      bottom: 0,
+                      width: '2px',
+                      bgcolor: '#673ab7',
+                      zIndex: 1
+                    }}
+                  />
+                )}
+
+                <Box
+                  sx={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    bgcolor: isLast ? '#ede7f6' : '#673ab7',
+                    border: '2px solid #673ab7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isLast ? '#673ab7' : '#fff',
+                    zIndex: 2,
+                    mr: 2,
+                    boxShadow: isLast ? '0 0 0 4px rgba(103, 58, 183, 0.2)' : 'none',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  {isLast ? (
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#673ab7' }} />
+                  ) : (
+                    <span style={{ fontSize: '10px', fontWeight: 900 }}>✓</span>
+                  )}
+                </Box>
+
+                <Box sx={{ pt: 0.2 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      fontSize: '0.9rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    {titleText}
+                    {isLast && (
+                      <Chip label="Current" size="small" sx={{ bgcolor: '#ede7f6', color: '#673ab7', fontWeight: 700, height: 16, fontSize: '0.65rem' }} />
+                    )}
+                  </Typography>
+
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                    {format(new Date(event.updatedAt), 'dd/MM/yyyy HH:mm')} by {event.updatedBy}
+                  </Typography>
+
+                  {event.comment && event.comment !== 'Ticket created' && !isReassign && !event.comment.startsWith('Status updated to') && (() => {
+                    let textToDisplay = event.comment;
+                    let isHtml = false;
+                    try {
+                      const parsed = JSON.parse(event.comment);
+                      if (parsed && parsed.comment) {
+                        textToDisplay = parsed.comment;
+                        isHtml = true;
+                      }
+                    } catch (e) {
+                      // not JSON
+                    }
+                    if (isHtml || textToDisplay.includes('<p>')) {
+                      return (
+                        <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                      );
+                    }
+                    return (
+                      <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7' }}>
+                        "{textToDisplay}"
+                      </Typography>
+                    );
+                  })()}
+                </Box>
+              </Box>
+            );
+          })}
         </Box>
-      )}
+      </Box>
+              </Box>
+            </Collapse>
+          </Box>
+
+        </Box>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
 
       {/* ── DASHBOARD STAT CARDS & ACTIONS ── */}
       <Box sx={{
@@ -1988,9 +2995,9 @@ export default function TicketManagement({ viewType }) {
           <HeaderStatCard title="Total" count={stats.total} color={theme.palette.primary.main} icon={<AssignmentIcon />} />
           <HeaderStatCard title="Open" count={stats.open} color={theme.palette.info.main} icon={<TicketIcon />} />
           <HeaderStatCard title="In Progress" count={stats.inProgress} color={theme.palette.warning.main} icon={<HistoryIcon />} />
-          <HeaderStatCard title="Resolved" count={stats.resolved} color={theme.palette.success.main} icon={<CheckCircleIcon />} />
-          <HeaderStatCard title="Closed" count={stats.closed} color={theme.palette.text.secondary} icon={<ArchiveIcon />} />
+          <HeaderStatCard title="To Be Tested" count={stats.toBeTested} color={theme.palette.success.main} icon={<CheckCircleIcon />} />
           <HeaderStatCard title="Reopened" count={stats.reopened} color={theme.palette.secondary.main} icon={<ReplayIcon />} />
+          <HeaderStatCard title="Completed" count={stats.completed} color={theme.palette.text.secondary} icon={<CheckCircleIcon />} />
           <HeaderStatCard title="Overdue" count={stats.overdue} color={theme.palette.error.main} icon={<ErrorOutlineIcon />} />
         </Box>
 
@@ -2989,764 +3996,20 @@ export default function TicketManagement({ viewType }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-        maxWidth="lg"
-        fullWidth
-        sx={{
-          '& .MuiDialog-paper': {
-            m: 1.5,
-            width: 'calc(100% - 24px)',
-            maxWidth: '1200px'
-          }
-        }}
-      >
-        {selectedTicket && (
-          <>
-            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Chip label={selectedTicket.ticketId} color="primary" sx={{ fontWeight: 700 }} />
-                <Typography variant="h3" sx={{ fontWeight: 700 }}>{selectedTicket.title}</Typography>
-              </Stack>
-              <IconButton onClick={() => setDetailsOpen(false)}><CloseIcon /></IconButton>
-            </DialogTitle>
-            <Divider />
-            <DialogContent sx={{ p: { xs: 2, md: 4 }, bgcolor: '#f4f6f8' }}>
-              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3 }}>
-                {/* LEFT SECTION (70%) */}
-                <Box sx={{ flex: { xs: '1 1 100%', md: tabValue === 0 ? 7 : 12 }, minWidth: 0 }}>
-                  <Paper sx={{ border: '1px solid #eef2f6', borderRadius: '12px', overflow: 'hidden', mb: 3 }}>
-                    <Tabs
-                      value={tabValue}
-                      onChange={(e, val) => setTabValue(val)}
-                      indicatorColor="primary"
-                      textColor="primary"
-                      variant="scrollable"
-                      scrollButtons="auto"
-                      sx={{ borderBottom: '1px solid #eef2f6', bgcolor: '#fcfcfc' }}
-                    >
-                      <Tab label="Details" />
-                      <Tab label={`Comments (${ticketComments.length})`} />
-                      <Tab label={`Files (${ticketAttachments.length})`} />
-                      <Tab label="Timeline" />
-                      <Tab label={`Reopens (${ticketReopens.length})`} />
-                    </Tabs>
-                    <Box sx={{ p: 2.5, minHeight: '65vh' }}>
-                      {tabValue === 0 && (
-                        <Box sx={{ p: 2.5, width: '100%' }}>
-                          <Stack spacing={2.5} sx={{ width: '100%' }}>
-                            <Paper sx={{ p: 2, borderRadius: '12px', border: '1px solid #eef2f6', mb: 3 }}>
-                              <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Ticket Description</Typography>
-                              <Box
-                                sx={{
-                                  p: 2,
-                                  bgcolor: '#fafafa',
-                                  borderRadius: '8px',
-                                  border: '1px solid #eee',
-                                  minHeight: 120,
-                                  overflowY: 'auto'
-                                }}
-                                dangerouslySetInnerHTML={{ __html: selectedTicket.description }}
-                              />
-
-                              <Grid container spacing={2} sx={{ mt: 3 }}>
-                                <Grid item xs={6} sm={4}>
-                                  <Typography variant="caption" color="text.secondary">Workflow Type</Typography>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.ticketType}</Typography>
-                                </Grid>
-                                <Grid item xs={6} sm={4}>
-                                  <Typography variant="caption" color="text.secondary">Severity</Typography>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.severityLevel || 'Medium'}</Typography>
-                                </Grid>
-                                <Grid item xs={6} sm={4}>
-                                  <Typography variant="caption" color="text.secondary">Source</Typography>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.sourceType || 'Portal'}</Typography>
-                                </Grid>
-
-                                <Grid item xs={6} sm={4}>
-                                  <Typography variant="caption" color="text.secondary">Module</Typography>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.moduleName || 'None'}</Typography>
-                                </Grid>
-                                <Grid item xs={6} sm={4}>
-                                  <Typography variant="caption" color="text.secondary">Screen Name</Typography>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.pageName || 'None'}</Typography>
-                                </Grid>
-                                <Grid item xs={6} sm={4}>
-                                  <Typography variant="caption" color="text.secondary">Created By</Typography>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.employeeName || selectedTicket.createdBy}</Typography>
-                                </Grid>
-
-                                {selectedTicket.takenTime && (
-                                  <Grid item xs={12}>
-                                    <Box sx={{
-                                      mt: 0.5,
-                                      pt: 1.5,
-                                      borderTop: '1px dashed #e2e8f0',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: 1.5,
-                                      flexWrap: 'wrap'
-                                    }}>
-                                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.7rem' }}>
-                                        Taken Time
-                                      </Typography>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'secondary.main', fontSize: '0.95rem' }}>
-                                        {selectedTicket.takenTime}
-                                      </Typography>
-                                    </Box>
-                                  </Grid>
-                                )}
-                              </Grid>
-                            </Paper>
-                            <Paper sx={{ p: 2, borderRadius: '12px', border: '1px solid #eef2f6', mb: 3 }}>
-                              <Typography variant="h4" sx={{ fontWeight: 700, mb: 2.5 }}>Workflow Management</Typography>
-                              <Stack spacing={3}>
-                                {/* Row 1: Status dropdown, Target Date, Taken Time (Stretch to 100% width) */}
-                                <Box sx={{ width: '100%' }}>
-                                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
-                                    <Box sx={{ flex: '1 1 240px', maxWidth: { sm: 300, xs: '100%' } }}>
-                                      <TextField
-                                        fullWidth
-                                        select
-                                        size="small"
-                                        label="Ticket Workflow Status"
-                                        value={detailStatus}
-                                        onChange={(e) => setDetailStatus(e.target.value)}
-                                      >
-                                        {currentViewType === 'raised-for-me' ? [
-                                          <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'}>Open</MenuItem>,
-                                          <MenuItem key="Reopened" value="Reopened" disabled={selectedTicket.ticketStatus !== 'Reopened'}>Reopened</MenuItem>,
-                                          <MenuItem key="Assigned" value="Assigned">Assigned</MenuItem>,
-                                          <MenuItem key="In Progress" value="In Progress">In Progress</MenuItem>,
-                                          <MenuItem key="Hold" value="Hold">Hold</MenuItem>,
-                                          <MenuItem key="Resolved" value="Resolved">Resolved</MenuItem>
-                                        ] : [
-                                          <MenuItem key="current" value={selectedTicket.ticketStatus}>{selectedTicket.ticketStatus}</MenuItem>,
-                                          selectedTicket.ticketStatus !== 'Closed' ? <MenuItem key="Closed" value="Closed">Closed</MenuItem> : null
-                                        ].filter(Boolean)}
-                                      </TextField>
-                                    </Box>
-
-                                    {currentViewType === 'raised-for-me' && (
-                                      <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <TextField
-                                          fullWidth
-                                          size="small"
-                                          type="date"
-                                          label="Target Date"
-                                          InputLabelProps={{ shrink: true }}
-                                          value={detailTargetDate}
-                                          onChange={(e) => setDetailTargetDate(e.target.value)}
-                                          inputProps={{
-                                            min: todayStr,
-                                            onClick: (e) => { try { e.target.showPicker(); } catch (err) { } }
-                                          }}
-                                        />
-                                        <HtmlTooltip
-                                          title={
-                                            <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
-                                              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
-                                                Developer Workload Details (Max 12h/day)
-                                              </Typography>
-                                              {renderWorkloadTrail(detailDevWorkloadTrail)}
-                                            </Box>
-                                          }
-                                          placement="top"
-                                          arrow
-                                        >
-                                          <IconButton size="small" sx={{ color: '#673ab7' }}>
-                                            <InfoOutlinedIcon fontSize="small" />
-                                          </IconButton>
-                                        </HtmlTooltip>
-                                      </Box>
-                                    )}
-
-                                    {currentViewType === 'raised-for-me' && (
-                                      <Box sx={{ flex: 1 }}>
-                                        <TextField
-                                          fullWidth
-                                          size="small"
-                                          label="Taken Time (e.g. 2 hrs, 1 day)"
-                                          value={detailTakenTime}
-                                          onChange={(e) => setDetailTakenTime(e.target.value)}
-                                        />
-                                      </Box>
-                                    )}
-                                  </Stack>
-                                </Box>
-
-                                {/* Row 2: Currently Assigned To text display (no input box) */}
-                                {(currentViewType === 'raised-for-me' || currentViewType === 'raised-by-me') && (
-                                  <Box sx={{ width: '100%' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 500 }}>
-                                      Currently Assigned To
-                                    </Typography>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '1.05rem' }}>
-                                      {detailAssignedTo || 'Unassigned'}
-                                    </Typography>
-                                  </Box>
-                                )}
-
-                                {/* Row 3: Reassign controls / button on the next row (full width) */}
-                                {(currentViewType === 'raised-for-me' || currentViewType === 'raised-by-me') && (
-                                  <Box sx={{ width: '100%' }}>
-                                    {isReassigning ? (
-                                      <Stack spacing={2} sx={{ width: '100%' }}>
-                                        <Autocomplete
-                                          options={employeesList}
-                                          getOptionLabel={(option) => option.employeeName || ''}
-                                          value={employeesList.find(e => e.employeeName === detailAssignedTo) || null}
-                                          onChange={(event, newValue) => {
-                                            setDetailAssignedTo(newValue ? newValue.employeeName : '');
-                                          }}
-                                          renderInput={(params) => (
-                                            <TextField
-                                              {...params}
-                                              size="small"
-                                              label="Select New Assignee"
-                                              placeholder="Choose employee..."
-                                              fullWidth
-                                            />
-                                          )}
-                                          sx={{
-                                            width: '100%',
-                                            '& .MuiOutlinedInput-root': {
-                                              borderRadius: '8px',
-                                              bgcolor: '#fbfbfe'
-                                            }
-                                          }}
-                                        />
-                                        <Button
-                                          variant="outlined"
-                                          color="secondary"
-                                          onClick={() => setIsReassigning(false)}
-                                          sx={{ height: 40, width: '100%', fontWeight: 700, borderRadius: '8px' }}
-                                        >
-                                          Cancel Reassign
-                                        </Button>
-                                      </Stack>
-                                    ) : (
-                                      <Button
-                                        variant="outlined"
-                                        color="secondary"
-                                        onClick={() => setIsReassigning(true)}
-                                        sx={{ height: 40, width: '100%', fontWeight: 700, borderRadius: '8px' }}
-                                      >
-                                        Reassign Ticket
-                                      </Button>
-                                    )}
-                                  </Box>
-                                )}
-
-                                {/* Row 3: Developer Auto-fill details for external */}
-                                {selectedTicket.ticketType === 'External' && (currentViewType === 'raised-for-me' || currentViewType === 'raised-by-me') && isReassigning && (
-                                  <Box sx={{ width: '100%' }}>
-                                    <Divider sx={{ my: 1.5 }} />
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'secondary.main', mb: 1.5 }}>
-                                      Developer Contact Details
-                                    </Typography>
-                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: '100%' }}>
-                                      <Box sx={{ flex: 5 }}>
-                                        <Autocomplete
-                                          size="small"
-                                          options={employeesList}
-                                          getOptionLabel={(option) => option.employeeName || ''}
-                                          value={employeesList.find(e => e.employeeName === detailDevName) || null}
-                                          onChange={(event, selectedEmp) => {
-                                            if (selectedEmp) {
-                                              setDetailDevName(selectedEmp.employeeName || '');
-                                              setDetailDevEmail(selectedEmp.officeMail || '');
-                                              setDetailDevMobile('');
-                                              axios.get(`/api/master/employee/${selectedEmp.id}/contact`)
-                                                .then(c => {
-                                                  if (c.data?.mobile) setDetailDevMobile(c.data.mobile);
-                                                }).catch(() => { });
-                                            } else {
-                                              setDetailDevName('');
-                                              setDetailDevEmail('');
-                                              setDetailDevMobile('');
-                                            }
-                                          }}
-                                          renderInput={(params) => <TextField {...params} label="Assign Developer" />}
-                                          fullWidth
-                                        />
-                                      </Box>
-                                      <Box sx={{ flex: 4 }}>
-                                        <TextField fullWidth size="small" disabled label="Developer Email" value={detailDevEmail} />
-                                      </Box>
-                                      <Box sx={{ flex: 3 }}>
-                                        <TextField fullWidth size="small" disabled label="Developer Mobile" value={detailDevMobile} />
-                                      </Box>
-                                    </Stack>
-                                  </Box>
-                                )}
-
-                                {/* Row 4: Comments Box */}
-                                <Box sx={{ width: '100%' }}>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.secondary' }}>Comments</Typography>
-                                  <Box
-                                    sx={{
-                                      p: 1.5,
-                                      bgcolor: '#fafafa',
-                                      borderRadius: '8px',
-                                      border: '1px solid #eee',
-                                      transition: 'all 0.3s ease',
-                                      '&:hover': {
-                                        borderColor: '#ccc'
-                                      }
-                                    }}
-                                  >
-                                    <TextField
-                                      fullWidth
-                                      multiline
-                                      rows={6}
-                                      placeholder="Provide details/justification for status change..."
-                                      value={detailResolution}
-                                      onChange={(e) => setDetailResolution(e.target.value)}
-                                      variant="standard"
-                                      InputProps={{
-                                        disableUnderline: true,
-                                        style: { fontSize: '0.875rem' }
-                                      }}
-                                    />
-                                  </Box>
-                                </Box>
-
-                                {/* Row 5: Apply Changes Button & Reopen Ticket Banner */}
-                                <Box sx={{ width: '100%' }}>
-                                  <Button
-                                    variant="contained"
-                                    color="secondary"
-                                    fullWidth
-                                    onClick={handleUpdateTicketDetails}
-                                    sx={{ height: 48, fontWeight: 700, fontSize: '1rem', borderRadius: '8px' }}
-                                  >
-                                    Apply Changes
-                                  </Button>
-                                </Box>
-
-                                {detailStatus === 'Resolved' && selectedTicket.ticketStatus !== 'Closed' && currentViewType === 'raised-by-me' && (
-                                  <Box sx={{ width: '100%' }}>
-                                    <Alert severity="success" action={
-                                      <Button size="small" color="inherit" startIcon={<ReplayIcon />} onClick={() => setReopenOpen(true)}>
-                                        Reopen Ticket
-                                      </Button>
-                                    }>
-                                      This ticket is completed. You can reopen it if you require further investigation.
-                                    </Alert>
-                                  </Box>
-                                )}
-                              </Stack>
-                            </Paper>
-
-
-                            {/* Row 1: 4 info cards across full width */}
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, width: '100%' }}>
-                              <Box sx={{ flex: '1 1 calc(25% - 12px)', minWidth: 140 }}>
-                                <Card sx={{ bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: 'none', height: '100%' }}>
-                                  <CardContent sx={{ p: '14px !important' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.5px' }}>
-                                      Contact Email
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                      {selectedTicket.email || '-'}
-                                    </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Box>
-                              <Box sx={{ flex: '1 1 calc(25% - 12px)', minWidth: 140 }}>
-                                <Card sx={{ bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: 'none', height: '100%' }}>
-                                  <CardContent sx={{ p: '14px !important' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.5px' }}>
-                                      Contact Mobile
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                                      {selectedTicket.mobileNo || '-'}
-                                    </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Box>
-                              <Box sx={{ flex: '1 1 calc(25% - 12px)', minWidth: 140 }}>
-                                <Card sx={{ bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: 'none', height: '100%' }}>
-                                  <CardContent sx={{ p: '14px !important' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.5px' }}>
-                                      Target Date
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                                      {selectedTicket.targetDate ? format(new Date(selectedTicket.targetDate), 'dd/MM/yyyy') : '-'}
-                                    </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Box>
-                              <Box sx={{ flex: '1 1 calc(25% - 12px)', minWidth: 140 }}>
-                                <Card sx={{ bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: 'none', height: '100%' }}>
-                                  <CardContent sx={{ p: '14px !important' }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5, fontWeight: 600, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.5px' }}>
-                                      Due Date
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'error.main' }}>
-                                      {selectedTicket.dueDate ? format(new Date(selectedTicket.dueDate), 'dd/MM/yyyy') : '-'}
-                                    </Typography>
-                                  </CardContent>
-                                </Card>
-                              </Box>
-                            </Box>
-
-                            {(selectedTicket.dueDateReason || selectedTicket.resolvedAt || selectedTicket.closedAt || selectedTicket.ticketStatus === 'Reopened') && (
-                              <Stack spacing={1.5} sx={{ width: '100%' }}>
-                                {selectedTicket.dueDateReason && (
-                                  <Box sx={{ p: 2, bgcolor: '#fffde7', border: '1px dashed #ffd54f', borderRadius: '8px', width: '100%' }}>
-                                    <Typography variant="caption" color="warning.dark" sx={{ fontWeight: 700, display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
-                                      Extension Reason
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'warning.dark', fontWeight: 500 }}>
-                                      {selectedTicket.dueDateReason}
-                                    </Typography>
-                                  </Box>
-                                )}
-                                {(selectedTicket.resolvedAt || selectedTicket.closedAt) && (
-                                  <Box sx={{ p: 2, bgcolor: '#f0fdf4', border: '1px dashed #4ade80', borderRadius: '8px', width: '100%' }}>
-                                    <Typography variant="caption" color="success.dark" sx={{ fontWeight: 700, display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
-                                      Resolution Summary
-                                    </Typography>
-                                    {selectedTicket.resolvedAt && (
-                                      <Typography variant="body2" sx={{ color: 'success.dark', fontWeight: 600 }}>
-                                        Resolved: {format(new Date(selectedTicket.resolvedAt), 'dd/MM/yyyy HH:mm')}
-                                      </Typography>
-                                    )}
-                                    {selectedTicket.closedAt && (
-                                      <Typography variant="body2" sx={{ color: 'success.dark', fontWeight: 600 }}>
-                                        Closed: {format(new Date(selectedTicket.closedAt), 'dd/MM/yyyy HH:mm')}
-                                      </Typography>
-                                    )}
-                                  </Box>
-                                )}
-                                {selectedTicket.ticketStatus === 'Reopened' && (
-                                  <Box sx={{ p: 2, bgcolor: '#fdf2f8', border: '1px dashed #ec4899', borderRadius: '8px', width: '100%' }}>
-                                    <Typography variant="caption" color="secondary.dark" sx={{ fontWeight: 700, display: 'block', mb: 0.5, textTransform: 'uppercase' }}>
-                                      Reopen Active Status
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'secondary.dark', fontWeight: 600 }}>
-                                      Reopen Target Date: {selectedTicket.targetDate ? format(new Date(selectedTicket.targetDate), 'dd/MM/yyyy') : '-'}
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ color: 'secondary.dark', fontWeight: 600, mt: 0.5 }}>
-                                      Reopen Expected Duration: {selectedTicket.takenTime || '-'}
-                                    </Typography>
-                                  </Box>
-                                )}
-                              </Stack>
-                            )}
-
-                            {/* Row 3: Duration stats side by side */}
-                            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                              <Box sx={{ flex: '1 1 calc(50% - 8px)', p: 2, bgcolor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', mb: 0.5 }}>
-                                  Overall Ticket Duration
-                                </Typography>
-                                <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', my: 0.5 }}>
-                                  {getOverallDuration(selectedTicket)}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                  From Creation: {format(new Date(selectedTicket.createdAt), 'dd/MM/yyyy HH:mm')}
-                                </Typography>
-                              </Box>
-
-                              <Box sx={{ flex: '1 1 calc(50% - 8px)', p: 2, bgcolor: '#fdf4ff', border: '1px solid #e9d5ff', borderRadius: '10px' }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', mb: 0.5 }}>
-                                  Overall Taken Time (Active Work)
-                                </Typography>
-                                {(() => {
-                                  const totalTime = calculateTotalTakenTime();
-                                  return (
-                                    <>
-                                      <Typography variant="h3" sx={{ fontWeight: 800, color: 'secondary.main', my: 0.5 }}>
-                                        {totalTime.formatted}
-                                      </Typography>
-                                      {totalTime.details && (
-                                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>
-                                          Sum of: {totalTime.details}
-                                        </Typography>
-                                      )}
-                                    </>
-                                  );
-                                })()}
-                              </Box>
-                            </Box>
-
-                            {ticketTimeline && ticketTimeline.length > 0 && (
-                              <Box>
-                                <Typography variant="subtitle1" sx={{ fontWeight: 700, mt: 1, mb: 1.5, color: '#1e293b' }}>
-                                  Status Transitions & Timeline Log
-                                </Typography>
-                                <Stack spacing={2} sx={{ maxHeight: 240, overflowY: 'auto', pr: 0.5 }}>
-                                  {ticketTimeline.map((item) => (
-                                    <Box key={item.id} sx={{ p: 2, border: '1px solid #eef2f6', borderRadius: '8px', bgcolor: '#fff', transition: 'all 0.2s', '&:hover': { boxShadow: '0 2px 8px rgba(0,0,0,0.04)' } }}>
-                                      <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                                        <Chip
-                                          label={item.fromStatus && item.fromStatus !== item.toStatus ? `${item.fromStatus} → ${item.toStatus}` : item.toStatus}
-                                          size="small"
-                                          color="secondary"
-                                          variant="outlined"
-                                          sx={{ fontWeight: 700, fontSize: '0.75rem', borderRadius: '4px' }}
-                                        />
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                          {format(new Date(item.updatedAt), 'dd/MM/yyyy HH:mm')}
-                                        </Typography>
-                                      </Stack>
-                                      <Typography variant="body2" sx={{ fontSize: '0.825rem', color: 'text.primary', mb: item.comment ? 1 : 0 }}>
-                                        Updated by: <span style={{ fontWeight: 700, color: '#673ab7' }}>{item.updatedBy}</span>
-                                      </Typography>
-                                      {item.comment && (() => {
-                                        let textToDisplay = item.comment;
-                                        let isHtml = false;
-                                        try {
-                                          const parsed = JSON.parse(item.comment);
-                                          if (parsed && parsed.comment) {
-                                            textToDisplay = parsed.comment;
-                                            isHtml = true;
-                                          }
-                                        } catch (e) { }
-                                        if (isHtml || textToDisplay.includes('<p>')) {
-                                          return (
-                                            <Box sx={{ p: 1.25, bgcolor: '#f8fafc', borderLeft: '4px solid #673ab7', borderRadius: '4px', fontStyle: 'italic', color: 'text.secondary', fontSize: '0.8rem', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
-                                          );
-                                        }
-                                        return (
-                                          <Typography variant="body2" sx={{ p: 1.25, bgcolor: '#f8fafc', borderLeft: '4px solid #673ab7', borderRadius: '4px', fontStyle: 'italic', color: 'text.secondary', fontSize: '0.8rem' }}>
-                                            "{textToDisplay}"
-                                          </Typography>
-                                        );
-                                      })()}
-                                    </Box>
-                                  ))}
-                                </Stack>
-                              </Box>
-                            )}
-                          </Stack>
-                        </Box>
-                      )}
-                      {/* Tab 1: Comments history with rich text editor */}
-                      {tabValue === 1 && (
-                        <Box sx={{ p: 2 }}>
-                          <Stack spacing={2} sx={{ maxHeight: 380, overflowY: 'auto', mb: 2, pr: 1 }}>
-                            {ticketComments.map((c) => (
-                              <Box key={c.id} sx={{ p: 1.5, bgcolor: c.commentType === 'Internal Note' ? '#fffde7' : '#fafafa', borderRadius: '8px', border: '1px solid #eee' }}>
-                                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                                  <Avatar sx={{ width: 28, height: 28, fontSize: '0.8rem' }}>{c.commentedBy[0]}</Avatar>
-                                  <Box sx={{ flexGrow: 1 }}>
-                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{c.commentedBy}</Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      {format(new Date(c.createdAt), 'dd/MM/yyyy HH:mm')}
-                                    </Typography>
-                                  </Box>
-                                  <Chip label={c.commentType} size="small" variant="outlined" color={c.commentType === 'Internal Note' ? 'warning' : 'primary'} />
-                                </Stack>
-                                <Box sx={{ pl: 1, fontSize: '0.9rem' }} dangerouslySetInnerHTML={{ __html: c.comments }} />
-                                {c.attachmentPath && (
-                                  <Button
-                                    variant="text"
-                                    size="small"
-                                    startIcon={<AttachFileIcon />}
-                                    onClick={() => window.open(c.attachmentPath)}
-                                    sx={{ mt: 1 }}
-                                  >
-                                    Download File
-                                  </Button>
-                                )}
-                              </Box>
-                            ))}
-                          </Stack>
-
-                          <Divider sx={{ my: 1.5 }} />
-                          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Post Comment (Rich Text)</Typography>
-                          <ReactQuillDemo value={newComment} onChange={setNewComment} editorMinHeight={80} />
-
-                          <Grid container spacing={1} alignItems="center" sx={{ mt: 1 }}>
-                            <Grid item xs={6}>
-                              <TextField
-                                fullWidth
-                                select
-                                size="small"
-                                label="Type"
-                                value={commentType}
-                                onChange={(e) => setCommentType(e.target.value)}
-                              >
-                                <MenuItem value="Public Reply">Public Reply</MenuItem>
-                                <MenuItem value="Internal Note">Internal Note</MenuItem>
-                                <MenuItem value="Resolution Update">Resolution Update</MenuItem>
-                              </TextField>
-                            </Grid>
-                            <Grid item xs={6}>
-                              <Button component="label" size="small" variant="outlined" fullWidth startIcon={<CloudUploadIcon />}>
-                                {commentUploading ? 'Uploading...' : commentFile ? 'File Uploaded' : 'Attach File'}
-                                <input type="file" hidden onChange={(e) => handleFileUpload(e, true)} />
-                              </Button>
-                            </Grid>
-                            <Grid item xs={12}>
-                              <Button
-                                variant="contained"
-                                color="secondary"
-                                fullWidth
-                                startIcon={<SendIcon />}
-                                onClick={handlePostComment}
-                                sx={{ mt: 1 }}
-                              >
-                                Send Comment
-                              </Button>
-                            </Grid>
-                          </Grid>
-                        </Box>
-                      )}
-                      {/* Tab 2: Attachments list and direct uploader */}
-                      {tabValue === 2 && (
-                        <Box sx={{ p: 3 }}>
-                          <Stack spacing={2} sx={{ maxHeight: 350, overflowY: 'auto', mb: 2 }}>
-                            {ticketAttachments.map((file) => {
-                              const isVoice = file.fileType === 'Voice Recording' ||
-                                /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
-                              return (
-                                <Box key={file.id} sx={{ p: 1.5, border: '1px solid #eee', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                    <Box sx={{ flexGrow: 1 }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{file.fileName}</Typography>
-                                      <Typography variant="caption" color="text.secondary">
-                                        By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
-                                      </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                      {!isVoice && (
-                                        <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
-                                          Preview
-                                        </Button>
-                                      )}
-                                      <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
-                                        Download
-                                      </Button>
-                                    </Box>
-                                  </Box>
-                                  {isVoice && (
-                                    <Box sx={{ width: '100%', mt: 0.5 }}>
-                                      <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '36px' }} />
-                                    </Box>
-                                  )}
-                                </Box>
-                              );
-                            })}
-                          </Stack>
-                          <Divider sx={{ my: 2 }} />
-                          <Button component="label" variant="contained" fullWidth startIcon={<CloudUploadIcon />}>
-                            Upload File
-                            <input type="file" hidden onChange={async (e) => {
-                              const file = e.target.files[0];
-                              if (file) {
-                                const fd = new FormData();
-                                fd.append('file', file);
-                                fd.append('module', 'Support');
-                                const r = await axios.post('/api/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                                handleAddDirectAttachment(r.data);
-                              }
-                            }} />
-                          </Button>
-                        </Box>
-                      )}
-                      {/* Tab 3: Timeline audit transitions */}
-                      {tabValue === 3 && (
-                        <Box sx={{ p: 3, maxHeight: 400, overflowY: 'auto' }}>
-                          <Stack spacing={2}>
-                            {ticketTimeline.map((item) => (
-                              <Box key={item.id} sx={{ pl: 2, borderLeft: '2px solid #ccc', position: 'relative' }}>
-                                <Box sx={{
-                                  width: 10,
-                                  height: 10,
-                                  bgcolor: '#673ab7',
-                                  borderRadius: '50%',
-                                  position: 'absolute',
-                                  left: -6,
-                                  top: 5
-                                }} />
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                  {item.fromStatus && item.fromStatus !== item.toStatus ? `${item.fromStatus} → ${item.toStatus}` : (item.toStatus ? `Status: ${item.toStatus}` : 'Updated')}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                                  By {item.updatedBy} at {format(new Date(item.updatedAt), 'dd/MM/yyyy HH:mm')}
-                                </Typography>
-                                {item.comment && (() => {
-                                  let textToDisplay = item.comment;
-                                  let isHtml = false;
-                                  try {
-                                    const parsed = JSON.parse(item.comment);
-                                    if (parsed && parsed.comment) {
-                                      textToDisplay = parsed.comment;
-                                      isHtml = true;
-                                    }
-                                  } catch (e) { }
-                                  if (isHtml || textToDisplay.includes('<p>')) {
-                                    return (
-                                      <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
-                                    );
-                                  }
-                                  return (
-                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary' }}>
-                                      "{textToDisplay}"
-                                    </Typography>
-                                  );
-                                })()}
-                              </Box>
-                            ))}
-                          </Stack>
-                        </Box>
-                      )}
-                      {/* Tab 4: Reopens history */}
-                      {tabValue === 4 && (
-                        <Box sx={{ p: 3, maxHeight: 400, overflowY: 'auto' }}>
-                          <Stack spacing={2}>
-                            {ticketReopens.length === 0 ? (
-                              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 4 }}>
-                                No reopen history for this ticket.
-                              </Typography>
-                            ) : ticketReopens.map((r, idx) => (
-                              <Box key={r.id} sx={{ p: 2, border: '1px solid #f9a8d4', borderRadius: '10px', bgcolor: '#fff5f9' }}>
-                                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-                                  <Chip label={`Reopen #${idx + 1}`} size="small" color="secondary" sx={{ fontWeight: 700, fontSize: '0.7rem' }} />
-                                  <Typography variant="caption" color="text.secondary">
-                                    {format(new Date(r.reopenedAt), 'dd/MM/yyyy HH:mm')} by {r.reopenedBy}
-                                  </Typography>
-                                </Stack>
-                                {r.expectedDuration && (
-                                  <Typography variant="body2" sx={{ fontWeight: 700, color: 'secondary.main', mt: 0.5 }}>
-                                    ⏱ Expected Fix Duration: {r.expectedDuration}
-                                  </Typography>
-                                )}
-                                {r.reopenTargetDate && (
-                                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mt: 0.5 }}>
-                                    📅 Target Date: {format(new Date(r.reopenTargetDate), 'dd/MM/yyyy')}
-                                  </Typography>
-                                )}
-                                <Typography variant="body2" sx={{ mt: 0.5, fontStyle: 'italic', color: 'text.secondary' }}>
-                                  Reason: {r.reason}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Stack>
-                        </Box>
-                      )}
-                    </Box>
-                  </Paper>
-                </Box>
-                {/* RIGHT SECTION (30%) */}
-                {tabValue === 0 && (
-                  <Box sx={{ flex: { xs: '1 1 100%', md: 3 }, minWidth: 280, maxWidth: { md: '30%' } }}>
-                    <Box sx={{ position: 'sticky', top: 16 }}>
-                      {renderRoadmap()}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </DialogContent>
-          </>
-        )}
-      </Dialog>
+      {/* Floating Save Button for Ticket Details (when open) */}
+      {selectedTicket && selectedTicket.ticketStatus !== 'Closed' && (
+        <Tooltip title="Save (Ctrl+S)" arrow placement="left">
+          <Fab 
+            color="secondary" 
+            aria-label="save" 
+            onClick={handleUpdateTicketDetails}
+            disabled={isSaving}
+            sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 1000 }}
+          >
+            <SaveIcon />
+          </Fab>
+        </Tooltip>
+      )}
 
       {/* Snackbar notification feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
