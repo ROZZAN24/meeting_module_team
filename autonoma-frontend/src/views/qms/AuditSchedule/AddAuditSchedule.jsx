@@ -13,7 +13,8 @@ import {
   useTheme,
   Chip,
   Avatar,
-  Tooltip
+  Tooltip,
+  Paper
 } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import {
@@ -36,6 +37,7 @@ import {
   BOSDatePicker,
   BOSDataTable,
   btnSave,
+  btnClear,
   getStatusChipSx,
   getPhotoUrl
 } from 'ui-component/bos';

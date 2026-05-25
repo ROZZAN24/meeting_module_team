@@ -328,7 +328,7 @@ export default function AddAuditObservation() {
 
         {/* Section 2: Attendance & Stats */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3fr 1fr' }, gap: 3 }}>
-          <BOSFormSection icon={<IconUsers size={20} color={theme.palette.secondary.main} />} title="Audit Attendance">
+          <BOSFormSection icon={<IconUsers size={20} color={theme.palette.secondary.main} />} title="Audit Attendance" sx={{ height: 'fit-content' }}>
             <BOSDataTable
               columns={[
                 { id: 'name', label: 'Name', minWidth: 150 },
@@ -341,7 +341,7 @@ export default function AddAuditObservation() {
               size={attendance.length || 5}
               loading={false}
               showActions={false}
-              sx={{ maxHeight: '250px' }}
+              sx={{ height: attendance.length > 0 ? '250px' : '135px' }}
               renderCell={(col, row) => {
                 if (col.id === 'attendanceStatus') return <Chip label={row.attendanceStatus} size="small" sx={getStatusChipSx(row.attendanceStatus === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
                 return row[col.id] || '-';
@@ -349,7 +349,7 @@ export default function AddAuditObservation() {
             />
           </BOSFormSection>
 
-          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px' }}>
+          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', height: 'fit-content' }}>
             <CardContent>
               <Stack spacing={2} alignItems="center">
                 <IconReportAnalytics size={40} color={theme.palette.primary.main} />

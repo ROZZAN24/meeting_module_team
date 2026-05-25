@@ -77,7 +77,8 @@ export const API_PATHS = {
     ITEM_OEM_MAPPING: `${API_BASE}/master/npd/oem-mapping`,
     ITEM_MODEL: `${API_BASE}/master/npd/model`,
     ITEM_CAPACITY: `${API_BASE}/master/npd/capacity`,
-    WIND_FARMS: `${API_BASE}/master/npd/wind-farm`
+    WIND_FARMS: `${API_BASE}/master/npd/wind-farm`,
+    PROCESS: `${API_BASE}/master/npd/process`
   },
 
   // Common/Infrastructure

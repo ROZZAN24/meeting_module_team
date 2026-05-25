@@ -13,7 +13,7 @@ CREATE TABLE [dbo].[AD_USER_COMPANY_MAPPING] (
     [company_id] BIGINT NOT NULL,
     [created_by] NVARCHAR(50),
     [created_at] DATETIME DEFAULT GETDATE(),
-    CONSTRAINT FK_UserComp_User FOREIGN KEY ([user_id]) REFERENCES AD_USER_CREDENTIALS([USER_ID]) ON DELETE CASCADE
+    CONSTRAINT FK_UserComp_User FOREIGN KEY ([user_id]) REFERENCES ad_user_credential([user_id]) ON DELETE CASCADE
 );
 END
 
@@ -25,7 +25,7 @@ CREATE TABLE [dbo].[AD_USER_DIVISION_MAPPING] (
     [division_id] BIGINT NOT NULL,
     [created_by] NVARCHAR(50),
     [created_at] DATETIME DEFAULT GETDATE(),
-    CONSTRAINT FK_UserDiv_User FOREIGN KEY ([user_id]) REFERENCES AD_USER_CREDENTIALS([USER_ID]) ON DELETE CASCADE
+    CONSTRAINT FK_UserDiv_User FOREIGN KEY ([user_id]) REFERENCES ad_user_credential([user_id]) ON DELETE CASCADE
 );
 END
 

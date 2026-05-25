@@ -87,18 +87,79 @@ export default function BOSDataTable({
     return rows.filter((row) => {
       // 1. Dynamic Filters from Search Popover (Only apply filters relevant to this table's columns)
       if (globalFilters) {
-        for (const [key, fVal] of Object.entries(globalFilters)) {
-          if (fVal === undefined || fVal === null || fVal === '' || fVal === 'All') continue;
-          
-          // Check if this filter key exists in our columns
-          const isRelevant = columns.some(col => col.id === key);
-          if (!isRelevant && key !== 'status') continue; 
+        const getResolvedValue = (colId, row) => {
+          let val = row[colId];
+          if (val === undefined || val === null) {
+            const snakeCaseId = colId.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            val = row[snakeCaseId];
+            if (val === undefined || val === null || val === '') {
+              if (colId === 'createdDate') val = row['createdAt'] || row['created_at'];
+              if (colId === 'updatedDate') val = row['updatedAt'] || row['updated_at'] || row['createdDate'] || row['createdAt'] || row['created_at'];
+              if (colId === 'createdBy') val = row['created_by'];
+              if (colId === 'updatedBy') val = row['updated_by'] || row['createdBy'] || row['created_by'];
+            }
+          }
+          return val;
+        };
 
-          const filterVal = String(fVal).toLowerCase().trim();
-          const rowVal = String(row[key] || '').toLowerCase().trim();
-          
-          if (filterVal && !rowVal.includes(filterVal)) {
-            return false;
+        for (const col of columns) {
+          if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') continue;
+
+          // Check if it's a date field
+          const isDateField = (col.id.toLowerCase().includes('date') || 
+                             col.id.endsWith('At') || 
+                             col.id.endsWith('_at') || 
+                             col.id === 'entryDate' ||
+                             col.id === 'invoiceDate') &&
+                            !(col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category'));
+
+          if (isDateField) {
+            const startVal = globalFilters[`${col.id}Start`];
+            const endVal = globalFilters[`${col.id}End`];
+            
+            if ((startVal && startVal !== 'All' && startVal !== '') || (endVal && endVal !== 'All' && endVal !== '')) {
+              const cellVal = getResolvedValue(col.id, row);
+              if (!cellVal) return false;
+              
+              const rowDate = new Date(cellVal);
+              if (isNaN(rowDate.getTime())) return false;
+              
+              if (startVal && startVal !== 'All' && startVal !== '') {
+                const startDate = new Date(startVal + 'T00:00:00');
+                if (!isNaN(startDate.getTime()) && rowDate < startDate) {
+                  return false;
+                }
+              }
+              if (endVal && endVal !== 'All' && endVal !== '') {
+                const endDate = new Date(endVal + 'T23:59:59');
+                if (!isNaN(endDate.getTime()) && rowDate > endDate) {
+                  return false;
+                }
+              }
+            }
+          } else {
+            const fVal = globalFilters[col.id];
+            if (fVal !== undefined && fVal !== null && fVal !== '' && fVal !== 'All') {
+              const cellVal = getResolvedValue(col.id, row);
+              const filterVal = String(fVal).toLowerCase().trim();
+              const rowVal = String(cellVal !== undefined && cellVal !== null ? cellVal : '').toLowerCase().trim();
+              
+              if (filterVal && !rowVal.includes(filterVal)) {
+                return false;
+              }
+            }
+          }
+        }
+
+        // Special check for 'status' or 'accountStatus' if it's not one of the columns
+        if (globalFilters.status !== undefined && globalFilters.status !== null && globalFilters.status !== '' && globalFilters.status !== 'All') {
+          const hasStatusCol = columns.some(col => col.id === 'status' || col.id === 'accountStatus');
+          if (!hasStatusCol) {
+            const statusVal = String(globalFilters.status).toLowerCase().trim();
+            const rowStatus = String(row.status || row.accountStatus || '').toLowerCase().trim();
+            if (statusVal && !rowStatus.includes(statusVal)) {
+              return false;
+            }
           }
         }
       }
@@ -200,8 +261,15 @@ export default function BOSDataTable({
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 185px)', overflow: 'hidden' }}>
-      <TableContainer component={Paper} sx={{ ...tableContainerSx, flexGrow: 1, height: 'auto', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, ...sx }} id={id}>
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      height: sx.height || 'calc(100vh - 185px)', 
+      maxHeight: sx.maxHeight || 'none',
+      minHeight: sx.minHeight || 'none',
+      overflow: 'hidden' 
+    }}>
+      <TableContainer component={Paper} sx={{ ...tableContainerSx, flexGrow: 1, height: 'auto', borderBottomLeftRadius: 0, borderBottomRightRadius: 0, ...sx, height: 'auto', maxHeight: 'none' }} id={id}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>

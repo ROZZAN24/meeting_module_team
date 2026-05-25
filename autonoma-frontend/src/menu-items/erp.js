@@ -46,7 +46,8 @@ import {
   IconTractor,
   IconMoodSmile,
   IconSearch,
-  IconCategory
+  IconCategory,
+  IconSitemap
 } from '@tabler/icons-react';
 
 const icons = {
@@ -97,7 +98,8 @@ const icons = {
   IconPlaneTilt,
   IconTractor,
   IconMoodSmile,
-  IconSearch
+  IconSearch,
+  IconSitemap
 };
 
 export const masters = {
@@ -454,6 +456,14 @@ export const masters = {
               url: '/master/npd/product-capacity',
               icon: icons.IconAward,
               pageCode: 'M3170'
+            },
+            {
+              id: 'master-npd-product-process',
+              title: 'Process Master',
+              type: 'item',
+              url: '/master/npd/product-process',
+              icon: icons.IconSitemap,
+              pageCode: 'M3180'
             }
           ]
         },
