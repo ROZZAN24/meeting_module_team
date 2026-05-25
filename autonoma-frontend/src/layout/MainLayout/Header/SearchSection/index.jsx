@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // material-ui
@@ -15,7 +15,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel } from '@mui/material';
+import { Divider, MenuItem, Select, Button, Stack, Popover, Checkbox, FormControlLabel, Tooltip } from '@mui/material';
 
 // third party
 import PopupState, { bindPopper, bindToggle } from 'material-ui-popup-state';
@@ -24,9 +24,10 @@ import PopupState, { bindPopper, bindToggle } from 'material-ui-popup-state';
 import Transitions from 'ui-component/extended/Transitions';
 import { useDispatch, useSelector } from 'react-redux';
 import { setQuery, setFilters, resetFilters, setFilterPreferences } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
-import { IconSearch, IconX, IconAdjustmentsHorizontal, IconFilter, IconCheck, IconPlus, IconRefresh } from '@tabler/icons-react';
+import { IconSearch, IconX, IconAdjustmentsHorizontal, IconFilter, IconCheck, IconPlus, IconRefresh, IconMicrophone } from '@tabler/icons-react';
 
 function HeaderAvatar({ children, ...others }) {
   const theme = useTheme();
@@ -115,11 +116,102 @@ export default function SearchSection() {
 
   const [isFocused, setIsFocused] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
   const [advancedAnchorEl, setAdvancedAnchorEl] = useState(null);
   const [visibleFilterIds, setVisibleFilterIds] = useState([]);
   const [addFilterAnchorEl, setAddFilterAnchorEl] = useState(null);
   const [tempSelectedIds, setTempSelectedIds] = useState([]);
   const isAddFilterOpen = Boolean(addFilterAnchorEl);
+
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recog = new SpeechRecognition();
+    recog.continuous = false;
+    recog.interimResults = false;
+    recog.lang = 'en-US';
+
+    recog.onstart = () => setIsListening(true);
+
+    recog.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        const cleaned = transcript
+          .replace(/^[.,\/#!$%\^&\*;:{}=\-_`~()?"']+|[.,\/#!$%\^&\*;:{}=\-_`~()?"']+$/g, '')
+          .trim();
+        dispatch(setQuery(cleaned));
+      }
+      setIsListening(false);
+    };
+
+    recog.onerror = (event) => {
+      console.error('Global search mic error', event.error);
+      setIsListening(false);
+
+      let errorMsg = 'Error during voice recognition. Please try again.';
+      if (event.error === 'not-allowed') {
+        errorMsg = 'Microphone permission denied. Please allow microphone access in your browser address bar/settings.';
+      } else if (event.error === 'no-speech') {
+        errorMsg = 'No speech detected. Please speak clearly into the microphone.';
+      } else if (event.error === 'network') {
+        errorMsg = 'Network error. Speech recognition requires an active internet connection.';
+      } else if (event.error === 'audio-capture') {
+        errorMsg = 'No microphone detected. Please connect a mic and try again.';
+      }
+
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: errorMsg,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: event.error === 'no-speech' ? 'info' : 'error',
+          close: false
+        })
+      );
+    };
+
+    recog.onend = () => setIsListening(false);
+
+    recognitionRef.current = recog;
+
+    return () => {
+      recog.onstart = null;
+      recog.onresult = null;
+      recog.onerror = null;
+      recog.onend = null;
+      try { recog.abort(); } catch (_) {}
+      recognitionRef.current = null;
+    };
+  }, [dispatch]);
+
+  const handleMicClick = useCallback((e) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    const recog = recognitionRef.current;
+    if (isListening) {
+      if (recog) recog.stop();
+    } else {
+      if (recog) {
+        try { recog.start(); } catch (err) { console.warn('Mic start error:', err); }
+      } else {
+        dispatch(
+          openSnackbar({
+            open: true,
+            message: 'Speech Recognition is not supported by your browser.',
+            variant: 'alert',
+            alert: { variant: 'filled' },
+            severity: 'warning',
+            close: false
+          })
+        );
+      }
+    }
+  }, [isListening, dispatch]);
 
   const anchorRef = useRef(null);
   const isAdvancedOpen = Boolean(advancedAnchorEl);
@@ -145,10 +237,17 @@ export default function SearchSection() {
       tableConfig.forEach(col => {
         if (!col || col.id === 'index' || col.id === 'photo' || col.id === 'actions') return;
         if (!list.find(f => f && f.id === col.id)) {
+          const isDateCol = (col.id.toLowerCase().includes('date') || 
+                             col.id.endsWith('At') || 
+                             col.id.endsWith('_at') || 
+                             col.id === 'entryDate' ||
+                             col.id === 'invoiceDate') &&
+                            !(col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category'));
+
           list.push({ 
             id: col.id, 
             label: col.label || col.id, 
-            type: col.options && col.options.length > 0 ? 'autocomplete' : 'text', 
+            type: isDateCol ? 'dateRange' : (col.options && col.options.length > 0 ? 'autocomplete' : 'text'), 
             isRequired: col.required,
             options: col.options || []
           });
@@ -286,6 +385,40 @@ export default function SearchSection() {
                     </IconButton>
                   )}
                   <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 20, alignSelf: 'center' }} />
+                  <Tooltip title="Voice Search Page Content" placement="top" arrow>
+                    <IconButton
+                      size="small"
+                      onClick={handleMicClick}
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                      }}
+                      sx={{
+                        p: 0.5,
+                        opacity: isHovered || isFocused || isListening ? 1 : 0,
+                        visibility: isHovered || isFocused || isListening ? 'visible' : 'hidden',
+                        transition: 'all 0.2s ease-in-out',
+                        color: isListening ? 'error.main' : 'text.secondary',
+                        animation: isListening ? 'globalPulse 1.5s infinite ease-in-out' : 'none',
+                        '@keyframes globalPulse': {
+                          '0%': { opacity: 0.6 },
+                          '50%': { opacity: 1 },
+                          '100%': { opacity: 0.6 }
+                        },
+                        '&:hover': { color: 'primary.main' }
+                      }}
+                    >
+                      <IconMicrophone stroke={1.5} size="20px" />
+                    </IconButton>
+                  </Tooltip>
                   <IconButton
                     size="small"
                     ref={anchorRef}
@@ -398,23 +531,23 @@ export default function SearchSection() {
                                 <Stack direction="row" spacing={1} alignItems="center">
                                   <TextField
                                     type="date"
+                                    label="From"
                                     fullWidth size="small"
                                     variant="outlined"
                                     value={filters[`${field.id}Start`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-                                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                   <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
                                   <TextField
                                     type="date"
+                                    label="To"
                                     fullWidth size="small"
                                     variant="outlined"
                                     value={filters[`${field.id}End`] || ''}
                                     onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-                                    inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                   />
                                 </Stack>
@@ -426,7 +559,6 @@ export default function SearchSection() {
                                   value={filters[field.id] || ''}
                                   onChange={(e) => handleFilterChange(field.id, e.target.value)}
                                   slotProps={{ inputLabel: { shrink: true } }}
-                                  inputProps={{ min: new Date().toISOString().split('T')[0] }}
                                   sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
                                 />
                               ) : (

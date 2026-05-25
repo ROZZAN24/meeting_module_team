@@ -20,16 +20,16 @@ import { Chip } from '@mui/material';
 
 const columns = [
   { id: 'seqNo', label: 'Seq No', minWidth: 80 },
-  { id: 'clause', label: 'Clause', minWidth: 100 },
   { id: 'auditType', label: 'Type', minWidth: 120, bold: true },
+  { id: 'clause', label: 'Clause', minWidth: 100 },
   { id: 'criteriaText', label: 'Criteria', minWidth: 250 },
   { id: 'department', label: 'Department', minWidth: 120 },
+  { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 },
+  { id: 'status', label: 'Status', minWidth: 100 },
   { id: 'createdBy', label: 'Created User', minWidth: 120 },
   { id: 'createdDate', label: 'Created Date', minWidth: 150 },
   { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 },
-  { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 },
-  { id: 'status', label: 'Status', minWidth: 100 }
+  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
 ];
 
 export default function AuditCriteriaMaster() {

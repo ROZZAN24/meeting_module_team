@@ -23,10 +23,10 @@ const columns = [
 ];
 
 export default function CountryMaster() {
-  const [rows, setRows] = useState([]);
-  const perms = usePagePermissions(PAGE_CODES.LOG_COUNTRY);
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
+  const [rows, setRows] = useState([]);
+  const perms = usePagePermissions(PAGE_CODES.LOG_COUNTRY);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [open, setOpen] = useState(false);

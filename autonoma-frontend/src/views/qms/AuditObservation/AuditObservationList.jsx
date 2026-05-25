@@ -24,7 +24,7 @@ const columns = [
   { id: 'departmentName', label: 'Dept Name', minWidth: 150 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
-  { id: 'ncrCount', label: 'NCR', minWidth: 80 },
+  { id: 'ncrCount', label: 'NC', minWidth: 80 },
   { id: 'ofiCount', label: 'OFI', minWidth: 80 },
   { id: 'auditScore', label: 'Score', minWidth: 80 },
   { id: 'status', label: 'Status', minWidth: 100 }

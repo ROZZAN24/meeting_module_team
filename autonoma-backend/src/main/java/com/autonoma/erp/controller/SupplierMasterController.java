@@ -48,6 +48,9 @@ public class SupplierMasterController {
         return service.getSupplierById(id)
                 .map(existing -> {
                     supplier.setId(id);
+                    supplier.setCreatedDate(existing.getCreatedDate());
+                    supplier.setCreatedBy(existing.getCreatedBy());
+                    if (supplier.getUpdatedBy() == null) supplier.setUpdatedBy("Admin");
                     return ResponseEntity.ok(service.saveSupplier(supplier));
                 })
                 .orElse(ResponseEntity.notFound().build());

@@ -142,10 +142,18 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 5,
+    pt: 8, // Increased significantly to prevent floating labels (e.g. Segment Name) from being blocked by header
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
-    overflowX: 'hidden'
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    // Ensure poppers and menus are not clipped
+    '& .MuiAutocomplete-popper': {
+      zIndex: '1500 !important'
+    },
+    '& .MuiMenu-root': {
+      zIndex: '1500 !important'
+    }
   },
   footer: {
     p: 3,

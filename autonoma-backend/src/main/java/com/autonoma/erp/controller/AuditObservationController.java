@@ -53,8 +53,26 @@ public class AuditObservationController {
             @RequestParam(required = false) String ncrApprovedBy,
             @RequestParam(required = false) String query) {
         
+        java.util.Date parsedFromDate = null;
+        java.util.Date parsedToDate = null;
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        try {
+            if (fromDate != null && !fromDate.trim().isEmpty()) {
+                parsedFromDate = sdf.parse(fromDate);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            if (toDate != null && !toDate.trim().isEmpty()) {
+                parsedToDate = sdf.parse(toDate);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
         List<AuditObservationDetail> details = auditObservationDetailRepository.findPendingNcrFindingsFiltered(
-                fromDate, toDate, considerDate, observationStatus, ncrStatus, ncrApprovedBy, query);
+                parsedFromDate, parsedToDate, considerDate, observationStatus, ncrStatus, ncrApprovedBy, query);
                 
         return details.stream().map(this::convertToDto).collect(Collectors.toList());
     }
@@ -126,6 +144,7 @@ public class AuditObservationController {
                     observation.setObservationDate(details.getObservationDate());
                     observation.setAuditScheduleNo(details.getAuditScheduleNo());
                     observation.setAuditType(details.getAuditType());
+                    observation.setAuditArea(details.getAuditArea());
                     observation.setDepartmentName(details.getDepartmentName());
                     observation.setAuditee(details.getAuditee());
                     observation.setAuditor(details.getAuditor());

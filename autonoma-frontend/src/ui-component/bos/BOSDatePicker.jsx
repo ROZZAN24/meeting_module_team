@@ -10,7 +10,7 @@ import { parseISO, format, isValid } from 'date-fns';
  * BOS DatePicker — SOP #9, #10
  * Wraps MUI DatePicker with standardized BOS styles and dd/MM/yyyy format.
  */
-export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon = false, ...rest }) {
+export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon = false, minDate, maxDate, ...rest }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -29,6 +29,8 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
       label={`${label}${required ? ' *' : ''}`}
       value={dateValue}
       disabled={disabled}
+      minDate={minDate}
+      maxDate={maxDate}
       format="dd/MM/yyyy"
       open={open}
       onOpen={() => setOpen(true)}
@@ -76,5 +78,7 @@ BOSDatePicker.propTypes = {
   error: PropTypes.bool,
   helperText: PropTypes.string,
   name: PropTypes.string,
-  showIcon: PropTypes.bool
+  showIcon: PropTypes.bool,
+  minDate: PropTypes.any,
+  maxDate: PropTypes.any
 };
