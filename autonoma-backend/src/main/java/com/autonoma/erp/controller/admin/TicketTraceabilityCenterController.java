@@ -258,6 +258,8 @@ public class TicketTraceabilityCenterController {
             }
             if (ticketDetails.getTakenTime() != null)
                 existingTicket.setTakenTime(ticketDetails.getTakenTime());
+            if (ticketDetails.getReworkTime() != null)
+                existingTicket.setReworkTime(ticketDetails.getReworkTime());
             if (ticketDetails.getDueDateReason() != null)
                 existingTicket.setDueDateReason(ticketDetails.getDueDateReason());
 
@@ -301,9 +303,7 @@ public class TicketTraceabilityCenterController {
                     }
 
                     // Check for Reopen workflow transition
-                    if ((oldStatus.equalsIgnoreCase("Resolved") || oldStatus.equalsIgnoreCase("Closed"))
-                            && (newStatus.equalsIgnoreCase("Open") || newStatus.equalsIgnoreCase("In Progress")
-                                     || newStatus.equalsIgnoreCase("Reopened"))) {
+                    if (newStatus.equalsIgnoreCase("Reopened") && !oldStatus.equalsIgnoreCase("Reopened")) {
                         existingTicket.setReopenedCount(existingTicket.getReopenedCount() + 1);
 
                         SupportTicketReopenHistory reopenHistory = SupportTicketReopenHistory.builder()
@@ -566,11 +566,24 @@ public class TicketTraceabilityCenterController {
                 } catch (NumberFormatException ignored) {
                 }
 
+                if (t.getTakenTime() != null && !t.getTakenTime().trim().isEmpty()) {
+                    String[] ttParts = t.getTakenTime().split(":");
+                    try {
+                        remainingMins -= Integer.parseInt(ttParts[0]) * 60 + (ttParts.length > 1 ? Integer.parseInt(ttParts[1]) : 0);
+                    } catch (NumberFormatException ignored) {}
+                }
+                if (t.getReworkTime() != null && !t.getReworkTime().trim().isEmpty()) {
+                    String[] rwParts = t.getReworkTime().split(":");
+                    try {
+                        remainingMins -= Integer.parseInt(rwParts[0]) * 60 + (rwParts.length > 1 ? Integer.parseInt(rwParts[1]) : 0);
+                    } catch (NumberFormatException ignored) {}
+                }
+
                 if (remainingMins <= 0) {
                     continue;
                 }
 
-                Date cursorDate = t.getCreatedAt() != null ? t.getCreatedAt() : new Date();
+                Date cursorDate = new Date();
                 Calendar cal = Calendar.getInstance();
                 cal.setTime(cursorDate);
                 cal.set(Calendar.HOUR_OF_DAY, 0);

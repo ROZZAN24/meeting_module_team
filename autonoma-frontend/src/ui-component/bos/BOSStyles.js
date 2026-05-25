@@ -110,6 +110,8 @@ export const getDialogStyles = (theme, isDark) => ({
     color: isDark ? '#c9d1d9' : theme.palette.text.primary
   },
   paper: {
+    display: 'flex',
+    flexDirection: 'column',
     height: 'auto',
     maxHeight: '95vh',
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
@@ -130,7 +132,8 @@ export const getDialogStyles = (theme, isDark) => ({
     borderBottom: '1px solid',
     borderColor: 'divider',
     py: 3.5,
-    px: 4
+    px: 4,
+    flexShrink: 0
   },
   titleText: {
     fontWeight: 600,
@@ -142,10 +145,20 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 5,
+    pt: 8, // Increased significantly to prevent floating labels (e.g. Segment Name) from being blocked by header
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
-    overflowX: 'hidden'
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    flexGrow: 1,
+    minHeight: 0,
+    // Ensure poppers and menus are not clipped
+    '& .MuiAutocomplete-popper': {
+      zIndex: '1500 !important'
+    },
+    '& .MuiMenu-root': {
+      zIndex: '1500 !important'
+    }
   },
   footer: {
     p: 3,
@@ -153,7 +166,8 @@ export const getDialogStyles = (theme, isDark) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    bgcolor: isDark ? '#161b22' : theme.palette.background.paper
+    bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
+    flexShrink: 0
   },
   sectionCard: {
     bgcolor: isDark ? 'background.default' : '#ffffff',
@@ -261,9 +275,10 @@ export const tableActionDeleteSx = {
 
 export const getStatusChipSx = (status) => {
   const isActive = ['ACTIVE', 'Active', 'active'].includes(status);
+  const isSuspended = ['SUSPENDED', 'Suspended', 'suspended'].includes(status);
   return {
-    bgcolor: isActive ? '#e8f5e9' : '#ffebee',
-    color: isActive ? '#2e7d32' : '#c62828',
+    bgcolor: isActive ? '#e8f5e9' : (isSuspended ? '#fffde7' : '#ffebee'),
+    color: isActive ? '#2e7d32' : (isSuspended ? '#f57f17' : '#c62828'),
     fontWeight: 700
   };
 };

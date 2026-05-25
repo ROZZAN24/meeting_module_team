@@ -72,6 +72,8 @@ public class AuditObservation {
     private Date updatedDate;
 
     @OneToMany(mappedBy = "auditObservation", cascade = CascadeType.ALL, orphanRemoval = true)
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     private List<AuditObservationDetail> details = new ArrayList<>();
 
     @PrePersist

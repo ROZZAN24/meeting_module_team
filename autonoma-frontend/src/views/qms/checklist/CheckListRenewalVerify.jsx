@@ -529,11 +529,11 @@ export default function CheckListRenewalVerify() {
                   key={row.id}
                   hover
                   onClick={() => setSelectedRowId(row.id)}
-                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onDoubleClick={() => { if (perms.approval || perms.write) { setSelectedRowId(row.id); setDialogOpen(true); } }}
+                  onMouseEnter={() => { if (perms.approval || perms.write) setShowDoubleTap(true); }}
                   onMouseLeave={() => setShowDoubleTap(false)}
                   onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                  sx={{ cursor: (perms.approval || perms.write) ? 'pointer' : 'default', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.assignType || 'Mine'}</TableCell>

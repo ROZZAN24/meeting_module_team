@@ -46,7 +46,8 @@ import {
   IconTractor,
   IconMoodSmile,
   IconSearch,
-  IconCategory
+  IconCategory,
+  IconSitemap
 } from '@tabler/icons-react';
 
 const icons = {
@@ -97,7 +98,8 @@ const icons = {
   IconPlaneTilt,
   IconTractor,
   IconMoodSmile,
-  IconSearch
+  IconSearch,
+  IconSitemap
 };
 
 export const masters = {
@@ -105,6 +107,7 @@ export const masters = {
   title: 'Master',
   caption: 'Master Q0001',
   type: 'group',
+  pageCode: 'M0000',
   icon: icons.IconServerCog,
   children: [
     {
@@ -319,12 +322,14 @@ export const masters = {
       id: 'master-qms',
       title: 'QMS',
       type: 'collapse',
+      pageCode: 'M1000',
       icon: icons.IconListCheck,
       children: [
         {
           id: 'master-qms-checklist-parent',
           title: 'Check List',
           type: 'collapse',
+          pageCode: 'M1200',
           icon: icons.IconClipboardCheck,
           children: [
             {
@@ -341,16 +346,9 @@ export const masters = {
           id: 'master-qms-audit',
           title: 'Audit',
           type: 'collapse',
+          pageCode: 'M1100',
           icon: icons.IconFileCheck,
           children: [
-            {
-              id: 'master-qms-audit-type',
-              title: 'Audit Type',
-              type: 'item',
-              url: '/master/qms/audit/type',
-              icon: icons.IconNotes,
-              pageCode: 'M1110'
-            },
             {
               id: 'master-qms-audit-area',
               title: 'Audit Area / Zone',
@@ -358,6 +356,14 @@ export const masters = {
               url: '/master/qms/audit/area',
               icon: icons.IconMapPin,
               pageCode: 'M1120'
+            },
+            {
+              id: 'master-qms-audit-type',
+              title: 'Audit Type',
+              type: 'item',
+              url: '/master/qms/audit/type',
+              icon: icons.IconNotes,
+              pageCode: 'M1110'
             },
             {
               id: 'master-qms-audit-criteria',
@@ -454,6 +460,14 @@ export const masters = {
               url: '/master/npd/product-capacity',
               icon: icons.IconAward,
               pageCode: 'M3170'
+            },
+            {
+              id: 'master-npd-product-process',
+              title: 'Process Master',
+              type: 'item',
+              url: '/master/npd/product-process',
+              icon: icons.IconSitemap,
+              pageCode: 'M3180'
             }
           ]
         },
@@ -755,12 +769,14 @@ export const qms = {
   title: 'Quality Management Systems',
   caption: 'Quality Management Systems QM0000',
   type: 'group',
+  pageCode: 'QM0000',
   icon: icons.IconListCheck,
   children: [
     {
       id: 'qms-checklist',
       title: 'Checklist',
       type: 'collapse',
+      pageCode: 'QM1100',
       icon: icons.IconClipboardCheck,
       children: [
         {
@@ -801,6 +817,7 @@ export const qms = {
       id: 'qms-audit',
       title: 'Audit',
       type: 'collapse',
+      pageCode: 'QM1200',
       icon: icons.IconFileCheck,
       children: [
         {

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, matchPath, useLocation } from 'react-router-dom';
 
 // material-ui
@@ -155,7 +155,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                       ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
                     }}
                   >
-                    <FormattedMessage id={item.title} />
+                    <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
                   </Typography>
                 }
                 secondary={
@@ -181,19 +181,19 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
             </Tooltip>
           )}
 
-          <Activity mode={drawerOpen && item.chip ? 'visible' : 'hidden'}>
+          {(drawerOpen && item.chip) && (
             <Chip
               color={item.chip?.color}
               variant={item.chip?.variant}
               size={item.chip?.size}
               label={item.chip?.label}
               avatar={
-                <Activity mode={item.chip?.avatar ? 'visible' : 'hidden'}>
+                item.chip?.avatar ? (
                   <Avatar>{item.chip?.avatar}</Avatar>
-                </Activity>
+                ) : undefined
               }
             />
-          </Activity>
+          )}
         </ListItemButton>
       ) : (
         <ListItemButton
@@ -226,11 +226,11 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
             sx={{ mb: 0.25 }}
             primary={
               <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                <FormattedMessage id={item.title} />
+                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
               </Typography>
             }
             secondary={
-              <Activity mode={item.caption ? 'visible' : 'hidden'}>
+              item.caption && (
                 <Typography
                   gutterBottom
                   component="span"
@@ -245,23 +245,23 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                 >
                   {item.caption}
                 </Typography>
-              </Activity>
+              )
             }
           />
 
-          <Activity mode={item.chip ? 'visible' : 'hidden'}>
+          {item.chip && (
             <Chip
               color={item.chip?.color}
               variant={item.chip?.variant}
               size={item.chip?.size}
               label={item.chip?.label}
               avatar={
-                <Activity mode={item.chip?.avatar ? 'visible' : 'hidden'}>
+                item.chip?.avatar ? (
                   <Avatar>{item.chip?.avatar}</Avatar>
-                </Activity>
+                ) : undefined
               }
             />
-          </Activity>
+          )}
         </ListItemButton>
       )}
     </>

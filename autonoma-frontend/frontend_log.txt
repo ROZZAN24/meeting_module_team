@@ -1,0 +1,424 @@
+
+> berry-material-react-js@5.1.1 start
+> vite
+
+
+  VITE v7.2.2  ready in 172 ms
+
+  ➜  Local:   http://localhost:3000/
+  ➜  Network: http://192.168.1.6:3000/
+2:14:19 PM [vite] (client) page reload Autonoma_ERP/index.html
+2:14:20 PM [vite] (client) hmr update /src/layout/MainLayout/Header/SearchSection/index.jsx
+2:14:20 PM [vite] (client) hmr update /src/layout/MainLayout/HorizontalBar.jsx, /src/layout/MainLayout/MenuList/index.jsx
+2:14:20 PM [vite] (client) hmr update /src/routes/MainRoutes.jsx
+2:14:20 PM [vite] (client) hmr update /src/layout/MainLayout/Header/ProfileSection/index.jsx, /src/ui-component/Logo.jsx, /src/views/pages/authentication/AuthLoginBackground.jsx
+2:14:20 PM [vite] (client) hmr update /src/ui-component/Locales.jsx
+2:14:20 PM [vite] (client) hmr update /src/views/pages/authentication/jwt/AuthLogin.jsx
+2:14:20 PM [vite] (client) hmr invalidate /src/routes/MainRoutes.jsx Could not Fast Refresh ("default" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+2:14:20 PM [vite] (client) hmr update /src/routes/index.jsx
+2:14:20 PM [vite] (client) hmr invalidate /src/routes/index.jsx Could not Fast Refresh ("default" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+2:14:20 PM [vite] (client) hmr update /src/App.jsx
+2:16:35 PM [vite] Internal server error: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx: Expected corresponding JSX closing tag for <BOSFormSection>. (324:10)
+
+  322 |               </Grid>
+  323 |             </Grid>
+> 324 |           </Grid>
+      |           ^
+  325 |         </BOSFormSection>
+  326 |
+  327 |         <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
+  Plugin: vite:react-babel
+  File: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx:324:10
+  322 |                </Grid>
+  323 |              </Grid>
+  324 |            </Grid>
+      |            ^
+  325 |          </BOSFormSection>
+  326 |  
+      at constructor (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:367:19)
+      at JSXParserMixin.raise (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:6624:19)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4756:16)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4778:17)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4788:19)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12500:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12567:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11747:28)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11395:23)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4793:20)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at JSXParserMixin.parseExpressionBase (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12495:16)
+      at JSXParserMixin.parseExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:17)
+      at JSXParserMixin.parseReturnStatement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13218:28)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12874:21)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseStatementListItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12823:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:61)
+      at JSXParserMixin.parseBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13385:10)
+      at JSXParserMixin.parseBlock (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13373:10)
+      at JSXParserMixin.parseFunctionBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12174:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12160:10)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13521:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12477:14)
+      at JSXParserMixin.parseFunction (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13520:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13983:19)
+      at JSXParserMixin.parseExport (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13904:25)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12954:27)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseModuleItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12820:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:36)
+2:17:41 PM [vite] Internal server error: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx: Expected corresponding JSX closing tag for <Grid>. (323:10)
+
+  321 |               </Grid>
+  322 |             </Grid>
+> 323 |           </BOSFormSection>
+      |           ^
+  324 |
+  325 |         <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
+  326 |           <Grid container spacing={2.5}>
+  Plugin: vite:react-babel
+  File: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx:323:10
+  321 |                </Grid>
+  322 |              </Grid>
+  323 |            </BOSFormSection>
+      |            ^
+  324 |  
+  325 |          <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Co...
+      at constructor (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:367:19)
+      at JSXParserMixin.raise (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:6624:19)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4756:16)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4778:17)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4788:19)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12500:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12567:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11747:28)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11395:23)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4793:20)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at JSXParserMixin.parseExpressionBase (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12495:16)
+      at JSXParserMixin.parseExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:17)
+      at JSXParserMixin.parseReturnStatement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13218:28)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12874:21)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseStatementListItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12823:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:61)
+      at JSXParserMixin.parseBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13385:10)
+      at JSXParserMixin.parseBlock (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13373:10)
+      at JSXParserMixin.parseFunctionBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12174:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12160:10)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13521:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12477:14)
+      at JSXParserMixin.parseFunction (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13520:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13983:19)
+      at JSXParserMixin.parseExport (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13904:25)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12954:27)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseModuleItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12820:17)
+2:17:49 PM [vite] Internal server error: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx: Expected corresponding JSX closing tag for <Grid>. (323:10)
+
+  321 |               </Grid>
+  322 |             </Grid>
+> 323 |           </BOSFormSection>
+      |           ^
+  324 |
+  325 |         <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
+  326 |           <Grid container spacing={2.5}>
+  Plugin: vite:react-babel
+  File: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx:323:10
+  321 |                </Grid>
+  322 |              </Grid>
+  323 |            </BOSFormSection>
+      |            ^
+  324 |  
+  325 |          <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Co...
+      at constructor (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:367:19)
+      at JSXParserMixin.raise (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:6624:19)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4756:16)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4778:17)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4788:19)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12500:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12567:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11747:28)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11395:23)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4793:20)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at JSXParserMixin.parseExpressionBase (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12495:16)
+      at JSXParserMixin.parseExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:17)
+      at JSXParserMixin.parseReturnStatement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13218:28)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12874:21)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseStatementListItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12823:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:61)
+      at JSXParserMixin.parseBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13385:10)
+      at JSXParserMixin.parseBlock (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13373:10)
+      at JSXParserMixin.parseFunctionBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12174:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12160:10)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13521:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12477:14)
+      at JSXParserMixin.parseFunction (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13520:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13983:19)
+      at JSXParserMixin.parseExport (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13904:25)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12954:27)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseModuleItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12820:17)
+2:17:49 PM [vite] Internal server error: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx: Expected corresponding JSX closing tag for <Grid>. (323:10)
+
+  321 |               </Grid>
+  322 |             </Grid>
+> 323 |           </BOSFormSection>
+      |           ^
+  324 |
+  325 |         <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
+  326 |           <Grid container spacing={2.5}>
+  Plugin: vite:react-babel
+  File: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx:323:10
+  321 |                </Grid>
+  322 |              </Grid>
+  323 |            </BOSFormSection>
+      |            ^
+  324 |  
+  325 |          <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Co...
+      at constructor (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:367:19)
+      at JSXParserMixin.raise (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:6624:19)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4756:16)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4778:17)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4788:19)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12500:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12567:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11747:28)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11395:23)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4793:20)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at JSXParserMixin.parseExpressionBase (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12495:16)
+      at JSXParserMixin.parseExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:17)
+      at JSXParserMixin.parseReturnStatement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13218:28)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12874:21)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseStatementListItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12823:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:61)
+      at JSXParserMixin.parseBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13385:10)
+      at JSXParserMixin.parseBlock (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13373:10)
+      at JSXParserMixin.parseFunctionBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12174:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12160:10)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13521:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12477:14)
+      at JSXParserMixin.parseFunction (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13520:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13983:19)
+      at JSXParserMixin.parseExport (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13904:25)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12954:27)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseModuleItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12820:17)
+2:17:50 PM [vite] Internal server error: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx: Expected corresponding JSX closing tag for <Grid>. (323:10)
+
+  321 |               </Grid>
+  322 |             </Grid>
+> 323 |           </BOSFormSection>
+      |           ^
+  324 |
+  325 |         <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
+  326 |           <Grid container spacing={2.5}>
+  Plugin: vite:react-babel
+  File: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx:323:10
+  321 |                </Grid>
+  322 |              </Grid>
+  323 |            </BOSFormSection>
+      |            ^
+  324 |  
+  325 |          <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Co...
+      at constructor (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:367:19)
+      at JSXParserMixin.raise (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:6624:19)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4756:16)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4778:17)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4788:19)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12500:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12567:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11747:28)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11395:23)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4793:20)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at JSXParserMixin.parseExpressionBase (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12495:16)
+      at JSXParserMixin.parseExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:17)
+      at JSXParserMixin.parseReturnStatement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13218:28)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12874:21)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseStatementListItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12823:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:61)
+      at JSXParserMixin.parseBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13385:10)
+      at JSXParserMixin.parseBlock (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13373:10)
+      at JSXParserMixin.parseFunctionBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12174:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12160:10)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13521:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12477:14)
+      at JSXParserMixin.parseFunction (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13520:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13983:19)
+      at JSXParserMixin.parseExport (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13904:25)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12954:27)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseModuleItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12820:17)
+2:17:55 PM [vite] Internal server error: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx: Expected corresponding JSX closing tag for <Grid>. (323:10)
+
+  321 |               </Grid>
+  322 |             </Grid>
+> 323 |           </BOSFormSection>
+      |           ^
+  324 |
+  325 |         <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Compliance">
+  326 |           <Grid container spacing={2.5}>
+  Plugin: vite:react-babel
+  File: /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/src/views/sm/SupplierMaster.jsx:323:10
+  321 |                </Grid>
+  322 |              </Grid>
+  323 |            </BOSFormSection>
+      |            ^
+  324 |  
+  325 |          <BOSFormSection icon={<IconBusinessplan size={20} color={theme.palette.primary.main} />} title="Business & Co...
+      at constructor (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:367:19)
+      at JSXParserMixin.raise (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:6624:19)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4756:16)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElementAt (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4727:32)
+      at JSXParserMixin.jsxParseElement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4778:17)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4788:19)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12500:12)
+      at JSXParserMixin.parseMaybeAssignAllowIn (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10864:17)
+      at JSXParserMixin.parseMaybeAssignAllowInOrVoidPattern (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12567:17)
+      at JSXParserMixin.parseParenAndDistinguishExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11747:28)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11395:23)
+      at JSXParserMixin.parseExprAtom (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:4793:20)
+      at JSXParserMixin.parseExprSubscripts (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11145:23)
+      at JSXParserMixin.parseUpdate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11130:21)
+      at JSXParserMixin.parseMaybeUnary (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:11110:23)
+      at JSXParserMixin.parseMaybeUnaryOrPrivate (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10963:61)
+      at JSXParserMixin.parseExprOps (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10968:23)
+      at JSXParserMixin.parseMaybeConditional (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10945:23)
+      at JSXParserMixin.parseMaybeAssign (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10895:21)
+      at JSXParserMixin.parseExpressionBase (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10848:23)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:39
+      at JSXParserMixin.allowInAnd (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12495:16)
+      at JSXParserMixin.parseExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:10844:17)
+      at JSXParserMixin.parseReturnStatement (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13218:28)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12874:21)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseStatementListItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12823:17)
+      at JSXParserMixin.parseBlockOrModuleBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13392:61)
+      at JSXParserMixin.parseBlockBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13385:10)
+      at JSXParserMixin.parseBlock (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13373:10)
+      at JSXParserMixin.parseFunctionBody (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12174:24)
+      at JSXParserMixin.parseFunctionBodyAndFinish (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12160:10)
+      at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13521:12
+      at JSXParserMixin.withSmartMixTopicForbiddingContext (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12477:14)
+      at JSXParserMixin.parseFunction (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13520:10)
+      at JSXParserMixin.parseExportDefaultExpression (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13983:19)
+      at JSXParserMixin.parseExport (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:13904:25)
+      at JSXParserMixin.parseStatementContent (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12954:27)
+      at JSXParserMixin.parseStatementLike (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12843:17)
+      at JSXParserMixin.parseModuleItem (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/@babel/parser/lib/index.js:12820:17)
+2:24:26 PM [vite] (client) hmr update /src/views/sm/masters/CountryMaster.jsx
+2:25:35 PM [vite] (client) hmr update /src/views/sm/masters/CountryMaster.jsx

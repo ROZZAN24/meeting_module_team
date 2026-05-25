@@ -42,6 +42,7 @@ function Sidebar() {
 
   const drawer = useMemo(() => {
     const isVerticalOpen = menuOrientation === MenuOrientation.VERTICAL && drawerOpen;
+    const isHorizontalOpen = menuOrientation === MenuOrientation.HORIZONTAL && drawerOpen && downMD;
     const drawerContent = (
       <>
         <MenuCard />
@@ -59,12 +60,12 @@ function Sidebar() {
         {downMD ? (
           <Box sx={drawerSX}>
             <MenuList />
-            {isVerticalOpen && drawerContent}
+            {(isVerticalOpen || isHorizontalOpen) && drawerContent}
           </Box>
         ) : (
           <SimpleBar sx={{ height: 'calc(100vh - 90px)', ...drawerSX }}>
             <MenuList />
-            {isVerticalOpen && drawerContent}
+            {(isVerticalOpen || isHorizontalOpen) && drawerContent}
           </SimpleBar>
         )}
       </>

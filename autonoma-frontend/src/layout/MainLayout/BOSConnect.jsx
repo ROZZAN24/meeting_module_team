@@ -339,8 +339,6 @@ export default function BOSConnect() {
 
   // Request Notification permissions and fetch company logo on Mount
   useEffect(() => {
-    requestNotificationPermission();
-
     const fetchCompanyLogo = async () => {
       try {
         const response = await axiosServices.get('/api/company-profile/all');
