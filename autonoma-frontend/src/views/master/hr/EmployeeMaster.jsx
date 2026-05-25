@@ -168,7 +168,19 @@ export default function EmployeeMaster() {
 
   const h = (e) => {
     const { name, value } = e.target;
-    setForm((p) => ({ ...p, [name]: value }));
+    setForm((p) => {
+      const next = { ...p, [name]: value };
+      if (name === 'departmentId') {
+        const dept = departments.find(d => d.id === value || d.id.toString() === value.toString());
+        const deptName = dept?.departmentName?.toUpperCase();
+        if (deptName && ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(deptName)) {
+          next.inductionStatus = 'COMPLETED';
+        } else {
+          next.inductionStatus = 'PENDING';
+        }
+      }
+      return next;
+    });
     if (errors[name]) clearErrors(name);
   };
 
