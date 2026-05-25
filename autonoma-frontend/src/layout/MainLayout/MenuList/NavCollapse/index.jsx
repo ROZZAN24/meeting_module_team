@@ -396,28 +396,66 @@ export default function NavCollapse({ menu, level, parentId }) {
           onMouseLeave={handleMouseLeaveHorizontal}
           sx={{ display: 'flex', alignItems: 'center', height: '100%' }}
         >
-          <ListItemButton
-            id={`boundary-${popperId}`}
-            disableRipple
-            selected={isSelected}
-            onClick={handleMouseEnterHorizontal}
-            aria-describedby={popperId}
-            className={anchorEl ? 'Mui-selected' : ''}
-            sx={{ height: '100%' }}
-          >
-            {menuIcon && (
-              <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
-            )}
-            <ListItemText
-              sx={{ mb: 0.25 }}
-              primary={
-                <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
-                  <FormattedMessage id={menu.title} />
-                </Typography>
-              }
-            />
-            {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
-          </ListItemButton>
+          {menu.pageCode ? (
+            <Tooltip
+              title={`Code: ${menu.pageCode}`}
+              placement="top"
+              arrow
+              slotProps={{
+                popper: {
+                  sx: {
+                    zIndex: 2500
+                  }
+                }
+              }}
+            >
+              <ListItemButton
+                id={`boundary-${popperId}`}
+                disableRipple
+                selected={isSelected}
+                onClick={handleMouseEnterHorizontal}
+                aria-describedby={popperId}
+                className={anchorEl ? 'Mui-selected' : ''}
+                sx={{ height: '100%' }}
+              >
+                {menuIcon && (
+                  <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
+                )}
+                <ListItemText
+                  sx={{ mb: 0.25 }}
+                  primary={
+                    <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+                      <FormattedMessage id={menu.title} />
+                    </Typography>
+                  }
+                />
+                {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
+              </ListItemButton>
+            </Tooltip>
+          ) : (
+            <ListItemButton
+              id={`boundary-${popperId}`}
+              disableRipple
+              selected={isSelected}
+              onClick={handleMouseEnterHorizontal}
+              aria-describedby={popperId}
+              className={anchorEl ? 'Mui-selected' : ''}
+              sx={{ height: '100%' }}
+            >
+              {menuIcon && (
+                <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
+              )}
+              <ListItemText
+                sx={{ mb: 0.25 }}
+                primary={
+                  <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+                    <FormattedMessage id={menu.title} />
+                  </Typography>
+                }
+              />
+              {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
+            </ListItemButton>
+          )}
 
           {anchorEl && (
             <PopperStyled
