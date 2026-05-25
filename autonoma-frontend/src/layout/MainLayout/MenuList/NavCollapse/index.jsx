@@ -183,159 +183,251 @@ export default function NavCollapse({ menu, level, parentId }) {
 
   const popperId = openMini ? `collapse-pop-${menu.id}` : undefined;
 
+  const verticalButton = (
+    <ListItemButton
+      sx={{
+        zIndex: 1201,
+        borderRadius: `${borderRadius}px`,
+        mb: 0.5,
+        ...(drawerOpen && level !== 1 && { ml: `${level * 18}px` }),
+        ...(!drawerOpen && { pl: 1.25 }),
+        ...((!drawerOpen || level !== 1) && {
+          py: level === 1 ? 0 : 1,
+          '&:hover': { bgcolor: 'transparent' },
+          '&.Mui-selected': { '&:hover': { bgcolor: 'transparent' }, bgcolor: 'transparent' }
+        })
+      }}
+      selected={isSelected}
+      {...(!drawerOpen && { onMouseEnter: handleClickMini, onMouseLeave: handleMiniClose })}
+      className={anchorEl ? 'Mui-selected' : ''}
+      onClick={handleClickMini}
+    >
+      <Activity mode={menuIcon ? 'visible' : 'hidden'}>
+        <ListItemIcon
+          sx={{
+            minWidth: level === 1 ? 36 : 18,
+            color: isSelected ? 'secondary.main' : 'text.primary',
+            ...(!drawerOpen &&
+              level === 1 && {
+                borderRadius: `${borderRadius}px`,
+                width: 46,
+                height: 46,
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': { bgcolor: 'secondary.light' },
+
+                ...((isSelected || anchorEl) && {
+                  bgcolor: 'secondary.light',
+                  '&:hover': { bgcolor: 'secondary.light' }
+                })
+              }),
+
+            // dark overrides
+            ...theme.applyStyles('dark', {
+              color: isSelected && drawerOpen ? 'text.primary' : 'text.primary',
+
+              ...(!drawerOpen &&
+                level === 1 && {
+                  '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25) },
+                  ...((isSelected || anchorEl) && {
+                    bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25),
+                    '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.3) }
+                  })
+                })
+            })
+          }}
+        >
+          {menuIcon}
+        </ListItemIcon>
+      </Activity>
+      {(drawerOpen || (!drawerOpen && level !== 1)) && (
+        <Tooltip title={menu.pageCode ? `Code: ${menu.pageCode}` : <FormattedMessage id={menu.title} />} disableHoverListener={menu.pageCode ? false : !hoverStatus}>
+          <ListItemText
+            primary={
+              <Typography
+                ref={ref}
+                noWrap
+                variant={isSelected || anchorEl ? 'h5' : 'body1'}
+                sx={{
+                  color: 'inherit',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: 120,
+                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
+                }}
+              >
+                <FormattedMessage id={menu.title} />
+              </Typography>
+            }
+            secondary={
+              menu.caption && (
+                <Typography
+                  gutterBottom
+                  component="span"
+                  sx={{
+                    display: 'block',
+                    fontSize: '0.6875rem',
+                    fontWeight: 500,
+                    color: 'text.secondary',
+                    textTransform: 'capitalize',
+                    lineHeight: 1.66
+                  }}
+                >
+                  <FormattedMessage id={menu.caption} />
+                </Typography>
+              )
+            }
+          />
+        </Tooltip>
+      )}
+
+      {openMini || open ? (
+        collapseIcon
+      ) : (
+        <IconChevronDown stroke={1.5} size="16px" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
+      )}
+
+      <Activity mode={!drawerOpen ? 'visible' : 'hidden'}>
+        <Popper
+          open={openMini}
+          anchorEl={anchorEl}
+          placement="right-start"
+          modifiers={[
+            {
+              name: 'offset',
+              options: {
+                offset: [-12, 0]
+              }
+            }
+          ]}
+          sx={{
+            overflow: 'visible',
+            zIndex: 2001,
+            minWidth: 180,
+            '&:before': {
+              content: '""',
+              bgcolor: 'background.paper',
+              transform: 'translateY(-50%) rotate(45deg)',
+              zIndex: 120,
+              borderLeft: `1px solid`,
+              borderBottom: `1px solid`,
+              borderColor: 'divider'
+            }
+          }}
+        >
+          {({ TransitionProps }) => (
+            <Transitions in={openMini} {...TransitionProps}>
+              <Paper
+                sx={{
+                  overflow: 'hidden',
+                  boxShadow: theme.shadows[8],
+                  backgroundImage: 'none'
+                }}
+              >
+                <ClickAwayListener onClickAway={handleClosePopper}>
+                  <Box>{menus}</Box>
+                </ClickAwayListener>
+              </Paper>
+            </Transitions>
+          )}
+        </Popper>
+      </Activity>
+    </ListItemButton>
+  );
+
+  const horizontalButton = (
+    <ListItemButton
+      id={`boundary-${popperId}`}
+      disableRipple
+      selected={isSelected}
+      onMouseEnter={handleHover}
+      onMouseLeave={handleClosePopper}
+      onClick={handleHover}
+      aria-describedby={popperId}
+      className={anchorEl ? 'Mui-selected' : ''}
+    >
+      <Activity mode={menuIcon ? 'visible' : 'hidden'}>
+        <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
+      </Activity>
+      {menu.pageCode ? (
+        <Tooltip 
+          title={`Code: ${menu.pageCode}`} 
+          placement="top" 
+          arrow
+          slotProps={{
+            popper: {
+              sx: {
+                zIndex: 2500
+              }
+            }
+          }}
+        >
+          <ListItemText
+            sx={{ mb: 0.25 }}
+            primary={
+              <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+                <FormattedMessage id={menu.title} />
+              </Typography>
+            }
+          />
+        </Tooltip>
+      ) : (
+        <ListItemText
+          sx={{ mb: 0.25 }}
+          primary={
+            <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+              <FormattedMessage id={menu.title} />
+            </Typography>
+          }
+        />
+      )}
+      {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
+
+      <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+        <PopperStyled
+          id={popperId}
+          open={openMini}
+          anchorEl={anchorEl}
+          placement="right-start"
+          style={{
+            zIndex: 2001
+          }}
+          modifiers={[
+            {
+              name: 'offset',
+              options: {
+                offset: [-10, 0]
+              }
+            }
+          ]}
+        >
+          {({ TransitionProps }) => (
+            <Transitions in={openMini} {...TransitionProps}>
+              <Paper
+                sx={{
+                  overflow: 'hidden',
+                  mt: 1.5,
+                  py: 0.5,
+                  boxShadow: theme.shadows[8],
+                  backgroundImage: 'none'
+                }}
+              >
+                <ClickAwayListener onClickAway={handleClosePopper}>
+                  <Box>{menus}</Box>
+                </ClickAwayListener>
+              </Paper>
+            </Transitions>
+          )}
+        </PopperStyled>
+      </Activity>
+    </ListItemButton>
+  );
+
   return (
     <>
       {!isHorizontal ? (
         <>
-          <ListItemButton
-            sx={{
-              zIndex: 1201,
-              borderRadius: `${borderRadius}px`,
-              mb: 0.5,
-              ...(drawerOpen && level !== 1 && { ml: `${level * 18}px` }),
-              ...(!drawerOpen && { pl: 1.25 }),
-              ...((!drawerOpen || level !== 1) && {
-                py: level === 1 ? 0 : 1,
-                '&:hover': { bgcolor: 'transparent' },
-                '&.Mui-selected': { '&:hover': { bgcolor: 'transparent' }, bgcolor: 'transparent' }
-              })
-            }}
-            selected={isSelected}
-            {...(!drawerOpen && { onMouseEnter: handleClickMini, onMouseLeave: handleMiniClose })}
-            className={anchorEl ? 'Mui-selected' : ''}
-            onClick={handleClickMini}
-          >
-            <Activity mode={menuIcon ? 'visible' : 'hidden'}>
-              <ListItemIcon
-                sx={{
-                  minWidth: level === 1 ? 36 : 18,
-                  color: isSelected ? 'secondary.main' : 'text.primary',
-                  ...(!drawerOpen &&
-                    level === 1 && {
-                      borderRadius: `${borderRadius}px`,
-                      width: 46,
-                      height: 46,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      '&:hover': { bgcolor: 'secondary.light' },
-
-                      ...((isSelected || anchorEl) && {
-                        bgcolor: 'secondary.light',
-                        '&:hover': { bgcolor: 'secondary.light' }
-                      })
-                    }),
-
-                  // dark overrides
-                  ...theme.applyStyles('dark', {
-                    color: isSelected && drawerOpen ? 'text.primary' : 'text.primary',
-
-                    ...(!drawerOpen &&
-                      level === 1 && {
-                        '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25) },
-                        ...((isSelected || anchorEl) && {
-                          bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25),
-                          '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.3) }
-                        })
-                      })
-                  })
-                }}
-              >
-                {menuIcon}
-              </ListItemIcon>
-            </Activity>
-            {(drawerOpen || (!drawerOpen && level !== 1)) && (
-              <Tooltip title={<FormattedMessage id={menu.title} />} disableHoverListener={!hoverStatus}>
-                <ListItemText
-                  primary={
-                    <Typography
-                      ref={ref}
-                      noWrap
-                      variant={isSelected || anchorEl ? 'h5' : 'body1'}
-                      sx={{
-                        color: 'inherit',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        width: 120,
-                        ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
-                      }}
-                    >
-                      <FormattedMessage id={menu.title} />
-                    </Typography>
-                  }
-                  secondary={
-                    menu.caption && (
-                      <Typography
-                        gutterBottom
-                        component="span"
-                        sx={{
-                          display: 'block',
-                          fontSize: '0.6875rem',
-                          fontWeight: 500,
-                          color: 'text.secondary',
-                          textTransform: 'capitalize',
-                          lineHeight: 1.66
-                        }}
-                      >
-                        <FormattedMessage id={menu.caption} />
-                      </Typography>
-                    )
-                  }
-                />
-              </Tooltip>
-            )}
-
-            {openMini || open ? (
-              collapseIcon
-            ) : (
-              <IconChevronDown stroke={1.5} size="16px" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
-            )}
-
-            <Activity mode={!drawerOpen ? 'visible' : 'hidden'}>
-              <Popper
-                open={openMini}
-                anchorEl={anchorEl}
-                placement="right-start"
-                modifiers={[
-                  {
-                    name: 'offset',
-                    options: {
-                      offset: [-12, 0]
-                    }
-                  }
-                ]}
-                sx={{
-                  overflow: 'visible',
-                  zIndex: 2001,
-                  minWidth: 180,
-                  '&:before': {
-                    content: '""',
-                    bgcolor: 'background.paper',
-                    transform: 'translateY(-50%) rotate(45deg)',
-                    zIndex: 120,
-                    borderLeft: `1px solid`,
-                    borderBottom: `1px solid`,
-                    borderColor: 'divider'
-                  }
-                }}
-              >
-                {({ TransitionProps }) => (
-                  <Transitions in={openMini} {...TransitionProps}>
-                    <Paper
-                      sx={{
-                        overflow: 'hidden',
-                        boxShadow: theme.shadows[8],
-                        backgroundImage: 'none'
-                      }}
-                    >
-                      <ClickAwayListener onClickAway={handleClosePopper}>
-                        <Box>{menus}</Box>
-                      </ClickAwayListener>
-                    </Paper>
-                  </Transitions>
-                )}
-              </Popper>
-            </Activity>
-          </ListItemButton>
+          {verticalButton}
 
           <Activity mode={drawerOpen ? 'visible' : 'hidden'}>
             <Collapse in={open} timeout="auto" unmountOnExit>
@@ -364,67 +456,7 @@ export default function NavCollapse({ menu, level, parentId }) {
           </Activity>
         </>
       ) : (
-        <ListItemButton
-          id={`boundary-${popperId}`}
-          disableRipple
-          selected={isSelected}
-          onMouseEnter={handleHover}
-          onMouseLeave={handleClosePopper}
-          onClick={handleHover}
-          aria-describedby={popperId}
-          className={anchorEl ? 'Mui-selected' : ''}
-        >
-          <Activity mode={menuIcon ? 'visible' : 'hidden'}>
-            <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
-          </Activity>
-          <ListItemText
-            sx={{ mb: 0.25 }}
-            primary={
-              <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
-                <FormattedMessage id={menu.title} />
-              </Typography>
-            }
-          />
-          {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
-
-          <Activity mode={anchorEl ? 'visible' : 'hidden'}>
-            <PopperStyled
-              id={popperId}
-              open={openMini}
-              anchorEl={anchorEl}
-              placement="right-start"
-              style={{
-                zIndex: 2001
-              }}
-              modifiers={[
-                {
-                  name: 'offset',
-                  options: {
-                    offset: [-10, 0]
-                  }
-                }
-              ]}
-            >
-              {({ TransitionProps }) => (
-                <Transitions in={openMini} {...TransitionProps}>
-                  <Paper
-                    sx={{
-                      overflow: 'hidden',
-                      mt: 1.5,
-                      py: 0.5,
-                      boxShadow: theme.shadows[8],
-                      backgroundImage: 'none'
-                    }}
-                  >
-                    <ClickAwayListener onClickAway={handleClosePopper}>
-                      <Box>{menus}</Box>
-                    </ClickAwayListener>
-                  </Paper>
-                </Transitions>
-              )}
-            </PopperStyled>
-          </Activity>
-        </ListItemButton>
+        horizontalButton
       )}
     </>
   );

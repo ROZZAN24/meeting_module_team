@@ -11,7 +11,7 @@ public interface AuditObservationDetailRepository extends JpaRepository<AuditObs
     @Query("SELECT ad FROM AuditObservationDetail ad " +
            "JOIN FETCH ad.auditObservation ao " +
            "WHERE ad.approvalStatus != 'CLOSED' " +
-           "AND (:observationStatus IS NULL OR :observationStatus = 'All' OR ad.observationStatus = :observationStatus) " +
+           "AND (:observationStatus IS NULL OR :observationStatus = 'All' OR ad.observationStatus = :observationStatus OR (:observationStatus = 'NC' AND ad.observationStatus = 'NCR')) " +
            "AND (:ncrStatus IS NULL OR :ncrStatus = 'All' OR ad.ncrStatus = :ncrStatus) " +
            "AND (:ncrApprovedBy IS NULL OR :ncrApprovedBy = 'All' OR ao.ncrApprovedBy = :ncrApprovedBy) " +
            "AND (:query IS NULL OR ao.observationNo LIKE %:query% OR ao.auditScheduleNo LIKE %:query% OR ao.auditType LIKE %:query%) " +
@@ -25,10 +25,10 @@ public interface AuditObservationDetailRepository extends JpaRepository<AuditObs
             @org.springframework.data.repository.query.Param("ncrApprovedBy") String ncrApprovedBy,
             @org.springframework.data.repository.query.Param("query") String query);
 
-    @Query("SELECT ad FROM AuditObservationDetail ad JOIN ad.auditObservation ao WHERE ad.observationStatus IN ('NCR', 'OFI') AND ad.approvalStatus != 'CLOSED'")
+    @Query("SELECT ad FROM AuditObservationDetail ad JOIN ad.auditObservation ao WHERE ad.observationStatus IN ('NCR', 'NC', 'OFI') AND ad.approvalStatus != 'CLOSED'")
     List<AuditObservationDetail> findPendingNcrFindings();
 
-    @Query("SELECT d FROM AuditObservationDetail d WHERE d.observationStatus IN ('NCR', 'OFI')")
+    @Query("SELECT d FROM AuditObservationDetail d WHERE d.observationStatus IN ('NCR', 'NC', 'OFI')")
     List<AuditObservationDetail> findAllNcrAndOfi();
 
     List<AuditObservationDetail> findByObservationStatus(String status);

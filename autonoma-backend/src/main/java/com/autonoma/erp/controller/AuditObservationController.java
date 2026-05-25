@@ -144,6 +144,7 @@ public class AuditObservationController {
                     observation.setObservationDate(details.getObservationDate());
                     observation.setAuditScheduleNo(details.getAuditScheduleNo());
                     observation.setAuditType(details.getAuditType());
+                    observation.setAuditArea(details.getAuditArea());
                     observation.setDepartmentName(details.getDepartmentName());
                     observation.setAuditee(details.getAuditee());
                     observation.setAuditor(details.getAuditor());

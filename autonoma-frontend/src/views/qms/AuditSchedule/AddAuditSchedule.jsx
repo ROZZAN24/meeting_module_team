@@ -24,7 +24,8 @@ import {
   IconFileDescription,
   IconCalendarEvent,
   IconUsers,
-  IconListCheck
+  IconListCheck,
+  IconArrowLeft
 } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
@@ -48,22 +49,58 @@ import { API_PATHS } from 'utils/api-constants';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const TIME_OPTIONS = Array.from({ length: 96 }, (_, i) => {
-  const hours = Math.floor(i / 4);
-  const minutes = (i % 4) * 15;
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const displayHours = hours % 12 || 12;
-  return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-});
+const formatTime12 = (hour, minute) => {
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
+};
 
-const VALIDATION_RULES = [
-  { field: 'auditType', label: 'Audit Type', required: true },
-  { field: 'auditArea', label: 'Audit Area', required: true },
-  { field: 'auditDate', label: 'Audit Date', required: true },
-  { field: 'department', label: 'Department', required: true },
-  { field: 'auditee', label: 'Auditee', required: true },
-  { field: 'auditor', label: 'Auditor', required: true }
-];
+const START_TIME_OPTIONS = [];
+for (let h = 9; h <= 20; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    if (h === 20 && m > 30) break;
+    START_TIME_OPTIONS.push(formatTime12(h, m));
+  }
+}
+
+const END_TIME_OPTIONS = [];
+for (let h = 9; h <= 21; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    if (h === 9 && m < 30) continue;
+    if (h === 21 && m > 0) break;
+    END_TIME_OPTIONS.push(formatTime12(h, m));
+  }
+}
+
+const ensure12h = (timeStr) => {
+  if (!timeStr) return '';
+  if (timeStr.includes('AM') || timeStr.includes('PM')) {
+    return timeStr;
+  }
+  const parts = timeStr.split(':');
+  if (parts.length >= 2) {
+    const h24 = parseInt(parts[0], 10);
+    const m = parts[1].substring(0, 2);
+    const ampm = h24 >= 12 ? 'PM' : 'AM';
+    const h12 = (h24 % 12 || 12).toString().padStart(2, '0');
+    return `${h12}:${m} ${ampm}`;
+  }
+  return timeStr;
+};
+
+const getAuditCategory = (auditTypeStr) => {
+  if (!auditTypeStr) return 'DEFAULT';
+  const type = auditTypeStr.toUpperCase();
+  if (type.includes('CUSTOMER')) return 'CUSTOMER_AUDIT';
+  if (type.includes('ISO')) return 'ISO_AUDIT';
+  if (type.includes('SUPPLIER ASSESSMENT')) return 'SUPPLIER_ASSESSMENT';
+  if (type.includes('SUPPLIER')) return 'SUPPLIER_AUDIT';
+  if (type.includes('SUBCONTRACTOR')) return 'SUBCONTRACTOR_AUDIT';
+  if (type.includes('PRODUCT')) return 'PRODUCT_AUDIT';
+  if (type.includes('RECORD ROOM')) return 'RECORD_ROOM_AUDIT';
+  if (type.includes('ERP')) return 'ERP_SCREEN_AUDIT';
+  return 'DEFAULT';
+};
 
 export default function AddAuditSchedule() {
   const { id } = useParams();
@@ -75,13 +112,21 @@ export default function AddAuditSchedule() {
   const isEditing = Boolean(id);
   const { errors, validate, clearErrors } = useBOSValidation();
 
+  const getLocalDateString = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+  };
+
   const [formData, setFormData] = useState({
     scheduleNo: '',
-    scheduleDate: new Date().toISOString().split('T')[0],
+    scheduleDate: getLocalDateString(),
     status: 'OPEN',
     auditType: '',
     auditArea: '',
-    auditDate: new Date().toISOString().split('T')[0],
+    auditDate: getLocalDateString(),
     auditMonth: MONTHS[new Date().getMonth()],
     startTime: '09:00 AM',
     endTime: '05:00 PM',
@@ -92,10 +137,19 @@ export default function AddAuditSchedule() {
     auditorType: '',
     ncrApprovedBy: '',
     ncrApprovedByType: '',
-    criteriaMinCount: 0
+    criteriaMinCount: 0,
+    // Dynamic Fields
+    customerName: '',
+    contactName: '',
+    externalName: '',
+    emailToCustomer: '',
+    subcontractorName: '',
+    supplierName: '',
+    coOrdinator: ''
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
+  const category = getAuditCategory(formData.auditType);
   const { 
     auditTypes = [], 
     departments = [], 
@@ -130,6 +184,14 @@ export default function AddAuditSchedule() {
     try {
       const res = await axios.get(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`);
       const data = res.data;
+      let extras = {};
+      try {
+        if (data.auditeeDetails) {
+          extras = JSON.parse(data.auditeeDetails);
+        }
+      } catch (e) {
+        console.error('Failed to parse auditeeDetails:', e);
+      }
       setFormData({
         scheduleNo: data.scheduleNo || '',
         scheduleDate: data.scheduleDate ? data.scheduleDate.split('T')[0] : '',
@@ -138,8 +200,8 @@ export default function AddAuditSchedule() {
         auditArea: data.auditArea || '',
         auditDate: data.auditDate ? data.auditDate.split('T')[0] : '',
         auditMonth: data.auditMonth || '',
-        startTime: data.startTime || '09:00',
-        endTime: data.endTime || '17:00',
+        startTime: ensure12h(data.startTime || '09:00 AM'),
+        endTime: ensure12h(data.endTime || '05:00 PM'),
         department: data.department || '',
         auditee: data.auditee || '',
         auditeeType: data.auditeeType || '',
@@ -147,7 +209,15 @@ export default function AddAuditSchedule() {
         auditorType: data.auditorType || '',
         ncrApprovedBy: data.ncrApprovedBy || '',
         ncrApprovedByType: data.ncrApprovedByType || '',
-        criteriaMinCount: data.criteriaMinCount || 0
+        criteriaMinCount: data.criteriaMinCount || 0,
+        itemCode: data.itemCode || '',
+        customerName: extras.customerName || '',
+        contactName: extras.contactName || '',
+        externalName: extras.externalName || '',
+        emailToCustomer: extras.emailToCustomer || '',
+        subcontractorName: extras.subcontractorName || '',
+        supplierName: extras.supplierName || '',
+        coOrdinator: extras.coOrdinator || ''
       });
       setCriteriaList(data.criteriaList || []);
     } catch (error) {
@@ -155,20 +225,103 @@ export default function AddAuditSchedule() {
     }
   };
 
+  // Modernize legacy employee labels when employee lookups load
+  useEffect(() => {
+    if (employees.length > 0) {
+      setFormData((prev) => {
+        const updateField = (val) => {
+          if (!val) return '';
+          const code = val.includes(' - ') ? val.split(' - ')[1] : val;
+          const match = employees.find(emp => String(emp.empCode || emp.employeeCode || emp.id) === String(code));
+          if (match) {
+            const fName = match.firstName || '';
+            const lName = match.lastName || '';
+            const empName = match.employeeName || '';
+            let name = '';
+            if (fName && lName) {
+              name = `${fName} ${lName}`.trim();
+            } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+              name = `${empName} ${lName}`.trim();
+            } else if (empName) {
+              name = empName;
+            } else {
+              name = `${fName} ${lName}`.trim();
+            }
+            return `${name} - ${match.empCode || match.employeeCode || match.id}`;
+          }
+          return val;
+        };
+
+        const updatedAuditee = updateField(prev.auditee);
+        const updatedAuditor = updateField(prev.auditor);
+        const updatedNcrApproved = updateField(prev.ncrApprovedBy);
+        const updatedCoOrdinator = updateField(prev.coOrdinator);
+
+        if (
+          updatedAuditee !== prev.auditee || 
+          updatedAuditor !== prev.auditor || 
+          updatedNcrApproved !== prev.ncrApprovedBy || 
+          updatedCoOrdinator !== prev.coOrdinator
+        ) {
+          return {
+            ...prev,
+            auditee: updatedAuditee,
+            auditor: updatedAuditor,
+            ncrApprovedBy: updatedNcrApproved,
+            coOrdinator: updatedCoOrdinator
+          };
+        }
+        return prev;
+      });
+    }
+  }, [employees]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
+    const category = getAuditCategory(formData.auditType);
+    const rules = [
+      { field: 'auditType', label: 'Audit Type', required: true },
+      { field: 'auditArea', label: 'Audit Area', required: true },
+      { field: 'auditDate', label: 'Audit Date', required: true },
+      { field: 'department', label: 'Department', required: true },
+      { field: 'auditee', label: 'Auditee', required: true },
+      { field: 'ncrApprovedBy', label: 'NCR Approved By', required: true }
+    ];
+
+    if (category === 'CUSTOMER_AUDIT') {
+      rules.push({ field: 'customerName', label: 'Customer Name', required: true });
+      rules.push({ field: 'contactName', label: 'Contact Name', required: true });
+      rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
+    } else if (category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
+      rules.push({ field: 'externalName', label: 'External Name', required: true });
+      rules.push({ field: 'contactName', label: 'Contact Name', required: true });
+      rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
+    } else if (category === 'PRODUCT_AUDIT') {
+      rules.push({ field: 'itemCode', label: 'Item Code', required: true });
+      rules.push({ field: 'auditor', label: 'Auditor', required: true });
+    } else if (category === 'SUBCONTRACTOR_AUDIT') {
+      rules.push({ field: 'subcontractorName', label: 'Subcontractor Name', required: true });
+      rules.push({ field: 'auditor', label: 'Auditor', required: true });
+    } else if (category === 'SUPPLIER_AUDIT') {
+      rules.push({ field: 'supplierName', label: 'Supplier Name', required: true });
+      rules.push({ field: 'auditor', label: 'Auditor', required: true });
+    } else {
+      rules.push({ field: 'auditor', label: 'Auditor', required: true });
+    }
+
+    if (!validate(formData, rules)) return;
 
     const convertTo24h = (time12h) => {
-      const [time, modifier] = time12h.split(' ');
+      const ensured = ensure12h(time12h);
+      const [time, modifier] = ensured.split(' ');
       let [hours, minutes] = time.split(':');
       if (hours === '12') hours = '00';
       if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
-      return parseInt(`${hours}${minutes}`, 10);
+      return parseInt(`${hours.toString().padStart(2, '0')}${minutes.toString().padStart(2, '0')}`, 10);
     };
 
     const startNum = convertTo24h(formData.startTime);
@@ -195,7 +348,22 @@ export default function AddAuditSchedule() {
     }
 
     try {
-      const payload = { ...formData, criteriaList };
+      const extraDetails = {
+        customerName: formData.customerName || '',
+        contactName: formData.contactName || '',
+        externalName: formData.externalName || '',
+        emailToCustomer: formData.emailToCustomer || '',
+        subcontractorName: formData.subcontractorName || '',
+        supplierName: formData.supplierName || '',
+        coOrdinator: formData.coOrdinator || ''
+      };
+      
+      const payload = { 
+        ...formData, 
+        auditeeDetails: JSON.stringify(extraDetails),
+        criteriaList 
+      };
+
       if (isEditing) {
         await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule updated successfully!', severity: 'success', variant: 'alert' }));
@@ -215,14 +383,14 @@ export default function AddAuditSchedule() {
     } else {
       setFormData({
         scheduleNo: '',
-        scheduleDate: new Date().toISOString().split('T')[0],
+        scheduleDate: getLocalDateString(),
         status: 'OPEN',
         auditType: '',
         auditArea: '',
-        auditDate: new Date().toISOString().split('T')[0],
+        auditDate: getLocalDateString(),
         auditMonth: MONTHS[new Date().getMonth()],
-        startTime: '09:00',
-        endTime: '17:00',
+        startTime: '09:00 AM',
+        endTime: '05:00 PM',
         department: '',
         auditee: '',
         auditeeType: '',
@@ -230,7 +398,15 @@ export default function AddAuditSchedule() {
         auditorType: '',
         ncrApprovedBy: '',
         ncrApprovedByType: '',
-        criteriaMinCount: 0
+        criteriaMinCount: 0,
+        customerName: '',
+        contactName: '',
+        externalName: '',
+        emailToCustomer: '',
+        subcontractorName: '',
+        supplierName: '',
+        coOrdinator: '',
+        itemCode: ''
       });
       setCriteriaList([]);
       generateScheduleNo();
@@ -304,6 +480,14 @@ export default function AddAuditSchedule() {
         }
         secondary={
           <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate('/qms/audit/schedule')}
+              startIcon={<IconArrowLeft size={20} />}
+            >
+              Back
+            </Button>
             <Tooltip title="Clear all fields">
               <Button variant="contained" sx={btnClear} onClick={handleClear} startIcon={<IconEraser size={20} />}>
                 Clear
@@ -320,14 +504,16 @@ export default function AddAuditSchedule() {
         <Stack spacing={3}>
           {/* Card 1: General Information */}
           <BOSFormSection icon={<IconFileDescription size={20} color={theme.palette.primary.main} />} title="General Information">
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 2.5 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
               <BOSTextField label="Schedule No" value={formData.scheduleNo} inputProps={{ readOnly: true }} />
-              <BOSDatePicker
+              <BOSTextField
                 required
+                type="date"
                 label="Schedule Date"
                 name="scheduleDate"
                 value={formData.scheduleDate}
-                onChange={handleChange}
+                inputProps={{ readOnly: true }}
+                InputLabelProps={{ shrink: true }}
                 error={!!errors.scheduleDate}
                 helperText={errors.scheduleDate}
               />
@@ -336,6 +522,89 @@ export default function AddAuditSchedule() {
                 <MenuItem value="CLOSED">CLOSED</MenuItem>
                 <MenuItem value="CANCELLED">CANCELLED</MenuItem>
               </BOSTextField>
+
+              {/* Dynamic Field: Item Code for Product Audit */}
+              {category === 'PRODUCT_AUDIT' && (
+                <BOSTextField
+                  required
+                  label="Item Code"
+                  name="itemCode"
+                  value={formData.itemCode}
+                  onChange={handleChange}
+                  error={!!errors.itemCode}
+                  helperText={errors.itemCode}
+                />
+              )}
+
+              {/* Dynamic Field: Supplier Name for Supplier Audit */}
+              {category === 'SUPPLIER_AUDIT' && (
+                <BOSTextField
+                  required
+                  label="Supplier Name"
+                  name="supplierName"
+                  value={formData.supplierName}
+                  onChange={handleChange}
+                  error={!!errors.supplierName}
+                  helperText={errors.supplierName}
+                />
+              )}
+
+              {/* Dynamic Field: Subcontractor Name for Subcontractor Audit */}
+              {category === 'SUBCONTRACTOR_AUDIT' && (
+                <BOSTextField
+                  required
+                  label="Subcontractor Name"
+                  name="subcontractorName"
+                  value={formData.subcontractorName}
+                  onChange={handleChange}
+                  error={!!errors.subcontractorName}
+                  helperText={errors.subcontractorName}
+                />
+              )}
+
+              {/* Dynamic Field: Customer Name for Customer Audit */}
+              {category === 'CUSTOMER_AUDIT' && (
+                <BOSTextField
+                  required
+                  label="Customer Name"
+                  name="customerName"
+                  value={formData.customerName}
+                  onChange={handleChange}
+                  error={!!errors.customerName}
+                  helperText={errors.customerName}
+                />
+              )}
+
+              {/* Dynamic Field: External Name for ISO / Supplier Assessment Audit */}
+              {(category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
+                <BOSTextField
+                  required
+                  label="External Name"
+                  name="externalName"
+                  value={formData.externalName}
+                  onChange={handleChange}
+                  error={!!errors.externalName}
+                  helperText={errors.externalName}
+                />
+              )}
+
+              <BOSTextField
+                required
+                type="number"
+                label="Criteria Min Count"
+                name="criteriaMinCount"
+                value={formData.criteriaMinCount}
+                onChange={handleChange}
+                error={!!errors.criteriaMinCount}
+                helperText={errors.criteriaMinCount}
+                sx={{ display: 'none' }}
+              />
+            </Box>
+          </BOSFormSection>
+
+          {/* Card 2: Audit Specifics */}
+          <BOSFormSection icon={<IconCalendarEvent size={20} color={theme.palette.secondary.main} />} title="Audit Specifics">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
               <Autocomplete
                 options={departments}
                 getOptionLabel={(option) => option.departmentName || ''}
@@ -353,49 +622,6 @@ export default function AddAuditSchedule() {
                   />
                 )}
               />
-              <BOSTextField
-                label="Item Code"
-                name="itemCode"
-                value={formData.itemCode}
-                onChange={handleChange}
-                placeholder="Optional"
-              />
-              <BOSTextField
-                required
-                type="number"
-                label="Criteria Min Count"
-                name="criteriaMinCount"
-                value={formData.criteriaMinCount}
-                onChange={handleChange}
-                error={!!errors.criteriaMinCount}
-                helperText={errors.criteriaMinCount}
-                sx={{ display: 'none' }}
-              />
-            </Box>
-          </BOSFormSection>
-
-          {/* SOP: Dynamic Sections (Supplier/Customer/External) */}
-          {(formData.auditType || '').toUpperCase().includes('SUPPLIER') && (
-            <BOSFormSection title="Supplier Information">
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
-                <BOSTextField label="Supplier Name" name="supplierName" onChange={handleChange} />
-                <BOSTextField label="Supplier Code" name="supplierCode" onChange={handleChange} />
-              </Box>
-            </BOSFormSection>
-          )}
-
-          {(formData.auditType || '').toUpperCase().includes('CUSTOMER') && (
-            <BOSFormSection title="Customer Information">
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
-                <BOSTextField label="Customer Name" name="customerName" onChange={handleChange} />
-                <BOSTextField label="Customer Area" name="customerArea" onChange={handleChange} />
-              </Box>
-            </BOSFormSection>
-          )}
-
-          {/* Card 2: Audit Specifics */}
-          <BOSFormSection icon={<IconCalendarEvent size={20} color={theme.palette.secondary.main} />} title="Audit Specifics">
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
               <Autocomplete
                 multiple
                 disableCloseOnSelect
@@ -404,7 +630,18 @@ export default function AddAuditSchedule() {
                 value={(Array.isArray(auditTypes) ? auditTypes : []).filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
                 onChange={(event, newValue) => {
                   const selectedTypeStr = newValue.map((v) => v.auditType).join(',');
-                  setFormData({ ...formData, auditType: selectedTypeStr });
+                  const combinedAreas = newValue
+                    .map((v) => v.auditArea)
+                    .filter((a) => a)
+                    .flatMap((a) => a.split(', '))
+                    .map((a) => a.trim());
+                  const uniqueAreas = Array.from(new Set(combinedAreas)).filter((a) => a).join(', ');
+                  
+                  setFormData((prev) => ({ 
+                    ...prev, 
+                    auditType: selectedTypeStr,
+                    auditArea: uniqueAreas
+                  }));
                 }}
                 renderInput={(params) => (
                   <BOSTextField
@@ -418,19 +655,48 @@ export default function AddAuditSchedule() {
               />
               <BOSTextField
                 required
-                label="Audit Area"
+                label={category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT' ? 'Audit Zone/Area' : 'Audit Area'}
                 name="auditArea"
                 value={formData.auditArea}
                 onChange={handleChange}
                 error={!!errors.auditArea}
                 helperText={errors.auditArea}
               />
-              <BOSDatePicker
+              
+              {/* Dynamic Field: Contact Name */}
+              {(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
+                <BOSTextField
+                  required
+                  label="Contact Name"
+                  name="contactName"
+                  value={formData.contactName}
+                  onChange={handleChange}
+                  error={!!errors.contactName}
+                  helperText={errors.contactName}
+                />
+              )}
+
+              {/* Dynamic Field: Email to Customer */}
+              {category === 'CUSTOMER_AUDIT' && (
+                <BOSTextField
+                  label="Email To Customer"
+                  name="emailToCustomer"
+                  value={formData.emailToCustomer}
+                  onChange={handleChange}
+                  placeholder="Optional"
+                  error={!!errors.emailToCustomer}
+                  helperText={errors.emailToCustomer}
+                />
+              )}
+              <BOSTextField
                 required
+                type="date"
                 label="Audit Date"
                 name="auditDate"
                 value={formData.auditDate}
                 onChange={handleChange}
+                inputProps={{ min: getLocalDateString() }}
+                InputLabelProps={{ shrink: true }}
                 error={!!errors.auditDate}
                 helperText={errors.auditDate}
               />
@@ -455,7 +721,7 @@ export default function AddAuditSchedule() {
                 value={formData.startTime}
                 onChange={handleChange}
               >
-                {TIME_OPTIONS.map((t) => (
+                {START_TIME_OPTIONS.map((t) => (
                   <MenuItem key={t} value={t}>{t}</MenuItem>
                 ))}
               </BOSTextField>
@@ -466,21 +732,59 @@ export default function AddAuditSchedule() {
                 value={formData.endTime}
                 onChange={handleChange}
               >
-                {TIME_OPTIONS.map((t) => (
+                {END_TIME_OPTIONS.map((t) => (
                   <MenuItem key={t} value={t}>{t}</MenuItem>
                 ))}
               </BOSTextField>
+
+              {/* Dynamic Field: Co-Ordinator Select */}
+              {(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
+                <BOSTextField
+                  select
+                  required
+                  label="Co-Ordinator"
+                  name="coOrdinator"
+                  value={formData.coOrdinator}
+                  onChange={handleChange}
+                  error={!!errors.coOrdinator}
+                  helperText={errors.coOrdinator}
+                >
+                  <MenuItem value="">-Select-</MenuItem>
+                  {employees.filter(emp => emp.status === 'Active').map(emp => {
+                    const fName = emp.firstName || '';
+                    const lName = emp.lastName || '';
+                    const empName = emp.employeeName || '';
+                    let name = '';
+                    if (fName && lName) {
+                      name = `${fName} ${lName}`.trim();
+                    } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                      name = `${empName} ${lName}`.trim();
+                    } else if (empName) {
+                      name = empName;
+                    } else {
+                      name = `${fName} ${lName}`.trim();
+                    }
+                    const opt = `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                    return <MenuItem key={opt} value={opt}>{opt}</MenuItem>;
+                  })}
+                </BOSTextField>
+              )}
             </Box>
           </BOSFormSection>
 
           {/* Card 3: Personnel Information */}
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.warning.main} />} title="Personnel Information">
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: `repeat(${(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') ? 2 : 3}, 1fr)` }, gap: 3 }}>
               {[
                 { role: 'AUDITEE', field: 'auditee', typeField: 'auditeeType', label: 'Auditee' },
                 { role: 'AUDITOR', field: 'auditor', typeField: 'auditorType', label: 'Auditor' },
                 { role: 'NCR APPROVED BY', field: 'ncrApprovedBy', typeField: 'ncrApprovedByType', label: 'NCR Approved By' }
-              ].map((person) => {
+              ].filter(person => {
+                if (person.role === 'AUDITOR') {
+                  return !(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT');
+                }
+                return true;
+              }).map((person) => {
                 const value = formData[person.field];
                 const name = value ? value.split(' - ')[0] : '-';
                 const code = value ? value.split(' - ')[1] || '-' : '-';
@@ -499,11 +803,32 @@ export default function AddAuditSchedule() {
                 });
 
                 const getEmpLabel = (emp) => {
-                  const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim();
-                  return `${fullName} - ${emp.empCode || emp.employeeCode || emp.id}`;
+                  const fName = emp.firstName || '';
+                  const lName = emp.lastName || '';
+                  const empName = emp.employeeName || '';
+                  
+                  let name = '';
+                  if (fName && lName) {
+                    name = `${fName} ${lName}`.trim();
+                  } else if (empName && lName && !empName.toLowerCase().includes(lName.toLowerCase())) {
+                    name = `${empName} ${lName}`.trim();
+                  } else if (empName) {
+                    name = empName;
+                  } else {
+                    name = `${fName} ${lName}`.trim();
+                  }
+                  return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
                 };
 
-                const selectedEmp = filteredEmployees.find(emp => getEmpLabel(emp) === value);
+                const selectedEmp = filteredEmployees.find(emp => {
+                  const label = getEmpLabel(emp);
+                  if (label === value) return true;
+                  if (value && value.includes(' - ')) {
+                    const code = value.split(' - ')[1];
+                    return String(emp.empCode || emp.employeeCode || emp.id) === String(code);
+                  }
+                  return false;
+                });
                 
                 const empDeptName = selectedEmp ? (departments.find(d => String(d.id) === String(selectedEmp.departmentId))?.departmentName || '-') : '-';
                 
@@ -589,7 +914,12 @@ export default function AddAuditSchedule() {
               </Tooltip>
             </Box>
             <BOSDataTable
-              columns={[
+              columns={(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') ? [
+                { id: 'clause', label: 'Clause', minWidth: 100 },
+                { id: 'criteriaDetails', label: 'Agenda', minWidth: 300 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'remarks', label: 'Remarks', minWidth: 150 }
+              ] : [
                 { id: 'index', label: '#', minWidth: 50 },
                 { id: 'seqNo', label: 'Seq No', minWidth: 80 },
                 { id: 'clause', label: 'Clause', minWidth: 100 },
@@ -625,7 +955,12 @@ export default function AddAuditSchedule() {
       >
         <Paper sx={{ p: 0, height: 500, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <BOSDataTable
-            columns={[
+            columns={(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') ? [
+              { id: 'select', label: '', minWidth: 50 },
+              { id: 'clause', label: 'Clause', minWidth: 100 },
+              { id: 'criteriaText', label: 'Agenda', minWidth: 400 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+            ] : [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'seqNo', label: 'Seq No', minWidth: 80 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
