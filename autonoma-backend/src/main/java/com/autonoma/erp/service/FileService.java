@@ -261,6 +261,11 @@ public class FileService {
             case "SALES_QUOTATION":
                 return BosDocConstants.SALES_QUOTATION_PATH;
 
+            case "SUPPORT_TEMP_ATTACHMENT":
+                return "Ticketing/Temp/Attachments";
+            case "SUPPORT_TEMP_VOICE":
+                return "Ticketing/Temp/Voice Recordings";
+
             default:
                 return BosDocConstants.DEFAULT_DOC_PATH;
         }
