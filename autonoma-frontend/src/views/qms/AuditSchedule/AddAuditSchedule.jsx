@@ -963,7 +963,6 @@ export default function AddAuditSchedule() {
                       <Box sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.100', px: 2.5, py: 0.5, borderRadius: '16px', mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap>{code !== '-' ? code : 'No Code'}</Typography>
                       </Box>
-<<<<<<< HEAD
                       <Stack spacing={2} sx={{ width: '100%' }}>
                         <BOSTextField
                           select
