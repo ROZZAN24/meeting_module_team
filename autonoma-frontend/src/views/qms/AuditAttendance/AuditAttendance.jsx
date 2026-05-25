@@ -11,6 +11,7 @@ import { BOSDataTable, BOSExportButton, BOSFormDialog, BOSFormSection, BOSTextFi
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useBOSValidation from 'hooks/useBOSValidation';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -40,6 +41,7 @@ const VALIDATION_RULES = [
 
 export default function AuditAttendance() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_ATTENDANCE);
   const { validate, clearErrors, errors } = useBOSValidation();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -239,7 +241,7 @@ export default function AuditAttendance() {
               { header: 'Attendance Status', key: 'attendanceStatus' }
             ]}
           />}
-          <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>
+          {perms.write && <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>}
         </Stack>
       }
     >
@@ -253,11 +255,11 @@ export default function AuditAttendance() {
         onPageChange={setPage}
         onSizeChange={setSize}
         onEditRow={perms.write ? handleOpenEdit : undefined}
-        onDeleteRow={(r) => { setDeleteTarget(r); setDeleteDialogOpen(true); }}
-        renderCell={null}
+        onDeleteRow={perms.delete ? (r) => { setDeleteTarget(r); setDeleteDialogOpen(true); } : undefined}
+        renderCell={renderCell}
       />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'}>
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'} isViewOnly={!perms.write}>
         <BOSFormSection title="Details" icon={<IconPlus size={20} />}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2.5 }}>
             <BOSTextField
