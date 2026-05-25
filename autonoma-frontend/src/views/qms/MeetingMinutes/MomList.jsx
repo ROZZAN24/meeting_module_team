@@ -319,18 +319,20 @@ export default function MomList() {
               { header: 'Status', key: 'status' }
             ]}
           />}
-          <Tooltip title="Reassign selected action">
-            <Button
-              variant="outlined"
-              color="warning"
-              size="medium"
-              onClick={handleReassignClick}
-              sx={{ borderRadius: '12px', fontWeight: 700 }}
-              startIcon={<IconArrowsExchange size={18} />}
-            >
-              Reassign
-            </Button>
-          </Tooltip>
+          {perms.write && (
+            <Tooltip title="Reassign selected action">
+              <Button
+                variant="outlined"
+                color="warning"
+                size="medium"
+                onClick={handleReassignClick}
+                sx={{ borderRadius: '12px', fontWeight: 700 }}
+                startIcon={<IconArrowsExchange size={18} />}
+              >
+                Reassign
+              </Button>
+            </Tooltip>
+          )}
           {perms.write && <Tooltip title={shortcutTooltip('Create New MOM', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
@@ -347,9 +349,10 @@ export default function MomList() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleEdit}
+        onDoubleClickRow={perms.write ? handleEdit : undefined}
         onClickRow={(row) => setSelectedRow(row)}
         selectedRowId={selectedRow?.id}
+        onEditRow={perms.write ? handleEdit : undefined}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="mom-list-table"

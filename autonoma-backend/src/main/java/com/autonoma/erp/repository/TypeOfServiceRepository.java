@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TypeOfServiceRepository extends JpaRepository<TypeOfService, Long> {
+    boolean existsByServiceNameIgnoreCase(String serviceName);
 }

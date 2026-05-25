@@ -58,3 +58,14 @@ BEGIN
     PRINT 'Created index: IX_division_status'
 END
 GO
+
+-- Seed default division if empty
+IF NOT EXISTS (SELECT * FROM ad_division_master)
+BEGIN
+    SET IDENTITY_INSERT ad_division_master ON;
+    INSERT INTO ad_division_master (id, company_id, division_name, status, created_by, created_at)
+    VALUES (1, 1, 'Corporate Division', 1, 'SYSTEM', GETDATE());
+    SET IDENTITY_INSERT ad_division_master OFF;
+    PRINT 'Seeded default division'
+END
+GO

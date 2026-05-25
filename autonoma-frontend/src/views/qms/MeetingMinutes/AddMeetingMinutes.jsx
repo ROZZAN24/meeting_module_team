@@ -54,6 +54,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import MaterialSelectionDialog from './MaterialSelectionDialog';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // Format: MM/CCRM/2026-2027/001
 const DEFAULT_MOM_NO = 'MM/CCRM/2026-2027/001';
@@ -96,6 +97,7 @@ export default function AddMeetingMinutes() {
   const editId = id || searchParams.get('id');
 
   const { meetingSchedules = [], employees = [] } = useLookups(['MEETING_SCHEDULES', 'EMPLOYEES']);
+  const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_MOM);
   const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
   const { user } = useAuth();
   const [form, setForm] = useState(INITIAL_FORM);
@@ -416,12 +418,16 @@ export default function AddMeetingMinutes() {
           <Tooltip title={shortcutTooltip('Back', 'Esc')}>
             <Button variant="outlined" color="error" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/qms/minutesofmeeting')} sx={btnCancel}>Back</Button>
           </Tooltip>
-          <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
-            <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={() => setForm(INITIAL_FORM)} sx={btnClear}>Clear</Button>
-          </Tooltip>
-          <Tooltip title={shortcutTooltip('Save Master', 'Ctrl + S')}>
-            <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save Master</Button>
-          </Tooltip>
+          {perms.write && (
+            <>
+              <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
+                <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={() => setForm(INITIAL_FORM)} sx={btnClear}>Clear</Button>
+              </Tooltip>
+              <Tooltip title={shortcutTooltip('Save Master', 'Ctrl + S')}>
+                <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save Master</Button>
+              </Tooltip>
+            </>
+          )}
         </Stack>
       }
     >
@@ -441,8 +447,8 @@ export default function AddMeetingMinutes() {
                     { label: 'Meeting Minutes No', component: <BOSTextField fullWidth value={form.momNo} onChange={(e) => {
                       const newNo = e.target.value.toUpperCase();
                       setForm({ ...form, momNo: newNo, details: syncMeetNumbers(newNo, form.details) });
-                    }} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { fontWeight: 800, color: 'secondary.dark', py: 0.8 } }} /> },
-                    { label: 'Meeting Minutes Date', component: <BOSTextField fullWidth type="date" value={form.momDate} onChange={(e) => setForm({...form, momDate: e.target.value})} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { py: 0.8 } }} /> },
+                    }} disabled={!perms.write} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { fontWeight: 800, color: 'secondary.dark', py: 0.8 } }} /> },
+                    { label: 'Meeting Minutes Date', component: <BOSTextField fullWidth type="date" value={form.momDate} onChange={(e) => setForm({...form, momDate: e.target.value})} disabled={!perms.write} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { py: 0.8 } }} /> },
                     { label: 'Meeting Schedule No', component: (
                       <Autocomplete
                         fullWidth
@@ -453,10 +459,11 @@ export default function AddMeetingMinutes() {
                           handleScheduleChange(e, val);
                           if (errors.schedule) clearErrors('schedule');
                         }}
+                        disabled={!perms.write}
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Schedule" required error={!!errors.schedule} sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
-                    { label: 'Meeting Agenda', component: <BOSTextField fullWidth name="agenda" value={form.agenda} onChange={(e) => handleInputChange(e, setForm)} multiline rows={2} placeholder="Enter Agenda..." sx={{ '& .MuiInputBase-root': { py: 0.5 } }} /> },
+                    { label: 'Meeting Agenda', component: <BOSTextField fullWidth name="agenda" value={form.agenda} onChange={(e) => handleInputChange(e, setForm)} multiline rows={2} placeholder="Enter Agenda..." disabled={!perms.write} sx={{ '& .MuiInputBase-root': { py: 0.5 } }} /> },
                     { label: 'Chaired By', component: (
                       <Autocomplete
                         fullWidth
@@ -467,11 +474,12 @@ export default function AddMeetingMinutes() {
                           setForm({...form, chairedBy: val});
                           if (errors.chairedBy) clearErrors('chairedBy');
                         }}
+                        disabled={!perms.write}
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Chaired By" sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
-                    { label: 'Meeting Start Time', component: <BOSTextField fullWidth type="time" value={form.startTime} onChange={(e) => setForm({...form, startTime: e.target.value})} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> },
-                    { label: 'Meeting End Time', component: <BOSTextField fullWidth type="time" value={form.endTime} onChange={(e) => setForm({...form, endTime: e.target.value})} placeholder="" InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> }
+                    { label: 'Meeting Start Time', component: <BOSTextField fullWidth type="time" value={form.startTime} onChange={(e) => setForm({...form, startTime: e.target.value})} placeholder="" disabled={!perms.write} InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> },
+                    { label: 'Meeting End Time', component: <BOSTextField fullWidth type="time" value={form.endTime} onChange={(e) => setForm({...form, endTime: e.target.value})} placeholder="" disabled={!perms.write} InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> }
                   ].map((row, idx) => (
                     <TableRow key={idx}>
                       <TableCell sx={{ width: '150px', whiteSpace: 'nowrap' }}>
@@ -545,7 +553,7 @@ export default function AddMeetingMinutes() {
                                 list[idx].outTime = e.target.value;
                                 setForm({...form, attendanceList: list});
                               }} 
-                              disabled={att.employee?.id !== form.schedule?.host?.id}
+                              disabled={!perms.write || att.employee?.id !== form.schedule?.host?.id}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
                               sx={{ 
@@ -579,9 +587,11 @@ export default function AddMeetingMinutes() {
                             </BOSTextField>
                           </TableCell>
                           <TableCell>
-                            <IconButton size="small" color="success" sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.main', color: 'white' }, p: 0.3 }}>
-                              <IconSave size={10} />
-                            </IconButton>
+                            {perms.write && (
+                              <IconButton size="small" color="success" sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.main', color: 'white' }, p: 0.3 }}>
+                                <IconSave size={10} />
+                              </IconButton>
+                            )}
                           </TableCell>
                         </TableRow>
                       ))
@@ -656,6 +666,7 @@ export default function AddMeetingMinutes() {
                           value={det.discussedPoint} 
                           onChange={(e) => handleDetailChange(idx, 'discussedPoint', e.target.value.toUpperCase())}
                           placeholder="Enter details..."
+                          disabled={!perms.write}
                           sx={{ 
                             ...seamlessInputSx, 
                             '& .MuiInputBase-root': { py: 1, px: 1 },
@@ -671,7 +682,7 @@ export default function AddMeetingMinutes() {
                       
                       {/* Details */}
                       <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.type || 'RM'} onChange={(e) => handleDetailChange(idx, 'type', e.target.value)} sx={seamlessInputSx}>
+                        <BOSTextField select value={det.type || 'RM'} onChange={(e) => handleDetailChange(idx, 'type', e.target.value)} disabled={!perms.write} sx={seamlessInputSx}>
                           <MenuItem value="RM">RM</MenuItem>
                           <MenuItem value="PRODUCT">PRODUCT</MenuItem>
                         </BOSTextField>
@@ -683,19 +694,19 @@ export default function AddMeetingMinutes() {
                           minRows={2} 
                           maxRows={4} 
                           value={det.materialList} 
-                          onClick={() => setMaterialDialog({ open: true, rowIdx: idx, type: det.type || 'RM' })}
+                          onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: idx, type: det.type || 'RM' })}
                           InputProps={{ 
                             readOnly: true,
-                            sx: { cursor: 'pointer' }
+                            sx: { cursor: perms.write ? 'pointer' : 'default' }
                           }}
-                          placeholder="Click to select..."
+                          placeholder={perms.write ? "Click to select..." : "N/A"}
                           sx={{ ...seamlessInputSx, '& .MuiInputBase-root': { py: 1, px: 1 } }} 
                         />
                       </TableCell>
                       
                       {/* Responsibility */}
                       <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.processType} onChange={(e) => handleProcessChange(idx, e.target.value)} sx={seamlessInputSx}>
+                        <BOSTextField select value={det.processType} onChange={(e) => handleProcessChange(idx, e.target.value)} disabled={!perms.write} sx={seamlessInputSx}>
                           <MenuItem value="INFO">INFO</MenuItem>
                           <MenuItem value="ACTION">ACTION</MenuItem>
                         </BOSTextField>
@@ -707,7 +718,7 @@ export default function AddMeetingMinutes() {
                           isOptionEqualToValue={(opt, val) => opt.id === val?.id}
                           value={det.assignedTo}
                           onChange={(e, val) => handleDetailChange(idx, 'assignedTo', val)}
-                          disabled={det.processType === 'INFO'}
+                          disabled={!perms.write || det.processType === 'INFO'}
                           renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignee"} sx={seamlessInputSx} />}
                         />
                       </TableCell>
@@ -718,7 +729,7 @@ export default function AddMeetingMinutes() {
                           isOptionEqualToValue={(opt, val) => opt.id === val?.id}
                           value={det.assignedBy}
                           onChange={(e, val) => handleDetailChange(idx, 'assignedBy', val)}
-                          disabled={det.processType === 'INFO'}
+                          disabled={!perms.write || det.processType === 'INFO'}
                           renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignor"} sx={seamlessInputSx} />}
                         />
                       </TableCell>
@@ -729,7 +740,7 @@ export default function AddMeetingMinutes() {
                           type="date" 
                           value={det.targetDate} 
                           onChange={(e) => handleDetailChange(idx, 'targetDate', e.target.value)} 
-                          disabled={det.processType === 'INFO'} 
+                          disabled={!perms.write || det.processType === 'INFO'} 
                           error={isSunday(det.targetDate) || (det.targetDate && det.targetDate < TODAY)}
                           helperText={isSunday(det.targetDate) ? 'Sunday!' : (det.targetDate && det.targetDate < TODAY ? 'Past Date!' : '')}
                           inputProps={{ min: TODAY }}
@@ -741,6 +752,7 @@ export default function AddMeetingMinutes() {
                           type="date" 
                           value={det.reviewDate} 
                           onChange={(e) => handleDetailChange(idx, 'reviewDate', e.target.value)} 
+                          disabled={!perms.write}
                           sx={seamlessInputSx} 
                           inputProps={{ min: det.targetDate || TODAY }}
                           error={(det.reviewDate && det.targetDate && det.reviewDate < det.targetDate) || (det.reviewDate && det.reviewDate < TODAY)}
@@ -750,7 +762,7 @@ export default function AddMeetingMinutes() {
                       
                       {/* Closure */}
                       <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.attachmentRequired} onChange={(e) => handleDetailChange(idx, 'attachmentRequired', e.target.value)} disabled={det.processType === 'INFO'} sx={seamlessInputSx}>
+                        <BOSTextField select value={det.attachmentRequired} onChange={(e) => handleDetailChange(idx, 'attachmentRequired', e.target.value)} disabled={!perms.write || det.processType === 'INFO'} sx={seamlessInputSx}>
                           <MenuItem value="YES">YES</MenuItem>
                           <MenuItem value="NO">NO</MenuItem>
                         </BOSTextField>
@@ -760,6 +772,7 @@ export default function AddMeetingMinutes() {
                             select 
                             value={det.status || 'OPEN'} 
                             onChange={(e) => handleDetailChange(idx, 'status', e.target.value)}
+                            disabled={!perms.write}
                             sx={{ 
                               ...seamlessInputSx,
                               '& .MuiSelect-select': { 
@@ -776,19 +789,21 @@ export default function AddMeetingMinutes() {
                       
                       {/* Sticky Actions Body */}
                       <TableCell sx={{ position: 'sticky', right: 0, bgcolor: 'inherit', zIndex: 10, borderRight: 'none', pt: 1 }}>
-                        <Stack direction="row" spacing={0.5} justifyContent="center">
-                          <Tooltip title={det.isAmended ? "Revert Amendment" : "Mark as Amendment"}>
-                            <IconButton size="small" color={det.isAmended ? "warning" : "primary"} onClick={() => toggleAmendment(idx)} sx={{ bgcolor: det.isAmended ? 'warning.lighter' : 'primary.lighter' }}>
-                              <IconEdit size={16} />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Save Row">
-                            <IconButton size="small" color="primary" onClick={handleSave} sx={{ bgcolor: 'primary.lighter' }}><IconCheck size={16} /></IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete Row">
-                            <IconButton size="small" color="error" onClick={() => removeDetailRow(idx)} disabled={form.details.length === 1} sx={{ bgcolor: 'error.lighter' }}><IconTrash size={16} /></IconButton>
-                          </Tooltip>
-                        </Stack>
+                        {perms.write ? (
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
+                            <Tooltip title={det.isAmended ? "Revert Amendment" : "Mark as Amendment"}>
+                              <IconButton size="small" color={det.isAmended ? "warning" : "primary"} onClick={() => toggleAmendment(idx)} sx={{ bgcolor: det.isAmended ? 'warning.lighter' : 'primary.lighter' }}>
+                                <IconEdit size={16} />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Save Row">
+                              <IconButton size="small" color="primary" onClick={handleSave} sx={{ bgcolor: 'primary.lighter' }}><IconCheck size={16} /></IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete Row">
+                              <IconButton size="small" color="error" onClick={() => removeDetailRow(idx)} disabled={form.details.length === 1} sx={{ bgcolor: 'error.lighter' }}><IconTrash size={16} /></IconButton>
+                            </Tooltip>
+                          </Stack>
+                        ) : '-'}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -797,17 +812,19 @@ export default function AddMeetingMinutes() {
             </TableContainer>
             );
             })()}
-            <Box sx={{ mt: 1.5, mb: 1.5, mr: 2, display: 'flex', justifyContent: 'flex-end' }}>
-               <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<IconPlus size={18} />} 
-                onClick={addDetailRow} 
-                sx={{ px: 3, fontWeight: 800, borderRadius: '8px' }}
-               >
-                 Add Row
-               </Button>
-            </Box>
+            {perms.write && (
+              <Box sx={{ mt: 1.5, mb: 1.5, mr: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                 <Button 
+                  variant="contained" 
+                  color="primary" 
+                  startIcon={<IconPlus size={18} />} 
+                  onClick={addDetailRow} 
+                  sx={{ px: 3, fontWeight: 800, borderRadius: '8px' }}
+                 >
+                   Add Row
+                 </Button>
+              </Box>
+            )}
           </BOSFormSection>
         </Box>
       </Box>

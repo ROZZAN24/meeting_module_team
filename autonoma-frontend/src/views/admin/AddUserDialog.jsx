@@ -20,6 +20,7 @@ import {
   Stack,
   Slider
 } from '@mui/material';
+import {
   IconPhoto, 
   IconPencil, 
   IconShieldLock, 
@@ -41,6 +42,7 @@ import { API_BASE } from 'utils/api-base';
 import getCroppedImg from 'utils/cropImage';
 import { autoUploadFile, getUserImageUrl } from 'utils/upload-helper';
 import useAuth from 'hooks/useAuth';
+import { getFaceDescriptor } from 'utils/faceApi';
 
 export default function AddUserDialog({ open, onClose, editingUser, employees, fetchUsers }) {
   const dispatch = useDispatch();
@@ -58,6 +60,8 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
   const [isUploading, setIsUploading] = useState(false);
 
   const [cameraActive, setCameraActive] = useState(false);
+  const [capturingPoses, setCapturingPoses] = useState(false);
+  const [poseCount, setPoseCount] = useState(0);
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
 
@@ -68,7 +72,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
     status: editingUser?.status ?? 1,
     imgName: editingUser?.imgName || '',
     faceImage: editingUser?.faceImage || '',
-    authMethod: editingUser?.authMethod || 'PASSWORD'
+    faceDescriptor: editingUser?.faceDescriptor || '',
+    authMethod: editingUser?.authMethod || 'PASSWORD',
+    autoLogoutOnFaceAbsence: editingUser?.autoLogoutOnFaceAbsence ?? 0
   };
 
   const [formData, setFormData] = useState(initialData);
@@ -99,18 +105,56 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
     setCameraActive(false);
   };
 
-  const captureFace = () => {
-    if (videoRef.current) {
-      const canvas = document.createElement('canvas');
-      canvas.width = 160;
-      canvas.height = 160;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(videoRef.current, 0, 0, 160, 160);
-      const dataUrl = canvas.toDataURL('image/jpeg');
-      setFormData(prev => ({ ...prev, faceImage: dataUrl }));
-      stopCamera();
-      dispatch(openSnackbar({ open: true, message: 'Face snapshot captured successfully', variant: 'alert', severity: 'success' }));
+  const captureMultiplePoses = async () => {
+    if (!videoRef.current) return;
+    setCapturingPoses(true);
+    setPoseCount(0);
+    
+    const descriptors = [];
+    let bestImage = null;
+    
+    for (let i = 0; i < 3; i++) {
+      setPoseCount(i + 1);
+      // Wait for user to change pose
+      await new Promise(r => setTimeout(r, 1200));
+      
+      const desc = await getFaceDescriptor(videoRef.current);
+      if (desc) {
+        descriptors.push(desc);
+      }
+      
+      // Save the first frame as the display image
+      if (i === 0) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 160;
+        canvas.height = 160;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, 160, 160);
+        bestImage = canvas.toDataURL('image/jpeg');
+      }
     }
+    
+    if (descriptors.length > 0) {
+      // Average the descriptors
+      const avgDesc = new Array(128).fill(0);
+      for (let d of descriptors) {
+        for (let j = 0; j < 128; j++) avgDesc[j] += d[j];
+      }
+      for (let j = 0; j < 128; j++) avgDesc[j] /= descriptors.length;
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        faceImage: bestImage,
+        faceDescriptor: JSON.stringify(avgDesc)
+      }));
+      dispatch(openSnackbar({ open: true, message: `Captured ${descriptors.length} poses successfully`, variant: 'alert', severity: 'success' }));
+    } else {
+      dispatch(openSnackbar({ open: true, message: 'Could not detect face in any pose. Please try again.', variant: 'alert', severity: 'error' }));
+    }
+    
+    stopCamera();
+    setCapturingPoses(false);
+    setPoseCount(0);
   };
 
   React.useEffect(() => {
@@ -165,7 +209,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           status: Number(formData.status), 
           imgName: formData.imgName,
           faceImage: formData.faceImage,
-          authMethod: formData.authMethod
+          faceDescriptor: formData.faceDescriptor,
+          authMethod: formData.authMethod,
+          autoLogoutOnFaceAbsence: Number(formData.autoLogoutOnFaceAbsence)
         });
       } else {
         await axios.post('/api/users/create', { 
@@ -175,7 +221,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           status: Number(formData.status), 
           imgName: formData.imgName,
           faceImage: formData.faceImage,
-          authMethod: formData.authMethod
+          faceDescriptor: formData.faceDescriptor,
+          authMethod: formData.authMethod,
+          autoLogoutOnFaceAbsence: Number(formData.autoLogoutOnFaceAbsence)
         });
       }
 
@@ -379,6 +427,18 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                     <MenuItem value="BOTH">Password or Face ID</MenuItem>
                   </BOSTextField>
                 </Grid>
+                <Grid item xs={12} sm={6}>
+                  <BOSTextField
+                    select
+                    name="autoLogoutOnFaceAbsence"
+                    label="Auto-Logout on Face Absence"
+                    value={formData.autoLogoutOnFaceAbsence ?? 0}
+                    onChange={handleChange}
+                  >
+                    <MenuItem value={1}>ENABLED</MenuItem>
+                    <MenuItem value={0}>DISABLED</MenuItem>
+                  </BOSTextField>
+                </Grid>
               </Grid>
             </BOSFormSection>
 
@@ -410,10 +470,10 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                     <Stack direction="row" spacing={1}>
                       {cameraActive ? (
                         <>
-                          <Button size="small" variant="contained" color="success" onClick={captureFace}>
-                            Capture Face
+                          <Button size="small" variant="contained" color="success" onClick={captureMultiplePoses} disabled={capturingPoses}>
+                            {capturingPoses ? `Capturing Pose ${poseCount}/3...` : 'Start Multi-Pose Capture'}
                           </Button>
-                          <Button size="small" variant="outlined" color="error" onClick={stopCamera}>
+                          <Button size="small" variant="outlined" color="error" onClick={stopCamera} disabled={capturingPoses}>
                             Cancel
                           </Button>
                         </>

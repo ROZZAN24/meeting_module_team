@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CurrencyRepository extends JpaRepository<Currency, Long> {
+    boolean existsByCurrencyCodeIgnoreCase(String currencyCode);
+    boolean existsByCurrencyNameIgnoreCase(String currencyName);
 }

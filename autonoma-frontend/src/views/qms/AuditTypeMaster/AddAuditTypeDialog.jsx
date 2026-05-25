@@ -120,8 +120,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
       const payload = {
         ...formData,
         auditArea: Array.isArray(formData.auditArea) ? formData.auditArea.join(', ') : formData.auditArea,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdBy: formData.id ? formData.createdBy : (user?.empId || '1001'),
+        updatedBy: user?.empId || '1001'
       };
 
       if (formData.id) {
@@ -243,7 +243,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           disabled={isViewOnly}
         >
           <MenuItem value="Fixed">Fixed</MenuItem>
-          <MenuItem value="Variable">Variable</MenuItem>
+          <MenuItem value="Variable">Open</MenuItem>
         </BOSTextField>
 
         <BOSTextField

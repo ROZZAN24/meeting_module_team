@@ -56,6 +56,9 @@ public class UserCredential {
     @Column(name = "face_descriptor", columnDefinition = "NVARCHAR(MAX)")
     private String faceDescriptor;
 
+    @Column(name = "auto_logout_on_face_absence")
+    private Integer autoLogoutOnFaceAbsence = 0;
+
     public String getUserId() {
         return userId;
     }
@@ -158,5 +161,13 @@ public class UserCredential {
 
     public void setFaceDescriptor(String faceDescriptor) {
         this.faceDescriptor = faceDescriptor;
+    }
+
+    public Integer getAutoLogoutOnFaceAbsence() {
+        return autoLogoutOnFaceAbsence;
+    }
+
+    public void setAutoLogoutOnFaceAbsence(Integer autoLogoutOnFaceAbsence) {
+        this.autoLogoutOnFaceAbsence = autoLogoutOnFaceAbsence;
     }
 }

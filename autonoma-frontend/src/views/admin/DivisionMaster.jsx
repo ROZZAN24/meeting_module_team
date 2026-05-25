@@ -12,6 +12,7 @@ import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| DIVISION MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -32,6 +33,7 @@ const columns = [
 
 export default function DivisionMaster() {
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.AD_DIVISION);
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
 
@@ -106,7 +108,7 @@ export default function DivisionMaster() {
 
   // ── Dialog handlers ───────────────────────────────────────────────────────
   const handleOpenAdd = () => { setSelectedRow(null); setIsReadOnly(false); setDialogOpen(true); };
-  const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };
+  const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(!perms.write); setDialogOpen(true); };
   const handleCloseDialog = (refresh) => { setDialogOpen(false); if (refresh === true) fetchDivisions(); };
 
   // ── Delete handlers ───────────────────────────────────────────────────────
@@ -196,24 +198,28 @@ export default function DivisionMaster() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          <BOSExportButton
-            data={filteredRows}
-            filename="Division_Master"
-            columns={[
-              { header: 'Division Name', key: 'divisionName' },
-              { header: 'Company', key: 'companyName' },
-              { header: 'City', key: 'city' },
-              { header: 'State', key: 'state' },
-              { header: 'Description', key: 'description' },
-              { header: 'Seq No', key: 'sequenceNo' },
-              { header: 'Status', key: 'statusLabel' }
-            ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Division', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>
+          {perms.export && (
+            <BOSExportButton
+              data={filteredRows}
+              filename="Division_Master"
+              columns={[
+                { header: 'Division Name', key: 'divisionName' },
+                { header: 'Company', key: 'companyName' },
+                { header: 'City', key: 'city' },
+                { header: 'State', key: 'state' },
+                { header: 'Description', key: 'description' },
+                { header: 'Seq No', key: 'sequenceNo' },
+                { header: 'Status', key: 'statusLabel' }
+              ]}
+            />
+          )}
+          {perms.write && (
+            <Tooltip title={shortcutTooltip('Create New Division', 'Ctrl + N')}>
+              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
+                + New
+              </Button>
+            </Tooltip>
+          )}
         </Stack>
       }
     >
@@ -228,7 +234,7 @@ export default function DivisionMaster() {
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
-        onDeleteRow={handleDeleteClick}
+        onDeleteRow={perms.delete ? handleDeleteClick : null}
       />
 
       <AddDivisionDialog

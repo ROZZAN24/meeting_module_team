@@ -30,6 +30,7 @@ import useConfig from 'hooks/useConfig';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { RibbonProvider, useRibbon } from 'contexts/RibbonContext';
 import { IconAlertCircle } from '@tabler/icons-react';
+import FaceWatchdogGuard from 'ui-component/FaceWatchdogGuard';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
@@ -69,36 +70,24 @@ function MainLayoutInner() {
     downMD && handlerDrawerOpen(false);
   }, [downMD]);
 
-  // Dynamically load Google Translate Engine on Mount
+  // Dynamically load Google Translate Engine on Mount.
+  // Translation language is controlled by the 'googtrans' cookie set in LocalizationSection
+  // before page reload — Google Translate reads it automatically on script load.
   useEffect(() => {
-    if (!document.getElementById('google-translate-script')) {
-      const googleTranslateElementInit = () => {
-        if (window.google && window.google.translate) {
-          new window.google.translate.TranslateElement({
-            pageLanguage: 'en',
-            layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
-            autoDisplay: false
-          }, 'google_translate_element');
-        }
-      };
-      window.googleTranslateElementInit = googleTranslateElementInit;
+    // Ensure the hidden GT container exists (idempotent)
+    if (!document.getElementById('google_translate_element')) {
+      const gtContainer = document.createElement('div');
+      gtContainer.id = 'google_translate_element';
+      gtContainer.style.display = 'none';
+      document.body.appendChild(gtContainer);
+    }
 
-      const script = document.createElement('script');
-      script.id = 'google-translate-script';
-      script.type = 'text/javascript';
-      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
-      document.body.appendChild(script);
-
-      const container = document.createElement('div');
-      container.id = 'google_translate_element';
-      container.style.display = 'none';
-      document.body.appendChild(container);
-
-      // Hide Google Translate standard banner and overlays to preserve premium client layout
+    // Inject suppression styles once
+    if (!document.getElementById('google-translate-styles')) {
       const style = document.createElement('style');
       style.id = 'google-translate-styles';
       style.innerHTML = `
-        iframe.skiptranslate, .skiptranslate, #goog-gt-tt, .goog-te-balloon-frame {
+        iframe.skiptranslate, #goog-gt-tt, .goog-te-balloon-frame {
           display: none !important;
         }
         body {
@@ -112,26 +101,25 @@ function MainLayoutInner() {
       `;
       document.head.appendChild(style);
     }
+
+    // Inject the Google Translate script once
+    if (!document.getElementById('google-translate-script')) {
+      window.googleTranslateElementInit = () => {
+        if (window.google && window.google.translate) {
+          new window.google.translate.TranslateElement(
+            { pageLanguage: 'en', autoDisplay: false },
+            'google_translate_element'
+          );
+        }
+      };
+
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.type = 'text/javascript';
+      script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+      document.body.appendChild(script);
+    }
   }, []);
-
-  // Programmatically trigger translation all over the page when i18n changes
-  useEffect(() => {
-    const triggerTranslation = () => {
-      const selectField = document.querySelector('select.goog-te-combo');
-      if (selectField) {
-        selectField.value = i18n;
-        selectField.dispatchEvent(new Event('change'));
-      } else {
-        setTimeout(triggerTranslation, 300);
-      }
-    };
-
-    const domain = window.location.hostname;
-    document.cookie = `googtrans=/en/${i18n}; path=/; domain=${domain}`;
-    document.cookie = `googtrans=/en/${i18n}; path=/`; // Localhost fallback
-
-    triggerTranslation();
-  }, [i18n]);
 
   // Anti-screenshot, printing, and context-menu protection
   useEffect(() => {
@@ -188,6 +176,7 @@ function MainLayoutInner() {
   if (menuMasterLoading) return <Loader />;
 
   return (
+    <FaceWatchdogGuard>
     <Box sx={{ display: 'flex' }}>
 
       {/* header */}
@@ -303,6 +292,7 @@ function MainLayoutInner() {
       <Customization />
       <BOSConnect />
     </Box>
+    </FaceWatchdogGuard>
   );
 }
 

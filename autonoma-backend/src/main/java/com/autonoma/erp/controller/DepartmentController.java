@@ -58,10 +58,10 @@ public class DepartmentController {
             return ResponseEntity.badRequest().body("Department Name already exists!");
         }
         if (department.getDepartmentNo() != null && departmentRepository.existsByDeptNoNative(department.getDepartmentNo()) > 0) {
-            return ResponseEntity.badRequest().body("Department Number already exists!");
+            return ResponseEntity.badRequest().body("Department No already exists.");
         }
         if (department.getSequenceNo() != null && departmentRepository.existsBySeqNoNative(department.getSequenceNo()) > 0) {
-            return ResponseEntity.badRequest().body("Department Sequence Number already exists!");
+            return ResponseEntity.badRequest().body("Department seq No already exists.");
         }
         department.setDepartmentName(sanitizedName);
         return ResponseEntity.ok(departmentService.saveDepartment(department));
@@ -77,10 +77,10 @@ public class DepartmentController {
             return ResponseEntity.badRequest().body("Department Name already exists!");
         }
         if (departmentDetails.getDepartmentNo() != null && departmentRepository.existsByDeptNoNativeWithId(departmentDetails.getDepartmentNo(), id) > 0) {
-            return ResponseEntity.badRequest().body("Department Number already exists!");
+            return ResponseEntity.badRequest().body("Department No already exists.");
         }
         if (departmentDetails.getSequenceNo() != null && departmentRepository.existsBySeqNoNativeWithId(departmentDetails.getSequenceNo(), id) > 0) {
-            return ResponseEntity.badRequest().body("Department Sequence Number already exists!");
+            return ResponseEntity.badRequest().body("Department seq No already exists.");
         }
         return departmentRepository.findById(id)
                 .map(department -> {

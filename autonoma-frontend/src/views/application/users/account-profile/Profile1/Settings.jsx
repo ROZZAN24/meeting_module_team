@@ -4,15 +4,22 @@ import { useState } from 'react';
 import Button from '@mui/material/Button';
 import CardActions from '@mui/material/CardActions';
 import Checkbox from '@mui/material/Checkbox';
+import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
+import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 
 // project imports
 import SubCard from 'ui-component/cards/SubCard';
 import AnimateButton from 'ui-component/extended/AnimateButton';
+import { useFaceWatchdogContext } from 'ui-component/FaceWatchdogGuard';
+
+// icons
+import { IconCamera, IconCameraOff, IconShieldLock, IconFaceId } from '@tabler/icons-react';
 
 const titleSX = {
   fontWeight: 600,
@@ -26,6 +33,16 @@ const titleSX = {
 // ==============================|| PROFILE 1 - SETTINGS ||============================== //
 
 export default function Settings() {
+  const watchdog = useFaceWatchdogContext();
+  const watchdogEnabled = watchdog?.enabled ?? false;
+  const facePresent = watchdog?.facePresent ?? null;
+  const countdown = watchdog?.countdown ?? null;
+  const isFeatureAllowed = watchdog?.isFeatureAllowed ?? false;
+
+  const handleWatchdogToggle = (e) => {
+    watchdog?.setEnabled(e.target.checked);
+  };
+
   const [state1, setState1] = useState({
     checkedA: true,
     checkedB: false
@@ -62,8 +79,92 @@ export default function Settings() {
   };
 
   return (
-    <SubCard title="Email Settings">
-      <Stack sx={{ gap: 3 }}>
+    <Stack sx={{ gap: 3 }}>
+
+      {/* ── Security & Privacy ─────────────────────────────── */}
+      <SubCard
+        title={
+          <Stack direction="row" alignItems="center" gap={1}>
+            <IconShieldLock size={20} stroke={1.5} />
+            Security &amp; Privacy
+          </Stack>
+        }
+      >
+        <Stack sx={{ gap: 2 }}>
+          {/* Toggle row */}
+          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" gap={2}>
+            <Box sx={{ flex: 1 }}>
+              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+                <IconFaceId size={18} stroke={1.5} />
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: isFeatureAllowed ? 'inherit' : 'text.disabled' }}>
+                  Auto-Logout on Face Absence
+                </Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary">
+                {isFeatureAllowed ? (
+                  <>
+                    If your face is not detected for <strong>30 seconds</strong>, you will be
+                    automatically signed out to protect your session.
+                  </>
+                ) : (
+                  <span style={{ color: '#f44336', fontWeight: 600 }}>
+                    This feature is currently disabled by your system administrator.
+                  </span>
+                )}
+              </Typography>
+            </Box>
+            <Switch
+              id="face-watchdog-toggle"
+              checked={watchdogEnabled}
+              onChange={handleWatchdogToggle}
+              disabled={!isFeatureAllowed}
+              color="primary"
+            />
+          </Stack>
+
+          {/* Live status indicator */}
+          {watchdogEnabled && (
+            <Stack direction="row" alignItems="center" gap={1}>
+              {facePresent === null ? (
+                <Chip
+                  icon={<IconCamera size={14} />}
+                  label="Initialising camera…"
+                  size="small"
+                  variant="outlined"
+                  color="default"
+                />
+              ) : facePresent ? (
+                <Chip
+                  icon={<IconCamera size={14} />}
+                  label="Face detected — session secure"
+                  size="small"
+                  color="success"
+                  variant="outlined"
+                />
+              ) : (
+                <Chip
+                  icon={<IconCameraOff size={14} />}
+                  label={countdown !== null ? `No face — logout in ${countdown}s` : 'Face not detected'}
+                  size="small"
+                  color={countdown !== null && countdown <= 10 ? 'error' : 'warning'}
+                  variant="outlined"
+                />
+              )}
+            </Stack>
+          )}
+
+          {/* Info alert */}
+          {watchdogEnabled && (
+            <Alert severity="info" sx={{ py: 0.5, fontSize: '0.78rem' }}>
+              Camera access is required. The video feed is <strong>never uploaded</strong> — face
+              detection runs entirely in your browser.
+            </Alert>
+          )}
+        </Stack>
+      </SubCard>
+
+      <SubCard title="Email Settings">
+        <Stack sx={{ gap: 3 }}>
         <Stack>
           <Typography variant="subtitle1">Setup Email Notification</Typography>
           <FormControlLabel
@@ -136,16 +237,8 @@ export default function Settings() {
             label="Tips and Document business products"
           />
         </Stack>
-      </Stack>
-      <Divider sx={{ mt: 2 }} />
-      <CardActions sx={{ p: 0, pt: 3 }}>
-        <Stack direction="row" sx={{ justifyContent: 'flex-end', width: 1, gap: 2 }}>
-          <Button sx={{ color: 'error.main' }}>Clear</Button>
-          <AnimateButton>
-            <Button variant="contained">Update</Button>
-          </AnimateButton>
         </Stack>
-      </CardActions>
-    </SubCard>
+      </SubCard>
+    </Stack>
   );
 }

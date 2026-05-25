@@ -51,11 +51,16 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
 
   useEffect(() => {
     if (data) {
+      const isAss = !!data.checklist;
       let currentStatus = '';
-      if (typeof data.status === 'object' && data.status !== null) {
-        currentStatus = data.status.name;
+      if (isAss) {
+        if (typeof data.status === 'object' && data.status !== null) {
+          currentStatus = data.status.name;
+        } else {
+          currentStatus = data.status || '';
+        }
       } else {
-        currentStatus = data.status || '';
+        currentStatus = data.verifyStatus || '';
       }
 
       setFormData({
@@ -96,14 +101,14 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
   const isAssignment = !!data.checklist;
   const master = isAssignment ? data.checklist : data;
 
-  const statusRaw = data.status;
-  const statusText = (typeof statusRaw === 'object' ? statusRaw?.name : statusRaw) || 
-                     (typeof master.status === 'object' ? master.status?.name : master.status) || 'Pending';
+  const statusText = isAssignment
+    ? ((typeof data.status === 'object' ? data.status?.name : data.status) || 'Pending')
+    : (data.verifyStatus || 'Pending for Verify');
 
   // Helper for status chip
   let chipStatus = 'PENDING';
-  if (statusText === 'Verified' || statusText === 'Accepted' || statusText === 'COMPLETED') chipStatus = 'ACTIVE';
-  if (statusText === 'Rejected' || statusText === 'Missed' || statusText === 'NOT COMPLETED') chipStatus = 'INACTIVE';
+  if (statusText === 'Verified' || statusText === 'Accepted' || statusText === 'COMPLETED' || statusText === 'Active') chipStatus = 'ACTIVE';
+  if (statusText === 'Rejected' || statusText === 'Missed' || statusText === 'NOT COMPLETED' || statusText === 'In Active') chipStatus = 'INACTIVE';
 
   const EXECUTION_STATUSES = ['-Select-', 'Started', '25%', '50%', '75%', 'Completed'];
 
@@ -281,25 +286,13 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
                   />
                 </>
               ) : (
-                <>
-                  <BOSTextField 
-                    label="Execution Comments" 
-                    value={data.remarks || 'No comments provided.'} 
-                    multiline 
-                    rows={2} 
-                    disabled 
-                  />
-                  {!isExecution && (formData.status?.name === 'Pending for Verified' || formData.status === 'Pending for Verified' || formData.status?.name === 'Completed' || formData.status === 'Completed') && (
-                    <BOSTextField 
-                      label="Verification Remarks" 
-                      value={verifyRemarks} 
-                      onChange={(e) => setVerifyRemarks(e.target.value)}
-                      multiline 
-                      rows={2} 
-                      placeholder="Enter verification comments..."
-                    />
-                  )}
-                </>
+                <BOSTextField 
+                  label="Execution Comments" 
+                  value={data.remarks || 'No comments provided.'} 
+                  multiline 
+                  rows={2} 
+                  disabled 
+                />
               )}
               
               {data.rejReason && (

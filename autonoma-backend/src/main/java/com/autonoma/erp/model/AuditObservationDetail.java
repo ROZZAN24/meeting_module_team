@@ -15,6 +15,8 @@ public class AuditObservationDetail {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "observation_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
+    @lombok.ToString.Exclude
+    @lombok.EqualsAndHashCode.Exclude
     private AuditObservation auditObservation;
 
     @com.fasterxml.jackson.annotation.JsonProperty("observationNo")
@@ -76,6 +78,9 @@ public class AuditObservationDetail {
 
     @Column(name = "attachment_req", columnDefinition = "NVARCHAR(10)")
     private String attachmentReq;
+
+    @Column(name = "attachment_path", columnDefinition = "NVARCHAR(MAX)")
+    private String attachmentPath;
 
     @Column(name = "observation_status", columnDefinition = "NVARCHAR(50)")
     private String observationStatus;

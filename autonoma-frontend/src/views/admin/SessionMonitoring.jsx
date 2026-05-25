@@ -3,23 +3,16 @@ import {
   Box,
   Typography,
   Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
   Chip,
   Stack,
   IconButton,
   Tooltip,
-  TablePagination,
   Avatar,
   Fade,
   LinearProgress,
   Card,
-  useMediaQuery
+  useMediaQuery,
+  Paper
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 import {
@@ -44,8 +37,9 @@ import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import { format, isToday, differenceInMinutes } from 'date-fns';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
-
 import { getUserImageUrl, getCompanyImageUrl } from 'utils/upload-helper';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { BOSDataTable } from 'ui-component/bos';
 
 // Search Configuration
 const sessionSearchConfig = [
@@ -110,6 +104,7 @@ const SessionMonitoring = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const dispatch = useDispatch();
+  const perms = usePagePermissions(PAGE_CODES.AD_SESSION_MONITORING);
   const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
 
   const [sessions, setSessions] = useState([]);
@@ -264,6 +259,121 @@ const SessionMonitoring = () => {
     );
   };
 
+  const columns = useMemo(() => [
+    { id: 'id', label: 'LOG ID' },
+    { id: 'userId', label: 'USER NAME', bold: true },
+    { id: 'ipAddress', label: 'ENDPOINT' },
+    { id: 'userAgent', label: 'CLIENT ENVIRONMENT' },
+    { id: 'loginTime', label: 'ACTIVITY' },
+    { id: 'logoutTime', label: 'ENGAGEMENT' },
+    { id: 'status', label: 'STATUS' }
+  ], []);
+
+  const handleRenderCell = (col, session, idx) => {
+    if (col.id === 'id') {
+      return (
+        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem' }}>
+          #{session.id?.toString().padStart(5, '0')}
+        </Typography>
+      );
+    }
+    if (col.id === 'userId') {
+      const userImg = userImageMap[session.userId];
+      const displayImg = userImg ? getUserImageUrl(userImg) : (companyLogo ? getCompanyImageUrl(companyLogo) : '');
+      const isCompanyFallback = !userImg && companyLogo;
+      return (
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Tooltip
+            title={
+              displayImg ? (
+                <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <img
+                    src={displayImg}
+                    alt="Profile"
+                    style={{ maxWidth: 150, maxHeight: 150, borderRadius: 4, display: 'block' }}
+                  />
+                  {isCompanyFallback && <Typography variant="caption" align="center" display="block" sx={{ mt: 0.5, fontWeight: 700, color: 'primary.main' }}>No Image</Typography>}
+                </Paper>
+              ) : "No Identity Image"
+            }
+            arrow
+            placement="right"
+          >
+            <Avatar
+              src={displayImg}
+              sx={{
+                width: 32, height: 32, border: `1px solid ${theme.palette.divider}`
+              }}
+            >
+              {session.userId?.charAt(0).toUpperCase()}
+            </Avatar>
+          </Tooltip>
+          <Box>
+            <Typography variant="subtitle2" fontWeight={800} sx={{ color: theme.palette.text.primary, fontSize: '0.75rem' }}>{session.userId}</Typography>
+            <Typography variant="caption" sx={{ fontSize: '0.6rem', color: '#e91e63', fontWeight: 700 }}>VERIFIED SESSION</Typography>
+          </Box>
+        </Stack>
+      );
+    }
+    if (col.id === 'ipAddress') {
+      return (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Box sx={{ p: 0.5, borderRadius: '4px', bgcolor: alpha(theme.palette.info.main, 0.1), color: 'info.main' }}>
+            <IconWorld size={12} />
+          </Box>
+          <Typography variant="body2" sx={{ fontSize: '0.75rem', fontWeight: 700, color: theme.palette.text.primary }}>
+            {session.ipAddress || '127.0.0.1'}
+          </Typography>
+        </Stack>
+      );
+    }
+    if (col.id === 'userAgent') {
+      return (
+        <Stack direction="row" spacing={1} alignItems="center">
+          {getDeviceIcon(session.userAgent)}
+          <Typography variant="body2" sx={{
+            maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            fontSize: '0.7rem', color: 'text.secondary'
+          }}>
+            {session.userAgent || 'Legacy Client'}
+          </Typography>
+        </Stack>
+      );
+    }
+    if (col.id === 'loginTime') {
+      return (
+        <Stack direction="column" spacing={0.25}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'success.main' }} />
+            <Typography variant="body2" sx={{ fontSize: '0.7rem', fontWeight: 600, color: theme.palette.text.primary }}>
+              {session.loginTime ? format(new Date(session.loginTime), 'MMM dd, HH:mm:ss') : 'N/A'}
+            </Typography>
+          </Stack>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: session.status === 'ACTIVE' ? 'primary.main' : 'error.main' }} />
+            <Typography variant="body2" sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }}>
+              {session.logoutTime ? format(new Date(session.logoutTime), 'MMM dd, HH:mm:ss') : (session.status === 'ACTIVE' ? 'Live Connection' : 'Unknown')}
+            </Typography>
+          </Stack>
+        </Stack>
+      );
+    }
+    if (col.id === 'logoutTime') {
+      return (
+        <Stack direction="row" spacing={0.5} alignItems="center">
+          <IconHourglassLow size={14} color={theme.palette.text.secondary} />
+          <Typography variant="body2" fontWeight={700} sx={{ fontSize: '0.75rem', color: theme.palette.text.primary }}>
+            {getDuration(session)}
+          </Typography>
+        </Stack>
+      );
+    }
+    if (col.id === 'status') {
+      return getStatusChip(session.status);
+    }
+    return null;
+  };
+
   // Helper for consistent dark mode backgrounds
   const paperBg = isDark ? '#1a223f' : '#ffffff';
   const headerBg = isDark ? '#111936' : '#ffffff';
@@ -321,142 +431,19 @@ const SessionMonitoring = () => {
         borderColor: 'divider',
         bgcolor: paperBg
       }}>
-        {loading && <LinearProgress sx={{ height: 2, bgcolor: alpha(theme.palette.secondary.main, 0.1), '& .MuiLinearProgress-bar': { bgcolor: 'secondary.main' } }} />}
-
-        <TableContainer sx={{ flexGrow: 1, overflowY: 'auto' }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>LOG ID</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>USER NAME</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>ENDPOINT</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>CLIENT ENVIRONMENT</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>ACTIVITY</TableCell>
-                <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>ENGAGEMENT</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, fontSize: '0.75rem', py: 2.5, bgcolor: paperBg, color: theme.palette.text.secondary, borderBottom: `1px solid ${theme.palette.divider}` }}>STATUS</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {paginatedSessions.map((session, idx) => {
-                const userImg = userImageMap[session.userId];
-                const displayImg = userImg ? getUserImageUrl(userImg) : (companyLogo ? getCompanyImageUrl(companyLogo) : '');
-                const isCompanyFallback = !userImg && companyLogo;
-
-                return (
-                  <TableRow key={session.id} sx={{
-                    '& td': { py: 2, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}` },
-                    bgcolor: idx % 2 === 0 ? 'transparent' : (isDark ? alpha(theme.palette.divider, 0.12) : '#fbfbfb'),
-                    '&:hover': { bgcolor: alpha(theme.palette.primary.main, isDark ? 0.15 : 0.05) + ' !important' }
-                  }}>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem' }}>
-                        #{session.id.toString().padStart(5, '0')}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Tooltip
-                          title={
-                            displayImg ? (
-                              <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                                <img
-                                  src={displayImg}
-                                  alt="Profile"
-                                  style={{ maxWidth: 150, maxHeight: 150, borderRadius: 4, display: 'block' }}
-                                />
-                                {isCompanyFallback && <Typography variant="caption" align="center" display="block" sx={{ mt: 0.5, fontWeight: 700, color: 'primary.main' }}>No Image</Typography>}
-                              </Paper>
-                            ) : "No Identity Image"
-                          }
-                          arrow
-                          placement="right"
-                        >
-                          <Avatar
-                            src={displayImg}
-                            sx={{
-                              width: 32, height: 32, border: `1px solid ${theme.palette.divider}`
-                            }}
-                          >
-                            {session.userId?.charAt(0).toUpperCase()}
-                          </Avatar>
-                        </Tooltip>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={800} sx={{ color: theme.palette.text.primary, fontSize: '0.75rem' }}>{session.userId}</Typography>
-                          <Typography variant="caption" sx={{ fontSize: '0.6rem', color: '#e91e63', fontWeight: 700 }}>VERIFIED SESSION</Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Box sx={{ p: 0.5, borderRadius: '4px', bgcolor: alpha(theme.palette.info.main, 0.1), color: 'info.main' }}>
-                          <IconWorld size={12} />
-                        </Box>
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem', fontWeight: 700, color: theme.palette.text.primary }}>
-                          {session.ipAddress || '127.0.0.1'}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        {getDeviceIcon(session.userAgent)}
-                        <Typography variant="body2" sx={{
-                          maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          fontSize: '0.7rem', color: 'text.secondary'
-                        }}>
-                          {session.userAgent || 'Legacy Client'}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="column" spacing={0.25}>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'success.main' }} />
-                          <Typography variant="body2" sx={{ fontSize: '0.7rem', fontWeight: 600, color: theme.palette.text.primary }}>
-                            {session.loginTime ? format(new Date(session.loginTime), 'MMM dd, HH:mm:ss') : 'N/A'}
-                          </Typography>
-                        </Stack>
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: session.status === 'ACTIVE' ? 'primary.main' : 'error.main' }} />
-                          <Typography variant="body2" sx={{ fontSize: '0.7rem', fontWeight: 600, color: 'text.secondary' }}>
-                            {session.logoutTime ? format(new Date(session.logoutTime), 'MMM dd, HH:mm:ss') : (session.status === 'ACTIVE' ? 'Live Connection' : 'Unknown')}
-                          </Typography>
-                        </Stack>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={0.5} alignItems="center">
-                        <IconHourglassLow size={14} color={theme.palette.text.secondary} />
-                        <Typography variant="body2" fontWeight={700} sx={{ fontSize: '0.75rem', color: theme.palette.text.primary }}>
-                          {getDuration(session)}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="center">
-                      {getStatusChip(session.status)}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {/* Pagination Section */}
-        <Box sx={{ borderTop: `1px solid ${theme.palette.divider}`, bgcolor: paperBg }}>
-          <TablePagination
-            rowsPerPageOptions={[25, 50, 100]}
-            component="div"
-            count={filteredSessions.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            sx={{
-              '& .MuiTablePagination-toolbar': { minHeight: 40 },
-              '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { fontSize: '0.75rem', fontWeight: 600 }
-            }}
-          />
-        </Box>
+        <BOSDataTable
+          columns={columns}
+          data={filteredSessions}
+          loading={loading}
+          showActions={false}
+          totalCount={filteredSessions.length}
+          page={page}
+          size={rowsPerPage}
+          onPageChange={setPage}
+          onSizeChange={setRowsPerPage}
+          renderCell={handleRenderCell}
+          sx={{ border: 'none' }}
+        />
       </Box>
 
       <style>

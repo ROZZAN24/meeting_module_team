@@ -2,6 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 
+// third party
+import FullCalendar from '@fullcalendar/react';
+import listPlugin from '@fullcalendar/list';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+
 // material-ui
 import {
   Box,
@@ -10,8 +17,6 @@ import {
   TextField,
   Avatar,
   Badge,
-  Tabs,
-  Tab,
   Button,
   CircularProgress,
   List,
@@ -22,7 +27,15 @@ import {
   Paper,
   Tooltip,
   Grow,
-  InputAdornment
+  InputAdornment,
+  Checkbox,
+  Stack,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  OutlinedInput,
+  Chip
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
 
@@ -52,7 +65,23 @@ import {
   IconMinimize,
   IconMoodSmile,
   IconBell,
-  IconBellOff
+  IconBellOff,
+  IconCalendar,
+  IconPaperclip as IconFiles,
+  IconFolder,
+  IconMessageCircle,
+  IconInfoCircle,
+  IconDots,
+  IconTrash,
+  IconEdit,
+  IconUserCheck,
+  IconCalendarEvent,
+  IconPhone,
+  IconVideo,
+  IconPhoneOff,
+  IconVideoOff,
+  IconScreenShare,
+  IconVolume
 } from '@tabler/icons-react';
 
 import EmojiPicker from 'emoji-picker-react';
@@ -62,28 +91,11 @@ import axiosServices from 'utils/axios';
 import useAuth from 'hooks/useAuth';
 import { getCompanyImageUrl, getUserImageUrl } from 'utils/upload-helper';
 
-const getActiveModuleColor = (pathname) => {
-  const p = (pathname || '').toLowerCase();
-  if (p.includes('/master/') || p.includes('/customer/') || p.includes('/supplier/') || p.includes('/sm/')) {
-    return '#1e88e5'; // Professional Blue
-  }
-  if (p.includes('/hra/') || p.includes('/hr/') || p.includes('/employee/')) {
-    return '#e65100'; // Warm Orange
-  }
-  if (p.includes('/sales/') || p.includes('/marketing/')) {
-    return '#2e7d32'; // Forest Green
-  }
-  if (p.includes('/quality/') || p.includes('/qms/')) {
-    return '#673ab7'; // Deep Violet/Indigo
-  }
-  if (p.includes('/reports/') || p.includes('/analytics/')) {
-    return '#c2185b'; // Rose/Magenta
-  }
-  if (p.includes('/admin/')) {
-    return '#0097a7'; // Cyan/Teal
-  }
-  return '#6264A7'; // Sleek Purple Default
-};
+const TEAMS_PURPLE = '#5B5FC7'; // Classic Microsoft Teams signature color
+const TEAMS_DARK_BG = '#1F1F1F'; // Teams desktop client dark mode bg
+const TEAMS_LIGHT_BG = '#F5F5F5'; // Teams light pane bg
+const TEAMS_BORDER_LIGHT = '#E1DFDD';
+const TEAMS_BORDER_DARK = '#292929';
 
 const getFormattedSeparatorDate = (dateStr) => {
   const date = new Date(dateStr);
@@ -100,12 +112,11 @@ const getFormattedSeparatorDate = (dateStr) => {
   }
 };
 
-// ==============================|| BOS CONNECT INTERNAL CHAT ||============================== //
+// ==============================|| AUTONOMA ONE-CONNECT (TEAMS DESIGNED) ||============================== //
 
 export default function BOSConnect() {
   const theme = useTheme();
   const location = useLocation();
-  const activeColor = getActiveModuleColor(location.pathname);
   const { user } = useAuth();
   const currentUserId = user?.userId || user?.id || 'bos';
 
@@ -116,7 +127,53 @@ export default function BOSConnect() {
   const [notificationPermission, setNotificationPermission] = useState(
     window.Notification ? Notification.permission : 'default'
   );
-  const [activeTab, setActiveTab] = useState(0); // 0 = Chats, 1 = Search Users, 2 = Create Group
+  
+  // Teams-style sidebar navigation state: 'chats' | 'teams' | 'copilot' | 'files' | 'calendar'
+  const [teamsSidebarTab, setTeamsSidebarTab] = useState('chats');
+
+  // Meeting Schedule & Calendar View states
+  const [meetingSchedules, setMeetingSchedules] = useState([]);
+  const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+  const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [isEditingMeeting, setIsEditingMeeting] = useState(false);
+  const [searchMeetingQuery, setSearchMeetingQuery] = useState('');
+
+  // Simulated calling states
+  const [callState, setCallState] = useState('IDLE'); // 'IDLE' | 'RINGING' | 'ACTIVE'
+  const [callType, setCallType] = useState('AUDIO'); // 'AUDIO' | 'VIDEO'
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isCamOff, setIsCamOff] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
+
+  // Meeting Metadata Cache
+  const [meetingMasters, setMeetingMasters] = useState([]);
+  const [activeEmployees, setActiveEmployees] = useState([]);
+  const [activeDepartments, setActiveDepartments] = useState([]);
+
+  // Meeting Cancellation Reason Prompt
+  const [showCancelPrompt, setShowCancelPrompt] = useState(false);
+  const [cancelReasonText, setCancelReasonText] = useState('');
+
+  // Meeting Form Data state
+  const [meetingForm, setMeetingForm] = useState({
+    meetingTypeId: '',
+    meetingName: '',
+    subject: '',
+    description: '',
+    agenda: '',
+    meetingDate: '',
+    startTime: '',
+    endTime: '',
+    chairedById: '',
+    hostById: '',
+    participantIds: [],
+    departmentIds: []
+  });
+  
+  // Search & View states
+  const [activeTab, setActiveTab] = useState(0); // 0 = Chats list, 1 = Find Users, 2 = New Group
   const [channels, setChannels] = useState([]);
   const [activeChannel, setActiveChannel] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -136,11 +193,14 @@ export default function BOSConnect() {
   const [filesList, setFilesList] = useState([]);
   const [smartReplies, setSmartReplies] = useState([]);
 
+  // Active channel context tabs: 'posts' | 'files' | 'summary'
+  const [activeChannelTab, setActiveChannelTab] = useState('posts');
+
   // Group Chat Creator
   const [groupName, setGroupName] = useState('');
   const [selectedGroupUsers, setSelectedGroupUsers] = useState([]);
 
-  // Voice Note Simulation State
+  // Voice Note State
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
 
@@ -153,7 +213,7 @@ export default function BOSConnect() {
 
   // Dimensions & Maximize state
   const [isMaximized, setIsMaximized] = useState(false);
-  const [dimensions, setDimensions] = useState({ width: 430, height: 620 });
+  const [dimensions, setDimensions] = useState({ width: 450, height: 650 });
   const [otherUserTyping, setOtherUserTyping] = useState(false);
 
   const handleResizeStart = (e) => {
@@ -170,8 +230,8 @@ export default function BOSConnect() {
       const deltaX = startX - currentX;
       const deltaY = startY - currentY;
       setDimensions({
-        width: Math.max(350, Math.min(window.innerWidth - 48, startWidth + deltaX)),
-        height: Math.max(450, Math.min(window.innerHeight - 140, startHeight + deltaY))
+        width: Math.max(380, Math.min(window.innerWidth - 48, startWidth + deltaX)),
+        height: Math.max(485, Math.min(window.innerHeight - 140, startHeight + deltaY))
       });
     };
 
@@ -204,7 +264,7 @@ export default function BOSConnect() {
   const recordingTimerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // 1. Play premium chime using Web Audio API (Zero static asset dependency)
+  // Play Microsoft Teams styled notification synth chime
   const playPing = () => {
     try {
       const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -230,7 +290,7 @@ export default function BOSConnect() {
     }
   };
 
-  // 2. HTML5 Desktop popup alert
+  // HTML5 Desktop popup alert
   const showDesktopNotification = (msg) => {
     if (!window.Notification) return;
 
@@ -277,11 +337,8 @@ export default function BOSConnect() {
     }
   };
 
-  // 3. Request Notification permissions and fetch company logo on Mount
+  // Request Notification permissions and fetch company logo on Mount
   useEffect(() => {
-    requestNotificationPermission();
-
-    // Fetch custom company logo configuration
     const fetchCompanyLogo = async () => {
       try {
         const response = await axiosServices.get('/api/company-profile/all');
@@ -295,7 +352,6 @@ export default function BOSConnect() {
     };
     fetchCompanyLogo();
 
-    // Set presence online on Mount
     updatePresenceStatus(true);
     return () => {
       updatePresenceStatus(false);
@@ -304,12 +360,182 @@ export default function BOSConnect() {
     };
   }, []);
 
-  // 4. Update presence status on backend
   const updatePresenceStatus = (isOnline) => {
     axiosServices.post(`/api/chat/presence?isOnline=${isOnline}`).catch(() => { });
   };
 
-  // 5. Poll channel list and messages always
+  // Fetch Calendar Data
+  useEffect(() => {
+    if (isOpen && teamsSidebarTab === 'calendar') {
+      fetchMeetingSchedules();
+      fetchCalendarMetadata();
+    }
+  }, [isOpen, teamsSidebarTab]);
+
+  const fetchCalendarMetadata = async () => {
+    try {
+      const resMasters = await axiosServices.get('/api/qms/meetings');
+      setMeetingMasters(resMasters.data || []);
+    } catch (e) {
+      console.warn("Failed to fetch meeting masters", e);
+    }
+
+    try {
+      const resEmployees = await axiosServices.get('/api/master/employee/filter/active');
+      setActiveEmployees(resEmployees.data || []);
+    } catch (e) {
+      console.warn("Failed to fetch active employees", e);
+    }
+
+    try {
+      const resDepts = await axiosServices.get('/api/hrm/departments/active');
+      setActiveDepartments(resDepts.data || []);
+    } catch (e) {
+      console.warn("Failed to fetch active departments", e);
+    }
+  };
+
+  const fetchMeetingSchedules = async () => {
+    setIsLoadingSchedules(true);
+    try {
+      const res = await axiosServices.get('/api/qms/meeting-schedules');
+      setMeetingSchedules(res.data || []);
+    } catch (e) {
+      console.error("Failed to load meeting schedules", e);
+    } finally {
+      setIsLoadingSchedules(false);
+    }
+  };
+
+  const handleSaveMeeting = async (e) => {
+    if (e) e.preventDefault();
+    if (!meetingForm.meetingTypeId || !meetingForm.meetingName || !meetingForm.meetingDate || !meetingForm.startTime || !meetingForm.endTime) {
+      alert("Please fill in all required fields.");
+      return;
+    }
+
+    const selectedMeetingType = meetingMasters.find(m => m.id === parseInt(meetingForm.meetingTypeId));
+    const selectedChaired = meetingForm.chairedById ? activeEmployees.find(emp => emp.id === parseInt(meetingForm.chairedById)) : null;
+    const selectedHost = meetingForm.hostById ? activeEmployees.find(emp => emp.id === parseInt(meetingForm.hostById)) : null;
+
+    const payload = {
+      id: isEditingMeeting ? selectedMeeting.id : null,
+      scheduleNo: isEditingMeeting ? selectedMeeting.scheduleNo : 'AUTO',
+      revNo: isEditingMeeting ? (selectedMeeting.revNo || 0) + 1 : 0,
+      meetingType: selectedMeetingType,
+      meetingName: meetingForm.meetingName,
+      subject: meetingForm.subject || meetingForm.meetingName,
+      description: meetingForm.description || selectedMeetingType?.meetingDescription || '',
+      agenda: meetingForm.agenda || selectedMeetingType?.meetingAgenda || '',
+      meetingDate: meetingForm.meetingDate,
+      startTime: meetingForm.startTime,
+      endTime: meetingForm.endTime,
+      intervalTime: '00:00',
+      frequency: 'NONE',
+      weekdays: '',
+      chairedBy: selectedChaired,
+      hostBy: selectedHost,
+      status: selectedMeeting?.status || 'OPEN',
+      departments: (meetingForm.departmentIds || []).map(deptId => {
+        const dept = activeDepartments.find(d => d.id === deptId);
+        return { department: dept };
+      }),
+      participants: (meetingForm.participantIds || []).map(empId => {
+        const emp = activeEmployees.find(e => e.id === empId);
+        return { employee: emp };
+      })
+    };
+
+    try {
+      if (isEditingMeeting && selectedMeeting?.id) {
+        const res = await axiosServices.put(`/api/qms/meeting-schedules/${selectedMeeting.id}`, payload);
+        setSelectedMeeting(res.data);
+      } else {
+        await axiosServices.post('/api/qms/meeting-schedules', payload);
+        setSelectedMeeting(null);
+      }
+      setIsScheduling(false);
+      setIsEditingMeeting(false);
+      fetchMeetingSchedules();
+    } catch (err) {
+      console.error("Failed to save meeting schedule", err);
+      alert(err.response?.data?.message || err.message || "Failed to save meeting.");
+    }
+  };
+
+  const handleCancelMeeting = async () => {
+    if (!selectedMeeting || !cancelReasonText.trim()) return;
+    try {
+      const payload = {
+        ...selectedMeeting,
+        status: 'CANCELLED',
+        cancelReason: cancelReasonText
+      };
+      const res = await axiosServices.put(`/api/qms/meeting-schedules/${selectedMeeting.id}`, payload);
+      setSelectedMeeting(res.data);
+      setShowCancelPrompt(false);
+      setCancelReasonText('');
+      fetchMeetingSchedules();
+    } catch (err) {
+      console.error("Failed to cancel meeting", err);
+      alert("Failed to cancel meeting.");
+    }
+  };
+
+  const handleDeleteMeeting = async (meetingId) => {
+    if (!window.confirm("Are you sure you want to delete this meeting schedule?")) return;
+    try {
+      await axiosServices.delete(`/api/qms/meeting-schedules/${meetingId}`);
+      setSelectedMeeting(null);
+      setIsScheduling(false);
+      setIsEditingMeeting(false);
+      fetchMeetingSchedules();
+    } catch (err) {
+      console.error("Failed to delete meeting", err);
+      alert(err.response?.data?.message || err.message || "Failed to delete meeting schedule.");
+    }
+  };
+
+  const handleOpenEditForm = (meeting) => {
+    setMeetingForm({
+      meetingTypeId: meeting.meetingType?.id || '',
+      meetingName: meeting.meetingName || '',
+      subject: meeting.subject || '',
+      description: meeting.description || '',
+      agenda: meeting.agenda || '',
+      meetingDate: meeting.meetingDate || '',
+      startTime: meeting.startTime || '',
+      endTime: meeting.endTime || '',
+      chairedById: meeting.chairedBy?.id || '',
+      hostById: meeting.hostBy?.id || '',
+      participantIds: (meeting.participants || []).map(p => p.employee?.id),
+      departmentIds: (meeting.departments || []).map(d => d.department?.id)
+    });
+    setIsEditingMeeting(true);
+    setIsScheduling(true);
+  };
+
+  const handleOpenCreateForm = (initialDate = '', initialStartTime = '', initialEndTime = '') => {
+    setMeetingForm({
+      meetingTypeId: '',
+      meetingName: '',
+      subject: '',
+      description: '',
+      agenda: '',
+      meetingDate: initialDate || new Date().toISOString().split('T')[0],
+      startTime: initialStartTime || '10:00',
+      endTime: initialEndTime || '11:00',
+      chairedById: '',
+      hostById: '',
+      participantIds: [],
+      departmentIds: []
+    });
+    setSelectedMeeting(null);
+    setIsEditingMeeting(false);
+    setIsScheduling(true);
+  };
+
+  // Poll channel list and messages
   useEffect(() => {
     fetchChannels();
     const intervalTime = isOpen ? 3000 : 5000;
@@ -321,7 +547,6 @@ export default function BOSConnect() {
     };
   }, [isOpen, activeChannel?.id]);
 
-  // Fetch Channels initially
   const fetchChannels = async () => {
     setIsLoadingChannels(true);
     try {
@@ -334,27 +559,20 @@ export default function BOSConnect() {
     }
   };
 
-  // Poll Channels & active room messages
   const pollData = async () => {
     try {
-      // 1. Refresh channels list
       const resChan = await axiosServices.get('/api/chat/channels');
 
-      // Detect new incoming messages for background toast alerts!
       if (channels && channels.length > 0) {
         resChan.data.forEach(newC => {
           const oldC = channels.find(c => c.id === newC.id);
           const oldUnread = oldC ? oldC.unreadCount : 0;
           if (newC.unreadCount > oldUnread) {
-            // A new message arrived in this room!
             const lastMsg = newC.lastMessage;
             if (lastMsg && lastMsg.senderId !== currentUserId && lastMsg.senderId !== 'BOS_AI_ASSISTANT') {
               playPing();
               showDesktopNotification(lastMsg);
 
-              // Only trigger visual in-app toast if:
-              // - Chat is closed, OR
-              // - We are in a different active channel!
               if (!isOpen || !activeChannel || activeChannel.id !== newC.id) {
                 setActiveToast({
                   id: lastMsg.id || new Date().getTime(),
@@ -362,7 +580,6 @@ export default function BOSConnect() {
                   messageContent: lastMsg.messageContent || 'Sent an attachment',
                   channel: newC
                 });
-                // Auto dismiss
                 setTimeout(() => {
                   setActiveToast(null);
                 }, 4000);
@@ -374,7 +591,6 @@ export default function BOSConnect() {
 
       setChannels(resChan.data);
 
-      // Extract typing indicator status for active channel members
       if (activeChannel) {
         const updatedActive = resChan.data.find(c => c.id === activeChannel.id);
         if (updatedActive && updatedActive.members) {
@@ -385,23 +601,19 @@ export default function BOSConnect() {
         }
       }
 
-      // 2. If room is open, fetch messages silently
       if (activeChannel) {
         const resMsg = await axiosServices.get(`/api/chat/channels/${activeChannel.id}/messages`);
         const polledMessages = resMsg.data;
 
-        // Check if new messages loaded (compared to last recorded count)
         const prevCount = prevMessagesCountRef.current[activeChannel.id] || 0;
         if (polledMessages.length > prevCount) {
           const lastMsg = polledMessages[polledMessages.length - 1];
-          // If message is from someone else, trigger alerts!
           if (lastMsg.senderId !== currentUserId && lastMsg.senderId !== 'BOS_AI_ASSISTANT') {
             playPing();
             showDesktopNotification(lastMsg);
           }
           setMessages(polledMessages);
           scrollMessageList();
-          // Load smart replies since discussion state changed
           fetchSmartReplies(activeChannel.id);
         }
         prevMessagesCountRef.current[activeChannel.id] = polledMessages.length;
@@ -411,15 +623,14 @@ export default function BOSConnect() {
     }
   };
 
-  // 6. Handle active room change
   const selectRoom = async (chan) => {
     setActiveChannel(chan);
     setIsLoadingMessages(true);
     setShowAiSummary(false);
     setShowFilesList(false);
     setSearchMessageQuery('');
+    setActiveChannelTab('posts'); // Default to Posts tab like Microsoft Teams
 
-    // Set otherUserTyping initially based on current channel data
     if (chan.members) {
       const isSomeoneTyping = chan.members.some(
         m => m.userId !== currentUserId && m.isTyping
@@ -433,7 +644,6 @@ export default function BOSConnect() {
       prevMessagesCountRef.current[chan.id] = res.data.length;
       scrollMessageList();
       fetchSmartReplies(chan.id);
-      // Mark read
       await axiosServices.post(`/api/chat/channels/${chan.id}/read`);
     } catch (e) {
       console.error("Failed to load channel messages", e);
@@ -448,7 +658,6 @@ export default function BOSConnect() {
     }, 100);
   };
 
-  // 7. Send message handler
   const handleSendMessage = async (customContent = null, customType = 'TEXT', customAttach = {}) => {
     const content = customContent || newMessage;
     if (!content.trim() && customType === 'TEXT') return;
@@ -465,18 +674,15 @@ export default function BOSConnect() {
 
       const res = await axiosServices.post('/api/chat/channels/messages', payload);
 
-      // Update local state instantly
       const updatedMessages = [...messages, res.data];
       setMessages(updatedMessages);
       prevMessagesCountRef.current[activeChannel.id] = updatedMessages.length;
       setNewMessage('');
       scrollMessageList();
 
-      // Trigger typing indicator stop
       axiosServices.post('/api/chat/typing').catch(() => { });
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
-      // Call polling once after small delay to grab automatic system responses / AI actions!
       setTimeout(() => {
         pollData();
       }, 1000);
@@ -486,7 +692,6 @@ export default function BOSConnect() {
     }
   };
 
-  // 8. Typing indicator triggers
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
     if (activeChannel) {
@@ -499,12 +704,10 @@ export default function BOSConnect() {
     }
   };
 
-  // 9. User Search to start direct chat
   const handleUserSearch = async (val = '') => {
     setSearchUserQuery(val);
     try {
       const res = await axiosServices.get(`/api/chat/search/users?query=${val}`);
-      // filter out self
       setUserSearchResults(res.data.filter(u => u.userId !== currentUserId));
     } catch (e) {
       console.error("User search failed", e);
@@ -520,9 +723,7 @@ export default function BOSConnect() {
   const startDirectChat = async (targetUser) => {
     try {
       const res = await axiosServices.post(`/api/chat/channels/direct?targetUserId=${targetUser.userId}`);
-      // Refresh list
       await fetchChannels();
-      // Select the direct room
       selectRoom(res.data);
       setActiveTab(0);
       setSearchUserQuery('');
@@ -532,7 +733,6 @@ export default function BOSConnect() {
     }
   };
 
-  // 10. File attachment upload handler
   const triggerFileUpload = () => {
     fileInputRef.current?.click();
   };
@@ -546,7 +746,6 @@ export default function BOSConnect() {
     fd.append('module', 'CHAT_UPLOAD');
 
     try {
-      // Upload using global file upload service
       const res = await axiosServices.post('/api/files/upload', fd, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -558,7 +757,6 @@ export default function BOSConnect() {
       else if (['XLS', 'XLSX', 'CSV'].includes(fileExt)) fileType = 'EXCEL';
       else if (['PNG', 'JPG', 'JPEG', 'GIF', 'WEBP'].includes(fileExt)) fileType = 'IMAGE';
 
-      // Send as attachment message
       handleSendMessage(`Sent file: ${file.name}`, 'FILE', {
         url: fileUrl,
         name: file.name,
@@ -569,10 +767,8 @@ export default function BOSConnect() {
     }
   };
 
-  // 11. Real Voice Recorder Action
   const handleVoiceToggle = async () => {
     if (isRecordingVoice) {
-      // Stop recording
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.stop();
       }
@@ -582,7 +778,6 @@ export default function BOSConnect() {
       }
       setRecordingDuration(0);
     } else {
-      // Start recording
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         const mediaRecorder = new MediaRecorder(stream);
@@ -617,7 +812,6 @@ export default function BOSConnect() {
             console.error("Voice upload failed", err);
           }
 
-          // Stop tracks to release mic
           stream.getTracks().forEach(track => track.stop());
         };
 
@@ -629,7 +823,6 @@ export default function BOSConnect() {
         }, 1000);
       } catch (err) {
         console.error("Failed to start voice recording", err);
-        // Fallback for demo or no mic
         setIsRecordingVoice(true);
         setTimeout(() => {
           setIsRecordingVoice(false);
@@ -639,7 +832,6 @@ export default function BOSConnect() {
     }
   };
 
-  // 12. Smart Replies and AI Summary Drawers
   const fetchSmartReplies = async (chanId) => {
     try {
       const res = await axiosServices.get(`/api/chat/channels/${chanId}/smart-replies`);
@@ -652,7 +844,7 @@ export default function BOSConnect() {
   const fetchAiSummary = async () => {
     if (!activeChannel) return;
     setIsLoadingSummary(true);
-    setShowAiSummary(true);
+    setAiSummary('');
     try {
       const res = await axiosServices.get(`/api/chat/channels/${activeChannel.id}/summary`);
       setAiSummary(res.data.summary);
@@ -665,7 +857,6 @@ export default function BOSConnect() {
 
   const fetchFilesList = async () => {
     if (!activeChannel) return;
-    setShowFilesList(true);
     try {
       const res = await axiosServices.get(`/api/chat/channels/${activeChannel.id}/files`);
       setFilesList(res.data);
@@ -674,7 +865,13 @@ export default function BOSConnect() {
     }
   };
 
-  // 13. Create Group Chat
+  useEffect(() => {
+    if (activeChannel) {
+      if (activeChannelTab === 'files') fetchFilesList();
+      if (activeChannelTab === 'summary') fetchAiSummary();
+    }
+  }, [activeChannelTab, activeChannel?.id]);
+
   const toggleGroupUser = (uid) => {
     if (selectedGroupUsers.includes(uid)) {
       setSelectedGroupUsers(selectedGroupUsers.filter(u => u !== uid));
@@ -696,15 +893,21 @@ export default function BOSConnect() {
     }
   };
 
-  // 14. Message Filtering (In-channel search)
   const filteredMessages = messages.filter(m => {
     if (!searchMessageQuery.trim()) return true;
     return m.messageContent?.toLowerCase().includes(searchMessageQuery.toLowerCase());
   });
 
+  // Filters channels by type depending on left sidebar active item
+  const displayChannels = channels.filter(c => {
+    if (teamsSidebarTab === 'chats') return c.channelType === 'DIRECT';
+    if (teamsSidebarTab === 'teams') return c.channelType !== 'DIRECT';
+    return true;
+  });
+
   return (
     <>
-      {/* 🚀 FLOATABLE & DRAGGABLE "BOS CONNECT" BUTTON (framer-motion powered) */}
+      {/* 🚀 MICROSOFT TEAMS INSPIRED FLOATABLE LAUNCHER BUTTON */}
       <motion.div
         drag
         dragMomentum={false}
@@ -720,7 +923,7 @@ export default function BOSConnect() {
           touchAction: 'none'
         }}
       >
-        <Tooltip title="Autonoma OneConnect" placement="top">
+        <Tooltip title="Autonoma OneConnect (Teams Client)" placement="top">
           <Button
             variant="contained"
             onClick={() => {
@@ -728,42 +931,42 @@ export default function BOSConnect() {
               requestNotificationPermission();
             }}
             sx={{
-              background: 'linear-gradient(135deg, #0284c7 0%, #0d9488 50%, #16a34a 100%)',
+              bgcolor: TEAMS_PURPLE,
               color: '#fff',
               borderRadius: '50%',
-              boxShadow: '0 4px 16px rgba(13, 148, 136, 0.45)',
+              boxShadow: '0 8px 24px rgba(91, 95, 199, 0.45)',
               border: 'none',
-              width: '50px',
-              height: '50px',
-              minWidth: '50px',
+              width: '56px',
+              height: '56px',
+              minWidth: '56px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               position: 'relative',
               '&:hover': {
-                background: 'linear-gradient(135deg, #0369a1 0%, #0f766e 50%, #15803d 100%)',
-                boxShadow: '0 6px 20px rgba(13, 148, 136, 0.55)'
+                bgcolor: '#464775',
+                boxShadow: '0 10px 28px rgba(91, 95, 199, 0.55)'
               }
             }}
           >
-            <IconMessage size={20} />
+            <IconMessageCircle size={26} stroke={1.8} />
             {channels.reduce((acc, c) => acc + c.unreadCount, 0) > 0 && (
               <Box
                 sx={{
                   position: 'absolute',
                   top: -2,
                   right: -2,
-                  minWidth: 16,
-                  height: 16,
+                  minWidth: 18,
+                  height: 18,
                   borderRadius: '50%',
-                  bgcolor: '#ff4d4f',
+                  bgcolor: '#C43E1C', // Microsoft Teams signature alert red
                   color: '#fff',
-                  fontSize: '0.6rem',
+                  fontSize: '0.65rem',
                   fontWeight: 900,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 8px #ff4d4f',
+                  boxShadow: '0 0 8px #C43E1C',
                   border: '1.5px solid #fff',
                   zIndex: 10
                 }}
@@ -775,7 +978,7 @@ export default function BOSConnect() {
         </Tooltip>
       </motion.div>
 
-      {/* 🛡️ STUNNING GLASSMORPHISM CHAT CONTAINER */}
+      {/* 🛡️ STATE-OF-THE-ART MICROSOFT TEAMS CLIENT WORKSPACE */}
       <AnimatePresence>
         {isOpen && (
           <Grow in={isOpen} style={{ transformOrigin: 'bottom right' }}>
@@ -790,41 +993,34 @@ export default function BOSConnect() {
                 maxHeight: isMaximized ? 'none' : '90vh',
                 zIndex: 9999,
                 display: 'flex',
-                flexDirection: 'column',
-                background: theme.palette.mode === 'dark'
-                  ? `linear-gradient(135deg, ${alpha(activeColor, 0.18)} 0%, ${alpha('#121212', 0.85)} 100%)`
-                  : `linear-gradient(135deg, ${alpha(activeColor, 0.12)} 0%, ${alpha('#ffffff', 0.85)} 100%)`,
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderRadius: '12px',
-                boxShadow: `0 12px 32px ${alpha(activeColor, 0.15)}, 0 4px 12px rgba(0,0,0,0.08)`,
-                border: theme.palette.mode === 'dark'
-                  ? `1px solid ${alpha(activeColor, 0.25)}`
-                  : `1px solid ${alpha(activeColor, 0.2)}`,
+                background: theme.palette.mode === 'dark' ? TEAMS_DARK_BG : '#FFFFFF',
+                borderRadius: '8px',
+                boxShadow: '0 24px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.06)',
+                border: `1px solid ${theme.palette.mode === 'dark' ? TEAMS_BORDER_DARK : TEAMS_BORDER_LIGHT}`,
                 overflow: 'hidden',
                 transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
-                animation: 'slideUp 0.3s ease-out',
-                '@keyframes slideUp': {
-                  '0%': { transform: 'translateY(20px)', opacity: 0 },
-                  '100%': { transform: 'translateY(0)', opacity: 1 }
+                animation: 'teamsWindowSlideUp 0.3s ease-out',
+                '@keyframes teamsWindowSlideUp': {
+                  '0%': { transform: 'translateY(30px) scale(0.98)', opacity: 0 },
+                  '100%': { transform: 'translateY(0) scale(1)', opacity: 1 }
                 },
                 '& ::-webkit-scrollbar': {
-                  width: '6px',
-                  height: '6px'
+                  width: '5px',
+                  height: '5px'
                 },
                 '& ::-webkit-scrollbar-track': {
                   background: 'transparent'
                 },
                 '& ::-webkit-scrollbar-thumb': {
-                  background: 'rgba(255, 255, 255, 0.1)',
+                  background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
                   borderRadius: '10px',
                   '&:hover': {
-                    background: 'rgba(99, 102, 241, 0.45)'
+                    background: TEAMS_PURPLE
                   }
                 }
               }}
             >
-              {/* 📐 TOP-LEFT RESIZE HANDLE (active only in windowed mode) */}
+              {/* 📐 RESIZE HANDLE */}
               {!isMaximized && (
                 <Box
                   onMouseDown={handleResizeStart}
@@ -833,910 +1029,1269 @@ export default function BOSConnect() {
                     position: 'absolute',
                     top: 0,
                     left: 0,
-                    width: '30px',
-                    height: '30px',
+                    width: '24px',
+                    height: '24px',
                     cursor: 'nw-resize',
-                    zIndex: 10001,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transition: 'background-color 0.2s',
-                    '&:hover': {
-                      bgcolor: 'rgba(255, 255, 255, 0.15)'
-                    },
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: '6px',
-                      left: '6px',
-                      width: '8px',
-                      height: '8px',
-                      borderTop: '2px solid rgba(255, 255, 255, 0.5)',
-                      borderLeft: '2px solid rgba(255, 255, 255, 0.5)',
-                      transition: 'border-color 0.2s'
-                    },
-                    '&:hover::before': {
-                      borderColor: '#fff'
-                    }
+                    zIndex: 10001
                   }}
                 />
               )}
 
-              {/* HEADER GORGEOUS GRADIENT */}
+              {/* ── 1. LEFT NARROW VERTICAL BAR (Signature Microsoft Teams Edge) ── */}
               <Box
                 sx={{
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0d9488 50%, #16a34a 100%)',
-                  p: 1.5,
-                  color: '#fff',
+                  width: '68px',
+                  bgcolor: theme.palette.mode === 'dark' ? '#201F1F' : '#EFEFF4',
+                  borderRight: `1px solid ${theme.palette.mode === 'dark' ? TEAMS_BORDER_DARK : TEAMS_BORDER_LIGHT}`,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderBottom: theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd',
-                  boxShadow: 'none',
-                  position: 'relative'
+                  py: 2.5,
+                  gap: 3,
+                  flexShrink: 0
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  {activeChannel && (
-                    <IconButton size="small" onClick={() => setActiveChannel(null)} sx={{ color: '#fff', mr: -0.5 }}>
-                      <IconArrowLeft size={20} />
-                    </IconButton>
-                  )}
-                  {activeChannel ? (
-                    <Avatar
-                      src={activeChannel.channelType === 'DIRECT' && activeChannel.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(activeChannel.members.find(m => m.userId !== currentUserId).imgName) : undefined}
-                      sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}
-                    >
-                      {activeChannel.channelType === 'DIRECT' ? (
-                        activeChannel.channelName.charAt(0).toUpperCase()
-                      ) : activeChannel.channelType === 'DEPARTMENT' ? (
-                        <IconFileText size={20} />
-                      ) : (
-                        <IconUsers size={20} />
-                      )}
-                    </Avatar>
-                  ) : (
-                    <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', width: 36, height: 36 }}>
-                      <IconMessage size={20} />
-                    </Avatar>
-                  )}
-                  <Box>
-                    <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', letterSpacing: '0.02em', mb: 0.1 }}>
-                      {activeChannel ? activeChannel.channelName : 'Autonoma OneConnect'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.75)', fontWeight: 500 }}>
-                      {activeChannel ? (activeChannel.channelType === 'DIRECT' ? 'Chat' : `${activeChannel.channelType} Chat`) : 'Unified Enterprise Communication'}
-                    </Typography>
-                  </Box>
-                </Box>
+                {/* App Brand Logo */}
+                <Avatar
+                  src={companyLogoUrl}
+                  sx={{
+                    width: 38,
+                    height: 38,
+                    bgcolor: TEAMS_PURPLE,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: `1.5px solid ${theme.palette.mode === 'dark' ? '#444' : '#fff'}`,
+                    mb: 1
+                  }}
+                />
 
-                {/* HEADER ACTIONS */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  {activeChannel && (
-                    <>
-                      <Tooltip title="In-chat Search">
-                        <IconButton size="small" onClick={() => setIsSearchingMessages(!isSearchingMessages)} sx={{ color: '#fff' }}>
-                          <IconSearch size={18} />
-                        </IconButton>
+                {/* Sidebar Navigation Items */}
+                <Stack spacing={1.5} sx={{ width: '100%', alignItems: 'center' }}>
+                  {[
+                    { id: 'chats', label: 'Chat', icon: <IconMessageCircle size={22} /> },
+                    { id: 'teams', label: 'Teams', icon: <IconUsers size={22} /> },
+                    { id: 'calendar', label: 'Calendar', icon: <IconCalendar size={22} /> },
+                    { id: 'copilot', label: 'Copilot', icon: <IconSparkles size={22} /> },
+                    { id: 'files', label: 'Files', icon: <IconFolder size={22} /> }
+                  ].map((item) => {
+                    const isActive = teamsSidebarTab === item.id;
+                    const hasNewAlert = item.id === 'chats' && channels.some(c => c.unreadCount > 0);
+                    return (
+                      <Tooltip key={item.id} title={item.label} placement="right">
+                        <Box sx={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                          {isActive && (
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                left: 0,
+                                top: '10%',
+                                width: '3px',
+                                height: '80%',
+                                bgcolor: TEAMS_PURPLE,
+                                borderRadius: '0 4px 4px 0'
+                              }}
+                            />
+                          )}
+                          <IconButton
+                            onClick={() => {
+                              setTeamsSidebarTab(item.id);
+                              if (item.id === 'calendar') {
+                                setSelectedMeeting(null);
+                                setIsScheduling(false);
+                                setIsEditingMeeting(false);
+                              } else if (item.id === 'copilot' && activeChannel) {
+                                setActiveChannelTab('summary');
+                              } else if (item.id === 'files' && activeChannel) {
+                                setActiveChannelTab('files');
+                              } else {
+                                setActiveChannelTab('posts');
+                              }
+                            }}
+                            sx={{
+                              color: isActive ? TEAMS_PURPLE : (theme.palette.mode === 'dark' ? '#adadad' : '#616161'),
+                              bgcolor: isActive ? (theme.palette.mode === 'dark' ? 'rgba(91,95,199,0.15)' : '#ffffff') : 'transparent',
+                              borderRadius: '8px',
+                              width: 46,
+                              height: 46,
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#e1dfdd',
+                                color: TEAMS_PURPLE
+                              }
+                            }}
+                          >
+                            {hasNewAlert ? (
+                              <Badge color="error" variant="dot" overlap="circular">
+                                {item.icon}
+                              </Badge>
+                            ) : item.icon}
+                          </IconButton>
+                        </Box>
                       </Tooltip>
-                      <Tooltip title="Files Shared">
-                        <IconButton size="small" onClick={fetchFilesList} sx={{ color: '#fff' }}>
-                          <IconPaperclip size={18} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="BOS AI Thread Summary">
-                        <IconButton size="small" onClick={fetchAiSummary} sx={{ color: '#fff' }}>
-                          <IconBrain size={18} />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  )}
+                    );
+                  })}
+                </Stack>
 
-                  {/* DESKTOP NOTIFICATION STATUS INDICATOR */}
-                  {notificationPermission === 'granted' ? (
-                    <Tooltip title="Desktop Notifications Enabled">
-                      <IconButton size="small" sx={{ color: '#a0d911' }}>
-                        <IconBell size={18} />
-                      </IconButton>
-                    </Tooltip>
-                  ) : notificationPermission === 'denied' ? (
-                    <Tooltip title="Notifications blocked in browser. Please enable them in browser URL settings.">
-                      <IconButton size="small" sx={{ color: '#ff4d4f' }}>
-                        <IconBellOff size={18} />
-                      </IconButton>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="Click to Enable Desktop Notifications">
-                      <IconButton
-                        size="small"
-                        onClick={requestNotificationPermission}
-                        sx={{
-                          color: '#faad14',
-                          animation: 'pulse 2s infinite',
-                          '@keyframes pulse': {
-                            '0%': { opacity: 0.6, transform: 'scale(0.95)' },
-                            '50%': { opacity: 1, transform: 'scale(1.05)' },
-                            '100%': { opacity: 0.6, transform: 'scale(0.95)' }
-                          }
-                        }}
-                      >
-                        <IconBellOff size={18} />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-
-                  {/* WINDOW CONTROLS: MAXIMIZE / RESTORE */}
-                  <Tooltip title={isMaximized ? "Restore Size" : "Maximize Screen"}>
-                    <IconButton size="small" onClick={() => setIsMaximized(!isMaximized)} sx={{ color: '#fff' }}>
-                      {isMaximized ? <IconMinimize size={18} /> : <IconMaximize size={18} />}
-                    </IconButton>
-                  </Tooltip>
-
-                  <Tooltip title="Close Chat">
-                    <IconButton size="small" onClick={() => setIsOpen(false)} sx={{ color: '#fff' }}>
-                      <IconX size={20} />
+                <Box sx={{ mt: 'auto' }}>
+                  <Tooltip title="Help & System Info">
+                    <IconButton sx={{ color: theme.palette.mode === 'dark' ? '#adadad' : '#616161' }}>
+                      <IconInfoCircle size={22} />
                     </IconButton>
                   </Tooltip>
                 </Box>
               </Box>
 
-              {/* SEARCH MESSAGE BAR */}
-              {activeChannel && isSearchingMessages && (
-                <Box sx={{ p: 1, bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#f5f5f5', borderBottom: theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd' }}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    placeholder="Search messages..."
-                    value={searchMessageQuery}
-                    onChange={(e) => setSearchMessageQuery(e.target.value)}
-                    variant="outlined"
-                    sx={{
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: '4px',
-                        bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#ffffff',
-                        color: theme.palette.mode === 'dark' ? '#fff' : '#242424',
-                        '& fieldset': { borderColor: theme.palette.mode === 'dark' ? '#3d3d3d' : '#e1dfdd' },
-                        '&:hover fieldset': { borderColor: '#6264A7' },
-                        '&.Mui-focused fieldset': { borderColor: '#6264A7' }
-                      }
-                    }}
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton size="small" onClick={() => { setSearchMessageQuery(''); setIsSearchingMessages(false); }}>
-                            <IconX size={16} color={theme.palette.mode === 'dark' ? '#94a3b8' : '#616161'} />
-                          </IconButton>
-                        </InputAdornment>
-                      )
-                    }}
-                  />
-                </Box>
-              )}
+              {/* ── 2. MIDDLE & RIGHT SPLIT VIEW CONTAINER ── */}
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                
+                {/* SYSTEM LEVEL SEARCH & TITLE Edge */}
+                <Box
+                  sx={{
+                    bgcolor: TEAMS_PURPLE,
+                    p: '10px 16px',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexShrink: 0
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, letterSpacing: '0.03em', fontSize: '0.85rem' }}>
+                    Autonoma OneConnect
+                  </Typography>
 
-              {/* MAIN CONTENT AREA */}
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: isMaximized ? 'row-reverse' : 'column', overflow: 'hidden' }}>
-
-                {/* EMPTY STATE FOR RIGHT PANE WHEN MAXIMIZED AND NO CHANNEL SELECTED */}
-                {isMaximized && !activeChannel && (
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#ffffff' }}>
-                    <IconMessage size={64} color={theme.palette.mode === 'dark' ? '#3d3d3d' : '#e1dfdd'} />
-                    <Typography variant="h6" sx={{ mt: 2, color: theme.palette.mode === 'dark' ? '#d1d1d1' : '#616161', fontWeight: 600 }}>Select a chat to start messaging</Typography>
+                  {/* Top search bar fallback (looks like Teams desktop header) */}
+                  <Box sx={{ display: { xs: 'none', sm: 'flex' }, width: '40%', maxWidth: 320 }}>
+                    <TextField
+                      fullWidth
+                      size="small"
+                      placeholder="Search users or type /commands"
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          height: 28,
+                          borderRadius: '4px',
+                          bgcolor: 'rgba(255, 255, 255, 0.15)',
+                          color: '#fff',
+                          fontSize: '0.75rem',
+                          '& fieldset': { border: 'none' },
+                          '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.25)' },
+                          '&.Mui-focused': { bgcolor: '#fff', color: '#000' }
+                        },
+                        '& .MuiInputBase-input::placeholder': { color: 'rgba(255,255,255,0.7)', opacity: 1 },
+                        '& .MuiInputBase-input:focus::placeholder': { color: '#888' }
+                      }}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <IconSearch size={14} color="rgba(255,255,255,0.8)" />
+                          </InputAdornment>
+                        )
+                      }}
+                    />
                   </Box>
-                )}
 
-                {activeChannel && (
-                  // ============================== MESSAGES WINDOW ==============================
-                  <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
-                    {isLoadingMessages ? (
-                      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
-                        <CircularProgress size={36} sx={{ color: '#6366f1' }} />
-                      </Box>
-                    ) : (
-                      <Box sx={{
-                        flexGrow: 1,
-                        p: 2.5,
-                        overflowY: 'auto',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 1.5,
-                        backgroundColor: theme.palette.mode === 'dark' ? '#12121e' : '#f0f3f8',
-                        backgroundImage: 'none'
-                      }}>
-                        {filteredMessages.map((msg, index) => {
-                          const isSelf = msg.senderId === currentUserId;
-                          const isSystem = msg.senderId === 'BOS_AI_ASSISTANT' || msg.messageType === 'SYSTEM';
+                  {/* Top Window Actions */}
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Tooltip title={isMaximized ? "Restore" : "Maximize"}>
+                      <IconButton size="small" onClick={() => setIsMaximized(!isMaximized)} sx={{ color: '#fff', p: 0.5 }}>
+                        {isMaximized ? <IconMinimize size={16} /> : <IconMaximize size={16} />}
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton size="small" onClick={() => setIsOpen(false)} sx={{ color: '#fff', p: 0.5 }}>
+                      <IconX size={18} />
+                    </IconButton>
+                  </Stack>
+                </Box>
 
-                          // WhatsApp style date grouping separator
-                          const msgDate = new Date(msg.createdAt).toDateString();
-                          const prevMsgDate = index > 0 ? new Date(filteredMessages[index - 1].createdAt).toDateString() : null;
-                          const showDateSeparator = msgDate !== prevMsgDate;
+                {/* MAIN SPLIT Edge */}
+                <Box sx={{ flexGrow: 1, display: 'flex', overflow: 'hidden' }}>
 
-                          return (
-                            <Box key={msg.id || index} sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                              {showDateSeparator && (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 1.5 }}>
-                                  <Box
-                                    sx={{
-                                      px: 1.5,
-                                      py: 0.5,
-                                      bgcolor: theme.palette.mode === 'dark' ? '#182229' : '#ffffff',
-                                      borderRadius: '8px',
-                                      boxShadow: '0 1px 1px rgba(0,0,0,0.08)',
-                                      border: theme.palette.mode === 'dark' ? 'none' : '1px solid rgba(0,0,0,0.05)'
-                                    }}
-                                  >
-                                    <Typography variant="caption" sx={{ color: theme.palette.mode === 'dark' ? '#8696a0' : '#667781', fontWeight: 600, fontSize: '0.75rem' }}>
-                                      {getFormattedSeparatorDate(msg.createdAt)}
-                                    </Typography>
-                                  </Box>
-                                </Box>
-                              )}
-
-                              {isSystem ? (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', my: 1 }}>
-                                  <Paper
-                                    elevation={0}
-                                    sx={{
-                                      p: 2,
-                                      bgcolor: 'rgba(99, 102, 241, 0.05)',
-                                      border: '1px dashed rgba(99, 102, 241, 0.35)',
-                                      borderRadius: '16px',
-                                      maxWidth: '90%',
-                                      position: 'relative',
-                                      '& table': {
-                                        width: '100%',
-                                        borderCollapse: 'collapse',
-                                        my: 1
-                                      },
-                                      '& th, & td': {
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        p: 0.75,
-                                        fontSize: '0.75rem',
-                                        color: '#e2e8f0'
-                                      },
-                                      '& th': {
-                                        bgcolor: 'rgba(99, 102, 241, 0.15)'
-                                      }
-                                    }}
-                                  >
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, color: '#a5b4fc' }}>
-                                      <IconSparkles size={16} />
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                        {msg.senderName}
-                                      </Typography>
-                                    </Box>
-                                    <Typography variant="body2" component="div" sx={{ color: '#e2e8f0', fontSize: '0.8rem', whiteSpace: 'pre-line' }}>
-                                      {msg.messageContent}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ display: 'block', mt: 0.8, color: '#94a3b8', fontSize: '0.65rem' }}>
-                                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </Typography>
-                                  </Paper>
-                                </Box>
-                              ) : (
-                                <Box
-                                  sx={{
-                                    display: 'flex',
-                                    width: '100%',
-                                    justifyContent: isSelf ? 'flex-end' : 'flex-start',
-                                    mb: 0.5
-                                  }}
-                                >
-                                  <Box
-                                    sx={{
-                                      p: 1.25,
-                                      borderRadius: '12px',
-                                      background: isSelf ? 'linear-gradient(135deg, #0284c7 0%, #0d9488 100%)' : (theme.palette.mode === 'dark' ? '#202330' : '#FFFFFF'),
-                                      color: isSelf ? '#ffffff' : (theme.palette.mode === 'dark' ? '#f1f5f9' : '#1e293b'),
-                                      border: 'none',
-                                      boxShadow: '0 1px 1.5px rgba(0,0,0,0.12)',
-                                      wordBreak: 'break-word',
-                                      maxWidth: '75%'
-                                    }}
-                                  >
-                                    {!isSelf && activeChannel?.channelType !== 'DIRECT' && (
-                                      <Typography variant="caption" sx={{ display: 'block', fontWeight: 800, color: '#818cf8', mb: 0.5, fontSize: '0.7rem' }}>
-                                        {msg.senderId}
-                                      </Typography>
-                                    )}
-
-                                    {/* RENDER NORMAL TEXT */}
-                                    {msg.messageType === 'TEXT' && (
-                                      <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
-                                        {msg.messageContent}
-                                      </Typography>
-                                    )}
-
-                                    {/* RENDER FILE ATTACHMENTS */}
-                                    {msg.messageType === 'FILE' && (
-                                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 0.5 }}>
-                                        {/* Dynamic inline preview if attachment is an image */}
-                                        {(msg.attachmentType === 'IMAGE' || (msg.attachmentName && msg.attachmentName.match(/\.(jpg|jpeg|png|gif|webp)$/i))) ? (
-                                          <Box
-                                            component="img"
-                                            src={`/api/files/view/${msg.attachmentUrl}`}
-                                            alt={msg.attachmentName}
-                                            sx={{
-                                              width: '100%',
-                                              maxHeight: '180px',
-                                              objectFit: 'cover',
-                                              borderRadius: '8px',
-                                              cursor: 'pointer',
-                                              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                              transition: 'transform 0.2s',
-                                              '&:hover': { transform: 'scale(1.02)' }
-                                            }}
-                                            onClick={() => window.open(`/api/files/view/${msg.attachmentUrl}`, '_blank')}
-                                          />
-                                        ) : (
-                                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <IconFileText size={24} color={isSelf ? '#53bdeb' : '#818cf8'} />
-                                            <Box>
-                                              <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.8rem', color: 'inherit' }}>
-                                                {msg.attachmentName}
-                                              </Typography>
-                                              <Typography variant="caption" sx={{ opacity: 0.8, fontSize: '0.65rem' }}>
-                                                {msg.attachmentType} File
-                                              </Typography>
-                                            </Box>
-                                          </Box>
-                                        )}
-                                        <Button
-                                          size="small"
-                                          variant="outlined"
-                                          href={`/api/files/view/${msg.attachmentUrl}`}
-                                          target="_blank"
-                                          sx={{
-                                            borderColor: isSelf ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.15)',
-                                            color: 'inherit',
-                                            textTransform: 'none',
-                                            fontSize: '0.7rem',
-                                            borderRadius: '8px',
-                                            '&:hover': {
-                                              borderColor: isSelf ? '#fff' : '#818cf8',
-                                              bgcolor: 'rgba(255,255,255,0.1)'
-                                            }
-                                          }}
-                                        >
-                                          View Full Document
-                                        </Button>
-                                      </Box>
-                                    )}
-
-                                    {/* RENDER VOICE NOTE */}
-                                    {msg.messageType === 'VOICE' && (
-                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        {msg.attachmentUrl ? (
-                                          <audio
-                                            controls
-                                            src={`/api/files/view/${msg.attachmentUrl}`}
-                                            style={{ outline: 'none', minWidth: '220px', height: '40px' }}
-                                          />
-                                        ) : (
-                                          <>
-                                            <IconMicrophone size={20} color={isSelf ? '#53bdeb' : '#818cf8'} />
-                                            <Box sx={{ width: 100, height: 16, display: 'flex', gap: '2px', alignItems: 'center' }}>
-                                              {[...Array(12)].map((_, i) => (
-                                                <Box
-                                                  key={i}
-                                                  sx={{
-                                                    width: 3,
-                                                    height: Math.floor(Math.random() * 12) + 4,
-                                                    bgcolor: isSelf ? '#fff' : '#818cf8',
-                                                    borderRadius: 1
-                                                  }}
-                                                />
-                                              ))}
-                                            </Box>
-                                            <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
-                                              0:05
-                                            </Typography>
-                                          </>
-                                        )}
-                                      </Box>
-                                    )}
-
-                                    {/* TIMESTAMP AND READ RECEIPT INSIDE BUBBLE */}
-                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 0.5, mt: 0.75, opacity: 0.85 }}>
-                                      <Typography variant="caption" sx={{ color: isSelf ? 'rgba(255,255,255,0.7)' : (theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b'), fontSize: '0.625rem', fontWeight: 600 }}>
-                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                      </Typography>
-                                      {isSelf && (
-                                        <Typography
-                                          variant="caption"
-                                          sx={{
-                                            color: msg.isSeen ? '#4ade80' : 'rgba(255,255,255,0.65)',
-                                            fontSize: '0.625rem',
-                                            fontWeight: 700,
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            ml: 0.5
-                                          }}
-                                        >
-                                          {msg.isSeen ? 'Read' : 'Sent'}
-                                          {msg.isSeen ? (
-                                            <IconChecks size={14} color="#4ade80" style={{ marginLeft: 3 }} />
-                                          ) : (
-                                            <IconCheck size={14} color="rgba(255,255,255,0.5)" style={{ marginLeft: 3 }} />
-                                          )}
-                                        </Typography>
-                                      )}
-                                    </Box>
-                                  </Box>
-                                </Box>
-                              )}
-                            </Box>
-                          );
-                        })}
-
-                        {/* SMART REPLIES FLOATING CHIPS IN MESSAGE TIMELINE */}
-                        {smartReplies.length > 0 && (
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              flexWrap: 'wrap',
-                              gap: 1,
-                              mt: 2,
-                              mb: 1,
-                              justifyContent: 'flex-start',
-                              pl: 2
-                            }}
-                          >
-                            {smartReplies.map((r, i) => (
-                              <Button
-                                key={i}
-                                variant="outlined"
-                                onClick={() => handleSendMessage(r)}
-                                startIcon={<IconSparkles size={13} style={{ color: activeColor }} />}
-                                sx={{
-                                  borderRadius: '20px',
-                                  fontSize: '0.78rem',
-                                  fontWeight: 600,
-                                  textTransform: 'none',
-                                  color: theme.palette.mode === 'dark' ? '#fff' : '#444',
-                                  borderColor: alpha(activeColor, 0.35),
-                                  background: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                                  flexShrink: 0,
-                                  px: 2,
-                                  height: '32px',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
-                                  transition: 'all 0.2s ease-in-out',
-                                  '&:hover': {
-                                    background: `linear-gradient(135deg, ${alpha(activeColor, 0.15)} 0%, ${alpha(activeColor, 0.05)} 100%)`,
-                                    borderColor: activeColor,
-                                    boxShadow: `0 3px 8px ${alpha(activeColor, 0.2)}`,
-                                    transform: 'translateY(-1px)'
-                                  },
-                                  '& .MuiButton-startIcon': {
-                                    margin: 0,
-                                    marginRight: '5px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center'
-                                  }
-                                }}
-                              >
-                                {r}
-                              </Button>
-                            ))}
-                          </Box>
-                        )}
-
-                        <div ref={messageEndRef} />
-                        <Box sx={{ minHeight: '16px', width: '100%' }} />
-                      </Box>
-                    )}
-
-                    {/* INPUT CONTROL PANEL */}
+                  {/* ── A. CHANNELS / CHAT LIST (Teams Middle Sidebar Pane) ── */}
+                  {(!activeChannel || isMaximized || teamsSidebarTab === 'copilot' || teamsSidebarTab === 'files' || teamsSidebarTab === 'calendar') && (
                     <Box
                       sx={{
-                        p: 1.5,
-                        bgcolor: theme.palette.mode === 'dark' ? '#0b141a' : '#efeae2',
+                        width: isMaximized ? '280px' : '100%',
+                        flexShrink: 0,
+                        borderRight: `1px solid ${theme.palette.mode === 'dark' ? TEAMS_BORDER_DARK : TEAMS_BORDER_LIGHT}`,
+                        bgcolor: theme.palette.mode === 'dark' ? '#292929' : TEAMS_LIGHT_BG,
                         display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
+                        flexDirection: 'column',
+                        overflow: 'hidden'
                       }}
                     >
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        style={{ display: 'none' }}
-                        onChange={handleFileChange}
-                      />
-
-                      {/* Main Premium Capsule Bar */}
-                      <Box sx={{
-                        flexGrow: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        bgcolor: theme.palette.mode === 'dark' ? '#202c33' : '#ffffff',
-                        borderRadius: '24px',
-                        px: 2,
-                        py: 0.5,
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-                      }}>
-                        {/* Plus button for file upload */}
-                        <IconButton size="small" onClick={triggerFileUpload} sx={{ color: theme.palette.mode === 'dark' ? '#8696a0' : '#54656f', p: 0.75 }}>
-                          <IconPlus size={22} />
-                        </IconButton>
-
-                        {/* Emoji Picker Button */}
-                        <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                          <IconButton size="small" onClick={() => setShowEmojiPicker(!showEmojiPicker)} sx={{ color: theme.palette.mode === 'dark' ? '#8696a0' : '#54656f', p: 0.75 }}>
-                            <IconMoodSmile size={22} />
-                          </IconButton>
-
-                          {showEmojiPicker && (
-                            <Box sx={{ position: 'absolute', bottom: '100%', left: 0, mb: 1, zIndex: 10 }}>
-                              <EmojiPicker
-                                theme="dark"
-                                onEmojiClick={(emojiData) => {
-                                  setNewMessage(prev => prev + emojiData.emoji);
-                                  setShowEmojiPicker(false);
+                      {/* Search & Actions Panel */}
+                      <Box sx={{ p: 1.5, display: 'flex', gap: 1, alignItems: 'center' }}>
+                        {teamsSidebarTab === 'calendar' ? (
+                          <>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              placeholder="Filter meetings"
+                              value={searchMeetingQuery}
+                              onChange={(e) => setSearchMeetingQuery(e.target.value)}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: '4px',
+                                  height: 32,
+                                  bgcolor: theme.palette.mode === 'dark' ? '#1f1f1f' : '#ffffff',
+                                  fontSize: '0.8rem',
+                                  '& fieldset': { borderColor: theme.palette.mode === 'dark' ? '#444' : '#e1dfdd' },
+                                  '&:hover fieldset': { borderColor: TEAMS_PURPLE },
+                                  '&.Mui-focused fieldset': { borderColor: TEAMS_PURPLE }
+                                }
+                              }}
+                            />
+                            <Tooltip title="Schedule New Meeting">
+                              <IconButton
+                                onClick={() => handleOpenCreateForm()}
+                                sx={{
+                                  bgcolor: isScheduling && !isEditingMeeting ? TEAMS_PURPLE : 'transparent',
+                                  color: isScheduling && !isEditingMeeting ? '#fff' : 'inherit',
+                                  border: `1px solid ${theme.palette.mode === 'dark' ? '#444' : '#e1dfdd'}`,
+                                  borderRadius: '4px',
+                                  width: 32,
+                                  height: 32
                                 }}
-                                width={280}
-                                height={350}
-                              />
-                            </Box>
-                          )}
-                        </Box>
-
-                        {/* Message Input Textbox */}
-                        <TextField
-                          fullWidth
-                          size="small"
-                          placeholder={isRecordingVoice ? `Recording voice note... ${Math.floor(recordingDuration / 60)}:${(recordingDuration % 60).toString().padStart(2, '0')}` : 'Type a message'}
-                          disabled={isRecordingVoice}
-                          value={newMessage}
-                          onChange={handleInputChange}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                          variant="standard"
-                          InputProps={{ disableUnderline: true }}
-                          sx={{
-                            mx: 1.5,
-                            '& input': {
-                              color: theme.palette.mode === 'dark' ? '#e9edef' : '#111b21',
-                              fontSize: '0.95rem',
-                              py: 0.75
-                            }
-                          }}
-                        />
-
-                        {/* Right Action Button inside the capsule */}
-                        {newMessage.trim() === '' ? (
-                          <IconButton
-                            onClick={handleVoiceToggle}
-                            sx={{
-                              color: isRecordingVoice ? '#f44336' : (theme.palette.mode === 'dark' ? '#8696a0' : '#54656f'),
-                              animation: isRecordingVoice ? 'pulse 1s infinite' : 'none',
-                              '@keyframes pulse': {
-                                '0%': { transform: 'scale(1)' },
-                                '50%': { transform: 'scale(1.1)' },
-                                '100%': { transform: 'scale(1)' }
-                              }
-                            }}
-                          >
-                            {isRecordingVoice ? <IconMicrophoneOff size={22} /> : <IconMicrophone size={22} />}
-                          </IconButton>
+                              >
+                                <IconPlus size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </>
                         ) : (
-                          <IconButton
-                            onClick={() => handleSendMessage()}
-                            sx={{
-                              color: '#00a884'
-                            }}
-                          >
-                            <IconSend size={22} />
-                          </IconButton>
+                          <>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              placeholder="Filter chat lists"
+                              value={searchUserQuery}
+                              onChange={(e) => handleUserSearch(e.target.value)}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: '4px',
+                                  height: 32,
+                                  bgcolor: theme.palette.mode === 'dark' ? '#1f1f1f' : '#ffffff',
+                                  fontSize: '0.8rem',
+                                  '& fieldset': { borderColor: theme.palette.mode === 'dark' ? '#444' : '#e1dfdd' },
+                                  '&:hover fieldset': { borderColor: TEAMS_PURPLE },
+                                  '&.Mui-focused fieldset': { borderColor: TEAMS_PURPLE }
+                                }
+                              }}
+                            />
+                            <Tooltip title="Start New Conversation">
+                              <IconButton
+                                onClick={() => {
+                                  setActiveTab(activeTab === 1 ? 0 : 1);
+                                  setSearchUserQuery('');
+                                }}
+                                sx={{
+                                  bgcolor: activeTab === 1 ? TEAMS_PURPLE : 'transparent',
+                                  color: activeTab === 1 ? '#fff' : 'inherit',
+                                  border: `1px solid ${theme.palette.mode === 'dark' ? '#444' : '#e1dfdd'}`,
+                                  borderRadius: '4px',
+                                  width: 32,
+                                  height: 32
+                                }}
+                              >
+                                <IconPlus size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          </>
                         )}
                       </Box>
-                    </Box>
 
-                    {/* AI SUMMARY SLIDE-IN PANEL */}
-                    <AnimatePresence>
-                      {showAiSummary && (
-                        <motion.div
-                          initial={{ x: '100%' }}
-                          animate={{ x: 0 }}
-                          exit={{ x: '100%' }}
-                          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '85%',
-                            height: '100%',
-                            background: theme.palette.mode === 'dark' ? '#292929' : '#ffffff',
-                            borderLeft: theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd',
-                            boxShadow: '-4px 0 16px rgba(0,0,0,0.1)',
-                            zIndex: 10,
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}
-                        >
-                          <Box sx={{ p: 2, bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#f5f5f5', borderBottom: theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd', color: theme.palette.mode === 'dark' ? '#fff' : '#242424', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <IconSparkles size={18} color="#6264A7" />
-                              <Typography variant="h6" sx={{ fontWeight: 700, color: theme.palette.mode === 'dark' ? '#fff' : '#242424' }}>M365 Copilot (BOS AI)</Typography>
-                            </Box>
-                            <IconButton size="small" onClick={() => setShowAiSummary(false)} sx={{ color: theme.palette.mode === 'dark' ? '#d1d1d1' : '#616161' }}>
-                              <IconX size={18} />
+                      {/* Header Category text based on sidebar tab */}
+                      <Box sx={{ px: 2, pb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem' }}>
+                          {teamsSidebarTab === 'chats' ? 'Conversations' : teamsSidebarTab === 'teams' ? 'Colleague Channels' : teamsSidebarTab === 'calendar' ? 'Meeting Schedules' : teamsSidebarTab === 'copilot' ? 'AI Workspace' : 'Shared Cloud'}
+                        </Typography>
+                        {teamsSidebarTab === 'teams' && (
+                          <Tooltip title="Create new Group Channel">
+                            <IconButton size="small" onClick={() => setActiveTab(2)} sx={{ p: 0.25 }}>
+                              <IconPlus size={14} />
                             </IconButton>
-                          </Box>
-                          <Box sx={{ flexGrow: 1, p: 2, overflowY: 'auto' }}>
-                            {isLoadingSummary ? (
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', mt: 4 }}>
-                                <CircularProgress size={30} sx={{ color: '#6264A7' }} />
-                                <Typography variant="caption" sx={{ color: theme.palette.mode === 'dark' ? '#d1d1d1' : '#616161' }}>Analyzing thread context...</Typography>
-                              </Box>
-                            ) : (
-                              <Box sx={{
-                                fontSize: '0.825rem',
-                                color: theme.palette.mode === 'dark' ? '#e2e8f0' : '#242424',
-                                '& h3': { color: '#6264A7', fontWeight: 700, mt: 0, mb: 1, fontSize: '0.95rem' },
-                                '& ul': { pl: 2, mt: 0.5, mb: 1.5 },
-                                '& li': { mb: 0.8 },
-                                '& strong': { color: theme.palette.mode === 'dark' ? '#fff' : '#000' }
-                              }}>
-                                <Typography variant="body2" component="div" sx={{ whiteSpace: 'pre-line', lineHeight: 1.5, color: 'inherit' }}>
-                                  {aiSummary}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                          </Tooltip>
+                        )}
+                      </Box>
 
-                    {/* FILES LIST DRAWER */}
-                    <AnimatePresence>
-                      {showFilesList && (
-                        <motion.div
-                          initial={{ x: '100%' }}
-                          animate={{ x: 0 }}
-                          exit={{ x: '100%' }}
-                          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            right: 0,
-                            width: '85%',
-                            height: '100%',
-                            background: 'rgba(15, 23, 42, 0.96)',
-                            backdropFilter: 'blur(16px)',
-                            borderLeft: '1px solid rgba(255, 255, 255, 0.1)',
-                            boxShadow: '-10px 0 30px rgba(0,0,0,0.4)',
-                            zIndex: 10,
-                            display: 'flex',
-                            flexDirection: 'column'
-                          }}
-                        >
-                          <Box sx={{ p: 2, bgcolor: '#0f172a', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', color: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <IconPaperclip size={18} />
-                              <Typography variant="h6" sx={{ fontWeight: 800, color: '#fff' }}>Shared Files</Typography>
-                            </Box>
-                            <IconButton size="small" onClick={() => setShowFilesList(false)} sx={{ color: '#fff' }}>
-                              <IconX size={18} />
-                            </IconButton>
-                          </Box>
-                          <Box sx={{ flexGrow: 1, p: 2, overflowY: 'auto' }}>
-                            {filesList.length === 0 ? (
-                              <Typography variant="body2" color="#94a3b8" sx={{ textAlign: 'center', mt: 4 }}>
-                                No files shared in this channel yet.
+                      {/* Tab switching or display lists */}
+                      <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
+                        {teamsSidebarTab === 'calendar' ? (
+                          // ── SUB-VIEW: LIST OF MEETING SCHEDULES ──
+                          <List sx={{ p: 0 }}>
+                            {isLoadingSchedules ? (
+                              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                                <CircularProgress size={24} sx={{ color: TEAMS_PURPLE }} />
+                              </Box>
+                            ) : meetingSchedules.filter(m => 
+                              !searchMeetingQuery || 
+                              m.meetingName?.toLowerCase().includes(searchMeetingQuery.toLowerCase()) || 
+                              m.subject?.toLowerCase().includes(searchMeetingQuery.toLowerCase())
+                            ).length === 0 ? (
+                              <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', mt: 4, color: 'text.secondary' }}>
+                                No meetings found
                               </Typography>
                             ) : (
-                              <List size="small">
-                                {filesList.map((f, i) => (
+                              meetingSchedules.filter(m => 
+                                !searchMeetingQuery || 
+                                m.meetingName?.toLowerCase().includes(searchMeetingQuery.toLowerCase()) || 
+                                m.subject?.toLowerCase().includes(searchMeetingQuery.toLowerCase())
+                              ).map((meeting) => {
+                                const isSelected = selectedMeeting?.id === meeting.id;
+                                const isCancelled = meeting.status === 'CANCELLED';
+                                return (
                                   <ListItem
-                                    key={i}
+                                    button
+                                    onClick={() => {
+                                      setSelectedMeeting(meeting);
+                                      setIsScheduling(false);
+                                      setIsEditingMeeting(false);
+                                    }}
+                                    key={meeting.id}
                                     sx={{
-                                      border: '1px solid rgba(255, 255, 255, 0.08)',
-                                      borderRadius: '10px',
-                                      mb: 1,
-                                      bgcolor: 'rgba(255, 255, 255, 0.02)'
+                                      py: 1.25,
+                                      px: 2,
+                                      bgcolor: isSelected ? (theme.palette.mode === 'dark' ? '#1F1F1F' : '#FFFFFF') : 'transparent',
+                                      borderBottom: `1px solid ${theme.palette.mode === 'dark' ? '#333' : '#f0f0f0'}`,
+                                      borderLeft: isSelected ? `3.5px solid ${TEAMS_PURPLE}` : '3.5px solid transparent',
+                                      '&:hover': { bgcolor: theme.palette.mode === 'dark' ? '#333' : '#EFEFF4' }
                                     }}
                                   >
-                                    <ListItemAvatar>
-                                      <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.05)' }}>
-                                        <IconFileText size={20} color="#818cf8" />
+                                    <ListItemAvatar sx={{ minWidth: 44 }}>
+                                      <Avatar sx={{ 
+                                        bgcolor: isCancelled ? 'rgba(211, 47, 47, 0.1)' : alpha(TEAMS_PURPLE, 0.1), 
+                                        color: isCancelled ? '#d32f2f' : TEAMS_PURPLE, 
+                                        width: 34, 
+                                        height: 34 
+                                      }}>
+                                        <IconCalendarEvent size={18} />
                                       </Avatar>
                                     </ListItemAvatar>
                                     <ListItemText
-                                      primary={f.attachmentName}
-                                      secondary={`${f.attachmentType} • ${new Date(f.createdAt).toLocaleDateString()}`}
-                                      primaryTypographyProps={{ fontSize: '0.775rem', fontWeight: 800, color: '#f8fafc' }}
-                                      secondaryTypographyProps={{ fontSize: '0.675rem', color: '#94a3b8' }}
+                                      primary={
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                          <Typography variant="subtitle2" noWrap sx={{ fontWeight: 700, fontSize: '0.8rem', color: isCancelled ? 'text.secondary' : (theme.palette.mode === 'dark' ? '#f8fafc' : '#1f1f1f'), textDecoration: isCancelled ? 'line-through' : 'none' }}>
+                                            {meeting.meetingName}
+                                          </Typography>
+                                        </Box>
+                                      }
+                                      secondary={
+                                        <Box sx={{ mt: 0.3 }}>
+                                          <Typography variant="caption" sx={{ display: 'block', fontSize: '0.675rem', color: 'text.secondary', fontWeight: 500 }}>
+                                            {meeting.meetingDate} • {meeting.startTime}
+                                          </Typography>
+                                          <Typography variant="caption" noWrap sx={{ display: 'block', fontSize: '0.65rem', color: isCancelled ? '#d32f2f' : 'text.disabled', mt: 0.1 }}>
+                                            {isCancelled ? `Cancelled` : (meeting.chairedBy ? `Chaired by: ${meeting.chairedBy.employeeName}` : `Open Status`)}
+                                          </Typography>
+                                        </Box>
+                                      }
                                     />
-                                    <Button
-                                      size="small"
-                                      href={`/api/files/view/${f.attachmentUrl}`}
-                                      target="_blank"
-                                      sx={{ fontSize: '0.65rem', textTransform: 'none', color: '#818cf8' }}
-                                    >
-                                      View
-                                    </Button>
                                   </ListItem>
-                                ))}
-                              </List>
+                                );
+                              })
                             )}
-                          </Box>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </Box>
-                )}
-
-                {(!activeChannel || isMaximized) && (
-                  // ============================== CHANNELS / ROOMS LIST (SIDEBAR) ==============================
-                  <Box sx={{
-                    width: isMaximized ? '320px' : '100%',
-                    flexShrink: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    overflow: 'hidden',
-                    borderRight: isMaximized ? (theme.palette.mode === 'dark' ? '1px solid #3d3d3d' : '1px solid #e1dfdd') : 'none',
-                    bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#f5f5f5'
-                  }}>
-                    <Tabs
-                      value={activeTab}
-                      onChange={(e, val) => setActiveTab(val)}
-                      variant="fullWidth"
-                      sx={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                        '& .MuiTabs-indicator': { bgcolor: '#6366f1' },
-                        '& .MuiTab-root': { fontWeight: 800, textTransform: 'none', color: '#94a3b8', fontSize: '0.8rem' },
-                        '& .Mui-selected': { color: '#818cf8 !important' }
-                      }}
-                    >
-                      <Tab label="Chats" />
-                      <Tab label="Find Users" />
-                      <Tab label="New Group" />
-                    </Tabs>
-
-                    <Box sx={{ flexGrow: 1, overflowY: 'auto' }}>
-                      {activeTab === 0 && (
-                        // TAB 0: ACTIVE CHATS LIST
-                        isLoadingChannels ? (
-                          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mt: 4 }}>
-                            <CircularProgress size={30} sx={{ color: '#6366f1' }} />
-                          </Box>
-                        ) : channels.length === 0 ? (
-                          <Box sx={{ p: 4, textAlign: 'center' }}>
-                            <Typography variant="body2" color="#94a3b8">No channels active.</Typography>
-                          </Box>
-                        ) : (
+                          </List>
+                        ) : activeTab === 1 ? (
+                          // ── SUB-VIEW: SEARCH USERS FOR DIRECT CHAT ──
                           <List sx={{ p: 0 }}>
-                            {channels.map((chan) => (
+                            {userSearchResults.map((u) => (
                               <ListItem
                                 button
-                                onClick={() => selectRoom(chan)}
-                                key={chan.id}
+                                onClick={() => startDirectChat(u)}
+                                key={u.userId}
                                 sx={{
-                                  borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-                                  transition: '0.2s',
-                                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.03)' }
+                                  py: 1,
+                                  px: 2,
+                                  borderBottom: `1px solid ${theme.palette.mode === 'dark' ? '#333' : '#f5f5f5'}`
                                 }}
                               >
                                 <ListItemAvatar>
-                                  <Badge
-                                    overlap="circular"
-                                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                                    variant="dot"
-                                    color={chan.members.some(m => m.userId !== currentUserId && m.online) ? 'success' : 'default'}
-                                  >
-                                    <Avatar
-                                      src={chan.channelType === 'DIRECT' && chan.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(chan.members.find(m => m.userId !== currentUserId).imgName) : undefined}
-                                      sx={{ bgcolor: '#312e81', width: 40, height: 40 }}
-                                    >
-                                      {chan.channelType === 'DIRECT' ? (
-                                        chan.channelName.charAt(0).toUpperCase()
-                                      ) : chan.channelType === 'DEPARTMENT' ? (
-                                        <IconFileText size={20} />
-                                      ) : (
-                                        <IconUsers size={20} />
-                                      )}
+                                  <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color={u.online ? 'success' : 'default'}>
+                                    <Avatar src={u.imgName ? getUserImageUrl(u.imgName) : undefined} sx={{ bgcolor: TEAMS_PURPLE, width: 36, height: 36 }}>
+                                      {u.userId.charAt(0).toUpperCase()}
                                     </Avatar>
                                   </Badge>
                                 </ListItemAvatar>
                                 <ListItemText
-                                  primary={
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: theme.palette.mode === 'dark' ? '#f8fafc' : '#111b21' }}>
-                                        {chan.channelName}
-                                      </Typography>
-                                      <Typography variant="caption" color="#94a3b8" sx={{ fontSize: '0.65rem' }}>
-                                        {new Date(chan.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                      </Typography>
-                                    </Box>
-                                  }
-                                  secondary={
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                                      <Typography variant="caption" noWrap sx={{ maxWidth: '80%', color: '#94a3b8', fontWeight: chan.unreadCount > 0 ? 900 : 500 }}>
-                                        {chan.lastMessageSender && `${chan.lastMessageSender}: `}{chan.lastMessage}
-                                      </Typography>
-                                      {chan.unreadCount > 0 && (
-                                        <Box sx={{ bgcolor: '#ff4d4f', color: '#fff', borderRadius: '10px', px: 0.8, py: 0.2, fontSize: '0.65rem', fontWeight: 900 }}>
-                                          {chan.unreadCount}
-                                        </Box>
-                                      )}
-                                    </Box>
-                                  }
+                                  primary={u.userId}
+                                  secondary={`${u.designationName || 'BOS Staff'}`}
+                                  primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 700 }}
+                                  secondaryTypographyProps={{ fontSize: '0.7rem', color: 'text.secondary' }}
                                 />
                               </ListItem>
                             ))}
                           </List>
-                        )
-                      )}
-
-                      {activeTab === 1 && (
-                        // TAB 1: FIND USERS AND START DIRECT CHAT
-                        <Box sx={{ p: 2 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            placeholder="Type user ID or employee name..."
-                            value={searchUserQuery}
-                            onChange={(e) => handleUserSearch(e.target.value)}
-                            sx={{
-                              mb: 2,
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '12px',
-                                bgcolor: 'rgba(255, 255, 255, 0.04)',
-                                color: '#fff',
-                                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                                '&.Mui-focused fieldset': { borderColor: '#6366f1' }
-                              },
-                              '& .MuiInputAdornment-root svg': { color: '#94a3b8' }
-                            }}
-                            InputProps={{
-                              startAdornment: (
-                                <InputAdornment position="start">
-                                  <IconSearch size={18} />
-                                </InputAdornment>
-                              )
-                            }}
-                          />
-                          {userSearchResults.length === 0 ? (
-                            <Typography variant="body2" color="#94a3b8" sx={{ textAlign: 'center', mt: 2 }}>
-                              No matching BOS(S) users found.
-                            </Typography>
-                          ) : (
-                            <List sx={{ p: 0 }}>
-                              {userSearchResults.map((u) => (
+                        ) : activeTab === 2 ? (
+                          // ── SUB-VIEW: CREATE GROUP CHAT ──
+                          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1.8 }}>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              label="Channel Name"
+                              value={groupName}
+                              onChange={(e) => setGroupName(e.target.value)}
+                              sx={{ '& .MuiOutlinedInput-root': { borderRadius: '4px' } }}
+                            />
+                            <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.secondary' }}>Select Members:</Typography>
+                            <Box sx={{ maxHeight: 150, overflowY: 'auto', border: `1px solid ${theme.palette.mode === 'dark' ? '#444' : '#e1dfdd'}`, borderRadius: '4px', p: 0.5 }}>
+                              <List sx={{ p: 0 }}>
+                                {userSearchResults.map((u) => (
+                                  <ListItem key={u.userId} button onClick={() => toggleGroupUser(u.userId)} sx={{ py: 0.5, px: 1, borderRadius: '4px', mb: 0.5, bgcolor: selectedGroupUsers.includes(u.userId) ? 'rgba(91,95,199,0.08)' : 'transparent' }}>
+                                    <Checkbox checked={selectedGroupUsers.includes(u.userId)} size="small" sx={{ p: 0.5, mr: 1, color: TEAMS_PURPLE, '&.Mui-checked': { color: TEAMS_PURPLE } }} />
+                                    <ListItemText primary={u.userId} primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 600 }} />
+                                  </ListItem>
+                                ))}
+                              </List>
+                            </Box>
+                            <Button fullWidth size="small" variant="contained" onClick={handleCreateGroup} disabled={!groupName.trim() || selectedGroupUsers.length === 0} sx={{ bgcolor: TEAMS_PURPLE, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#464775' } }}>
+                              Create Group
+                            </Button>
+                            <Button fullWidth size="small" variant="text" onClick={() => setActiveTab(0)} sx={{ textTransform: 'none', color: 'text.secondary' }}>
+                              Cancel
+                            </Button>
+                          </Box>
+                        ) : (
+                          // ── DEFAULT VIEW: CHANNELS & DIRECT CHATS ──
+                          <List sx={{ p: 0 }}>
+                            {displayChannels.map((chan) => {
+                              const isActive = activeChannel?.id === chan.id;
+                              return (
                                 <ListItem
                                   button
-                                  onClick={() => startDirectChat(u)}
-                                  key={u.userId}
+                                  onClick={() => selectRoom(chan)}
+                                  key={chan.id}
                                   sx={{
-                                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                                    borderRadius: '12px',
-                                    mb: 1,
-                                    bgcolor: 'rgba(255, 255, 255, 0.02)',
-                                    '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.04)' }
+                                    py: 1.25,
+                                    px: 2,
+                                    bgcolor: isActive ? (theme.palette.mode === 'dark' ? '#1F1F1F' : '#FFFFFF') : 'transparent',
+                                    borderBottom: `1px solid ${theme.palette.mode === 'dark' ? '#333' : '#f0f0f0'}`,
+                                    borderLeft: isActive ? `3.5px solid ${TEAMS_PURPLE}` : '3.5px solid transparent',
+                                    '&:hover': { bgcolor: theme.palette.mode === 'dark' ? '#333' : '#EFEFF4' }
                                   }}
                                 >
-                                  <ListItemAvatar>
-                                    <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color={u.online ? 'success' : 'default'}>
+                                  <ListItemAvatar sx={{ minWidth: 46 }}>
+                                    <Badge overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot" color={chan.members.some(m => m.userId !== currentUserId && m.online) ? 'success' : 'default'}>
                                       <Avatar
-                                        src={u.imgName ? getUserImageUrl(u.imgName) : undefined}
-                                        sx={{ bgcolor: '#312e81' }}
+                                        src={chan.channelType === 'DIRECT' && chan.members.find(m => m.userId !== currentUserId)?.imgName ? getUserImageUrl(chan.members.find(m => m.userId !== currentUserId).imgName) : undefined}
+                                        sx={{ bgcolor: TEAMS_PURPLE, width: 36, height: 36, fontSize: '0.85rem', fontWeight: 800 }}
                                       >
-                                        {u.userId.charAt(0).toUpperCase()}
+                                        {chan.channelType === 'DIRECT' ? (
+                                          chan.channelName.charAt(0).toUpperCase()
+                                        ) : chan.channelType === 'DEPARTMENT' ? (
+                                          <IconFileText size={18} />
+                                        ) : (
+                                          <IconUsers size={18} />
+                                        )}
                                       </Avatar>
                                     </Badge>
                                   </ListItemAvatar>
                                   <ListItemText
-                                    primary={u.userId}
-                                    secondary={`${u.designationName || 'BOS Staff'} • ${u.departmentName || 'Admin'}`}
-                                    primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 800, color: theme.palette.mode === 'dark' ? '#f8fafc' : '#0f172a' }}
-                                    secondaryTypographyProps={{ fontSize: '0.7rem', color: '#94a3b8' }}
+                                    primary={
+                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: chan.unreadCount > 0 ? 900 : 700, fontSize: '0.8rem', color: theme.palette.mode === 'dark' ? '#f8fafc' : '#1f1f1f' }}>
+                                          {chan.channelName}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.65rem' }}>
+                                          {new Date(chan.lastMessageTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </Typography>
+                                      </Box>
+                                    }
+                                    secondary={
+                                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.2 }}>
+                                        <Typography variant="caption" noWrap sx={{ maxWidth: '85%', color: 'text.secondary', fontWeight: chan.unreadCount > 0 ? 800 : 400 }}>
+                                          {chan.lastMessageSender && `${chan.lastMessageSender}: `}{chan.lastMessage}
+                                        </Typography>
+                                        {chan.unreadCount > 0 && (
+                                          <Box sx={{ bgcolor: '#C43E1C', color: '#fff', borderRadius: '10px', px: 0.8, py: 0.1, fontSize: '0.6rem', fontWeight: 900 }}>
+                                            {chan.unreadCount}
+                                          </Box>
+                                        )}
+                                      </Box>
+                                    }
                                   />
-                                  <Button size="small" variant="contained" sx={{ fontSize: '0.675rem', textTransform: 'none', borderRadius: '15px', bgcolor: '#6366f1', '&:hover': { bgcolor: '#4f46e5' } }}>
-                                    Chat
+                                </ListItem>
+                              );
+                            })}
+                          </List>
+                        )}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* ── B. MAIN ACTIVE WINDOW (Teams Chat/Calendar timeline and workspace) ── */}
+                  {teamsSidebarTab === 'calendar' ? (
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: theme.palette.mode === 'dark' ? '#1F1F1F' : '#FAF9F8' }}>
+                      {/* Header */}
+                      <Box sx={{ p: '12px 20px', borderBottom: `1px solid ${theme.palette.mode === 'dark' ? TEAMS_BORDER_DARK : TEAMS_BORDER_LIGHT}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: theme.palette.mode === 'dark' ? '#201F1F' : '#FFFFFF' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          {(isScheduling || selectedMeeting) && (
+                            <IconButton size="small" onClick={() => { setIsScheduling(false); setSelectedMeeting(null); setIsEditingMeeting(false); }} sx={{ color: 'text.primary' }}>
+                              <IconArrowLeft size={18} />
+                            </IconButton>
+                          )}
+                          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.95rem' }}>
+                            {isScheduling ? (isEditingMeeting ? 'Edit Meeting Schedule' : 'Schedule New Meeting') : selectedMeeting ? 'Meeting Information' : 'Teams Calendar'}
+                          </Typography>
+                        </Box>
+                        {!isScheduling && !selectedMeeting && (
+                          <Button 
+                            variant="contained" 
+                            size="small" 
+                            onClick={() => handleOpenCreateForm()}
+                            startIcon={<IconPlus size={16} />}
+                            sx={{ bgcolor: TEAMS_PURPLE, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#464775' } }}
+                          >
+                            Schedule Meeting
+                          </Button>
+                        )}
+                      </Box>
+
+                      {/* Content Area */}
+                      <Box sx={{ flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+                        
+                        {isScheduling ? (
+                          // ── VIEW 1: SCHEDULE/EDIT MEETING FORM ──
+                          <Box component="form" onSubmit={handleSaveMeeting} sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <FormControl fullWidth size="small" required>
+                                <InputLabel>Meeting Type</InputLabel>
+                                <Select
+                                  value={meetingForm.meetingTypeId}
+                                  label="Meeting Type"
+                                  onChange={(e) => {
+                                    const selectedTypeId = e.target.value;
+                                    const meetingType = meetingMasters.find(m => m.id === parseInt(selectedTypeId));
+                                    if (meetingType) {
+                                      const masterEmpEntries = (meetingType.employeeName || '').split(',').map(s => s.trim()).filter(Boolean);
+                                      const matchedParticipants = activeEmployees.filter(emp => 
+                                        masterEmpEntries.some(entry => {
+                                          const separator = entry.includes(' - ') ? ' - ' : entry.includes(';') ? ';' : null;
+                                          if (separator) {
+                                            const [code] = entry.split(separator);
+                                            return emp.empCode === code;
+                                          }
+                                          return emp.employeeName === entry;
+                                        })
+                                      );
+                                      const matchedParticipantIds = matchedParticipants.map(emp => emp.id);
+
+                                      setMeetingForm({
+                                        ...meetingForm,
+                                        meetingTypeId: selectedTypeId,
+                                        description: meetingForm.description || meetingType.meetingDescription || '',
+                                        agenda: meetingForm.agenda || meetingType.meetingAgenda || '',
+                                        participantIds: matchedParticipantIds
+                                      });
+                                    } else {
+                                      setMeetingForm({ ...meetingForm, meetingTypeId: selectedTypeId });
+                                    }
+                                  }}
+                                >
+                                  {meetingMasters.map(m => (
+                                    <MenuItem key={m.id} value={m.id}>{m.meetingName} ({m.meetingPrefix})</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                              
+                              <TextField
+                                label="Meeting Name"
+                                required
+                                size="small"
+                                fullWidth
+                                value={meetingForm.meetingName}
+                                onChange={(e) => setMeetingForm({ ...meetingForm, meetingName: e.target.value })}
+                              />
+                            </Stack>
+
+                            <TextField
+                              label="Subject"
+                              size="small"
+                              fullWidth
+                              value={meetingForm.subject}
+                              onChange={(e) => setMeetingForm({ ...meetingForm, subject: e.target.value })}
+                            />
+
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <TextField
+                                label="Meeting Date"
+                                type="date"
+                                required
+                                size="small"
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                                value={meetingForm.meetingDate}
+                                onChange={(e) => setMeetingForm({ ...meetingForm, meetingDate: e.target.value })}
+                              />
+                              <TextField
+                                label="Start Time"
+                                type="time"
+                                required
+                                size="small"
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                                value={meetingForm.startTime}
+                                onChange={(e) => setMeetingForm({ ...meetingForm, startTime: e.target.value })}
+                              />
+                              <TextField
+                                label="End Time"
+                                type="time"
+                                required
+                                size="small"
+                                fullWidth
+                                InputLabelProps={{ shrink: true }}
+                                value={meetingForm.endTime}
+                                onChange={(e) => setMeetingForm({ ...meetingForm, endTime: e.target.value })}
+                              />
+                            </Stack>
+
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Chaired By</InputLabel>
+                                <Select
+                                  value={meetingForm.chairedById}
+                                  label="Chaired By"
+                                  onChange={(e) => setMeetingForm({ ...meetingForm, chairedById: e.target.value })}
+                                >
+                                  <MenuItem value=""><em>None</em></MenuItem>
+                                  {activeEmployees.map(emp => (
+                                    <MenuItem key={emp.id} value={emp.id}>{emp.employeeName} ({emp.empCode})</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+
+                              <FormControl fullWidth size="small">
+                                <InputLabel>Host By</InputLabel>
+                                <Select
+                                  value={meetingForm.hostById}
+                                  label="Host By"
+                                  onChange={(e) => setMeetingForm({ ...meetingForm, hostById: e.target.value })}
+                                >
+                                  <MenuItem value=""><em>None</em></MenuItem>
+                                  {activeEmployees.map(emp => (
+                                    <MenuItem key={emp.id} value={emp.id}>{emp.employeeName} ({emp.empCode})</MenuItem>
+                                  ))}
+                                </Select>
+                              </FormControl>
+                            </Stack>
+
+                            {/* Departments Multi-Select */}
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Departments Involved</InputLabel>
+                              <Select
+                                multiple
+                                value={meetingForm.departmentIds}
+                                onChange={(e) => setMeetingForm({ ...meetingForm, departmentIds: e.target.value })}
+                                input={<OutlinedInput label="Departments Involved" />}
+                                renderValue={(selected) => (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => {
+                                      const dept = activeDepartments.find(d => d.id === value);
+                                      return <Chip key={value} label={dept ? dept.departmentName : value} size="small" />;
+                                    })}
+                                  </Box>
+                                )}
+                              >
+                                {activeDepartments.map((dept) => (
+                                  <MenuItem key={dept.id} value={dept.id}>
+                                    {dept.departmentName}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+
+                            {/* Participants Multi-Select */}
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Participants</InputLabel>
+                              <Select
+                                multiple
+                                value={meetingForm.participantIds}
+                                onChange={(e) => setMeetingForm({ ...meetingForm, participantIds: e.target.value })}
+                                input={<OutlinedInput label="Participants" />}
+                                renderValue={(selected) => (
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selected.map((value) => {
+                                      const emp = activeEmployees.find(e => e.id === value);
+                                      return <Chip key={value} label={emp ? emp.employeeName : value} size="small" />;
+                                    })}
+                                  </Box>
+                                )}
+                              >
+                                {activeEmployees.map((emp) => (
+                                  <MenuItem key={emp.id} value={emp.id}>
+                                    {emp.employeeName} ({emp.empCode})
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+
+                            <TextField
+                              label="Agenda"
+                              multiline
+                              rows={2}
+                              fullWidth
+                              size="small"
+                              value={meetingForm.agenda}
+                              onChange={(e) => setMeetingForm({ ...meetingForm, agenda: e.target.value })}
+                            />
+
+                            <TextField
+                              label="Description"
+                              multiline
+                              rows={2}
+                              fullWidth
+                              size="small"
+                              value={meetingForm.description}
+                              onChange={(e) => setMeetingForm({ ...meetingForm, description: e.target.value })}
+                            />
+
+                            <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 1 }}>
+                              <Button 
+                                size="small" 
+                                variant="outlined" 
+                                onClick={() => { setIsScheduling(false); setIsEditingMeeting(false); }}
+                                sx={{ textTransform: 'none' }}
+                              >
+                                Cancel
+                              </Button>
+                              <Button 
+                                size="small" 
+                                type="submit" 
+                                variant="contained" 
+                                sx={{ bgcolor: TEAMS_PURPLE, textTransform: 'none', fontWeight: 700, '&:hover': { bgcolor: '#464775' } }}
+                              >
+                                {isEditingMeeting ? 'Update Schedule' : 'Schedule Meeting'}
+                              </Button>
+                            </Stack>
+                          </Box>
+                        ) : selectedMeeting ? (
+                          // ── VIEW 2: MEETING DETAILS VIEW ──
+                          <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {/* Card Details */}
+                            <Paper variant="outlined" sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2, bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#fff', border: `1px solid ${theme.palette.mode === 'dark' ? '#444' : '#e1dfdd'}` }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1.5 }}>
+                                <Box>
+                                  <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                                    {selectedMeeting.meetingName}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.5, fontWeight: 600 }}>
+                                    Schedule No: {selectedMeeting.scheduleNo}
+                                  </Typography>
+                                </Box>
+                                <Chip 
+                                  label={selectedMeeting.status} 
+                                  color={selectedMeeting.status === 'CANCELLED' ? 'error' : 'success'} 
+                                  size="small" 
+                                  sx={{ fontWeight: 700 }}
+                                />
+                              </Box>
+
+                              <Divider />
+
+                              <Stack spacing={1.5}>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 100 }}>Date & Time:</Typography>
+                                  <Typography variant="body2">{selectedMeeting.meetingDate} @ {selectedMeeting.startTime} - {selectedMeeting.endTime}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 100 }}>Meeting Type:</Typography>
+                                  <Typography variant="body2">{selectedMeeting.meetingType?.meetingName}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 100 }}>Chaired By:</Typography>
+                                  <Typography variant="body2">{selectedMeeting.chairedBy ? `${selectedMeeting.chairedBy.employeeName} (${selectedMeeting.chairedBy.empCode})` : 'N/A'}</Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, minWidth: 100 }}>Host By:</Typography>
+                                  <Typography variant="body2">{selectedMeeting.hostBy ? `${selectedMeeting.hostBy.employeeName} (${selectedMeeting.hostBy.empCode})` : 'N/A'}</Typography>
+                                </Box>
+                              </Stack>
+
+                              {selectedMeeting.departments && selectedMeeting.departments.length > 0 && (
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Departments Involved:</Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selectedMeeting.departments.map((d, i) => (
+                                      <Chip key={i} label={d.department?.departmentName} size="small" variant="outlined" />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+
+                              {selectedMeeting.participants && selectedMeeting.participants.length > 0 && (
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>Participants:</Typography>
+                                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {selectedMeeting.participants.map((p, i) => (
+                                      <Chip key={i} label={p.employee?.employeeName} size="small" variant="outlined" color="primary" />
+                                    ))}
+                                  </Box>
+                                </Box>
+                              )}
+
+                              {selectedMeeting.agenda && (
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>Agenda:</Typography>
+                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-line', p: 1, bgcolor: theme.palette.mode === 'dark' ? '#1f1f1f' : '#f5f5f5', borderRadius: '4px' }}>
+                                    {selectedMeeting.agenda}
+                                  </Typography>
+                                </Box>
+                              )}
+
+                              {selectedMeeting.description && (
+                                <Box>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>Description:</Typography>
+                                  <Typography variant="body2" sx={{ whiteSpace: 'pre-line', p: 1, bgcolor: theme.palette.mode === 'dark' ? '#1f1f1f' : '#f5f5f5', borderRadius: '4px' }}>
+                                    {selectedMeeting.description}
+                                  </Typography>
+                                </Box>
+                              )}
+
+                              {selectedMeeting.status === 'CANCELLED' && selectedMeeting.cancelReason && (
+                                <Box sx={{ borderLeft: '3px solid #d32f2f', pl: 1.5, py: 0.5 }}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#d32f2f' }}>Cancellation Reason:</Typography>
+                                  <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                                    "{selectedMeeting.cancelReason}"
+                                  </Typography>
+                                </Box>
+                              )}
+                            </Paper>
+
+                            {/* Cancellation Reason Prompt Inline */}
+                            {showCancelPrompt && (
+                              <Paper variant="outlined" sx={{ p: 2, borderColor: '#d32f2f', bgcolor: theme.palette.mode === 'dark' ? '#2c2222' : '#fff8f8' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#d32f2f', mb: 1 }}>Provide reason for cancellation:</Typography>
+                                <TextField
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  size="small"
+                                  placeholder="e.g. Host is unavailable, scheduled for another day"
+                                  value={cancelReasonText}
+                                  onChange={(e) => setCancelReasonText(e.target.value)}
+                                  sx={{ mb: 2 }}
+                                />
+                                <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                                  <Button size="small" variant="text" onClick={() => setShowCancelPrompt(false)}>Cancel</Button>
+                                  <Button size="small" variant="contained" color="error" disabled={!cancelReasonText.trim()} onClick={handleCancelMeeting}>Confirm Cancel</Button>
+                                </Stack>
+                              </Paper>
+                            )}
+
+                            {/* Actions bar */}
+                            {!showCancelPrompt && (
+                              <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+                                <IconButton color="error" onClick={() => handleDeleteMeeting(selectedMeeting.id)}>
+                                  <IconTrash size={20} />
+                                </IconButton>
+                                {selectedMeeting.status !== 'CANCELLED' && (
+                                  <>
+                                    <Button 
+                                      size="small" 
+                                      variant="outlined" 
+                                      color="error"
+                                      onClick={() => setShowCancelPrompt(true)}
+                                      sx={{ textTransform: 'none' }}
+                                    >
+                                      Cancel Meeting
+                                    </Button>
+                                    <Button 
+                                      size="small" 
+                                      variant="contained" 
+                                      onClick={() => handleOpenEditForm(selectedMeeting)}
+                                      startIcon={<IconEdit size={16} />}
+                                      sx={{ bgcolor: TEAMS_PURPLE, textTransform: 'none', '&:hover': { bgcolor: '#464775' } }}
+                                    >
+                                      Edit Details
+                                    </Button>
+                                  </>
+                                )}
+                              </Stack>
+                            )}
+                          </Box>
+                        ) : (
+                          // ── VIEW 3: FULL CALENDAR GRID VIEW ──
+                          <Box sx={{
+                            flexGrow: 1,
+                            p: 2,
+                            height: isMaximized ? 'calc(100vh - 190px)' : '480px',
+                            minHeight: 400,
+                            overflow: 'hidden',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#FFFFFF',
+                            '& .fc-license-message': { display: 'none' },
+                            '& .fc': {
+                              fontFamily: 'inherit',
+                              '--fc-border-color': theme.palette.mode === 'dark' ? '#333' : '#e1dfdd',
+                              '--fc-today-bg-color': theme.palette.mode === 'dark' ? 'rgba(91,95,199,0.15)' : 'rgba(91,95,199,0.08)',
+                              '--fc-event-bg-color': TEAMS_PURPLE,
+                              '--fc-event-border-color': TEAMS_PURPLE,
+                              color: theme.palette.text.primary,
+                              fontSize: '0.8rem',
+                              height: '100%'
+                            },
+                            '& .fc-col-header-cell': {
+                              bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#f3f2f1',
+                              py: 0.5
+                            },
+                            '& .fc-col-header-cell-cushion': {
+                              color: theme.palette.text.primary,
+                              fontWeight: 700
+                            },
+                            '& .fc-daygrid-day-number': {
+                              fontWeight: 600,
+                              p: 0.5
+                            },
+                            '& .fc-event': {
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              p: 0.25,
+                              fontSize: '0.72rem',
+                              fontWeight: 600
+                            }
+                          }}>
+                            <FullCalendar
+                              plugins={[listPlugin, dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                              initialView={isMaximized ? 'dayGridMonth' : 'listWeek'}
+                              headerToolbar={{
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: isMaximized ? 'dayGridMonth,timeGridWeek,listWeek' : 'listWeek'
+                              }}
+                              events={meetingSchedules.map(s => ({
+                                id: s.id.toString(),
+                                title: s.meetingName || s.subject || 'Meeting',
+                                start: `${s.meetingDate}T${s.startTime}`,
+                                end: `${s.meetingDate}T${s.endTime}`,
+                                color: s.status === 'CANCELLED' ? '#d32f2f' : '#5B5FC7',
+                                extendedProps: s
+                              }))}
+                              selectable
+                              editable={false}
+                              height="100%"
+                              eventTimeFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
+                              eventClick={(arg) => {
+                                const meeting = arg.event.extendedProps;
+                                setSelectedMeeting(meeting);
+                                setIsScheduling(false);
+                                setIsEditingMeeting(false);
+                              }}
+                              select={(arg) => {
+                                handleOpenCreateForm(arg.startStr, '10:00', '11:00');
+                              }}
+                            />
+                          </Box>
+                        )}
+                      </Box>
+                    </Box>
+                  ) : activeChannel && (
+                    <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: theme.palette.mode === 'dark' ? '#1F1F1F' : '#FFFFFF' }}>
+                      
+                      {/* Active Chat Header */}
+                      <Box
+                        sx={{
+                          p: '12px 20px',
+                          borderBottom: `1px solid ${theme.palette.mode === 'dark' ? TEAMS_BORDER_DARK : TEAMS_BORDER_LIGHT}`,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          flexShrink: 0
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            {!isMaximized && (
+                              <IconButton size="small" onClick={() => setActiveChannel(null)} sx={{ color: 'text.primary', mr: -0.5 }}>
+                                <IconArrowLeft size={18} />
+                              </IconButton>
+                            )}
+                            <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.95rem' }}>
+                              {activeChannel.channelName}
+                            </Typography>
+                          </Box>
+
+                          {/* Quick Header actions */}
+                          <Box sx={{ display: 'flex', gap: 0.5 }}>
+                            <Tooltip title="Start Audio Call (Simulated)">
+                              <IconButton size="small" sx={{ color: TEAMS_PURPLE }}><IconMicrophone size={18} /></IconButton>
+                            </Tooltip>
+                            <Tooltip title="Channel Options"><IconButton size="small"><IconDots size={18} /></IconButton></Tooltip>
+                          </Box>
+                        </Box>
+
+                        {/* 🌟 TEAMS WINDOW TABS ("Posts", "Files", "AI Summary") */}
+                        <Box sx={{ display: 'flex', gap: 2.5, mt: 1.5, borderTop: `1px solid ${theme.palette.mode === 'dark' ? '#2d2d2d' : '#f0f0f0'}`, pt: 1 }}>
+                          {[
+                            { id: 'posts', label: 'Posts', icon: <IconMessageCircle size={15} /> },
+                            { id: 'files', label: 'Files Shared', icon: <IconPaperclip size={15} /> },
+                            { id: 'summary', label: 'Copilot AI Summary', icon: <IconSparkles size={15} /> }
+                          ].map((t) => (
+                            <Button
+                              key={t.id}
+                              size="small"
+                              onClick={() => setActiveChannelTab(t.id)}
+                              startIcon={t.icon}
+                              sx={{
+                                textTransform: 'none',
+                                fontWeight: activeChannelTab === t.id ? 800 : 500,
+                                color: activeChannelTab === t.id ? TEAMS_PURPLE : 'text.secondary',
+                                borderBottom: activeChannelTab === t.id ? `3px solid ${TEAMS_PURPLE}` : '3px solid transparent',
+                                borderRadius: 0,
+                                px: 0.5,
+                                pb: 0.5,
+                                fontSize: '0.8rem',
+                                minWidth: 0,
+                                '&:hover': { bgcolor: 'transparent', color: TEAMS_PURPLE }
+                              }}
+                            >
+                              {t.label}
+                            </Button>
+                          ))}
+                        </Box>
+                      </Box>
+
+                      {/* ── TAB 1 CONTENT: POSTS / DISCUSSIONS TIMELINE ── */}
+                      {activeChannelTab === 'posts' && (
+                        <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                          <Box sx={{
+                            flexGrow: 1,
+                            p: 2.5,
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 1.8,
+                            bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#F3F2F1'
+                          }}>
+                            {isLoadingMessages ? (
+                              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
+                                <CircularProgress size={30} sx={{ color: TEAMS_PURPLE }} />
+                              </Box>
+                            ) : (
+                              filteredMessages.map((msg, index) => {
+                                const isSelf = msg.senderId === currentUserId;
+                                const isSystem = msg.senderId === 'BOS_AI_ASSISTANT' || msg.messageType === 'SYSTEM';
+
+                                const msgDate = new Date(msg.createdAt).toDateString();
+                                const prevMsgDate = index > 0 ? new Date(filteredMessages[index - 1].createdAt).toDateString() : null;
+                                const showDateSeparator = msgDate !== prevMsgDate;
+
+                                return (
+                                  <Box key={msg.id || index} sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                                    {showDateSeparator && (
+                                      <Box sx={{ display: 'flex', justifyContent: 'center', my: 1.5 }}>
+                                        <Box sx={{ px: 1.5, py: 0.5, bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#ffffff', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.05)' }}>
+                                          <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: '0.72rem' }}>
+                                            {getFormattedSeparatorDate(msg.createdAt)}
+                                          </Typography>
+                                        </Box>
+                                      </Box>
+                                    )}
+
+                                    {isSystem ? (
+                                      // Copilot message bubble inside standard Teams style
+                                      <Box sx={{ display: 'flex', gap: 1.5, my: 1, width: '90%' }}>
+                                        <Avatar sx={{ bgcolor: 'rgba(91, 95, 199, 0.1)', color: TEAMS_PURPLE, width: 32, height: 32 }}>
+                                          <IconSparkles size={18} />
+                                        </Avatar>
+                                        <Box sx={{ flexGrow: 1, bgcolor: theme.palette.mode === 'dark' ? '#201F1F' : '#fff', p: 1.8, borderRadius: '6px', border: '1px solid rgba(91,95,199,0.2)', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: TEAMS_PURPLE, mb: 0.5 }}>{msg.senderName}</Typography>
+                                          <Typography variant="body2" component="div" sx={{ fontSize: '0.825rem', color: 'text.primary', whiteSpace: 'pre-line' }}>{msg.messageContent}</Typography>
+                                          <Typography variant="caption" sx={{ display: 'block', mt: 0.8, color: 'text.disabled', fontSize: '0.65rem' }}>
+                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                          </Typography>
+                                        </Box>
+                                      </Box>
+                                    ) : (
+                                      // Fluent style Chat message bubbles
+                                      <Box sx={{ display: 'flex', width: '100%', justifyContent: isSelf ? 'flex-end' : 'flex-start' }}>
+                                        <Box sx={{ display: 'flex', gap: 1, maxWidth: '80%', flexDirection: isSelf ? 'row-reverse' : 'row' }}>
+                                          {!isSelf && (
+                                            <Avatar src={msg.senderId ? getUserImageUrl(msg.senderId) : undefined} sx={{ width: 32, height: 32, bgcolor: TEAMS_PURPLE, fontSize: '0.8rem', fontWeight: 800 }}>
+                                              {msg.senderId.charAt(0).toUpperCase()}
+                                            </Avatar>
+                                          )}
+                                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: isSelf ? 'flex-end' : 'flex-start' }}>
+                                            {/* Sender name & Timestamp in header line */}
+                                            <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'baseline', mb: 0.3 }}>
+                                              <Typography variant="caption" sx={{ fontWeight: 800, color: 'text.primary', fontSize: '0.72rem' }}>
+                                                {isSelf ? 'You' : msg.senderId}
+                                              </Typography>
+                                              <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.625rem' }}>
+                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                              </Typography>
+                                            </Box>
+
+                                            {/* Fluent bubble */}
+                                            <Box sx={{
+                                              p: 1.5,
+                                              borderRadius: '6px',
+                                              bgcolor: isSelf ? (theme.palette.mode === 'dark' ? '#2D2C42' : '#E8E8FF') : (theme.palette.mode === 'dark' ? '#292929' : '#FFFFFF'),
+                                              color: 'text.primary',
+                                              border: `1px solid ${isSelf ? 'rgba(91,95,199,0.15)' : (theme.palette.mode === 'dark' ? '#333' : '#E1DFDD')}`,
+                                              boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                                              fontSize: '0.85rem',
+                                              wordBreak: 'break-word'
+                                            }}>
+                                              {msg.messageType === 'TEXT' && (
+                                                <Typography variant="body2" sx={{ fontSize: '0.85rem', lineHeight: 1.4 }}>
+                                                  {msg.messageContent}
+                                                </Typography>
+                                              )}
+
+                                              {msg.messageType === 'FILE' && (
+                                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2, mt: 0.5 }}>
+                                                  {(msg.attachmentType === 'IMAGE' || (msg.attachmentName && msg.attachmentName.match(/\.(jpg|jpeg|png|gif|webp)$/i))) ? (
+                                                    <Box
+                                                      component="img"
+                                                      src={`/api/files/view/${msg.attachmentUrl}`}
+                                                      alt={msg.attachmentName}
+                                                      sx={{ width: '100%', maxHeight: '180px', objectFit: 'cover', borderRadius: '4px', cursor: 'pointer' }}
+                                                      onClick={() => window.open(`/api/files/view/${msg.attachmentUrl}`, '_blank')}
+                                                    />
+                                                  ) : (
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                      <IconFileText size={22} color={TEAMS_PURPLE} />
+                                                      <Box>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.78rem' }}>{msg.attachmentName}</Typography>
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.625rem' }}>{msg.attachmentType} File</Typography>
+                                                      </Box>
+                                                    </Box>
+                                                  )}
+                                                  <Button size="small" variant="text" href={`/api/files/view/${msg.attachmentUrl}`} target="_blank" sx={{ textTransform: 'none', fontSize: '0.7rem', color: TEAMS_PURPLE, p: 0 }}>
+                                                    Open Document
+                                                  </Button>
+                                                </Box>
+                                              )}
+
+                                              {msg.messageType === 'VOICE' && (
+                                                <audio controls src={`/api/files/view/${msg.attachmentUrl}`} style={{ minWidth: '180px', height: '36px' }} />
+                                              )}
+
+                                              {isSelf && (
+                                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 0.5, gap: 0.3, opacity: 0.7 }}>
+                                                  <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 600 }}>{msg.isSeen ? 'Read' : 'Sent'}</Typography>
+                                                  {msg.isSeen ? <IconChecks size={12} color={TEAMS_PURPLE} /> : <IconCheck size={12} />}
+                                                </Box>
+                                              )}
+                                            </Box>
+                                          </Box>
+                                        </Box>
+                                      </Box>
+                                    )}
+                                  </Box>
+                                );
+                              })
+                            )}
+
+                            {smartReplies.length > 0 && (
+                              <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', useFlexGap: true }}>
+                                {smartReplies.map((r, i) => (
+                                  <Button
+                                    key={i}
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => handleSendMessage(r)}
+                                    startIcon={<IconSparkles size={12} />}
+                                    sx={{
+                                      borderRadius: '16px',
+                                      textTransform: 'none',
+                                      borderColor: alpha(TEAMS_PURPLE, 0.4),
+                                      color: TEAMS_PURPLE,
+                                      fontSize: '0.72rem',
+                                      fontWeight: 700,
+                                      bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#fff',
+                                      '&:hover': { bgcolor: alpha(TEAMS_PURPLE, 0.05), borderColor: TEAMS_PURPLE }
+                                    }}
+                                  >
+                                    {r}
                                   </Button>
+                                ))}
+                              </Stack>
+                            )}
+
+                            <div ref={messageEndRef} />
+                          </Box>
+
+                          {/* Microsoft Teams styled solid rectangular input workspace */}
+                          <Box sx={{ p: 1.5, bgcolor: theme.palette.mode === 'dark' ? '#201f1f' : '#f3f2f1', borderTop: `1px solid ${theme.palette.mode === 'dark' ? TEAMS_BORDER_DARK : TEAMS_BORDER_LIGHT}` }}>
+                            <Box sx={{
+                              border: `1.5px solid ${theme.palette.mode === 'dark' ? '#444' : '#e1dfdd'}`,
+                              borderRadius: '4px',
+                              bgcolor: theme.palette.mode === 'dark' ? '#292929' : '#ffffff',
+                              p: 0.5
+                            }}>
+                              <TextField
+                                fullWidth
+                                multiline
+                                maxRows={3}
+                                size="small"
+                                placeholder={isRecordingVoice ? `Recording voice message...` : `Start a new discussion`}
+                                disabled={isRecordingVoice}
+                                value={newMessage}
+                                onChange={handleInputChange}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage();
+                                  }
+                                }}
+                                variant="standard"
+                                InputProps={{ disableUnderline: true }}
+                                sx={{ px: 1.5, '& textarea': { fontSize: '0.85rem', color: 'text.primary', py: 0.5 } }}
+                              />
+
+                              {/* Teams styled format & attachment toolbar */}
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: `1px solid ${theme.palette.mode === 'dark' ? '#383838' : '#f0f0f0'}`, pt: 0.5, mt: 0.5 }}>
+                                <Stack direction="row" spacing={0.5}>
+                                  <input type="file" ref={fileInputRef} style={{ display: 'none' }} onChange={handleFileChange} />
+                                  <IconButton size="small" onClick={triggerFileUpload}><IconPaperclip size={18} /></IconButton>
+                                  
+                                  {/* Emoji Button */}
+                                  <Box sx={{ position: 'relative', display: 'flex' }}>
+                                    <IconButton size="small" onClick={() => setShowEmojiPicker(!showEmojiPicker)}><IconMoodSmile size={18} /></IconButton>
+                                    {showEmojiPicker && (
+                                      <Box sx={{ position: 'absolute', bottom: '100%', left: 0, mb: 1, zIndex: 11000 }}>
+                                        <EmojiPicker theme="dark" onEmojiClick={(emojiData) => { setNewMessage(prev => prev + emojiData.emoji); setShowEmojiPicker(false); }} width={280} height={350} />
+                                      </Box>
+                                    )}
+                                  </Box>
+
+                                  <IconButton size="small" onClick={handleVoiceToggle} color={isRecordingVoice ? 'error' : 'default'}><IconMicrophone size={18} /></IconButton>
+                                </Stack>
+
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleSendMessage()}
+                                  disabled={newMessage.trim() === ''}
+                                  sx={{ color: TEAMS_PURPLE, '&.Mui-disabled': { color: 'text.disabled' } }}
+                                >
+                                  <IconSend size={18} />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* ── TAB 2 CONTENT: SHARED FILES PANEL ── */}
+                      {activeChannelTab === 'files' && (
+                        <Box sx={{ flexGrow: 1, p: 3, overflowY: 'auto', bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#FAF9F8' }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconFiles size={18} /> Files shared in this workspace
+                          </Typography>
+                          {filesList.length === 0 ? (
+                            <Typography variant="body2" sx={{ textAlign: 'center', mt: 4, color: 'text.secondary' }}>No files shared yet.</Typography>
+                          ) : (
+                            <List sx={{ p: 0 }}>
+                              {filesList.map((f, i) => (
+                                <ListItem key={i} sx={{ border: `1px solid ${theme.palette.mode === 'dark' ? '#333' : '#e1dfdd'}`, borderRadius: '4px', mb: 1.5, bgcolor: 'background.paper' }}>
+                                  <ListItemAvatar>
+                                    <Avatar sx={{ bgcolor: alpha(TEAMS_PURPLE, 0.1), color: TEAMS_PURPLE }}><IconFileText size={18} /></Avatar>
+                                  </ListItemAvatar>
+                                  <ListItemText
+                                    primary={f.attachmentName}
+                                    secondary={`${f.attachmentType} • ${new Date(f.createdAt).toLocaleDateString()}`}
+                                    primaryTypographyProps={{ fontSize: '0.78rem', fontWeight: 800 }}
+                                    secondaryTypographyProps={{ fontSize: '0.675rem' }}
+                                  />
+                                  <Button size="small" href={`/api/files/view/${f.attachmentUrl}`} target="_blank" sx={{ textTransform: 'none', fontSize: '0.7rem', color: TEAMS_PURPLE }}>View File</Button>
                                 </ListItem>
                               ))}
                             </List>
@@ -1744,114 +2299,44 @@ export default function BOSConnect() {
                         </Box>
                       )}
 
-                      {activeTab === 2 && (
-                        // TAB 2: CREATE NEW GROUP CHAT
-                        <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                          <TextField
-                            fullWidth
-                            size="small"
-                            label="Group Chat Name"
-                            value={groupName}
-                            onChange={(e) => setGroupName(e.target.value)}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '12px',
-                                bgcolor: 'rgba(255, 255, 255, 0.04)',
-                                color: '#fff',
-                                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                                '&.Mui-focused fieldset': { borderColor: '#6366f1' }
-                              },
-                              '& .MuiInputLabel-root': { color: '#94a3b8' }
-                            }}
-                          />
-
-                          <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 1, color: '#f8fafc' }}>
-                            Select Members:
-                          </Typography>
-
-                          <TextField
-                            fullWidth
-                            size="small"
-                            placeholder="Filter members..."
-                            value={searchUserQuery}
-                            onChange={(e) => handleUserSearch(e.target.value)}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '12px',
-                                bgcolor: 'rgba(255, 255, 255, 0.04)',
-                                color: '#fff',
-                                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
-                                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
-                                '&.Mui-focused fieldset': { borderColor: '#6366f1' }
-                              }
-                            }}
-                          />
-
-                          <Box sx={{ maxHeight: 200, overflowY: 'auto', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', p: 1, bgcolor: 'rgba(255,255,255,0.02)' }}>
-                            {userSearchResults.length === 0 ? (
-                              <Typography variant="caption" color="#94a3b8" sx={{ display: 'block', textAlign: 'center', py: 2 }}>
-                                Type in filter bar to list users
-                              </Typography>
-                            ) : (
-                              <List size="small">
-                                {userSearchResults.map((u) => (
-                                  <ListItem
-                                    button
-                                    onClick={() => toggleGroupUser(u.userId)}
-                                    key={u.userId}
-                                    sx={{
-                                      borderRadius: '8px',
-                                      mb: 0.5,
-                                      bgcolor: selectedGroupUsers.includes(u.userId) ? 'rgba(99, 102, 241, 0.15)' : 'transparent',
-                                      '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.04)' }
-                                    }}
-                                  >
-                                    <ListItemText
-                                      primary={u.userId}
-                                      secondary={u.departmentName}
-                                      primaryTypographyProps={{ fontSize: '0.75rem', fontWeight: 800, color: theme.palette.mode === 'dark' ? '#f8fafc' : '#111b21' }}
-                                      secondaryTypographyProps={{ fontSize: '0.65rem', color: '#94a3b8' }}
-                                    />
-                                    {selectedGroupUsers.includes(u.userId) && (
-                                      <IconCheck size={16} color="#6366f1" />
-                                    )}
-                                  </ListItem>
-                                ))}
-                              </List>
-                            )}
+                      {/* ── TAB 3 CONTENT: COPILOT AI THREAD SUMMARY ── */}
+                      {activeChannelTab === 'summary' && (
+                        <Box sx={{ flexGrow: 1, p: 3, overflowY: 'auto', bgcolor: theme.palette.mode === 'dark' ? '#1a1a1a' : '#FAF9F8' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+                            <IconSparkles size={20} color={TEAMS_PURPLE} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: TEAMS_PURPLE }}>Microsoft Copilot Discussions Summary</Typography>
                           </Box>
-
-                          <Button
-                            variant="contained"
-                            disabled={!groupName.trim() || selectedGroupUsers.length === 0}
-                            onClick={handleCreateGroup}
-                            sx={{
-                              borderRadius: '20px',
-                              textTransform: 'none',
-                              fontWeight: 800,
-                              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                              boxShadow: '0 0 15px rgba(99, 102, 241, 0.35)',
-                              '&:hover': {
-                                background: 'linear-gradient(135deg, #4f46e5 0%, #3b33c8 100%)',
-                                boxShadow: '0 0 20px rgba(99, 102, 241, 0.5)'
-                              }
-                            }}
-                          >
-                            Create Group Discussions
-                          </Button>
+                          
+                          {isLoadingSummary ? (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', mt: 4 }}>
+                              <CircularProgress size={30} sx={{ color: TEAMS_PURPLE }} />
+                              <Typography variant="caption" sx={{ color: 'text.secondary' }}>Synthesizing thread transcripts...</Typography>
+                            </Box>
+                          ) : (
+                            <Box sx={{
+                              p: 2.5,
+                              borderRadius: '6px',
+                              bgcolor: 'background.paper',
+                              border: `1px solid ${theme.palette.mode === 'dark' ? '#333' : '#e1dfdd'}`,
+                              lineHeight: 1.6,
+                              fontSize: '0.825rem',
+                              whiteSpace: 'pre-line'
+                            }}>
+                              {aiSummary || "Select a chat, start posting some messages, and click this tab to let Copilot summarize the discussion points instantly!"}
+                            </Box>
+                          )}
                         </Box>
                       )}
                     </Box>
-                  </Box>
-                )}
+                  )}
+                </Box>
               </Box>
             </Box>
           </Grow>
         )}
       </AnimatePresence>
 
-      {/* 🔔 PREMIUM IN-APP TOAST ALERTS PANEL */}
+      {/* 🔔 Microsoft Teams styled Toast popup */}
       <AnimatePresence>
         {activeToast && (
           <motion.div
@@ -1873,41 +2358,29 @@ export default function BOSConnect() {
               zIndex: 11000,
               cursor: 'pointer',
               width: '320px',
-              borderRadius: '16px',
-              padding: '16px',
-              background: theme.palette.mode === 'dark' ? 'rgba(30, 30, 47, 0.92)' : 'rgba(255, 255, 255, 0.95)',
-              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(99, 102, 241, 0.15)'}`,
-              boxShadow: theme.palette.mode === 'dark'
-                ? '0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(99, 102, 241, 0.1)'
-                : '0 12px 32px rgba(99, 102, 241, 0.12), 0 4px 12px rgba(0,0,0,0.06)',
-              backdropFilter: 'blur(10px)',
+              borderRadius: '6px',
+              padding: '14px',
+              background: theme.palette.mode === 'dark' ? '#201F1F' : '#ffffff',
+              borderLeft: `5px solid ${TEAMS_PURPLE}`,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px'
             }}
           >
-            <Avatar
-              src={activeToast.channel?.lastMessage?.senderId ? getUserImageUrl(activeToast.channel.lastMessage.senderId) : undefined}
-              sx={{
-                bgcolor: activeColor,
-                width: 44,
-                height: 44,
-                boxShadow: `0 4px 10px ${alpha(activeColor, 0.3)}`
-              }}
-            >
+            <Avatar src={activeToast.channel?.lastMessage?.senderId ? getUserImageUrl(activeToast.channel.lastMessage.senderId) : undefined} sx={{ bgcolor: TEAMS_PURPLE, width: 36, height: 36 }}>
               {activeToast.senderName.charAt(0).toUpperCase()}
             </Avatar>
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: theme.palette.mode === 'dark' ? '#fff' : '#0f172a', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: '0.78rem', color: theme.palette.mode === 'dark' ? '#fff' : '#111' }}>
                 {activeToast.senderName}
-                <Box sx={{ width: 6, height: 6, bgcolor: '#3b82f6', borderRadius: '50%' }} />
               </Typography>
-              <Typography variant="caption" sx={{ color: theme.palette.mode === 'dark' ? '#94a3b8' : '#64748b', fontWeight: 600, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', mt: 0.2 }}>
+              <Typography variant="caption" noWrap sx={{ color: 'text.secondary', display: 'block', fontSize: '0.7rem', mt: 0.1 }}>
                 {activeToast.messageContent}
               </Typography>
             </Box>
-            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setActiveToast(null); }} sx={{ color: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)', '&:hover': { color: '#ff4d4f' } }}>
-              <IconX size={16} />
+            <IconButton size="small" onClick={(e) => { e.stopPropagation(); setActiveToast(null); }} sx={{ color: 'text.disabled' }}>
+              <IconX size={14} />
             </IconButton>
           </motion.div>
         )}
