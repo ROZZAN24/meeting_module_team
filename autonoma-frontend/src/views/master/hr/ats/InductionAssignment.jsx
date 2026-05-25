@@ -102,6 +102,17 @@ const columns = [
   { id: 'createdBy', label: 'Assigned By', minWidth: 120 }
 ];
 
+const getCurrentDateString = () => {
+  return new Date().toISOString().split('T')[0];
+};
+
+const getCurrentTimeString = () => {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
 const INITIAL_STATE = {
   id: null,
   empCode: '',
@@ -110,9 +121,9 @@ const INITIAL_STATE = {
   department: '',
   designation: '',
   inductionRound: '',
-  screeningLevel: 'Level 1', 
-  inductionDate: new Date().toISOString().split('T')[0],
-  inductionTime: '09:00',
+  screeningLevel: 'L1', 
+  inductionDate: getCurrentDateString(),
+  inductionTime: getCurrentTimeString(),
   trainerName: '',
   currentStatus: 'PENDING',
   inductionStatus: 'ACTIVE',
@@ -120,7 +131,7 @@ const INITIAL_STATE = {
 };
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
-const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
+const LEVEL_OPTIONS = ['L1', 'L2', 'L3', 'L4'];
 const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
 const VALIDATION_RULES = [
@@ -128,7 +139,21 @@ const VALIDATION_RULES = [
   { field: 'inductionRound', label: 'Induction Round', required: true },
   { field: 'screeningLevel', label: 'Screening Level', required: true },
   { field: 'inductionDate', label: 'Induction Date', required: true },
-  { field: 'inductionTime', label: 'Induction Time', required: true },
+  { 
+    field: 'inductionTime', 
+    label: 'Induction Time', 
+    required: true,
+    validate: (val, form) => {
+      const today = getCurrentDateString();
+      if (form.inductionDate === today) {
+        const currTime = getCurrentTimeString();
+        if (val < currTime) {
+          return 'For current date, time must start from current time onwards';
+        }
+      }
+      return null;
+    }
+  },
   { field: 'trainerName', label: 'Trainer Name', required: true }
 ];
 
@@ -204,7 +229,17 @@ const InductionAssignment = () => {
       if (row.inductionDate && row.inductionDate !== '-') {
         cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
       } else {
-        cleanData.inductionDate = new Date().toISOString().split('T')[0];
+        cleanData.inductionDate = getCurrentDateString();
+      }
+
+      if (row.inductionTime && row.inductionTime !== '-') {
+        cleanData.inductionTime = row.inductionTime;
+      } else {
+        if (cleanData.inductionDate === getCurrentDateString()) {
+          cleanData.inductionTime = getCurrentTimeString();
+        } else {
+          cleanData.inductionTime = '09:00';
+        }
       }
 
       // Add gradeCode/Level info for summary header
@@ -330,7 +365,16 @@ const InductionAssignment = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const nextState = { ...prev, [name]: value };
+      if (name === 'inductionDate') {
+        const today = getCurrentDateString();
+        if (value === today) {
+          nextState.inductionTime = getCurrentTimeString();
+        }
+      }
+      return nextState;
+    });
     if (errors[name]) clearErrors(name);
   };
 
@@ -501,7 +545,6 @@ const InductionAssignment = () => {
                 value={formData.inductionDate}
                 onChange={handleInputChange}
                 required
-                inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
                 sx={errorStyle(!!errors.inductionDate)}
@@ -556,22 +599,6 @@ const InductionAssignment = () => {
                       {emp.employeeName} ({emp.empCode})
                     </MenuItem>
                   ))}
-              </BOSTextField>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="currentStatus"
-                label="STATUS"
-                value={formData.currentStatus}
-                onChange={handleInputChange}
-                required
-                error={!!errors.currentStatus}
-                sx={errorStyle(!!errors.currentStatus)}
-              >
-                {STATUS_OPTIONS.map(s => (
-                  <MenuItem key={s} value={s}>{s}</MenuItem>
-                ))}
               </BOSTextField>
             </Box>
           </Box>

@@ -246,6 +246,18 @@ public class SqlMigrationRunner implements CommandLineRunner {
             if (upperSql.contains("ALTER TABLE")
                     && upperSql.contains(" ADD ")) {
 
+                // If the SQL batch contains multiple ALTER TABLE statements, we shouldn't skip the entire batch
+                // just because the first column exists.
+                int occurrences = 0;
+                int index = 0;
+                while ((index = upperSql.indexOf("ALTER TABLE", index)) != -1) {
+                    occurrences++;
+                    index += "ALTER TABLE".length();
+                }
+                if (occurrences > 1) {
+                    return false;
+                }
+
                 String tableName = extractTableName(sql);
 
                 String columnName = extractColumnName(sql);
