@@ -25,6 +25,18 @@ public class CustomerMasterService {
 
     @Transactional
     public CustomerMaster saveCustomer(CustomerMaster customer) {
+        if (customer.getId() == null) {
+            if (repository.existsByCustomerNameIgnoreCase(customer.getCustomerName())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value! Please check.");
+            }
+        } else {
+            if (repository.existsByCustomerNameIgnoreCaseAndIdNot(customer.getCustomerName(), customer.getId())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value! Please check.");
+            }
+        }
+
         if (customer.getCustomerCode() == null || customer.getCustomerCode().isEmpty()) {
             customer.setCustomerCode(generateNextCode());
         }
@@ -36,30 +48,31 @@ public class CustomerMasterService {
         repository.deleteById(id);
     }
 
-    public String getNextCode() {
+    public String getNextCustomerCode() {
         return generateNextCode();
     }
 
     private String generateNextCode() {
-        String maxCode = repository.findMaxCustomerCode();
-        String year = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yy"));
-        String prefix = "C-" + year + "-";
-        
-        if (maxCode == null || !maxCode.startsWith(prefix)) {
-            return prefix + "00001";
-        }
-        
         try {
-            // Assumes format C-26-00001
-            String[] parts = maxCode.split("-");
-            if (parts.length == 3) {
-                int lastNum = Integer.parseInt(parts[2]);
-                return String.format(prefix + "%05d", lastNum + 1);
+            String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
+            String prefix = "C-" + year + "-";
+            
+            Optional<CustomerMaster> lastCustomer = repository.findTopByCustomerCodeStartingWithOrderByCustomerCodeDesc(prefix);
+            
+            if (lastCustomer.isEmpty()) {
+                return prefix + "00001";
             }
-            return prefix + "00001";
+            
+            String lastCode = lastCustomer.get().getCustomerCode();
+            String[] parts = lastCode.split("-");
+            if (parts.length < 3) return prefix + "00001";
+            
+            int lastNum = Integer.parseInt(parts[2]);
+            return String.format("%s%05d", prefix, lastNum + 1);
         } catch (Exception e) {
-            return prefix + "00001";
+            e.printStackTrace();
+            String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
+            return "C-" + year + "-00001";
         }
     }
-
 }

@@ -131,8 +131,8 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 3.5,
-    px: 4,
+    py: 2,
+    px: 3,
     flexShrink: 0
   },
   titleText: {
@@ -161,7 +161,8 @@ export const getDialogStyles = (theme, isDark) => ({
     }
   },
   footer: {
-    p: 3,
+    py: 2,
+    px: 3,
     borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'space-between',

@@ -28,7 +28,7 @@ public class DepartmentService {
 
     public Department saveDepartment(Department department) {
         if (department.getCreatedBy() == null) {
-            department.setCreatedBy("admin");
+            department.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
         return departmentRepository.save(department);
     }
@@ -37,7 +37,8 @@ public class DepartmentService {
         departmentRepository.deleteById(id);
     }
 
-    public Optional<Department> getDepartmentByNo(Integer no) {
+    public Optional<Department> getDepartmentByNo(String no) {
         return departmentRepository.findByDepartmentNo(no);
     }
 }
+

@@ -31,6 +31,10 @@ public class EmployeeMasterService {
         return employeeRepo.findAll();
     }
 
+    public List<EmployeeMaster> getActiveEmployees() {
+        return employeeRepo.findByStatus("Active");
+    }
+
     public EmployeeMaster getEmployeeById(Long id) {
         return employeeRepo.findById(id).orElse(null);
     }
@@ -67,10 +71,21 @@ public class EmployeeMasterService {
     }
 
     public EmployeeMaster createEmployee(EmployeeMaster employee) {
+        if (employee.getEmpCode() != null && !employee.getEmpCode().trim().isEmpty()) {
+            if (employeeRepo.existsByEmpCode(employee.getEmpCode())) {
+                throw new RuntimeException("Employee Code already exists!");
+            }
+        }
+        
         if (employee.getCreatedAt() == null) {
             employee.setCreatedAt(new Date());
         }
         employee.setUpdatedAt(new Date());
+        
+        if (employee.getCreatedBy() == null) {
+            employee.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        }
+        employee.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         
         // Auto-generate empCode if missing
         if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
@@ -85,6 +100,12 @@ public class EmployeeMasterService {
     }
 
     public EmployeeMaster updateEmployee(Long id, EmployeeMaster details) {
+        if (details.getEmpCode() != null && !details.getEmpCode().trim().isEmpty()) {
+            if (employeeRepo.existsByEmpCodeAndIdNot(details.getEmpCode(), id)) {
+                throw new RuntimeException("Employee Code already exists!");
+            }
+        }
+
         EmployeeMaster emp = employeeRepo.findById(id).orElse(null);
         if (emp == null) return null;
 
@@ -92,6 +113,9 @@ public class EmployeeMasterService {
         details.setId(id);
         if (details.getCreatedBy() == null) details.setCreatedBy(emp.getCreatedBy());
         if (details.getCreatedAt() == null) details.setCreatedAt(emp.getCreatedAt());
+        
+        details.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        details.setUpdatedAt(new Date());
         
         sanitizeEmployee(details);
         return employeeRepo.save(details);
@@ -101,27 +125,18 @@ public class EmployeeMasterService {
     private void sanitizeEmployee(EmployeeMaster e) {
         if (e.getEmpCode() == null)                e.setEmpCode("");
         if (e.getFatherHusbandName() == null)     e.setFatherHusbandName("");
-        if (e.getOldEmpCode() == null)             e.setOldEmpCode("");
         if (e.getGradeCode() == null)              e.setGradeCode("");
-        if (e.getProductionLine() == null)         e.setProductionLine("");
-        if (e.getEmpClass() == null)               e.setEmpClass("");
-        if (e.getTeamGroup() == null)              e.setTeamGroup("");
-        if (e.getAdditionalRole() == null)         e.setAdditionalRole("");
         if (e.getExitReason() == null)             e.setExitReason("");
         if (e.getReferMode() == null)              e.setReferMode("");
-        if (e.getUserName() == null)               e.setUserName("");
         if (e.getHomeManager() == null)            e.setHomeManager("");
         if (e.getBusinessManager() == null)        e.setBusinessManager("");
         if (e.getSupplierName() == null)           e.setSupplierName("");
-        if (e.getProfileUpload() == null)          e.setProfileUpload("");
-        if (e.getSignature() == null)              e.setSignature("");
-        if (e.getNdaCertificateUpload() == null)   e.setNdaCertificateUpload("");
+        if (e.getEmployeePhotoUpload() == null)    e.setEmployeePhotoUpload("");
+        if (e.getEmployeeSignatureUpload() == null) e.setEmployeeSignatureUpload("");
+        if (e.getNdaUpload() == null)              e.setNdaUpload("");
         if (e.getFitnessCertificateUpload() == null) e.setFitnessCertificateUpload("");
         if (e.getShiftDuration() == null)          e.setShiftDuration("480");
         if (e.getShiftName() == null)              e.setShiftName("GENERAL");
-        if (e.getGuest() == null)                  e.setGuest("No");
-        if (e.getDailySheetRequired() == null)     e.setDailySheetRequired("No");
-        if (e.getAttendanceRequired() == null)     e.setAttendanceRequired("Yes");
         if (e.getShift() == null)                  e.setShift("Yes");
         if (e.getInductionStatus() == null)        e.setInductionStatus("PENDING");
         if (e.getStatus() == null)                 e.setStatus("Active");
@@ -174,14 +189,38 @@ public class EmployeeMasterService {
     @Transactional
     public EmployeePersonalDetail savePersonalDetail(Long employeeId, EmployeePersonalDetail detail) {
         if (!employeeRepo.existsById(employeeId)) throw new RuntimeException("Employee not found with ID: " + employeeId);
-        detail.setEmployeeId(employeeId);
-        EmployeePersonalDetail existing = personalRepo.findByEmployeeId(employeeId).orElse(null);
-        if (existing != null) {
-            detail.setId(existing.getId());
-            detail.setCreatedBy(existing.getCreatedBy());
-            detail.setCreatedDate(existing.getCreatedDate());
+        
+        EmployeePersonalDetail existing = personalRepo.findByEmployeeId(employeeId).orElse(new EmployeePersonalDetail());
+        if (existing.getId() == null) {
+            existing.setEmployeeId(employeeId);
+            existing.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
-        return personalRepo.save(detail);
+
+        // Merge fields (Personal Details + ID Details)
+        if (detail.getGender() != null) existing.setGender(detail.getGender());
+        if (detail.getMaritalStatus() != null) existing.setMaritalStatus(detail.getMaritalStatus());
+        if (detail.getMarriageDate() != null) existing.setMarriageDate(detail.getMarriageDate());
+        if (detail.getBirthDate() != null) existing.setBirthDate(detail.getBirthDate());
+        if (detail.getNationality() != null) existing.setNationality(detail.getNationality());
+        if (detail.getPersonalEmail() != null) existing.setPersonalEmail(detail.getPersonalEmail());
+        if (detail.getBloodGroup() != null) existing.setBloodGroup(detail.getBloodGroup());
+        if (detail.getRegion() != null) existing.setRegion(detail.getRegion());
+        if (detail.getShirtSize() != null) existing.setShirtSize(detail.getShirtSize());
+        if (detail.getPantSize() != null) existing.setPantSize(detail.getPantSize());
+        if (detail.getShoeSize() != null) existing.setShoeSize(detail.getShoeSize());
+        if (detail.getHeight() != null) existing.setHeight(detail.getHeight());
+        if (detail.getWeight() != null) existing.setWeight(detail.getWeight());
+        
+        // ID Details
+        if (detail.getAadharNumber() != null) existing.setAadharNumber(detail.getAadharNumber());
+        if (detail.getDrivingLicenseNumber() != null) existing.setDrivingLicenseNumber(detail.getDrivingLicenseNumber());
+        if (detail.getPassportNumber() != null) existing.setPassportNumber(detail.getPassportNumber());
+        if (detail.getPassportIssueCity() != null) existing.setPassportIssueCity(detail.getPassportIssueCity());
+        if (detail.getLicenseExpiryDate() != null) existing.setLicenseExpiryDate(detail.getLicenseExpiryDate());
+
+        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        existing.setUpdatedDate(new Date());
+        return personalRepo.save(existing);
     }
 
     // ======================== CONTACT ========================
@@ -193,14 +232,24 @@ public class EmployeeMasterService {
     @Transactional
     public EmployeeContact saveContact(Long employeeId, EmployeeContact contact) {
         if (!employeeRepo.existsById(employeeId)) throw new RuntimeException("Employee not found");
-        contact.setEmployeeId(employeeId);
-        EmployeeContact existing = contactRepo.findByEmployeeId(employeeId).orElse(null);
-        if (existing != null) {
-            contact.setId(existing.getId());
-            contact.setCreatedBy(existing.getCreatedBy());
-            contact.setCreatedDate(existing.getCreatedDate());
+        
+        EmployeeContact existing = contactRepo.findByEmployeeId(employeeId).orElse(new EmployeeContact());
+        if (existing.getId() == null) {
+            existing.setEmployeeId(employeeId);
+            existing.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
-        return contactRepo.save(contact);
+
+        if (contact.getAddress() != null) existing.setAddress(contact.getAddress());
+        if (contact.getCity() != null) existing.setCity(contact.getCity());
+        if (contact.getState() != null) existing.setState(contact.getState());
+        if (contact.getCountry() != null) existing.setCountry(contact.getCountry());
+        if (contact.getPincode() != null) existing.setPincode(contact.getPincode());
+        if (contact.getMobile() != null) existing.setMobile(contact.getMobile());
+        if (contact.getAlternateMobile() != null) existing.setAlternateMobile(contact.getAlternateMobile());
+
+        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        existing.setUpdatedDate(new Date());
+        return contactRepo.save(existing);
     }
 
     // ======================== JOB PROFILE ========================
@@ -212,14 +261,62 @@ public class EmployeeMasterService {
     @Transactional
     public EmployeeJobProfile saveJobProfile(Long employeeId, EmployeeJobProfile profile) {
         if (!employeeRepo.existsById(employeeId)) throw new RuntimeException("Employee not found");
-        profile.setEmployeeId(employeeId);
-        EmployeeJobProfile existing = jobProfileRepo.findByEmployeeId(employeeId).orElse(null);
-        if (existing != null) {
-            profile.setId(existing.getId());
-            profile.setCreatedBy(existing.getCreatedBy());
-            profile.setCreatedDate(existing.getCreatedDate());
+        
+        EmployeeJobProfile existing = jobProfileRepo.findByEmployeeId(employeeId).orElse(new EmployeeJobProfile());
+        if (existing.getId() == null) {
+            existing.setEmployeeId(employeeId);
+            existing.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
-        return jobProfileRepo.save(profile);
+
+        // Merge Bank Details
+        if (profile.getSalaryAccountNumber() != null) existing.setSalaryAccountNumber(profile.getSalaryAccountNumber());
+        if (profile.getAccountName() != null) existing.setAccountName(profile.getAccountName());
+        if (profile.getBankAccountType() != null) existing.setBankAccountType(profile.getBankAccountType());
+        if (profile.getBankName() != null) existing.setBankName(profile.getBankName());
+        if (profile.getIfscCode() != null) existing.setIfscCode(profile.getIfscCode());
+        if (profile.getBranchName() != null) existing.setBranchName(profile.getBranchName());
+
+        // Merge Pay Components
+        if (profile.getGrossSalary() != null) existing.setGrossSalary(profile.getGrossSalary());
+        if (profile.getNetSalary() != null) existing.setNetSalary(profile.getNetSalary());
+        if (profile.getBasicSalary() != null) existing.setBasicSalary(profile.getBasicSalary());
+        if (profile.getDa() != null) existing.setDa(profile.getDa());
+        if (profile.getHra() != null) existing.setHra(profile.getHra());
+        if (profile.getSpecialAllowance() != null) existing.setSpecialAllowance(profile.getSpecialAllowance());
+        if (profile.getPerformanceIncentive() != null) existing.setPerformanceIncentive(profile.getPerformanceIncentive());
+        if (profile.getCanteenDeduction() != null) existing.setCanteenDeduction(profile.getCanteenDeduction());
+        if (profile.getPfType() != null) existing.setPfType(profile.getPfType());
+        if (profile.getPfEmployee() != null) existing.setPfEmployee(profile.getPfEmployee());
+        if (profile.getEsiEmployee() != null) existing.setEsiEmployee(profile.getEsiEmployee());
+        if (profile.getProfessionalTaxAmount() != null) existing.setProfessionalTaxAmount(profile.getProfessionalTaxAmount());
+        if (profile.getPfDocument() != null) existing.setPfDocument(profile.getPfDocument());
+
+        // Merge CTC Details
+        if (profile.getMonthlyCtc() != null) existing.setMonthlyCtc(profile.getMonthlyCtc());
+        if (profile.getBasicSalaryCtc() != null) existing.setBasicSalaryCtc(profile.getBasicSalaryCtc());
+        if (profile.getDaCtc() != null) existing.setDaCtc(profile.getDaCtc());
+        if (profile.getSpecialAllowanceCtc() != null) existing.setSpecialAllowanceCtc(profile.getSpecialAllowanceCtc());
+        if (profile.getCanteenAllowance() != null) existing.setCanteenAllowance(profile.getCanteenAllowance());
+        if (profile.getPerformanceIncentiveCtc() != null) existing.setPerformanceIncentiveCtc(profile.getPerformanceIncentiveCtc());
+        if (profile.getEsiCtc() != null) existing.setEsiCtc(profile.getEsiCtc());
+        if (profile.getPfCtc() != null) existing.setPfCtc(profile.getPfCtc());
+        if (profile.getGrossCtc() != null) existing.setGrossCtc(profile.getGrossCtc());
+        if (profile.getEmployerPf() != null) existing.setEmployerPf(profile.getEmployerPf());
+        if (profile.getEmployerEsi() != null) existing.setEmployerEsi(profile.getEmployerEsi());
+        if (profile.getUniformAllowance() != null) existing.setUniformAllowance(profile.getUniformAllowance());
+        if (profile.getShoeAllowance() != null) existing.setShoeAllowance(profile.getShoeAllowance());
+        if (profile.getMobileAllowanceCug() != null) existing.setMobileAllowanceCug(profile.getMobileAllowanceCug());
+        if (profile.getAnnualCtc() != null) existing.setAnnualCtc(profile.getAnnualCtc());
+        if (profile.getSalaryCtc() != null) existing.setSalaryCtc(profile.getSalaryCtc());
+        if (profile.getGratuity() != null) existing.setGratuity(profile.getGratuity());
+        if (profile.getBonus() != null) existing.setBonus(profile.getBonus());
+        if (profile.getSpecialIncentive() != null) existing.setSpecialIncentive(profile.getSpecialIncentive());
+        if (profile.getPerformanceLinkedIncentive() != null) existing.setPerformanceLinkedIncentive(profile.getPerformanceLinkedIncentive());
+        if (profile.getHealthInsurance() != null) existing.setHealthInsurance(profile.getHealthInsurance());
+
+        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        existing.setUpdatedDate(new Date());
+        return jobProfileRepo.save(existing);
     }
 
     // ======================== EDUCATION (1:N) ========================

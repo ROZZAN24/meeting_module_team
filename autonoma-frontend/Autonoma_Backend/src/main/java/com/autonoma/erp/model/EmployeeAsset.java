@@ -27,12 +27,24 @@ public class EmployeeAsset {
     @Column(name = "asset_name", length = 255)
     private String assetName;
 
-    @Column(precision = 12, scale = 2)
-    private BigDecimal value;
+    @Column(name = "asset_value", precision = 12, scale = 2)
+    private BigDecimal assetValue;
 
     @Column(name = "issue_date")
     @Temporal(TemporalType.DATE)
     private Date issueDate;
+
+    @Column(name = "condition_of_asset", length = 100)
+    private String condition;
+
+    @Column(name = "qty")
+    private Integer qty;
+
+    @Column(name = "serial_no", length = 100)
+    private String serialNo;
+
+    @Column(precision = 12, scale = 2)
+    private BigDecimal value;
 
     @Column(columnDefinition = "NVARCHAR(MAX)")
     private String comments;

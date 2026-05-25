@@ -119,7 +119,7 @@ const RULES = [
   { field: 'dateOfJoining', label: 'Date Of Joining', required: true }
 ];
 
-const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
 
 export default function EmployeeMaster() {
   const theme = useTheme();

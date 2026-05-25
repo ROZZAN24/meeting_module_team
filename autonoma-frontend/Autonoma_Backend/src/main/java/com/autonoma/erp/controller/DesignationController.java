@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.DesignationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -52,6 +53,7 @@ public class DesignationController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M2240", action = "write")
     public ResponseEntity<?> create(@RequestBody Designation designation) {
         if (designationRepository.existsByDesignationName(designation.getDesignationName())) {
             return ResponseEntity.badRequest().body("Designation Name already exists!");
@@ -66,6 +68,7 @@ public class DesignationController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2240", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Designation designationDetails) {
         if (designationRepository.existsByDesignationNameAndIdNot(designationDetails.getDesignationName(), id)) {
             return ResponseEntity.badRequest().body("Designation Name already exists!");
@@ -93,6 +96,7 @@ public class DesignationController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2240", action = "delete")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         return designationRepository.findById(id)
                 .map(designation -> {

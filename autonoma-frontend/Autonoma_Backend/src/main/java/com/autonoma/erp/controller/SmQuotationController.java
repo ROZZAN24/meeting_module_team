@@ -6,6 +6,7 @@ import com.autonoma.erp.repository.SmQuotationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,14 +39,22 @@ public class SmQuotationController {
     }
 
     @Operation(summary = "Create a new quotation")
+    @RequirePagePermission(pageCode = "SM1140", action = "write")
     @PostMapping
-    public ResponseEntity<SmQuotation> createQuotation(@RequestBody SmQuotation quotation) {
+    public ResponseEntity<?> createQuotation(@RequestBody SmQuotation quotation) {
+        if (quotationRepository.existsByQuotationNo(quotation.getQuotationNo())) {
+            return ResponseEntity.badRequest().body("Quotation Number already exists!");
+        }
         return ResponseEntity.ok(quotationService.saveQuotation(quotation));
     }
 
     @Operation(summary = "Update an existing quotation")
+    @RequirePagePermission(pageCode = "SM1140", action = "write")
     @PutMapping("/{id}")
-    public ResponseEntity<SmQuotation> updateQuotation(@PathVariable Long id, @RequestBody SmQuotation quotationDetails) {
+    public ResponseEntity<?> updateQuotation(@PathVariable Long id, @RequestBody SmQuotation quotationDetails) {
+        if (quotationRepository.existsByQuotationNoAndIdNot(quotationDetails.getQuotationNo(), id)) {
+            return ResponseEntity.badRequest().body("Quotation Number already exists!");
+        }
         return quotationRepository.findById(id)
                 .map(quotation -> {
                     quotation.setQuotationNo(quotationDetails.getQuotationNo());
@@ -67,12 +76,14 @@ public class SmQuotationController {
                     quotation.setOcrConfidence(quotationDetails.getOcrConfidence());
                     quotation.setStatus(quotationDetails.getStatus());
                     quotation.setRemarks(quotationDetails.getRemarks());
-                    quotation.setUpdatedBy("admin");
+                    quotation.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                    quotation.setUpdatedDate(new java.util.Date());
                     return ResponseEntity.ok(quotationRepository.save(quotation));
                 }).orElse(ResponseEntity.notFound().build());
     }
 
     @Operation(summary = "Delete a quotation")
+    @RequirePagePermission(pageCode = "SM1140", action = "delete")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteQuotation(@PathVariable Long id) {
         quotationService.deleteQuotation(id);

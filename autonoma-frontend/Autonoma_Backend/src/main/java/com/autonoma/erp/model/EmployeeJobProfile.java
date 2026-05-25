@@ -30,6 +30,12 @@ public class EmployeeJobProfile {
     @Column(name = "salary_account_number", length = 50)
     private String salaryAccountNumber;
 
+    @Column(name = "account_name", length = 100)
+    private String accountName;
+
+    @Column(name = "bank_account_type", length = 50)
+    private String bankAccountType;
+
     @Column(name = "personal_account_number", length = 50)
     private String personalAccountNumber;
 
@@ -42,80 +48,109 @@ public class EmployeeJobProfile {
     @Column(name = "branch_name", length = 100)
     private String branchName;
 
-    @Column(name = "bank_micro_code", length = 50)
-    private String bankMicroCode;
+    // === Pay Components ===
+    @Column(name = "gross_salary", precision = 18, scale = 2)
+    private BigDecimal grossSalary;
 
-    @Column(name = "office_email", length = 255)
-    private String officeEmail;
+    @Column(name = "net_salary", precision = 18, scale = 2)
+    private BigDecimal netSalary;
 
-    @Column(name = "official_password", length = 255)
-    private String officialPassword;
+    @Column(name = "basic_salary", precision = 18, scale = 2)
+    private BigDecimal basicSalary;
 
-    @Column(name = "provident_fund", length = 10)
-    private String providentFund;
+    @Column(name = "da", precision = 18, scale = 2)
+    private BigDecimal da;
 
-    @Column(name = "esi_allowed", length = 10)
-    private String esiAllowed;
+    @Column(name = "hra", precision = 18, scale = 2)
+    private BigDecimal hra;
 
-    @Column(name = "professional_tax", length = 10)
-    private String professionalTax;
+    @Column(name = "special_allowance", precision = 18, scale = 2)
+    private BigDecimal specialAllowance;
 
-    @Column(length = 10)
-    private String bonus;
+    @Column(name = "performance_incentive", precision = 18, scale = 2)
+    private BigDecimal performanceIncentive;
 
-    @Column(name = "over_time_allowed", length = 10)
-    private String overTimeAllowed;
+    @Column(name = "canteen_deduction", precision = 18, scale = 2)
+    private BigDecimal canteenDeduction;
 
-    @Column(name = "over_time_factorial", length = 20)
-    private String overTimeFactorial;
+    @Column(name = "pf_type", length = 50)
+    private String pfType;
 
-    @Column(name = "physically_challenged", length = 10)
-    private String physicallyChallenged;
+    @Column(name = "pf_employee", precision = 18, scale = 2)
+    private BigDecimal pfEmployee;
 
-    @Column(name = "loss_of_minutes_deduct", length = 10)
-    private String lossOfMinutesDeduct;
+    @Column(name = "esi_employee", precision = 18, scale = 2)
+    private BigDecimal esiEmployee;
 
-    @Column(name = "loss_of_minutes_allow", length = 10)
-    private String lossOfMinutesAllow;
+    @Column(name = "professional_tax_amount", precision = 18, scale = 2)
+    private BigDecimal professionalTaxAmount;
 
-    @Column(name = "international_worker", length = 10)
-    private String internationalWorker;
+    @Column(name = "pf_document", columnDefinition = "NVARCHAR(MAX)")
+    private String pfDocument;
 
-    @Column(name = "lta_eligible", length = 10)
-    private String ltaEligible;
+    // === CTC Details ===
+    @Column(name = "monthly_ctc", precision = 18, scale = 2)
+    private BigDecimal monthlyCtc;
 
-    @Column(name = "pf_restriction_to", length = 50)
-    private String pfRestrictionTo;
+    @Column(name = "basic_salary_ctc", precision = 18, scale = 2)
+    private BigDecimal basicSalaryCtc;
 
-    @Column(name = "company_contact1", length = 20)
-    private String companyContact1;
+    @Column(name = "da_ctc", precision = 18, scale = 2)
+    private BigDecimal daCtc;
 
-    @Column(name = "company_contact2", length = 20)
-    private String companyContact2;
+    @Column(name = "special_allowance_ctc", precision = 18, scale = 2)
+    private BigDecimal specialAllowanceCtc;
 
-    @Column(name = "over_time_rate_per_hour", precision = 10, scale = 2)
-    private BigDecimal overTimeRatePerHour;
+    @Column(name = "canteen_allowance", precision = 18, scale = 2)
+    private BigDecimal canteenAllowance;
 
-    @Column(name = "number_of_leave_allow")
-    private Integer numberOfLeaveAllow;
+    @Column(name = "performance_incentive_ctc", precision = 18, scale = 2)
+    private BigDecimal performanceIncentiveCtc;
 
-    @Column(name = "asset_id1", length = 50)
-    private String assetId1;
+    @Column(name = "esi_ctc", precision = 18, scale = 2)
+    private BigDecimal esiCtc;
 
-    @Column(name = "ip_address1", length = 50)
-    private String ipAddress1;
+    @Column(name = "pf_ctc", precision = 18, scale = 2)
+    private BigDecimal pfCtc;
 
-    @Column(name = "asset_id2", length = 50)
-    private String assetId2;
+    @Column(name = "gross_ctc", precision = 18, scale = 2)
+    private BigDecimal grossCtc;
 
-    @Column(name = "ip_address2", length = 50)
-    private String ipAddress2;
+    @Column(name = "employer_pf", precision = 18, scale = 2)
+    private BigDecimal employerPf;
 
-    @Column(name = "permission_request", length = 10)
-    private String permissionRequest;
+    @Column(name = "employer_esi", precision = 18, scale = 2)
+    private BigDecimal employerEsi;
 
-    @Column(name = "permission_hours", length = 20)
-    private String permissionHours;
+    @Column(name = "uniform_allowance", precision = 18, scale = 2)
+    private BigDecimal uniformAllowance;
+
+    @Column(name = "shoe_allowance", precision = 18, scale = 2)
+    private BigDecimal shoeAllowance;
+
+    @Column(name = "mobile_allowance_cug", precision = 18, scale = 2)
+    private BigDecimal mobileAllowanceCug;
+
+    @Column(name = "annual_ctc", precision = 18, scale = 2)
+    private BigDecimal annualCtc;
+
+    @Column(name = "salary_ctc", precision = 18, scale = 2)
+    private BigDecimal salaryCtc;
+
+    @Column(name = "gratuity", precision = 18, scale = 2)
+    private BigDecimal gratuity;
+
+    @Column(name = "bonus", precision = 18, scale = 2)
+    private BigDecimal bonus;
+
+    @Column(name = "special_incentive", precision = 18, scale = 2)
+    private BigDecimal specialIncentive;
+
+    @Column(name = "performance_linked_incentive", precision = 18, scale = 2)
+    private BigDecimal performanceLinkedIncentive;
+
+    @Column(name = "health_insurance", precision = 18, scale = 2)
+    private BigDecimal healthInsurance;
 
     @Column(name = "created_by", length = 100)
     private String createdBy;

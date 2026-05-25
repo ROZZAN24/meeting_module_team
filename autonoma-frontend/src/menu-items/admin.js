@@ -2,7 +2,7 @@
 import {
   IconUserPlus, IconUsers, IconShieldLock, IconSettings, IconBuildingSkyscraper,
   IconAccessPoint, IconHistory, IconLayoutColumns, IconTimeline,
-  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics
+  IconFingerprint, IconActivity, IconUserShield, IconCategory, IconFileAnalytics, IconDatabaseExport
 } from '@tabler/icons-react';
 
 // constant
@@ -20,7 +20,8 @@ const icons = {
   IconActivity,
   IconUserShield,
   IconCategory,
-  IconFileAnalytics
+  IconFileAnalytics,
+  IconDatabaseExport
 };
 
 // ==============================|| MENU ITEMS - ADMIN ||============================== //
@@ -99,6 +100,15 @@ const admin = {
           icon: icons.IconFileAnalytics,
           breadcrumbs: true,
           pageCode: 'AD1170'
+        },
+        {
+          id: 'data-migration',
+          title: 'Old Data Migration',
+          type: 'item',
+          url: '/admin/data-migration',
+          icon: icons.IconDatabaseExport,
+          breadcrumbs: true,
+          pageCode: 'AD1180'
         }
       ]
     },

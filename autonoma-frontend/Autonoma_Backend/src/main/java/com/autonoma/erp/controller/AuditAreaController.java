@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.AuditAreaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -29,13 +30,19 @@ public class AuditAreaController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M1120", action = "write")
     @Operation(summary = "Create/Update Audit Area", description = "Creates a new audit area or updates an existing one")
     public AuditArea createAuditArea(@RequestBody AuditArea auditArea) {
         log.info("Saving audit area: {}", auditArea);
+        if (auditArea.getId() == null) {
+            auditArea.setUpdatedBy(null);
+            auditArea.setUpdatedDate(null);
+        }
         return auditAreaRepository.save(auditArea);
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1120", action = "delete")
     @Operation(summary = "Delete Audit Area", description = "Deletes an audit area by its ID")
     public ResponseEntity<Void> deleteAuditArea(@PathVariable Long id) {
         auditAreaRepository.deleteById(id);
