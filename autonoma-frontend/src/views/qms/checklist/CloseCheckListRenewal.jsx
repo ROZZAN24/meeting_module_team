@@ -398,7 +398,7 @@ export default function CloseCheckListRenewal() {
       title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>
+          {perms.write && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>}
           {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }
@@ -469,11 +469,11 @@ export default function CloseCheckListRenewal() {
                   key={row.id}
                   hover
                   onClick={() => setSelectedRowId(row.id)}
-                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onDoubleClick={() => { if (perms.write) { setSelectedRowId(row.id); setDialogOpen(true); } }}
+                  onMouseEnter={() => { if (perms.write) setShowDoubleTap(true); }}
                   onMouseLeave={() => setShowDoubleTap(false)}
                   onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                  sx={{ cursor: perms.write ? 'pointer' : 'default', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>

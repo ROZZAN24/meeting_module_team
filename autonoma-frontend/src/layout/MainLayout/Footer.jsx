@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 
 export default function Footer() {
   return (
-    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center', pt: 3, mt: 'auto' }}>
+    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'center', pt: 1.5, pb: 1.5, mt: 'auto' }}>
       <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
         &copy; All rights reserved{' '}
         <Typography component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>

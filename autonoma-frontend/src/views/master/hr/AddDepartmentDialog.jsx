@@ -84,7 +84,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
       }
       handleClose(true);
     } catch (error) {
-      const msg = error.response?.data || 'Failed to save department.';
+      const msg = typeof error === 'string' ? error : (error?.message || 'Failed to save department.');
       dispatch(openSnackbar({ 
         open: true, 
         message: typeof msg === 'string' ? msg : 'Failed to save department.', 
@@ -102,7 +102,8 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
       dispatch(openSnackbar({ open: true, message: 'Department deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       handleClose(true);
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      const msg = typeof error === 'string' ? error : (error?.message || 'Failed to delete.');
+      dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
@@ -197,6 +198,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
             >
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="In Active">In Active</MenuItem>
+              <MenuItem value="Suspended">Suspended</MenuItem>
             </BOSTextField>
           </Box>
         </BOSFormSection>

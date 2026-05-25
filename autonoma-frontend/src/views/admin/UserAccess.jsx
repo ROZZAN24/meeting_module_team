@@ -40,6 +40,7 @@ import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 import { getUserImageUrl } from 'utils/upload-helper';
 
@@ -54,6 +55,8 @@ const UserAccess = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const isDark = theme.palette.mode === 'dark';
+
+  const perms = usePagePermissions(PAGE_CODES.AD_USER_ACCESS);
 
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
@@ -250,7 +253,8 @@ const UserAccess = () => {
           size="small"
           checked={isAllChecked(header.id)}
           indeterminate={isSomeChecked(header.id)}
-          onChange={(e) => handleSelectAll(header.id, e.target.checked)}
+          disabled={!perms.write}
+          onChange={(e) => perms.write && handleSelectAll(header.id, e.target.checked)}
           sx={{ color: header.color, '&.Mui-checked': { color: header.color }, '&.MuiCheckbox-indeterminate': { color: header.color }, p: 0.2 }}
         />
         <Typography variant="caption" sx={{ fontWeight: 800, color: isDark ? theme.palette.text.secondary : '#333', fontSize: '0.6rem', textTransform: 'uppercase' }}>{header.label}</Typography>
@@ -360,7 +364,7 @@ const UserAccess = () => {
             variant="outlined"
             startIcon={<IconCopy size={18} />}
             onClick={handleCopyPermissions}
-            disabled={!selectedUser || !sourceUser}
+            disabled={!selectedUser || !sourceUser || !perms.write}
             sx={{ height: 38, borderRadius: '8px', color: '#2196f3', borderColor: '#2196f3', textTransform: 'none', fontWeight: 700 }}
           >
             Copy
@@ -370,7 +374,7 @@ const UserAccess = () => {
             variant="contained"
             startIcon={<IconDeviceFloppy size={20} />}
             onClick={handleSaveAll}
-            disabled={!selectedUser}
+            disabled={!selectedUser || !perms.write}
             sx={{ height: 38, borderRadius: '8px', bgcolor: '#673ab7', '&:hover': { bgcolor: '#5e35b1' }, px: 3, fontWeight: 700, boxShadow: 'none' }}
           >
             Save All
@@ -463,7 +467,8 @@ const UserAccess = () => {
                             size="small"
                             checked={isRowAllChecked(row)}
                             indeterminate={isRowSomeChecked(row)}
-                            onChange={(e) => handleRowSelectAll(globalIdx, e.target.checked)}
+                            disabled={!perms.write}
+                            onChange={(e) => perms.write && handleRowSelectAll(globalIdx, e.target.checked)}
                             sx={{ color: '#78909c', '&.Mui-checked': { color: '#4caf50' } }}
                           />
                         </TableCell>
@@ -472,7 +477,8 @@ const UserAccess = () => {
                           <TableCell key={h.id} align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
                             <Checkbox
                               checked={row[h.id] === 1}
-                              onChange={() => handleCheckboxChange(globalIdx, h.id)}
+                              disabled={!perms.write}
+                              onChange={() => perms.write && handleCheckboxChange(globalIdx, h.id)}
                               icon={<IconX size={16} color={isDark ? '#475569' : '#e5e7eb'} />}
                               checkedIcon={<IconCheck size={16} color="#4caf50" stroke={3} />}
                               sx={{ p: 0.2 }}
@@ -487,7 +493,7 @@ const UserAccess = () => {
                         </TableCell>
                         <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
                           <Tooltip title="Save Permissions" arrow>
-                            <IconButton onClick={() => handleSaveRow(row)} sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}>
+                            <IconButton onClick={() => handleSaveRow(row)} disabled={!perms.write} sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}>
                               <IconDeviceFloppy size={18} />
                             </IconButton>
                           </Tooltip>
