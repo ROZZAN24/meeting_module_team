@@ -286,6 +286,7 @@ export default function BOSFormDialog({
         onMouseDown={startDrag}
         sx={{
           ...ds.titleBar,
+          borderRadius: isMaximized ? 0 : '24px 24px 0 0',
           cursor: isMaximized ? 'default' : 'grab',
           userSelect: 'none',
           '&:active': { cursor: isMaximized ? 'default' : 'grabbing' },
@@ -356,7 +357,12 @@ export default function BOSFormDialog({
 
       {/* ── FOOTER ACTION BUTTONS (SOP #1, #12) ── */}
       {!hideFooter && !isCollapsed && (
-        <Box sx={ds.footer}>
+        <Box 
+          sx={{
+            ...ds.footer,
+            borderRadius: isMaximized ? 0 : '0 0 24px 24px'
+          }}
+        >
           {isViewOnly ? (
             <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
               {secondaryActions}
