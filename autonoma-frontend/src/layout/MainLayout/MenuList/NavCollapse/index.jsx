@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useEffect, useRef, useState, Activity } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 
 // material-ui
@@ -229,7 +229,7 @@ export default function NavCollapse({ menu, level, parentId }) {
       className={anchorEl ? 'Mui-selected' : ''}
       onClick={handleClickMini}
     >
-      <Activity mode={menuIcon ? 'visible' : 'hidden'}>
+      {menuIcon && (
         <ListItemIcon
           sx={{
             minWidth: level === 1 ? 36 : 18,
@@ -266,7 +266,7 @@ export default function NavCollapse({ menu, level, parentId }) {
         >
           {menuIcon}
         </ListItemIcon>
-      </Activity>
+      )}
       {(drawerOpen || (!drawerOpen && level !== 1)) && (
         <Tooltip title={menu.pageCode ? `Code: ${menu.pageCode}` : <FormattedMessage id={menu.title} />} disableHoverListener={menu.pageCode ? false : !hoverStatus}>
           <ListItemText
@@ -314,7 +314,7 @@ export default function NavCollapse({ menu, level, parentId }) {
         <IconChevronDown stroke={1.5} size="16px" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
       )}
 
-      <Activity mode={!drawerOpen ? 'visible' : 'hidden'}>
+      {!drawerOpen && (
         <Popper
           open={openMini}
           anchorEl={anchorEl}
@@ -358,7 +358,7 @@ export default function NavCollapse({ menu, level, parentId }) {
             </Transitions>
           )}
         </Popper>
-      </Activity>
+      )}
     </ListItemButton>
   );
 
@@ -373,9 +373,9 @@ export default function NavCollapse({ menu, level, parentId }) {
       aria-describedby={popperId}
       className={anchorEl ? 'Mui-selected' : ''}
     >
-      <Activity mode={menuIcon ? 'visible' : 'hidden'}>
+      {menuIcon && (
         <ListItemIcon sx={{ my: 'auto', minWidth: !menu.icon ? 18 : 36 }}>{menuIcon}</ListItemIcon>
-      </Activity>
+      )}
       {menu.pageCode ? (
         <Tooltip 
           title={`Code: ${menu.pageCode}`} 
@@ -410,7 +410,7 @@ export default function NavCollapse({ menu, level, parentId }) {
       )}
       {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
 
-      <Activity mode={anchorEl ? 'visible' : 'hidden'}>
+      {anchorEl && (
         <PopperStyled
           id={popperId}
           open={openMini}
@@ -446,7 +446,7 @@ export default function NavCollapse({ menu, level, parentId }) {
             </Transitions>
           )}
         </PopperStyled>
-      </Activity>
+      )}
     </ListItemButton>
   );
 
