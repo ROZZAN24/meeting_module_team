@@ -575,8 +575,18 @@ public class ChecklistService {
 
             if (oldRejected != null) {
                 // Determine the target status for A
-                String nextStatusName = "YES".equalsIgnoreCase(master.getDualCheck())
-                        ? "Pending for Verified" : "Completed";
+                boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
+                        userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
+                        .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                        .orElse(false);
+
+                String nextStatusName;
+                if (!isUserAdmin) {
+                    nextStatusName = "Pending for Verified";
+                } else {
+                    nextStatusName = "YES".equalsIgnoreCase(master.getDualCheck())
+                            ? "Pending for Verified" : "Completed";
+                }
                 StatusMaster aStatus = statusRepo.findByName(nextStatusName).orElseThrow();
 
                 // Promote A
@@ -623,11 +633,7 @@ public class ChecklistService {
                     .orElse(false);
             
             if (!isUserAdmin) {
-                if ("YES".equalsIgnoreCase(master.getDualCheck()) || "YES".equalsIgnoreCase(master.getVerificationRequired())) {
-                    finalStatusName = "Pending for Verified";
-                } else {
-                    finalStatusName = "Pending";
-                }
+                finalStatusName = "Pending for Verified";
             } else {
                 if ("YES".equalsIgnoreCase(master.getDualCheck())) {
                     finalStatusName = "Pending for Verified";

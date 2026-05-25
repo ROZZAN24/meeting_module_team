@@ -333,7 +333,7 @@ export default function CloseCheckListRenewal() {
 
       const response = await axios.get('/api/qms/checklist/assignments', { params });
         // Additional client-side filter: exclude any remaining finalized statuses
-        const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed'];
+        const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed', 'Pending for Verified', 'Pending for Accepted'];
         const filteredRows = response.data.content.filter((r) => {
           const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
           return !finalizedStatuses.includes(statusName);
