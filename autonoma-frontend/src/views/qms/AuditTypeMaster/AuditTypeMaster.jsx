@@ -147,35 +147,35 @@ export default function AuditTypeMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'ACTIVE';
+      const statusFilter = globalFilters?.status || 'ACTIVE';
       const rowStatusTrimmed = row.status ? row.status.trim() : '';
       const matchesStatus = statusFilter === 'All' || rowStatusTrimmed === statusFilter;
 
-      const auditTypeFilter = globalFilters.auditType || '';
+      const auditTypeFilter = globalFilters?.auditType || '';
       const rowAuditTypeTrimmed = row.auditType ? row.auditType.trim() : '';
       const matchesAuditType = !auditTypeFilter || rowAuditTypeTrimmed.toLowerCase().includes(auditTypeFilter.toLowerCase());
       
-      const standardFilter = globalFilters.standard || '';
+      const standardFilter = globalFilters?.standard || '';
       const rowStandardTrimmed = row.standard ? row.standard.trim() : '';
       const matchesStandard = !standardFilter || rowStandardTrimmed.toLowerCase().includes(standardFilter.toLowerCase());
       
-      const descriptionFilter = globalFilters.description || '';
+      const descriptionFilter = globalFilters?.description || '';
       const rowDescriptionTrimmed = row.description ? row.description.trim() : '';
       const matchesDescription = !descriptionFilter || rowDescriptionTrimmed.toLowerCase().includes(descriptionFilter.toLowerCase());
       
-      const auditAreaFilter = globalFilters.auditArea || '';
+      const auditAreaFilter = globalFilters?.auditArea || '';
       const rowAuditAreaTrimmed = row.auditArea ? row.auditArea.trim() : '';
       const matchesAuditArea = !auditAreaFilter || rowAuditAreaTrimmed.toLowerCase().includes(auditAreaFilter.toLowerCase());
       
-      const criteriaTypeFilter = globalFilters.criteriaType || 'All';
+      const criteriaTypeFilter = globalFilters?.criteriaType || 'All';
       const rowCriteriaTypeTrimmed = row.criteriaType ? row.criteriaType.trim() : '';
       const matchesCriteriaType = criteriaTypeFilter === 'All' || rowCriteriaTypeTrimmed === criteriaTypeFilter;
       
-      const createdByFilter = globalFilters.createdBy || '';
+      const createdByFilter = globalFilters?.createdBy || '';
       const rowCreatedByTrimmed = row.createdBy ? row.createdBy.trim() : '';
       const matchesCreatedBy = !createdByFilter || rowCreatedByTrimmed.toLowerCase().includes(createdByFilter.toLowerCase());
       
-      const updatedByFilter = globalFilters.updatedBy || '';
+      const updatedByFilter = globalFilters?.updatedBy || '';
       const rowUpdatedByTrimmed = row.updatedBy ? row.updatedBy.trim() : '';
       const matchesUpdatedBy = !updatedByFilter || rowUpdatedByTrimmed.toLowerCase().includes(updatedByFilter.toLowerCase());
 
@@ -233,6 +233,7 @@ export default function AuditTypeMaster() {
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={(col, row) => {
           const val = row[col.id];
+          if (col.id === 'index') return null;
           if (col.id === 'createdBy' || col.id === 'updatedBy') return (val ? val.trim() : '') || '-';
           if (col.id.toLowerCase().includes('date')) {
             if (!val) return '-';
