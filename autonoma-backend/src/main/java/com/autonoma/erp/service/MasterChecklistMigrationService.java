@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @Service
 public class MasterChecklistMigrationService {
 
-    @Autowired
+    @Autowired(required = false)
     @Qualifier("secondaryJdbcTemplate")
     private JdbcTemplate jdbcTemplate;
 
@@ -28,6 +28,9 @@ public class MasterChecklistMigrationService {
 
     @Autowired
     private ChecklistAssignmentRepository checklistAssignmentRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.DepartmentRepository departmentRepository;
 
     // ─── STATUS int mapping ─────────────────────────────────────────────────────
     // STATUS: 0=INACTIVE/DRAFT, 1=ACTIVE, 2=EXPIRED, 3=PENDING, 4=CANCELLED
@@ -40,7 +43,19 @@ public class MasterChecklistMigrationService {
 
     @Transactional
     public String migrateOldChecklists() {
+        if (jdbcTemplate == null) {
+            return "Migration database not configured in application.properties.";
+        }
         String sql = "SELECT * FROM HRMS_MASTER_CHECKLIST";
+
+        List<com.autonoma.erp.model.Department> allDepts = departmentRepository.findAll();
+        Map<String, String> deptNoToNameMap = allDepts.stream()
+                .filter(d -> d.getDepartmentNo() != null && !d.getDepartmentNo().trim().isEmpty())
+                .collect(Collectors.toMap(
+                        d -> d.getDepartmentNo().trim(),
+                        d -> d.getDepartmentName(),
+                        (a, b) -> a
+                ));
 
         List<MasterChecklist> migratedList = jdbcTemplate.query(sql, (rs, rowNum) -> {
             MasterChecklist checklist = new MasterChecklist();
@@ -93,9 +108,18 @@ public class MasterChecklistMigrationService {
             if (deptNo != null && !deptNo.trim().isEmpty()) {
                 List<ChecklistDepartment> deptList = new ArrayList<>();
                 for (String dept : deptNo.split(",")) {
-                    if (!dept.trim().isEmpty()) {
+                    String cleanDept = dept.trim();
+                    if (!cleanDept.isEmpty()) {
                         ChecklistDepartment department = new ChecklistDepartment();
-                        department.setDepartmentName(dept.trim());
+                        String lookupKey = cleanDept;
+                        try {
+                            int deptCodeNum = Integer.parseInt(cleanDept);
+                            lookupKey = String.format("DEPT-%03d", deptCodeNum);
+                        } catch (NumberFormatException e) {
+                            // Already in a non-integer format, keep as is
+                        }
+                        String resolvedDeptName = deptNoToNameMap.getOrDefault(lookupKey, cleanDept);
+                        department.setDepartmentName(resolvedDeptName);
                         department.setChecklist(checklist);
                         deptList.add(department);
                     }
@@ -118,6 +142,9 @@ public class MasterChecklistMigrationService {
 
     @Transactional
     public String migrateChecklistAssignments() {
+        if (jdbcTemplate == null) {
+            return "Migration database not configured in application.properties.";
+        }
         // Build a lookup: legacy row_id (SEQ_NO) -> new MasterChecklist entity
         List<MasterChecklist> allChecklists = masterChecklistRepository.findAll();
         Map<String, MasterChecklist> checklistByLegacyId = allChecklists.stream()
@@ -192,5 +219,44 @@ public class MasterChecklistMigrationService {
         return "Successfully migrated " + validAssignments.size()
                 + " assignment records from QMS_ASSIGN_CHECKLIST to qms_checklist_assignment."
                 + (skipped > 0 ? " (Skipped " + skipped + " records with no matching checklist.)" : "");
+    }
+
+    // ─── DEPARTMENT MIGRATION ───────────────────────────────────────────────────
+    @Transactional
+    public String migrateDepartments() {
+        if (jdbcTemplate == null) {
+            return "Migration database not configured in application.properties.";
+        }
+        String sql = "SELECT * FROM DEPT";
+
+        List<com.autonoma.erp.model.Department> migratedList = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            com.autonoma.erp.model.Department dept = new com.autonoma.erp.model.Department();
+            
+            int legacyDeptNo = rs.getInt("DEPT_NO");
+            dept.setDepartmentNo(String.format("DEPT-%03d", legacyDeptNo));
+            dept.setDepartmentName(rs.getString("DEPT_NAME"));
+            
+            String nda = rs.getString("NDA_CERTIFICATE");
+            dept.setNdaCertificate(nda != null ? nda : "No");
+            
+            dept.setSequenceNo(rs.getInt("SEQ_NO"));
+            dept.setStatus("Active");
+            dept.setCreatedBy("SYSTEM");
+            dept.setCreatedAt(new java.util.Date());
+
+            return dept;
+        });
+
+        int migratedCount = 0;
+        if (!migratedList.isEmpty()) {
+            for (com.autonoma.erp.model.Department d : migratedList) {
+                if (!departmentRepository.findByDepartmentNo(d.getDepartmentNo()).isPresent()) {
+                    departmentRepository.save(d);
+                    migratedCount++;
+                }
+            }
+        }
+
+        return "Successfully migrated " + migratedCount + " department records from DEPT to hrm_department_master.";
     }
 }

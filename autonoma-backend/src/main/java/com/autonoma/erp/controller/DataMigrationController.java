@@ -83,6 +83,41 @@ public class DataMigrationController {
         }
     }
 
+    // ─── POST /api/admin/migration/departments ──────────────────────────────────
+    @PostMapping("/departments")
+    public ResponseEntity<Map<String, String>> migrateDepartments() {
+        Map<String, String> response = new HashMap<>();
+        String currentUser = resolveCurrentUser();
+
+        MigrationAuditLog auditLog = MigrationAuditLog.builder()
+                .tableName("DEPT -> hrm_department_master")
+                .migratedBy(currentUser)
+                .migratedAt(new Date())
+                .build();
+
+        try {
+            String result = migrationService.migrateDepartments();
+            response.put("message", result);
+
+            auditLog.setStatus("SUCCESS");
+            auditLog.setRecordsCount(extractCount(result));
+            auditLog.setMessage(result);
+            auditLogRepository.save(auditLog);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            String errorMsg = "Department migration failed: " + e.getMessage();
+            response.put("message", errorMsg);
+
+            auditLog.setStatus("FAILED");
+            auditLog.setRecordsCount(0);
+            auditLog.setMessage(e.getMessage());
+            auditLogRepository.save(auditLog);
+
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     // ─── POST /api/admin/migration/assignments ───────────────────────────────────
     @PostMapping("/assignments")
     public ResponseEntity<Map<String, String>> migrateAssignments() {
@@ -126,7 +161,29 @@ public class DataMigrationController {
         StringBuilder summary = new StringBuilder();
         boolean anyFailed = false;
 
-        // Step 1: Master Checklists
+        // Step 1: Departments
+        MigrationAuditLog deptLog = MigrationAuditLog.builder()
+                .tableName("DEPT -> hrm_department_master")
+                .migratedBy(currentUser)
+                .migratedAt(new Date())
+                .build();
+        try {
+            String result = migrationService.migrateDepartments();
+            deptLog.setStatus("SUCCESS");
+            deptLog.setRecordsCount(extractCount(result));
+            deptLog.setMessage(result);
+            summary.append("[Departments] ").append(result).append(" | ");
+        } catch (Exception e) {
+            anyFailed = true;
+            deptLog.setStatus("FAILED");
+            deptLog.setRecordsCount(0);
+            deptLog.setMessage(e.getMessage());
+            summary.append("[Departments] FAILED: ").append(e.getMessage()).append(" | ");
+        } finally {
+            auditLogRepository.save(deptLog);
+        }
+
+        // Step 2: Master Checklists
         MigrationAuditLog masterLog = MigrationAuditLog.builder()
                 .tableName("HRMS_MASTER_CHECKLIST -> qms_checklist_master")
                 .migratedBy(currentUser)
@@ -148,7 +205,7 @@ public class DataMigrationController {
             auditLogRepository.save(masterLog);
         }
 
-        // Step 2: Checklist Assignments
+        // Step 3: Checklist Assignments
         MigrationAuditLog assignLog = MigrationAuditLog.builder()
                 .tableName("QMS_ASSIGN_CHECKLIST -> qms_checklist_assignment")
                 .migratedBy(currentUser)

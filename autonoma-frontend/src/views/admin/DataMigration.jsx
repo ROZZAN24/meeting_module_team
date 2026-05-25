@@ -42,11 +42,11 @@ export default function DataMigration() {
     fetchAuditLogs();
   }, []);
 
-  const handleMigrationStart = async () => {
+  const runMigration = async (endpoint, successMessage) => {
     setLoading(true);
     try {
-      const response = await axios.post('/api/admin/migration/checklists');
-      showNotification(response.data.message || 'Migration process completed successfully.', 'success');
+      const response = await axios.post(endpoint);
+      showNotification(response.data.message || successMessage, 'success');
       fetchAuditLogs();
       // Auto switch to history tab to view results
       setActiveTab(1);
@@ -95,94 +95,166 @@ export default function DataMigration() {
       </Box>
 
       {activeTab === 0 && (
-        <Grid container spacing={3} justifyContent="center">
-          {/* Centered Migration Trigger Control */}
-          <Grid item xs={12} md={8}>
+        <Grid container spacing={3}>
+          {/* Main Safety Instruction Banner */}
+          <Grid item xs={12}>
+            <Box sx={{ p: 2.5, bgcolor: 'primary.light', borderRadius: '16px', borderLeft: '6px solid', borderColor: 'primary.main', display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <IconInfoCircle size={24} style={{ color: '#2196f3', flexShrink: 0, marginTop: 2 }} />
+              <Box>
+                <Typography variant="h4" color="primary.dark" sx={{ fontWeight: 700 }}>
+                  Important Execution Safety
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mt: 0.5, lineHeight: 1.5 }}>
+                  Before starting, verify database connection availability. Running migrations does not overwrite existing records, but appends new transaction contexts cleanly. It is recommended to run the migrations sequentially (Step 1, then Step 2, then Step 3) or use the "Run All Migrations" button.
+                </Typography>
+              </Box>
+            </Box>
+          </Grid>
+
+          {/* Quick Action - Run All */}
+          <Grid item xs={12}>
             <Card variant="outlined" sx={{
-              borderColor: 'divider',
+              borderColor: 'success.main',
               borderRadius: '16px',
-              boxShadow: '0 4px 20px 0 rgba(0,0,0,0.02)',
-              background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-              mt: 2
+              borderWidth: '1.5px',
+              background: 'linear-gradient(135deg, #f1fcf4 0%, #ffffff 100%)',
+              boxShadow: '0 4px 15px rgba(46, 125, 50, 0.05)'
             }}>
-              <CardContent sx={{ p: 4 }}>
-                <Stack spacing={3}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Avatar sx={{ bgcolor: 'primary.light', color: 'primary.main', width: 56, height: 56, borderRadius: '12px' }}>
-                      <IconServer size={32} />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h3" sx={{ fontWeight: 700 }}>
-                        Master Checklist Migration
-                      </Typography>
-                      <Typography variant="subtitle2" color="textSecondary">
-                        Legacy System Data Synchronizer
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Typography variant="body1" color="textSecondary" sx={{ lineHeight: 1.6 }}>
-                    This module automates the transfer of checklist templates, items, sub-items, department scopes, and validity metadata. It maps legacy structural identifiers to the active Autonoma ERP models safely.
-                  </Typography>
-
-                  <Box sx={{ p: 2, bgcolor: 'primary.light', borderRadius: '12px', borderLeft: '4px solid', borderColor: 'primary.main', display: 'flex', gap: 1.5, alignItems: 'flex-start' }}>
-                    <IconInfoCircle size={20} style={{ color: '#2196f3', flexShrink: 0, marginTop: 2 }} />
-                    <Box>
-                      <Typography variant="subtitle2" color="primary.dark" sx={{ fontWeight: 700 }}>
-                        Important Execution Safety
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary" sx={{ mt: 0.5, display: 'block', lineHeight: 1.4 }}>
-                        Before starting, verify database connection availability. Running migrations does not overwrite existences but appends new transaction contexts cleanly.
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="large"
-                      startIcon={<IconPlayerPlay size={20} />}
-                      onClick={handleMigrationStart}
-                      disabled={loading}
-                      sx={{
-                        borderRadius: '10px',
-                        px: 4,
-                        py: 1.5,
-                        fontWeight: 700,
-                        fontSize: '1rem',
-                        boxShadow: '0 4px 12px 0 rgba(33, 150, 243, 0.3)',
-                        '&:hover': {
-                          boxShadow: '0 6px 20px 0 rgba(33, 150, 243, 0.4)'
-                        }
-                      }}
-                    >
-                      {loading ? 'Migrating Data...' : 'Start Migration Now'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      size="large"
-                      startIcon={<IconInfoCircle size={20} />}
-                      onClick={() => setScopeOpen(true)}
-                      sx={{
-                        borderRadius: '10px',
-                        px: 3,
-                        py: 1.5,
-                        fontWeight: 700,
-                        fontSize: '1rem'
-                      }}
-                    >
-                      View Migration Scope
-                    </Button>
-                    {loading && (
-                      <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-                        Syncing schemas...
-                      </Typography>
-                    )}
+              <CardContent sx={{ p: 3, display: 'flex', alignItems: 'center', justifyContent: 'between', flexWrap: 'wrap', gap: 3 }}>
+                <Stack direction="row" alignItems="center" spacing={2} sx={{ flexGrow: 1 }}>
+                  <Avatar sx={{ bgcolor: 'success.main', color: '#ffffff', width: 48, height: 48, borderRadius: '12px' }}>
+                    <IconServer size={26} />
+                  </Avatar>
+                  <Box>
+                    <Typography variant="h3" sx={{ fontWeight: 800, color: 'success.dark' }}>
+                      Run All Migrations (Recommended)
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Sequentially runs Department Migration, Master Checklist Migration, and Checklist Assignment Migration.
+                    </Typography>
                   </Box>
                 </Stack>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="large"
+                    startIcon={<IconPlayerPlay size={20} />}
+                    onClick={() => runMigration('/api/admin/migration/all', 'All data migrations completed successfully.')}
+                    disabled={loading}
+                    sx={{
+                      borderRadius: '10px',
+                      px: 4,
+                      py: 1.5,
+                      fontWeight: 700,
+                      boxShadow: '0 4px 12px 0 rgba(46, 125, 50, 0.3)',
+                      '&:hover': {
+                        boxShadow: '0 6px 20px 0 rgba(46, 125, 50, 0.4)'
+                      }
+                    }}
+                  >
+                    {loading ? 'Executing Migration...' : 'Run All Migrations'}
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    size="large"
+                    startIcon={<IconInfoCircle size={20} />}
+                    onClick={() => setScopeOpen(true)}
+                    sx={{ borderRadius: '10px', px: 3, py: 1.5, fontWeight: 700 }}
+                  >
+                    View Scope
+                  </Button>
+                </Stack>
               </CardContent>
+            </Card>
+          </Grid>
+
+          {/* Grid of steps */}
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transform: 'translateY(-2px)', transition: 'all 0.3s' } }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Step 1
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
+                  Department Migration
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ lineHeight: 1.6, mb: 3 }}>
+                  Imports legacy department codes (DEPT_NO) from the DEPT table and registers them as professional department numbers (DEPT-XXX) and names.
+                </Typography>
+              </CardContent>
+              <Box sx={{ p: 3, pt: 0 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  startIcon={<IconPlayerPlay size={16} />}
+                  onClick={() => runMigration('/api/admin/migration/departments', 'Departments migrated successfully.')}
+                  disabled={loading}
+                  sx={{ borderRadius: '8px', py: 1, fontWeight: 700 }}
+                >
+                  Migrate Departments
+                </Button>
+              </Box>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transform: 'translateY(-2px)', transition: 'all 0.3s' } }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Step 2
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
+                  Master Checklist
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ lineHeight: 1.6, mb: 3 }}>
+                  Imports checklist templates, SOP guidelines, categories, rules, and maps them to resolved department names.
+                </Typography>
+              </CardContent>
+              <Box sx={{ p: 3, pt: 0 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  startIcon={<IconPlayerPlay size={16} />}
+                  onClick={() => runMigration('/api/admin/migration/checklists', 'Master checklists migrated successfully.')}
+                  disabled={loading}
+                  sx={{ borderRadius: '8px', py: 1, fontWeight: 700 }}
+                >
+                  Migrate Checklists
+                </Button>
+              </Box>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transform: 'translateY(-2px)', transition: 'all 0.3s' } }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Step 3
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
+                  Assignments
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ lineHeight: 1.6, mb: 3 }}>
+                  Imports history of checklist assignments, employee tasks, dates, carry forward counters, and verification parameters.
+                </Typography>
+              </CardContent>
+              <Box sx={{ p: 3, pt: 0 }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  fullWidth
+                  startIcon={<IconPlayerPlay size={16} />}
+                  onClick={() => runMigration('/api/admin/migration/assignments', 'Checklist assignments migrated successfully.')}
+                  disabled={loading}
+                  sx={{ borderRadius: '8px', py: 1, fontWeight: 700 }}
+                >
+                  Migrate Assignments
+                </Button>
+              </Box>
             </Card>
           </Grid>
         </Grid>
@@ -325,6 +397,18 @@ export default function DataMigration() {
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+              <Avatar sx={{ bgcolor: 'success.light', color: 'success.dark', width: 28, height: 28, fontSize: '0.8rem', fontWeight: 700 }}>
+                <IconCheck size={16} />
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>hrm_department_master (Target)</Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mt: 0.2 }}>
+                  Imports departments from legacy DEPT, maps integer codes to DEPT-XXX format, and registers department names.
+                </Typography>
+              </Box>
+            </Box>
+
             <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
               <Avatar sx={{ bgcolor: 'success.light', color: 'success.dark', width: 28, height: 28, fontSize: '0.8rem', fontWeight: 700 }}>
                 <IconCheck size={16} />

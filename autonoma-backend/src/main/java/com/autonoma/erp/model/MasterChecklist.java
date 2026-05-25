@@ -118,12 +118,15 @@ public class MasterChecklist {
     private String scannedFiles;
 
     @Column(name = "STATUS")
+    @Convert(converter = com.autonoma.erp.util.ChecklistStatusConverter.class)
     private String status;
 
     @Column(name = "TASK_STATUS")
+    @Convert(converter = com.autonoma.erp.util.ChecklistTaskStatusConverter.class)
     private String taskStatus;
 
     @Column(name = "VERIFY_STATUS")
+    @Convert(converter = com.autonoma.erp.util.ChecklistVerifyStatusConverter.class)
     private String verifyStatus;
 
     @Column(name = "VERIFIED_BY")
