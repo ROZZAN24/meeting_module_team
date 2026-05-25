@@ -32,7 +32,8 @@ export function ConfigProvider({ children }) {
           presetColor: state.presetColor,
           i18n: state.i18n,
           themeDirection: state.themeDirection,
-          container: state.container
+          container: state.container,
+          dashboardLayout: state.dashboardLayout || 'glass'
         });
       } catch (err) {
         console.error('Failed to save theme settings to DB:', err);

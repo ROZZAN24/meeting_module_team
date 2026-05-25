@@ -131,8 +131,8 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 3.5,
-    px: 4,
+    py: 2,
+    px: 3,
     flexShrink: 0
   },
   titleText: {
@@ -145,7 +145,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 8, // Increased significantly to prevent floating labels (e.g. Segment Name) from being blocked by header
+    pt: '24px !important', // Explicit override to prevent touching the DialogTitle header
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
     overflowY: 'auto',
@@ -161,7 +161,8 @@ export const getDialogStyles = (theme, isDark) => ({
     }
   },
   footer: {
-    p: 3,
+    py: 2,
+    px: 3,
     borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'space-between',
@@ -179,7 +180,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   sectionHeader: {
     px: 3,
-    py: 3,
+    py: 1.5,
     borderBottom: '1px solid',
     borderColor: 'divider',
     bgcolor: isDark ? '#1c2128' : 'grey.50',

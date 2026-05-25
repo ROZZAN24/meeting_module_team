@@ -132,7 +132,28 @@ public class InductionTrainingService {
                 .collect(Collectors.toList());
 
         if (criteria.isEmpty()) {
-            throw new RuntimeException("No induction criteria found for round: " + round + ". Please assign criteria first in Induction Criteria page.");
+            List<InductionMaster> defaults = new ArrayList<>();
+            if ("HR".equalsIgnoreCase(round)) {
+                defaults.add(createDefaultMaster("Company Profile & Orientation", "Understand company culture, policy, and business vision.", round, currentUser));
+                defaults.add(createDefaultMaster("HR Policies & Code of Conduct", "Familiarity with leaves, working hours, safety, and code of conduct.", round, currentUser));
+                defaults.add(createDefaultMaster("Salary & Benefits Orientation", "Understanding payroll, insurance, benefits, and incentives.", round, currentUser));
+            } else if ("QMS".equalsIgnoreCase(round)) {
+                defaults.add(createDefaultMaster("Quality Management System Overview", "Understanding basic QMS ISO standards and process compliance.", round, currentUser));
+                defaults.add(createDefaultMaster("Standard Operating Procedures (SOP)", "Understanding operational SOPs and documentation procedures.", round, currentUser));
+                defaults.add(createDefaultMaster("Audits & Compliance Reporting", "Understanding internal audit workflows and NCR handling.", round, currentUser));
+            } else if ("DEPARTMENT".equalsIgnoreCase(round)) {
+                defaults.add(createDefaultMaster("Role & Responsibility Mapping", "Clarity on daily job duties and ownership.", round, currentUser));
+                defaults.add(createDefaultMaster("Workstation & Tools Setup", "Setting up logins, credentials, and physical tooling/software.", round, currentUser));
+                defaults.add(createDefaultMaster("Departmental Processes & Interfaces", "Understanding workflow inputs, outputs, and team interfaces.", round, currentUser));
+            } else {
+                defaults.add(createDefaultMaster("Management Structure & Reporting", "Understanding vertical reporting lines and leadership strategy.", round, currentUser));
+                defaults.add(createDefaultMaster("Strategic Goals & KPIs", "Alignment with annual key performance indicators and goals.", round, currentUser));
+            }
+            
+            for (InductionMaster m : defaults) {
+                masterRepo.save(m);
+                criteria.add(m);
+            }
         }
 
         // Create detail rows
@@ -223,5 +244,19 @@ public class InductionTrainingService {
         assignment.setUpdatedBy(currentUser);
         assignment.setUpdatedAt(new Date());
         return assignmentRepo.save(assignment);
+    }
+
+    private InductionMaster createDefaultMaster(String details, String answer, String round, String currentUser) {
+        InductionMaster m = new InductionMaster();
+        m.setInductionDetails(details);
+        m.setAnswer(answer);
+        m.setDepartmentCodes("ALL");
+        m.setLevelCodes("ALL");
+        m.setInductionRound(round);
+        m.setAttachmentRequired("NO");
+        m.setStatus("ACTIVE");
+        m.setCreatedBy(currentUser);
+        m.setCreatedAt(new Date());
+        return m;
     }
 }

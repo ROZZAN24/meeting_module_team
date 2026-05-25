@@ -23,41 +23,14 @@ public class EmployeeMaster {
     @Column(name = "emp_code", unique = true, nullable = false)
     private String empCode;
 
+    @Column(name = "old_emp_code", length = 50)
+    private String oldEmpCode;
+
     @Column(name = "title", length = 10)
     private String title;
 
     @Column(name = "employee_name")
     private String employeeName;
-
-    @Column(name = "email")
-    private String email;
-
-    @Column(name = "phone")
-    private String phone;
-
-    @Column(name = "department_id")
-    private Long departmentId;
-
-    @Column(name = "designation_id")
-    private Long designationId;
-
-    @Column(name = "father_husband_name")
-    private String fatherHusbandName;
-
-    @Column(name = "old_emp_code")
-    private String oldEmpCode;
-
-    @Column(name = "grade_code")
-    private String gradeCode;
-
-    @Column(name = "production_line")
-    private String productionLine;
-
-    @Column(name = "guest")
-    private String guest = "No";
-
-    @Column(name = "status")
-    private String status = "Active";
 
     @Column(name = "first_name", length = 100)
     private String firstName;
@@ -65,66 +38,108 @@ public class EmployeeMaster {
     @Column(name = "last_name", length = 100)
     private String lastName;
 
-    @Column(name = "emp_class", length = 50)
-    private String empClass;
+    @Column(name = "father_husband_name", length = 100)
+    private String fatherHusbandName;
 
-    @Column(name = "team_group", length = 100)
-    private String teamGroup;
+    @Column(name = "category_id")
+    private Long categoryId;
 
-    @Column(name = "additional_role", length = 500)
-    private String additionalRole;
+    @Column(name = "emp_level_id")
+    private Long empLevelId;
 
-    // === Dates ===
-    @Column(name = "date_of_joining")
-    @Temporal(TemporalType.DATE)
-    private Date dateOfJoining;
+    @Column(name = "employee_type_id")
+    private Long employeeTypeId;
 
-    @Column(name = "confirmation_date")
-    @Temporal(TemporalType.DATE)
-    private Date confirmationDate;
+    @Column(name = "grade_code", length = 50)
+    private String gradeCode;
 
-    @Column(name = "next_revision_date")
-    @Temporal(TemporalType.DATE)
-    private Date nextRevisionDate;
+    @Column(name = "unit_id")
+    private Long unitId;
 
-    @Column(name = "exit_date")
-    @Temporal(TemporalType.DATE)
-    private Date exitDate;
+    @Column(name = "department_id")
+    private Long departmentId;
 
-    @Column(name = "exit_reason", length = 255)
-    private String exitReason;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_id", insertable = false, updatable = false)
+    private Department department;
 
-    // === Operations ===
-    @Column(name = "daily_sheet_required", length = 10)
-    private String dailySheetRequired;
+    @Column(name = "designation_id")
+    private Long designationId;
 
-    @Column(name = "attendance_required", length = 10)
-    private String attendanceRequired;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "designation_id", insertable = false, updatable = false)
+    private Designation designation;
 
-    @Column(name = "induction_status", length = 50)
-    private String inductionStatus;
+    // === Uploads ===
+    @Column(name = "employee_photo_upload", columnDefinition = "NVARCHAR(MAX)")
+    private String employeePhotoUpload;
 
-    @Column(name = "shift", length = 10)
-    private String shift;
+    @Column(name = "employee_signature_upload", columnDefinition = "NVARCHAR(MAX)")
+    private String employeeSignatureUpload;
 
-    @Column(name = "shift_name", length = 100)
-    private String shiftName;
+    @Column(name = "nda_upload", columnDefinition = "NVARCHAR(MAX)")
+    private String ndaUpload;
 
-    @Column(name = "shift_duration", length = 50)
-    private String shiftDuration;
+    @Column(name = "fitness_certificate_upload", columnDefinition = "NVARCHAR(MAX)")
+    private String fitnessCertificateUpload;
 
-    @Column(name = "grace_minutes")
-    private Integer graceMinutes;
+    // === Organization ===
+    @Column(name = "vertical_head", length = 200)
+    private String verticalHead;
 
-    @Column(name = "petrol_allowance", precision = 10, scale = 2)
-    private BigDecimal petrolAllowance;
+    @Column(name = "hr_manager", length = 200)
+    private String hrManager;
 
-    // === References ===
+    @Column(name = "office_mail", length = 200)
+    private String officeMail;
+
+    @Column(name = "office_mail_password", length = 200)
+    private String officeMailPassword;
+
+    @Column(name = "pf_toggle", length = 10)
+    private String pfToggle = "NO";
+
+    @Column(name = "esi_toggle", length = 10)
+    private String esiToggle = "NO";
+
+    @Column(name = "p_tax_toggle", length = 10)
+    private String pTaxToggle = "NO";
+
+    @Column(name = "bonus_toggle", length = 10)
+    private String bonusToggle = "NO";
+
+    @Column(name = "ot_toggle", length = 10)
+    private String otToggle = "NO";
+
+    @Column(name = "ot_factorial", precision = 10, scale = 2)
+    private BigDecimal otFactorial;
+
+    @Column(name = "lom_deduction", length = 10)
+    private String lomDeduction = "NO";
+
+    @Column(name = "lom_allow", precision = 10, scale = 2)
+    private BigDecimal lomAllow;
+
+    @Column(name = "lta_eligible", length = 10)
+    private String ltaEligible = "NO";
+
+    @Column(name = "pf_restriction", precision = 10, scale = 2)
+    private BigDecimal pfRestriction;
+
+    @Column(name = "permission_toggle", length = 10)
+    private String permissionToggle = "NO";
+
+    @Column(name = "permission_limit", precision = 10, scale = 2)
+    private BigDecimal permissionLimit;
+
+    @Column(name = "vendor_name", length = 200)
+    private String vendorName;
+
     @Column(name = "refer_mode", length = 50)
     private String referMode;
 
-    @Column(name = "user_name", length = 100)
-    private String userName;
+    @Column(name = "reference_comments", columnDefinition = "NVARCHAR(MAX)")
+    private String referenceComments;
 
     @Column(name = "home_manager", length = 100)
     private String homeManager;
@@ -135,50 +150,53 @@ public class EmployeeMaster {
     @Column(name = "supplier_name", length = 100)
     private String supplierName;
 
-    // === Uploads ===
-    @Column(name = "profile_upload", length = 500)
-    private String profileUpload;
+    // === Dates & Scheduling ===
+    @Column(name = "date_of_joining")
+    @Temporal(TemporalType.DATE)
+    private Date dateOfJoining;
 
-    @Column(name = "signature", length = 500)
-    private String signature;
+    @Column(name = "probation_period")
+    private String probationPeriod;
 
-    @Column(name = "nda_certificate_upload", length = 500)
-    private String ndaCertificateUpload;
+    @Column(name = "confirmation_date")
+    @Temporal(TemporalType.DATE)
+    private Date confirmationDate;
 
-    @Column(name = "fitness_certificate_upload", length = 500)
-    private String fitnessCertificateUpload;
+    @Column(name = "induction_status", length = 50)
+    private String inductionStatus = "PENDING";
 
-    // === Audit ===
+    @Column(name = "exit_date")
+    @Temporal(TemporalType.DATE)
+    private Date exitDate;
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
+    @Column(name = "exit_reason", length = 255)
+    private String exitReason;
 
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    @Column(name = "exit_comments", columnDefinition = "NVARCHAR(MAX)")
+    private String exitComments;
 
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
+    @Column(name = "rejoining_date")
+    @Temporal(TemporalType.DATE)
+    private Date rejoiningDate;
 
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    // === Operations & Allowances ===
+    @Column(name = "grace_minutes")
+    private Integer graceMinutes;
 
-    // === Classification ===
-    @Column(name = "category_id")
-    private Long categoryId;
+    @Column(name = "petrol_mode", length = 50)
+    private String petrolMode = "NA";
 
-    @Column(name = "sub_category_id")
-    private String subCategoryId;
+    @Column(name = "petrol_allowance", precision = 10, scale = 2)
+    private BigDecimal petrolAllowance;
 
-    @Column(name = "emp_level_id")
-    private Long empLevelId;
+    @Column(name = "shift", length = 50)
+    private String shift;
 
-    @Column(name = "employee_type_id")
-    private Long employeeTypeId;
+    @Column(name = "shift_name", length = 100)
+    private String shiftName;
 
-    @Column(name = "unit_id")
-    private Long unitId;
+    @Column(name = "shift_duration", length = 50)
+    private String shiftDuration;
 
     // === Ability Section ===
     @Column(name = "is_auditor", length = 10)
@@ -277,10 +295,27 @@ public class EmployeeMaster {
     @Column(name = "is_pr_assignee", length = 10)
     private String isPrAssignee = "NO";
 
+    // === System ===
+    @Column(name = "status", length = 50)
+    private String status = "Active";
+
+    @Column(name = "created_by", length = 100)
+    private String createdBy;
+
+    @Column(name = "created_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date createdAt;
+
+    @Column(name = "updated_by", length = 100)
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updatedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = new Date();
-        // Auto-compute employeeName from first + last
         if (firstName != null && lastName != null) {
             employeeName = (firstName + " " + lastName).trim();
         } else if (firstName != null) {
@@ -297,30 +332,4 @@ public class EmployeeMaster {
             employeeName = firstName;
         }
     }
-
-    // Manual Getters and Setters for stability
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-    public String getEmpCode() { return empCode; }
-    public void setEmpCode(String empCode) { this.empCode = empCode; }
-    public String getEmployeeName() { return employeeName; }
-    public void setEmployeeName(String employeeName) { this.employeeName = employeeName; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
-    public Long getDepartmentId() { return departmentId; }
-    public void setDepartmentId(Long departmentId) { this.departmentId = departmentId; }
-    public Long getDesignationId() { return designationId; }
-    public void setDesignationId(Long designationId) { this.designationId = designationId; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
-    public String getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 }

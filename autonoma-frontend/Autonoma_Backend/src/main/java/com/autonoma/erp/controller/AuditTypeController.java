@@ -5,6 +5,7 @@ import com.autonoma.erp.repository.AuditTypeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -56,6 +57,7 @@ public class AuditTypeController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M1110", action = "write")
     @Operation(summary = "Create Audit Type", description = "Creates a new audit type configuration")
     public AuditType createAuditType(@RequestBody AuditType auditType) {
         log.info("Saving audit type: {}", auditType);
@@ -63,12 +65,14 @@ public class AuditTypeController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1110", action = "write")
     public ResponseEntity<AuditType> updateAuditType(@PathVariable Long id, @RequestBody AuditType auditType) {
         auditType.setId(id);
         return ResponseEntity.ok(auditTypeService.save(auditType));
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1110", action = "delete")
     public ResponseEntity<Void> deleteAuditType(@PathVariable Long id) {
         auditTypeService.delete(id);
         return ResponseEntity.noContent().build();

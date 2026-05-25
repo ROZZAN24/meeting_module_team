@@ -15,7 +15,6 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
-  const [open, setOpen] = React.useState(false);
 
   // Convert string value to Date object for MUI DatePicker
   const dateValue = useMemo(() => {
@@ -32,9 +31,6 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
       minDate={minDate}
       maxDate={maxDate}
       format="dd/MM/yyyy"
-      open={open}
-      onOpen={() => setOpen(true)}
-      onClose={() => setOpen(false)}
       onChange={(newValue) => {
         if (newValue && isValid(newValue)) {
           const formatted = format(newValue, 'yyyy-MM-dd');
@@ -42,9 +38,6 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
         } else if (newValue === null) {
           onChange({ target: { name: rest.name, value: '' } });
         }
-      }}
-      slots={{
-        openPickerIcon: () => null,
       }}
       slotProps={{
         textField: {
@@ -54,15 +47,21 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
           helperText: helperText,
           sx: { 
             ...bosInput,
-            '& .MuiInputBase-input': { cursor: 'pointer' }
+            '& .MuiInputBase-input': { cursor: 'text' },
+            '& .MuiInputAdornment-root': {
+              marginLeft: 0,
+            },
+            '& .MuiIconButton-root': {
+              padding: '4px',
+              marginRight: '-4px',
+            },
+            '& .MuiSvgIcon-root': {
+              fontSize: '1.2rem'
+            }
           },
           name: rest.name,
           autoComplete: 'off',
-          onClick: () => !disabled && setOpen(true),
           ...rest
-        },
-        openPickerButton: {
-          sx: { display: 'none' }
         }
       }}
     />

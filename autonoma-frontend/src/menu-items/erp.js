@@ -120,6 +120,7 @@ export const masters = {
           id: 'master-hr-ats',
           title: 'ATS',
           type: 'collapse',
+          pageCode: 'M2100',
           icon: icons.IconSearch,
           children: [
             {
@@ -184,6 +185,7 @@ export const masters = {
           id: 'master-hr-employee',
           title: 'Employee',
           type: 'collapse',
+          pageCode: 'M2200',
           icon: icons.IconUsers,
           children: [
             {
@@ -248,6 +250,7 @@ export const masters = {
           id: 'master-hr-payroll',
           title: 'Payroll',
           type: 'collapse',
+          pageCode: 'M2300',
           icon: icons.IconCoins,
           children: [
             {
@@ -379,6 +382,7 @@ export const masters = {
           id: 'master-qms-meeting',
           title: 'Meeting',
           type: 'collapse',
+          pageCode: 'M1300',
           icon: icons.IconMessage2,
           children: [
             {

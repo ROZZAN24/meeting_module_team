@@ -5,33 +5,36 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "qms_checklist_verification")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ChecklistVerification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assignment_id")
+    @JoinColumn(name = "ASSIGNMENT_ID")
+    @lombok.EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
     private ChecklistAssignment assignment;
 
-    @Column(name = "verified_by")
+    @Column(name = "VERIFIED_BY")
     private String verifiedBy;
 
     @ManyToOne
-    @JoinColumn(name = "status_id")
+    @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "REMARKS", columnDefinition = "TEXT")
     private String remarks;
 
-    @Column(name = "verified_date")
+    @Column(name = "VERIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedDate;
 

@@ -49,7 +49,7 @@ public class ContactMaster {
     @Column(name = "file_upload", length = 500)
     private String fileUpload;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     @Builder.Default
     private String status = "Active";
 
@@ -57,23 +57,21 @@ public class ContactMaster {
     private String createdBy;
 
     @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
+    private java.time.LocalDateTime createdAt;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
+    private java.time.LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new Date();
+        createdAt = java.time.LocalDateTime.now();
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new Date();
+        updatedAt = java.time.LocalDateTime.now();
     }
 }

@@ -62,9 +62,8 @@ public class ChecklistService {
 
     /**
      * Retrieves master checklists based on comprehensive filtering criteria.
-     * 
-     * @param status       The lifecycle status of the checklist (e.g., Active,
-     *                     Inactive).
+     *
+     * @param status       The lifecycle status of the checklist (e.g., Active, Inactive).
      * @param category     The functional category (RENEWAL, CHECK LIST).
      * @param department   Optional department filter.
      * @param searchBy     The field to perform textual search on.
@@ -75,11 +74,13 @@ public class ChecklistService {
      * @return A paginated result set of MasterChecklist entities.
      */
     public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy,
-            String searchValue, String dualCheck, String verifyStatus, Pageable pageable) {
+            String searchValue, String dualCheck, String verifyStatus,
+            String seqNo, String frequency, String checkingPoint, String description,
+            String stockLink, String photoRequired, String carryForward, Pageable pageable) {
         return masterRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            if (dualCheck != null && !dualCheck.isEmpty()) {
+            if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
                 predicates.add(cb.equal(root.get("dualCheck"), dualCheck));
             }
 
@@ -98,6 +99,34 @@ public class ChecklistService {
             if (department != null && !department.isEmpty()) {
                 Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
                 predicates.add(cb.equal(deptJoin.get("departmentName"), department));
+            }
+
+            if (seqNo != null && !seqNo.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("seqNo")), "%" + seqNo.toLowerCase() + "%"));
+            }
+
+            if (frequency != null && !frequency.isEmpty() && !frequency.equals("All")) {
+                predicates.add(cb.equal(root.get("frequency"), frequency));
+            }
+
+            if (checkingPoint != null && !checkingPoint.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("checkingPoint")), "%" + checkingPoint.toLowerCase() + "%"));
+            }
+
+            if (description != null && !description.isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("description")), "%" + description.toLowerCase() + "%"));
+            }
+
+            if (stockLink != null && !stockLink.isEmpty() && !stockLink.equals("All")) {
+                predicates.add(cb.equal(root.get("stockLink"), stockLink));
+            }
+
+            if (photoRequired != null && !photoRequired.isEmpty() && !photoRequired.equals("All")) {
+                predicates.add(cb.equal(root.get("photoRequired"), photoRequired));
+            }
+
+            if (carryForward != null && !carryForward.isEmpty() && !carryForward.equals("All")) {
+                predicates.add(cb.equal(root.get("carryForward"), carryForward));
             }
 
             if (searchValue != null && !searchValue.isEmpty()) {
@@ -137,13 +166,18 @@ public class ChecklistService {
 
     @Transactional
     public MasterChecklist saveMasterChecklist(MasterChecklist checklist, List<String> departments) {
-<<<<<<<< HEAD:autonoma-backend/src/main/java/com/autonoma/erp/service/ChecklistService.java
-        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same
-        // Department)
-========
+        boolean isAmendment = false;
+        if (checklist.getId() != null) {
+            MasterChecklist existing = masterRepo.findById(checklist.getId()).orElse(null);
+            if (existing != null && "Verified".equals(existing.getVerifyStatus()) &&
+                    checklist.getAmendmentReason() != null &&
+                    !checklist.getAmendmentReason().isEmpty()) {
+                isAmendment = true;
+            }
+        }
+
         // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same Department)
->>>>>>>> origin/chore/repo-cleanup:autonoma-frontend/Autonoma_Backend/src/main/java/com/autonoma/erp/service/ChecklistService.java
-        if (departments != null && !departments.isEmpty()) {
+        if (!isAmendment && departments != null && !departments.isEmpty()) {
             List<MasterChecklist> duplicates = masterRepo.findDuplicates(
                     checklist.getCategory(),
                     checklist.getCheckingPoint(),
@@ -189,45 +223,69 @@ public class ChecklistService {
             }
 
             // Normal update (either not verified yet, or no amendment reason)
-            existing.setSeqNo(checklist.getSeqNo());
-            existing.setCheckingPoint(checklist.getCheckingPoint());
-            existing.setDescription(checklist.getDescription());
-            existing.setCategory(checklist.getCategory());
-            existing.setFrequency(checklist.getFrequency());
+            existing.setSeqNo(checklist.getSeqNo() != null ? checklist.getSeqNo() : existing.getSeqNo());
+            existing.setCheckingPoint(checklist.getCheckingPoint() != null ? checklist.getCheckingPoint() : existing.getCheckingPoint());
+            existing.setDescription(checklist.getDescription() != null ? checklist.getDescription() : existing.getDescription());
+            existing.setCategory(checklist.getCategory() != null ? checklist.getCategory() : existing.getCategory());
+            existing.setFrequency(checklist.getFrequency() != null ? checklist.getFrequency() : existing.getFrequency());
+            existing.setEffectiveFrom(checklist.getEffectiveFrom() != null ? checklist.getEffectiveFrom() : existing.getEffectiveFrom());
             existing.setExpiryDate(checklist.getExpiryDate());
             existing.setReminderDays(checklist.getReminderDays());
             existing.setReminderDate(checklist.getReminderDate());
-            existing.setStockLink(checklist.getStockLink());
-            existing.setPhotoRequired(checklist.getPhotoRequired());
-            existing.setVerificationRequired(checklist.getVerificationRequired());
-            existing.setStatus(checklist.getStatus());
-            existing.setVerifyStatus(checklist.getVerifyStatus());
+            existing.setStockLink(checklist.getStockLink() != null ? checklist.getStockLink() : existing.getStockLink());
+            existing.setPhotoRequired(checklist.getPhotoRequired() != null ? checklist.getPhotoRequired() : existing.getPhotoRequired());
+            existing.setVerificationRequired(checklist.getVerificationRequired() != null ? checklist.getVerificationRequired() : existing.getVerificationRequired());
+            existing.setDualCheck(checklist.getDualCheck() != null ? checklist.getDualCheck() : existing.getDualCheck());
+            existing.setCarryForward(checklist.getCarryForward() != null ? checklist.getCarryForward() : existing.getCarryForward());
+            
+            existing.setWeekDays(checklist.getWeekDays() != null ? checklist.getWeekDays() : existing.getWeekDays());
+            existing.setRepeatEveryValue(checklist.getRepeatEveryValue() != null ? checklist.getRepeatEveryValue() : existing.getRepeatEveryValue());
+            existing.setRepeatEveryUnit(checklist.getRepeatEveryUnit() != null ? checklist.getRepeatEveryUnit() : existing.getRepeatEveryUnit());
+
+            if (checklist.getStatus() != null) {
+                existing.setStatus(checklist.getStatus());
+            } else if (existing.getStatus() == null) {
+                existing.setStatus("Active");
+            }
+
+            if (checklist.getVerifyStatus() != null) {
+                existing.setVerifyStatus(checklist.getVerifyStatus());
+            } else if (existing.getVerifyStatus() == null || "Rejected".equals(existing.getVerifyStatus())) {
+                existing.setVerifyStatus("Pending for Verify");
+            }
 
             if (checklist.getAmendmentReason() != null && !checklist.getAmendmentReason().isEmpty()) {
                 existing.setVerifyStatus("Pending for Verify");
             }
 
-            existing.setVerifiedBy(checklist.getVerifiedBy());
-            existing.setVerifiedDate(checklist.getVerifiedDate());
-            existing.setRejReason(checklist.getRejReason());
-            existing.setAssignTo(checklist.getAssignTo());
-            existing.setAssignDate(checklist.getAssignDate());
-            existing.setItemCode(checklist.getItemCode());
-            existing.setQty(checklist.getQty());
-            existing.setLevelIds(checklist.getLevelIds());
-            existing.setAmendmentReason(checklist.getAmendmentReason());
-            existing.setUploadedFiles(checklist.getUploadedFiles());
-            existing.setScannedFiles(checklist.getScannedFiles());
+            if (checklist.getVerifiedBy() != null) existing.setVerifiedBy(checklist.getVerifiedBy());
+            if (checklist.getVerifiedDate() != null) existing.setVerifiedDate(checklist.getVerifiedDate());
+            if (checklist.getRejReason() != null) existing.setRejReason(checklist.getRejReason());
+            if (checklist.getAssignTo() != null) existing.setAssignTo(checklist.getAssignTo());
+            if (checklist.getAssignDate() != null) existing.setAssignDate(checklist.getAssignDate());
+            if (checklist.getItemCode() != null) existing.setItemCode(checklist.getItemCode());
+            if (checklist.getQty() != null) existing.setQty(checklist.getQty());
+            if (checklist.getLevelIds() != null) existing.setLevelIds(checklist.getLevelIds());
+            if (checklist.getAmendmentReason() != null) existing.setAmendmentReason(checklist.getAmendmentReason());
+            if (checklist.getUploadedFiles() != null) existing.setUploadedFiles(checklist.getUploadedFiles());
+            if (checklist.getScannedFiles() != null) existing.setScannedFiles(checklist.getScannedFiles());
             existing.setUpdatedDate(new Date());
+            existing.setUpdatedBy(checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty() 
+                    ? checklist.getUpdatedBy() 
+                    : com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
 
-            // Re-sync departments
-            deptRepo.deleteByChecklist(existing);
+            // Re-sync departments safely via the managed list of the existing entity to avoid Hibernate state desync
+            if (existing.getDepartments() != null) {
+                existing.getDepartments().clear();
+            } else {
+                existing.setDepartments(new ArrayList<>());
+            }
             if (departments != null) {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
                     dept.setChecklist(existing);
                     dept.setDepartmentName(deptName);
-                    deptRepo.save(dept);
+                    existing.getDepartments().add(dept);
                 }
             }
             return masterRepo.save(existing);
@@ -237,6 +295,8 @@ public class ChecklistService {
                 checklist.setStatus("Active");
             if (checklist.getVerifyStatus() == null)
                 checklist.setVerifyStatus("Pending for Verify");
+            if (checklist.getCarryForwardStatus() == null)
+                checklist.setCarryForwardStatus("NO");
             if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                 checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
             }
@@ -272,13 +332,15 @@ public class ChecklistService {
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate,
             String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType,
-            String currentUser, boolean excludeCompleted, Pageable pageable) {
+            String currentUser, boolean excludeCompleted, boolean excludePending, String dualCheck, Pageable pageable) {
 
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
+            Join<ChecklistAssignment, MasterChecklist> masterJoin = null;
+
             if (masterVerifyStatus != null && !masterVerifyStatus.isEmpty()) {
-                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                masterJoin = root.join("checklist");
                 if ("Verified".equals(masterVerifyStatus)) {
                     predicates.add(masterJoin.get("verifyStatus").in("Verified", "Accepted"));
                 } else {
@@ -286,9 +348,16 @@ public class ChecklistService {
                 }
             }
 
+            if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
+                if (masterJoin == null) {
+                    masterJoin = root.join("checklist");
+                }
+                predicates.add(cb.equal(masterJoin.get("dualCheck"), dualCheck));
+            }
+
             // Task Type Logic (SOP Item 8)
             if ("Mine".equalsIgnoreCase(taskType) && currentUser != null) {
-                predicates.add(cb.equal(root.get("assignedTo"), currentUser));
+                predicates.add(cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase()));
             } else if ("Team".equalsIgnoreCase(taskType)) {
                 // For simplicity, we assume 'Team' means tasks for the user's department.
                 // This would normally involve joining with Employee departments.
@@ -298,11 +367,16 @@ public class ChecklistService {
             if (status != null && !status.equals("All")) {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
                 predicates.add(cb.equal(statusJoin.get("name"), status));
-            } else if (excludeCompleted) {
-                // If "All" is selected and we want to focus on execution, exclude
-                // completed/finalized tasks
-                Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
-                predicates.add(cb.not(statusJoin.get("name").in("Completed", "Verified", "Accepted")));
+            } else {
+                if (excludeCompleted) {
+                    // If "All" is selected and we want to focus on execution, exclude completed/finalized tasks
+                    Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
+                    predicates.add(cb.not(statusJoin.get("name").in("Completed", "Verified", "Accepted")));
+                }
+                if (excludePending) {
+                    Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
+                    predicates.add(cb.not(statusJoin.get("name").in("Pending", "Started")));
+                }
             }
 
             if (assignedTo != null && !assignedTo.isEmpty()) {
@@ -328,7 +402,9 @@ public class ChecklistService {
             }
 
             if (category != null && !category.equals("All")) {
-                Join<ChecklistAssignment, MasterChecklist> masterJoin = root.join("checklist");
+                if (masterJoin == null) {
+                    masterJoin = root.join("checklist");
+                }
                 predicates.add(cb.equal(masterJoin.get("category"), category));
             }
 
@@ -386,24 +462,18 @@ public class ChecklistService {
         if (id != null) {
             assignment = assignRepo.findById(id).orElse(new ChecklistAssignment());
         } else {
-            // Prevent duplicate assignments for same person on same checklist
             // Prevent duplicate assignments for same person on same checklist for same date
             if (assignRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
                     .isPresent()) {
                 // Return a dummy object or handle in controller to avoid 409 red console error
-                // For now, let's return a "special" assignment or just return null and handle
-                // in service?
-                // Actually, the cleanest way to avoid 409 in console but still inform UI is a
-                // custom response wrapper.
-                // But since I'm in Service, I'll throw a specific exception that I'll catch in
-                // Controller or
-                // just return a dummy with an error message.
-                // Reverting to returning a "Duplicate" indicator.
                 ChecklistAssignment duplicate = new ChecklistAssignment();
                 duplicate.setRemarks("DUPLICATE_ASSIGNMENT");
                 return duplicate;
             }
             assignment = new ChecklistAssignment();
+            assignment.setCarryForward(checklist.getCarryForward());
+            assignment.setCarryForwardStatus("NO");
+            assignment.setCarryForwardCount(0);
             // Default status: Pending (only for new)
             statusRepo.findByName("Pending").ifPresent(assignment::setStatus);
         }
@@ -463,7 +533,69 @@ public class ChecklistService {
         ChecklistAssignment assignment = assignRepo.findById(assignmentId).orElseThrow();
         MasterChecklist master = assignment.getChecklist();
 
-        // DUAL CHECK LOGIC:
+        // ── USER REWORK COMPLETION WORKFLOW ──────────────────────────────────
+        // When the user submits "Completed" on the again-created assignment B
+        // (which is currently Pending/Started) and there is an older Rejected
+        // assignment A for the same checklist/user/date, we:
+        //   1. Promote A from "Rejected" → "Pending for Verified" (or "Completed")
+        //   2. Copy the user's files/remarks onto A
+        //   3. Delete B entirely (it was only a rework helper)
+        //   4. Return so the manager sees one clean record (A) to verify.
+        if ("Completed".equalsIgnoreCase(statusName) && assignment.getStatus() != null
+                && ("Pending".equalsIgnoreCase(assignment.getStatus().getName())
+                        || "Started".equalsIgnoreCase(assignment.getStatus().getName()))) {
+
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
+
+            java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
+            ChecklistAssignment oldRejected = null;
+            if (allAssigned != null) {
+                oldRejected = allAssigned.stream()
+                    .filter(a -> a.getAssignedTo() != null
+                            && a.getAssignedTo().equalsIgnoreCase(assignment.getAssignedTo()))
+                    .filter(a -> a.getChecklistDate() != null
+                            && sdf.format(a.getChecklistDate()).equals(dateStr))
+                    .filter(a -> !a.getId().equals(assignment.getId()) && a.getStatus() != null
+                            && "Rejected".equalsIgnoreCase(a.getStatus().getName()))
+                    .findFirst().orElse(null);
+            }
+
+            if (oldRejected != null) {
+                // Determine the target status for A
+                String nextStatusName = "YES".equalsIgnoreCase(master.getDualCheck())
+                        ? "Pending for Verified" : "Completed";
+                StatusMaster aStatus = statusRepo.findByName(nextStatusName).orElseThrow();
+
+                // Promote A
+                oldRejected.setStatus(aStatus);
+                oldRejected.setRemarks(remarks);
+                if (actualFiles != null) {
+                    oldRejected.setActualFiles(actualFiles);
+                }
+                oldRejected.setUpdatedBy(verifiedBy);
+                oldRejected.setUpdatedAt(new Date());
+                assignRepo.save(oldRejected);
+
+                // Create a verification record on A so the manager sees the rework
+                ChecklistVerification ver = new ChecklistVerification();
+                ver.setAssignment(oldRejected);
+                ver.setVerifiedBy(verifiedBy);
+                ver.setStatus(aStatus);
+                ver.setRemarks(remarks);
+                ver.setVerifiedDate(new Date());
+                ChecklistVerification savedVer = verifyRepo.save(ver);
+
+                // Delete B (the again-created helper assignment) entirely
+                verifyRepo.deleteByAssignment(assignment);
+                assignRepo.delete(assignment);
+
+                return savedVer;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        // DUAL CHECK LOGIC (for original/manager submit flows):
         // If status is 'Completed' but Master has Dual Check enabled,
         // force status to 'Pending for Verified'.
         String finalStatusName = statusName;
@@ -479,6 +611,8 @@ public class ChecklistService {
         if (actualFiles != null) {
             assignment.setActualFiles(actualFiles);
         }
+        assignment.setUpdatedBy(verifiedBy);
+        assignment.setUpdatedAt(new Date());
         assignRepo.save(assignment);
 
         // Create verification record
@@ -491,14 +625,85 @@ public class ChecklistService {
 
         ChecklistVerification savedVerify = verifyRepo.save(verification);
 
-        // RECURRING LOGIC:
-        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is
-        // NO),
-        // we should generate the next assignment if it's a recurring task.
+        // MANAGER REJECTION WORKFLOW:
+        // If the checklist was completed by the user and rejected by the manager,
+        // create a new identical checklist assignment for the user to perform again.
+        if ("Rejected".equalsIgnoreCase(finalStatusName)) {
+            // Check if there is already a Pending/Started assignment for the same checklist, user, date
+            boolean alreadyExists = false;
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
+
+            java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
+            if (allAssigned != null) {
+                alreadyExists = allAssigned.stream()
+                    .filter(a -> a.getAssignedTo() != null && a.getAssignedTo().equalsIgnoreCase(assignment.getAssignedTo()))
+                    .filter(a -> a.getChecklistDate() != null && sdf.format(a.getChecklistDate()).equals(dateStr))
+                    .anyMatch(a -> !a.getId().equals(assignment.getId()) && a.getStatus() != null && 
+                                   ("Pending".equalsIgnoreCase(a.getStatus().getName()) || "Started".equalsIgnoreCase(a.getStatus().getName())));
+            }
+            if (!alreadyExists) {
+                ChecklistAssignment next = new ChecklistAssignment();
+                next.setChecklist(master);
+                next.setAssignedTo(assignment.getAssignedTo());
+                next.setAssignedBy(verifiedBy);
+                next.setAssignType(assignment.getAssignType());
+                next.setAssignedDate(new Date());
+                next.setChecklistDate(assignment.getChecklistDate());
+                next.setCarryForward(master.getCarryForward());
+                next.setCarryForwardStatus("NO");
+                next.setCarryForwardCount(0);
+                statusRepo.findByName("Pending").ifPresent(next::setStatus);
+                assignRepo.save(next);
+            }
+        }
+
         boolean isFinalized = "Verified".equalsIgnoreCase(finalStatusName) ||
                 "Accepted".equalsIgnoreCase(finalStatusName) ||
                 ("Completed".equalsIgnoreCase(finalStatusName) && !"YES".equalsIgnoreCase(master.getDualCheck()));
 
+        // ERASE ON VERIFY WORKFLOW:
+        // When the newly created checklist is eventually verified or accepted,
+        // erase all old rejected checklist assignments for the same checklist, user, and date.
+        if (isFinalized) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
+
+            java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
+            if (allAssigned != null) {
+                java.util.List<ChecklistAssignment> matched = allAssigned.stream()
+                    .filter(a -> a.getAssignedTo() != null && a.getAssignedTo().equalsIgnoreCase(assignment.getAssignedTo()))
+                    .filter(a -> a.getChecklistDate() != null && sdf.format(a.getChecklistDate()).equals(dateStr))
+                    .collect(java.util.stream.Collectors.toList());
+
+                // 1. Delete all Rejected assignments
+                java.util.List<ChecklistAssignment> rejectedList = matched.stream()
+                    .filter(a -> !a.getId().equals(assignment.getId()) && a.getStatus() != null && "Rejected".equalsIgnoreCase(a.getStatus().getName()))
+                    .collect(java.util.stream.Collectors.toList());
+                if (!rejectedList.isEmpty()) {
+                    for (ChecklistAssignment rej : rejectedList) {
+                        verifyRepo.deleteByAssignment(rej);
+                    }
+                    assignRepo.deleteAll(rejectedList);
+                }
+
+                // 2. Delete the again-created checklist (which is Pending/Started)
+                java.util.List<ChecklistAssignment> pendingList = matched.stream()
+                    .filter(a -> !a.getId().equals(assignment.getId()) && a.getStatus() != null && 
+                                ("Pending".equalsIgnoreCase(a.getStatus().getName()) || "Started".equalsIgnoreCase(a.getStatus().getName())))
+                    .collect(java.util.stream.Collectors.toList());
+                if (!pendingList.isEmpty()) {
+                    for (ChecklistAssignment pend : pendingList) {
+                        verifyRepo.deleteByAssignment(pend);
+                    }
+                    assignRepo.deleteAll(pendingList);
+                }
+            }
+        }
+
+        // RECURRING LOGIC:
+        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is NO),
+        // we should generate the next assignment if it's a recurring task.
         if (isFinalized && master.getFrequency() != null && !"ONE TIME".equalsIgnoreCase(master.getFrequency())) {
             generateNextAssignment(assignment);
         }
@@ -536,8 +741,7 @@ public class ChecklistService {
 
         Date nextDate = cal.getTime();
 
-        // DUPLICATE PREVENTION: Check if a future assignment for this date already
-        // exists
+        // DUPLICATE PREVENTION: Check if a future assignment for this date already exists
         boolean exists = assignRepo.existsByChecklistIdAndAssignedToAndChecklistDate(
                 master.getId(), current.getAssignedTo(), nextDate);
         if (exists)
@@ -560,8 +764,9 @@ public class ChecklistService {
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
-        checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
+        checklist.setUpdatedBy(verifiedBy);
+        checklist.setUpdatedDate(new Date());
         if ("Rejected".equals(status)) {
             checklist.setRejReason(remarks);
         } else if ("Verified".equals(status)) {
@@ -597,4 +802,3 @@ public class ChecklistService {
         }
     }
 }
-

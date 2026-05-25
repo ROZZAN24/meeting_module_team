@@ -254,6 +254,7 @@ export default function EmployeeList() {
 
       return {
         ...row,
+        empCode: row.oldEmpCode || row.empCode || '-',
         photo: row.employeePhotoUpload,
         firstName: getFirstName(row),
         lastName: getLastName(row),

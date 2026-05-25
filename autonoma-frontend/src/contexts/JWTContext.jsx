@@ -106,7 +106,8 @@ export function JWTProvider({ children }) {
           // Use localStorage i18n if present; fall back to DB value
           i18n: localI18n || dbSettings.i18n,
           themeDirection: dbSettings.themeDirection,
-          container: dbSettings.container
+          container: dbSettings.container,
+          dashboardLayout: dbSettings.dashboardLayout || 'glass'
         };
         
         setConfigState((prev) => ({

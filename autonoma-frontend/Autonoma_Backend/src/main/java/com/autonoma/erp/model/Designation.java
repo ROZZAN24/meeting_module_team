@@ -54,24 +54,27 @@ public class Designation {
     @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdDate;
+    @Column(name = "created_date")
+    private java.util.Date createdDate;
 
-    @Nationalized
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedDate;
+    @Column(name = "updated_date")
+    private java.util.Date updatedDate;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = LocalDateTime.now();
+        createdDate = new java.util.Date();
+        if (createdBy == null) {
+            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = LocalDateTime.now();
+        updatedDate = new java.util.Date();
+        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
 
     // Manual Getters and Setters for stability
@@ -99,10 +102,10 @@ public class Designation {
     public void setBudgetedPositions(Integer budgetedPositions) { this.budgetedPositions = budgetedPositions; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public LocalDateTime getCreatedDate() { return createdDate; }
-    public void setCreatedDate(LocalDateTime createdDate) { this.createdDate = createdDate; }
+    public java.util.Date getCreatedDate() { return createdDate; }
+    public void setCreatedDate(java.util.Date createdDate) { this.createdDate = createdDate; }
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public LocalDateTime getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(LocalDateTime updatedDate) { this.updatedDate = updatedDate; }
+    public java.util.Date getUpdatedDate() { return updatedDate; }
+    public void setUpdatedDate(java.util.Date updatedDate) { this.updatedDate = updatedDate; }
 }
