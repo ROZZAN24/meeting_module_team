@@ -49,6 +49,13 @@ import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
+const getCurrentTimeStr = () => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
 const columns = [
@@ -64,9 +71,9 @@ const columns = [
   { id: 'inductionDate', label: 'Date', minWidth: 120 },
   { id: 'inductionTime', label: 'Time', minWidth: 100 },
   { id: 'trainerName', label: 'Trainer/Person', minWidth: 150 },
-  { 
-    id: 'currentStatus', 
-    label: 'Current Status', 
+  {
+    id: 'currentStatus',
+    label: 'Current Status',
     minWidth: 130,
     render: (row) => {
       const colors = {
@@ -77,24 +84,24 @@ const columns = [
         'REJECTED': 'error'
       };
       return (
-        <Chip 
-          label={row.currentStatus} 
-          size="small" 
+        <Chip
+          label={row.currentStatus}
+          size="small"
           color={colors[row.currentStatus] || 'default'}
           sx={{ fontWeight: 700, borderRadius: '6px' }}
         />
       );
     }
   },
-  { 
-    id: 'inductionStatus', 
-    label: 'Induction Status', 
+  {
+    id: 'inductionStatus',
+    label: 'Induction Status',
     minWidth: 120,
     render: (row) => (
-      <Chip 
-        label={row.inductionStatus} 
+      <Chip
+        label={row.inductionStatus}
         variant="outlined"
-        size="small" 
+        size="small"
         color={row.inductionStatus === 'ACTIVE' ? 'success' : 'error'}
       />
     )
@@ -103,7 +110,11 @@ const columns = [
 ];
 
 const getCurrentDateString = () => {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const getCurrentTimeString = () => {
@@ -121,7 +132,7 @@ const INITIAL_STATE = {
   department: '',
   designation: '',
   inductionRound: '',
-  screeningLevel: 'L1', 
+  screeningLevel: 'L1',
   inductionDate: getCurrentDateString(),
   inductionTime: getCurrentTimeString(),
   trainerName: '',
@@ -139,21 +150,7 @@ const VALIDATION_RULES = [
   { field: 'inductionRound', label: 'Induction Round', required: true },
   { field: 'screeningLevel', label: 'Screening Level', required: true },
   { field: 'inductionDate', label: 'Induction Date', required: true },
-  { 
-    field: 'inductionTime', 
-    label: 'Induction Time', 
-    required: true,
-    validate: (val, form) => {
-      const today = getCurrentDateString();
-      if (form.inductionDate === today) {
-        const currTime = getCurrentTimeString();
-        if (val < currTime) {
-          return 'For current date, time must start from current time onwards';
-        }
-      }
-      return null;
-    }
-  },
+  { field: 'inductionTime', label: 'Induction Time', required: true },
   { field: 'trainerName', label: 'Trainer Name', required: true }
 ];
 
@@ -216,9 +213,9 @@ const InductionAssignment = () => {
     try {
       const { data } = await axios.get(`/api/hr/induction-assignment/employee/${row.empCode}`);
       setHistory(data || []);
-      
+
       const cleanData = { ...INITIAL_STATE };
-      
+
       Object.keys(cleanData).forEach(key => {
         if (row[key] !== undefined && row[key] !== null) {
           cleanData[key] = row[key];
@@ -233,7 +230,7 @@ const InductionAssignment = () => {
         cleanData.inductionRound = '';
       }
 
-      // Special handling for dates
+      // Special handling for dates and times
       if (row.inductionDate && row.inductionDate !== '-') {
         cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
       } else {
@@ -265,13 +262,16 @@ const InductionAssignment = () => {
     } catch (err) {
       console.error('History fetch error:', err);
       // Fallback if history fails
+      const todayStr = getCurrentDateString();
       setFormData({
         ...INITIAL_STATE,
         empCode: row.empCode,
         empName: row.empName || row.employeeName,
         department: row.department,
         designation: row.designation,
-        oldEmpCode: row.oldEmpCode
+        oldEmpCode: row.oldEmpCode,
+        inductionDate: todayStr,
+        inductionTime: getCurrentTimeStr()
       });
       setDialogOpen(true);
     } finally {
@@ -286,17 +286,17 @@ const InductionAssignment = () => {
     { id: 'oldEmpCode', label: 'OldEmpCode', minWidth: 120, render: (row) => row.oldEmpCode || '-' },
     { id: 'department', label: 'Department', minWidth: 150 },
     { id: 'designation', label: 'Designation', minWidth: 150 },
-    { 
-      id: 'inductionStatus', 
-      label: 'Induction Status', 
+    {
+      id: 'inductionStatus',
+      label: 'Induction Status',
       minWidth: 130,
       render: (row) => {
         const status = row.inductionStatus || 'PENDING';
         return (
-          <Chip 
-            label={status} 
+          <Chip
+            label={status}
             variant="outlined"
-            size="small" 
+            size="small"
             color={status === 'COMPLETED' ? 'success' : 'warning'}
           />
         );
@@ -326,36 +326,36 @@ const InductionAssignment = () => {
 
       const assignments = assignRes.data;
       const allActiveEmployees = empRes.data;
-      
+
       const finalRows = [];
       assignments.forEach(a => {
         const emp = allActiveEmployees.find(e => e.empCode === a.empCode);
         const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : (emp?.department || a.department);
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : (emp?.designation || a.designation);
-        finalRows.push({ 
-          ...emp, 
-          ...a, 
+        finalRows.push({
+          ...emp,
+          ...a,
           id: a.id,
           employeeId: emp?.id,
           department: empDept,
           designation: empDesig,
-          isVirtual: false 
+          isVirtual: false
         });
       });
 
       allActiveEmployees.forEach(emp => {
         if (!assignments.some(a => a.empCode === emp.empCode)) {
-          finalRows.push({ 
-            ...emp, 
+          finalRows.push({
+            ...emp,
             id: null,
             employeeId: emp.id,
             empName: emp.employeeName,
             department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
             designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
-            isVirtual: true, 
-            currentStatus: 'PENDING', 
-            inductionRound: '-', 
-            screeningLevel: '-' 
+            isVirtual: true,
+            currentStatus: 'PENDING',
+            inductionRound: '-',
+            screeningLevel: '-'
           });
         }
       });
@@ -386,12 +386,30 @@ const InductionAssignment = () => {
     if (errors[name]) clearErrors(name);
   };
 
+  const handleDateChange = (e) => {
+    const { value } = e.target;
+    const todayStr = getCurrentDateString();
+
+    let newTime = formData.inductionTime;
+    if (value === todayStr) {
+      newTime = getCurrentTimeStr();
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      inductionDate: value,
+      inductionTime: newTime
+    }));
+    if (errors.inductionDate) clearErrors('inductionDate');
+    if (errors.inductionTime) clearErrors('inductionTime');
+  };
+
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
-    
+
     // Find trainer emp code
     const selectedTrainer = employees.find(e => e.employeeName === formData.trainerName);
-    
+
     // Clean payload to match backend model exactly
     const payload = {
       empCode: formData.empCode,
@@ -434,13 +452,13 @@ const InductionAssignment = () => {
       const message = typeof error === 'string'
         ? error
         : (error.response?.data?.message || error.response?.data || error.message || error.error || 'Failed to save');
-      
-      dispatch(openSnackbar({ 
-        open: true, 
-        message: message, 
-        variant: 'alert', 
-        alert: { variant: 'filled' }, 
-        severity: 'error' 
+
+      dispatch(openSnackbar({
+        open: true,
+        message: message,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error'
       }));
     }
   };
@@ -449,11 +467,11 @@ const InductionAssignment = () => {
     return rows.filter(row => {
       const statusVal = globalFilters.status || 'ALL';
       const matchesStatus = statusVal === 'ALL' || row.inductionStatus === statusVal;
-      
+
       const searchByVal = globalFilters.searchBy || 'empCode';
       const term = globalQuery ? globalQuery.toLowerCase() : '';
       const matchesSearch = !term || (row[searchByVal] && row[searchByVal].toString().toLowerCase().includes(term));
-      
+
       return matchesStatus && matchesSearch;
     }).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
@@ -472,10 +490,10 @@ const InductionAssignment = () => {
             </IconButton>
           </Tooltip>
 
-          {perms.export && <BOSExportButton 
-            data={resolvedRows} 
-            filename="Induction_Summary" 
-            columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
+          {perms.export && <BOSExportButton
+            data={resolvedRows}
+            filename="Induction_Summary"
+            columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
           />}
         </Stack>
       }
@@ -496,7 +514,12 @@ const InductionAssignment = () => {
         maxWidth="md"
         onSave={handleSave}
         onClear={() => {
-          setFormData(INITIAL_STATE);
+          const todayStr = getCurrentDateString();
+          setFormData({
+            ...INITIAL_STATE,
+            inductionDate: todayStr,
+            inductionTime: getCurrentTimeStr()
+          });
           setErrors({});
         }}
       >
@@ -551,7 +574,7 @@ const InductionAssignment = () => {
                 name="inductionDate"
                 label="INDUCTION DATE"
                 value={formData.inductionDate}
-                onChange={handleInputChange}
+                onChange={handleDateChange}
                 required
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
@@ -646,21 +669,21 @@ const InductionAssignment = () => {
                       <TableCell>{h.inductionDate ? `${h.inductionDate} ${h.inductionTime || ''}` : '-'}</TableCell>
                       <TableCell>{h.trainerName || '-'}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={h.currentStatus || 'PENDING'} 
-                          size="small" 
-                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')} 
+                        <Chip
+                          label={h.currentStatus || 'PENDING'}
+                          size="small"
+                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')}
                           sx={{ fontWeight: 600 }}
                         />
                       </TableCell>
                       <TableCell>NO</TableCell>
                       <TableCell>{h.createdBy || '-'}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={h.inductionStatus || 'ACTIVE'} 
-                          size="small" 
-                          variant="outlined" 
-                          color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
+                        <Chip
+                          label={h.inductionStatus || 'ACTIVE'}
+                          size="small"
+                          variant="outlined"
+                          color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'}
                         />
                       </TableCell>
                     </TableRow>
