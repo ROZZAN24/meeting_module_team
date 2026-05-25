@@ -110,6 +110,8 @@ export const getDialogStyles = (theme, isDark) => ({
     color: isDark ? '#c9d1d9' : theme.palette.text.primary
   },
   paper: {
+    display: 'flex',
+    flexDirection: 'column',
     height: 'auto',
     maxHeight: '95vh',
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
@@ -130,7 +132,8 @@ export const getDialogStyles = (theme, isDark) => ({
     borderBottom: '1px solid',
     borderColor: 'divider',
     py: 3.5,
-    px: 4
+    px: 4,
+    flexShrink: 0
   },
   titleText: {
     fontWeight: 600,
@@ -147,6 +150,8 @@ export const getDialogStyles = (theme, isDark) => ({
     width: '100%',
     overflowY: 'auto',
     overflowX: 'hidden',
+    flexGrow: 1,
+    minHeight: 0,
     // Ensure poppers and menus are not clipped
     '& .MuiAutocomplete-popper': {
       zIndex: '1500 !important'
@@ -161,7 +166,8 @@ export const getDialogStyles = (theme, isDark) => ({
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    bgcolor: isDark ? '#161b22' : theme.palette.background.paper
+    bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
+    flexShrink: 0
   },
   sectionCard: {
     bgcolor: isDark ? 'background.default' : '#ffffff',
