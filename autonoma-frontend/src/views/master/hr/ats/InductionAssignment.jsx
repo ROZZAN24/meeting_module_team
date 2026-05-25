@@ -110,7 +110,11 @@ const columns = [
 ];
 
 const getCurrentDateString = () => {
-  return new Date().toISOString().split('T')[0];
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const getCurrentTimeString = () => {
@@ -146,21 +150,7 @@ const VALIDATION_RULES = [
   { field: 'inductionRound', label: 'Induction Round', required: true },
   { field: 'screeningLevel', label: 'Screening Level', required: true },
   { field: 'inductionDate', label: 'Induction Date', required: true },
-  { 
-    field: 'inductionTime', 
-    label: 'Induction Time', 
-    required: true,
-    validate: (val, form) => {
-      const today = getCurrentDateString();
-      if (form.inductionDate === today) {
-        const currTime = getCurrentTimeString();
-        if (val < currTime) {
-          return 'For current date, time must start from current time onwards';
-        }
-      }
-      return null;
-    }
-  },
+  { field: 'inductionTime', label: 'Induction Time', required: true },
   { field: 'trainerName', label: 'Trainer Name', required: true }
 ];
 
@@ -264,7 +254,7 @@ const InductionAssignment = () => {
     } catch (err) {
       console.error('History fetch error:', err);
       // Fallback if history fails
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = getCurrentDateString();
       setFormData({
         ...INITIAL_STATE,
         empCode: row.empCode,
@@ -389,22 +379,22 @@ const InductionAssignment = () => {
   };
 
   const handleDateChange = (e) => {
-    const { value } = e.target;
-    const todayStr = new Date().toISOString().split('T')[0];
-    
-    let newTime = formData.inductionTime;
-    if (value === todayStr) {
-      newTime = getCurrentTimeStr();
-    }
-    
-    setFormData(prev => ({ 
-      ...prev, 
-      inductionDate: value,
-      inductionTime: newTime
-    }));
-    if (errors.inductionDate) clearErrors('inductionDate');
-    if (errors.inductionTime) clearErrors('inductionTime');
-  };
+      const { value } = e.target;
+      const todayStr = getCurrentDateString();
+      
+      let newTime = formData.inductionTime;
+      if (value === todayStr) {
+        newTime = getCurrentTimeStr();
+      }
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        inductionDate: value,
+        inductionTime: newTime
+      }));
+      if (errors.inductionDate) clearErrors('inductionDate');
+      if (errors.inductionTime) clearErrors('inductionTime');
+    };
 
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
@@ -516,7 +506,7 @@ const InductionAssignment = () => {
         maxWidth="md"
         onSave={handleSave}
         onClear={() => {
-          const todayStr = new Date().toISOString().split('T')[0];
+          const todayStr = getCurrentDateString();
           setFormData({
             ...INITIAL_STATE,
             inductionDate: todayStr,
@@ -592,7 +582,6 @@ const InductionAssignment = () => {
                 onChange={handleInputChange}
                 required
                 InputLabelProps={{ shrink: true }}
-                inputProps={formData.inductionDate === new Date().toISOString().split('T')[0] ? { min: getCurrentTimeStr() } : {}}
                 error={!!errors.inductionTime}
                 sx={errorStyle(!!errors.inductionTime)}
               />
