@@ -14,6 +14,7 @@ import {
   IconUser, IconCalendar
 } from '@tabler/icons-react';
 import useAuth from 'hooks/useAuth';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
 
@@ -148,6 +149,8 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
 const CompanyProfile = () => {
   const { user } = useAuth();
   const isSuperUser = user?.isBosAdmin === 1;
+
+  const perms = usePagePermissions(PAGE_CODES.AD_COMPANY_PROFILE);
 
   const [form, setForm] = useState(emptyForm);
   const [recordId, setRecordId] = useState(null);
@@ -873,20 +876,22 @@ const CompanyProfile = () => {
               Reset
             </Button>
           </Tooltip> */}
-          <Button
-            variant="contained"
-            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}
-            onClick={handleSave}
-            disabled={loading}
-            sx={{
-              borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 4,
-              background: 'linear-gradient(135deg,#5e72e4,#825ee4)',
-              boxShadow: '0 4px 15px rgba(94,114,228,0.4)',
-              '&:hover': { background: 'linear-gradient(135deg,#4a5fd4,#6e48d4)', boxShadow: '0 6px 20px rgba(94,114,228,0.5)' }
-            }}
-          >
-            {loading ? 'Saving…' : recordId ? 'Update Profile' : 'Save Profile'}
-          </Button>
+          {perms.write && (
+            <Button
+              variant="contained"
+              startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}
+              onClick={handleSave}
+              disabled={loading || !perms.write}
+              sx={{
+                borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 4,
+                background: 'linear-gradient(135deg,#5e72e4,#825ee4)',
+                boxShadow: '0 4px 15px rgba(94,114,228,0.4)',
+                '&:hover': { background: 'linear-gradient(135deg,#4a5fd4,#6e48d4)', boxShadow: '0 6px 20px rgba(94,114,228,0.5)' }
+              }}
+            >
+              {loading ? 'Saving…' : recordId ? 'Update Profile' : 'Save Profile'}
+            </Button>
+          )}
         </Box>
       </Paper>
 
