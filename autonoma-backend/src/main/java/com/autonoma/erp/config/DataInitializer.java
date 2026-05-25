@@ -44,8 +44,9 @@ public class DataInitializer implements CommandLineRunner {
         // Use the new reversible encoder
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setStatus(1);
+        admin.setIsBosAdmin(1); // Set as Super User
         userRepository.save(admin);
-        System.out.println("Admin password initialized/updated with reversible encryption.");
+        System.out.println("Admin password initialized/updated with reversible encryption and superuser privileges.");
 
         // Seed Sample Customers if none exist
         if (customerRepository.count() == 0) {

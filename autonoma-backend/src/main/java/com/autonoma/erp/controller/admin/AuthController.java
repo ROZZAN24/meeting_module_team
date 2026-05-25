@@ -57,6 +57,12 @@ public class AuthController {
     @Autowired
     private com.autonoma.erp.repository.admin.CompanyCredentialRepository companyCredentialRepository;
 
+    @GetMapping("/check-credentials")
+    public ResponseEntity<?> checkCredentialsGet() {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED)
+                .body(Map.of("message", "Request method 'GET' is not supported for check-credentials. Use 'POST' with a JSON request body containing 'username' and 'password' instead."));
+    }
+
     @PostMapping("/check-credentials")
     public ResponseEntity<?> checkCredentials(@RequestBody LoginRequest loginRequest) {
         // Step 1: Validate credentials from master database

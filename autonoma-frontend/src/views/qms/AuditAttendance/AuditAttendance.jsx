@@ -39,6 +39,18 @@ const VALIDATION_RULES = [
   { field: 'attendanceStatus', label: 'Attendance Status', required: true }
 ];
 
+const getSystemTime12h = () => {
+  const date = new Date();
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const strMinutes = minutes < 10 ? '0' + minutes : minutes;
+  const strHours = hours < 10 ? '0' + hours : hours;
+  return `${strHours}:${strMinutes} ${ampm}`;
+};
+
 export default function AuditAttendance() {
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_ATTENDANCE);
@@ -104,16 +116,12 @@ export default function AuditAttendance() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleOpenAdd = () => {
-    setFormData({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', outTime: '', attendanceStatus: 'PRESENT' });
+    setFormData({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: getSystemTime12h(), outTime: '', attendanceStatus: 'PRESENT' });
     clearErrors();
     setDialogOpen(true);
   };
 
-  const handleOpenEdit = (row) => {
-    setFormData({ ...row });
-    clearErrors();
-    setDialogOpen(true);
-  };
+
 
   useEffect(() => {
     const fetchParticipants = async () => {
@@ -124,26 +132,6 @@ export default function AuditAttendance() {
           const participantData = res.data || [];
           console.log(`[AuditAttendance] Participants loaded: ${participantData.length}`);
           setParticipants(participantData);
-          
-          const schedule = schedules.find(s => s.scheduleNo === formData.auditScheduleNo);
-          if (schedule) {
-            const formatTo12h = (t) => {
-              if (!t || t.includes('AM') || t.includes('PM')) return t;
-              try {
-                let [h, m] = t.split(':').map(Number);
-                const ampm = h >= 12 ? 'PM' : 'AM';
-                h = h % 12 || 12;
-                return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;
-              } catch (e) {
-                return t;
-              }
-            };
-            setFormData(prev => ({
-              ...prev,
-              inTime: formatTo12h(schedule.startTime) || prev.inTime,
-              outTime: formatTo12h(schedule.endTime) || prev.outTime
-            }));
-          }
         } catch (err) {
           console.error(`[AuditAttendance] Error fetching participants for ${formData.auditScheduleNo}:`, err);
           setParticipants([]);
@@ -151,16 +139,29 @@ export default function AuditAttendance() {
       }
     };
     fetchParticipants();
-  }, [formData.auditScheduleNo, formData.id, schedules]);
+  }, [formData.auditScheduleNo, formData.id]);
+
+  const handleOpenEdit = (row) => {
+    setFormData({
+      ...row,
+      inTime: row.attendanceStatus === 'PRESENT' && !row.inTime ? getSystemTime12h() : (row.inTime || '')
+    });
+    clearErrors();
+    setDialogOpen(true);
+  };
 
   const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
-    console.log('[AuditAttendance] Attempting to save attendance record:', formData);
+    const finalData = {
+      ...formData,
+      inTime: formData.attendanceStatus === 'PRESENT' && !formData.inTime ? getSystemTime12h() : formData.inTime
+    };
+    if (!validate(finalData, VALIDATION_RULES)) return;
+    console.log('[AuditAttendance] Attempting to save attendance record:', finalData);
     try {
-      if (formData.id) {
-        await axios.put(`/api/qms/audit/attendance/${formData.id}`, formData);
+      if (finalData.id) {
+        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData);
       } else {
-        await axios.post('/api/qms/audit/attendance', formData);
+        await axios.post('/api/qms/audit/attendance', finalData);
       }
       console.log('[AuditAttendance] Save successful');
       dispatch(openSnackbar({ 
@@ -301,30 +302,14 @@ export default function AuditAttendance() {
               )}
             </BOSTextField>
 
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <BOSTextField
-                select
-                label="In Time"
-                disabled={formData.attendanceStatus === 'ABSENT'}
-                value={formData.inTime}
-                onChange={(e) => setFormData({ ...formData, inTime: e.target.value })}
-                error={!!errors.inTime}
-                helperText={errors.inTime}
-              >
-                {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </BOSTextField>
-              <BOSTextField
-                select
-                label="Out Time"
-                disabled={formData.attendanceStatus === 'ABSENT'}
-                value={formData.outTime}
-                onChange={(e) => setFormData({ ...formData, outTime: e.target.value })}
-                error={!!errors.outTime}
-                helperText={errors.outTime}
-              >
-                {TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </BOSTextField>
-            </Box>
+            <BOSTextField
+              label="In Time"
+              value={formData.inTime}
+              disabled={formData.attendanceStatus === 'ABSENT'}
+              InputProps={{ readOnly: true }}
+              error={!!errors.inTime}
+              helperText={errors.inTime}
+            />
 
             <BOSTextField
               select
@@ -333,7 +318,12 @@ export default function AuditAttendance() {
               value={formData.attendanceStatus}
               onChange={(e) => {
                 const s = e.target.value;
-                setFormData(prev => ({ ...prev, attendanceStatus: s, inTime: s === 'ABSENT' ? '' : prev.inTime, outTime: s === 'ABSENT' ? '' : prev.outTime }));
+                setFormData(prev => ({
+                  ...prev,
+                  attendanceStatus: s,
+                  inTime: s === 'ABSENT' ? '' : (prev.inTime || getSystemTime12h()),
+                  outTime: s === 'ABSENT' ? '' : prev.outTime
+                }));
               }}
               error={!!errors.attendanceStatus}
               helperText={errors.attendanceStatus}
