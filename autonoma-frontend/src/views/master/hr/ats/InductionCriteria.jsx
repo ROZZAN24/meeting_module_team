@@ -83,20 +83,16 @@ export default function InductionCriteria() {
   const { departments = [], levels = [] } = useLookups(['DEPARTMENTS', 'LEVELS']);
 
   const levelOptions = useMemo(() => {
-    if (!levels || levels.length === 0) {
-      return [
-        { code: 'L1', label: 'L1 - Trainee' },
-        { code: 'L2', label: 'L2 - Junior Executive' },
-        { code: 'L3', label: 'L3 - Executive' },
-        { code: 'L4', label: 'L4 - Senior Executive' },
-        { code: 'L5', label: 'L5 - Assistant Manager' },
-        { code: 'L6', label: 'L6 - Manager & Above' }
-      ];
+    if (levels && levels.length > 0) {
+      return levels.map(dl => {
+        const matchingLegacy = LEVEL_OPTIONS.find(l => l.code === dl.level);
+        return {
+          code: dl.level,
+          label: matchingLegacy ? matchingLegacy.label : dl.level
+        };
+      });
     }
-    return levels.map(l => ({
-      code: l.level,
-      label: l.level
-    }));
+    return LEVEL_OPTIONS;
   }, [levels]);
 
   const globalQuery = useSelector((state) => state.search.query);
@@ -238,6 +234,34 @@ export default function InductionCriteria() {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
     if (errors[name]) clearErrors(name);
+  };
+
+  const handleDepartmentChange = (e) => {
+    const { value } = e.target;
+    if (value.includes('ALL')) {
+      if (formData.departmentCodes.length === departments.length) {
+        setFormData(prev => ({ ...prev, departmentCodes: [] }));
+      } else {
+        setFormData(prev => ({ ...prev, departmentCodes: departments.map(d => d.id.toString()) }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, departmentCodes: value }));
+    }
+    if (errors.departmentCodes) clearErrors('departmentCodes');
+  };
+
+  const handleLevelChange = (e) => {
+    const { value } = e.target;
+    if (value.includes('ALL')) {
+      if (formData.levelCodes.length === levelOptions.length) {
+        setFormData(prev => ({ ...prev, levelCodes: [] }));
+      } else {
+        setFormData(prev => ({ ...prev, levelCodes: levelOptions.map(l => l.code) }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, levelCodes: value }));
+    }
+    if (errors.levelCodes) clearErrors('levelCodes');
   };
 
   const handleSave = async () => {
@@ -504,7 +528,7 @@ export default function InductionCriteria() {
                   name="departmentCodes"
                   label="DEPARTMENT"
                   value={formData.departmentCodes}
-                  onChange={handleInputChange}
+                  onChange={handleDepartmentChange}
                   SelectProps={{
                     multiple: true,
                     renderValue: (selected) => {
@@ -518,10 +542,12 @@ export default function InductionCriteria() {
                   error={!!errors.departmentCodes}
                   sx={errorStyle(!!errors.departmentCodes)}
                 >
-                  <MenuItem value="ALL">
-                    <Checkbox checked={formData.departmentCodes.length === departments.length} indeterminate={formData.departmentCodes.length > 0 && formData.departmentCodes.length < departments.length} />
-                    <ListItemText primary="Select All" />
-                  </MenuItem>
+                  {departments.length > 0 && (
+                    <MenuItem value="ALL">
+                      <Checkbox checked={formData.departmentCodes.length === departments.length} indeterminate={formData.departmentCodes.length > 0 && formData.departmentCodes.length < departments.length} />
+                      <ListItemText primary="Select All" sx={{ '& .MuiTypography-root': { fontWeight: 'bold' } }} />
+                    </MenuItem>
+                  )}
                   {departments.map((d) => (
                     <MenuItem key={d.id} value={d.id.toString()}>
                       <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
@@ -534,11 +560,12 @@ export default function InductionCriteria() {
                   name="levelCodes"
                   label="LEVEL"
                   value={formData.levelCodes}
-                  onChange={handleInputChange}
+                  onChange={handleLevelChange}
                   SelectProps={{
                     multiple: true,
                     renderValue: (selected) => {
-                      if (selected.length === 0) return <em>-Select-</em>;
+                      if (!selected || selected.length === 0) return <em>-Select-</em>;
+                      if (selected.length === levelOptions.length) return 'All Levels';
                       return selected.map(code => levelOptions.find(l => l.code === code)?.label || code).join(', ');
                     }
                   }}
@@ -547,6 +574,12 @@ export default function InductionCriteria() {
                   error={!!errors.levelCodes}
                   sx={errorStyle(!!errors.levelCodes)}
                 >
+                  {levelOptions.length > 0 && (
+                    <MenuItem value="ALL">
+                      <Checkbox checked={formData.levelCodes.length === levelOptions.length} indeterminate={formData.levelCodes.length > 0 && formData.levelCodes.length < levelOptions.length} />
+                      <ListItemText primary="Select All" sx={{ '& .MuiTypography-root': { fontWeight: 'bold' } }} />
+                    </MenuItem>
+                  )}
                   {levelOptions.map((l) => (
                     <MenuItem key={l.code} value={l.code}>
                       <Checkbox checked={formData.levelCodes.includes(l.code)} />

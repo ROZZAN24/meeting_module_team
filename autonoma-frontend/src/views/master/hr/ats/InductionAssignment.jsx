@@ -49,6 +49,13 @@ import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
+const getCurrentTimeStr = () => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
 const columns = [
@@ -225,7 +232,7 @@ const InductionAssignment = () => {
         }
       });
 
-      // Special handling for dates
+      // Special handling for dates and times
       if (row.inductionDate && row.inductionDate !== '-') {
         cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
       } else {
@@ -257,13 +264,16 @@ const InductionAssignment = () => {
     } catch (err) {
       console.error('History fetch error:', err);
       // Fallback if history fails
+      const todayStr = new Date().toISOString().split('T')[0];
       setFormData({
         ...INITIAL_STATE,
         empCode: row.empCode,
         empName: row.empName || row.employeeName,
         department: row.department,
         designation: row.designation,
-        oldEmpCode: row.oldEmpCode
+        oldEmpCode: row.oldEmpCode,
+        inductionDate: todayStr,
+        inductionTime: getCurrentTimeStr()
       });
       setDialogOpen(true);
     } finally {
@@ -378,6 +388,24 @@ const InductionAssignment = () => {
     if (errors[name]) clearErrors(name);
   };
 
+  const handleDateChange = (e) => {
+    const { value } = e.target;
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    let newTime = formData.inductionTime;
+    if (value === todayStr) {
+      newTime = getCurrentTimeStr();
+    }
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      inductionDate: value,
+      inductionTime: newTime
+    }));
+    if (errors.inductionDate) clearErrors('inductionDate');
+    if (errors.inductionTime) clearErrors('inductionTime');
+  };
+
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
     
@@ -488,7 +516,12 @@ const InductionAssignment = () => {
         maxWidth="md"
         onSave={handleSave}
         onClear={() => {
-          setFormData(INITIAL_STATE);
+          const todayStr = new Date().toISOString().split('T')[0];
+          setFormData({
+            ...INITIAL_STATE,
+            inductionDate: todayStr,
+            inductionTime: getCurrentTimeStr()
+          });
           setErrors({});
         }}
       >
@@ -543,7 +576,7 @@ const InductionAssignment = () => {
                 name="inductionDate"
                 label="INDUCTION DATE"
                 value={formData.inductionDate}
-                onChange={handleInputChange}
+                onChange={handleDateChange}
                 required
                 InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionDate}
@@ -559,6 +592,7 @@ const InductionAssignment = () => {
                 onChange={handleInputChange}
                 required
                 InputLabelProps={{ shrink: true }}
+                inputProps={formData.inductionDate === new Date().toISOString().split('T')[0] ? { min: getCurrentTimeStr() } : {}}
                 error={!!errors.inductionTime}
                 sx={errorStyle(!!errors.inductionTime)}
               />
