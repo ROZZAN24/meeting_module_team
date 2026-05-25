@@ -2144,6 +2144,29 @@ export default function TicketManagement({ viewType }) {
     );
   }, [formPage, tickets]);
 
+  const activeDevelopersForSelectedPage = useMemo(() => {
+    if (!formPage || !tickets) return [];
+    const activeTickets = tickets.filter(t =>
+      t.pageId === formPage.pageId &&
+      t.ticketStatus !== 'Completed' &&
+      t.ticketStatus !== 'To Be Tested' &&
+      t.ticketStatus !== 'Closed' &&
+      (t.developerName || t.assignedTo)
+    );
+    const devs = activeTickets.map(t => (t.developerName || t.assignedTo).trim());
+    return Array.from(new Set(devs));
+  }, [formPage, tickets]);
+
+  const activeDevelopersInOptions = useMemo(() => {
+    if (!employeesList || !user) return [];
+    const filteredEmployees = employeesList.filter(
+      e => e.employeeName !== user?.name && e.employeeName !== user?.username && e.empCode !== user?.empId
+    );
+    return activeDevelopersForSelectedPage.filter(dev =>
+      filteredEmployees.some(opt => opt.employeeName?.trim().toLowerCase() === dev.toLowerCase())
+    );
+  }, [activeDevelopersForSelectedPage, employeesList, user]);
+
   if (selectedTicket && detailsOpen) {
     const roadmapEvents = ticketTimeline && ticketTimeline.length > 0
       ? ticketTimeline.filter(event => {
@@ -3434,6 +3457,14 @@ export default function TicketManagement({ viewType }) {
                     <Autocomplete
                       options={employeesList.filter(e => e.employeeName !== user?.name && e.employeeName !== user?.username && e.empCode !== user?.empId)}
                       getOptionLabel={(option) => option.employeeName || ''}
+                      getOptionDisabled={(option) => {
+                        if (activeDevelopersInOptions.length > 0) {
+                          return !activeDevelopersInOptions.some(
+                            dev => dev.toLowerCase() === option.employeeName?.trim().toLowerCase()
+                          );
+                        }
+                        return false;
+                      }}
                       value={employeesList.find(e => e.employeeName === formDevName) || null}
                       onChange={(event, selectedEmp) => {
                         if (selectedEmp) {
@@ -3449,7 +3480,48 @@ export default function TicketManagement({ viewType }) {
                           setFormDevMobile('');
                         }
                       }}
-                      renderInput={(params) => <TextField {...params} required label="Assigned To" placeholder="Search employee..." />}
+                      renderInput={(params) => {
+                        const originalEndAdornment = params.InputProps.endAdornment;
+                        return (
+                          <TextField
+                            {...params}
+                            required
+                            label="Assigned To"
+                            placeholder="Search employee..."
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {activeDevelopersForSelectedPage.length > 0 && (
+                                    <InputAdornment position="end" sx={{ mr: 2 }}>
+                                      <HtmlTooltip
+                                        title={
+                                          <Box sx={{ p: 1, minWidth: 240 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#ffb74d', mb: 1 }}>
+                                              Already Assigned to Page
+                                            </Typography>
+                                            <Typography variant="body2" sx={{ color: 'white', fontSize: '0.8rem', lineHeight: 1.4 }}>
+                                              {activeDevelopersForSelectedPage.join(', ')} is already working on a task for this page. Please assign it to them.
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', display: 'block', mt: 1, fontStyle: 'italic' }}>
+                                              ({activeDevelopersForSelectedPage.join(', ')} intha task idhae page la pannuraru, avarukae assign pannunga.)
+                                            </Typography>
+                                          </Box>
+                                        }
+                                        placement="top"
+                                        arrow
+                                      >
+                                        <InfoOutlinedIcon sx={{ color: '#ffb74d', cursor: 'pointer', fontSize: 20 }} />
+                                      </HtmlTooltip>
+                                    </InputAdornment>
+                                  )}
+                                  {originalEndAdornment}
+                                </>
+                              )
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </Box>
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formVerifiedBy, 'Verified By', 90)}px` }}>
