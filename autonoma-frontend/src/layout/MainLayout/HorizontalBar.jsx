@@ -232,6 +232,13 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
           anchorEl={anchorEl}
           placement="bottom-start"
           sx={{ zIndex: 2001 }}
+          onMouseEnter={() => {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+              timeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={handleMouseLeave}
           modifiers={[
             {
               name: 'offset',
@@ -241,7 +248,26 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors }) {
             }
           ]}
         >
-          <Paper sx={{ boxShadow: theme.shadows[8], py: 0.5, minWidth: 190, backgroundImage: 'none' }}>
+          <Paper 
+            sx={{ 
+              boxShadow: theme.shadows[8], 
+              py: 0.5, 
+              minWidth: 190, 
+              backgroundImage: 'none',
+              position: 'relative',
+              overflow: 'visible',
+              '&::before': {
+                content: '""',
+                position: 'absolute',
+                top: -12, // Bridges the 8px offset gap perfectly
+                left: 0,
+                right: 0,
+                height: 12,
+                bgcolor: 'transparent',
+                zIndex: 1
+              }
+            }}
+          >
             <List dense disablePadding>
               {item.children.map((menu) => {
                 switch (menu.type) {
