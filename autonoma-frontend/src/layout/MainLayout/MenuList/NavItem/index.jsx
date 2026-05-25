@@ -155,7 +155,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                       ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
                     }}
                   >
-                    <FormattedMessage id={item.title} />
+                    <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
                   </Typography>
                 }
                 secondary={
@@ -226,7 +226,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
             sx={{ mb: 0.25 }}
             primary={
               <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                <FormattedMessage id={item.title} />
+                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
               </Typography>
             }
             secondary={
