@@ -225,6 +225,14 @@ const InductionAssignment = () => {
         }
       });
 
+      // Sanitize fields coming from virtual row defaults
+      if (!cleanData.screeningLevel || cleanData.screeningLevel === '-' || !LEVEL_OPTIONS.includes(cleanData.screeningLevel)) {
+        cleanData.screeningLevel = 'L1';
+      }
+      if (cleanData.inductionRound === '-') {
+        cleanData.inductionRound = '';
+      }
+
       // Special handling for dates
       if (row.inductionDate && row.inductionDate !== '-') {
         cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
