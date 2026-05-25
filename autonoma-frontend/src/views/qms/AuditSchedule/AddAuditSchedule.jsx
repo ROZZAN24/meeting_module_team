@@ -143,6 +143,7 @@ export default function AddAuditSchedule() {
     contactName: '',
     externalName: '',
     emailToCustomer: '',
+    fromEmailToCustomer: '',
     subcontractorName: '',
     supplierName: '',
     coOrdinator: ''
@@ -156,8 +157,10 @@ export default function AddAuditSchedule() {
     auditCriterias: masterCriteria = [], 
     employees = [],
     levels = [],
-    designations = []
-  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS']);
+    designations = [],
+    customers = [],
+    contacts = []
+  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS']);
 
   // Criteria Dialog state
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
@@ -215,6 +218,7 @@ export default function AddAuditSchedule() {
         contactName: extras.contactName || '',
         externalName: extras.externalName || '',
         emailToCustomer: extras.emailToCustomer || '',
+        fromEmailToCustomer: extras.fromEmailToCustomer || '',
         subcontractorName: extras.subcontractorName || '',
         supplierName: extras.supplierName || '',
         coOrdinator: extras.coOrdinator || ''
@@ -296,6 +300,9 @@ export default function AddAuditSchedule() {
       rules.push({ field: 'customerName', label: 'Customer Name', required: true });
       rules.push({ field: 'contactName', label: 'Contact Name', required: true });
       rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
+      if (formData.emailToCustomer === 'YES') {
+        rules.push({ field: 'fromEmailToCustomer', label: 'From Email', required: true });
+      }
     } else if (category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
       rules.push({ field: 'externalName', label: 'External Name', required: true });
       rules.push({ field: 'contactName', label: 'Contact Name', required: true });
@@ -353,6 +360,7 @@ export default function AddAuditSchedule() {
         contactName: formData.contactName || '',
         externalName: formData.externalName || '',
         emailToCustomer: formData.emailToCustomer || '',
+        fromEmailToCustomer: formData.fromEmailToCustomer || '',
         subcontractorName: formData.subcontractorName || '',
         supplierName: formData.supplierName || '',
         coOrdinator: formData.coOrdinator || ''
@@ -403,6 +411,7 @@ export default function AddAuditSchedule() {
         contactName: '',
         externalName: '',
         emailToCustomer: '',
+        fromEmailToCustomer: '',
         subcontractorName: '',
         supplierName: '',
         coOrdinator: '',
@@ -564,14 +573,26 @@ export default function AddAuditSchedule() {
 
               {/* Dynamic Field: Customer Name for Customer Audit */}
               {category === 'CUSTOMER_AUDIT' && (
-                <BOSTextField
-                  required
-                  label="Customer Name"
-                  name="customerName"
-                  value={formData.customerName}
-                  onChange={handleChange}
-                  error={!!errors.customerName}
-                  helperText={errors.customerName}
+                <Autocomplete
+                  options={customers}
+                  getOptionLabel={(option) => option.customerName || ''}
+                  value={customers.find((c) => c.customerName === formData.customerName) || null}
+                  onChange={(event, newValue) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      customerName: newValue ? newValue.customerName : '',
+                      contactName: ''
+                    }));
+                  }}
+                  renderInput={(params) => (
+                    <BOSTextField
+                      {...params}
+                      required
+                      label="Customer Name"
+                      error={!!errors.customerName}
+                      helperText={errors.customerName}
+                    />
+                  )}
                 />
               )}
 
@@ -664,7 +685,29 @@ export default function AddAuditSchedule() {
               />
               
               {/* Dynamic Field: Contact Name */}
-              {(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
+              {category === 'CUSTOMER_AUDIT' && (
+                <Autocomplete
+                  options={contacts.filter(c => (c.groupName === formData.customerName && c.status === 'Active') || c.contactName === formData.contactName)}
+                  getOptionLabel={(option) => option.contactName || ''}
+                  value={contacts.find(c => c.contactName === formData.contactName) || null}
+                  onChange={(event, newValue) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      contactName: newValue ? newValue.contactName : ''
+                    }));
+                  }}
+                  renderInput={(params) => (
+                    <BOSTextField
+                      {...params}
+                      required
+                      label="Contact Name"
+                      error={!!errors.contactName}
+                      helperText={errors.contactName}
+                    />
+                  )}
+                />
+              )}
+              {(category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
                 <BOSTextField
                   required
                   label="Contact Name"
@@ -679,13 +722,30 @@ export default function AddAuditSchedule() {
               {/* Dynamic Field: Email to Customer */}
               {category === 'CUSTOMER_AUDIT' && (
                 <BOSTextField
+                  select
                   label="Email To Customer"
                   name="emailToCustomer"
                   value={formData.emailToCustomer}
                   onChange={handleChange}
-                  placeholder="Optional"
                   error={!!errors.emailToCustomer}
                   helperText={errors.emailToCustomer}
+                >
+                  <MenuItem value="">-Select-</MenuItem>
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </BOSTextField>
+              )}
+
+              {/* Dynamic Field: From Email to Customer */}
+              {category === 'CUSTOMER_AUDIT' && formData.emailToCustomer === 'YES' && (
+                <BOSTextField
+                  required
+                  label="From Email"
+                  name="fromEmailToCustomer"
+                  value={formData.fromEmailToCustomer}
+                  onChange={handleChange}
+                  error={!!errors.fromEmailToCustomer}
+                  helperText={errors.fromEmailToCustomer}
                 />
               )}
               <BOSTextField
@@ -750,7 +810,12 @@ export default function AddAuditSchedule() {
                   helperText={errors.coOrdinator}
                 >
                   <MenuItem value="">-Select-</MenuItem>
-                  {employees.filter(emp => emp.status === 'Active').map(emp => {
+                  {employees.filter(emp => {
+                    if (emp.status !== 'Active') return false;
+                    if (!formData.department) return false;
+                    const empDept = departments.find(d => String(d.id) === String(emp.departmentId));
+                    return empDept?.departmentName === formData.department;
+                  }).map(emp => {
                     const fName = emp.firstName || '';
                     const lName = emp.lastName || '';
                     const empName = emp.employeeName || '';
@@ -907,10 +972,12 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconListCheck size={20} color={theme.palette.success.main} />} title="Audit Criteria Checklist">
             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box />
-              <Tooltip title={shortcutTooltip('Add Criteria', 'Ctrl + N')}>
-                <Button variant="contained" size="small" onClick={() => setCriteriaDialogOpen(true)} startIcon={<IconPlus size={16} />} sx={{ borderRadius: '8px' }}>
-                  Add Criteria
-                </Button>
+              <Tooltip title={category === 'CUSTOMER_AUDIT' ? 'Criteria are read-only for Customer Audits' : shortcutTooltip('Add Criteria', 'Ctrl + N')}>
+                <span>
+                  <Button variant="contained" size="small" onClick={() => setCriteriaDialogOpen(true)} disabled={category === 'CUSTOMER_AUDIT'} startIcon={<IconPlus size={16} />} sx={{ borderRadius: '8px' }}>
+                    Add Criteria
+                  </Button>
+                </span>
               </Tooltip>
             </Box>
             <BOSDataTable
@@ -929,11 +996,13 @@ export default function AddAuditSchedule() {
               ]}
               rows={criteriaList}
               page={0}
-              size={criteriaList.length || 10}
+              size={999}
+              totalCount={criteriaList.length}
+              disableFilters={true}
               onPageChange={() => {}}
               onSizeChange={() => {}}
               onDeleteRow={(row) => handleRemoveCriteria(criteriaList.indexOf(row))}
-              showActions={true}
+              showActions={category !== 'CUSTOMER_AUDIT'}
               renderCell={(col, row, idx) => {
                 if (col.id === 'index') return idx + 1;
                 if (col.id === 'attachmentReq') return <Chip label={row.attachmentReq} size="small" sx={getStatusChipSx(row.attachmentReq === 'YES' ? 'ACTIVE' : 'INACTIVE')} />;

@@ -44,7 +44,8 @@ export default function BOSDataTable({
   selectedRowId,
   renderCell,
   sx = {},
-  id
+  id,
+  disableFilters = false
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
@@ -78,8 +79,11 @@ export default function BOSDataTable({
     return Boolean(onEditRow || onDeleteRow || actionColumn);
   }, [showActionsProp, onEditRow, onDeleteRow, actionColumn]);
 
-  const searchQuery = useSelector((state) => state.search?.query || '');
-  const globalFilters = useSelector((state) => state.search?.filters || {});
+  const searchQueryVal = useSelector((state) => state.search?.query || '');
+  const globalFiltersVal = useSelector((state) => state.search?.filters || {});
+
+  const searchQuery = disableFilters ? '' : searchQueryVal;
+  const globalFilters = disableFilters ? {} : globalFiltersVal;
 
   const filteredRows = useMemo(() => {
     if (!rows || rows.length === 0) return [];
@@ -94,9 +98,9 @@ export default function BOSDataTable({
             val = row[snakeCaseId];
             if (val === undefined || val === null || val === '') {
               if (colId === 'createdDate') val = row['createdAt'] || row['created_at'];
-              if (colId === 'updatedDate') val = row['updatedAt'] || row['updated_at'] || row['createdDate'] || row['createdAt'] || row['created_at'];
+              if (colId === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
               if (colId === 'createdBy') val = row['created_by'];
-              if (colId === 'updatedBy') val = row['updated_by'] || row['createdBy'] || row['created_by'];
+              if (colId === 'updatedBy') val = row['updated_by'];
             }
           }
           return val;
@@ -207,9 +211,9 @@ export default function BOSDataTable({
       // 2. Audit-Specific Fallbacks (The "Big 4")
       if (val === undefined || val === null || val === '') {
         if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
-        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'] || row['createdDate'] || row['createdAt'] || row['created_at'];
+        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
         if (col.id === 'createdBy') val = row['created_by'];
-        if (col.id === 'updatedBy') val = row['updated_by'] || row['createdBy'] || row['created_by'];
+        if (col.id === 'updatedBy') val = row['updated_by'];
       }
     }
 
