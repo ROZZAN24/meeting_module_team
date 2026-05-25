@@ -14,7 +14,7 @@ import axios from 'utils/axios';
 import useLookups from 'hooks/useLookups';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview, BOSAutocomplete } from 'ui-component/bos';
 
 // ── Top-level so it never remounts on parent re-render ────────────────────────
 const FileItem = ({ file, onPreview, onRemove }) => (
@@ -170,8 +170,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [stockLink, setStockLink] = useState('');
-  const [photoRequired, setPhotoRequired] = useState('');
+  const [stockLink, setStockLink] = useState('NO');
+  const [photoRequired, setPhotoRequired] = useState('NO');
   const [dualCheck, setDualCheck] = useState('');
   const [carryForward, setCarryForward] = useState('');
   const [amendmentReason, setAmendmentReason] = useState('');
@@ -261,8 +261,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setRepeatEveryUnit(initialData.repeatEveryUnit || '');
         setDescription(initialData.description || '');
         setDepartment((initialData.departments || []).map(d => d.departmentName));
-        setStockLink(initialData.stockLink || '');
-        setPhotoRequired(initialData.photoRequired || '');
+        setStockLink(initialData.stockLink || 'NO');
+        setPhotoRequired(initialData.photoRequired || 'NO');
         setDualCheck(initialData.category === 'RENEWAL' ? (initialData.verificationRequired || '') : (initialData.dualCheck || ''));
         setCarryForward(initialData.carryForward || '');
         setAmendmentReason(initialData.amendmentReason || '');
@@ -274,7 +274,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
         setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
         setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-        setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
+        setStockLink('NO'); setPhotoRequired('NO'); setDualCheck(''); setCarryForward('');
         setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
         setLevelIds([]);
@@ -542,18 +542,15 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               required
             />
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Category"
               value={category}
-              onChange={e => setCategory(e.target.value)}
+              options={['RENEWAL', 'CHECK LIST']}
+              onChange={val => setCategory(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="RENEWAL">RENEWAL</MenuItem>
-              <MenuItem value="CHECK LIST">CHECK LIST</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
           </Box>
 
           {category === 'RENEWAL' && (
@@ -701,64 +698,51 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
             {category !== 'RENEWAL' && (
-              <BOSTextField
-                select
+              <BOSAutocomplete
                 label="Frequency"
                 value={frequency}
-                onChange={e => setFrequency(e.target.value)}
+                options={['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY','CUSTOM']}
+                onChange={val => setFrequency(val)}
                 required
                 disabled={isViewOnly}
-              >
-                <MenuItem value=""><em>-Select-</em></MenuItem>
-                {['DAILY','WEEKLY','FORTNIGHTLY','MONTHLY','QUARTERLY','HALF YEARLY','YEARLY', 'CUSTOM'].map(f => (
-                  <MenuItem key={f} value={f}>{f}</MenuItem>
-                ))}
-              </BOSTextField>
+                autoHighlight
+              />
             )}
 
             {category !== 'RENEWAL' && (frequency === 'WEEKLY' || frequency === 'CUSTOM') && (
               <Box sx={{ p: 2.5, border: '1px dashed', borderColor: 'primary.light', borderRadius: 2, bgcolor: 'background.paper', display: 'flex', gap: 2.5, alignItems: 'center' }}>
                 {frequency === 'WEEKLY' && (
-                  <BOSTextField
-                    select
+                  <BOSAutocomplete
                     label="Week Day"
                     value={weekDays}
-                    onChange={e => setWeekDays(e.target.value)}
+                    options={WEEK_DAYS}
+                    onChange={val => setWeekDays(val)}
                     required
                     disabled={isViewOnly}
                     sx={{ minWidth: 200 }}
-                  >
-                    <MenuItem value=""><em>-Select-</em></MenuItem>
-                    {WEEK_DAYS.map(day => (
-                      <MenuItem key={day} value={day}>{day}</MenuItem>
-                    ))}
-                  </BOSTextField>
+                    autoHighlight
+                  />
                 )}
                 {frequency === 'CUSTOM' && (
                   <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center', width: '100%' }}>
-                    <BOSTextField 
+                    <BOSTextField
                       label="Repeat Every"
                       type="number"
                       placeholder="e.g. 2"
-                      value={repeatEveryValue} 
-                      onChange={e => setRepeatEveryValue(e.target.value)} 
+                      value={repeatEveryValue}
+                      onChange={e => setRepeatEveryValue(e.target.value)}
                       required
                       disabled={isViewOnly}
                     />
-                    <BOSTextField
-                      select
+                    <BOSAutocomplete
                       label="Unit"
-                      value={repeatEveryUnit} 
-                      onChange={e => setRepeatEveryUnit(e.target.value)} 
+                      value={repeatEveryUnit}
+                      options={['DAYS','WEEKS','MONTHS','YEARS']}
+                      onChange={val => setRepeatEveryUnit(val)}
                       required
                       disabled={isViewOnly}
-                    >
-                      <MenuItem value=""><em>-Select-</em></MenuItem>
-                      <MenuItem value="DAYS">DAYS</MenuItem>
-                      <MenuItem value="WEEKS">WEEKS</MenuItem>
-                      <MenuItem value="MONTHS">MONTHS</MenuItem>
-                      <MenuItem value="YEARS">YEARS</MenuItem>
-                    </BOSTextField>
+                      autoHighlight
+                    />
                   </Box>
                 )}
               </Box>
@@ -766,73 +750,59 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 3 }}>
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Stock Link ?"
               value={stockLink}
-              onChange={e => setStockLink(e.target.value)}
+              options={['YES', 'NO']}
+              onChange={val => setStockLink(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="YES">YES</MenuItem>
-              <MenuItem value="NO">NO</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Photo Required ?"
               value={photoRequired}
-              onChange={e => setPhotoRequired(e.target.value)}
+              options={['YES', 'NO']}
+              onChange={val => setPhotoRequired(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="YES">YES</MenuItem>
-              <MenuItem value="NO">NO</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label={category === 'RENEWAL' ? 'Verification Required ?' : 'Dual Check ?'}
               value={dualCheck}
-              onChange={e => setDualCheck(e.target.value)}
+              options={['YES', 'NO']}
+              onChange={val => setDualCheck(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value=""><em>-Select-</em></MenuItem>
-              <MenuItem value="YES">YES</MenuItem>
-              <MenuItem value="NO">NO</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
           </Box>
 
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
             {category !== 'RENEWAL' && (
-              <BOSTextField
-                select
+              <BOSAutocomplete
                 label="Carry Forward ?"
                 value={carryForward}
-                onChange={e => setCarryForward(e.target.value)}
+                options={['YES', 'NO']}
+                onChange={val => setCarryForward(val)}
                 required
                 disabled={isViewOnly}
-              >
-                <MenuItem value=""><em>-Select-</em></MenuItem>
-                <MenuItem value="YES">YES</MenuItem>
-                <MenuItem value="NO">NO</MenuItem>
-              </BOSTextField>
+                autoHighlight
+              />
             )}
 
-            <BOSTextField
-              select
+            <BOSAutocomplete
               label="Status"
               value={status}
-              onChange={e => setStatus(e.target.value)}
+              options={['Active', 'Inactive']}
+              onChange={val => setStatus(val)}
               required
               disabled={isViewOnly}
-            >
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">In Active</MenuItem>
-            </BOSTextField>
+              autoHighlight
+            />
           </Box>
 
           {isAmendment && (

@@ -43,6 +43,8 @@ import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig, resetFilters, setFilters } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { BOSDataTable, BOSExportButton } from 'ui-component/bos';
 
 // assets
 import HistoryIcon from '@mui/icons-material/History';
@@ -104,6 +106,8 @@ const AuditTrailPage = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
   const matchDownMd = useMediaQuery(theme.breakpoints.down('md'));
+
+  const perms = usePagePermissions(PAGE_CODES.AD_AUDIT_TRAIL);
 
   const globalSearch = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -301,7 +305,7 @@ const AuditTrailPage = () => {
 
       {/* ── TABS AND CONTENT (As per image) ── */}
       <MainCard sx={{ borderRadius: '16px' }} content={false}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)}>
             <Tab label="Full Audit Trail" icon={<HistoryIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
             <Tab label="Modifications" icon={<UpdateIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
@@ -309,106 +313,142 @@ const AuditTrailPage = () => {
             <Tab label="Creations" icon={<AddCircleIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
             <Tab label="Restored Items" icon={<RestoreIcon sx={{ fontSize: 18 }} />} iconPosition="start" />
           </Tabs>
+          {perms.export && (
+            <BOSExportButton
+              data={filteredLogs}
+              filename="Audit_Trail"
+              pageCode={PAGE_CODES.AD_AUDIT_TRAIL}
+              pageName="Audit Trail Hub"
+              columns={[
+                { header: 'Timestamp', key: 'createdAt' },
+                { header: 'User Context', key: 'userId' },
+                { header: 'Operation', key: 'actionType' },
+                { header: 'Target Entity', key: 'tableName' },
+                { header: 'Record ID', key: 'recordId' },
+                { header: 'Summary', key: 'comments' }
+              ]}
+              sx={{ mb: 1 }}
+            />
+          )}
         </Box>
 
-        <TableContainer sx={{ maxHeight: 'calc(100vh - 380px)', minHeight: '400px' }}>
-          {loading && <LinearProgress sx={{ height: 2 }} />}
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow sx={{ '& th': { fontWeight: 800, color: 'text.primary', borderBottom: '2px solid', borderColor: 'divider' } }}>
-                <TableCell>Timestamp</TableCell>
-                <TableCell>User Context</TableCell>
-                <TableCell>Operation</TableCell>
-                <TableCell>Target Entity</TableCell>
-                <TableCell>Summary</TableCell>
-                <TableCell align="center">Inspect</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {pagedLogs.map((log) => (
-                <TableRow key={log.id} hover sx={{ '& td': { py: 1.5 } }}>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{new Date(log.createdAt).toLocaleTimeString()}</Typography>
-                    <Typography variant="caption" color="textSecondary">{new Date(log.createdAt).toLocaleDateString()}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar
-                        src={log.userImage ? `${API_BASE}/api/users/image/${log.userImage}` : ''}
-                        sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}
-                      >
-                        {log.userId?.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{log.userId}</Typography>
-                        <Typography variant="caption" color="textSecondary">{log.pageName}</Typography>
-                      </Box>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={log.actionType}
-                      size="small"
-                      sx={{
-                        fontWeight: 800, fontSize: '0.65rem',
-                        bgcolor: log.actionType === 'DELETE' ? alpha(theme.palette.error.main, 0.1) :
-                          log.actionType === 'INSERT' ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.warning.main, 0.1),
-                        color: log.actionType === 'DELETE' ? 'error.main' :
-                          log.actionType === 'INSERT' ? 'success.main' : 'warning.main'
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{log.tableName}</Typography>
-                    <Typography variant="caption" color="textSecondary">ID: {log.recordId}</Typography>
-                  </TableCell>
-                  <TableCell sx={{ maxWidth: '300px' }}>
-                    <Tooltip title={log.comments} placement="top" arrow>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {log.comments}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Stack direction="row" spacing={0.5} justifyContent="center">
-                      <IconButton size="small" color="primary" onClick={() => setSelectedLog(log)}>
-                        <VisibilityIcon fontSize="inherit" />
-                      </IconButton>
-                      {isRestorable(log) && (
-                        <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); openConfirmDialog(log); }}>
-                          <RestoreIcon fontSize="inherit" />
-                        </IconButton>
-                      )}
-                      {(log.restored || log.isRestored) && (
-                        <Chip label="RESTORED" size="small" color="success" sx={{ fontSize: '0.55rem', height: 18, fontWeight: 900 }} />
-                      )}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        {(() => {
+          const columns = [
+            { id: 'index', label: 'No' },
+            { 
+              id: 'createdAt', 
+              label: 'Timestamp',
+              render: (row) => (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {new Date(row.createdAt).toLocaleTimeString()}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    {new Date(row.createdAt).toLocaleDateString()}
+                  </Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'userId',
+              label: 'User Context',
+              render: (row) => (
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Avatar
+                    src={row.userImage ? `${API_BASE}/api/users/image/${row.userImage}` : ''}
+                    sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}
+                  >
+                    {row.userId?.charAt(0)}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{row.userId}</Typography>
+                    <Typography variant="caption" color="textSecondary">{row.pageName}</Typography>
+                  </Box>
+                </Stack>
+              )
+            },
+            {
+              id: 'actionType',
+              label: 'Operation',
+              render: (row) => (
+                <Chip
+                  label={row.actionType}
+                  size="small"
+                  sx={{
+                    fontWeight: 800, fontSize: '0.65rem',
+                    bgcolor: row.actionType === 'DELETE' ? alpha(theme.palette.error.main, 0.1) :
+                      row.actionType === 'INSERT' ? alpha(theme.palette.success.main, 0.1) : alpha(theme.palette.warning.main, 0.1),
+                    color: row.actionType === 'DELETE' ? 'error.main' :
+                      row.actionType === 'INSERT' ? 'success.main' : 'warning.main'
+                  }}
+                />
+              )
+            },
+            {
+              id: 'tableName',
+              label: 'Target Entity',
+              render: (row) => (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{row.tableName}</Typography>
+                  <Typography variant="caption" color="textSecondary">ID: {row.recordId}</Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'comments',
+              label: 'Summary',
+              render: (row) => (
+                <Tooltip title={row.comments} placement="top" arrow>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      maxWidth: '300px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {row.comments}
+                  </Typography>
+                </Tooltip>
+              )
+            }
+          ];
 
-        <Box sx={{ p: '1px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider' }}>
-          <TablePagination
-            component="div"
-            count={filteredLogs.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(e, p) => setPage(p)}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-            sx={{ '& .MuiTablePagination-toolbar': { minHeight: '34px', p: '0 8px' } }}
-          />
-        </Box>
+          const actionColumn = {
+            render: (row) => (
+              <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+                <IconButton size="small" color="primary" onClick={() => setSelectedLog(row)}>
+                  <VisibilityIcon fontSize="inherit" />
+                </IconButton>
+                {isRestorable(row) && perms.write && (
+                  <IconButton size="small" color="success" onClick={(e) => { e.stopPropagation(); openConfirmDialog(row); }}>
+                    <RestoreIcon fontSize="inherit" />
+                  </IconButton>
+                )}
+                {(row.restored || row.isRestored) && (
+                  <Chip label="RESTORED" size="small" color="success" sx={{ fontSize: '0.55rem', height: 18, fontWeight: 900 }} />
+                )}
+              </Stack>
+            )
+          };
+
+          return (
+            <BOSDataTable
+              columns={columns}
+              data={filteredLogs}
+              page={page}
+              size={rowsPerPage}
+              totalCount={filteredLogs.length}
+              onPageChange={setPage}
+              onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
+              showActions={true}
+              actionColumn={actionColumn}
+              loading={loading}
+            />
+          );
+        })()}
       </MainCard>
 
       {/* ── PROFESSIONAL INSPECTION POPUP ── */}
@@ -532,7 +572,7 @@ const AuditTrailPage = () => {
             <Divider />
             <Box sx={{ p: 2, display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
               <Button onClick={() => setSelectedLog(null)} sx={{ color: 'text.secondary' }}>Close</Button>
-              {isRestorable(selectedLog) && (
+              {isRestorable(selectedLog) && perms.write && (
                 <Button
                   onClick={() => openConfirmDialog(selectedLog)}
                   variant="contained"

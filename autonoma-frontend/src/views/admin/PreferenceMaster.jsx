@@ -39,6 +39,8 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useAuth from 'hooks/useAuth';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { BOSDataTable } from 'ui-component/bos';
 
 // assets
 import {
@@ -75,6 +77,11 @@ const PreferenceMaster = () => {
 
   const { user } = useAuth();
   const searchQuery = useSelector((state) => state.search.query);
+
+  const perms = usePagePermissions(PAGE_CODES.AD_APP_PREFERENCE);
+
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const getErrorMessage = (err) => {
     if (typeof err === 'string') return err;
@@ -115,6 +122,10 @@ const PreferenceMaster = () => {
       pref.comments?.toLowerCase().includes(query)
     );
   }, [preferences, searchQuery]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery]);
 
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.rowId);
@@ -183,22 +194,24 @@ const PreferenceMaster = () => {
           </Box>
         </Stack>
 
-        <Button
-          variant="contained"
-          startIcon={<IconPlus size={18} />}
-          onClick={handleClickOpen}
-          sx={{
-            height: 40,
-            borderRadius: '8px',
-            bgcolor: theme.palette.primary.main,
-            '&:hover': { bgcolor: theme.palette.primary.dark },
-            px: 3,
-            fontWeight: 700,
-            boxShadow: 'none'
-          }}
-        >
-          Add Preference
-        </Button>
+        {perms.write && (
+          <Button
+            variant="contained"
+            startIcon={<IconPlus size={18} />}
+            onClick={handleClickOpen}
+            sx={{
+              height: 40,
+              borderRadius: '8px',
+              bgcolor: theme.palette.primary.main,
+              '&:hover': { bgcolor: theme.palette.primary.dark },
+              px: 3,
+              fontWeight: 700,
+              boxShadow: 'none'
+            }}
+          >
+            Add Preference
+          </Button>
+        )}
       </Box>
 
       {/* ── TABLE SECTION ── */}
@@ -212,111 +225,108 @@ const PreferenceMaster = () => {
         bgcolor: 'white',
         minHeight: 0
       }}>
-        <TableContainer sx={{ flexGrow: 1, overflow: 'auto' }}>
-          <Table stickyHeader size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#ccc', fontSize: '0.7rem', py: 2.5, width: 50 }}>#</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Preference Name</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Value</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Type</TableCell>
-                <TableCell sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5 }}>Last Updated</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 800, bgcolor: '#f8fafc', color: '#1a223f', fontSize: '0.7rem', py: 2.5, width: 100 }}>Action</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                    <CircularProgress size={32} thickness={5} />
-                    <Typography variant="body2" sx={{ mt: 2, color: 'text.secondary', fontWeight: 600 }}>Loading Preferences...</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : filteredPreferences.length > 0 ? (
-                filteredPreferences.map((row, idx) => (
-                  <TableRow
-                    key={row.rowId}
+        {(() => {
+          const columns = [
+            { id: 'index', label: '#' },
+            {
+              id: 'prefName',
+              label: 'Preference Name',
+              render: (row) => (
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.prefName}</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem' }}>{row.comments || 'No description available'}</Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'prefValue',
+              label: 'Value',
+              render: (row) => (
+                <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem' }}>{row.prefValue}</Typography>
+              )
+            },
+            {
+              id: 'prefType',
+              label: 'Type',
+              render: (row) => (
+                <Typography variant="caption" sx={{ fontWeight: 800, color: '#673ab7', bgcolor: alpha('#673ab7', 0.08), px: 1, py: 0.3, borderRadius: '4px', fontSize: '0.65rem' }}>
+                  {row.prefType}
+                </Typography>
+              )
+            },
+            {
+              id: 'updatedDate',
+              label: 'Last Updated',
+              render: (row) => (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <IconCalendarEvent size={14} color="#94a3b8" />
+                  <Box>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: '#1a223f', display: 'block', lineHeight: 1.1 }}>
+                      {row.updatedDate || row.createdDate ? new Date(row.updatedDate || row.createdDate).toLocaleDateString() : 'N/A'}
+                    </Typography>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      <IconUser size={10} color="#94a3b8" />
+                      <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.6rem', fontWeight: 700 }}>{row.updatedBy || row.createdBy || 'System'}</Typography>
+                    </Stack>
+                  </Box>
+                </Stack>
+              )
+            }
+          ];
+
+          const actionColumn = {
+            render: (row) => (
+              <Stack direction="row" spacing={1} justifyContent="center" alignItems="center">
+                <Tooltip title="Edit Preference" arrow>
+                  <IconButton
+                    onClick={() => handleEdit(row)}
                     sx={{
-                      '& td': { py: 1.5, borderBottom: '1px solid #f8fafc' },
-                      '&:hover': { bgcolor: '#f1f5f9 !important' },
-                      bgcolor: idx % 2 === 0 ? 'white' : '#f9fbff'
+                      bgcolor: alpha('#2196f3', 0.1),
+                      color: '#2196f3',
+                      borderRadius: '6px',
+                      p: 0.5,
+                      '&:hover': { bgcolor: '#2196f3', color: 'white' }
                     }}
                   >
-                    <TableCell sx={{ fontWeight: 700, color: '#d1d5db', fontSize: '0.75rem' }}>{idx + 1}</TableCell>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.prefName}</Typography>
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#94a3b8', fontSize: '0.65rem' }}>{row.comments || 'No description available'}</Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 800, color: '#1a223f', fontSize: '0.75rem' }}>{row.prefValue}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="caption" sx={{ fontWeight: 800, color: '#673ab7', bgcolor: alpha('#673ab7', 0.08), px: 1, py: 0.3, borderRadius: '4px', fontSize: '0.65rem' }}>
-                        {row.prefType}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <IconCalendarEvent size={14} color="#94a3b8" />
-                        <Box>
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: '#1a223f', display: 'block', lineHeight: 1.1 }}>
-                            {row.updatedDate || row.createdDate ? new Date(row.updatedDate || row.createdDate).toLocaleDateString() : 'N/A'}
-                          </Typography>
-                          <Stack direction="row" spacing={0.5} alignItems="center">
-                            <IconUser size={10} color="#94a3b8" />
-                            <Typography variant="caption" sx={{ color: '#94a3b8', fontSize: '0.6rem', fontWeight: 700 }}>{row.updatedBy || row.createdBy || 'System'}</Typography>
-                          </Stack>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Stack direction="row" spacing={1} justifyContent="center">
-                        <Tooltip title="Edit Preference" arrow>
-                          <IconButton
-                            onClick={() => handleEdit(row)}
-                            sx={{
-                              bgcolor: alpha('#2196f3', 0.1),
-                              color: '#2196f3',
-                              borderRadius: '6px',
-                              p: 0.5,
-                              '&:hover': { bgcolor: '#2196f3', color: 'white' }
-                            }}
-                          >
-                            <IconPencil size={18} />
-                          </IconButton>
-                        </Tooltip>
-                        {user?.isBosAdmin === 1 && (
-                          <Tooltip title="Delete Preference" arrow>
-                            <IconButton
-                              onClick={() => handleDeleteClick(row)}
-                              sx={{
-                                bgcolor: alpha('#f44336', 0.1),
-                                color: '#f44336',
-                                borderRadius: '6px',
-                                p: 0.5,
-                                '&:hover': { bgcolor: '#f44336', color: 'white' }
-                              }}
-                            >
-                              <IconTrash size={18} />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                    <Typography variant="h5" color="textSecondary">No preferences found</Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                    {perms.write ? <IconPencil size={18} /> : <IconInfoCircle size={18} />}
+                  </IconButton>
+                </Tooltip>
+                {perms.delete && (
+                  <Tooltip title="Delete Preference" arrow>
+                    <IconButton
+                      onClick={() => handleDeleteClick(row)}
+                      sx={{
+                        bgcolor: alpha('#f44336', 0.1),
+                        color: '#f44336',
+                        borderRadius: '6px',
+                        p: 0.5,
+                        '&:hover': { bgcolor: '#f44336', color: 'white' }
+                      }}
+                    >
+                      <IconTrash size={18} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Stack>
+            )
+          };
+
+          return (
+            <BOSDataTable
+              columns={columns}
+              data={filteredPreferences}
+              page={page}
+              size={rowsPerPage}
+              totalCount={filteredPreferences.length}
+              onPageChange={setPage}
+              onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
+              showActions={true}
+              actionColumn={actionColumn}
+              loading={loading}
+              onDoubleClickRow={handleEdit}
+            />
+          );
+        })()}
       </Box>
 
       {/* ── PREFERENCE DIALOG (COMMAND CENTER DESIGN - MATCHING IMAGE) ── */}
@@ -488,26 +498,28 @@ const PreferenceMaster = () => {
                   >
                     Discard
                   </Button>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    disabled={isSubmitting}
-                    startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />}
-                    sx={{
-                      px: 5,
-                      py: 1.5,
-                      fontWeight: 800,
-                      borderRadius: '16px',
-                      bgcolor: '#1a223f',
-                      color: 'white',
-                      fontSize: '0.95rem',
-                      boxShadow: '0 12px 24px rgba(26, 34, 63, 0.3)',
-                      '&:hover': { bgcolor: '#000', transform: 'translateY(-2px)' },
-                      transition: 'all 0.3s ease'
-                    }}
-                  >
-                    {editingRow ? 'Commit Changes' : 'Save Preference'}
-                  </Button>
+                  {perms.write && (
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isSubmitting}
+                      startIcon={isSubmitting ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />}
+                      sx={{
+                        px: 5,
+                        py: 1.5,
+                        fontWeight: 800,
+                        borderRadius: '16px',
+                        bgcolor: '#1a223f',
+                        color: 'white',
+                        fontSize: '0.95rem',
+                        boxShadow: '0 12px 24px rgba(26, 34, 63, 0.3)',
+                        '&:hover': { bgcolor: '#000', transform: 'translateY(-2px)' },
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      {editingRow ? 'Commit Changes' : 'Save Preference'}
+                    </Button>
+                  )}
                 </Stack>
               </DialogActions>
             </form>

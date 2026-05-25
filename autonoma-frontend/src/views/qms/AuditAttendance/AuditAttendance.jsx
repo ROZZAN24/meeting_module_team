@@ -242,7 +242,7 @@ export default function AuditAttendance() {
               { header: 'Attendance Status', key: 'attendanceStatus' }
             ]}
           />}
-          <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>
+          {perms.write && <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>}
         </Stack>
       }
     >
@@ -256,11 +256,11 @@ export default function AuditAttendance() {
         onPageChange={setPage}
         onSizeChange={setSize}
         onEditRow={perms.write ? handleOpenEdit : undefined}
-        onDeleteRow={(r) => { setDeleteTarget(r); setDeleteDialogOpen(true); }}
-        renderCell={null}
+        onDeleteRow={perms.delete ? (r) => { setDeleteTarget(r); setDeleteDialogOpen(true); } : undefined}
+        renderCell={renderCell}
       />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'}>
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'} isViewOnly={!perms.write}>
         <BOSFormSection title="Details" icon={<IconPlus size={20} />}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2.5 }}>
             <BOSTextField

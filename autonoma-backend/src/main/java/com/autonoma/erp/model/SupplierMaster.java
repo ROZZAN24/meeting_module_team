@@ -135,25 +135,27 @@ public class SupplierMaster {
     @Column(name = "UPLOAD_FILES", length = 2000)
     private String uploadFiles;
 
-    @Column(name = "CREATED_BY")
+    @Column(name = "created_by")
     private String createdBy;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "created_at")
     private LocalDateTime createdDate;
 
-    @Column(name = "UPDATED_BY")
+    @Column(name = "updated_by")
     private String updatedBy;
 
-    @Column(name = "UPDATED_DATE")
+    @Column(name = "updated_at")
     private LocalDateTime updatedDate;
 
     @PrePersist
     protected void onCreate() {
         createdDate = LocalDateTime.now();
+        if (createdBy == null) createdBy = "Admin";
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedDate = LocalDateTime.now();
+        if (updatedBy == null) updatedBy = "Admin";
     }
 }

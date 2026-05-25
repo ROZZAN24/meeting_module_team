@@ -45,6 +45,7 @@ import useBOSValidation from 'hooks/useBOSValidation';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { useLookups } from 'hooks/useLookups';
 import { API_PATHS } from 'utils/api-constants';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -73,6 +74,7 @@ export default function AddAuditSchedule() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const isEditing = Boolean(id);
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_SCHEDULE);
   const { errors, validate, clearErrors } = useBOSValidation();
 
   const [formData, setFormData] = useState({
@@ -304,16 +306,24 @@ export default function AddAuditSchedule() {
         }
         secondary={
           <Stack direction="row" spacing={2}>
-            <Tooltip title="Clear all fields">
-              <Button variant="contained" sx={btnClear} onClick={handleClear} startIcon={<IconEraser size={20} />}>
-                Clear
+            {perms.write ? (
+              <>
+                <Tooltip title="Clear all fields">
+                  <Button variant="contained" sx={btnClear} onClick={handleClear} startIcon={<IconEraser size={20} />}>
+                    Clear
+                  </Button>
+                </Tooltip>
+                <Tooltip title={shortcutTooltip('Save Schedule', 'Ctrl + S')}>
+                  <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>
+                    Save
+                  </Button>
+                </Tooltip>
+              </>
+            ) : (
+              <Button variant="outlined" color="primary" onClick={() => navigate('/qms/audit/schedule')}>
+                Back
               </Button>
-            </Tooltip>
-            <Tooltip title={shortcutTooltip('Save Schedule', 'Ctrl + S')}>
-              <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>
-                Save
-              </Button>
-            </Tooltip>
+            )}
           </Stack>
         }
       >
@@ -330,8 +340,9 @@ export default function AddAuditSchedule() {
                 onChange={handleChange}
                 error={!!errors.scheduleDate}
                 helperText={errors.scheduleDate}
+                disabled={!perms.write}
               />
-              <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange}>
+              <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} disabled={!perms.write}>
                 <MenuItem value="OPEN">OPEN</MenuItem>
                 <MenuItem value="CLOSED">CLOSED</MenuItem>
                 <MenuItem value="CANCELLED">CANCELLED</MenuItem>
@@ -343,6 +354,7 @@ export default function AddAuditSchedule() {
                 onChange={(event, newValue) => {
                   setFormData({ ...formData, department: newValue ? newValue.departmentName : '', auditee: '' }); // Reset auditee when dept changes
                 }}
+                disabled={!perms.write}
                 renderInput={(params) => (
                   <BOSTextField
                     {...params}
@@ -359,6 +371,7 @@ export default function AddAuditSchedule() {
                 value={formData.itemCode}
                 onChange={handleChange}
                 placeholder="Optional"
+                disabled={!perms.write}
               />
               <BOSTextField
                 required
@@ -378,8 +391,8 @@ export default function AddAuditSchedule() {
           {(formData.auditType || '').toUpperCase().includes('SUPPLIER') && (
             <BOSFormSection title="Supplier Information">
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
-                <BOSTextField label="Supplier Name" name="supplierName" onChange={handleChange} />
-                <BOSTextField label="Supplier Code" name="supplierCode" onChange={handleChange} />
+                <BOSTextField label="Supplier Name" name="supplierName" onChange={handleChange} disabled={!perms.write} />
+                <BOSTextField label="Supplier Code" name="supplierCode" onChange={handleChange} disabled={!perms.write} />
               </Box>
             </BOSFormSection>
           )}
@@ -387,8 +400,8 @@ export default function AddAuditSchedule() {
           {(formData.auditType || '').toUpperCase().includes('CUSTOMER') && (
             <BOSFormSection title="Customer Information">
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2.5 }}>
-                <BOSTextField label="Customer Name" name="customerName" onChange={handleChange} />
-                <BOSTextField label="Customer Area" name="customerArea" onChange={handleChange} />
+                <BOSTextField label="Customer Name" name="customerName" onChange={handleChange} disabled={!perms.write} />
+                <BOSTextField label="Customer Area" name="customerArea" onChange={handleChange} disabled={!perms.write} />
               </Box>
             </BOSFormSection>
           )}
@@ -406,6 +419,7 @@ export default function AddAuditSchedule() {
                   const selectedTypeStr = newValue.map((v) => v.auditType).join(',');
                   setFormData({ ...formData, auditType: selectedTypeStr });
                 }}
+                disabled={!perms.write}
                 renderInput={(params) => (
                   <BOSTextField
                     {...params}
@@ -424,6 +438,7 @@ export default function AddAuditSchedule() {
                 onChange={handleChange}
                 error={!!errors.auditArea}
                 helperText={errors.auditArea}
+                disabled={!perms.write}
               />
               <BOSDatePicker
                 required
@@ -433,6 +448,7 @@ export default function AddAuditSchedule() {
                 onChange={handleChange}
                 error={!!errors.auditDate}
                 helperText={errors.auditDate}
+                disabled={!perms.write}
               />
               <BOSTextField
                 select
@@ -443,6 +459,7 @@ export default function AddAuditSchedule() {
                 onChange={handleChange}
                 error={!!errors.auditMonth}
                 helperText={errors.auditMonth}
+                disabled={!perms.write}
               >
                 {MONTHS.map((m) => (
                   <MenuItem key={m} value={m}>{m}</MenuItem>
@@ -454,6 +471,7 @@ export default function AddAuditSchedule() {
                 name="startTime"
                 value={formData.startTime}
                 onChange={handleChange}
+                disabled={!perms.write}
               >
                 {TIME_OPTIONS.map((t) => (
                   <MenuItem key={t} value={t}>{t}</MenuItem>
@@ -465,6 +483,7 @@ export default function AddAuditSchedule() {
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleChange}
+                disabled={!perms.write}
               >
                 {TIME_OPTIONS.map((t) => (
                   <MenuItem key={t} value={t}>{t}</MenuItem>
@@ -554,57 +573,60 @@ export default function AddAuditSchedule() {
                       <Box sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'grey.100', px: 2.5, py: 0.5, borderRadius: '16px', mb: 3 }}>
                         <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap>{code !== '-' ? code : 'No Code'}</Typography>
                       </Box>
-                      <Stack spacing={2} sx={{ width: '100%' }}>
-                        <BOSTextField
-                          select
-                          required
-                          label={`Select ${person.label}`}
-                          name={person.field}
-                          value={formData[person.field]}
-                          onChange={handleChange}
-                          error={!!errors[person.field]}
-                          helperText={errors[person.field]}
-                        >
-                          <MenuItem value="">-Select-</MenuItem>
-                          {employeeOptions.map((opt) => (
-                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                          ))}
-                        </BOSTextField>
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </Box>
-          </BOSFormSection>
-
-          {/* Card 4: Audit Criteria Checklist */}
-          <BOSFormSection icon={<IconListCheck size={20} color={theme.palette.success.main} />} title="Audit Criteria Checklist">
-            <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box />
-              <Tooltip title={shortcutTooltip('Add Criteria', 'Ctrl + N')}>
-                <Button variant="contained" size="small" onClick={() => setCriteriaDialogOpen(true)} startIcon={<IconPlus size={16} />} sx={{ borderRadius: '8px' }}>
-                  Add Criteria
-                </Button>
-              </Tooltip>
-            </Box>
-            <BOSDataTable
-              columns={[
-                { id: 'index', label: '#', minWidth: 50 },
-                { id: 'seqNo', label: 'Seq No', minWidth: 80 },
-                { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
-                { id: 'remarks', label: 'Remarks', minWidth: 150 }
-              ]}
-              rows={criteriaList}
-              page={0}
-              size={criteriaList.length || 10}
-              onPageChange={() => {}}
-              onSizeChange={() => {}}
-              onDeleteRow={(row) => handleRemoveCriteria(criteriaList.indexOf(row))}
-              showActions={true}
-              renderCell={(col, row, idx) => {
+                       <Stack spacing={2} sx={{ width: '100%' }}>
+                         <BOSTextField
+                           select
+                           required
+                           label={`Select ${person.label}`}
+                           name={person.field}
+                           value={formData[person.field]}
+                           onChange={handleChange}
+                           error={!!errors[person.field]}
+                           helperText={errors[person.field]}
+                           disabled={!perms.write}
+                         >
+                           <MenuItem value="">-Select-</MenuItem>
+                           {employeeOptions.map((opt) => (
+                             <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                           ))}
+                         </BOSTextField>
+                       </Stack>
+                     </CardContent>
+                   </Card>
+                 );
+               })}
+             </Box>
+           </BOSFormSection>
+ 
+           {/* Card 4: Audit Criteria Checklist */}
+           <BOSFormSection icon={<IconListCheck size={20} color={theme.palette.success.main} />} title="Audit Criteria Checklist">
+             {perms.write && (
+               <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                 <Box />
+                 <Tooltip title={shortcutTooltip('Add Criteria', 'Ctrl + N')}>
+                   <Button variant="contained" size="small" onClick={() => setCriteriaDialogOpen(true)} startIcon={<IconPlus size={16} />} sx={{ borderRadius: '8px' }}>
+                     Add Criteria
+                   </Button>
+                 </Tooltip>
+               </Box>
+             )}
+             <BOSDataTable
+               columns={[
+                 { id: 'index', label: '#', minWidth: 50 },
+                 { id: 'seqNo', label: 'Seq No', minWidth: 80 },
+                 { id: 'clause', label: 'Clause', minWidth: 100 },
+                 { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 300 },
+                 { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
+               ]}
+               rows={criteriaList}
+               page={0}
+               size={criteriaList.length || 10}
+               onPageChange={() => {}}
+               onSizeChange={() => {}}
+               onDeleteRow={perms.write ? (row) => handleRemoveCriteria(criteriaList.indexOf(row)) : undefined}
+               showActions={perms.write}
+               renderCell={(col, row, idx) => {
                 if (col.id === 'index') return idx + 1;
                 if (col.id === 'attachmentReq') return <Chip label={row.attachmentReq} size="small" sx={getStatusChipSx(row.attachmentReq === 'YES' ? 'ACTIVE' : 'INACTIVE')} />;
                 return row[col.id] || '-';

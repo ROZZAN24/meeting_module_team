@@ -59,7 +59,7 @@ const INITIAL = {
   permissionToggle: 'NO', 
   permissionLimit: '',
   vendorName: '', 
-  referMode: '', 
+  referMode: '-SELECT-', 
   referenceComments: '', 
 
   // 3. Date & Scheduling
@@ -76,7 +76,7 @@ const INITIAL = {
   graceMinutes: '0', 
   petrolMode: 'NA', 
   petrolAllowance: '0.00', 
-  shift: 'GENERAL', 
+  shift: 'NO', 
   shiftName: 'GENERAL', 
   shiftDuration: '480',
 
@@ -102,7 +102,7 @@ const INITIAL = {
 };
 
 const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
-const REF_MODES = ['EMPLOYEE', 'LINKED IN', 'NEWS PAPER', 'POSTER', 'WEBSITE', 'WHATS APP', 'OTHERS'];
+const REF_MODES = ['-SELECT-', 'EMPLOYEE', 'LINKED IN', 'NEWS PAPER', 'POSTER', 'WEBSITE', 'WHATS APP', 'OTHERS'];
 const CATEGORIES = [{id: 1, categoryName: 'EMPLOYEE'}, {id: 2, categoryName: 'CONTRACTOR'}, {id: 3, categoryName: 'CONSULTANT'}];
 const TYPES = [{id: 1, typeName: 'PERMANENT'}, {id: 2, typeName: 'TEMPORARY'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'PROBATION'}];
 const YES_NO = ['YES', 'NO'];
@@ -160,6 +160,7 @@ export default function EmployeeMaster() {
       ['dateOfJoining', 'confirmationDate', 'exitDate', 'rejoiningDate', 'marriedDate', 'dob'].forEach((k) => {
         if (d[k] && typeof d[k] === 'string') d[k] = d[k].split('T')[0];
       });
+      d.referMode = d.referMode || '-SELECT-';
       setForm(d);
     } catch (e) { console.error(e); }
   }, [employeeId]);
@@ -282,7 +283,6 @@ export default function EmployeeMaster() {
   }, []);
 
   const [abilityUpload, setAbilityUpload] = useState({ open: false, field: '', types: [], selectedType: '' });
-
   const renderAbilityRow = (label, toggleName, typeName, fileName, hasType = true, hasFile = true, customOptions = null) => {
     const isEnabled = form[toggleName] === 'YES';
     const fileValue = fileName ? form[fileName] : null;
@@ -291,10 +291,10 @@ export default function EmployeeMaster() {
 
     return (
       <Paper sx={{ mb: 2.5, p: 2.5, borderRadius: 3, border: '1px solid', borderColor: isEnabled ? 'primary.light' : 'divider', bgcolor: isEnabled ? (isDark ? 'rgba(33, 150, 243, 0.05)' : 'rgba(33, 150, 243, 0.02)') : 'transparent', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, gap: 4 }}>
+        <Grid container spacing={4} alignItems="center">
           
           {/* Left Side: Icon, Label & Status Toggle */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5, width: { xs: '100%', md: '280px' }, flexShrink: 0 }}>
+          <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
             <Box sx={{ minWidth: 48, width: 48, height: 48, borderRadius: 2, bgcolor: isEnabled ? 'primary.main' : 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isEnabled ? 'white' : 'grey.500', boxShadow: isEnabled ? theme.customShadows.primary : 'none' }}>
               <IconShieldCheck size={24} />
             </Box>
@@ -305,10 +305,10 @@ export default function EmployeeMaster() {
                 <MenuItem value="NO">NO</MenuItem>
               </BOSTextField>
             </Box>
-          </Box>
+          </Grid>
 
           {/* Right Side: Content Area */}
-          <Box sx={{ flex: 1, width: '100%' }}>
+          <Grid item xs={12} md={8} sx={{ width: '100%' }}>
             {isEnabled ? (
               <Stack spacing={2}>
                 {hasType && (
@@ -359,8 +359,8 @@ export default function EmployeeMaster() {
                 <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>This eligibility is currently disabled for this employee.</Typography>
               </Box>
             )}
-          </Box>
-        </Box>
+          </Grid>
+        </Grid>
       </Paper>
     );
   };
@@ -533,8 +533,7 @@ export default function EmployeeMaster() {
               )}
             </R>
             <R>
-              <BOSTextField select name="referMode" label="Reference Mode" value={form.referMode} onChange={h}>
-                <MenuItem value="">-Select-</MenuItem>
+              <BOSTextField select name="referMode" label="Reference Mode" value={form.referMode || '-SELECT-'} onChange={h}>
                 {REF_MODES.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
               </BOSTextField>
             </R>
@@ -558,7 +557,7 @@ export default function EmployeeMaster() {
             </R>
           </Grid>
         </BOSFormSection>
-
+ 
         {/* --- SECTION 3: DATES & SCHEDULING --- */}
         <BOSFormSection icon={<IconCalendar size={20} color={theme.palette.primary.main} />} title="Date & Scheduling">
           <Grid container spacing={2.5}>
@@ -570,31 +569,70 @@ export default function EmployeeMaster() {
                 name="inductionStatus" 
                 label="Induction Status" 
                 value={form.inductionStatus || 'PENDING'} 
-                inputProps={{ readOnly: true }}
+                InputProps={{
+                  readOnly: true,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => navigate('/master/hr/ats/induction-trainee')} size="small" color="primary">
+                        <IconEye size={18} />
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
               />
             </R>
             <R><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
             <R>
-              <BOSTextField select name="exitReason" label="Exit Reason" value={form.exitReason} onChange={h} disabled={!form.exitDate}>
-                <MenuItem value="RESIGNED">RESIGNED</MenuItem>
-                <MenuItem value="TERMINATED">TERMINATED</MenuItem>
-                <MenuItem value="RETIRED">RETIRED</MenuItem>
-                <MenuItem value="OTHER">OTHER</MenuItem>
-              </BOSTextField>
+              <Autocomplete
+                options={['Resigned', 'Termination', 'Death', 'Others']}
+                value={form.exitReason || null}
+                onChange={(event, newValue) => {
+                  setForm(prev => ({ ...prev, exitReason: newValue || '' }));
+                }}
+                disabled={!form.exitDate}
+                renderInput={(params) => (
+                  <BOSTextField 
+                    {...params} 
+                    label="Exit Reason" 
+                    placeholder="Select Reason"
+                  />
+                )}
+              />
             </R>
-            <R><BOSTextField name="exitComments" label="Exit Comments" value={form.exitComments} onChange={h} disabled={form.exitReason !== 'OTHER'} placeholder={form.exitReason === 'OTHER' ? 'Explain...' : 'Disabled'} /></R>
+            <R>
+              <BOSTextField 
+                name="exitComments" 
+                label="Exit Comments" 
+                value={form.exitComments} 
+                onChange={h} 
+                disabled={form.exitReason !== 'Others'} 
+                placeholder={form.exitReason === 'Others' ? 'Explain...' : 'Disabled'} 
+              />
+            </R>
             <R><BOSDatePicker name="rejoiningDate" label="Rejoining Date" value={form.rejoiningDate} onChange={h} /></R>
           </Grid>
         </BOSFormSection>
-
+ 
         {/* --- SECTION 4: OPERATIONS --- */}
         <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Operations And Allowances">
           <Grid container spacing={2.5}>
             <R><BOSTextField name="graceMinutes" label="Grace Minutes" value={form.graceMinutes} onChange={h} type="number" /></R>
             <R><BOSTextField select name="petrolMode" label="Petrol Mode" value={form.petrolMode} onChange={h}><MenuItem value="FIXED">FIXED</MenuItem><MenuItem value="KM BASED">KM BASED</MenuItem><MenuItem value="NA">NA</MenuItem></BOSTextField></R>
             <R><BOSTextField name="petrolAllowance" label="Petrol Allowance" value={form.petrolAllowance} onChange={h} type="number" disabled={form.petrolMode === 'NA'} /></R>
-            <R><BOSTextField select name="shift" label="Shift" value={form.shift} onChange={h}><MenuItem value="GENERAL">GENERAL</MenuItem><MenuItem value="ROTATIONAL">ROTATIONAL</MenuItem></BOSTextField></R>
-            <R><BOSTextField select name="shiftName" label="Shift Name" value={form.shiftName} onChange={h}><MenuItem value="GENERAL">GENERAL</MenuItem><MenuItem value="SHIFT A">SHIFT A</MenuItem><MenuItem value="SHIFT B">SHIFT B</MenuItem></BOSTextField></R>
+            <R>
+              <BOSTextField select name="shift" label="Shift" value={form.shift} onChange={h}>
+                <MenuItem value="YES">YES</MenuItem>
+                <MenuItem value="NO">NO</MenuItem>
+              </BOSTextField>
+            </R>
+            <R>
+              <BOSTextField select name="shiftName" label="Shift Name" value={form.shiftName} onChange={h}>
+                <MenuItem value="GENERAL">GENERAL</MenuItem>
+                <MenuItem value="SHIFT 1">SHIFT 1</MenuItem>
+                <MenuItem value="SHIFT 2">SHIFT 2</MenuItem>
+                <MenuItem value="SHIFT 3">SHIFT 3</MenuItem>
+              </BOSTextField>
+            </R>
             <R><BOSTextField name="shiftDuration" label="Shift Duration" value={form.shiftDuration} inputProps={{ readOnly: true }} /></R>
           </Grid>
         </BOSFormSection>

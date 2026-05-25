@@ -130,7 +130,7 @@ public class ChecklistController {
     }
 
     @PostMapping("/verify-master")
-    @RequirePagePermission(pageCode = "M1210", action = "approval")
+    @RequirePagePermission(pageCode = "QM1110", action = "approval")
     @Operation(summary = "Verify Master Checklist", description = "Approves or rejects a Master Checklist definition")
     public ResponseEntity<MasterChecklist> verifyMaster(@RequestBody Map<String, Object> payload) {
         Long checklistId = Long.valueOf(payload.get("checklistId").toString());

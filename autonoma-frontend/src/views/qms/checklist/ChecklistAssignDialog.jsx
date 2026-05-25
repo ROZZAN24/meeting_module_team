@@ -64,7 +64,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
   
   // Filter employees whose department matches one of the checklist's departments,
-  // and who are active, completed induction, and have credentials created.
+  // and who are active and have credentials created.
   let filteredEmployees = (lookups.employees || []).filter(emp => {
     // 1. Same department (if checklist has allowed departments)
     if (allowedDeptNames.length > 0) {
@@ -77,22 +77,17 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     if (emp.status !== 'Active') {
       return false;
     }
-    // 3. Induction completed
-    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') {
-      return false;
-    }
-    // 4. Credentials created (exists in user list)
+    // 3. Credentials created (exists in user list)
     if (!userEmpIds.includes(Number(emp.id))) {
       return false;
     }
     return true;
   });
 
-  // Fallback: If no employees match the checklist's department, show all employees who are active, induction completed, and credentialed.
+  // Fallback: If no employees match the checklist's department, show all employees who are active and credentialed.
   if (filteredEmployees.length === 0) {
     filteredEmployees = (lookups.employees || []).filter(emp => {
       return emp.status === 'Active' && 
-             emp.inductionStatus?.toUpperCase() === 'COMPLETED' && 
              userEmpIds.includes(Number(emp.id));
     });
   }
@@ -112,6 +107,26 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     assignType: '',
     id: null
   });
+
+  // Get employee names already assigned to any role for this checklist
+  const blockedEmployeeNames = assignments
+    .filter(a => {
+      if (formData.id && a.id === formData.id) return false;
+      return true;
+    })
+    .map(a => a.assignedTo);
+
+  const visibleEmployeeOptions = employeeOptions.filter(opt => {
+    return !blockedEmployeeNames.includes(opt.value);
+  });
+
+  // Get assign types already assigned to ANY employee for this checklist
+  const alreadyTakenTypes = assignments
+    .filter(a => {
+      if (formData.id && a.id === formData.id) return false;
+      return true;
+    })
+    .map(a => a.assignType);
 
   useEffect(() => {
     if (open && checklistId) {
@@ -289,7 +304,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
               >
-                {employeeOptions.map(opt => (
+                {visibleEmployeeOptions.map(opt => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </BOSTextField>
@@ -302,9 +317,9 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 required
               >
                 <MenuItem value="">-Select-</MenuItem>
-                <MenuItem value="PRIMARY">PRIMARY</MenuItem>
-                <MenuItem value="SECONDARY">SECONDARY</MenuItem>
-                <MenuItem value="TERTIARY">TERTIARY</MenuItem>
+                {!alreadyTakenTypes.includes('PRIMARY') && <MenuItem value="PRIMARY">PRIMARY</MenuItem>}
+                {!alreadyTakenTypes.includes('SECONDARY') && <MenuItem value="SECONDARY">SECONDARY</MenuItem>}
+                {!alreadyTakenTypes.includes('TERTIARY') && <MenuItem value="TERTIARY">TERTIARY</MenuItem>}
               </BOSTextField>
 
               <Button 
@@ -335,6 +350,22 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               showActions={false}
               renderCell={(col, row) => {
                 if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' || row.status === 'Started' ? 'ACTIVE' : 'INACTIVE')} />;
+                if (col.id === 'checkingPoint' && row.checkingPoint && row.checkingPoint !== '-') {
+                  return (
+                    <Box
+                      component="span"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRowId(row.id);
+                        handleEditAssignment(row);
+                        setIsEditing(true);
+                      }}
+                      sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                    >
+                      {row.checkingPoint}
+                    </Box>
+                  );
+                }
                 return row[col.id];
               }}
             />

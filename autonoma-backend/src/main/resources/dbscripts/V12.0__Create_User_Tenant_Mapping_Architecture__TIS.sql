@@ -32,7 +32,7 @@ END
 -- Seed mapping for default Admin user if companies exist
 -- This ensures the first user can still login after these mappings are enforced.
 INSERT INTO [dbo].[AD_USER_COMPANY_MAPPING] ([user_id], [company_id], [created_by])
-SELECT 'Admin', id, 'SYSTEM' FROM AD_COMPANY_CREDENTIAL WHERE NOT EXISTS (SELECT 1 FROM AD_USER_COMPANY_MAPPING WHERE [user_id] = 'Admin');
+SELECT 'Admin', id, 'SYSTEM' FROM ad_company_credential WHERE NOT EXISTS (SELECT 1 FROM AD_USER_COMPANY_MAPPING WHERE [user_id] = 'Admin');
 
 INSERT INTO [dbo].[AD_USER_DIVISION_MAPPING] ([user_id], [division_id], [created_by])
 SELECT 'Admin', id, 'SYSTEM' FROM ad_division_master WHERE NOT EXISTS (SELECT 1 FROM AD_USER_DIVISION_MAPPING WHERE [user_id] = 'Admin');
