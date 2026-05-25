@@ -61,7 +61,13 @@ public class AuthController {
     public ResponseEntity<?> checkCredentials(@RequestBody LoginRequest loginRequest) {
         // Step 1: Validate credentials from master database
         com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
-        Optional<UserCredential> userOpt = userRepository.findByUserId(loginRequest.getUsername());
+        String usernameInput = loginRequest.getUsername();
+        Optional<UserCredential> userOpt = userRepository.findByUserId(usernameInput);
+        if (!userOpt.isPresent()) {
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getUserId().equalsIgnoreCase(usernameInput))
+                    .findFirst();
+        }
 
         if (userOpt.isPresent() && passwordEncoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
             UserCredential user = userOpt.get();

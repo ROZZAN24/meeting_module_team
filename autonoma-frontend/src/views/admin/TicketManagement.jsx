@@ -30,12 +30,16 @@ import {
   MenuItem,
   CircularProgress,
   Card,
+  InputLabel,
   CardContent,
   Avatar,
   Autocomplete,
-  Tabs,
-  Tab,
-  TablePagination
+  TablePagination,
+  InputBase,
+  Select,
+  FormControl,
+  OutlinedInput,
+  InputAdornment
 } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 
@@ -52,12 +56,19 @@ import ReactQuillDemo from 'ui-component/third-party/ReactQuill';
 
 // assets
 import CloseIcon from '@mui/icons-material/Close';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import TicketIcon from '@mui/icons-material/ConfirmationNumber';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import SaveIcon from '@mui/icons-material/Save';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import DownloadIcon from '@mui/icons-material/Download';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SendIcon from '@mui/icons-material/Send';
 import AttachFileIcon from '@mui/icons-material/AttachFile';
@@ -71,6 +82,7 @@ import MicNoneIcon from '@mui/icons-material/MicNone';
 import SettingsVoiceIcon from '@mui/icons-material/SettingsVoice';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import StopIcon from '@mui/icons-material/Stop';
+import ArchiveIcon from '@mui/icons-material/Archive';
 
 const HtmlTooltip = styled(({ className, ...props }) => (
   <Tooltip {...props} classes={{ popper: className }} />
@@ -101,36 +113,63 @@ const HeaderStatCard = ({ title, count, color, icon }) => {
 
   return (
     <Paper elevation={1} sx={{
-      p: 2,
-      borderRadius: '16px',
+      p: 1.5,
+      borderRadius: '12px',
       bgcolor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
       border: `1px solid ${theme.palette.divider}`,
       display: 'flex',
       flexDirection: 'column',
+      justifyContent: 'center',
       position: 'relative',
       overflow: 'hidden',
+      height: 70,
       transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
       '&:hover': {
         transform: 'translateY(-2px)',
-        boxShadow: theme.shadows[3]
+        boxShadow: `0 4px 12px ${alpha(color, 0.15)}`
       }
     }}>
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
-        <Avatar sx={{ bgcolor: alpha(color, 0.15), color: color, width: 38, height: 38 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ zIndex: 1, position: 'relative' }}>
+        <Avatar sx={{ bgcolor: alpha(color, 0.15), color: color, width: 36, height: 36 }}>
           {icon}
         </Avatar>
-        <Box>
-          <Typography variant="caption" sx={{ fontSize: '0.7rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>{count}</Typography>
+          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', mt: 0.5, letterSpacing: '0.5px' }}>
             {title}
           </Typography>
-          <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mt: 0.2 }}>{count}</Typography>
         </Box>
       </Stack>
-      <Box sx={{ height: 30, mt: 1 }}>
-        <Chart options={chartOptions} series={[{ data: [15, 23, 18, 30, 24, 35, 28] }]} type="area" height={35} />
+      <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 25, opacity: 0.5 }}>
+        <Chart options={chartOptions} series={[{ data: [15, 23, 18, 30, 24, 35, 28] }]} type="area" height={25} />
       </Box>
     </Paper>
   );
+};
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getFileTypeDisplay = (name) => {
+  if (!name) return 'Unknown';
+  const ext = name.split('.').pop().toLowerCase();
+  if (['pdf'].includes(ext)) return 'PDF';
+  if (['xls', 'xlsx'].includes(ext)) return 'Excel';
+  if (['doc', 'docx'].includes(ext)) return 'Word';
+  if (['png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext)) return 'Image';
+  if (['mp3', 'wav', 'ogg'].includes(ext)) return 'Audio';
+  return ext.toUpperCase();
+};
+
+const isPreviewable = (name) => {
+  if (!name) return false;
+  const ext = name.split('.').pop().toLowerCase();
+  return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext);
 };
 
 // ==============================|| TICKET MANAGEMENT CENTER ||============================== //
@@ -164,6 +203,9 @@ export default function TicketManagement({ viewType }) {
 
   // Dialog States
   const [createOpen, setCreateOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [previewFileData, setPreviewFileData] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
 
@@ -193,6 +235,7 @@ export default function TicketManagement({ viewType }) {
   const [formDevName, setFormDevName] = useState('');
   const [formDevEmail, setFormDevEmail] = useState('');
   const [formDevMobile, setFormDevMobile] = useState('');
+  const [formVerifiedBy, setFormVerifiedBy] = useState('');
 
   // Severity and General Fields
   const [formSeverity, setFormSeverity] = useState('Medium');
@@ -202,17 +245,31 @@ export default function TicketManagement({ viewType }) {
   const [formAssignedHours, setFormAssignedHours] = useState('');
   const [hoursPart, setHoursPart] = useState('');
   const [minutesPart, setMinutesPart] = useState('');
+  const [isTimeFocused, setIsTimeFocused] = useState(false);
+  const [hoursFocused, setHoursFocused] = useState(false);
+  const [minutesFocused, setMinutesFocused] = useState(false);
   const [devWorkloadTrail, setDevWorkloadTrail] = useState([]);
   const [detailDevWorkloadTrail, setDetailDevWorkloadTrail] = useState([]);
 
   // Voice support states
-  const [voiceLang, setVoiceLang] = useState('en-IN');
+  const [voiceLang, setVoiceLang] = useState('ta-IN'); // ta-IN supports both Tamil and English natively in Chrome
   const [isListening, setIsListening] = useState(false);
   const [isRecordingAudio, setIsRecordingAudio] = useState(false);
   const [transcriptionStatus, setTranscriptionStatus] = useState('');
   const recognitionRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
+  const autoRestartRef = useRef(false);
+
+  useEffect(() => {
+    if (autoRestartRef.current && !isListening) {
+      autoRestartRef.current = false;
+      // Small timeout to ensure previous rec instance is fully destroyed
+      setTimeout(() => {
+        handleToggleVoiceTyping();
+      }, 100);
+    }
+  }, [isListening, voiceLang]);
 
   const handleToggleVoiceTyping = () => {
     if (isListening) {
@@ -234,21 +291,59 @@ export default function TicketManagement({ viewType }) {
       const rec = new SpeechRecognition();
       rec.continuous = true;
       rec.interimResults = false;
-      rec.lang = voiceLang;
+      rec.lang = voiceLang; // Use state for dynamic switching
 
       rec.onstart = () => {
         setIsListening(true);
       };
 
       rec.onresult = (event) => {
-        const text = event.results[event.results.length - 1][0].transcript;
-        if (text) {
+        let text = event.results[event.results.length - 1][0].transcript;
+        const lowerText = text.toLowerCase();
+        
+        // Voice Command: Engine Switcher
+        if (lowerText.includes("tamil") || lowerText.includes("தமிழ்") || lowerText.includes("தமில்") || lowerText.includes("तमिल") || lowerText.includes("తమిళం")) {
+           if (voiceLang !== 'ta-IN') {
+             setVoiceLang('ta-IN');
+             autoRestartRef.current = true;
+             rec.stop();
+             return;
+           }
+        } else if (lowerText.includes("english") || lowerText.includes("இங்கிலீஷ்") || lowerText.includes("ஆங்கிலம்") || lowerText.includes("अंग्रेजी") || lowerText.includes("इंग्लिश") || lowerText.includes("ఆంగ్లం") || lowerText.includes("ఇంగ్లీష్")) {
+           if (voiceLang !== 'en-IN') {
+             setVoiceLang('en-IN');
+             autoRestartRef.current = true;
+             rec.stop();
+             return;
+           }
+        } else if (lowerText.includes("hindi") || lowerText.includes("हिंदी") || lowerText.includes("ஹிந்தி") || lowerText.includes("హిందీ")) {
+           if (voiceLang !== 'hi-IN') {
+             setVoiceLang('hi-IN');
+             autoRestartRef.current = true;
+             rec.stop();
+             return;
+           }
+        } else if (lowerText.includes("telugu") || lowerText.includes("తెలుగు") || lowerText.includes("தெலுங்கு") || lowerText.includes("तेलुगु")) {
+           if (voiceLang !== 'te-IN') {
+             setVoiceLang('te-IN');
+             autoRestartRef.current = true;
+             rec.stop();
+             return;
+           }
+        }
+        
+        // The native browser engine perfectly handles outputting the correct script 
+        // based on the selected voiceLang mode (ta-IN for Tamil script, en-IN for Tanglish/English).
+        let processedText = text;
+        
+        // Append real spoken text
+        if (processedText) {
           setFormDesc((prev) => {
             const cleanPrev = prev ? prev.replace(/<\/p>$/, '') : '';
             if (cleanPrev.startsWith('<p>')) {
-              return `${cleanPrev} ${text}</p>`;
+              return `${cleanPrev} ${processedText}</p>`;
             } else {
-              return `<p>${prev ? prev + ' ' : ''}${text}</p>`;
+              return `<p>${prev ? prev + ' ' : ''}${processedText}</p>`;
             }
           });
         }
@@ -274,31 +369,46 @@ export default function TicketManagement({ viewType }) {
   };
 
   const simulateVoiceTyping = () => {
+    const userPrompt = window.prompt("Speak your command (Voice Typing Simulation):", "Tamil la type pannu");
+    if (!userPrompt) return;
+
     setIsListening(true);
     setTimeout(() => {
-      let sampleText = "";
-      if (voiceLang === 'ta-IN') {
-        sampleText = "லாகின் செய்யும்போது எரர் வருகிறது, தயవుசெய்து சரிசெய்யவும்.";
-      } else if (voiceLang === 'hi-IN') {
-        sampleText = "लॉगिन करते समय त्रुटि आ रही है, कृपया इसे जल्द से जल्द ठीक करें।";
-      } else if (voiceLang === 'es-ES') {
-        sampleText = "Hay un problema de conexión con la base de datos al iniciar sesión.";
-      } else if (voiceLang === 'fr-FR') {
-        sampleText = "Il y a un problème de connexion à la base de données lors de la connexion.";
-      } else if (voiceLang === 'de-DE') {
-        sampleText = "Beim Anmelden tritt ein Datenbankverbindungsproblem auf.";
-      } else if (voiceLang === 'te-IN') {
-        sampleText = "ಲಾగిన్ చేసేటప్పుడు డేటాబేస్ కనెక్షన్ సమస్య వస్తోంది.";
-      } else if (voiceLang === 'kn-IN') {
-        sampleText = "ಲಾಗಿನ್ ಮಾಡುವಾಗ ಡೇಟಾಬೇಸ್ ಸಂಪರ್ಕದ ಸಮಸ್ಯೆ ಉಂಟಾಗಿದೆ.";
-      } else if (voiceLang === 'ml-IN') {
-        sampleText = "ലോഗിൻ ചെയ്യുമ്പോൾ ഡാറ്റാബേസ് കണക്ഷൻ പ്രശ്നം ഉണ്ടാകുന്നു.";
-      } else if (voiceLang === 'bn-IN') {
-        sampleText = "লগইন করার সময় ডাটাবেস সংযোগের সমস্যা হচ্ছে।";
-      } else {
-        sampleText = "";
+      let sampleText = userPrompt;
+      const lowerText = userPrompt.toLowerCase();
+      
+      // 4-Language Simulation mapping
+      const tamilMap = {
+        'tamil': 'தமிழ்', 'la': 'ல', 'peasumpothu': 'பேசும்போது', 'intha': 'இந்த', 
+        'error': 'எரர்', 'varuthu': 'வருது', 'enakku': 'எனக்கு', 'peasina': 'பேசினா', 
+        'aaganum': 'ஆகணும்', 'apadi': 'அப்படி', 'veanum': 'வேணும்', 'english': 'இங்கிலீஷ்', 
+        'type': 'டைப்', 'ipo': 'இப்போ', 'mattum': 'மட்டும்', 'deduct': 'டிடெக்ட்', 
+        'pannuthu': 'பண்ணுது', 'correct': 'கரக்ட்', 'aa': 'ஆ', 'nalla': 'நல்லா', 
+        'understand': 'அண்டர்ஸ்டாண்ட்', 'konjam': 'கொஞ்சம்', 'issue': 'இஸ்யூ', 
+        'irukku': 'இருக்கு', 'fix': 'பிக்ஸ்', 'panna': 'பண்ண', 'try': 'ட்ரை', 'pannu': 'பண்ணு'
+      };
+      const hindiMap = {
+        'hindi': 'हिंदी', 'kaisa': 'कैसा', 'hai': 'है', 'namaste': 'नमस्ते', 'mera': 'मेरा'
+      };
+      const teluguMap = {
+        'telugu': 'తెలుగు', 'ela': 'ఎలా', 'unnavu': 'ఉన్నావు', 'namaskaram': 'నమస్కారం'
+      };
+      
+      const words = sampleText.split(/\s+/);
+      const translatedWords = words.map(w => {
+        const cleanW = w.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (tamilMap[cleanW]) return w.replace(new RegExp(cleanW, 'i'), tamilMap[cleanW]);
+        if (hindiMap[cleanW]) return w.replace(new RegExp(cleanW, 'i'), hindiMap[cleanW]);
+        if (teluguMap[cleanW]) return w.replace(new RegExp(cleanW, 'i'), teluguMap[cleanW]);
+        return w;
+      });
+      
+      sampleText = translatedWords.join(' ');
+      
+      if (!sampleText.includes('(') && sampleText !== userPrompt) {
+         sampleText += " (AI Auto-Translated)";
       }
-
+      
       setFormDesc((prev) => {
         const cleanPrev = prev ? prev.replace(/<\/p>$/, '') : '';
         if (cleanPrev.startsWith('<p>')) {
@@ -586,6 +696,40 @@ export default function TicketManagement({ viewType }) {
     }
   }, [user, currentViewType]);
 
+  // Keyboard Shortcut: Ctrl + N for New Task
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
+        if (currentViewType === 'raised-by-me') {
+          e.preventDefault();
+          e.stopPropagation();
+          resetForm();
+          setCreateOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+  }, [currentViewType]);
+
+  // Handle Ctrl + S for ticket creation
+  useEffect(() => {
+    const handleSaveShortcut = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        if (createOpen && !isSaving) {
+          e.preventDefault();
+          e.stopPropagation();
+          const submitBtn = document.getElementById('ticket-submit-button');
+          if (submitBtn && !submitBtn.disabled) {
+            submitBtn.click();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleSaveShortcut, { capture: true });
+    return () => window.removeEventListener('keydown', handleSaveShortcut, { capture: true });
+  }, [createOpen, isSaving]);
+
   // When a ticket is selected, load its comments/timeline
   useEffect(() => {
     if (selectedTicket) {
@@ -656,10 +800,10 @@ export default function TicketManagement({ viewType }) {
   };
 
   // ── Auto Target Date Calculation ─────────────────────────────────────────────
-  //   Daily capacity: 12 h = 720 min per working day (Mon–Sat, Sundays and Govt Holidays are off).
+  //   Daily capacity: 8 h = 480 min per working day (Mon–Sat, Sundays and Govt Holidays are off).
   //   Fetches the assignee's existing workload from the backend, then distributes
   //   the new ticket's assigned minutes across available slots day-by-day.
-  const DAILY_CAPACITY_MINS = 12 * 60; // 720
+  const DAILY_CAPACITY_MINS = 8 * 60; // 480
 
   const GOVERNMENT_HOLIDAYS = [
     // 2025
@@ -747,13 +891,8 @@ export default function TicketManagement({ viewType }) {
       const key = dateKey(cursor);
       const formattedDate = format(cursor, 'dd-MM-yyyy');
 
-      // 1. Sunday check
+      // 1. Sunday check (Silently skip Sundays without showing in Info tooltip)
       if (cursor.getDay() === 0) {
-        trail.push({
-          dateStr: formattedDate,
-          type: 'sunday',
-          isFinal: false
-        });
         cursor = addDays(cursor, 1);
         continue;
       }
@@ -927,7 +1066,7 @@ export default function TicketManagement({ viewType }) {
                         fontSize: '0.7rem'
                       }}
                     >
-                      * Workload full (12h limit reached) - Skipped
+                      * Workload full (8h limit reached) - Skipped
                     </Typography>
                   )}
 
@@ -1225,7 +1364,12 @@ export default function TicketManagement({ viewType }) {
           const res = await axios.post('/api/files/upload', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
-          uploadedUrls.push(res.data);
+          uploadedUrls.push({
+            url: res.data,
+            name: file.name,
+            size: file.size,
+            type: file.type || file.name.split('.').pop()
+          });
         }
         setFormAttachments(uploadedUrls);
         showSnackbar('Attachments uploaded successfully!');
@@ -1240,6 +1384,7 @@ export default function TicketManagement({ viewType }) {
   // Due Date & Target Date Reason Check
   const validateAndSubmitTicket = (e) => {
     e.preventDefault();
+    if (isSaving) return;
     if (!formTitle.trim() || !formDesc.trim()) {
       showSnackbar('Title and Description are required', 'warning');
       return;
@@ -1269,15 +1414,16 @@ export default function TicketManagement({ viewType }) {
       severityLevel: formSeverity,
       sourceType: formSourceType,
       ticketStatus: 'Open',
-      attachmentPath: formAttachments.join(','),
+      attachmentPath: formAttachments.map(f => typeof f === 'string' ? f : f.url).join(','),
       assignedHours: formAssignedHours || null,
       targetDate: formTargetDate ? new Date(formTargetDate) : null,
       developerName: formDevName || null,
       developerEmail: formDevEmail || null,
       developerMobileNo: formDevMobile || null,
       assignedTo: formDevName || 'Unassigned',
+      verifiedBy: formVerifiedBy || null,
       createdBy: user?.username || user?.email || user?.name || 'SYSTEM',
-      tempAttachments: formAttachments,
+      tempAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
       tempVoiceRecordings: formVoiceFiles
     };
 
@@ -1286,6 +1432,7 @@ export default function TicketManagement({ viewType }) {
 
   const submitTicket = async (payload) => {
     try {
+      setIsSaving(true);
       await axios.post('/api/tickets', payload);
       showSnackbar('Ticket raised successfully!');
       setCreateOpen(false);
@@ -1296,6 +1443,8 @@ export default function TicketManagement({ viewType }) {
       fetchTickets();
     } catch (err) {
       showSnackbar('Failed to create ticket: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -1468,6 +1617,7 @@ export default function TicketManagement({ viewType }) {
     setFormDevName('');
     setFormDevEmail('');
     setFormDevMobile('');
+    setFormVerifiedBy(user?.name || user?.username || '');
     if (user?.empId) {
       fetchEmployeeDetails();
     } else {
@@ -1609,9 +1759,18 @@ export default function TicketManagement({ viewType }) {
         matchesDate = matchesDate && new Date(t.createdAt) <= new Date(globalFilters.endDate + 'T23:59:59');
       }
 
-      return matchesSearch && matchesId && matchesType && matchesStatus && matchesPriority && matchesDept && matchesAssigned && matchesDate;
+      const hasActiveFilters = q !== '' || filterId !== '' || filterTypeVal !== 'All' || filterStatusVal !== 'All' || filterPriorityVal !== 'All' || filterDeptVal !== '' || filterAssignedVal !== '' || globalFilters.startDate || globalFilters.endDate;
+
+      let baseMatches = matchesSearch && matchesId && matchesType && matchesStatus && matchesPriority && matchesDept && matchesAssigned && matchesDate;
+
+      // Hide closed tickets in 'raised-by-me' view unless actively searched for
+      if (currentViewType === 'raised-by-me' && !hasActiveFilters && t.ticketStatus === 'Closed') {
+        return false;
+      }
+
+      return baseMatches;
     });
-  }, [baseFilteredTickets, globalQuery, globalFilters]);
+  }, [baseFilteredTickets, globalQuery, globalFilters, currentViewType]);
 
   const pagedTickets = useMemo(() => {
     return filteredTickets.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -1622,11 +1781,11 @@ export default function TicketManagement({ viewType }) {
 
     const roadmapEvents = ticketTimeline && ticketTimeline.length > 0
       ? ticketTimeline.filter(event => {
-          if (!event.fromStatus) return true;
-          if (event.fromStatus !== event.toStatus) return true;
-          if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
-          return false;
-        })
+        if (!event.fromStatus) return true;
+        if (event.fromStatus !== event.toStatus) return true;
+        if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
+        return false;
+      })
       : [{
         id: 'temp-created',
         toStatus: selectedTicket.ticketStatus,
@@ -1762,114 +1921,119 @@ export default function TicketManagement({ viewType }) {
     return `${t.moduleName || 'System'} ${t.pageName ? `> ${t.pageName}` : ''}`;
   };
 
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      {/* ── TOP HEADER SECTION ── */}
-      <Box sx={{
-        bgcolor: 'white',
-        p: '12px 24px',
-        borderRadius: '12px',
-        border: '1px solid #eef2f6',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between'
-      }}>
-        <Stack direction="row" spacing={2.5} alignItems="center">
-          <Avatar sx={{ width: 50, height: 50, bgcolor: '#ede7f6', color: '#673ab7' }}>
-            <TicketIcon size={28} />
-          </Avatar>
-          <Box>
-            <Typography variant="h3" sx={{ fontWeight: 800, color: '#1a223f' }}>
-              {currentViewType === 'raised-for-me' ? 'Tickets Assigned To Me' : 'Tickets Created By Me'}
-            </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 700, color: '#9e9e9e', textTransform: 'uppercase', fontSize: '0.65rem' }}>
-              {currentViewType === 'raised-for-me' ? 'Raised For Me Workflow' : 'Raised By Me Workflow'}
-            </Typography>
-          </Box>
-        </Stack>
+  const activeTicketsForSelectedPage = useMemo(() => {
+    if (!formPage || !tickets) return [];
+    return tickets.filter(t => 
+      t.pageId === formPage.pageId && 
+      ['Open', 'In Progress', 'Reopened', 'Overdue'].includes(t.ticketStatus)
+    );
+  }, [formPage, tickets]);
 
-        <Stack direction="row" spacing={2} alignItems="center">
-          {/* Raised For Me Filters */}
-          {currentViewType === 'raised-for-me' && (
-            <TextField
-              select
-              size="small"
-              label="View Level"
-              value={accessLevel}
-              onChange={(e) => setAccessLevel(e.target.value)}
-              sx={{ width: 240 }}
-            >
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {/* ── TOP HEADER SECTION (Only for raised-for-me) ── */}
+      {currentViewType === 'raised-for-me' && (
+        <Box sx={{
+          bgcolor: 'white',
+          p: '12px 24px',
+          borderRadius: '12px',
+          border: '1px solid #eef2f6',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 2
+        }}>
+          <Stack direction="row" spacing={2.5} alignItems="center">
+            <Avatar sx={{ width: 50, height: 50, bgcolor: '#ede7f6', color: '#673ab7' }}>
+              <TicketIcon size={28} />
+            </Avatar>
+            <Box>
+              <Typography variant="h3" sx={{ fontWeight: 800, color: '#1a223f' }}>
+                Tickets Assigned To Me
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#9e9e9e', textTransform: 'uppercase', fontSize: '0.65rem' }}>
+                Raised For Me Workflow
+              </Typography>
+            </Box>
+          </Stack>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 'auto' }}>
+            <TextField select size="small" label="View Level" value={accessLevel} onChange={(e) => setAccessLevel(e.target.value)} sx={{ width: 240 }}>
               <MenuItem value="Mine">Mine (Default)</MenuItem>
               <MenuItem value="My Team">My Team</MenuItem>
               <MenuItem value="My Company">My Company</MenuItem>
             </TextField>
-          )}
+          </Stack>
+        </Box>
+      )}
 
-          {/* Raised By Me (Ticket By Me) Filters */}
-          {currentViewType === 'raised-by-me' && (
-            <Autocomplete
-              size="small"
-              options={employeesList}
-              getOptionLabel={(option) => option.employeeName || ''}
-              value={employeesList.find(e => e.employeeName === raisedToFilter) || null}
-              onChange={(event, newValue) => {
-                setRaisedToFilter(newValue ? newValue.employeeName : '');
-              }}
-              sx={{ width: 320 }}
-              renderInput={(params) => <TextField {...params} label="Raised To Employee" />}
-            />
-          )}
-
-          {currentViewType === 'raised-by-me' && (
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => { resetForm(); setCreateOpen(true); }}
-              sx={{
-                height: 40,
-                borderRadius: '8px',
-                bgcolor: '#673ab7',
-                '&:hover': { bgcolor: '#5e35b1' },
-                px: 3,
-                fontWeight: 700
-              }}
-            >
-              Raise Ticket
-            </Button>
-          )}
-        </Stack>
-      </Box>
-
-      {/* ── DASHBOARD STAT CARDS ── */}
+      {/* ── DASHBOARD STAT CARDS & ACTIONS ── */}
       <Box sx={{
         display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         gap: 2,
         width: '100%',
-        overflowX: 'auto',
-        pb: 1,
-        '& > *': {
-          flex: '1 1 0px',
-          minWidth: '150px'
-        }
+        mb: 0.5,
+        mt: 1.2
       }}>
-        <HeaderStatCard title="Total" count={stats.total} color={theme.palette.primary.main} icon={<AssignmentIcon />} />
-        <HeaderStatCard title="Open" count={stats.open} color={theme.palette.info.main} icon={<TicketIcon />} />
-        <HeaderStatCard title="In Progress" count={stats.inProgress} color={theme.palette.warning.main} icon={<HistoryIcon />} />
-        <HeaderStatCard title="Resolved" count={stats.resolved} color={theme.palette.success.main} icon={<CheckCircleIcon />} />
-        <HeaderStatCard title="Closed" count={stats.closed} color={theme.palette.text.secondary} icon={<CloseIcon />} />
-        <HeaderStatCard title="Reopened" count={stats.reopened} color={theme.palette.secondary.main} icon={<ReplayIcon />} />
-        <HeaderStatCard title="Overdue" count={stats.overdue} color={theme.palette.error.main} icon={<ErrorOutlineIcon />} />
+        <Box sx={{
+          display: 'flex',
+          gap: 1.5,
+          flexGrow: 1,
+          overflowX: 'auto',
+          pb: 0.5,
+          '& > *': { flex: '1 1 0px', minWidth: '120px', maxWidth: '160px' }
+        }}>
+          <HeaderStatCard title="Total" count={stats.total} color={theme.palette.primary.main} icon={<AssignmentIcon />} />
+          <HeaderStatCard title="Open" count={stats.open} color={theme.palette.info.main} icon={<TicketIcon />} />
+          <HeaderStatCard title="In Progress" count={stats.inProgress} color={theme.palette.warning.main} icon={<HistoryIcon />} />
+          <HeaderStatCard title="Resolved" count={stats.resolved} color={theme.palette.success.main} icon={<CheckCircleIcon />} />
+          <HeaderStatCard title="Closed" count={stats.closed} color={theme.palette.text.secondary} icon={<ArchiveIcon />} />
+          <HeaderStatCard title="Reopened" count={stats.reopened} color={theme.palette.secondary.main} icon={<ReplayIcon />} />
+          <HeaderStatCard title="Overdue" count={stats.overdue} color={theme.palette.error.main} icon={<ErrorOutlineIcon />} />
+        </Box>
+
+        {currentViewType === 'raised-by-me' && (
+          <Box sx={{ display: 'flex', alignItems: 'center', pb: 0.5 }}>
+            <Tooltip title="Ctrl + N" placement="top">
+              <Button
+                variant="contained"
+                onClick={() => { resetForm(); setCreateOpen(true); }}
+                sx={{
+                  height: '70px',
+                  borderRadius: '12px',
+                  bgcolor: '#673ab7',
+                  '&:hover': { bgcolor: '#5e35b1' },
+                  px: 3,
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 14px 0 rgba(103,58,183,0.39)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <AddIcon fontSize="small" />
+                  <span>New Task</span>
+                </Box>
+              </Button>
+            </Tooltip>
+          </Box>
+        )}
       </Box>
 
-      <MainCard sx={{ p: 0, display: 'flex', flexDirection: 'column', minHeight: 'calc(100vh - 310px)' }}>
+      <MainCard sx={{ p: 0, display: 'flex', flexDirection: 'column', height: 'fit-content' }}>
         {/* ── TICKETS RECORDS TABLE ── */}
-        <TableContainer sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <TableContainer sx={{ height: 'fit-content', overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
           {loading ? (
             <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
               <CircularProgress color="secondary" />
             </Box>
           ) : (
-            <Table sx={{ minWidth: 650, flexGrow: 1 }}>
+            <Table size="small" sx={{ minWidth: 650, flexGrow: 1, '& .MuiTableCell-root': { py: 1.5, px: 2, height: '65px' } }}>
               <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50' }}>
                 {currentViewType === 'raised-for-me' ? (
                   <TableRow>
@@ -2131,15 +2295,16 @@ export default function TicketManagement({ viewType }) {
             alignItems: 'center',
             background: 'linear-gradient(135deg, #673ab7 0%, #512da8 100%)',
             color: 'white',
-            py: 2
+            py: 1.5,
+            minHeight: 60
           }}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white' }}>
-                <TicketIcon />
+              <Avatar sx={{ bgcolor: 'rgba(255, 255, 255, 0.2)', color: 'white', width: 32, height: 32 }}>
+                <TicketIcon fontSize="small" />
               </Avatar>
               <Box>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: 'white' }}>Raise Support Ticket</Typography>
-                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)', display: 'block' }}>Create new internal or external workflow issue</Typography>
+                <Typography variant="h3" sx={{ fontWeight: 700, color: 'white', lineHeight: 1, display: 'flex', alignItems: 'center' }}>New Task</Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255, 255, 255, 0.8)', display: 'block', mt: 0.5 }}>Create and assign a new workflow task</Typography>
               </Box>
             </Stack>
             <IconButton onClick={() => setCreateOpen(false)} sx={{ color: 'white' }}><CloseIcon /></IconButton>
@@ -2153,20 +2318,9 @@ export default function TicketManagement({ viewType }) {
                   <Box sx={{ width: 4, height: 16, bgcolor: '#673ab7', borderRadius: 1 }} />
                   Ticket Information & Classification
                 </Typography>
-                {/* Row 1: Workflow Type + Title — Type is narrow/fixed, Title grows */}
+                {/* Row 1: Title grows */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-                  <Box sx={{ flex: '0 1 auto', minWidth: `${getFieldMinWidth(formType, 'Ticket Workflow Type', 90)}px` }}>
-                    <TextField
-                      fullWidth
-                      select
-                      label="Ticket Workflow Type"
-                      value={formType}
-                      onChange={(e) => setFormType(e.target.value)}
-                    >
-                      <MenuItem value="Internal">Internal</MenuItem>
-                    </TextField>
-                  </Box>
-                  <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formTitle, 'Ticket Title', 90)}px` }}>
+                  <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formTitle, 'Ticket Title', 90)}px` }}>
                     <TextField
                       fullWidth
                       label="Ticket Title"
@@ -2220,31 +2374,76 @@ export default function TicketManagement({ viewType }) {
                       onChange={(event, newValue) => {
                         setFormPage(newValue);
                       }}
-                      renderInput={(params) => <TextField {...params} label={`Screen / Page Name (${pagesData ? pagesData.length : 0})`} placeholder="Select..." />}
+                      renderInput={(params) => {
+                        const originalEndAdornment = params.InputProps.endAdornment;
+                        const formatToHHMM = (mins) => {
+                          if (!mins) return '00:00';
+                          const h = String(Math.floor(mins / 60)).padStart(2, '0');
+                          const m = String(mins % 60).padStart(2, '0');
+                          return `${h}:${m}`;
+                        };
+                        return (
+                          <TextField 
+                            {...params} 
+                            label={`Screen / Page Name (${pagesData ? pagesData.length : 0})`} 
+                            placeholder="Select..." 
+                            InputProps={{
+                              ...params.InputProps,
+                              endAdornment: (
+                                <>
+                                  {activeTicketsForSelectedPage.length > 0 && (
+                                    <InputAdornment position="end" sx={{ mr: 2 }}>
+                                      <HtmlTooltip
+                                        title={
+                                          <Box sx={{ p: 1, minWidth: 260 }}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: '#ffb74d', mb: 1 }}>Already Active Task Found</Typography>
+                                            {activeTicketsForSelectedPage.map((t, idx) => (
+                                              <Box key={t.ticketId} sx={{ mb: idx < activeTicketsForSelectedPage.length - 1 ? 1.5 : 0, pb: idx < activeTicketsForSelectedPage.length - 1 ? 1.5 : 0, borderBottom: idx < activeTicketsForSelectedPage.length - 1 ? '1px dashed rgba(255,255,255,0.2)' : 'none' }}>
+                                                <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace', mb: 0.5 }}>
+                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Ticket No</Box>
+                                                  <Box sx={{ flex: 1 }}>: {t.ticketId}</Box>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace', mb: 0.5 }}>
+                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Assigned To</Box>
+                                                  <Box sx={{ flex: 1 }}>: {t.developerName || t.assignedTo || 'Unassigned'}</Box>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace', mb: 0.5 }}>
+                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Assigned By</Box>
+                                                  <Box sx={{ flex: 1 }}>: {t.createdBy || 'Unknown'}</Box>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace', mb: 0.5 }}>
+                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Status</Box>
+                                                  <Box sx={{ flex: 1 }}>: {t.ticketStatus}</Box>
+                                                </Box>
+                                                <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace' }}>
+                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Assigned Hrs</Box>
+                                                  <Box sx={{ flex: 1 }}>: {t.assignedHours || '00:00'}</Box>
+                                                </Box>
+                                              </Box>
+                                            ))}
+                                          </Box>
+                                        }
+                                        placement="top"
+                                        arrow
+                                      >
+                                        <InfoOutlinedIcon sx={{ color: '#ffb74d', cursor: 'pointer', fontSize: 20 }} />
+                                      </HtmlTooltip>
+                                    </InputAdornment>
+                                  )}
+                                  {originalEndAdornment}
+                                </>
+                              )
+                            }}
+                          />
+                        );
+                      }}
                     />
                   </Box>
                 </Box>
 
               </Box>
 
-              {/* SECTION 2: REPORTER CONTACT INFO */}
-              <Box sx={{ bgcolor: 'white', p: 2.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 4, height: 16, bgcolor: '#0284c7', borderRadius: 1 }} />
-                  Reporter Contact Information
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
-                    <TextField fullWidth label="Department" value={formDeptName} onChange={(e) => setFormDeptName(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={4}>
-                    <TextField fullWidth label="Email Address" type="email" value={formEmail} onChange={(e) => setFormEmail(e.target.value)} />
-                  </Grid>
-                  <Grid item xs={12} md={4}>
-                    <TextField fullWidth label="Mobile Number" value={formMobile} onChange={(e) => setFormMobile(e.target.value)} />
-                  </Grid>
-                </Grid>
-              </Box>
+              {/* SECTION 2: REMOVED */}
 
               {/* SECTION 3: WORKFLOW ASSIGNMENT */}
               <Box sx={{
@@ -2256,80 +2455,42 @@ export default function TicketManagement({ viewType }) {
               }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#673ab7', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#673ab7', borderRadius: 1 }} />
-                  {formType === 'Internal' ? 'Internal Assignment' : 'External Assignment'}
+                  Task Assignment & Verification
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-                  {formType === 'Internal' ? (
-                    <>
-                      <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formDevName, 'Assigned Employee Name', 90)}px` }}>
-                        <Autocomplete
-                          options={employeesList}
-                          getOptionLabel={(option) => option.employeeName || ''}
-                          value={employeesList.find(e => e.employeeName === formDevName) || null}
-                          onChange={(event, selectedEmp) => {
-                            if (selectedEmp) {
-                              setFormDevName(selectedEmp.employeeName || '');
-                              setFormDevEmail(selectedEmp.officeMail || '');
-                              setFormDevMobile('');
-                              axios.get(`/api/master/employee/${selectedEmp.id}/contact`)
-                                .then(c => {
-                                  if (c.data?.mobile) setFormDevMobile(c.data.mobile);
-                                }).catch(() => { });
-                            } else {
-                              setFormDevName('');
-                              setFormDevEmail('');
-                              setFormDevMobile('');
-                            }
-                          }}
-                          renderInput={(params) => <TextField {...params} label="Assigned Employee Name" placeholder="Select employee..." />}
-                        />
-                      </Box>
-                      <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formDevEmail, 'Employee Email', 90)}px` }}>
-                        <TextField fullWidth disabled label="Employee Email" value={formDevEmail} />
-                      </Box>
-                      <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formDevMobile, 'Employee Mobile', 90)}px` }}>
-                        <TextField fullWidth disabled label="Employee Mobile" value={formDevMobile} />
-                      </Box>
-                    </>
-                  ) : (
-                    <>
-                      <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formDevName, 'Assigned Company Name', 90)}px` }}>
-                        <Autocomplete
-                          options={companiesList}
-                          getOptionLabel={(option) => option.companyName || ''}
-                          value={companiesList.find(c => c.companyName === formDevName) || null}
-                          onChange={(event, selectedComp) => {
-                            if (selectedComp) {
-                              setFormDevName(selectedComp.companyName || '');
-                              setFormDevEmail('');
-                              setFormDevMobile('');
-                            } else {
-                              setFormDevName('');
-                              setFormDevEmail('');
-                              setFormDevMobile('');
-                            }
-                          }}
-                          renderInput={(params) => <TextField {...params} label="Assigned Company Name" placeholder="Select company..." />}
-                        />
-                      </Box>
-                      <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formDevEmail, 'Company Email', 90)}px` }}>
-                        <TextField
-                          fullWidth
-                          label="Company Email"
-                          value={formDevEmail}
-                          onChange={(e) => setFormDevEmail(e.target.value)}
-                        />
-                      </Box>
-                      <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formDevMobile, 'Company Mobile', 90)}px` }}>
-                        <TextField
-                          fullWidth
-                          label="Company Mobile"
-                          value={formDevMobile}
-                          onChange={(e) => setFormDevMobile(e.target.value)}
-                        />
-                      </Box>
-                    </>
-                  )}
+                  <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formDevName, 'Assigned To', 90)}px` }}>
+                    <Autocomplete
+                      options={employeesList.filter(e => e.employeeName !== user?.name && e.employeeName !== user?.username && e.empCode !== user?.empId)}
+                      getOptionLabel={(option) => option.employeeName || ''}
+                      value={employeesList.find(e => e.employeeName === formDevName) || null}
+                      onChange={(event, selectedEmp) => {
+                        if (selectedEmp) {
+                          setFormDevName(selectedEmp.employeeName || '');
+                          setFormDevEmail(selectedEmp.officeMail || '');
+                          axios.get(`/api/master/employee/${selectedEmp.id}/contact`)
+                            .then(c => {
+                              if (c.data?.mobile) setFormDevMobile(c.data.mobile);
+                            }).catch(() => { });
+                        } else {
+                          setFormDevName('');
+                          setFormDevEmail('');
+                          setFormDevMobile('');
+                        }
+                      }}
+                      renderInput={(params) => <TextField {...params} label="Assigned To" placeholder="Search employee..." />}
+                    />
+                  </Box>
+                  <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formVerifiedBy, 'Verified By', 90)}px` }}>
+                    <Autocomplete
+                      options={employeesList}
+                      getOptionLabel={(option) => option.employeeName || ''}
+                      value={employeesList.find(e => e.employeeName === formVerifiedBy) || null}
+                      onChange={(event, selectedEmp) => {
+                        setFormVerifiedBy(selectedEmp ? (selectedEmp.employeeName || '') : '');
+                      }}
+                      renderInput={(params) => <TextField {...params} label="Verified By" placeholder="Search employee..." />}
+                    />
+                  </Box>
                 </Box>
               </Box>
 
@@ -2340,120 +2501,68 @@ export default function TicketManagement({ viewType }) {
                   Details & Due Dates
                 </Typography>
                 <Box sx={{ mb: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                      Detailed Description (Rich Text Editor) *
-                    </Typography>
+                  <Box sx={{ position: 'relative', mt: 1, width: '100%' }}>
+                    {/* Floating Label */}
+                    <InputLabel
+                      shrink={true}
+                      sx={{
+                        position: 'absolute',
+                        top: -9,
+                        left: 10,
+                        bgcolor: 'white',
+                        px: 0.5,
+                        zIndex: 2,
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'text.secondary'
+                      }}
+                    >
+                      Detailed Description *
+                    </InputLabel>
 
-                    {/* Integrated Voice & Audio Toolbar */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                      {/* Language Selection Dropdown */}
-                      <TextField
-                        select
-                        size="small"
-                        label="Voice Language"
-                        value={voiceLang}
-                        onChange={(e) => setVoiceLang(e.target.value)}
-                        InputLabelProps={{ shrink: true }}
-                        sx={{
-                          width: 140,
-                          '& .MuiInputBase-root': { height: 32, fontSize: '0.8rem' },
-                          '& .MuiInputLabel-root': { fontSize: '0.8rem', transform: 'translate(14px, -6px) scale(0.75)' }
-                        }}
-                      >
-                        <MenuItem value="en-IN">English</MenuItem>
-                        <MenuItem value="ta-IN">Tamil</MenuItem>
-                        <MenuItem value="hi-IN">Hindi</MenuItem>
-                        <MenuItem value="es-ES">Spanish</MenuItem>
-                        <MenuItem value="fr-FR">French</MenuItem>
-                        <MenuItem value="de-DE">German</MenuItem>
-                        <MenuItem value="te-IN">Telugu</MenuItem>
-                        <MenuItem value="kn-IN">Kannada</MenuItem>
-                        <MenuItem value="ml-IN">Malayalam</MenuItem>
-                        <MenuItem value="bn-IN">Bengali</MenuItem>
-                      </TextField>
-
-                      {/* Live Voice Typing (Speech-to-Text) Button */}
-                      <Tooltip title={isListening ? "Stop Voice Typing" : "Live Voice Typing (Speech-to-Text)"}>
-                        <Button
-                          variant={isListening ? "contained" : "outlined"}
+                    {/* Mic Button at top right */}
+                    <Box sx={{ position: 'absolute', top: 6, right: 6, zIndex: 10, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.65rem', userSelect: 'none' }}>
+                        {voiceLang === 'ta-IN' ? 'TA' : voiceLang === 'hi-IN' ? 'HI' : voiceLang === 'te-IN' ? 'TE' : 'EN'}
+                      </Typography>
+                      <Tooltip title={isListening ? "Listening..." : "Start Voice Typing (Say 'English' or 'Tamil' to switch)"}>
+                        <IconButton
                           color={isListening ? "error" : "primary"}
                           onClick={handleToggleVoiceTyping}
                           size="small"
-                          startIcon={isListening ? <MicIcon /> : <MicNoneIcon />}
                           sx={{
-                            height: 32,
-                            textTransform: 'none',
-                            fontSize: '0.75rem',
+                            bgcolor: isListening ? 'rgba(239,68,68,0.1)' : 'rgba(103,58,183,0.08)',
                             animation: isListening ? 'pulse-voice 1.5s infinite' : 'none',
                             '@keyframes pulse-voice': {
-                              '0%': { transform: 'scale(1)' },
-                              '50%': { transform: 'scale(1.1)' },
-                              '100%': { transform: 'scale(1)' }
-                            }
+                              '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239,68,68,0.4)' },
+                              '70%': { transform: 'scale(1.1)', boxShadow: '0 0 0 10px rgba(239,68,68,0)' },
+                              '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239,68,68,0)' }
+                            },
+                            '&:hover': { bgcolor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(103,58,183,0.15)' }
                           }}
                         >
-                          {isListening ? "Listening..." : "Voice Type"}
-                        </Button>
+                          <MicIcon fontSize="small" />
+                        </IconButton>
                       </Tooltip>
-
-                      {/* Live Voice Recording Button */}
-                      <Tooltip title={isRecordingAudio ? "Stop & Transcribe Recording" : "Record Live Audio (Microphone)"}>
-                        <Button
-                          variant={isRecordingAudio ? "contained" : "outlined"}
-                          color={isRecordingAudio ? "error" : "secondary"}
-                          onClick={handleToggleLiveRecording}
-                          size="small"
-                          startIcon={isRecordingAudio ? <StopIcon /> : <FiberManualRecordIcon />}
-                          sx={{
-                            height: 32,
-                            textTransform: 'none',
-                            fontSize: '0.75rem',
-                            animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none'
-                          }}
-                        >
-                          {isRecordingAudio ? "Stop Rec" : "Record Voice"}
-                        </Button>
-                      </Tooltip>
-
-                      {/* Audio File Upload Button */}
-                      <Button
-                        variant="outlined"
-                        component="label"
-                        color="secondary"
-                        size="small"
-                        startIcon={<SettingsVoiceIcon />}
-                        sx={{ height: 32, textTransform: 'none', fontSize: '0.75rem' }}
-                      >
-                        Upload Audio
-                        <input
-                          type="file"
-                          hidden
-                          accept=".mp3,.wav,.m4a,.aac"
-                          onChange={handleVoiceUpload}
-                        />
-                      </Button>
-
-                      {/* Transcription Status Chip */}
-                      {transcriptionStatus && (
-                        <Chip
-                          size="small"
-                          label={transcriptionStatus}
-                          color={
-                            transcriptionStatus.includes('Processing') || transcriptionStatus.includes('Recording')
-                              ? 'warning'
-                              : transcriptionStatus.includes('Completed')
-                                ? 'success'
-                                : 'error'
-                          }
-                          sx={{ height: 24, fontSize: '0.7rem', fontWeight: 600 }}
-                        />
-                      )}
                     </Box>
-                  </Box>
 
-                  <Box sx={{ border: '1px solid #cbd5e1', borderRadius: '8px', overflow: 'hidden', bgcolor: '#fafafa' }}>
-                    <ReactQuillDemo value={formDesc} onChange={setFormDesc} editorMinHeight={150} />
+                    {/* Editor */}
+                    <Box sx={{ 
+                      border: '1px solid', 
+                      borderColor: isListening ? 'error.main' : '#cbd5e1', 
+                      borderRadius: '8px', 
+                      overflow: 'hidden', 
+                      bgcolor: '#fafafa',
+                      transition: 'border-color 0.3s ease',
+                      '& .ql-editor': { minHeight: '150px' }
+                    }}>
+                      <ReactQuillDemo 
+                        value={formDesc} 
+                        onChange={setFormDesc} 
+                        editorMinHeight={150} 
+                        placeholder="Type or speak your description here..." 
+                      />
+                    </Box>
                   </Box>
                 </Box>
                 <Box sx={{
@@ -2464,39 +2573,175 @@ export default function TicketManagement({ viewType }) {
                   width: '100%',
                   flexWrap: 'wrap'
                 }}>
-                  {/* Hours Dropdown */}
-                  <TextField
-                    select
-                    label="Hours"
-                    value={hoursPart}
-                    onChange={(e) => setHoursPart(e.target.value)}
-                    sx={{ width: 140 }}
-                    SelectProps={{
-                      MenuProps: { PaperProps: { sx: { maxHeight: 200 } } }
-                    }}
-                  >
-                    {Array.from({ length: 101 }, (_, i) => (
-                      <MenuItem key={i} value={String(i)}>
-                        {i} h
-                      </MenuItem>
-                    ))}
-                  </TextField>
+                  {/* Custom "Assigned Time" component exactly as designed */}
+                  <FormControl sx={{ width: 'max-content' }} variant="outlined">
+                    <InputLabel shrink={true} sx={{ bgcolor: 'white', px: 0.5, zIndex: 2 }}>Assigned Time</InputLabel>
+                    <OutlinedInput
+                      notched={true}
+                      label="Assigned Time"
+                      inputProps={{ sx: { display: 'none' }, readOnly: true }} // Hide native input text area
+                      sx={{ 
+                        p: 0,
+                        height: '56px', // Standard MUI input height
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2', borderWidth: '2px' }
+                      }}
+                      onFocus={() => setIsTimeFocused(true)}
+                      onBlur={(e) => {
+                         if (!e.relatedTarget) setIsTimeFocused(false);
+                      }}
+                      startAdornment={
+                        <Box sx={{ display: 'flex', alignItems: 'center', p: '0 12px', gap: 1.5 }}>
+                          {/* Clock Icon */}
+                          <AccessTimeIcon sx={{ color: '#64748b', fontSize: 22 }} />
+                          
+                          {/* Hours Box */}
+                          <Box sx={{ 
+                            position: 'relative',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            border: hoursFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
+                            bgcolor: hoursFocused ? '#f0f7ff' : 'white',
+                            borderRadius: '6px', width: '70px', height: '42px',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                            '&:hover': { borderColor: '#1976d2' }
+                          }}>
+                            {/* Inner Dropdown overlaying the box perfectly to intercept clicks */}
+                            <Select
+                              variant="standard" disableUnderline
+                              value={hoursPart || '00'}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setHoursPart(val);
+                                if (val === '24') setMinutesPart('00');
+                                setIsTimeFocused(true);
+                              }}
+                              onOpen={() => setHoursFocused(true)}
+                              onClose={() => setHoursFocused(false)}
+                              MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }}
+                              sx={{
+                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, zIndex: 1,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {Array.from({ length: 25 }, (_, i) => {
+                                 const val = String(i).padStart(2, '0');
+                                 return <MenuItem key={val} value={val}>{val}</MenuItem>;
+                              })}
+                            </Select>
+                            
+                            {/* Visual Content */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
+                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{hoursPart || '00'}</Typography>
+                                <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Hours</Typography>
+                              </Box>
+                              
+                              {/* Arrows Column */}
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                <IconButton 
+                                  size="small" sx={{ p: 0 }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    let h = parseInt(hoursPart || '0', 10);
+                                    h = (h + 1) % 25;
+                                    setHoursPart(String(h).padStart(2, '0'));
+                                    if (h === 24) setMinutesPart('00');
+                                  }}
+                                >
+                                  <KeyboardArrowUpIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                </IconButton>
+                                <IconButton 
+                                  size="small" sx={{ p: 0 }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    let h = parseInt(hoursPart || '0', 10);
+                                    h = h - 1 < 0 ? 24 : h - 1;
+                                    setHoursPart(String(h).padStart(2, '0'));
+                                    if (h === 24) setMinutesPart('00');
+                                  }}
+                                >
+                                  <KeyboardArrowDownIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          </Box>
 
-                  {/* Minutes Dropdown */}
-                  <TextField
-                    select
-                    label="Minutes"
-                    value={minutesPart}
-                    onChange={(e) => setMinutesPart(e.target.value)}
-                    sx={{ width: 140 }}
-                  >
-                    <MenuItem value="00">00 m</MenuItem>
-                    <MenuItem value="10">10 m</MenuItem>
-                    <MenuItem value="20">20 m</MenuItem>
-                    <MenuItem value="30">30 m</MenuItem>
-                    <MenuItem value="40">40 m</MenuItem>
-                    <MenuItem value="50">50 m</MenuItem>
-                  </TextField>
+                          {/* Colon */}
+                          <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: '#1e293b', pb: 0.5 }}>:</Typography>
+
+                          {/* Minutes Box */}
+                          <Box sx={{ 
+                            position: 'relative',
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            border: minutesFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
+                            bgcolor: minutesFocused ? '#f0f7ff' : 'white',
+                            borderRadius: '6px', width: '70px', height: '42px',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                            '&:hover': { borderColor: '#1976d2' }
+                          }}>
+                            {/* Inner Dropdown overlaying the box perfectly to intercept clicks */}
+                            <Select
+                              variant="standard" disableUnderline
+                              value={minutesPart || '00'}
+                              onChange={(e) => {
+                                setMinutesPart(e.target.value);
+                                setIsTimeFocused(true);
+                              }}
+                              onOpen={() => setMinutesFocused(true)}
+                              onClose={() => setMinutesFocused(false)}
+                              MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }}
+                              sx={{
+                                position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, zIndex: 1,
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {Array.from({ length: 60 }, (_, i) => {
+                                 const val = String(i).padStart(2, '0');
+                                 return <MenuItem key={val} value={val} disabled={hoursPart === '24' && val !== '00'}>{val}</MenuItem>;
+                              })}
+                            </Select>
+                            
+                            {/* Visual Content */}
+                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
+                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{minutesPart || '00'}</Typography>
+                                <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Minutes</Typography>
+                              </Box>
+                              
+                              {/* Arrows Column */}
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                <IconButton 
+                                  size="small" sx={{ p: 0 }}
+                                  disabled={hoursPart === '24'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if(hoursPart === '24') return;
+                                    let m = parseInt(minutesPart || '0', 10);
+                                    m = (m + 1) % 60;
+                                    setMinutesPart(String(m).padStart(2, '0'));
+                                  }}
+                                >
+                                  <KeyboardArrowUpIcon sx={{ fontSize: 14, color: hoursPart === '24' ? '#cbd5e1' : '#64748b' }} />
+                                </IconButton>
+                                <IconButton 
+                                  size="small" sx={{ p: 0 }}
+                                  disabled={hoursPart === '24'}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if(hoursPart === '24') return;
+                                    let m = parseInt(minutesPart || '0', 10);
+                                    m = m - 1 < 0 ? 59 : m - 1;
+                                    setMinutesPart(String(m).padStart(2, '0'));
+                                  }}
+                                >
+                                  <KeyboardArrowDownIcon sx={{ fontSize: 14, color: hoursPart === '24' ? '#cbd5e1' : '#64748b' }} />
+                                </IconButton>
+                              </Box>
+                            </Box>
+                          </Box>
+                        </Box>
+                      }
+                    />
+                  </FormControl>
 
                   {/* Target Date */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 200px' }}>
@@ -2513,7 +2758,7 @@ export default function TicketManagement({ viewType }) {
                       title={
                         <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
-                            Developer Workload Details (Max 12h/day)
+                            Developer Workload Details (Max 8h/day)
                           </Typography>
                           {renderWorkloadTrail(devWorkloadTrail)}
                         </Box>
@@ -2527,8 +2772,8 @@ export default function TicketManagement({ viewType }) {
                     </HtmlTooltip>
                   </Box>
 
-                  {/* Upload Attachments */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1.5 1 280px', minWidth: 260 }}>
+                  {/* Upload Attachments & Audio Recording */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1.5 1 280px', minWidth: 260, flexWrap: 'wrap' }}>
                     <Button
                       component="label"
                       variant="outlined"
@@ -2547,18 +2792,66 @@ export default function TicketManagement({ viewType }) {
                       {uploading ? 'Uploading...' : 'Upload Attachments'}
                       <input type="file" multiple hidden onChange={(e) => handleFileUpload(e, false)} />
                     </Button>
+                    
+                    <Tooltip title={isRecordingAudio ? "Stop & Save Recording" : "Record Voice Audio Note"}>
+                      <Button
+                        variant={isRecordingAudio ? "contained" : "outlined"}
+                        color={isRecordingAudio ? "error" : "secondary"}
+                        onClick={handleToggleLiveRecording}
+                        sx={{
+                          height: 55,
+                          borderStyle: isRecordingAudio ? 'solid' : 'dashed',
+                          borderRadius: '8px',
+                          px: 2,
+                          animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none'
+                        }}
+                        startIcon={isRecordingAudio ? <StopIcon /> : <SettingsVoiceIcon />}
+                      >
+                        {isRecordingAudio ? "Recording..." : "Record Audio"}
+                      </Button>
+                    </Tooltip>
                     {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 85, overflowY: 'auto' }}>
-                        {formAttachments.map((url, idx) => (
-                          <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f1f5f9', px: 1, py: 0.25, borderRadius: '4px' }}>
-                            <Typography variant="caption" sx={{ textOverflow: 'ellipsis', overflow: 'hidden', color: 'success.main', fontWeight: 600, maxWidth: '120px', whiteSpace: 'nowrap' }}>
-                              ✓ {url.substring(url.lastIndexOf('/') + 1)}
-                            </Typography>
-                            <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                              <CloseIcon sx={{ fontSize: 10, color: 'error.main' }} />
-                            </IconButton>
-                          </Box>
-                        ))}
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto' }}>
+                        {formAttachments.map((fileObj, idx) => {
+                          const isUrlStr = typeof fileObj === 'string';
+                          const url = isUrlStr ? fileObj : fileObj.url;
+                          const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
+                          const size = isUrlStr ? null : fileObj.size;
+                          const canPreview = isPreviewable(name);
+
+                          return (
+                            <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
+                              <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                <Tooltip title={name} arrow>
+                                  <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {name}
+                                  </Typography>
+                                </Tooltip>
+                              </Box>
+                              <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                {getFileTypeDisplay(name)}
+                              </Typography>
+                              <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                {size ? formatFileSize(size) : 'Unknown'}
+                              </Typography>
+                              <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                                {canPreview ? (
+                                  <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                    <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
+                                  </Button>
+                                ) : (
+                                  <Button size="small" onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(url)}`, '_blank')} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                    <DownloadIcon sx={{ fontSize: 14, mr: 0.5 }} /> Download
+                                  </Button>
+                                )}
+                              </Box>
+                              <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ color: 'error.main', p: 0.25 }}>
+                                <CloseIcon sx={{ fontSize: 14 }} />
+                              </IconButton>
+                            </Box>
+                          );
+                        })}
                         {formVoiceFiles.map((url, idx) => (
                           <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
                             <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
@@ -2579,21 +2872,28 @@ export default function TicketManagement({ viewType }) {
             </Stack>
           </DialogContent>
           <Divider />
-          <DialogActions sx={{ p: 2.5, bgcolor: '#f1f5f9' }}>
-            <Button onClick={() => setCreateOpen(false)} sx={{ color: '#475569', fontWeight: 600 }}>Cancel</Button>
-            <Button
-              variant="contained"
-              type="submit"
-              sx={{
-                bgcolor: '#673ab7',
-                fontWeight: 700,
-                px: 4,
-                borderRadius: '8px',
-                '&:hover': { bgcolor: '#5e35b1' }
-              }}
-            >
-              Submit Ticket
-            </Button>
+          <DialogActions sx={{ p: 2.5, bgcolor: '#f1f5f9', justifyContent: 'flex-end' }}>
+            <Tooltip title="Ctrl + S" arrow placement="top">
+              <span>
+                <Button
+                  id="ticket-submit-button"
+                  variant="contained"
+                  type="submit"
+                  disabled={isSaving}
+                  sx={{
+                    bgcolor: '#673ab7',
+                    fontWeight: 700,
+                    px: 4,
+                    borderRadius: '8px',
+                    '&:hover': { bgcolor: '#5e35b1' },
+                    '&.Mui-disabled': { bgcolor: '#b39ddb', color: '#fff' }
+                  }}
+                >
+                  <SaveIcon sx={{ mr: 1, fontSize: 20 }} />
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </span>
+            </Tooltip>
           </DialogActions>
         </form>
       </Dialog>
@@ -2667,6 +2967,26 @@ export default function TicketManagement({ viewType }) {
           <Button onClick={() => setReopenOpen(false)}>Cancel</Button>
           <Button variant="contained" color="error" onClick={handleReopenTicket}>Reopen Ticket</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* ── DIALOG: INLINE ATTACHMENT PREVIEW ── */}
+      <Dialog open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '12px', height: '80vh' } }}>
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', py: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <VisibilityIcon sx={{ color: '#64748b' }} />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{previewFileData?.name}</Typography>
+          </Box>
+          <IconButton onClick={() => setPreviewModalOpen(false)} size="small" sx={{ color: '#64748b' }}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, bgcolor: '#e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {previewFileData?.type === 'PDF' ? (
+            <iframe src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
+          ) : (
+            <img src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+          )}
+        </DialogContent>
       </Dialog>
 
       <Dialog
@@ -3186,7 +3506,7 @@ export default function TicketManagement({ viewType }) {
                                             textToDisplay = parsed.comment;
                                             isHtml = true;
                                           }
-                                        } catch (e) {}
+                                        } catch (e) { }
                                         if (isHtml || textToDisplay.includes('<p>')) {
                                           return (
                                             <Box sx={{ p: 1.25, bgcolor: '#f8fafc', borderLeft: '4px solid #673ab7', borderRadius: '4px', fontStyle: 'italic', color: 'text.secondary', fontSize: '0.8rem', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
@@ -3360,7 +3680,7 @@ export default function TicketManagement({ viewType }) {
                                       textToDisplay = parsed.comment;
                                       isHtml = true;
                                     }
-                                  } catch (e) {}
+                                  } catch (e) { }
                                   if (isHtml || textToDisplay.includes('<p>')) {
                                     return (
                                       <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />

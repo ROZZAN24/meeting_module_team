@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Button, Stack, Tooltip, IconButton, Grid, MenuItem, Box, Checkbox, ListItemText } from '@mui/material';
-import { IconClipboardCheck, IconRefresh, IconPlus, IconDeviceFloppy, IconEraser } from '@tabler/icons-react';
+import { IconClipboardCheck, IconRefresh, IconPlus, IconDeviceFloppy, IconEraser, IconEye } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -14,6 +14,7 @@ import {
   BOSTextField,
   BOSFormSection,
   BOSFileUpload,
+  BOSFilePreview,
   errorStyle
 } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
@@ -23,28 +24,7 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
-const columns = [
-  { id: 'index', label: 'Sl.No', minWidth: 60 },
-  { id: 'serialNo', label: 'Serial No', bold: true, color: 'primary.main', minWidth: 100 },
-  { id: 'inductionDetails', label: 'Induction Details', required: true, bold: true, minWidth: 250 },
-  { id: 'answer', label: 'Answer', required: true, minWidth: 200 },
-  { id: 'departmentCodes', label: 'Department', minWidth: 150 },
-  { id: 'levelCodes', label: 'Level', minWidth: 120 },
-  { id: 'inductionRound', label: 'Round', minWidth: 120 },
-  { id: 'attachmentRequired', label: 'Attach Req.', minWidth: 100 },
-  {
-    id: 'status',
-    label: 'Status',
-    required: true,
-    hide: true,
-    minWidth: 100,
-    render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
-  },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdAt', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Edited By', minWidth: 120 },
-  { id: 'updatedAt', label: 'Edited Date', minWidth: 150 }
-];
+
 
 const INITIAL_STATE = {
   id: null,
@@ -88,11 +68,87 @@ export default function InductionCriteria() {
   const [formData, setFormData] = useState(INITIAL_STATE);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
-  const { departments = [] } = useLookups(['DEPARTMENTS']);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+
+  const handlePreviewFile = useCallback((attachmentPath) => {
+    setPreviewFile({
+      serverFileName: attachmentPath,
+      fileName: attachmentPath.split('/').pop(),
+      isServer: true
+    });
+    setPreviewOpen(true);
+  }, []);
+
+  const { departments = [], levels = [] } = useLookups(['DEPARTMENTS', 'LEVELS']);
+
+  const levelOptions = useMemo(() => {
+    if (levels && levels.length > 0) {
+      return levels.map(dl => {
+        const matchingLegacy = LEVEL_OPTIONS.find(l => l.code === dl.level);
+        return {
+          code: dl.level,
+          label: matchingLegacy ? matchingLegacy.label : dl.level
+        };
+      });
+    }
+    return LEVEL_OPTIONS;
+  }, [levels]);
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
+
+  const columns = useMemo(() => [
+    { id: 'index', label: 'Sl.No', minWidth: 60 },
+    { id: 'serialNo', label: 'Serial No', bold: true, color: 'primary.main', minWidth: 100 },
+    { id: 'inductionDetails', label: 'Induction Details', required: true, bold: true, minWidth: 250 },
+    { id: 'answer', label: 'Answer', required: true, minWidth: 200 },
+    { id: 'departmentCodes', label: 'Department', minWidth: 150 },
+    { id: 'levelCodes', label: 'Level', minWidth: 120 },
+    { id: 'inductionRound', label: 'Round', minWidth: 120 },
+    { id: 'attachmentRequired', label: 'Attach Req.', minWidth: 100 },
+    {
+      id: 'inductionAttachment',
+      label: 'Attachment',
+      minWidth: 120,
+      render: (row) => {
+        if (!row.inductionAttachment) return '-';
+        const fileName = row.inductionAttachment.split('/').pop();
+        return (
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2" sx={{ maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {fileName}
+            </Typography>
+            <Tooltip title="View Attachment">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePreviewFile(row.inductionAttachment);
+                }}
+              >
+                <IconEye size={18} />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        );
+      }
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      required: true,
+      hide: true,
+      minWidth: 100,
+      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
+    },
+    { id: 'createdBy', label: 'Created By', minWidth: 120 },
+    { id: 'createdAt', label: 'Created Date', minWidth: 150 },
+    { id: 'updatedBy', label: 'Edited By', minWidth: 120 },
+    { id: 'updatedAt', label: 'Edited Date', minWidth: 150 }
+  ], [handlePreviewFile]);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
@@ -164,8 +220,48 @@ export default function InductionCriteria() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'departmentCodes') {
+      if (value.includes('ALL')) {
+        if (formData.departmentCodes.length === departments.length) {
+          setFormData(prev => ({ ...prev, departmentCodes: [] }));
+        } else {
+          setFormData(prev => ({ ...prev, departmentCodes: departments.map(d => d.id.toString()) }));
+        }
+      } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
     if (errors[name]) clearErrors(name);
+  };
+
+  const handleDepartmentChange = (e) => {
+    const { value } = e.target;
+    if (value.includes('ALL')) {
+      if (formData.departmentCodes.length === departments.length) {
+        setFormData(prev => ({ ...prev, departmentCodes: [] }));
+      } else {
+        setFormData(prev => ({ ...prev, departmentCodes: departments.map(d => d.id.toString()) }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, departmentCodes: value }));
+    }
+    if (errors.departmentCodes) clearErrors('departmentCodes');
+  };
+
+  const handleLevelChange = (e) => {
+    const { value } = e.target;
+    if (value.includes('ALL')) {
+      if (formData.levelCodes.length === levelOptions.length) {
+        setFormData(prev => ({ ...prev, levelCodes: [] }));
+      } else {
+        setFormData(prev => ({ ...prev, levelCodes: levelOptions.map(l => l.code) }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, levelCodes: value }));
+    }
+    if (errors.levelCodes) clearErrors('levelCodes');
   };
 
   const handleSave = async () => {
@@ -432,11 +528,12 @@ export default function InductionCriteria() {
                   name="departmentCodes"
                   label="DEPARTMENT"
                   value={formData.departmentCodes}
-                  onChange={handleInputChange}
+                  onChange={handleDepartmentChange}
                   SelectProps={{
                     multiple: true,
                     renderValue: (selected) => {
                       if (!selected || selected.length === 0) return <em>-Select-</em>;
+                      if (selected.length === departments.length) return 'All Departments';
                       return selected.map(id => departments.find(d => d.id.toString() === id)?.departmentName || id).join(', ');
                     }
                   }}
@@ -445,6 +542,12 @@ export default function InductionCriteria() {
                   error={!!errors.departmentCodes}
                   sx={errorStyle(!!errors.departmentCodes)}
                 >
+                  {departments.length > 0 && (
+                    <MenuItem value="ALL">
+                      <Checkbox checked={formData.departmentCodes.length === departments.length} indeterminate={formData.departmentCodes.length > 0 && formData.departmentCodes.length < departments.length} />
+                      <ListItemText primary="Select All" sx={{ '& .MuiTypography-root': { fontWeight: 'bold' } }} />
+                    </MenuItem>
+                  )}
                   {departments.map((d) => (
                     <MenuItem key={d.id} value={d.id.toString()}>
                       <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
@@ -457,12 +560,13 @@ export default function InductionCriteria() {
                   name="levelCodes"
                   label="LEVEL"
                   value={formData.levelCodes}
-                  onChange={handleInputChange}
+                  onChange={handleLevelChange}
                   SelectProps={{
                     multiple: true,
                     renderValue: (selected) => {
-                      if (selected.length === 0) return <em>-Select-</em>;
-                      return selected.map(code => LEVEL_OPTIONS.find(l => l.code === code)?.label || code).join(', ');
+                      if (!selected || selected.length === 0) return <em>-Select-</em>;
+                      if (selected.length === levelOptions.length) return 'All Levels';
+                      return selected.map(code => levelOptions.find(l => l.code === code)?.label || code).join(', ');
                     }
                   }}
                   required
@@ -470,7 +574,13 @@ export default function InductionCriteria() {
                   error={!!errors.levelCodes}
                   sx={errorStyle(!!errors.levelCodes)}
                 >
-                  {LEVEL_OPTIONS.map((l) => (
+                  {levelOptions.length > 0 && (
+                    <MenuItem value="ALL">
+                      <Checkbox checked={formData.levelCodes.length === levelOptions.length} indeterminate={formData.levelCodes.length > 0 && formData.levelCodes.length < levelOptions.length} />
+                      <ListItemText primary="Select All" sx={{ '& .MuiTypography-root': { fontWeight: 'bold' } }} />
+                    </MenuItem>
+                  )}
+                  {levelOptions.map((l) => (
                     <MenuItem key={l.code} value={l.code}>
                       <Checkbox checked={formData.levelCodes.includes(l.code)} />
                       <ListItemText primary={l.label} />
@@ -508,6 +618,12 @@ export default function InductionCriteria() {
         title="Inactivate Induction Criteria"
         message="Are you sure you want to inactivate this induction criteria?"
         itemName={deleteTarget?.inductionDetails}
+      />
+
+      <BOSFilePreview
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        file={previewFile}
       />
     </MainCard>
   );
