@@ -99,7 +99,7 @@ export default function AuditTypeMaster() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, size, globalQuery, globalFilters]);
 
   useEffect(() => { fetchAuditTypes(); }, [fetchAuditTypes]);
 
