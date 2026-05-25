@@ -51,30 +51,74 @@ END
 WHERE [VERIFY_STATUS_INT] IS NULL;
 GO
 
--- STEP 3: Drop old VARCHAR status columns
+-- STEP 3: Drop default constraints & old VARCHAR/NVARCHAR status columns
+DECLARE @sql NVARCHAR(MAX) = '';
+
+-- Drop constraint for STATUS
+SELECT @sql += 'ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT ' + QUOTENAME(name) + ';'
+FROM sys.default_constraints
+WHERE parent_object_id = OBJECT_ID('[dbo].[qms_checklist_master]')
+  AND parent_column_id = COLUMNPROPERTY(parent_object_id, 'STATUS', 'ColumnId');
+
+-- Drop constraint for TASK_STATUS
+SELECT @sql += 'ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT ' + QUOTENAME(name) + ';'
+FROM sys.default_constraints
+WHERE parent_object_id = OBJECT_ID('[dbo].[qms_checklist_master]')
+  AND parent_column_id = COLUMNPROPERTY(parent_object_id, 'TASK_STATUS', 'ColumnId');
+
+-- Drop constraint for VERIFY_STATUS
+SELECT @sql += 'ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT ' + QUOTENAME(name) + ';'
+FROM sys.default_constraints
+WHERE parent_object_id = OBJECT_ID('[dbo].[qms_checklist_master]')
+  AND parent_column_id = COLUMNPROPERTY(parent_object_id, 'VERIFY_STATUS', 'ColumnId');
+
+IF @sql <> ''
+BEGIN
+    EXEC sp_executesql @sql;
+END
+GO
+
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'STATUS'
-           AND system_type_id = TYPE_ID('varchar'))
+           AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
 BEGIN
     ALTER TABLE [dbo].[qms_checklist_master] DROP COLUMN [STATUS];
 END
 GO
+
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'TASK_STATUS'
-           AND system_type_id = TYPE_ID('varchar'))
+           AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
 BEGIN
     ALTER TABLE [dbo].[qms_checklist_master] DROP COLUMN [TASK_STATUS];
 END
 GO
+
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'VERIFY_STATUS'
-           AND system_type_id = TYPE_ID('varchar'))
+           AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
 BEGIN
     ALTER TABLE [dbo].[qms_checklist_master] DROP COLUMN [VERIFY_STATUS];
 END
 GO
 
 -- STEP 4: Rename INT columns back to final names
-EXEC sp_rename 'dbo.qms_checklist_master.STATUS_INT',       'STATUS',       'COLUMN';
-EXEC sp_rename 'dbo.qms_checklist_master.TASK_STATUS_INT',  'TASK_STATUS',  'COLUMN';
-EXEC sp_rename 'dbo.qms_checklist_master.VERIFY_STATUS_INT','VERIFY_STATUS','COLUMN';
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'STATUS_INT')
+   AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'STATUS')
+BEGIN
+    EXEC sp_rename 'dbo.qms_checklist_master.STATUS_INT', 'STATUS', 'COLUMN';
+END
+GO
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'TASK_STATUS_INT')
+   AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'TASK_STATUS')
+BEGIN
+    EXEC sp_rename 'dbo.qms_checklist_master.TASK_STATUS_INT', 'TASK_STATUS', 'COLUMN';
+END
+GO
+
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'VERIFY_STATUS_INT')
+   AND NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'VERIFY_STATUS')
+BEGIN
+    EXEC sp_rename 'dbo.qms_checklist_master.VERIFY_STATUS_INT', 'VERIFY_STATUS', 'COLUMN';
+END
 GO
 
 -- STEP 5: Fix casing of created_at and updated_at -> CREATED_AT, UPDATED_AT

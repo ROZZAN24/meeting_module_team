@@ -113,6 +113,18 @@ public class QmsMeetingSchedule {
     @Column(name = "updated_by")
     private String updatedBy;
 
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdBy == null) {
+            this.createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+    }
+
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("schedule")
     @lombok.ToString.Exclude

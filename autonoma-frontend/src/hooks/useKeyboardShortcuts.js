@@ -55,8 +55,10 @@ export default function useKeyboardShortcuts(shortcuts = {}, enabled = true) {
         return;
       }
 
-      // Skip other shortcuts when in input fields
-      if (isInput && combo !== 'escape') return;
+      // Allow ctrl/meta combos (e.g., ctrl+s, ctrl+backspace) even in inputs
+      // Only block bare key presses (no modifier) to avoid interfering with typing
+      const hasModifier = e.ctrlKey || e.metaKey || e.altKey;
+      if (isInput && !hasModifier) return;
 
       if (currentShortcuts[combo]) {
         e.preventDefault();

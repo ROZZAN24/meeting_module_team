@@ -94,6 +94,13 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
 
       if (isDuplicate) {
         setErrors(prev => ({ ...prev, meetingName: 'A meeting with this name already exists' }));
+        dispatch(openSnackbar({
+          open: true,
+          message: `Meeting "${form.meetingName.trim()}" already exists. Please use a different name.`,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'warning'
+        }));
         return;
       }
 

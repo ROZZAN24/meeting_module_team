@@ -30,12 +30,13 @@ import {
 } from 'ui-component/bos';
 import MainCard from 'ui-component/cards/MainCard';
 import useBOSValidation from 'hooks/useBOSValidation';
+import useAuth from 'hooks/useAuth';
 import { useLookups } from 'hooks/useLookups';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
-import { IconSettings, IconCalendarEvent, IconUsers, IconArrowLeft, IconEraser, IconDeviceFloppy } from '@tabler/icons-react';
+import { IconSettings, IconCalendarEvent, IconUsers, IconArrowLeft, IconEraser, IconDeviceFloppy, IconBarcode, IconCircleCheck } from '@tabler/icons-react';
 
 const FREQUENCIES = ['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL'];
 const ALL_TIME_OPTIONS = Array.from({ length: 96 }).map((_, i) => {
@@ -100,15 +101,21 @@ export default function AddMeetingSchedule() {
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
+  const { user } = useAuth();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // Keyboard Shortcuts
-  useKeyboardShortcuts({
-    'ctrl+s': (e) => { e.preventDefault(); handleSave(); },
-    'ctrl+backspace': (e) => { e.preventDefault(); setForm(INITIAL_FORM); },
-    'escape': (e) => { e.preventDefault(); navigate('/qms/meeting-schedule'); }
-  }, true);
+  // Clear handler to reset form but keep current user populated
+  const handleClear = useCallback(() => {
+    setForm({
+      ...INITIAL_FORM,
+      createdBy: user?.employeeName || user?.userName || user?.name || 'System'
+    });
+    clearErrors();
+  }, [user, clearErrors]);
+
+
 
   const filteredTimeOptions = useMemo(() => {
     const limit = id ? 21 : 23;
@@ -144,34 +151,30 @@ export default function AddMeetingSchedule() {
     if (id) {
       fetchSchedule();
     } else {
-      setForm(INITIAL_FORM);
+      setForm({
+        ...INITIAL_FORM,
+        createdBy: user?.employeeName || user?.userName || user?.name || 'System'
+      });
     }
     clearErrors();
-  }, [id, fetchSchedule, clearErrors]);
+  }, [id, fetchSchedule, clearErrors, user]);
+
+  useEffect(() => {
+    if (!id && user) {
+      const currentUser = user.employeeName || user.userName || user.name || 'System';
+      setForm(p => ({ ...p, createdBy: currentUser }));
+    }
+  }, [id, user]);
 
   const h = (e) => handleInputChange(e, setForm);
 
   // Auto-populate based on Meeting Type
   useEffect(() => {
     if (form.meetingType && !id && employees.length > 0) {
-      const masterEmpEntries = (form.meetingType.employeeName || '').split(',').map(s => s.trim()).filter(Boolean);
-      
-      const matchedParticipants = employees.filter(emp => 
-        masterEmpEntries.some(entry => {
-          const separator = entry.includes(' - ') ? ' - ' : entry.includes(';') ? ';' : null;
-          if (separator) {
-            const [code] = entry.split(separator);
-            return emp.empCode === code;
-          }
-          return emp.employeeName === entry;
-        })
-      );
-
       setForm(p => ({
         ...p,
         description: form.meetingType.meetingDescription || '',
-        agenda: form.meetingType.meetingAgenda || '',
-        participants: matchedParticipants
+        agenda: form.meetingType.meetingAgenda || ''
       }));
     }
   }, [form.meetingType, id, employees]);
@@ -187,7 +190,42 @@ export default function AddMeetingSchedule() {
     }
   }, [form.frequency, form.meetingDate]);
 
+  // Automatically clear selected chairedBy, hostBy, and participants if their department is removed
+  useEffect(() => {
+    const selectedDeptIds = (form.departments || []).map(d => String(d.id));
+    
+    setForm(prev => {
+      let updated = false;
+      const nextForm = { ...prev };
+
+      // Check chairedBy
+      if (nextForm.chairedBy && !selectedDeptIds.includes(String(nextForm.chairedBy.departmentId))) {
+        nextForm.chairedBy = null;
+        updated = true;
+      }
+
+      // Check hostBy
+      if (nextForm.hostBy && !selectedDeptIds.includes(String(nextForm.hostBy.departmentId))) {
+        nextForm.hostBy = null;
+        updated = true;
+      }
+
+      // Check participants
+      const validParticipants = (nextForm.participants || []).filter(p => 
+        selectedDeptIds.includes(String(p.departmentId))
+      );
+      if (validParticipants.length !== (nextForm.participants || []).length) {
+        nextForm.participants = validParticipants;
+        updated = true;
+      }
+
+      return updated ? nextForm : prev;
+    });
+  }, [form.departments]);
+
   const handleSave = async () => {
+    if (submitting) return;
+
     const rules = [
       { field: 'meetingDate', label: 'Schedule Date', required: true },
       { field: 'meetingType', label: 'Meeting Type', required: true },
@@ -201,6 +239,7 @@ export default function AddMeetingSchedule() {
     ];
 
     if (validate(form, rules)) {
+      setSubmitting(true);
       try {
         const payload = {
           ...form,
@@ -208,22 +247,33 @@ export default function AddMeetingSchedule() {
           endTime: to24h(form.endTime),
           intervalTime: to24h(form.intervalTime),
           departments: form.departments.map(d => ({ department: d })),
-          participants: form.participants.map(e => ({ employee: e }))
+          participants: form.participants.map(e => ({ employee: e })),
+          createdBy: form.createdBy || user?.employeeName || user?.userName || user?.name || 'System'
         };
 
         if (id) {
           await axios.put(`${API_PATHS.QMS.MEETING_SCHEDULES}/${id}`, payload);
-          dispatch(openSnackbar({ open: true, message: 'Meeting Schedule updated successfully!', variant: 'alert', severity: 'success' }));
+          dispatch(openSnackbar({ open: true, message: 'Meeting schedule updated successfully.', variant: 'alert', severity: 'success' }));
         } else {
           await axios.post(API_PATHS.QMS.MEETING_SCHEDULES, payload);
-          dispatch(openSnackbar({ open: true, message: 'Meeting Schedule saved successfully!', variant: 'alert', severity: 'success' }));
+          dispatch(openSnackbar({ open: true, message: 'Meeting schedule saved successfully.', variant: 'alert', severity: 'success' }));
         }
         navigate('/qms/meeting-schedule');
       } catch (error) {
-        dispatch(openSnackbar({ open: true, message: 'Failed to save schedule', variant: 'alert', severity: 'error' }));
+        setSubmitting(false);
+        const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Failed to save schedule due to connection or validation issues.';
+        dispatch(openSnackbar({ open: true, message: `Failed to save schedule: ${errorMsg}`, variant: 'alert', severity: 'error' }));
       }
     }
   };
+
+  // Keyboard Shortcuts — placed after handleSave/handleClear so refs are defined
+  // (hook uses a ref internally, so handlers are always up-to-date)
+  useKeyboardShortcuts({
+    'ctrl+s': handleSave,
+    'ctrl+backspace': handleClear,
+    'escape': () => navigate('/qms/meeting-schedule')
+  }, true);
 
   if (loading) {
     return (
@@ -249,28 +299,267 @@ export default function AddMeetingSchedule() {
             <Button variant="outlined" color="error" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/qms/meeting-schedule')} sx={btnCancel}>Back</Button>
           </Tooltip>
           <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
-            <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={() => setForm(INITIAL_FORM)} sx={btnClear}>Clear</Button>
+            <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={handleClear} sx={btnClear}>Clear</Button>
           </Tooltip>
-          <Tooltip title={shortcutTooltip('Save Master', 'Ctrl + S')}>
-            <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save Master</Button>
+          <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />} 
+              onClick={handleSave} 
+              disabled={submitting}
+              sx={btnSave}
+            >
+              {submitting ? 'Saving...' : 'Save'}
+            </Button>
           </Tooltip>
         </Stack>
       }
     >
       <Stack spacing={4}>
         {/* HEADER INFO */}
-        <Grid container spacing={3} sx={{ p: 3, mb: 1, bgcolor: 'primary.lighter', borderRadius: '12px', border: '1px solid', borderColor: 'primary.light', alignItems: 'center' }}>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Schedule No</Typography>
-            <Typography variant="h5" fontWeight={800} color="primary.main">{form.scheduleNo}</Typography>
+        <Grid container spacing={3} sx={{ mb: 1 }}>
+          {/* Card 1: Schedule No */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                p: 2.5,
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'primary.light',
+                bgcolor: isDark ? 'rgba(30, 136, 229, 0.05)' : 'rgba(30, 136, 229, 0.03)',
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(30, 136, 229, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-3px)',
+                  boxShadow: isDark ? '0 8px 24px rgba(30, 136, 229, 0.2)' : '0 8px 24px rgba(30, 136, 229, 0.12)',
+                  borderColor: 'primary.main',
+                }
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2.5}>
+                <Avatar
+                  sx={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '12px',
+                    bgcolor: isDark ? 'primary.dark' : 'primary.light',
+                    color: isDark ? '#fff' : 'primary.main',
+                    boxShadow: '0 4px 10px rgba(30, 136, 229, 0.15)'
+                  }}
+                >
+                  <IconBarcode size={26} />
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px',
+                      display: 'block',
+                      mb: 0.5
+                    }}
+                  >
+                    Schedule No
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    noWrap
+                    sx={{
+                      fontWeight: 800,
+                      color: isDark ? 'primary.light' : 'primary.main',
+                    }}
+                  >
+                    {form.scheduleNo}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Date</Typography>
-            <Typography variant="h5" fontWeight={800} color="text.primary">{form.meetingDate || new Date().toISOString().split('T')[0]}</Typography>
+
+          {/* Card 2: Date */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                p: 2.5,
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'secondary.light',
+                bgcolor: isDark ? 'rgba(103, 58, 183, 0.05)' : 'rgba(103, 58, 183, 0.03)',
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(103, 58, 183, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-3px)',
+                  boxShadow: isDark ? '0 8px 24px rgba(103, 58, 183, 0.2)' : '0 8px 24px rgba(103, 58, 183, 0.12)',
+                  borderColor: 'secondary.main',
+                }
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2.5}>
+                <Avatar
+                  sx={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '12px',
+                    bgcolor: isDark ? 'secondary.dark' : 'secondary.light',
+                    color: isDark ? '#fff' : 'secondary.main',
+                    boxShadow: '0 4px 10px rgba(103, 58, 183, 0.15)'
+                  }}
+                >
+                  <IconCalendarEvent size={26} />
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px',
+                      display: 'block',
+                      mb: 0.5
+                    }}
+                  >
+                    Schedule Date
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    noWrap
+                    sx={{
+                      fontWeight: 800,
+                      color: isDark ? 'secondary.light' : 'secondary.main',
+                    }}
+                  >
+                    {form.meetingDate || new Date().toISOString().split('T')[0]}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Card>
           </Grid>
-          <Grid item xs={12} sm={4}>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>Status</Typography>
-            <Typography variant="h5" fontWeight={800} color="success.main">{form.status}</Typography>
+
+          {/* Card 3: Status */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                p: 2.5,
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'success.light',
+                bgcolor: isDark ? 'rgba(0, 200, 83, 0.05)' : 'rgba(0, 200, 83, 0.03)',
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0, 200, 83, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-3px)',
+                  boxShadow: isDark ? '0 8px 24px rgba(0, 200, 83, 0.2)' : '0 8px 24px rgba(0, 200, 83, 0.12)',
+                  borderColor: 'success.main',
+                }
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2.5}>
+                <Avatar
+                  sx={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '12px',
+                    bgcolor: isDark ? 'success.dark' : 'success.light',
+                    color: isDark ? '#fff' : 'success.main',
+                    boxShadow: '0 4px 10px rgba(0, 200, 83, 0.15)'
+                  }}
+                >
+                  <IconCircleCheck size={26} />
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px',
+                      display: 'block',
+                      mb: 0.5
+                    }}
+                  >
+                    Schedule Status
+                  </Typography>
+                  <Chip
+                    label={form.status}
+                    color="success"
+                    size="small"
+                    sx={{
+                      fontWeight: 800,
+                      fontSize: '0.875rem',
+                      height: '28px',
+                      borderRadius: '8px',
+                      px: 0.5,
+                      boxShadow: '0 2px 8px rgba(0, 200, 83, 0.2)'
+                    }}
+                  />
+                </Box>
+              </Stack>
+            </Card>
+          </Grid>
+
+          {/* Card 4: Created User */}
+          <Grid item xs={12} sm={6} md={3}>
+            <Card
+              sx={{
+                p: 2.5,
+                borderRadius: '16px',
+                border: '1px solid',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'warning.light',
+                bgcolor: isDark ? 'rgba(255, 193, 7, 0.05)' : 'rgba(255, 193, 7, 0.03)',
+                boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 12px rgba(255, 193, 7, 0.05)',
+                transition: 'all 0.3s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-3px)',
+                  boxShadow: isDark ? '0 8px 24px rgba(255, 193, 7, 0.2)' : '0 8px 24px rgba(255, 193, 7, 0.12)',
+                  borderColor: 'warning.main',
+                }
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2.5}>
+                <Avatar
+                  sx={{
+                    width: 54,
+                    height: 54,
+                    borderRadius: '12px',
+                    bgcolor: isDark ? 'warning.dark' : 'warning.light',
+                    color: isDark ? '#fff' : 'warning.main',
+                    boxShadow: '0 4px 10px rgba(255, 193, 7, 0.15)'
+                  }}
+                >
+                  <IconUsers size={26} />
+                </Avatar>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.8px',
+                      display: 'block',
+                      mb: 0.5
+                    }}
+                  >
+                    Created User
+                  </Typography>
+                  <Typography
+                    variant="h3"
+                    noWrap
+                    sx={{
+                      fontWeight: 800,
+                      color: isDark ? 'warning.light' : 'warning.main',
+                    }}
+                  >
+                    {form.createdBy || user?.employeeName || user?.userName || user?.name || 'System'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Card>
           </Grid>
         </Grid>
 
@@ -431,7 +720,12 @@ export default function AddMeetingSchedule() {
                   level = levelMatch?.level || desigMatch?.designationName || '-';
                 }
 
-                const filteredEmployees = employees.filter(emp => emp.status === 'Active' && person.filter(emp));
+                const selectedDeptIds = (form.departments || []).map(d => String(d.id));
+                const filteredEmployees = employees.filter(emp => 
+                  emp.status === 'Active' && 
+                  person.filter(emp) &&
+                  selectedDeptIds.includes(String(emp.departmentId))
+                );
 
                 return (
                   <Card key={person.role} sx={{
@@ -473,6 +767,7 @@ export default function AddMeetingSchedule() {
                       
                       <Autocomplete
                         fullWidth
+                        disabled={form.departments.length === 0}
                         options={filteredEmployees}
                         getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
                         value={selectedEmp}
@@ -480,7 +775,15 @@ export default function AddMeetingSchedule() {
                           setForm(p => ({ ...p, [person.field]: val }));
                           if (errors[person.field]) clearErrors(person.field);
                         }}
-                        renderInput={(params) => <BOSTextField {...params} label={`Select ${person.label}`} required error={!!errors[person.field]} fullWidth />}
+                        renderInput={(params) => (
+                          <BOSTextField 
+                            {...params} 
+                            label={form.departments.length === 0 ? `Select ${person.label} (Please select a department first)` : `Select ${person.label}`} 
+                            required 
+                            error={!!errors[person.field]} 
+                            fullWidth 
+                          />
+                        )}
                       />
                     </CardContent>
                   </Card>
@@ -493,14 +796,28 @@ export default function AddMeetingSchedule() {
             <Autocomplete
               multiple
               disableCloseOnSelect
-              options={employees.filter(e => e.isParticipants === 'YES' && !form.participants.some(p => p.id === e.id || p.empCode === e.empCode))}
+              disabled={form.departments.length === 0}
+              options={employees.filter(e => 
+                e.status === 'Active' && 
+                e.isParticipants === 'YES' && 
+                form.departments.map(d => String(d.id)).includes(String(e.departmentId)) &&
+                !form.participants.some(p => p.id === e.id || p.empCode === e.empCode)
+              )}
               getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
               value={form.participants}
               onChange={(e, val) => {
                 setForm(p => ({ ...p, participants: val }));
                 if (errors.participants) clearErrors('participants');
               }}
-              renderInput={(params) => <BOSTextField {...params} label="Participants" required error={!!errors.participants} fullWidth />}
+              renderInput={(params) => (
+                <BOSTextField 
+                  {...params} 
+                  label={form.departments.length === 0 ? "Participants (Please select a department first)" : "Participants"} 
+                  required 
+                  error={!!errors.participants} 
+                  fullWidth 
+                />
+              )}
             />
 
             {/* PARTICIPANTS PREVIEW GALLERY */}
