@@ -434,6 +434,7 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
+        showActions={false}
       />
 
       <BOSFormDialog

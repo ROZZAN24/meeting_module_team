@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Box, Grid, Stack, Typography, MenuItem, Button, Divider, IconButton, 
-  InputAdornment, Card, CardContent, Autocomplete, Chip, useTheme, Paper, Tooltip, Dialog, DialogTitle, DialogContent, CircularProgress 
+  InputAdornment, Card, CardContent, Autocomplete, Chip, useTheme, Paper, Tooltip, Dialog, DialogTitle, DialogContent, CircularProgress,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow
 } from '@mui/material';
 import { IconUserPlus, IconDeviceFloppy, IconArrowLeft, IconTrash, IconEraser, IconUser, IconBriefcase, IconCalendar, IconSettings, IconShieldCheck, IconCloudUpload, IconFileDescription, IconEye, IconX, IconSignature, IconFileCertificate, IconLock, IconMail, IconFileUpload, IconPlus } from '@tabler/icons-react';
 import { useColorScheme } from '@mui/material/styles';
@@ -109,6 +110,7 @@ const YES_NO = ['YES', 'NO'];
 
 const RULES = [
   { field: 'empCode', label: 'Employee Code', required: true },
+  { field: 'oldEmpCode', label: 'Emp Code', required: true },
   { field: 'employeeName', label: 'Employee Name', required: true },
   { field: 'categoryId', label: 'Category', required: true },
   { field: 'empLevelId', label: 'Level', required: true },
@@ -119,7 +121,7 @@ const RULES = [
   { field: 'dateOfJoining', label: 'Date Of Joining', required: true }
 ];
 
-const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg} xl={4}>{children}</Grid>;
 
 export default function EmployeeMaster() {
   const theme = useTheme();
@@ -283,85 +285,95 @@ export default function EmployeeMaster() {
   }, []);
 
   const [abilityUpload, setAbilityUpload] = useState({ open: false, field: '', types: [], selectedType: '' });
-  const renderAbilityRow = (label, toggleName, typeName, fileName, hasType = true, hasFile = true, customOptions = null) => {
-    const isEnabled = form[toggleName] === 'YES';
-    const fileValue = fileName ? form[fileName] : null;
-    const fileData = fileValue ? JSON.parse(fileValue) : [];
-    const selectedTypes = form[typeName] ? form[typeName].split(',').map(t => t.trim()).filter(t => t) : [];
-
+  const renderAbilityTable = (groupTitle, groupIcon, items) => {
     return (
-      <Paper sx={{ mb: 2.5, p: 2.5, borderRadius: 3, border: '1px solid', borderColor: isEnabled ? 'primary.light' : 'divider', bgcolor: isEnabled ? (isDark ? 'rgba(33, 150, 243, 0.05)' : 'rgba(33, 150, 243, 0.02)') : 'transparent', transition: 'all 0.3s ease', position: 'relative', overflow: 'hidden' }}>
-        <Grid container spacing={4} alignItems="center">
-          
-          {/* Left Side: Icon, Label & Status Toggle */}
-          <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
-            <Box sx={{ minWidth: 48, width: 48, height: 48, borderRadius: 2, bgcolor: isEnabled ? 'primary.main' : 'grey.200', display: 'flex', alignItems: 'center', justifyContent: 'center', color: isEnabled ? 'white' : 'grey.500', boxShadow: isEnabled ? theme.customShadows.primary : 'none' }}>
-              <IconShieldCheck size={24} />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: isEnabled ? 'text.primary' : 'text.secondary', mb: 0.5 }}>{label}</Typography>
-              <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 90 }}>
-                <MenuItem value="YES">YES</MenuItem>
-                <MenuItem value="NO">NO</MenuItem>
-              </BOSTextField>
-            </Box>
-          </Grid>
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1.5, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+          {groupIcon} {groupTitle}
+        </Typography>
+        <TableContainer component={Paper} sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider', overflow: 'hidden', boxShadow: 'none' }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ bgcolor: isDark ? 'background.default' : 'grey.50' }}>
+                <TableCell sx={{ fontWeight: 800, width: '25%', py: 1 }}>Eligibility</TableCell>
+                <TableCell sx={{ fontWeight: 800, width: '15%', py: 1 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 800, width: '35%', py: 1 }}>Qualified For</TableCell>
+                <TableCell sx={{ fontWeight: 800, width: '25%', py: 1 }}>Proofs & Upload</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {items.map((item) => {
+                const { label, toggleName, typeName, fileName, hasType = true, hasFile = true, customOptions = null } = item;
+                const isEnabled = form[toggleName] === 'YES';
+                const fileValue = fileName ? form[fileName] : null;
+                const fileData = fileValue ? JSON.parse(fileValue) : [];
+                const selectedTypes = form[typeName] ? form[typeName].split(',').map(t => t.trim()).filter(t => t) : [];
 
-          {/* Right Side: Content Area */}
-          <Grid item xs={12} md={8} sx={{ width: '100%' }}>
-            {isEnabled ? (
-              <Stack spacing={2}>
-                {hasType && (
-                  <Autocomplete 
-                    multiple 
-                    options={customOptions || auditTypes.map(t => t.auditType)} 
-                    value={selectedTypes} 
-                    onChange={(e, val) => setForm(p => ({ ...p, [typeName]: val.join(',') }))} 
-                    renderInput={(params) => (<BOSTextField {...params} label="Qualified For" placeholder="Select roles..." />)} 
-                    renderTags={(v, getTagProps) => v.map((o, i) => {
-                      const { key, ...tagProps } = getTagProps({ index: i });
-                      return <Chip key={key} label={o} size="small" color="primary" {...tagProps} sx={{ fontWeight: 600 }} />;
-                    })}
-                    size="small" 
-                  />
-                )}
-
-                {hasFile && (
-                  <Box sx={{ p: 1.5, bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50', borderRadius: 2, border: '1px dashed', borderColor: 'divider' }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                      <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <IconFileUpload size={16} /> Credentials & Proofs
-                      </Typography>
-                      <Button variant="contained" size="small" startIcon={<IconCloudUpload size={14} />} disabled={selectedTypes.length === 0} onClick={() => setAbilityUpload({ open: true, field: fileName, types: selectedTypes, selectedType: selectedTypes[0] || '', allOptions: customOptions || auditTypes.map(t => t.auditType) })} sx={{ height: 28, fontSize: '0.75rem' }}>Upload</Button>
-                    </Stack>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                      {fileData.length === 0 ? (
-                        <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>Select "Qualified For" and click "Upload".</Typography>
+                return (
+                  <TableRow key={toggleName} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                    <TableCell sx={{ fontWeight: 600, py: 1 }}>{label}</TableCell>
+                    <TableCell sx={{ py: 1 }}>
+                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 85 }}>
+                        <MenuItem value="YES">YES</MenuItem>
+                        <MenuItem value="NO">NO</MenuItem>
+                      </BOSTextField>
+                    </TableCell>
+                    <TableCell sx={{ py: 1 }}>
+                      {isEnabled && hasType ? (
+                        <Autocomplete 
+                          multiple 
+                          options={customOptions || auditTypes.map(t => t.auditType)} 
+                          value={selectedTypes} 
+                          onChange={(e, val) => setForm(p => ({ ...p, [typeName]: val.join(',') }))} 
+                          renderInput={(params) => (<BOSTextField {...params} placeholder="Select..." size="small" />)} 
+                          renderTags={(v, getTagProps) => v.map((o, i) => {
+                            const { key, ...tagProps } = getTagProps({ index: i });
+                            return <Chip key={key} label={o} size="small" color="primary" {...tagProps} sx={{ fontWeight: 600, height: 20, fontSize: '0.7rem' }} />;
+                          })}
+                          size="small" 
+                        />
                       ) : (
-                        fileData.map((f) => (
-                          <Chip 
-                            key={f.id} 
-                            label={`${f.fileName} (${f.type})`} 
-                            onDelete={() => setForm(p => ({ ...p, [fileName]: JSON.stringify(fileData.filter(x => x.id !== f.id)) }))} 
-                            onClick={() => handleOpenPreview(f.serverFileName, f.fileName)} 
-                            size="small" 
-                            color="info" 
-                            sx={{ height: 24, fontSize: '0.75rem' }}
-                          />
-                        ))
+                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic', pl: 1 }}>-</Typography>
                       )}
-                    </Box>
-                  </Box>
-                )}
-              </Stack>
-            ) : (
-              <Box sx={{ p: 2, bgcolor: isDark ? 'rgba(0,0,0,0.1)' : 'grey.50', borderRadius: 2, border: '1px solid', borderColor: 'divider', width: '100%' }}>
-                <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>This eligibility is currently disabled for this employee.</Typography>
-              </Box>
-            )}
-          </Grid>
-        </Grid>
-      </Paper>
+                    </TableCell>
+                    <TableCell sx={{ py: 1 }}>
+                      {isEnabled && hasFile ? (
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={<IconCloudUpload size={14} />} 
+                            disabled={hasType && selectedTypes.length === 0} 
+                            onClick={() => setAbilityUpload({ open: true, field: fileName, types: selectedTypes, selectedType: selectedTypes[0] || '', allOptions: customOptions || auditTypes.map(t => t.auditType) })}
+                            sx={{ height: 26, fontSize: '0.7rem', py: 0 }}
+                          >
+                            Upload
+                          </Button>
+                          <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                            {fileData.map((f) => (
+                              <Chip 
+                                key={f.id} 
+                                label={`${f.fileName.substring(0, 10)}...`} 
+                                onDelete={() => setForm(p => ({ ...p, [fileName]: JSON.stringify(fileData.filter(x => x.id !== f.id)) }))} 
+                                onClick={() => handleOpenPreview(f.serverFileName, f.fileName)} 
+                                size="small" 
+                                color="info" 
+                                sx={{ height: 20, fontSize: '0.7rem', cursor: 'pointer' }}
+                              />
+                            ))}
+                          </Stack>
+                        </Stack>
+                      ) : (
+                        <Typography variant="body2" color="text.disabled" sx={{ fontStyle: 'italic', pl: 1 }}>-</Typography>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
     );
   };
 
@@ -372,7 +384,7 @@ export default function EmployeeMaster() {
         <Stack direction="row" spacing={1.5}>
           <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hra/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
           {employeeId && <Tooltip title="Delete"><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
-          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); }} sx={btnClear}>Clear</Button></Tooltip>
+          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hra/employee/master/create', { replace: true }); }} sx={btnClear}>Clear</Button></Tooltip>
           <Tooltip title="Save"><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
         </Stack>
       }
@@ -381,8 +393,17 @@ export default function EmployeeMaster() {
         {/* --- SECTION 1: CLASSIFICATION & IDENTITY --- */}
         <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Classification & Identity">
           <Grid container spacing={2.5}>
-            <R><BOSTextField name="empCode" label="Employee Code *" value={form.empCode} inputProps={{ readOnly: true }} /></R>
-            <R><BOSTextField name="oldEmpCode" label="Old Emp. Code" value={form.oldEmpCode} onChange={h} /></R>
+            {/* empCode is hidden in the UI but preserved in form state for backend/database */}
+            <R>
+              <BOSTextField 
+                name="oldEmpCode" 
+                label="Emp Code *" 
+                value={form.oldEmpCode} 
+                onChange={h} 
+                error={!!errors.oldEmpCode} 
+                helperText={errors.oldEmpCode} 
+              />
+            </R>
             <R>
               <BOSTextField select name="categoryId" label="Category *" value={form.categoryId} onChange={h} error={!!errors.categoryId} helperText={errors.categoryId}>
                 {CATEGORIES.map((c) => <MenuItem key={c.id} value={c.id}>{c.categoryName}</MenuItem>)}
@@ -583,23 +604,23 @@ export default function EmployeeMaster() {
             </R>
             <R><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
             <R>
-              <Autocomplete
-                options={['Resigned', 'Termination', 'Death', 'Others']}
-                value={form.exitReason || null}
-                onChange={(event, newValue) => {
-                  setForm(prev => ({ ...prev, exitReason: newValue || '' }));
-                }}
+              <BOSTextField
+                select
+                name="exitReason"
+                label="Exit Reason"
+                value={form.exitReason || ''}
+                onChange={h}
                 disabled={!form.exitDate}
-                renderInput={(params) => (
-                  <BOSTextField 
-                    {...params} 
-                    label="Exit Reason" 
-                    placeholder="Select Reason"
-                  />
-                )}
-              />
+              >
+                <MenuItem value="">-Select Reason-</MenuItem>
+                {['Resigned', 'Termination', 'Death', 'Others'].map((r) => (
+                  <MenuItem key={r} value={r}>
+                    {r}
+                  </MenuItem>
+                ))}
+              </BOSTextField>
             </R>
-            <R>
+            <R lg={8}>
               <BOSTextField 
                 name="exitComments" 
                 label="Exit Comments" 
@@ -641,42 +662,32 @@ export default function EmployeeMaster() {
 
         {/* ═══ SECTION 16: ABILITY ═══ */}
         <BOSFormSection icon={<IconShieldCheck size={20} color={theme.palette.secondary.main} />} title="Ability">
-          <Stack spacing={4}>
+          <Stack spacing={3}>
             
             {/* Group 1: Audit & Compliance */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconShieldCheck size={20} /> Audit & Compliance
-              </Typography>
-              <Stack spacing={1}>
-                {renderAbilityRow('Auditor', 'isAuditor', 'auditorType', 'auditorFileInfo')}
-                {renderAbilityRow('Auditee', 'isAuditee', 'auditeeType', 'auditeeFileInfo')}
-                {renderAbilityRow('NCR approved by', 'isNcrApprover', 'ncrApproverType', 'ncrApproverFileInfo')}
-              </Stack>
-            </Box>
+            {renderAbilityTable('Audit & Compliance', <IconShieldCheck size={20} />, [
+              { label: 'Auditor', toggleName: 'isAuditor', typeName: 'auditorType', fileName: 'auditorFileInfo' },
+              { label: 'Auditee', toggleName: 'isAuditee', typeName: 'auditeeType', fileName: 'auditeeFileInfo' },
+              { label: 'NCR approved by', toggleName: 'isNcrApprover', typeName: 'ncrApproverType', fileName: 'ncrApproverFileInfo' }
+            ])}
 
             <Divider />
 
             {/* Group 2: Meeting & Governance */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconSettings size={20} /> Meeting & Governance
-              </Typography>
-              <Stack spacing={1}>
-                {renderAbilityRow('Chaired', 'isChaired', 'chairedType', '', true, false, meetings.map(m => m.meetingName))}
-                {renderAbilityRow('Host', 'isHost', 'hostType', '', true, false, meetings.map(m => m.meetingName))}
-                {renderAbilityRow('Participants', 'isParticipants', 'participantsType', '', true, false, meetings.map(m => m.meetingName))}
-              </Stack>
-            </Box>
+            {renderAbilityTable('Meeting & Governance', <IconSettings size={20} />, [
+              { label: 'Chaired', toggleName: 'isChaired', typeName: 'chairedType', fileName: '', hasFile: false, customOptions: meetings.map(m => m.meetingName) },
+              { label: 'Host', toggleName: 'isHost', typeName: 'hostType', fileName: '', hasFile: false, customOptions: meetings.map(m => m.meetingName) },
+              { label: 'Participants', toggleName: 'isParticipants', typeName: 'participantsType', fileName: '', hasFile: false, customOptions: meetings.map(m => m.meetingName) }
+            ])}
 
             <Divider />
 
             {/* Group 3: Strategic Mapping */}
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <IconBriefcase size={20} /> Strategic Mapping
               </Typography>
-              <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50' }}>
+              <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50', boxShadow: 'none' }}>
                 <Grid container spacing={2}>
                   <R lg={6}>
                     <BOSTextField select name="segment" label="Segment" value={form.segment} onChange={h}>
@@ -697,27 +708,22 @@ export default function EmployeeMaster() {
             <Divider />
 
             {/* Group 4: Safety & Specialized Skills */}
-            <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <IconFileCertificate size={20} /> Safety & Specialized Skills
-              </Typography>
-              <Stack spacing={1}>
-                {renderAbilityRow('First Aid', 'isFirstAid', '', 'firstAidFileInfo', false, true)}
-                {renderAbilityRow('Fire Fighter', 'isFireFighter', '', 'fireFighterFileInfo', false, true)}
-                {renderAbilityRow('Two Wheeler Driving', 'isTwoWheeler', '', 'twoWheelerFileInfo', false, true)}
-                {renderAbilityRow('Four Wheeler Driving', 'isFourWheeler', '', 'fourWheelerFileInfo', false, true)}
-              </Stack>
-            </Box>
+            {renderAbilityTable('Safety & Specialized Skills', <IconFileCertificate size={20} />, [
+              { label: 'First Aid', toggleName: 'isFirstAid', typeName: '', fileName: 'firstAidFileInfo', hasType: false },
+              { label: 'Fire Fighter', toggleName: 'isFireFighter', typeName: '', fileName: 'fireFighterFileInfo', hasType: false },
+              { label: 'Two Wheeler Driving', toggleName: 'isTwoWheeler', typeName: '', fileName: 'twoWheelerFileInfo', hasType: false },
+              { label: 'Four Wheeler Driving', toggleName: 'isFourWheeler', typeName: '', fileName: 'fourWheelerFileInfo', hasType: false }
+            ])}
 
             <Divider />
 
             {/* Group 5: Internal Assignments */}
             <Box>
-              <Typography variant="subtitle1" sx={{ mb: 2, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1.5, color: 'secondary.main', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <IconUser size={20} /> Internal Assignments
               </Typography>
-              <Paper sx={{ p: 3, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50' }}>
-                <Grid container spacing={3}>
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50', boxShadow: 'none' }}>
+                <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField select name="isInductionEligible" label="Induction" value={form.isInductionEligible} onChange={h} fullWidth>
                       {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}

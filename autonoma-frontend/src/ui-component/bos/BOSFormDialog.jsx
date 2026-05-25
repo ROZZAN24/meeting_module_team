@@ -8,7 +8,7 @@ import {
   Typography,
   Button,
   IconButton,
-  Slide,
+  Fade,
   Tooltip,
   useTheme,
   Paper
@@ -48,13 +48,15 @@ const CustomPaper = forwardRef(({ position, isMaximized, isCollapsed, style, ...
           position: 'fixed',
           borderRadius: 0,
         } : {
-          transform: `${style?.transform || ''} translate(${position?.x || 0}px, ${position?.y || 0}px)`,
+          transform: `${style?.transform || ''} translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0px)`,
         }),
         ...(isCollapsed ? {
           height: 'auto',
           minHeight: 0,
           maxHeight: 'none',
-        } : {})
+        } : {}),
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden',
       }}
       {...other}
     />
@@ -72,7 +74,7 @@ CustomPaper.propTypes = {
 };
 
 const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
+  return <Fade ref={ref} {...props} />;
 });
 
 /**
@@ -121,6 +123,13 @@ export default function BOSFormDialog({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [preMaximizedSize, setPreMaximizedSize] = useState({ width: null, height: null });
   const [preMaximizedPosition, setPreMaximizedPosition] = useState({ x: 0, y: 0 });
+
+  const handleExited = useCallback(() => {
+    setPosition({ x: 0, y: 0 });
+    setSize({ width: null, height: null });
+    setIsMaximized(false);
+    setIsCollapsed(false);
+  }, []);
 
   const dragState = useRef(null);   // { type: 'drag'|'resize-w'|'resize-h'|'resize-both', startX, startY, startPosX, startPosY, startW, startH }
 
@@ -261,6 +270,7 @@ export default function BOSFormDialog({
     <Dialog
       open={open}
       TransitionComponent={Transition}
+      TransitionProps={{ onExited: handleExited }}
       keepMounted
       onClose={() => onClose()}
       maxWidth={sidebar ? 'lg' : maxWidth}
