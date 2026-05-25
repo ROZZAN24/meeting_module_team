@@ -24,6 +24,8 @@ public class EmployeeMasterService {
     @Autowired private EmployeeKycRepository kycRepo;
     @Autowired private EmployeeKycDocumentRepository kycDocumentRepo;
     @Autowired private EmployeeActivityRepository activityRepo;
+    @Autowired private EmployeeManagerMappingRepository managerMappingRepo;
+    @Autowired private com.autonoma.erp.repository.admin.UserRepository userRepo;
 
     // ======================== EMPLOYEE MASTER CRUD ========================
 
@@ -177,7 +179,26 @@ public class EmployeeMasterService {
 
     @Transactional
     public void deleteEmployee(Long id) {
-        employeeRepo.deleteById(id);
+        try {
+            personalRepo.deleteByEmployeeId(id);
+            contactRepo.deleteByEmployeeId(id);
+            jobProfileRepo.deleteByEmployeeId(id);
+            educationRepo.deleteByEmployeeId(id);
+            experienceRepo.deleteByEmployeeId(id);
+            emergencyContactRepo.deleteByEmployeeId(id);
+            passportRepo.deleteByEmployeeId(id);
+            dependentRepo.deleteByEmployeeId(id);
+            assetRepo.deleteByEmployeeId(id);
+            kycRepo.deleteByEmployeeId(id);
+            kycDocumentRepo.deleteByEmployeeId(id);
+            activityRepo.deleteByEmployeeId(id);
+            managerMappingRepo.deleteByEmpId(id);
+            userRepo.deleteByEmpId(id);
+            
+            employeeRepo.deleteById(id);
+        } catch (org.springframework.dao.DataIntegrityViolationException ex) {
+            throw new RuntimeException("Cannot delete employee: The employee is linked to other system records (e.g., Audits, Meetings, or Inductions). Please deactivate them instead.");
+        }
     }
 
     // ======================== PERSONAL DETAIL ========================
