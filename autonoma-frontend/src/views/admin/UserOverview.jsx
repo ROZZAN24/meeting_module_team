@@ -601,7 +601,12 @@ const UserOverview = () => {
                 isBosAdmin: values.isBosAdmin
               });
 
-              if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) updateProfile({ imgName: values.imgName });
+              if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) {
+                updateProfile({
+                  imgName: values.imgName,
+                  autoLogoutOnFaceAbsence: Number(values.autoLogoutOnFaceAbsence)
+                });
+              }
               dispatch(openSnackbar({ open: true, message: `User ${editingUser ? 'updated' : 'created'} successfully`, variant: 'alert', severity: 'success' }));
               setOpen(false);
               await fetchUsers();

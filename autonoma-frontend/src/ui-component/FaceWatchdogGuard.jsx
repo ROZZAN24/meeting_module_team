@@ -31,7 +31,7 @@ export default function FaceWatchdogGuard({ children }) {
   const { enabled, countdown, facePresent } = watchdog;
 
   // Show warning overlay only when counting down (face absent)
-  const showWarning = enabled && countdown !== null && countdown > 0;
+  const showWarning = enabled && countdown !== null && countdown >= 0;
   const progress = showWarning ? (countdown / ABSENCE_TIMEOUT_S) * 100 : 100;
   const isUrgent = countdown !== null && countdown <= 10;
 

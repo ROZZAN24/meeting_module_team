@@ -895,101 +895,83 @@ export default function JWTLogin({ ...others }) {
                     No active divisions found. You will be signed in with Company-wide Administrative access to configure divisions.
                   </Alert>
                 ) : (
-                  <Box
-                    sx={{
-                      maxHeight: 150,
-                      overflowY: 'auto',
-                      pr: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1.2,
-                      '&::-webkit-scrollbar': { width: '6px' },
-                      '&::-webkit-scrollbar-track': { bgcolor: alpha(theme.palette.divider, 0.05), borderRadius: '6px' },
-                      '&::-webkit-scrollbar-thumb': {
-                        bgcolor: alpha(theme.palette.secondary.main, 0.25),
-                        borderRadius: '6px',
-                        '&:hover': { bgcolor: alpha(theme.palette.secondary.main, 0.45) }
-                      }
-                    }}
-                  >
-                    {currentDivisions.map((div) => (
-                      <Paper
-                        key={div.id}
-                        variant="outlined"
-                        onClick={() => { setSelectedDivisionId(String(div.id)); setLoginError(null); }}
-                        sx={{
-                          flexShrink: 0,
-                          px: 1.5,
-                          py: 0.8,
-                          borderRadius: '12px',
-                          cursor: 'pointer',
+                  <FormControl fullWidth>
+                    <Select
+                      value={selectedDivisionId}
+                      onChange={(e) => {
+                        setSelectedDivisionId(e.target.value);
+                        setLoginError(null);
+                      }}
+                      sx={{
+                        borderRadius: '16px',
+                        background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.5)})`,
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.common.white, 0.6),
+                        boxShadow: `0 8px 32px ${alpha(theme.palette.secondary.main, 0.08)}`,
+                        py: 0.3,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          borderColor: theme.palette.secondary.main,
+                          boxShadow: `0 10px 36px ${alpha(theme.palette.secondary.main, 0.15)}`
+                        },
+                        '& .MuiSelect-select': {
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 1.2,
-                          border: selectedDivisionId === String(div.id) ? '2px solid' : '1px solid',
-                          borderColor: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : alpha(theme.palette.common.white, 0.6),
-                          background: selectedDivisionId === String(div.id)
-                            ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.15)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`
-                            : alpha(theme.palette.background.paper, 0.7),
-                          backdropFilter: 'blur(20px)',
-                          boxShadow: selectedDivisionId === String(div.id) ? `0 8px 24px ${alpha(theme.palette.secondary.main, 0.28)}` : `0 4px 12px ${alpha(theme.palette.common.black, 0.03)}`,
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          '&:hover': {
-                            borderColor: theme.palette.secondary.main,
-                            background: selectedDivisionId === String(div.id)
-                              ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.18)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`
-                              : alpha(theme.palette.common.white, 0.95),
-                            transform: 'translateY(-2px)',
-                            boxShadow: `0 12px 25px ${alpha(theme.palette.secondary.main, 0.2)}`
-                          }
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : alpha(theme.palette.secondary.main, 0.12),
-                            color: selectedDivisionId === String(div.id) ? '#fff' : theme.palette.secondary.main,
-                            transition: 'all 0.3s',
-                            boxShadow: selectedDivisionId === String(div.id) ? `0 4px 14px ${alpha(theme.palette.secondary.main, 0.4)}` : 'none'
-                          }}
-                        >
-                          <IconBuildingFactory2 size={16} stroke={2.2} />
-                        </Box>
-                        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: selectedDivisionId === String(div.id) ? 800 : 700, color: selectedDivisionId === String(div.id) ? 'text.primary' : 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
-                            {div.divisionName}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
-                            Division ID: <span style={{ color: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : theme.palette.text.secondary, fontWeight: 700 }}>{div.id}</span>
-                          </Typography>
-                        </Box>
-                        {selectedDivisionId === String(div.id) && (
-                          <Chip
-                            icon={<IconCheck size={14} />}
-                            label="Active"
-                            size="small"
-                            sx={{
-                              height: 22,
-                              fontSize: '0.68rem',
-                              fontWeight: 800,
-                              bgcolor: alpha(theme.palette.secondary.main, 0.15),
-                              color: theme.palette.secondary.dark,
-                              borderColor: alpha(theme.palette.secondary.main, 0.3),
-                              border: '1px solid',
-                              px: 0.5
-                            }}
-                          />
-                        )}
-                      </Paper>
-                    ))}
-                  </Box>
+                          gap: 1.5,
+                          pl: 2
+                        }
+                      }}
+                    >
+                      {currentDivisions.map((div) => (
+                        <MenuItem key={div.id} value={String(div.id)} sx={{ py: 1.2, borderRadius: '10px', mx: 1, my: 0.2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : alpha(theme.palette.secondary.main, 0.12),
+                                color: selectedDivisionId === String(div.id) ? '#fff' : theme.palette.secondary.main,
+                                boxShadow: selectedDivisionId === String(div.id) ? `0 4px 12px ${alpha(theme.palette.secondary.main, 0.4)}` : 'none',
+                                transition: 'all 0.3s'
+                              }}
+                            >
+                              <IconBuildingFactory2 size={18} stroke={2.2} />
+                            </Box>
+                            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
+                                {div.divisionName}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
+                                Division ID: <span style={{ color: theme.palette.secondary.main, fontWeight: 700 }}>{div.id}</span>
+                              </Typography>
+                            </Box>
+                            {selectedDivisionId === String(div.id) && (
+                              <Chip
+                                icon={<IconCheck size={14} />}
+                                label="Active"
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.68rem',
+                                  fontWeight: 800,
+                                  bgcolor: alpha(theme.palette.secondary.main, 0.15),
+                                  color: theme.palette.secondary.dark,
+                                  borderColor: alpha(theme.palette.secondary.main, 0.3),
+                                  border: '1px solid',
+                                  px: 0.5
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 )}
               </Box>
 
