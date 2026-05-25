@@ -2201,9 +2201,8 @@ export default function TicketManagement({ viewType }) {
                 {panelsOpen.part2 ? <ExpandLessIcon /> : <ExpandMoreIcon />}
               </IconButton>
             </Box>
-            <Collapse in={panelsOpen.part2} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-              {panelsOpen.part2 && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {panelsOpen.part2 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
                   <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, pt: 1 }}>
                     <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} aria-label="workflow tabs">
                       <Tab label="Workflow Management" sx={{ fontWeight: 600, textTransform: 'none', fontSize: '0.9rem' }} />
@@ -2213,7 +2212,7 @@ export default function TicketManagement({ viewType }) {
                   </Box>
                   <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     {tabValue === 0 && (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative' }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative' }}>
                         {/* Scrollable form area */}
                         <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
                           <Stack spacing={2.5}>
@@ -2390,14 +2389,20 @@ export default function TicketManagement({ viewType }) {
 
                         {/* Sticky Save Footer */}
                         {selectedTicket.ticketStatus !== 'Closed' && (
-                          <Box sx={{ p: 2, pt: 1.5, pb: 3, borderTop: '1px solid #e2e8f0', bgcolor: '#fff', flexShrink: 0 }}>
+                          <Box sx={{ p: 2, pt: 1.5, pb: 3, borderTop: '1px solid #e2e8f0', bgcolor: '#fff', flexShrink: 0, position: 'sticky', bottom: 0, zIndex: 10 }}>
                             <Button
                               id="ticket-update-button"
                               variant="contained" color="secondary" fullWidth
+                              startIcon={<SaveIcon />}
                               onClick={handleUpdateTicketDetails}
-                              sx={{ height: 46, fontWeight: 700, fontSize: '1rem', borderRadius: '8px' }}
+                              disabled={isSaving}
+                              sx={{ 
+                                height: 46, fontWeight: 700, fontSize: '1rem', borderRadius: '8px',
+                                transition: 'all 0.3s ease',
+                                '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 12px rgba(0,0,0,0.15)' }
+                              }}
                             >
-                              Save
+                              {isSaving ? 'Saving...' : 'Save (Ctrl+S)'}
                             </Button>
                           </Box>
                         )}
@@ -2684,15 +2689,21 @@ export default function TicketManagement({ viewType }) {
                                 </Box>
 
                                 {/* Row 5: Apply Changes Button & Reopen Ticket Banner */}
-                                <Box sx={{ width: '100%' }}>
+                                <Box sx={{ width: '100%', position: 'sticky', bottom: 16, zIndex: 10 }}>
                                   <Button
                                     variant="contained"
                                     color="secondary"
                                     fullWidth
+                                    startIcon={<SaveIcon />}
                                     onClick={handleUpdateTicketDetails}
-                                    sx={{ height: 48, fontWeight: 700, fontSize: '1rem', borderRadius: '8px' }}
+                                    disabled={isSaving}
+                                    sx={{ 
+                                      height: 48, fontWeight: 700, fontSize: '1rem', borderRadius: '8px',
+                                      transition: 'all 0.3s ease',
+                                      '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 12px rgba(0,0,0,0.15)' }
+                                    }}
                                   >
-                                    Apply Changes
+                                    {isSaving ? 'Saving...' : 'Apply Changes (Ctrl+S)'}
                                   </Button>
                                 </Box>
 
@@ -2776,7 +2787,7 @@ export default function TicketManagement({ viewType }) {
                       const delayColor = diffMins < 0 ? '#16a34a' : diffMins === 0 ? '#d97706' : '#dc2626';
                       const delayLabel = diffMins < 0 ? `-${toHHMM(-diffMins)}` : diffMins === 0 ? '00:00' : `+${toHHMM(diffMins)}`;
                       return (
-                        <Box sx={{ p: 2 }}>
+                        <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
                           {/* Top 3 cards */}
                           <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
                             <Box sx={{ flex: 1, p: 2.5, border: '1px solid #e2e8f0', borderRadius: '12px', bgcolor: '#f8fafc', textAlign: 'center' }}>
@@ -2828,9 +2839,8 @@ export default function TicketManagement({ viewType }) {
                       );
                     })()}
                   </Box>
-                </Box>
-              )}
-            </Collapse>
+              </Box>
+            )}
           </Box>
 
           {/* Part 3: Progress Roadmap (20%) */}
@@ -2967,6 +2977,8 @@ export default function TicketManagement({ viewType }) {
           </Box>
 
         </Box>
+
+
       </Box>
     );
   }
@@ -3995,21 +4007,6 @@ export default function TicketManagement({ viewType }) {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Floating Save Button for Ticket Details (when open) */}
-      {selectedTicket && selectedTicket.ticketStatus !== 'Closed' && (
-        <Tooltip title="Save (Ctrl+S)" arrow placement="left">
-          <Fab 
-            color="secondary" 
-            aria-label="save" 
-            onClick={handleUpdateTicketDetails}
-            disabled={isSaving}
-            sx={{ position: 'fixed', bottom: 32, right: 32, zIndex: 1000 }}
-          >
-            <SaveIcon />
-          </Fab>
-        </Tooltip>
-      )}
 
       {/* Snackbar notification feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
