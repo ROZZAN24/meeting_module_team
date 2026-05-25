@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Stack, Button, Tooltip, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Stack, Button, Tooltip, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { IconPlus, IconCalendarEvent, IconRefresh, IconGitBranch } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
@@ -11,7 +12,6 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
-import AddMeetingScheduleDialog from './AddMeetingScheduleDialog';
 import { isMobile } from 'react-device-detect';
 
 const formatTime12h = (time24) => {
@@ -41,6 +41,7 @@ const columns = [
 ];
 
 export default function MeetingScheduleList() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -50,8 +51,6 @@ export default function MeetingScheduleList() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
@@ -82,6 +81,23 @@ export default function MeetingScheduleList() {
     });
   }, [rows]);
 
+  // ── FILTERED ROWS ──
+  const filteredRows = useMemo(() => {
+    return resolvedRows.filter((row) => {
+      const statusFilter = globalFilters?.status || 'OPEN';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
+
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.scheduleNo || '').toLowerCase().includes(q) ||
+               (row.meetingTypeName || '').toLowerCase().includes(q) ||
+               (row.departmentNames || '').toLowerCase().includes(q) ||
+               (row.participantsBy || '').toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [resolvedRows, globalQuery, globalFilters]);
+
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
     dispatch(setFilterConfig([
@@ -99,6 +115,18 @@ export default function MeetingScheduleList() {
         id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true,
         options: [{ value: 'YES', label: 'Yes' }, { value: 'NO', label: 'No' }],
         defaultValue: 'NO'
+      },
+      {
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
+        options: [
+          { value: 'ALL', label: 'All' },
+          { value: 'OPEN', label: 'Open' },
+          { value: 'RESCHEDULE', label: 'Reschedule' },
+          { value: 'CLOSED', label: 'Closed' },
+          { value: 'AUTO CLOSED', label: 'Auto Closed' },
+          { value: 'CANCELLED', label: 'Cancelled' }
+        ],
+        defaultValue: 'OPEN'
       }
     ]));
     return () => dispatch(setFilterConfig(null));
@@ -124,10 +152,11 @@ export default function MeetingScheduleList() {
   // ── HANDLERS ──
   const handleAdd = () => {
     if (!perms.write) return;
-    setSelectedItem(null);
-    setDialogOpen(true);
+    navigate('/qms/meeting-schedule/create');
   };
-  const handleEdit = (item) => { setSelectedItem(item); setDialogOpen(true); };
+  const handleEdit = (item) => { 
+    navigate(`/qms/meeting-schedule/edit/${item.id}`); 
+  };
   const handleDeleteClick = (row) => { setDeleteTarget(row); setDeleteDialogOpen(true); };
 
   const handleAmendmentClick = (row) => {
@@ -155,21 +184,7 @@ export default function MeetingScheduleList() {
     }
   };
 
-  const handleSave = async (formData) => {
-    try {
-      if (selectedItem) {
-        await axios.put(`${API_PATHS.QMS.MEETING_SCHEDULES}/${selectedItem.id}`, formData);
-        dispatch(openSnackbar({ open: true, message: 'Meeting Schedule updated Successfully...', variant: 'alert', severity: 'success' }));
-      } else {
-        await axios.post(API_PATHS.QMS.MEETING_SCHEDULES, formData);
-        dispatch(openSnackbar({ open: true, message: 'Meeting Schedule saved Successfully.', variant: 'alert', severity: 'success' }));
-      }
-      setDialogOpen(false);
-      fetchData();
-    } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save schedule', variant: 'alert', severity: 'error' }));
-    }
-  };
+
 
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
@@ -231,20 +246,22 @@ export default function MeetingScheduleList() {
   return (
     <MainCard
       title={
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconCalendarEvent size={24} />
-          <Typography variant="h3">Meeting Schedule</Typography>
+        <Stack direction="row" alignItems="center" spacing={2} sx={{ py: 0.5 }}>
+          <Box sx={{ p: 1, bgcolor: 'primary.light', borderRadius: 2, display: 'flex' }}>
+            <IconCalendarEvent size={26} color="#fff" />
+          </Box>
+          <Typography variant="h3" sx={{ fontWeight: 800 }}>Meeting Schedule</Typography>
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center">
           <Tooltip title="Refresh">
             <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
           {perms.export && <BOSExportButton
-            data={resolvedRows}
+            data={filteredRows}
             filename="Meeting_Schedule"
             columns={[
               { header: '#', key: 'index' },
@@ -283,7 +300,7 @@ export default function MeetingScheduleList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={resolvedRows}
+        rows={filteredRows}
         page={page}
         size={size}
         loading={loading}
@@ -295,12 +312,7 @@ export default function MeetingScheduleList() {
         id="meeting-schedule-table"
       />
 
-      <AddMeetingScheduleDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSave={handleSave}
-        item={selectedItem}
-      />
+
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}

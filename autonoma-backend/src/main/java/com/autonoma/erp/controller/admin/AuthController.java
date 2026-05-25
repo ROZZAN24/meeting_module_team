@@ -57,6 +57,36 @@ public class AuthController {
     @Autowired
     private com.autonoma.erp.repository.admin.CompanyCredentialRepository companyCredentialRepository;
 
+    @GetMapping("/fix-users")
+    public String fixUsers() {
+        com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
+        java.util.List<UserCredential> users = userRepository.findAll();
+        java.util.List<com.autonoma.erp.model.admin.CompanyCredential> comps = companyCredentialRepository.findAll();
+        if (comps.isEmpty()) return "No companies found";
+        
+        for (UserCredential u : users) {
+            for (com.autonoma.erp.model.admin.CompanyCredential c : comps) {
+                if (userCompanyMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getCompanyId().equals(c.getId()))) {
+                    com.autonoma.erp.model.admin.UserCompanyMapping m = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                    m.setUserId(u.getUserId());
+                    m.setCompanyId(c.getId());
+                    userCompanyMappingRepository.save(m);
+                }
+                
+                java.util.List<com.autonoma.erp.model.Division> divs = divisionService.getActiveDivisionsByCompany(c.getId());
+                for (com.autonoma.erp.model.Division d : divs) {
+                    if (userDivisionMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getDivisionId().equals(d.getId()))) {
+                        com.autonoma.erp.model.admin.UserDivisionMapping m = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                        m.setUserId(u.getUserId());
+                        m.setDivisionId(d.getId());
+                        userDivisionMappingRepository.save(m);
+                    }
+                }
+            }
+        }
+        return "Done mapping all users to all companies and divisions";
+    }
+
     @PostMapping("/check-credentials")
     public ResponseEntity<?> checkCredentials(@RequestBody LoginRequest loginRequest) {
         // Step 1: Validate credentials from master database

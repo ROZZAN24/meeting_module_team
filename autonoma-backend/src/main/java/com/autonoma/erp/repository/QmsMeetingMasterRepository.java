@@ -9,4 +9,7 @@ import java.util.List;
 @Repository
 public interface QmsMeetingMasterRepository extends JpaRepository<QmsMeetingMaster, Integer> {
     List<QmsMeetingMaster> findByStatus(String status);
+    
+    boolean existsByMeetingNameIgnoreCase(String meetingName);
+    boolean existsByMeetingNameIgnoreCaseAndIdNot(String meetingName, Integer id);
 }

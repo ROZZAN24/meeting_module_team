@@ -47,6 +47,7 @@ import {
 } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import useBOSValidation from 'hooks/useBOSValidation';
+import useAuth from 'hooks/useAuth';
 import { useLookups } from 'hooks/useLookups';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -96,6 +97,7 @@ export default function AddMeetingMinutes() {
 
   const { meetingSchedules = [], employees = [] } = useLookups(['MEETING_SCHEDULES', 'EMPLOYEES']);
   const { errors, validate, clearErrors, handleInputChange } = useBOSValidation();
+  const { user } = useAuth();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
   const [materialDialog, setMaterialDialog] = useState({ open: false, rowIdx: null, type: 'RM' });
@@ -340,12 +342,17 @@ export default function AddMeetingMinutes() {
 
     if (validate(form, rules)) {
       try {
+        const currentUser = user?.employeeName || user?.userName || user?.name || 'System';
         const payload = {
           ...form,
+          createdBy: editId ? form.createdBy : currentUser,
+          updatedBy: currentUser,
           details: form.details.map(d => ({
             ...d,
             targetDate: d.targetDate || null,
-            reviewDate: d.reviewDate || null
+            reviewDate: d.reviewDate || null,
+            createdBy: d.id ? d.createdBy : currentUser,
+            updatedBy: currentUser
           }))
         };
 

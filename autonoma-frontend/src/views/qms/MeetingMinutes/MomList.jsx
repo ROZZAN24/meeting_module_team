@@ -63,23 +63,32 @@ export default function MomList() {
   // Resolve all complex objects into flat strings for BOSDataTable to handle filtering/extraction
   const resolvedRows = useMemo(() => {
     if (!Array.isArray(flatRows)) return [];
-    return flatRows.map(row => ({
-      ...row,
-      meetingType: row._meetingType || '-',
-      momDate: row._momDate || '-',
-      scheduleNo: row._scheduleNo || '-',
-      minNo: row.id ? `${row._momNo}/${String(row.id).padStart(3, '0')}` : '-',
-      discussedPoint: row.discussedPoint || '-',
-      processType: row.processType || '-',
-      assignedTo: row.assignedTo?.employeeName || '-',
-      assignedBy: row.assignedBy?.employeeName || '-',
-      targetDate: row.targetDate || '-',
-      reviewDate: row.reviewDate || '-',
-      createdBy: row._createdBy || '-',
-      status: row.status || 'OPEN',
-      detailStatus: row.status || 'OPEN', // specifically for the status chip column
-      momNo: row._momNo || '-'
-    }));
+    return flatRows.map(row => {
+      const createdMs = row._createdAt ? new Date(row._createdAt).getTime() : 0;
+      const updatedMs = row._updatedAt ? new Date(row._updatedAt).getTime() : 0;
+      const isUnedited = Math.abs(updatedMs - createdMs) < 2000 || !row._updatedAt;
+
+      return {
+        ...row,
+        meetingType: row._meetingType || '-',
+        momDate: row._momDate || '-',
+        scheduleNo: row._scheduleNo || '-',
+        minNo: row.id ? `${row._momNo}/${String(row.id).padStart(3, '0')}` : '-',
+        discussedPoint: row.discussedPoint || '-',
+        processType: row.processType || '-',
+        assignedTo: row.assignedTo?.employeeName || '-',
+        assignedBy: row.assignedBy?.employeeName || '-',
+        targetDate: row.targetDate || '-',
+        reviewDate: row.reviewDate || '-',
+        createdBy: row._createdBy || '-',
+        createdDate: row._createdAt ? new Date(row._createdAt).toLocaleDateString('en-GB') : '-',
+        updatedBy: isUnedited ? '-' : (row._updatedBy || '-'),
+        updatedDate: isUnedited ? '-' : new Date(row._updatedAt).toLocaleDateString('en-GB'),
+        status: row.status || 'OPEN',
+        detailStatus: row.status || 'OPEN', // specifically for the status chip column
+        momNo: row._momNo || '-'
+      };
+    });
   }, [flatRows]);
 
   // ── GLOBAL FILTER CONFIG ──
@@ -190,7 +199,10 @@ export default function MomList() {
               _meetingType: mom.meetingType?.meetingName || '-',
               _momDate: mom.momDate,
               _scheduleNo: mom.scheduleNo,
-              _createdBy: mom.createdBy
+              _createdBy: mom.createdBy,
+              _createdAt: mom.createdAt,
+              _updatedBy: mom.updatedBy,
+              _updatedAt: mom.updatedAt
             });
           });
         }

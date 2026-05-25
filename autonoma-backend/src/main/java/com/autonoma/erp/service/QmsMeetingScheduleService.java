@@ -25,7 +25,12 @@ public class QmsMeetingScheduleService {
 
     @Transactional
     public QmsMeetingSchedule saveSchedule(QmsMeetingSchedule schedule) {
-        if (schedule.getId() == null) {
+        boolean isNew = schedule.getId() == null;
+        QmsMeetingSchedule oldSchedule = null;
+
+        if (!isNew) {
+            oldSchedule = repository.findById(schedule.getId()).orElse(null);
+        } else {
             schedule.setScheduleNo(generateScheduleNo(schedule));
         }
         
@@ -39,21 +44,41 @@ public class QmsMeetingScheduleService {
         
         QmsMeetingSchedule saved = repository.save(schedule);
 
-        // Trigger notifications for participants
-        if (saved.getParticipants() != null) {
-            List<String> emails = saved.getParticipants().stream()
-                .filter(p -> p.getEmployee() != null && p.getEmployee().getOfficeMail() != null)
-                .map(p -> p.getEmployee().getOfficeMail())
-                .filter(e -> e != null && !e.isEmpty())
-                .collect(Collectors.toList());
+        // Determine Action Type
+        boolean timeChanged = false;
+        if (!isNew && oldSchedule != null) {
+            boolean dateChanged = (saved.getMeetingDate() != null && !saved.getMeetingDate().equals(oldSchedule.getMeetingDate()));
+            boolean startChanged = (saved.getStartTime() != null && !saved.getStartTime().equals(oldSchedule.getStartTime()));
+            timeChanged = dateChanged || startChanged;
+        }
+        String actionType = isNew ? "NEW" : (timeChanged ? "UPDATE_TIME" : "UPDATE_MEMBERS");
 
-            notificationService.notifyParticipants(
-                saved.getScheduleNo(),
-                saved.getMeetingName(),
-                saved.getMeetingDate() != null ? saved.getMeetingDate().toString() : "TBD",
-                saved.getStartTime() != null ? saved.getStartTime().toString() : "TBD",
-                emails
-            );
+        // Notify Host
+        if (isNew || timeChanged || (!isNew && oldSchedule != null && oldSchedule.getHostBy() != null && saved.getHostBy() != null && !oldSchedule.getHostBy().getId().equals(saved.getHostBy().getId()))) {
+             if (saved.getHostBy() != null) {
+                 notificationService.notifyUserAboutMeeting(saved.getHostBy(), saved, actionType);
+             }
+        }
+
+        // Notify Participants
+        if (saved.getParticipants() != null) {
+            List<Long> oldParticipantIds = java.util.Collections.emptyList();
+            if (!isNew && oldSchedule != null && oldSchedule.getParticipants() != null) {
+                oldParticipantIds = oldSchedule.getParticipants().stream()
+                        .filter(p -> p.getEmployee() != null)
+                        .map(p -> p.getEmployee().getId())
+                        .collect(Collectors.toList());
+            }
+            
+            for (QmsMeetingScheduleParticipant participant : saved.getParticipants()) {
+                if (participant.getEmployee() != null) {
+                    Long empId = participant.getEmployee().getId();
+                    // If it's new, or time changed (notify all), or it's an update but this participant wasn't in the old list (notify new only)
+                    if (isNew || timeChanged || !oldParticipantIds.contains(empId)) {
+                        notificationService.notifyUserAboutMeeting(participant.getEmployee(), saved, actionType);
+                    }
+                }
+            }
         }
 
         return saved;
