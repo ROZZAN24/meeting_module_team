@@ -204,7 +204,7 @@ export default function AuditObservationList() {
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onEditRow={perms.write ? handleOpenEdit : undefined}
-        onDeleteRow={(row) => { setDeleteTarget(row); setDeleteDialogOpen(true); }}
+        onDeleteRow={perms.delete ? (row) => { setDeleteTarget(row); setDeleteDialogOpen(true); } : undefined}
         renderCell={renderCell}
       />
 

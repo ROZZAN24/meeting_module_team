@@ -53,6 +53,7 @@ import { autoUploadFile } from 'utils/upload-helper';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import { IconX, IconDownload } from '@tabler/icons-react';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const VALIDATION_RULES = [
   { field: 'observationDate', label: 'Observation Date', required: true },
@@ -67,6 +68,7 @@ export default function AddAuditObservation() {
   const dispatch = useDispatch();
   const theme = useTheme();
   const isEditing = Boolean(id);
+  const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_OBSERVATION);
   const { errors, validate, clearErrors } = useBOSValidation();
 
   const [formData, setFormData] = useState({
@@ -304,8 +306,8 @@ export default function AddAuditObservation() {
       secondary={
         <Stack direction="row" spacing={2}>
           <Button variant="outlined" startIcon={<IconArrowLeft size={20} />} onClick={() => navigate('/qms/audit/observation')}>Back</Button>
-          <Button variant="contained" sx={btnClear} onClick={() => isEditing ? fetchObservation() : generateObservationNo()} startIcon={<IconEraser size={20} />}>Reset</Button>
-          <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>Save</Button>
+          {perms.write && <Button variant="contained" sx={btnClear} onClick={() => isEditing ? fetchObservation() : generateObservationNo()} startIcon={<IconEraser size={20} />}>Reset</Button>}
+          {perms.write && <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>Save</Button>}
         </Stack>
       }
     >
@@ -314,8 +316,8 @@ export default function AddAuditObservation() {
         <BOSFormSection icon={<IconCalendarEvent size={20} color={theme.palette.primary.main} />} title="Observation Summary">
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2.5 }}>
             <BOSTextField label="Observation No" value={formData.observationNo || ''} inputProps={{ readOnly: true }} />
-            <BOSTextField required type="date" label="Observation Date" name="observationDate" value={formData.observationDate || ''} onChange={(e) => setFormData({ ...formData, observationDate: e.target.value })} InputLabelProps={{ shrink: true }} />
-            <BOSTextField select required label="Schedule No" name="auditScheduleNo" value={formData.auditScheduleNo || ''} onChange={handleScheduleChange}>
+            <BOSTextField required type="date" label="Observation Date" name="observationDate" value={formData.observationDate || ''} onChange={(e) => setFormData({ ...formData, observationDate: e.target.value })} InputLabelProps={{ shrink: true }} disabled={!perms.write} />
+            <BOSTextField select required label="Schedule No" name="auditScheduleNo" value={formData.auditScheduleNo || ''} onChange={handleScheduleChange} disabled={!perms.write}>
               {schedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo}</MenuItem>)}
             </BOSTextField>
             <BOSTextField label="Audit Type" value={formData.auditType || ''} inputProps={{ readOnly: true }} />
@@ -397,7 +399,7 @@ export default function AddAuditObservation() {
             renderCell={(col, row, idx) => {
               if (col.id === 'observationStatus') {
                 return (
-                  <BOSTextField select size="small" value={row.observationStatus} onChange={(e) => updateDetail(idx, 'observationStatus', e.target.value)} fullWidth>
+                  <BOSTextField select size="small" value={row.observationStatus} onChange={(e) => updateDetail(idx, 'observationStatus', e.target.value)} disabled={!perms.write} fullWidth>
                     {OBS_STATUSES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </BOSTextField>
                 );
@@ -408,11 +410,13 @@ export default function AddAuditObservation() {
               if (col.id === 'attachment') {
                 return (
                   <Stack direction="row" spacing={0.5}>
-                    <Tooltip title="Upload Evidence">
-                      <IconButton size="small" color="primary" onClick={() => handleFileUpload(idx)}>
-                        <IconUpload size={18} />
-                      </IconButton>
-                    </Tooltip>
+                    {perms.write && (
+                      <Tooltip title="Upload Evidence">
+                        <IconButton size="small" color="primary" onClick={() => handleFileUpload(idx)}>
+                          <IconUpload size={18} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {row.attachmentPath && (
                       <Tooltip title="Preview Evidence">
                         <IconButton size="small" color="secondary" onClick={() => handlePreview(row.attachmentPath)}>
@@ -424,7 +428,7 @@ export default function AddAuditObservation() {
                 );
               }
               if (col.id === 'comments') {
-                return <BOSTextField multiline size="small" value={row.comments} onChange={(e) => updateDetail(idx, 'comments', e.target.value)} placeholder="Enter findings..." fullWidth />;
+                return <BOSTextField multiline size="small" value={row.comments} onChange={(e) => updateDetail(idx, 'comments', e.target.value)} placeholder="Enter findings..." disabled={!perms.write} fullWidth />;
               }
               return row[col.id] || '-';
             }}
