@@ -24,7 +24,7 @@ public class SmEnquiryService {
 
     public SmEnquiry saveEnquiry(SmEnquiry enquiry) {
         if (enquiry.getCreatedBy() == null) {
-            enquiry.setCreatedBy("admin");
+            enquiry.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
         if (enquiry.getEnquiryNo() == null || enquiry.getEnquiryNo().isEmpty()) {
             Long maxId = enquiryRepository.findMaxId().orElse(0L);
@@ -49,3 +49,4 @@ public class SmEnquiryService {
         return enquiryRepository.findByStatus(status).size();
     }
 }
+

@@ -129,7 +129,7 @@ public class NcrOfiService {
         master.setPreventiveAction(preventiveAction);
         master.setStatus("WAITING_APPROVAL");
         master.setApprovalStatus("PENDING");
-        master.setCreatedBy("Admin");
+        master.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         
         // Use provided No or generate
         if (ncrOfiNo != null && !ncrOfiNo.isEmpty() && !ncrOfiNo.equals("N/A")) {
@@ -180,7 +180,7 @@ public class NcrOfiService {
                 master.setApprovalStatus("APPROVED");
                 master.setStatus("CLOSED");
                 master.setUpdatedDate(LocalDateTime.now());
-                master.setUpdatedBy("Admin");
+                master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
         });
@@ -196,7 +196,7 @@ public class NcrOfiService {
                 master.setApprovalStatus("REJECTED");
                 master.setStatus("OPEN");
                 master.setUpdatedDate(LocalDateTime.now());
-                master.setUpdatedBy("Admin");
+                master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 // In a real app, we'd store remarks in a history or comments table
                 ncrOfiMasterRepository.save(master);
             });
@@ -213,7 +213,7 @@ public class NcrOfiService {
                 master.setApprovalStatus("REWORK");
                 master.setStatus("ACTION PENDING");
                 master.setUpdatedDate(LocalDateTime.now());
-                master.setUpdatedBy("Admin");
+                master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
         });
@@ -299,3 +299,4 @@ public class NcrOfiService {
         return null; 
     }
 }
+

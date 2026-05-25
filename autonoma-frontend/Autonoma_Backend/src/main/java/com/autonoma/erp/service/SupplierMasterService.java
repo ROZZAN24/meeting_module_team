@@ -2,18 +2,16 @@ package com.autonoma.erp.service;
 
 import com.autonoma.erp.model.SupplierMaster;
 import com.autonoma.erp.repository.SupplierMasterRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 public class SupplierMasterService {
 
-    private final SupplierMasterRepository repository;
+    @Autowired
+    private SupplierMasterRepository repository;
 
     public List<SupplierMaster> getAllSuppliers() {
         return repository.findAll();
@@ -23,42 +21,69 @@ public class SupplierMasterService {
         return repository.findById(id);
     }
 
-    @Transactional
     public SupplierMaster saveSupplier(SupplierMaster supplier) {
+        // Uniqueness checks
+        if (supplier.getId() == null) {
+            // New record
+            if (repository.existsBySupplierName(supplier.getSupplierName())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value! Please check.");
+            }
+            if (supplier.getSupplierCode() != null && !supplier.getSupplierCode().isEmpty()) {
+                if (repository.existsBySupplierCode(supplier.getSupplierCode())) {
+                    throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value! Please check.");
+                }
+            }
+        } else {
+            // Update
+            if (repository.existsBySupplierNameAndIdNot(supplier.getSupplierName(), supplier.getId())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value! Please check.");
+            }
+            if (supplier.getSupplierCode() != null && !supplier.getSupplierCode().isEmpty()) {
+                if (repository.existsBySupplierCodeAndIdNot(supplier.getSupplierCode(), supplier.getId())) {
+                    throw new org.springframework.web.server.ResponseStatusException(
+                        org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value! Please check.");
+                }
+            }
+        }
+
         if (supplier.getSupplierCode() == null || supplier.getSupplierCode().isEmpty()) {
-            supplier.setSupplierCode(generateNextCode());
+            supplier.setSupplierCode(generateSupplierCode());
         }
         return repository.save(supplier);
     }
 
-    @Transactional
     public void deleteSupplier(Long id) {
         repository.deleteById(id);
     }
 
-    public String getNextCode() {
-        return generateNextCode();
+    public String getNextSupplierCode() {
+        return generateSupplierCode();
     }
 
-    private String generateNextCode() {
-        String maxCode = repository.findMaxSupplierCode();
-        String year = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yy"));
-        String prefix = "S-" + year + "-";
-        
-        if (maxCode == null || !maxCode.startsWith(prefix)) {
-            return prefix + "00001";
-        }
-        
+    private String generateSupplierCode() {
         try {
-            // Assumes format S-26-00001
-            String[] parts = maxCode.split("-");
-            if (parts.length == 3) {
-                int lastNum = Integer.parseInt(parts[2]);
-                return String.format(prefix + "%05d", lastNum + 1);
+            String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
+            String prefix = "S-" + year + "-";
+            
+            Optional<SupplierMaster> lastSupplier = repository.findTopBySupplierCodeStartingWithOrderBySupplierCodeDesc(prefix);
+            
+            if (lastSupplier.isEmpty()) {
+                return prefix + "00001";
             }
-            return prefix + "00001";
+            
+            String lastCode = lastSupplier.get().getSupplierCode();
+            String[] parts = lastCode.split("-");
+            if (parts.length < 3) return prefix + "00001";
+            
+            int lastNum = Integer.parseInt(parts[2]);
+            return String.format("%s%05d", prefix, lastNum + 1);
         } catch (Exception e) {
-            return prefix + "00001";
+            e.printStackTrace(); // Minimal logging to stdout
+            String year = String.valueOf(java.time.Year.now().getValue()).substring(2);
+            return "S-" + year + "-00001";
         }
     }
 }

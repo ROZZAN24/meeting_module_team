@@ -5,6 +5,7 @@ import com.autonoma.erp.service.EmployeeMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.autonoma.erp.security.RequirePagePermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -20,12 +21,27 @@ public class EmployeeMasterController {
     @Autowired
     private EmployeeMasterService service;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeManagerMappingRepository managerMappingRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserRepository userRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.DesignationLevelRepository designationLevelRepository;
+
     // ======================== EMPLOYEE MASTER ========================
 
     @GetMapping
     @Operation(summary = "List all employees")
     public List<EmployeeMaster> getAllEmployees() {
         return service.getAllEmployees();
+    }
+
+    @GetMapping("/filter/active")
+    @Operation(summary = "List only active employees")
+    public List<EmployeeMaster> getActiveEmployees() {
+        return service.getActiveEmployees();
     }
 
     @GetMapping("/next-no")
@@ -49,12 +65,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Create new employee")
     public EmployeeMaster createEmployee(@RequestBody EmployeeMaster employee) {
         return service.createEmployee(employee);
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Update employee")
     public ResponseEntity<EmployeeMaster> updateEmployee(@PathVariable Long id, @RequestBody EmployeeMaster details) {
         EmployeeMaster updated = service.updateEmployee(id, details);
@@ -62,6 +80,7 @@ public class EmployeeMasterController {
     }
 
     @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete employee and all sub-resources")
     public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
         service.deleteEmployee(id);
@@ -78,6 +97,7 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/personal")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Save/update personal details")
     public EmployeePersonalDetail savePersonalDetail(@PathVariable Long id, @RequestBody EmployeePersonalDetail detail) {
         return service.savePersonalDetail(id, detail);
@@ -93,6 +113,7 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/contact")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Save/update contact details")
     public EmployeeContact saveContact(@PathVariable Long id, @RequestBody EmployeeContact contact) {
         return service.saveContact(id, contact);
@@ -108,6 +129,7 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/job-profile")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Save/update job profile")
     public EmployeeJobProfile saveJobProfile(@PathVariable Long id, @RequestBody EmployeeJobProfile profile) {
         return service.saveJobProfile(id, profile);
@@ -122,12 +144,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/education")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update education record")
     public EmployeeEducation saveEducation(@PathVariable Long id, @RequestBody EmployeeEducation edu) {
         return service.saveEducation(id, edu);
     }
 
     @DeleteMapping("/education/{eduId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete education record")
     public ResponseEntity<Void> deleteEducation(@PathVariable Long eduId) {
         service.deleteEducation(eduId);
@@ -143,12 +167,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/experience")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update experience record")
     public EmployeeExperience saveExperience(@PathVariable Long id, @RequestBody EmployeeExperience exp) {
         return service.saveExperience(id, exp);
     }
 
     @DeleteMapping("/experience/{expId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete experience record")
     public ResponseEntity<Void> deleteExperience(@PathVariable Long expId) {
         service.deleteExperience(expId);
@@ -164,12 +190,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/emergency-contact")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update emergency contact")
     public EmployeeEmergencyContact saveEmergencyContact(@PathVariable Long id, @RequestBody EmployeeEmergencyContact ec) {
         return service.saveEmergencyContact(id, ec);
     }
 
     @DeleteMapping("/emergency-contact/{ecId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete emergency contact")
     public ResponseEntity<Void> deleteEmergencyContact(@PathVariable Long ecId) {
         service.deleteEmergencyContact(ecId);
@@ -186,6 +214,7 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/passport")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Save/update passport details")
     public EmployeePassport savePassport(@PathVariable Long id, @RequestBody EmployeePassport passport) {
         return service.savePassport(id, passport);
@@ -200,12 +229,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/dependent")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update dependent")
     public EmployeeDependent saveDependent(@PathVariable Long id, @RequestBody EmployeeDependent dep) {
         return service.saveDependent(id, dep);
     }
 
     @DeleteMapping("/dependent/{depId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete dependent")
     public ResponseEntity<Void> deleteDependent(@PathVariable Long depId) {
         service.deleteDependent(depId);
@@ -221,12 +252,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/asset")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update asset")
     public EmployeeAsset saveAsset(@PathVariable Long id, @RequestBody EmployeeAsset asset) {
         return service.saveAsset(id, asset);
     }
 
     @DeleteMapping("/asset/{assetId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete asset")
     public ResponseEntity<Void> deleteAsset(@PathVariable Long assetId) {
         service.deleteAsset(assetId);
@@ -243,6 +276,7 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/kyc")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Save/update KYC details")
     public EmployeeKyc saveKyc(@PathVariable Long id, @RequestBody EmployeeKyc kyc) {
         return service.saveKyc(id, kyc);
@@ -257,12 +291,14 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/kyc-document")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update KYC document")
     public EmployeeKycDocument saveKycDocument(@PathVariable Long id, @RequestBody EmployeeKycDocument doc) {
         return service.saveKycDocument(id, doc);
     }
 
     @DeleteMapping("/kyc-document/{docId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete KYC document")
     public ResponseEntity<Void> deleteKycDocument(@PathVariable Long docId) {
         service.deleteKycDocument(docId);
@@ -278,15 +314,119 @@ public class EmployeeMasterController {
     }
 
     @PostMapping("/{id}/activity")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
     @Operation(summary = "Add/update activity")
     public EmployeeActivity saveActivity(@PathVariable Long id, @RequestBody EmployeeActivity activity) {
         return service.saveActivity(id, activity);
     }
 
     @DeleteMapping("/activity/{actId}")
+    @RequirePagePermission(pageCode = "M2210", action = "delete")
     @Operation(summary = "Delete activity")
     public ResponseEntity<Void> deleteActivity(@PathVariable Long actId) {
         service.deleteActivity(actId);
         return ResponseEntity.ok().build();
+    }
+
+    // ======================== EMPLOYEE MANAGER MAPPING ========================
+
+    @GetMapping("/manager-mapping")
+    @Operation(summary = "Get all employee manager mappings")
+    public ResponseEntity<List<EmployeeManagerMapping>> getAllManagerMappings() {
+        return ResponseEntity.ok(managerMappingRepository.findAll());
+    }
+
+    @GetMapping("/manager-mapping/{empId}")
+    @Operation(summary = "Get employee manager mapping")
+    public ResponseEntity<EmployeeManagerMapping> getManagerMapping(@PathVariable Long empId) {
+        return ResponseEntity.ok(managerMappingRepository.findByEmpId(empId)
+                .orElse(new EmployeeManagerMapping(null, empId, null, null, null, null, null, null, null, null, "Active")));
+    }
+
+    @PostMapping("/manager-mapping")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
+    @Operation(summary = "Create or update employee manager mapping")
+    public ResponseEntity<EmployeeManagerMapping> saveManagerMapping(@RequestBody EmployeeManagerMapping mapping) {
+        EmployeeManagerMapping existing = managerMappingRepository.findByEmpId(mapping.getEmpId()).orElse(null);
+        if (existing != null) {
+            existing.setHomeManagerId(mapping.getHomeManagerId());
+            existing.setBusinessManagerId(mapping.getBusinessManagerId());
+            existing.setVerticalHeadId(mapping.getVerticalHeadId());
+            existing.setHrId(mapping.getHrId());
+            existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            existing.setUpdatedAt(new java.util.Date());
+            return ResponseEntity.ok(managerMappingRepository.save(existing));
+        } else {
+            mapping.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            mapping.setCreatedAt(new java.util.Date());
+            return ResponseEntity.ok(managerMappingRepository.save(mapping));
+        }
+    }
+
+    @GetMapping("/manager-mapping/eligible-managers")
+    @Operation(summary = "Get eligible managers based on designation level criteria")
+    public ResponseEntity<List<EmployeeMaster>> getEligibleManagers(@RequestParam(required = false) Long empId) {
+        int empLevelVal = 0;
+        if (empId != null) {
+            EmployeeMaster emp = service.getEmployeeById(empId);
+            if (emp != null && emp.getEmpLevelId() != null) {
+                DesignationLevel dLevel = designationLevelRepository.findById(emp.getEmpLevelId()).orElse(null);
+                if (dLevel != null) {
+                    empLevelVal = parseLevelNumber(dLevel.getLevel());
+                }
+            }
+        }
+
+        List<EmployeeMaster> active = service.getActiveEmployees();
+        List<EmployeeMaster> eligible = new java.util.ArrayList<>();
+        // Cache level values for sorting
+        java.util.Map<Long, Integer> levelCache = new java.util.HashMap<>();
+
+        for (EmployeeMaster candidate : active) {
+            // 0. Exclude the selected employee themselves
+            if (empId != null && candidate.getId().equals(empId)) {
+                continue;
+            }
+            // 1. User credentials created
+            if (!userRepository.existsByEmpId(candidate.getId())) {
+                continue;
+            }
+            // 2. Induction completed
+            if (candidate.getInductionStatus() == null || !candidate.getInductionStatus().equalsIgnoreCase("COMPLETED")) {
+                continue;
+            }
+            // 3. Level condition: candidateLevelVal must be STRICTLY GREATER than empLevelVal
+            if (candidate.getEmpLevelId() != null) {
+                DesignationLevel candLevelObj = designationLevelRepository.findById(candidate.getEmpLevelId()).orElse(null);
+                if (candLevelObj != null) {
+                    int candLevelVal = parseLevelNumber(candLevelObj.getLevel());
+                    if (candLevelVal > empLevelVal) {
+                        eligible.add(candidate);
+                        levelCache.put(candidate.getId(), candLevelVal);
+                    }
+                }
+            }
+        }
+
+        // Sort: highest level first, then employee name ascending
+        eligible.sort((a, b) -> {
+            int levelA = levelCache.getOrDefault(a.getId(), 0);
+            int levelB = levelCache.getOrDefault(b.getId(), 0);
+            if (levelB != levelA) return Integer.compare(levelB, levelA); // descending level
+            String nameA = a.getEmployeeName() != null ? a.getEmployeeName() : "";
+            String nameB = b.getEmployeeName() != null ? b.getEmployeeName() : "";
+            return nameA.compareToIgnoreCase(nameB); // ascending name
+        });
+
+        return ResponseEntity.ok(eligible);
+    }
+
+    private int parseLevelNumber(String levelName) {
+        if (levelName == null || levelName.isEmpty()) return 0;
+        try {
+            return Integer.parseInt(levelName.replaceAll("[^0-9]", ""));
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

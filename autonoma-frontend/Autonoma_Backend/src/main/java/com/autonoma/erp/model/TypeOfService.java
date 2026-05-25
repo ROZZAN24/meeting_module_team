@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "SM_TYPE_OF_SERVICE")
+@Table(name = "sm_type_of_service")
 @Data
 public class TypeOfService {
     @Id
@@ -20,6 +20,18 @@ public class TypeOfService {
     @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
-    @Column(name = "STATUS", length = 20)
-    private String status;
+    @Column(name = "STATUS")
+    private String status = "Active";
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_at")
+    private java.time.LocalDateTime createdAt;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    @Column(name = "updated_at")
+    private java.time.LocalDateTime updatedAt;
 }

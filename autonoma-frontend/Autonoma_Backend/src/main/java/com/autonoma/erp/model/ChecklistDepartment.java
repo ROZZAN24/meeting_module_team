@@ -5,12 +5,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "qms_checklist_department")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ChecklistDepartment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,13 +21,11 @@ public class ChecklistDepartment {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHECKLIST_ID")
     @JsonIgnore
+    @lombok.EqualsAndHashCode.Exclude
+    @lombok.ToString.Exclude
     private MasterChecklist checklist;
 
-<<<<<<<< HEAD:autonoma-backend/src/main/java/com/autonoma/erp/model/ChecklistDepartment.java
     @Column(name = "DEPARTMENT_NAME")
-========
-    @Column(name = "department_name")
->>>>>>>> origin/chore/repo-cleanup:autonoma-frontend/Autonoma_Backend/src/main/java/com/autonoma/erp/model/ChecklistDepartment.java
     private String departmentName;
 
     public Long getId() { return id; }

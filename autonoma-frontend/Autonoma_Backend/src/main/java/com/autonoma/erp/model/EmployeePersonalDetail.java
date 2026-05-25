@@ -39,7 +39,13 @@ public class EmployeePersonalDetail {
     private Integer numberOfChildren;
 
     @Column(name = "email_id", length = 255)
-    private String emailId;
+    private String personalEmail;
+
+    @Column(name = "passport_number", length = 50)
+    private String passportNumber;
+
+    @Column(name = "passport_issue_city", length = 100)
+    private String passportIssueCity;
 
     @Column(length = 100)
     private String nationality;
@@ -49,6 +55,9 @@ public class EmployeePersonalDetail {
 
     @Column(length = 50)
     private String religion;
+
+    @Column(name = "region", length = 100)
+    private String region;
 
     @Column(length = 20)
     private String height;
