@@ -418,7 +418,7 @@ export default function HorizontalBar() {
     <ElevationScroll>
       <AppBar
         sx={(theme) => ({
-          top: 71,
+          top: 64,
           bgcolor: 'rgba(255, 255, 255, 0.75)',
           backdropFilter: 'blur(16px)',
           width: '100%',
