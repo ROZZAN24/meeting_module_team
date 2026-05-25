@@ -269,6 +269,7 @@ public class AuthController {
                 userMap.put("role", "ADMIN");
                 userMap.put("imgName", user.getImgName());
                 userMap.put("isBosAdmin", user.getIsBosAdmin());
+                userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
 
                 enrichUserMapWithTenantInfo(userMap);
 
@@ -313,6 +314,7 @@ public class AuthController {
                         userMap.put("role", "ADMIN");
                         userMap.put("imgName", user.getImgName());
                         userMap.put("isBosAdmin", user.getIsBosAdmin());
+                        userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
 
                         enrichUserMapWithTenantInfo(userMap);
 
@@ -701,6 +703,7 @@ public class AuthController {
             userMap.put("role", "ADMIN");
             userMap.put("imgName", user.getImgName());
             userMap.put("isBosAdmin", user.getIsBosAdmin());
+            userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
 
             enrichUserMapWithTenantInfo(userMap);
             response.put("user", userMap);

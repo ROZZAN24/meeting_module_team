@@ -559,6 +559,7 @@ const UserOverview = () => {
             faceImage: editingUser?.faceImage || '',
             faceDescriptor: editingUser?.faceDescriptor || '',
             authMethod: editingUser?.authMethod || 'PASSWORD',
+            autoLogoutOnFaceAbsence: editingUser?.autoLogoutOnFaceAbsence ?? 0,
             submit: null
           }}
           validationSchema={Yup.object().shape({
@@ -578,7 +579,8 @@ const UserOverview = () => {
                   imgName: values.imgName,
                   faceImage: values.faceImage,
                   faceDescriptor: values.faceDescriptor,
-                  authMethod: values.authMethod
+                  authMethod: values.authMethod,
+                  autoLogoutOnFaceAbsence: Number(values.autoLogoutOnFaceAbsence)
                 });
               } else {
                 await axios.post('/api/users/create', {
@@ -589,7 +591,8 @@ const UserOverview = () => {
                   imgName: values.imgName,
                   faceImage: values.faceImage,
                   faceDescriptor: values.faceDescriptor,
-                  authMethod: values.authMethod
+                  authMethod: values.authMethod,
+                  autoLogoutOnFaceAbsence: Number(values.autoLogoutOnFaceAbsence)
                 });
               }
 
@@ -712,6 +715,12 @@ const UserOverview = () => {
                               <MenuItem value="PASSWORD">Password Only</MenuItem>
                               <MenuItem value="FACE">Face ID Only</MenuItem>
                               <MenuItem value="BOTH">Password or Face ID</MenuItem>
+                            </TextField>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField select fullWidth label="Auto-Logout on Face Absence" name="autoLogoutOnFaceAbsence" value={values.autoLogoutOnFaceAbsence ?? 0} onChange={handleChange} onBlur={handleBlur}>
+                              <MenuItem value={1}>ENABLED</MenuItem>
+                              <MenuItem value={0}>DISABLED</MenuItem>
                             </TextField>
                           </Grid>
                         </Grid>
