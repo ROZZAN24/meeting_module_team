@@ -92,6 +92,26 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     id: null
   });
 
+  // Get employee names already assigned to any role for this checklist
+  const blockedEmployeeNames = assignments
+    .filter(a => {
+      if (formData.id && a.id === formData.id) return false;
+      return true;
+    })
+    .map(a => a.assignedTo);
+
+  const visibleEmployeeOptions = employeeOptions.filter(opt => {
+    return !blockedEmployeeNames.includes(opt.value);
+  });
+
+  // Get assign types already assigned to ANY employee for this checklist
+  const alreadyTakenTypes = assignments
+    .filter(a => {
+      if (formData.id && a.id === formData.id) return false;
+      return true;
+    })
+    .map(a => a.assignType);
+
   useEffect(() => {
     if (open && checklistId) {
       fetchAssignments();
@@ -266,7 +286,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
               >
-                {employeeOptions.map(opt => (
+                {visibleEmployeeOptions.map(opt => (
                   <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                 ))}
               </BOSTextField>
@@ -279,9 +299,9 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                 required
               >
                 <MenuItem value="">-Select-</MenuItem>
-                <MenuItem value="PRIMARY">PRIMARY</MenuItem>
-                <MenuItem value="SECONDARY">SECONDARY</MenuItem>
-                <MenuItem value="TERTIARY">TERTIARY</MenuItem>
+                {!alreadyTakenTypes.includes('PRIMARY') && <MenuItem value="PRIMARY">PRIMARY</MenuItem>}
+                {!alreadyTakenTypes.includes('SECONDARY') && <MenuItem value="SECONDARY">SECONDARY</MenuItem>}
+                {!alreadyTakenTypes.includes('TERTIARY') && <MenuItem value="TERTIARY">TERTIARY</MenuItem>}
               </BOSTextField>
 
               <Button 
@@ -312,6 +332,22 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               showActions={false}
               renderCell={(col, row) => {
                 if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' || row.status === 'Started' ? 'ACTIVE' : 'INACTIVE')} />;
+                if (col.id === 'checkingPoint' && row.checkingPoint && row.checkingPoint !== '-') {
+                  return (
+                    <Box
+                      component="span"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedRowId(row.id);
+                        handleEditAssignment(row);
+                        setIsEditing(true);
+                      }}
+                      sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                    >
+                      {row.checkingPoint}
+                    </Box>
+                  );
+                }
                 return row[col.id];
               }}
             />

@@ -351,7 +351,7 @@ export default function CheckListRenewalVerify() {
   };
 
   const handleVerify = async (status, remarks) => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     if (!activeRow) return;
 
     // ── Mapped Vertical Head Validation ──
@@ -531,7 +531,17 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.assignType || 'Mine'}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>
-                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checklist?.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checklist.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{row.checklist?.description}</TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>

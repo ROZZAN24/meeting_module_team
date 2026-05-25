@@ -711,6 +711,12 @@ const UserOverview = () => {
                             </TextField>
                           </Grid>
                           <Grid item xs={12} sm={6}>
+                            <TextField select fullWidth label="BOS Admin Privilege" name="isBosAdmin" value={values.isBosAdmin} onChange={handleChange} onBlur={handleBlur}>
+                              <MenuItem value={1}>YES</MenuItem>
+                              <MenuItem value={0}>NO</MenuItem>
+                            </TextField>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
                             <TextField select fullWidth label="Preferred Login Method" name="authMethod" value={values.authMethod || 'PASSWORD'} onChange={handleChange} onBlur={handleBlur}>
                               <MenuItem value="PASSWORD">Password Only</MenuItem>
                               <MenuItem value="FACE">Face ID Only</MenuItem>
