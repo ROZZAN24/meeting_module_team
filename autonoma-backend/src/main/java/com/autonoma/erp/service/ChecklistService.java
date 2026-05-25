@@ -2,6 +2,7 @@ package com.autonoma.erp.service;
 
 import com.autonoma.erp.model.*;
 import com.autonoma.erp.repository.*;
+import com.autonoma.erp.repository.admin.UserRepository;
 import jakarta.persistence.criteria.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,9 @@ public class ChecklistService {
 
     @Autowired
     private ChecklistDepartmentRepository deptRepo;
+
+    @Autowired
+    private UserRepository userRepository;
 
     // --- Master Checklist ---
 
@@ -602,12 +606,34 @@ public class ChecklistService {
         }
         // ─────────────────────────────────────────────────────────────────────
 
-        // DUAL CHECK LOGIC (for original/manager submit flows):
-        // If status is 'Completed' but Master has Dual Check enabled,
-        // force status to 'Pending for Verified'.
+        // DUAL CHECK & WORKFLOW MAPPING LOGIC:
+        // When a user completes their assigned task (submits with status 'Completed'):
+        // If the submitter is NOT an admin, map it to:
+        // - 'Pending for Verified' if verification/dual check is required
+        // - 'Pending' if no verification is required
+        // If the submitter IS an admin, they are closing/verifying it directly:
+        // - If dual check is enabled, it moves to 'Pending for Verified'
+        // - If dual check is disabled, it moves to 'Completed' (closed)
         String finalStatusName = statusName;
-        if ("Completed".equalsIgnoreCase(statusName) && "YES".equalsIgnoreCase(master.getDualCheck())) {
-            finalStatusName = "Pending for Verified";
+        if ("Completed".equalsIgnoreCase(statusName)) {
+            boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
+                    userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
+                    .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                    .orElse(false);
+            
+            if (!isUserAdmin) {
+                if ("YES".equalsIgnoreCase(master.getDualCheck()) || "YES".equalsIgnoreCase(master.getVerificationRequired())) {
+                    finalStatusName = "Pending for Verified";
+                } else {
+                    finalStatusName = "Pending";
+                }
+            } else {
+                if ("YES".equalsIgnoreCase(master.getDualCheck())) {
+                    finalStatusName = "Pending for Verified";
+                } else {
+                    finalStatusName = "Completed";
+                }
+            }
         }
 
         StatusMaster status = statusRepo.findByName(finalStatusName).orElseThrow();
