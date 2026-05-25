@@ -362,8 +362,10 @@ export default function CheckListRenewalVerify() {
         return fullName === assigneeName.toLowerCase().trim();
       });
 
+      const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+
       if (!assignee) {
-        if (user?.isBosAdmin !== 1) {
+        if (!isAdmin) {
           dispatch(openSnackbar({
             open: true,
             message: `Assignee '${assigneeName}' not found in Employee Master. Only an administrator can verify.`,
@@ -384,7 +386,7 @@ export default function CheckListRenewalVerify() {
             (employees || []).find(emp => String(emp.id) === String(mapping.verticalHeadId))?.firstName?.toLowerCase() === user?.name?.split(' ')[0]?.toLowerCase()
           );
 
-          if (!isVerticalHead && user?.isBosAdmin !== 1) {
+          if (!isVerticalHead && !isAdmin) {
             dispatch(openSnackbar({
               open: true,
               message: `Only the mapped Vertical Head of '${assigneeName}' can verify or reject this record!`,
@@ -397,7 +399,7 @@ export default function CheckListRenewalVerify() {
           }
         } catch (err) {
           console.error('Failed to verify manager mapping:', err);
-          if (user?.isBosAdmin !== 1) {
+          if (!isAdmin) {
             dispatch(openSnackbar({
               open: true,
               message: 'Failed to validate manager permissions. Only administrators can bypass.',
