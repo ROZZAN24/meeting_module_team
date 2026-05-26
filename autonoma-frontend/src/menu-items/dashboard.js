@@ -20,7 +20,7 @@ const dashboard = {
   children: [
     {
       id: 'user-task-queue',
-      title: 'User Task Queue',
+      title: 'Unified Work Dashboard',
       type: 'item',
       url: '/dashboard/user-task-queue',
       icon: icons.IconClipboardList,

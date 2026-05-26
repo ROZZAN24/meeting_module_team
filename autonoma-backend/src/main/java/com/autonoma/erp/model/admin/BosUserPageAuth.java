@@ -59,6 +59,8 @@ public class BosUserPageAuth {
     @Column(name = "additional2")
     private Integer additional2;
 
+    @Column(name = "add_task_enable")
+    private Integer addTaskEnable;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -87,6 +89,8 @@ public class BosUserPageAuth {
     private boolean additional1Flag = false;
     @Transient
     private boolean additional2Flag = false;
+    @Transient
+    private boolean addTaskEnableFlag = false;
 
     public String getUserId() {
         return userId;
@@ -190,6 +194,14 @@ public class BosUserPageAuth {
 
     public void setAdditional2(Integer additional2) {
         this.additional2 = additional2;
+    }
+
+    public Integer getAddTaskEnable() {
+        return addTaskEnable;
+    }
+
+    public void setAddTaskEnable(Integer addTaskEnable) {
+        this.addTaskEnable = addTaskEnable;
     }
 
     public UserCredential getUser() {

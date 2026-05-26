@@ -4,12 +4,14 @@ import {
   Box, Grid, Typography, Stack, useTheme,
   Skeleton, Avatar, IconButton, Chip, Tabs, Tab,
   TextField, InputAdornment, Tooltip, Fade, LinearProgress, Divider,
-  Badge, CircularProgress, useMediaQuery, Paper, MenuItem, Select, FormControl,
+  Badge, CircularProgress, useMediaQuery, Paper, MenuItem, Select, FormControl, Autocomplete, Collapse,
 } from '@mui/material';
-import { styled, alpha, keyframes } from '@mui/material/styles';
+import { styled, alpha, keyframes, useColorScheme, ThemeProvider, createTheme } from '@mui/material/styles';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
 import useConfig from 'hooks/useConfig';
+import { getUserImageUrl } from 'utils/api-base';
+import { useLookups } from 'hooks/useLookups';
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 import WavingHandIcon from '@mui/icons-material/WavingHand';
@@ -38,11 +40,19 @@ import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
 import PersonSearchRoundedIcon from '@mui/icons-material/PersonSearchRounded';
 import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 
 // ─── Keyframes ────────────────────────────────────────────────────────────────
 const slideUp = keyframes`
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
+`;
+
+const floatInWater = keyframes`
+  0%   { transform: translateY(0px); }
+  50%  { transform: translateY(-6px); }
+  100% { transform: translateY(0px); }
 `;
 
 const fadeIn = keyframes`
@@ -80,24 +90,30 @@ const float = keyframes`
   50%      { transform: translateY(-6px); }
 `;
 
+const bounce = keyframes`
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-7px); }
+`;
+
 // ─── Design System ────────────────────────────────────────────────────────────
 const PALETTE = {
-  indigo:  { solid: '#6366F1', light: '#EEF2FF', dark: '#4338CA', glow: 'rgba(99,102,241,0.3)'  },
-  rose:    { solid: '#F43F5E', light: '#FFF1F2', dark: '#BE123C', glow: 'rgba(244,63,94,0.3)'   },
-  emerald: { solid: '#10B981', light: '#ECFDF5', dark: '#047857', glow: 'rgba(16,185,129,0.3)'  },
-  amber:   { solid: '#F59E0B', light: '#FFFBEB', dark: '#B45309', glow: 'rgba(245,158,11,0.3)'  },
-  violet:  { solid: '#8B5CF6', light: '#F5F3FF', dark: '#6D28D9', glow: 'rgba(139,92,246,0.3)'  },
-  sky:     { solid: '#0EA5E9', light: '#F0F9FF', dark: '#0369A1', glow: 'rgba(14,165,233,0.3)'  },
-  slate:   { solid: '#64748B', light: '#F8FAFC', dark: '#334155', glow: 'rgba(100,116,139,0.3)' },
+  indigo: { solid: '#6366F1', light: '#EEF2FF', dark: '#4338CA', glow: 'rgba(99,102,241,0.3)' },
+  rose: { solid: '#F43F5E', light: '#FFF1F2', dark: '#BE123C', glow: 'rgba(244,63,94,0.3)' },
+  emerald: { solid: '#10B981', light: '#ECFDF5', dark: '#047857', glow: 'rgba(16,185,129,0.3)' },
+  amber: { solid: '#F59E0B', light: '#FFFBEB', dark: '#B45309', glow: 'rgba(245,158,11,0.3)' },
+  violet: { solid: '#8B5CF6', light: '#F5F3FF', dark: '#6D28D9', glow: 'rgba(139,92,246,0.3)' },
+  sky: { solid: '#0EA5E9', light: '#F0F9FF', dark: '#0369A1', glow: 'rgba(14,165,233,0.3)' },
+  slate: { solid: '#64748B', light: '#F8FAFC', dark: '#334155', glow: 'rgba(100,116,139,0.3)' },
 };
 
 const RADIUS = { xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 28 };
 
 // ─── Styled Components ────────────────────────────────────────────────────────
 
-const PageRoot = styled(Box)(({ theme }) => ({
+const PageRoot = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme, isDark }) => ({
   minHeight: '100vh',
-  background: theme.palette.mode === 'dark'
+  background: isDark
     ? 'linear-gradient(160deg, #0B0F1A 0%, #111827 40%, #0F172A 100%)'
     : 'linear-gradient(160deg, #F8FAFF 0%, #EFF4FF 40%, #F1F5F9 100%)',
   padding: theme.spacing(2.5),
@@ -105,63 +121,53 @@ const PageRoot = styled(Box)(({ theme }) => ({
 }));
 
 /* ── Hero Banner ── */
-const HeroBanner = styled(Box)(({ theme }) => ({
-  borderRadius: RADIUS.xxl,
-  padding: theme.spacing(4, 4.5),
+const HeroBanner = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme, isDark }) => ({
+  borderRadius: RADIUS.md,
+  padding: theme.spacing(2, 3),
   position: 'relative',
   overflow: 'hidden',
-  marginBottom: theme.spacing(3),
+  marginBottom: theme.spacing(2.5),
   animation: `${slideUp} 0.6s cubic-bezier(0.22,1,0.36,1)`,
-
-  // Glass-morphism base
-  background: theme.palette.mode === 'dark'
-    ? 'linear-gradient(135deg, rgba(99,102,241,0.15) 0%, rgba(139,92,246,0.12) 50%, rgba(14,165,233,0.08) 100%)'
-    : 'linear-gradient(135deg, #6366F1 0%, #7C3AED 45%, #8B5CF6 70%, #6366F1 100%)',
-  backdropFilter: theme.palette.mode === 'dark' ? 'blur(40px)' : 'none',
-  border: theme.palette.mode === 'dark'
-    ? '1px solid rgba(99,102,241,0.2)'
-    : 'none',
-  color: '#fff',
-  boxShadow: theme.palette.mode === 'dark'
-    ? '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)'
-    : '0 20px 60px rgba(99,102,241,0.25), 0 8px 24px rgba(99,102,241,0.15)',
-
-  // Decorative mesh gradient orbs
+  background: isDark
+    ? 'linear-gradient(168deg, #0F172A 40%, #991B1B 100%)'
+    : 'linear-gradient(168deg, #def7e1ff 40%, #0d7ba7ff 100%)',
+  border: isDark
+    ? '1px solid rgba(255,255,255,0.08)'
+    : '1px solid rgba(226,232,240, 1)',
+  color: isDark ? '#F8FAFC' : '#0F172A',
+  boxShadow: isDark
+    ? '0 10px 30px -10px rgba(0,0,0,0.5)'
+    : '0 10px 30px -10px rgba(0,0,0,0.05)',
   '&::before': {
-    content: '""', position: 'absolute',
-    width: 400, height: 400,
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
-    right: -100, top: -140,
+    content: '""',
+    position: 'absolute',
+    top: 0, right: 0, bottom: 0, left: 0,
+    background: isDark
+      ? 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.1) 0%, transparent 60%)'
+      : 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.08) 0%, transparent 60%)',
     pointerEvents: 'none',
-  },
-  '&::after': {
-    content: '""', position: 'absolute',
-    width: 300, height: 300,
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
-    left: '30%', bottom: -160,
-    pointerEvents: 'none',
-  },
+  }
 }));
 
 /* ── Stat Summary Card (inside banner) ── */
-const StatBubble = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  background: 'rgba(255,255,255,0.12)',
-  backdropFilter: 'blur(12px)',
-  borderRadius: RADIUS.md,
-  padding: '8px 16px',
-  border: '1px solid rgba(255,255,255,0.15)',
-  transition: 'all 0.25s ease',
-  cursor: 'default',
-  '&:hover': {
-    background: 'rgba(255,255,255,0.18)',
-    transform: 'translateY(-1px)',
-  },
-}));
+const StatBubble = styled(Box)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+    background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+    borderRadius: RADIUS.sm,
+    padding: '6px 14px',
+    border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+    transition: 'all 0.2s ease',
+    cursor: 'default',
+    color: isDark ? '#E2E8F0' : '#475569',
+    '&:hover': {
+      background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+    },
+  };
+});
 
 /* ── Glass Card ── */
 const GlassCard = styled(Box)(({ theme, palettekey = 'indigo', selected }) => {
@@ -239,11 +245,11 @@ const FilterBar = styled(Box)(({ theme }) => ({
   gap: 6,
   padding: 4,
   borderRadius: RADIUS.md,
-  background: theme.palette.mode === 'dark'
+  background: isDark
     ? 'rgba(17,24,39,0.5)'
     : 'rgba(255,255,255,0.7)',
   backdropFilter: 'blur(16px)',
-  border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+  border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
   marginBottom: theme.spacing(2.5),
   flexWrap: 'wrap',
 }));
@@ -398,26 +404,7 @@ const DueDateBadge = styled(Box)(({ theme, isoverdue }) => {
   };
 });
 
-/* ── Super User Search ── */
-const SuperUserSearch = styled(TextField)(({ theme }) => {
-  const isDark = theme.palette.mode === 'dark';
-  return {
-    '& .MuiOutlinedInput-root': {
-      borderRadius: RADIUS.sm,
-      background: 'rgba(255,255,255,0.1)',
-      backdropFilter: 'blur(8px)',
-      color: '#fff',
-      fontSize: '0.85rem',
-      height: 40,
-      '& fieldset': { borderColor: 'rgba(255,255,255,0.15)' },
-      '&:hover fieldset': { borderColor: 'rgba(255,255,255,0.3)' },
-      '&.Mui-focused fieldset': { borderColor: 'rgba(255,255,255,0.5)', borderWidth: 1 },
-    },
-    '& input': { color: '#fff', fontWeight: 500 },
-    '& input::placeholder': { color: 'rgba(255,255,255,0.5)', opacity: 1 },
-    width: 220,
-  };
-});
+
 
 // ─── Circular Progress Ring Component ──────────────────────────────────────────
 function ProgressRing({ value, max, size = 44, stroke = 4, color = PALETTE.indigo.solid }) {
@@ -429,9 +416,9 @@ function ProgressRing({ value, max, size = 44, stroke = 4, color = PALETTE.indig
   return (
     <Box sx={{ position: 'relative', width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={size/2} cy={size/2} r={radius}
+        <circle cx={size / 2} cy={size / 2} r={radius}
           fill="none" stroke="rgba(128,128,128,0.12)" strokeWidth={stroke} />
-        <circle cx={size/2} cy={size/2} r={radius}
+        <circle cx={size / 2} cy={size / 2} r={radius}
           fill="none" stroke={color} strokeWidth={stroke}
           strokeDasharray={circumference} strokeDashoffset={dashOffset}
           strokeLinecap="round"
@@ -476,9 +463,9 @@ function isOverdue(v) {
 
 function getGreeting() {
   const h = new Date().getHours();
-  if (h < 12) return 'Good Morning';
-  if (h < 17) return 'Good Afternoon';
-  return 'Good Evening';
+  if (h < 12) return 'Good Morning!';
+  if (h < 17) return 'Good Afternoon!';
+  return 'Good Evening!';
 }
 
 const REFRESH_S = 60;
@@ -486,29 +473,119 @@ const TAB_TYPES = [null, 'CHECKLIST', 'MEETING', 'TICKET', 'AUDIT'];
 
 // ─── Type Config ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG = {
-  CHECKLIST: { label: 'Checklist', palette: 'rose',    icon: <ChecklistRtlIcon sx={{ fontSize: 22 }} /> },
-  MEETING:   { label: 'Meeting',   palette: 'emerald', icon: <GroupsIcon sx={{ fontSize: 22 }} /> },
-  TICKET:    { label: 'Ticket',    palette: 'indigo',  icon: <ConfirmationNumberIcon sx={{ fontSize: 22 }} /> },
-  AUDIT:     { label: 'Audit',     palette: 'amber',   icon: <PolicyIcon sx={{ fontSize: 22 }} /> },
+  CHECKLIST: { label: 'Checklist', palette: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 22 }} /> },
+  MEETING: { label: 'Meeting', palette: 'emerald', icon: <GroupsIcon sx={{ fontSize: 22 }} /> },
+TICKET: { label: 'Ticket', palette: 'indigo', icon: <ConfirmationNumberIcon sx={{ fontSize: 22 }} /> },
+  AUDIT: { label: 'Audit', palette: 'amber', icon: <PolicyIcon sx={{ fontSize: 22 }} /> },
 };
+
+// ─── Metric Card Component ─────────────────────────────────────────────────
+const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, isDark, active, index = 0, onClick }) => {
+  const pal = PALETTE[paletteKey] || PALETTE.indigo;
+  const floatDelay = `${(index * 0.4)}s`;
+
+  return (
+    <Paper
+      onClick={onClick}
+      sx={{
+        borderRadius: 4,
+        p: 3,
+        cursor: 'pointer',
+        bgcolor: isDark ? '#1E293B' : '#fff',
+        boxShadow: active
+          ? `0 12px 30px ${alpha(pal.solid, 0.4)}, 0 4px 10px ${alpha(pal.solid, 0.15)}`
+          : isDark ? 'none' : '0 4px 20px rgba(0,0,0,0.03)',
+        border: active ? `1px solid ${pal.solid}` : (isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid transparent'),
+        position: 'relative',
+        animation: `${floatInWater} 4s ease-in-out infinite`,
+        animationDelay: floatDelay,
+        transition: 'transform 0.2s, box-shadow 0.2s, border 0.2s',
+        '&:hover': {
+          animationPlayState: 'paused',
+          transform: 'scale(1.03) translateY(-4px)',
+          borderColor: pal.solid,
+          boxShadow: active
+            ? `0 15px 40px ${alpha(pal.solid, 0.6)}, 0 8px 20px ${alpha(pal.solid, 0.3)}`
+            : (isDark ? `0 8px 25px ${alpha(pal.solid, 0.2)}` : `0 12px 30px ${alpha(pal.solid, 0.2)}`)
+        }
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 3 }}>
+        <Box sx={{ position: 'relative' }}>
+          {/* Icon Box */}
+          <Box sx={{
+            width: 56,
+            height: 56,
+            borderRadius: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: alpha(pal.solid, 0.1),
+            color: pal.solid
+          }}>
+            {icon || <DashboardRoundedIcon sx={{ fontSize: 28 }} />}
+          </Box>
+          {/* Badge */}
+          <Box sx={{
+            position: 'absolute',
+            top: -6,
+            right: -12,
+            width: 28,
+            height: 28,
+            borderRadius: '50%',
+            bgcolor: isDark ? '#1E293B' : '#fff',
+            border: `2px solid ${isDark ? '#334155' : '#f1f5f9'}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: pal.solid,
+            fontWeight: 700,
+            fontSize: '0.75rem'
+          }}>
+            {count || 0}
+          </Box>
+        </Box>
+      </Box>
+      <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5, fontSize: '2rem' }}>
+        {count || 0}
+      </Typography>
+      <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        {moduleName}
+      </Typography>
+    </Paper>
+  );
+}
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function UserTaskQueue() {
-  const theme = useTheme();
+  const baseTheme = useTheme();
+  const colorSchemeObj = useColorScheme() || {};
+  const mode = colorSchemeObj.mode || colorSchemeObj.colorScheme || 'light';
+  const isDark = mode === 'dark' || baseTheme.palette.mode === 'dark';
+  const theme = React.useMemo(() => ({
+    ...baseTheme,
+    palette: { ...baseTheme.palette, mode: mode || 'light' }
+  }), [baseTheme, mode]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [tasks, setTasks]       = useState([]);
-  const [loading, setLoading]   = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab]   = useState(0);
-  const [countdown, setCountdown]   = useState(REFRESH_S);
+  const [activeTab, setActiveTab] = useState(0);
+  const [countdown, setCountdown] = useState(REFRESH_S);
 
   const [targetUserId, setTargetUserId] = useState('');
   const [activeUserId, setActiveUserId] = useState('');
-  const [isSuperUser,  setIsSuperUser]  = useState(false);
-  const [initialized,  setInitialized]  = useState(false);
+  const [isSuperUser, setIsSuperUser] = useState(false);
+  const [isBosSuper, setIsBosSuper] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]);
+  const [pageAuths, setPageAuths] = useState([]);
+
+  const { departments = [], designations = [], levels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS']);
 
   const timerRef = useRef(null);
 
@@ -521,9 +598,15 @@ export default function UserTaskQueue() {
         setActiveUserId(uid);
         setInitialized(true);
         const roles = String(user.roles || user.role || '').toLowerCase();
-        if (roles.includes('admin') || roles.includes('super') || user.isSuperUser || user.bosSuperUser) {
+        if (roles.includes('admin') || roles.includes('super') || user.isSuperUser || user.isBosAdmin === 1) {
           setIsSuperUser(true);
         }
+        if (user.isBosAdmin === 1) {
+          setIsBosSuper(true);
+          axios.get('/api/users/all').then(res => setAllUsers(res.data || [])).catch(e => console.error(e));
+        }
+
+        axios.get('/api/master/employee').then(res => setAllEmployees(res.data || [])).catch(e => console.error(e));
       }
     }
   }, [user, initialized]);
@@ -537,12 +620,14 @@ export default function UserTaskQueue() {
 
     (cl || []).forEach(a => {
       const st = a.status?.name || a.status?.statusName || 'Pending';
-      if (['Completed','Verified','Approved','Closed'].includes(st)) return;
-      out.push({ id:`cl-${a.id}`, type:'CHECKLIST',
+      if (['Completed', 'Verified', 'Approved', 'Closed'].includes(st)) return;
+      out.push({
+        id: `cl-${a.id}`, type: 'CHECKLIST',
         title: a.checklist?.checkingPoint || a.checklist?.description || `Checklist #${a.id}`,
         desc: a.checklist?.category || 'General',
         status: st, dueDate: a.checklistDate || a.assignedDate,
-        assignedBy: a.assignedBy || 'System', link:'/qms/checklist/assignment' });
+        assignedBy: a.assignedBy || 'System', link: '/qms/checklist/assignment'
+      });
     });
 
     (mom || []).forEach(action => {
@@ -551,23 +636,27 @@ export default function UserTaskQueue() {
         : (action.assignedTo || '');
       if (!String(raw).toLowerCase().includes(sid)) return;
       const st = action.status || 'Open';
-      if (['Approved','Cancelled','Closed'].includes(st)) return;
-      out.push({ id:`mom-${action.id}`, type:'MEETING',
+      if (['Approved', 'Cancelled', 'Closed'].includes(st)) return;
+      out.push({
+        id: `mom-${action.id}`, type: 'MEETING',
         title: action.discussedPoint || `MOM Action #${action.id}`,
         desc: action.momNo ? `MOM: ${action.momNo}` : 'Meeting Action',
         status: st, dueDate: action.targetDate,
-        assignedBy: action.assignedBy || 'Organizer', link:'/qms/mom/action-review' });
+        assignedBy: action.assignedBy || 'Organizer', link: '/qms/mom/action-review'
+      });
     });
 
     (tk || []).forEach(t => {
       if (!String(t.assignedTo || '').toLowerCase().includes(sid)) return;
       const st = t.ticketStatus || 'Open';
-      if (['Closed','Resolved'].includes(st)) return;
-      out.push({ id:`tk-${t.rowId}`, type:'TICKET',
+      if (['Closed', 'Resolved'].includes(st)) return;
+      out.push({
+        id: `tk-${t.rowId}`, type: 'TICKET',
         title: t.title || t.ticketId || `Ticket ${t.rowId}`,
-        desc: t.description ? String(t.description).replace(/<[^>]+>/g,'').substring(0,60)+'…' : 'Support Ticket',
+        desc: t.description ? String(t.description).replace(/<[^>]+>/g, '').substring(0, 60) + '…' : 'Support Ticket',
         status: st, dueDate: t.dueDate || t.targetDate,
-        assignedBy: t.assignedBy || 'User', link:'/admin/ticket-management' });
+        assignedBy: t.assignedBy || 'User', link: '/admin/ticket-management'
+      });
     });
 
     (audit || []).forEach(a => {
@@ -575,15 +664,17 @@ export default function UserTaskQueue() {
       const auditor = String(a.auditor || '').toLowerCase();
       if (!auditee.includes(sid) && !auditor.includes(sid)) return;
       const st = a.status || 'Pending';
-      if (['Closed','Completed','Approved'].includes(st)) return;
-      out.push({ id:`audit-${a.id}`, type:'AUDIT',
+      if (['Closed', 'Completed', 'Approved'].includes(st)) return;
+      out.push({
+        id: `audit-${a.id}`, type: 'AUDIT',
         title: `Audit Schedule ${a.scheduleNo || ''}`,
         desc: a.auditArea || a.auditType || 'Scheduled Audit',
         status: st, dueDate: a.auditDate || a.scheduleDate,
-        assignedBy: a.createdBy || 'System', link:'/qms/AuditSchedule' });
+        assignedBy: a.createdBy || 'System', link: '/qms/AuditSchedule'
+      });
     });
 
-    return out.sort((a,b) => {
+    return out.sort((a, b) => {
       const ao = isOverdue(a.dueDate) ? -1 : 0, bo = isOverdue(b.dueDate) ? -1 : 0;
       if (ao !== bo) return ao - bo;
       if (!a.dueDate) return 1;
@@ -597,20 +688,22 @@ export default function UserTaskQueue() {
     if (!activeUserId) return;
     if (!silent) setLoading(true); else setRefreshing(true);
     try {
-      const [r1,r2,r3,r4] = await Promise.allSettled([
-        axios.get('/api/qms/checklist/assignments', { params:{ assignedTo:activeUserId, excludeCompleted:true, size:200, page:0 } }),
+      const [r1, r2, r3, r4, r5] = await Promise.allSettled([
+        axios.get('/api/qms/checklist/assignments', { params: { assignedTo: activeUserId, excludeCompleted: true, size: 200, page: 0 } }),
         axios.get('/api/qms/moms/actions'),
         axios.get('/api/tickets'),
         axios.get('/api/qms/audit-schedules'),
+        axios.get('/api/user-page-auth/' + activeUserId)
       ]);
       setTasks(normalise(
-        r1.status==='fulfilled' ? (r1.value.data?.content || r1.value.data || []) : [],
-        r2.status==='fulfilled' ? (r2.value.data || []) : [],
-        r3.status==='fulfilled' ? (r3.value.data || []) : [],
-        r4.status==='fulfilled' ? (r4.value.data || []) : [],
+        r1.status === 'fulfilled' ? (r1.value.data?.content || r1.value.data || []) : [],
+        r2.status === 'fulfilled' ? (r2.value.data || []) : [],
+        r3.status === 'fulfilled' ? (r3.value.data || []) : [],
+        r4.status === 'fulfilled' ? (r4.value.data || []) : [],
       ));
+      if (r5.status === 'fulfilled') setPageAuths(r5.value.data || []);
       setCountdown(REFRESH_S);
-    } catch(e) { console.error(e); }
+    } catch (e) { console.error(e); }
     finally { setLoading(false); setRefreshing(false); }
   }, [activeUserId, normalise]);
 
@@ -625,15 +718,15 @@ export default function UserTaskQueue() {
 
   // ── Counts ────────────────────────────────────────────────────────────────
   const counts = {
-    CHECKLIST: tasks.filter(t=>t.type==='CHECKLIST').length,
-    MEETING:   tasks.filter(t=>t.type==='MEETING').length,
-    TICKET:    tasks.filter(t=>t.type==='TICKET').length,
-    AUDIT:     tasks.filter(t=>t.type==='AUDIT').length,
+    CHECKLIST: tasks.filter(t => t.type === 'CHECKLIST').length,
+    MEETING: tasks.filter(t => t.type === 'MEETING').length,
+    TICKET: tasks.filter(t => t.type === 'TICKET').length,
+    AUDIT: tasks.filter(t => t.type === 'AUDIT').length,
   };
   const visibleTasks = activeTab === 0 ? tasks : tasks.filter(t => t.type === TAB_TYPES[activeTab]);
 
   const overdueCount = tasks.filter(t =>
-    isOverdue(t.dueDate) && !['Closed','Resolved','Approved','Completed'].includes(t.status)
+    isOverdue(t.dueDate) && !['Closed', 'Resolved', 'Approved', 'Completed'].includes(t.status)
   ).length;
 
   const pctCountdown = (countdown / REFRESH_S) * 100;
@@ -642,364 +735,273 @@ export default function UserTaskQueue() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <PageRoot>
+    <ThemeProvider theme={theme}>
+      <PageRoot isDark={isDark}>
 
       {/* ── Refreshing overlay ── */}
       {refreshing && (
         <LinearProgress
-          sx={{ position:'fixed', top:0, left:0, right:0, zIndex:9999,
-            '& .MuiLinearProgress-bar': { background:'linear-gradient(90deg,#6366F1,#8B5CF6,#6366F1)', backgroundSize:'200% 100%', animation:`${shimmer} 1.5s linear infinite` },
-            background:'transparent', height:2.5, borderRadius:0 }}
+          sx={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            '& .MuiLinearProgress-bar': { background: 'linear-gradient(90deg,#6366F1,#8B5CF6,#6366F1)', backgroundSize: '200% 100%', animation: `${shimmer} 1.5s linear infinite` },
+            background: 'transparent', height: 2.5, borderRadius: 0
+          }}
         />
       )}
 
       {/* ═══════════════════════════════════════ HERO BANNER ═══════════════════ */}
-      <HeroBanner>
-        <Stack direction={{ xs:'column', md:'row' }} justifyContent="space-between" alignItems={{ xs:'flex-start', md:'center' }} gap={3}>
+      <HeroBanner isDark={isDark}>
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }} gap={3}>
 
           {/* Left: Greeting area */}
-          <Box sx={{ position:'relative', zIndex:1 }}>
-            <Typography sx={{ fontSize:'0.82rem', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.12em', opacity:0.7, mb:0.75 }}>
-              {getGreeting()}
-            </Typography>
-            <Typography sx={{ fontSize: isMobile ? '1.5rem' : '2rem', fontWeight:800, lineHeight:1.15, mb:1.5, display:'flex', alignItems:'center', gap:1.5 }}>
-              {userName}'s Dashboard
-              <WavingHandIcon sx={{ fontSize: isMobile ? 26 : 32, animation:`${waveHand} 2.5s ease-in-out 0.5s both`, display:'inline-block', transformOrigin:'70% 70%' }} />
-            </Typography>
-            <Stack direction="row" alignItems="center" gap={1} sx={{ opacity:0.75, mb:2 }}>
-              <CalendarTodayIcon sx={{ fontSize:14 }} />
-              <Typography variant="body2" sx={{ fontWeight:500, fontSize:'0.82rem' }}>
-                {new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })}
-              </Typography>
-            </Stack>
+          {/* Left: Greeting area */}
+          <Stack direction="row" alignItems="center" gap={2} sx={{ position: 'relative', zIndex: 1 }}>
+            {(() => {
+              const activeObj = allUsers.find(u => (u.userId || u.empCode) === activeUserId);
+              const img = activeObj?.userImage || activeObj?.imgName || activeObj?.profilePic || (!isViewingOther ? (user?.userImage || user?.imgName) : null);
+              return <Avatar src={img ? getUserImageUrl(img) : undefined} sx={{ width: 56, height: 56, border: isDark ? '2px solid rgba(255,255,255,0.1)' : '2px solid #E2E8F0', boxShadow: '0 4px 10px rgba(0,0,0,0.03)' }} />;
+            })()}
 
-            {/* Stat bubbles */}
-            <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
-              <StatBubble>
-                <DashboardRoundedIcon sx={{ fontSize:16 }} />
-                <Typography variant="body2" sx={{ fontWeight:700, fontSize:'0.82rem' }}>
-                  {tasks.length} Pending
+            <Box>
+              <Stack direction="row" alignItems="center" gap={1} sx={{ mb: 0.5 }}>
+                <Typography sx={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: isDark ? '#EAB308' : '#CA8A04' }}>
+                  {getGreeting()}
                 </Typography>
-              </StatBubble>
-              {overdueCount > 0 && (
-                <StatBubble sx={{
-                  background:'rgba(244,63,94,0.2)',
-                  border:'1px solid rgba(244,63,94,0.35)',
-                  animation:`${pulseGlow} 2s ease-in-out infinite`,
-                  animationName: pulseGlow,
-                  '@keyframes pulseGlow': {
-                    '0%, 100%': { boxShadow: '0 0 0 0 rgba(244,63,94,0.4)' },
-                    '50%': { boxShadow: '0 0 0 6px rgba(244,63,94,0)' },
-                  },
-                }}>
-                  <WarningAmberRoundedIcon sx={{ fontSize:16, color:'#FCA5A5' }} />
-                  <Typography variant="body2" sx={{ fontWeight:700, fontSize:'0.82rem' }}>
-                    {overdueCount} Overdue
+                <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: isDark ? '#475569' : '#CBD5E1' }} />
+                <TodayIcon sx={{ fontSize: 13, color: isDark ? '#94A3B8' : '#64748B' }} />
+                <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.7rem', color: isDark ? '#94A3B8' : '#64748B' }}>
+                  {new Date().toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true })}
+                </Typography>
+              </Stack>
+
+              <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap">
+                <Typography sx={{ fontSize: isMobile ? '1.25rem' : '1.5rem', fontWeight: 800, lineHeight: 1.15, display: 'flex', alignItems: 'center', gap: 0.5, letterSpacing: '-0.02em' }}>
+                  <Box component="span" sx={{ color: isDark ? '#38BDF8' : '#0EA5E9' }}>
+                    {isViewingOther ? activeUserId : userName}'s
+                  </Box> Workspace
+                </Typography>
+
+                {/* Stat bubbles */}
+                <Stack direction="row" alignItems="center" gap={1}>
+                  <StatBubble isDark={isDark} sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff' }}>
+                    <DashboardRoundedIcon sx={{ fontSize: 14 }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                      {tasks.length} Pending
+                    </Typography>
+                  </StatBubble>
+                  {overdueCount > 0 && (
+                    <StatBubble isDark={isDark} sx={{
+                      py: 0.25, px: 1, minHeight: 26,
+                      background: 'rgba(244,63,94,0.15)',
+                      border: '1px solid rgba(244,63,94,0.3)',
+                      animation: `${pulseGlow} 2s ease-in-out infinite`,
+                      animationName: pulseGlow,
+                      '@keyframes pulseGlow': {
+                        '0%, 100%': { boxShadow: '0 0 0 0 rgba(244,63,94,0.4)' },
+                        '50%': { boxShadow: '0 0 0 6px rgba(244,63,94,0)' },
+                      },
+                    }}>
+                      <WarningAmberRoundedIcon sx={{ fontSize: 14, color: '#F87171' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                        {overdueCount} Overdue
+                      </Typography>
+                    </StatBubble>
+                  )}
+                  {isViewingOther && (
+                    <StatBubble isDark={isDark} sx={{ py: 0.25, px: 1, minHeight: 26, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
+                      <PersonSearchRoundedIcon sx={{ fontSize: 14 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
+                        Viewing: {activeUserId}
+                      </Typography>
+                    </StatBubble>
+                  )}
+                </Stack>
+              </Stack>
+
+              {(() => {
+                const activeObj = allUsers.find(u => String(u.userId || u.empCode) === String(activeUserId)) || user || {};
+
+                // Find matching employee record in master
+                const empRecord = allEmployees.find(e =>
+                  (e.id && activeObj.empId && String(e.id) === String(activeObj.empId)) ||
+                  (e.id && activeObj.id && String(e.id) === String(activeObj.id)) ||
+                  (e.empCode && activeObj.empCode && String(e.empCode) === String(activeObj.empCode)) ||
+                  (e.id && String(e.id) === String(activeUserId)) ||
+                  (e.empCode && String(e.empCode) === String(activeUserId))
+                ) || {};
+
+                // Resolve using lookups or fallback to populated names
+                const getDesigName = (id, fallback) => String(designations.find(d => String(d.id) === String(id))?.designationName || fallback || '');
+                const getDeptName = (id, fallback) => String(departments.find(d => String(d.id) === String(id))?.departmentName || fallback || '');
+                const getLevelName = (id, fallback) => String(levels.find(l => String(l.rowId) === String(id))?.level || fallback || '');
+
+                const desig = empRecord.designationId ? getDesigName(empRecord.designationId, empRecord.designationName || empRecord.designation) : (activeObj?.designation?.name || activeObj?.designation || empRecord.designationName || empRecord.designation || 'USER DESIGNATION');
+                const dept = empRecord.departmentId ? getDeptName(empRecord.departmentId, empRecord.departmentName || empRecord.department) : (activeObj?.department?.name || activeObj?.department || empRecord.departmentName || empRecord.department || 'DEPARTMENT');
+                const level = empRecord.empLevelId ? getLevelName(empRecord.empLevelId, empRecord.levelName || empRecord.level) : '';
+
+                const combinedText = (level ? `${level} -` : '') + [desig, dept].filter(Boolean).join(' / ');
+
+                return (
+                  <Typography variant="body2" sx={{ fontSize: '0.65rem', fontWeight: 600, color: isDark ? '#94A3B8' : '#64748B', mt: 0.5, textTransform: 'uppercase' }}>
+                    {combinedText}
                   </Typography>
-                </StatBubble>
-              )}
-              {isViewingOther && (
-                <StatBubble sx={{ background:'rgba(14,165,233,0.2)', border:'1px solid rgba(14,165,233,0.35)' }}>
-                  <PersonSearchRoundedIcon sx={{ fontSize:16 }} />
-                  <Typography variant="body2" sx={{ fontWeight:600, fontSize:'0.8rem' }}>
-                    Viewing: {activeUserId}
-                  </Typography>
-                </StatBubble>
-              )}
-            </Stack>
-          </Box>
+                );
+              })()}
+            </Box>
+          </Stack>
 
           {/* Right: Controls */}
-          <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap" sx={{ position:'relative', zIndex:1 }}>
-            {isSuperUser && (
-              <Tooltip title="Enter Employee ID and press Enter" placement="top" arrow>
-                <SuperUserSearch
-                  size="small"
-                  placeholder="Search user ID…"
-                  value={targetUserId}
-                  onChange={e => setTargetUserId(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter' && targetUserId.trim()) setActiveUserId(targetUserId.trim()); }}
-                  InputProps={{ startAdornment:(
-                    <InputAdornment position="start">
-                      <PersonSearchRoundedIcon sx={{ fontSize:18, color:'rgba(255,255,255,0.5)' }} />
-                    </InputAdornment>
-                  ) }}
-                />
-              </Tooltip>
+          <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap" sx={{ position: 'relative', zIndex: 1 }}>
+            {isBosSuper && (
+              <Autocomplete
+                size="small"
+                freeSolo
+                options={allUsers}
+                value={allUsers.find(u => (u.userId || u.empCode) === activeUserId) || activeUserId || null}
+                getOptionLabel={(option) => typeof option === 'string' ? option : `${option.firstName || ''} ${option.lastName || ''} (${option.userId || option.empCode || ''})`}
+                onChange={(e, val) => {
+                  if (!val) {
+                    const uid = user?.id || user?.userId || user?.email || user?.empCode || '';
+                    if (uid) setActiveUserId(uid);
+                  } else {
+                    const id = typeof val === 'object' && val !== null ? (val.userId || val.empCode) : val;
+                    if (id) setActiveUserId(id);
+                  }
+                }}
+                renderInput={(params) => (
+                  <TextField {...params} placeholder="Search User ID..." sx={{
+                    minWidth: 240,
+                    '& .MuiOutlinedInput-root': {
+                      background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                      borderRadius: 1.5,
+                      '& fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0' },
+                      '&:hover fieldset': { borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1' },
+                    }
+                  }}
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: (
+                        <>
+                          <InputAdornment position="start" sx={{ pl: 1 }}>
+                            <PersonSearchRoundedIcon sx={{ fontSize: 18, color: isDark ? '#94A3B8' : '#64748B' }} />
+                          </InputAdornment>
+                          {params.InputProps.startAdornment}
+                        </>
+                      )
+                    }}
+                  />
+                )}
+              />
             )}
 
-            {/* Countdown ring */}
-            <Tooltip title={`Auto-refresh in ${countdown}s`} placement="top" arrow>
-              <Box sx={{ display:'flex', alignItems:'center', gap:1,
-                background:'rgba(255,255,255,0.1)', borderRadius: RADIUS.sm,
-                px:1.5, py:0.5, border:'1px solid rgba(255,255,255,0.12)' }}>
-                <Box sx={{ position:'relative', width:28, height:28 }}>
-                  <svg width={28} height={28} style={{ transform:'rotate(-90deg)' }}>
-                    <circle cx={14} cy={14} r={11} fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth={2.5} />
-                    <circle cx={14} cy={14} r={11} fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth={2.5}
-                      strokeDasharray={2 * Math.PI * 11}
-                      strokeDashoffset={2 * Math.PI * 11 * (1 - countdown / REFRESH_S)}
-                      strokeLinecap="round"
-                      style={{ transition:'stroke-dashoffset 1s linear' }} />
-                  </svg>
-                  <Typography sx={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center',
-                    fontSize:'0.6rem', fontWeight:800, color:'rgba(255,255,255,0.9)' }}>
-                    {countdown}
-                  </Typography>
-                </Box>
+            {/* Refresh / Countdown Pill */}
+            <Tooltip title={`Auto-refresh`} placement="top" arrow>
+              <Box sx={{
+                display: 'flex', alignItems: 'center', gap: 1,
+                background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                borderRadius: 20, px: 2, py: 0.75,
+                border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
+                color: isDark ? '#E2E8F0' : '#475569',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                '&:hover': { background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1' }
+              }} onClick={() => fetchData(false)}>
+                <RefreshRoundedIcon sx={{ fontSize: 16, animation: refreshing ? `${spin} 1s linear infinite` : 'none', color: 'inherit' }} />
+                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: 'inherit' }}>
+                  {countdown}s
+                </Typography>
               </Box>
             </Tooltip>
-
-            <IconButton
-              onClick={() => fetchData(false)}
-              disabled={loading}
-              sx={{
-                background:'rgba(255,255,255,0.12)',
-                border:'1px solid rgba(255,255,255,0.15)',
-                color:'#fff', width:40, height:40, borderRadius: RADIUS.sm,
-                '&:hover': { background:'rgba(255,255,255,0.22)', transform:'scale(1.05)' },
-                transition:'all 0.2s ease',
-              }}
-            >
-              <RefreshRoundedIcon sx={{ fontSize:20, animation: refreshing ? `${spin} 1s linear infinite` : 'none' }} />
-            </IconButton>
           </Stack>
         </Stack>
       </HeroBanner>
 
-      {/* ═══════════════════════════════════ METRIC CARDS ═══════════════════════ */}
-      <Grid container spacing={2} sx={{ mb:3 }}>
-        {[
-          { key:'total',     label:'All Tasks',  value:tasks.length,     palette:'indigo',  icon:<NotificationsActiveIcon sx={{ fontSize:24 }} />, tab:0 },
-          { key:'checklist', label:'Checklists',  value:counts.CHECKLIST, palette:'rose',    icon:<ChecklistRtlIcon sx={{ fontSize:24 }} />, tab:1 },
-          { key:'meeting',   label:'Meetings',    value:counts.MEETING,   palette:'emerald', icon:<GroupsIcon sx={{ fontSize:24 }} />, tab:2 },
-          { key:'ticket',    label:'Tickets',     value:counts.TICKET,    palette:'sky',     icon:<ConfirmationNumberIcon sx={{ fontSize:24 }} />, tab:3 },
-          { key:'audit',     label:'Audits',      value:counts.AUDIT,     palette:'amber',   icon:<PolicyIcon sx={{ fontSize:24 }} />, tab:4 },
-        ].map((m, i) => (
-          <Grid item xs={6} sm={4} md={2.4} key={m.key}>
-            <Fade in timeout={500} style={{ transitionDelay:`${i*80}ms` }}>
-              <GlassCard
-                palettekey={m.palette}
-                selected={activeTab === m.tab}
-                onClick={() => setActiveTab(m.tab)}
-                sx={{ animation:`${slideUp} 0.5s cubic-bezier(0.22,1,0.36,1) both`, animationDelay:`${i*80}ms` }}
-              >
-                <Stack direction="row" alignItems="flex-start" justifyContent="space-between" sx={{ mb:2 }}>
-                  <MetricIconWrap palettekey={m.palette}>
-                    {m.icon}
-                  </MetricIconWrap>
-                  {!loading && (
-                    <ProgressRing
-                      value={m.value}
-                      max={Math.max(tasks.length, 1)}
-                      size={42}
-                      stroke={3.5}
-                      color={PALETTE[m.palette].solid}
-                    />
-                  )}
-                </Stack>
-                {loading
-                  ? <Skeleton width={56} height={38} sx={{ borderRadius:2 }} />
-                  : <Typography sx={{ fontSize:'2rem', fontWeight:800, lineHeight:1, letterSpacing:'-0.03em', color:'text.primary', mb:0.5 }}>
-                      {m.value}
-                    </Typography>
-                }
-                <Typography variant="body2" sx={{
-                  fontWeight:600, color:'text.secondary', textTransform:'uppercase',
-                  letterSpacing:'0.08em', fontSize:'0.68rem',
-                }}>
-                  {m.label}
-                </Typography>
-              </GlassCard>
-            </Fade>
-          </Grid>
-        ))}
+      {/* ═══════════════════════════════════ METRIC CARDS GRID ════════════════════════════ */}
+      <Grid container spacing={3}>
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Grid item xs={12} sm={6} md={3} key={i}>
+              <Skeleton variant="rounded" height={160} sx={{ borderRadius: 4 }} />
+            </Grid>
+          ))
+        ) : (
+          (() => {
+            const enabledAuths = pageAuths.filter(a => a.addTaskEnable === 1);
+
+            const tasksByType = {
+              'CHECKLIST': tasks.filter(t => t.type === 'CHECKLIST'),
+              'MEETING': tasks.filter(t => t.type === 'MEETING'),
+              'TICKET': tasks.filter(t => t.type === 'TICKET'),
+              'AUDIT': tasks.filter(t => t.type === 'AUDIT'),
+            };
+
+            let modulesToRender = [];
+
+            // Always add ALL TASKS first
+            modulesToRender.push({
+              name: 'ALL TASKS',
+              count: tasks.length,
+              paletteKey: 'indigo',
+              icon: <NotificationsActiveIcon sx={{ fontSize: 28 }} />,
+              tabIndex: 0
+            });
+
+            let dynamicModules = [];
+
+            if (enabledAuths.length > 0) {
+              dynamicModules = enabledAuths.map(auth => {
+                const name = auth.page?.pageName || auth.page?.pageCode || `Module ${auth.pageId}`;
+                const upName = name.toUpperCase();
+                let modTasks = [];
+                let palette = 'indigo';
+                let icon = <DashboardRoundedIcon sx={{ fontSize: 28 }} />;
+
+                if (upName.includes('CHECK')) { modTasks = tasksByType['CHECKLIST']; palette = 'rose'; icon = <ChecklistRtlIcon sx={{ fontSize: 28 }} />; }
+                else if (upName.includes('MEET') || upName.includes('MOM')) { modTasks = tasksByType['MEETING']; palette = 'emerald'; icon = <GroupsIcon sx={{ fontSize: 28 }} />; }
+                else if (upName.includes('TICKET')) { modTasks = tasksByType['TICKET']; palette = 'sky'; icon = <ConfirmationNumberIcon sx={{ fontSize: 28 }} />; }
+                else if (upName.includes('AUDIT')) { modTasks = tasksByType['AUDIT']; palette = 'amber'; icon = <PolicyIcon sx={{ fontSize: 28 }} />; }
+
+                return { name, count: modTasks.length, paletteKey: palette, icon };
+              });
+            } else {
+              // Fallback structure to match the old dashboard exactly
+              dynamicModules = [
+                { name: 'CHECKLISTS', count: tasksByType['CHECKLIST'].length, paletteKey: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 28 }} /> },
+                { name: 'MEETINGS', count: tasksByType['MEETING'].length, paletteKey: 'emerald', icon: <GroupsIcon sx={{ fontSize: 28 }} /> },
+                { name: 'TICKETS', count: tasksByType['TICKET'].length, paletteKey: 'sky', icon: <ConfirmationNumberIcon sx={{ fontSize: 28 }} /> },
+                { name: 'AUDITS', count: tasksByType['AUDIT'].length, paletteKey: 'amber', icon: <PolicyIcon sx={{ fontSize: 28 }} /> },
+              ];
+            }
+
+            // Order by pending count ascending
+            dynamicModules.sort((a, b) => a.count - b.count);
+
+            // Append dynamic modules with incremented tab index
+            dynamicModules.forEach((mod, idx) => {
+              mod.tabIndex = idx + 1;
+              modulesToRender.push(mod);
+            });
+
+            return modulesToRender.map((mod, i) => (
+              <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i}>
+                <DashboardMetricCard
+                  moduleName={mod.name}
+                  count={mod.count}
+                  icon={mod.icon}
+                  paletteKey={mod.paletteKey}
+                  theme={theme}
+                  isDark={isDark}
+                  active={activeTab === mod.tabIndex}
+                  index={i}
+                  onClick={() => setActiveTab(mod.tabIndex)}
+                />
+              </Grid>
+            ));
+          })()
+        )}
       </Grid>
 
-      {/* ═══════════════════════════════════════ FILTER BAR ═══════════════════ */}
-      <FilterBar>
-        <FilterListRoundedIcon sx={{ fontSize:18, color:'text.disabled', ml:1, mr:0.5 }} />
-        {[
-          { label:'All', icon:<DashboardRoundedIcon sx={{ fontSize:16 }} />, count:tasks.length, tab:0 },
-          { label:'Checklists', icon:<ChecklistRtlIcon sx={{ fontSize:16 }} />, count:counts.CHECKLIST, tab:1 },
-          { label:'Meetings', icon:<GroupsIcon sx={{ fontSize:16 }} />, count:counts.MEETING, tab:2 },
-          { label:'Tickets', icon:<ConfirmationNumberIcon sx={{ fontSize:16 }} />, count:counts.TICKET, tab:3 },
-          { label:'Audits', icon:<PolicyIcon sx={{ fontSize:16 }} />, count:counts.AUDIT, tab:4 },
-        ].map(f => (
-          <FilterChip
-            key={f.tab}
-            active={activeTab === f.tab ? 1 : 0}
-            onClick={() => setActiveTab(f.tab)}
-          >
-            {f.icon}
-            {f.label}
-            <Box component="span" sx={{
-              display:'inline-flex', alignItems:'center', justifyContent:'center',
-              minWidth:20, height:18, borderRadius:9, px:0.6,
-              fontSize:'0.65rem', fontWeight:800,
-              background: activeTab === f.tab
-                ? alpha(PALETTE.indigo.solid, 0.15)
-                : theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-              color: activeTab === f.tab ? PALETTE.indigo.solid : 'inherit',
-            }}>
-              {f.count}
-            </Box>
-          </FilterChip>
-        ))}
-      </FilterBar>
-
-      {/* ═══════════════════════════════════ TASK LIST ════════════════════════ */}
-      {/* Column header */}
-      {!loading && visibleTasks.length > 0 && (
-        <Stack direction="row" alignItems="center" sx={{
-          px:3, pb:1, pt:0.5, opacity:0.5,
-          animation:`${fadeIn} 0.5s ease-out`,
-        }}>
-          <Typography sx={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', flex:1, ml:7.5 }}>
-            Task
-          </Typography>
-          <Stack direction="row" gap={1} sx={{ flexShrink:0 }}>
-            <Typography sx={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', width:100, textAlign:'center' }}>
-              Due Date
-            </Typography>
-            <Typography sx={{ fontSize:'0.68rem', fontWeight:700, textTransform:'uppercase', letterSpacing:'0.1em', width:90, textAlign:'center' }}>
-              Status
-            </Typography>
-            <Box sx={{ width:24 }} />
-          </Stack>
-        </Stack>
-      )}
-
-      <Box>
-        {loading ? (
-          Array.from({ length:6 }).map((_,i) => (
-            <TaskCard key={i} isoverdue="false" taskpalette="slate" sx={{ animationDelay:`${i*70}ms` }}>
-              <Skeleton variant="rounded" width={46} height={46} sx={{ borderRadius:`${RADIUS.sm}px`, flexShrink:0 }} />
-              <Box flex={1}>
-                <Skeleton width="50%" height={20} sx={{ mb:0.75, borderRadius:1 }} />
-                <Stack direction="row" gap={1}>
-                  <Skeleton width={70} height={18} sx={{ borderRadius:1 }} />
-                  <Skeleton width={90} height={18} sx={{ borderRadius:1 }} />
-                </Stack>
-              </Box>
-              <Stack direction="row" gap={1}>
-                <Skeleton width={90} height={26} sx={{ borderRadius:1.5 }} />
-                <Skeleton width={80} height={26} sx={{ borderRadius:1.5 }} />
-              </Stack>
-            </TaskCard>
-          ))
-        ) : visibleTasks.length === 0 ? (
-          <Box sx={{
-            textAlign:'center', py:10,
-            animation:`${slideUp} 0.5s cubic-bezier(0.22,1,0.36,1)`,
-          }}>
-            <Box sx={{
-              width:88, height:88, borderRadius:'50%', mx:'auto', mb:3,
-              display:'flex', alignItems:'center', justifyContent:'center',
-              background: theme.palette.mode === 'dark'
-                ? 'rgba(16,185,129,0.1)' : alpha(PALETTE.emerald.solid, 0.08),
-              animation:`${float} 3s ease-in-out infinite`,
-            }}>
-              <CheckCircleRoundedIcon sx={{
-                fontSize:48, color:PALETTE.emerald.solid,
-                filter:`drop-shadow(0 4px 16px ${PALETTE.emerald.glow})`,
-              }} />
-            </Box>
-            <Typography variant="h5" sx={{ fontWeight:800, mb:1, color:'text.primary' }}>All Clear!</Typography>
-            <Typography color="text.secondary" sx={{ fontSize:'0.92rem' }}>
-              No pending tasks in this category. You're all caught up!
-            </Typography>
-          </Box>
-        ) : (
-          visibleTasks.map((task, i) => {
-            const overdue = isOverdue(task.dueDate) && !['Closed','Resolved','Approved','Completed'].includes(task.status);
-            const cfg   = TYPE_CONFIG[task.type] || TYPE_CONFIG.TICKET;
-            const pal   = PALETTE[cfg.palette];
-
-            const statusColor = overdue ? PALETTE.rose.solid
-              : task.status === 'In Progress' ? PALETTE.emerald.solid
-              : task.status === 'Assigned'    ? PALETTE.indigo.solid
-              : PALETTE.amber.solid;
-            const statusBg = overdue
-              ? (theme.palette.mode === 'dark' ? alpha(PALETTE.rose.solid, 0.15) : PALETTE.rose.light)
-              : task.status === 'In Progress'
-                ? (theme.palette.mode === 'dark' ? alpha(PALETTE.emerald.solid, 0.15) : PALETTE.emerald.light)
-              : task.status === 'Assigned'
-                ? (theme.palette.mode === 'dark' ? alpha(PALETTE.indigo.solid, 0.15) : PALETTE.indigo.light)
-              : (theme.palette.mode === 'dark' ? alpha(PALETTE.amber.solid, 0.15) : PALETTE.amber.light);
-            const statusIcon = overdue
-              ? <ErrorRoundedIcon sx={{ fontSize:11 }} />
-              : task.status === 'In Progress' ? <PlayArrowRoundedIcon sx={{ fontSize:11 }} />
-              : task.status === 'Assigned'    ? <AssignmentIndIcon sx={{ fontSize:11 }} />
-              : <AccessTimeFilledIcon sx={{ fontSize:11 }} />;
-
-            return (
-              <TaskCard
-                key={task.id}
-                isoverdue={String(overdue)}
-                taskpalette={cfg.palette}
-                onClick={() => navigate(task.link)}
-                sx={{ animationDelay:`${i * 50}ms` }}
-              >
-
-                {/* Icon */}
-                <TaskIconAvatar className="task-icon-wrap" palettekey={cfg.palette}>
-                  {cfg.icon}
-                </TaskIconAvatar>
-
-                {/* Title + meta */}
-                <Box flex={1} minWidth={0}>
-                  <Typography sx={{ fontWeight:700, fontSize:'0.92rem', color:'text.primary',
-                    whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', mb:0.5,
-                    lineHeight:1.3 }}>
-                    {task.title}
-                  </Typography>
-                  <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-                    <TypeBadge palettekey={cfg.palette}>
-                      {cfg.label}
-                    </TypeBadge>
-                    <Typography variant="caption" sx={{ color:'text.secondary', display:'flex', alignItems:'center', gap:0.5, fontSize:'0.72rem' }}>
-                      <AssignmentIndIcon sx={{ fontSize:12, opacity:0.7 }} />{task.assignedBy}
-                    </Typography>
-                    <Typography variant="caption" sx={{ color:'text.disabled', fontSize:'0.72rem' }}>
-                      {task.desc}
-                    </Typography>
-                  </Stack>
-                </Box>
-
-                {/* Badges */}
-                <Stack direction="row" alignItems="center" gap={1} flexShrink={0}>
-                  <DueDateBadge isoverdue={String(overdue)}>
-                    <TodayIcon sx={{ fontSize:12 }} />
-                    {fmtDate(task.dueDate)}
-                  </DueDateBadge>
-                  <StatusBadge statuscolor={statusColor} statusbg={statusBg}>
-                    {statusIcon}
-                    {overdue ? 'Overdue' : task.status}
-                  </StatusBadge>
-                  <ArrowForwardRoundedIcon className="task-arrow"
-                    sx={{ fontSize:18, color:'text.disabled', opacity:0,
-                      transform:'translateX(-8px)', transition:'all 0.25s ease' }} />
-                </Stack>
-              </TaskCard>
-            );
-          })
-        )}
-      </Box>
-
-      {/* ── Footer summary ── */}
-      {!loading && visibleTasks.length > 0 && (
-        <Stack direction="row" justifyContent="center" alignItems="center" gap={1.5} sx={{
-          mt:2, py:2, opacity:0.5,
-          animation:`${fadeIn} 0.6s ease-out 0.3s both`,
-        }}>
-          <ScheduleRoundedIcon sx={{ fontSize:14 }} />
-          <Typography sx={{ fontSize:'0.75rem', fontWeight:600, letterSpacing:'0.04em' }}>
-            Showing {visibleTasks.length} of {tasks.length} tasks • Auto-refresh in {countdown}s
-          </Typography>
-        </Stack>
-      )}
-
-    </PageRoot>
+        </PageRoot>
+    </ThemeProvider>
   );
 }
