@@ -14,6 +14,7 @@ import useAuth from 'hooks/useAuth';
 import BOSDataTable from './BOSDataTable';
 import { format } from 'date-fns';
 import axios from 'utils/axios';
+import { resolveNestedValue } from './BOSUtils';
 
 /**
  * ═══════════════════════════════════════════════════════════════
@@ -53,10 +54,19 @@ export default function BOSExportButton({
     return data.map(row => {
       const mappedRow = {};
       columns.forEach(col => {
-        let val = typeof col.key === 'function' ? col.key(row) : row[col.key];
+        let val = typeof col.key === 'function' ? col.key(row) : resolveNestedValue(col.key, row);
+        
+        const keyName = typeof col.key === 'string' ? col.key : '';
+        if (keyName === 'updatedBy' || keyName === 'updated_by') {
+          const hasUpdate = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['updated_date'];
+          if (!hasUpdate) {
+            val = '-';
+          }
+        }
+
         // Format dates for Excel readability
-        const keyName = typeof col.key === 'string' ? col.key.toLowerCase() : '';
-        if (keyName.includes('date') || keyName.includes('at')) {
+        const keyNameLower = keyName.toLowerCase();
+        if ((keyNameLower.includes('date') || keyNameLower.includes('at')) && !keyNameLower.includes('by')) {
           try {
             const d = new Date(val);
             if (!isNaN(d.getTime())) {
@@ -70,15 +80,19 @@ export default function BOSExportButton({
       // Auto-append Audit Columns if they exist in the row data (SOP Standard)
       const auditFields = [
         { key: 'createdBy', label: 'Created By' },
-        { key: 'createdDate', label: 'Created Date' },
+        { key: 'createdAt', label: 'Created Date' },
         { key: 'updatedBy', label: 'Updated By' },
-        { key: 'updatedDate', label: 'Updated Date' }
+        { key: 'updatedAt', label: 'Updated Date' }
       ];
 
+      const hasUpdate = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['updated_date'];
       auditFields.forEach(field => {
-        let val = row[field.key];
+        let val = row[field.key] || row[field.key.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)];
+        if (field.key.startsWith('updated') && !hasUpdate) {
+          val = null;
+        }
         if (val) {
-          if (field.key.includes('Date')) {
+          if (field.key.endsWith('At') || field.key.endsWith('Date')) {
             try { val = format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch (e) { /* ignore */ }
           }
           mappedRow[field.label] = val;

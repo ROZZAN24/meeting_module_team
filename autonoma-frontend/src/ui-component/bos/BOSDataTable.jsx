@@ -14,7 +14,7 @@ import {
   tableContainerSx, tableHeadCellSx, getTableRowSx,
   tableActionEditSx, tableActionDeleteSx, getStatusChipSx
 } from './BOSStyles';
-import { getPhotoUrl } from './BOSUtils';
+import { getPhotoUrl, resolveNestedValue } from './BOSUtils';
 import { IconUser } from '@tabler/icons-react';
 import { Avatar } from '@mui/material';
 
@@ -61,7 +61,7 @@ export default function BOSDataTable({
       const columnsWithData = columns.map(col => {
         if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') return col;
         
-        const uniqueValues = [...new Set(rows.map(r => r[col.id]))]
+        const uniqueValues = [...new Set(rows.map(r => resolveNestedValue(col.id, r)))]
           .filter(v => v !== undefined && v !== null && v !== '')
           .map(v => ({ value: v, label: String(v) }));
 
@@ -98,7 +98,12 @@ export default function BOSDataTable({
   };
 
   const getCellDisplayValue = (col, row, idx) => {
-    let val = row[col.id];
+    if (col.id === 'updatedBy' || col.id === 'updated_by') {
+      const hasUpdate = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['updated_date'];
+      if (!hasUpdate) return '-';
+    }
+
+    let val = resolveNestedValue(col.id, row);
     
     if (val === undefined || val === null) {
       // 1. Standard camelCase to snake_case (e.g. updatedBy -> updated_by)
@@ -125,13 +130,12 @@ export default function BOSDataTable({
       return statusText;
     }
 
-    // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
     const isDateField = (col.id.toLowerCase().includes('date') || 
                         col.id.endsWith('At') || 
                         col.id.endsWith('_at') || 
                         col.id === 'entryDate' ||
                         col.id === 'invoiceDate') &&
-                        !col.id.toLowerCase().endsWith('by');
+                        !col.id.toLowerCase().includes('by');
     
     // Explicitly exclude false positives like 'state' or 'category'
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
@@ -199,8 +203,13 @@ export default function BOSDataTable({
   const defaultRenderCell = (col, row, idx) => {
     if (col.render) return col.render(row, idx);
     
+    if (col.id === 'updatedBy' || col.id === 'updated_by') {
+      const hasUpdate = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['updated_date'];
+      if (!hasUpdate) return '-';
+    }
+
     // ── DATA RESOLUTION (Supports camelCase, snake_case, and common audit fallbacks) ──
-    let val = row[col.id];
+    let val = resolveNestedValue(col.id, row);
     
     if (val === undefined || val === null) {
       // 1. Standard camelCase to snake_case (e.g. updatedBy -> updated_by)
@@ -238,13 +247,12 @@ export default function BOSDataTable({
       return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText)} />;
     }
 
-    // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
     const isDateField = (col.id.toLowerCase().includes('date') || 
                         col.id.endsWith('At') || 
                         col.id.endsWith('_at') || 
                         col.id === 'entryDate' ||
                         col.id === 'invoiceDate') &&
-                        !col.id.toLowerCase().endsWith('by');
+                        !col.id.toLowerCase().includes('by');
     
     // Explicitly exclude false positives like 'state' or 'category'
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
@@ -358,7 +366,7 @@ export default function BOSDataTable({
                         ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
                         ...(col.bold ? { fontWeight: 600, color: '#37474f' } : {}),
                         // SOP: Prevent column split issue by keeping text on one line unless explicitly long
-                        whiteSpace: (String(row[col.id] || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
+                        whiteSpace: (String(resolveNestedValue(col.id, row) || '').length > 50 || col.wrap) ? 'normal' : 'nowrap',
                         ...(col.maxWidth ? { maxWidth: col.maxWidth, overflow: 'hidden', textOverflow: 'ellipsis' } : {}),
                         minWidth: col.id === 'index' ? 60 : (col.minWidth || 100),
                         paddingX: 1.5
