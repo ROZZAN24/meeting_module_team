@@ -36,6 +36,14 @@ For comprehensive system documentation, architecture guidelines, coding conventi
 
 ---
 
+## 🤝 Development Standards
+*   **Java 21 (LTS)** is required for backend services.
+*   **Flyway** is the sole authority for database schema changes.
+*   **BOS Components** must be used for all new UI development to ensure consistency.
+
+---
+
 ## 📂 System Core Modules
 *   `autonoma-backend/`: REST API controllers, repositories, JPA models, security configs, and background services.
 *   `autonoma-frontend/`: User interface views, REDUX stores, routing paths, and reusable BOS ecosystem components.
+
