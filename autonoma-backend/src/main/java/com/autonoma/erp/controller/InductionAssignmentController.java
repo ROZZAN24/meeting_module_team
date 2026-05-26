@@ -68,4 +68,15 @@ public class InductionAssignmentController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @DeleteMapping("/{id}")
+    @RequirePagePermission(pageCode = "M2150", action = "write")
+    public ResponseEntity<?> delete(@PathVariable Long id, Principal principal) {
+        try {
+            String currentUser = principal != null ? principal.getName() : "SYSTEM";
+            service.deleteAssignment(id, currentUser);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

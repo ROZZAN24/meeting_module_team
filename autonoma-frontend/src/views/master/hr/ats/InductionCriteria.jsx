@@ -38,7 +38,7 @@ const INITIAL_STATE = {
   inductionAttachment: '' // For file upload
 };
 
-const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
+const FALLBACK_ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = [
   { code: 'L1', label: 'L1 - Trainee' },
   { code: 'L2', label: 'L2 - Junior Executive' },
@@ -66,6 +66,7 @@ export default function InductionCriteria() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [nextSequence, setNextSequence] = useState(null);
   const [formData, setFormData] = useState(INITIAL_STATE);
+  const [roundOptions, setRoundOptions] = useState(FALLBACK_ROUND_OPTIONS);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -186,6 +187,21 @@ export default function InductionCriteria() {
   }, [dispatch]);
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
+
+  // Fetch dynamic round options from master table
+  useEffect(() => {
+    const fetchRounds = async () => {
+      try {
+        const { data } = await axios.get('/api/hr/induction-round/active');
+        if (data && data.length > 0) {
+          setRoundOptions(data.map(r => r.roundName));
+        }
+      } catch (err) {
+        console.error('Failed to fetch induction rounds, using defaults:', err);
+      }
+    };
+    fetchRounds();
+  }, []);
 
   const handleOpenAdd = async () => {
     setFormData(INITIAL_STATE);
@@ -442,7 +458,7 @@ export default function InductionCriteria() {
                 sx={errorStyle(!!errors.inductionRound)}
               >
                 <MenuItem value="">-Select-</MenuItem>
-                {ROUND_OPTIONS.map((r) => (
+                {roundOptions.map((r) => (
                   <MenuItem key={r} value={r}>{r}</MenuItem>
                 ))}
               </BOSTextField>

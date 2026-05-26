@@ -49,15 +49,15 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 // ==============================|| INDUCTION TRAINING (TRAINER PAGE) ||============================== //
 
 const columns = [
-  { id: 'index', label: 'Sl.No', minWidth: 60 },
-  { id: 'empCode', label: 'Emp Code', bold: true, minWidth: 100 },
-  { id: 'empName', label: 'Employee Name', minWidth: 180 },
-  { id: 'inductionDate', label: 'Induction Date', minWidth: 120 },
-  { id: 'inductionRound', label: 'Induction Round', minWidth: 130 },
+  { id: 'index', label: 'Sl.No', minWidth: 50 },
+  { id: 'empCode', label: 'Emp Code', bold: true, minWidth: 90 },
+  { id: 'empName', label: 'Employee Name', minWidth: 150 },
+  { id: 'inductionDate', label: 'Induction Date', minWidth: 100 },
+  { id: 'inductionRound', label: 'Round', minWidth: 80 },
   {
     id: 'currentStatus',
-    label: 'Current Status',
-    minWidth: 140,
+    label: 'Status',
+    minWidth: 120,
     render: (row) => {
       const colors = {
         'PENDING': 'warning',
@@ -76,25 +76,6 @@ const columns = [
         />
       );
     }
-  },
-  {
-    id: 'averageRating',
-    label: 'Rating',
-    minWidth: 100,
-    render: (row) => row.averageRating ? `${row.averageRating.toFixed(1)}/5` : '-'
-  },
-  {
-    id: 'inductionStatus',
-    label: 'Induction Status',
-    minWidth: 120,
-    render: (row) => (
-      <Chip
-        label={row.inductionStatus}
-        variant="outlined"
-        size="small"
-        color={row.inductionStatus === 'ACTIVE' ? 'success' : 'error'}
-      />
-    )
   }
 ];
 
@@ -117,6 +98,8 @@ export default function InductionTraining() {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [trainingDetails, setTrainingDetails] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -163,21 +146,28 @@ export default function InductionTraining() {
 
   // Open training dialog
   const handleStartTraining = useCallback(async (row) => {
+    console.log('[InductionTraining] handleStartTraining called with row:', JSON.stringify(row));
+    console.log('[InductionTraining] row.id:', row.id, 'row.currentStatus:', row.currentStatus);
     setSelectedAssignment(row);
     setLoading(true);
     try {
       // If PENDING, start the training first
       if (row.currentStatus === 'PENDING' || row.currentStatus === 'RESCHEDULE') {
-        await axios.post(`/api/hr/induction-training/${row.id}/start`);
+        console.log('[InductionTraining] Calling POST /api/hr/induction-training/' + row.id + '/start');
+        const startRes = await axios.post(`/api/hr/induction-training/${row.id}/start`);
+        console.log('[InductionTraining] Start response:', startRes.status, startRes.data);
         dispatch(openSnackbar({ open: true, message: 'Training session started!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
 
       // Load training detail items
+      console.log('[InductionTraining] Calling GET /api/hr/induction-training/' + row.id + '/details');
       const { data } = await axios.get(`/api/hr/induction-training/${row.id}/details`);
+      console.log('[InductionTraining] Details response:', data);
       setTrainingDetails(data || []);
       setDialogOpen(true);
     } catch (error) {
-      const msg = error.response?.data || 'Failed to start training';
+      console.error('[InductionTraining] ERROR in handleStartTraining:', error);
+      const msg = error.response?.data || error.message || 'Failed to start training';
       dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
     } finally {
       setLoading(false);
@@ -193,12 +183,15 @@ export default function InductionTraining() {
 
   // Save progress
   const handleSaveProgress = async () => {
+    console.log('[InductionTraining] SAVE clicked. assignmentId:', selectedAssignment?.id, 'details:', JSON.stringify(trainingDetails));
     setSaving(true);
     try {
       await axios.put(`/api/hr/induction-training/${selectedAssignment.id}/details`, trainingDetails);
+      console.log('[InductionTraining] SAVE SUCCESS');
       dispatch(openSnackbar({ open: true, message: 'Training progress saved', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
     } catch (error) {
-      const msg = error.response?.data || 'Failed to save progress';
+      console.error('[InductionTraining] SAVE ERROR:', error);
+      const msg = error.response?.data || error.message || 'Failed to save progress';
       dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
     } finally {
       setSaving(false);
@@ -280,7 +273,18 @@ export default function InductionTraining() {
         columns={columns}
         rows={resolvedRows}
         loading={loading}
+        page={page}
+        size={size}
+        onPageChange={(p) => setPage(p)}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
+        onClickRow={(row) => {
+          console.log('[InductionTraining] ROW CLICKED! row:', row.empCode, 'status:', row.currentStatus, 'id:', row.id);
+          if (['PENDING', 'RESCHEDULE', 'TRAINING STARTED'].includes(row.currentStatus)) {
+            handleStartTraining(row);
+          }
+        }}
         onDoubleClickRow={(row) => {
+          console.log('[InductionTraining] ROW DOUBLE-CLICKED!');
           if (['PENDING', 'RESCHEDULE', 'TRAINING STARTED'].includes(row.currentStatus)) {
             handleStartTraining(row);
           }
@@ -293,7 +297,10 @@ export default function InductionTraining() {
                 variant="contained"
                 color="primary"
                 startIcon={<IconPlayerPlay size={16} />}
-                onClick={() => handleStartTraining(row)}
+                onClick={() => {
+                  console.log('[InductionTraining] START TRAINING BUTTON CLICKED! id:', row.id);
+                  handleStartTraining(row);
+                }}
                 sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
               >
                 {row.currentStatus === 'TRAINING STARTED' ? 'Continue' : 'Start Training'}
@@ -313,8 +320,7 @@ export default function InductionTraining() {
         fullWidth
         maxWidth="xl"
         onSave={handleSaveProgress}
-        saveLabel="Save Progress"
-        extraActions={
+        secondaryActions={
           <Button
             variant="contained"
             color="success"

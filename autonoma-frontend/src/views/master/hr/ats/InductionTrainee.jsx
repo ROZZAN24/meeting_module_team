@@ -89,6 +89,8 @@ export default function InductionTrainee() {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [trainingDetails, setTrainingDetails] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
 
   const globalQuery = useSelector((state) => state.search.query);
 
@@ -224,6 +226,10 @@ export default function InductionTrainee() {
         columns={columns}
         rows={resolvedRows}
         loading={loading}
+        page={page}
+        size={size}
+        onPageChange={(p) => setPage(p)}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleUpdateTraining}
         actionColumn={{
           render: (row) => (

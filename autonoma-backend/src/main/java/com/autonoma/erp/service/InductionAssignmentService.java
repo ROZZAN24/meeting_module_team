@@ -106,4 +106,20 @@ public class InductionAssignmentService {
             throw new RuntimeException("Invalid status transition from " + current + " to " + newStatus);
         }
     }
+
+    @Transactional
+    public void deleteAssignment(Long id, String currentUser) {
+        InductionAssignment existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Assignment not found."));
+
+        if ("COMPLETED".equalsIgnoreCase(existing.getCurrentStatus())) {
+            throw new RuntimeException("Completed inductions cannot be deleted.");
+        }
+
+        existing.setInductionStatus("IN ACTIVE");
+        existing.setCurrentStatus("REJECTED");
+        existing.setUpdatedBy(currentUser);
+        existing.setUpdatedAt(new Date());
+        repository.save(existing);
+    }
 }

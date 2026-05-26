@@ -44,6 +44,7 @@ import {
   errorStyle
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -141,7 +142,7 @@ const INITIAL_STATE = {
   remarks: ''
 };
 
-const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
+const FALLBACK_ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = ['L1', 'L2', 'L3', 'L4'];
 const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
@@ -162,11 +163,14 @@ const InductionAssignment = () => {
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [roundOptions, setRoundOptions] = useState(FALLBACK_ROUND_OPTIONS);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_STATE);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const [history, setHistory] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -307,11 +311,24 @@ const InductionAssignment = () => {
       label: 'Actions',
       align: 'center',
       render: (row) => (
-        <Tooltip title={row.isVirtual ? "Assign Now" : "Edit Assignment"}>
-          <IconButton onClick={() => handleAssign(row)} size="small" color={row.isVirtual ? "primary" : "secondary"}>
-            {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
-          </IconButton>
-        </Tooltip>
+        <Stack direction="row" spacing={0.5} justifyContent="center">
+          <Tooltip title={row.isVirtual ? "Assign Now" : "Edit Assignment"}>
+            <IconButton onClick={() => handleAssign(row)} size="small" color={row.isVirtual ? "primary" : "secondary"}>
+              {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
+            </IconButton>
+          </Tooltip>
+          {!row.isVirtual && row.currentStatus !== 'COMPLETED' && (
+            <Tooltip title="Delete Assignment">
+              <IconButton
+                onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); setDeleteDialogOpen(true); }}
+                size="small"
+                color="error"
+              >
+                <IconTrash size={18} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
       )
     }
   ], [handleAssign]);
@@ -370,6 +387,21 @@ const InductionAssignment = () => {
   }, []);
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
+
+  // Fetch dynamic round options from master table
+  useEffect(() => {
+    const fetchRounds = async () => {
+      try {
+        const { data } = await axios.get('/api/hr/induction-round/active');
+        if (data && data.length > 0) {
+          setRoundOptions(data.map(r => r.roundName));
+        }
+      } catch (err) {
+        console.error('Failed to fetch induction rounds, using defaults:', err);
+      }
+    };
+    fetchRounds();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -561,7 +593,7 @@ const InductionAssignment = () => {
                 sx={errorStyle(!!errors.inductionRound)}
               >
                 <MenuItem value="">-SELECT-</MenuItem>
-                {ROUND_OPTIONS.map(r => (
+                {roundOptions.map(r => (
                   <MenuItem key={r} value={r}>{r}</MenuItem>
                 ))}
               </BOSTextField>
@@ -694,6 +726,26 @@ const InductionAssignment = () => {
           </TableContainer>
         </Box>
       </BOSFormDialog>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={async () => {
+          try {
+            await axios.delete(`/api/hr/induction-assignment/${deleteTarget.id}`);
+            dispatch(openSnackbar({ open: true, message: 'Induction assignment deleted successfully', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+            setDeleteDialogOpen(false);
+            setDeleteTarget(null);
+            fetchRows();
+          } catch (error) {
+            const msg = error.response?.data?.message || error.response?.data || 'Failed to delete assignment';
+            dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+          }
+        }}
+        title="Delete Induction Assignment"
+        message={`Are you sure you want to delete the induction assignment for ${deleteTarget?.empName || deleteTarget?.empCode || 'this employee'}? This will mark the record as inactive.`}
+        itemName={deleteTarget?.empName || deleteTarget?.empCode}
+      />
     </MainCard>
   );
 };
