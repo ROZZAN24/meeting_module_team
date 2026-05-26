@@ -134,7 +134,15 @@ export default function MeetingMasterList() {
       setDialogOpen(false);
       fetchData();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save meeting', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      let cleanError = error.details || error.message || error.response?.data?.message || '';
+      if (cleanError.includes('could not execute statement [')) {
+        const match = cleanError.match(/could not execute statement \[(.*?)\]/);
+        if (match && match[1]) {
+          cleanError = match[1];
+        }
+      }
+      const finalMessage = cleanError ? `Failed to save meeting: ${cleanError}` : 'Failed to save meeting';
+      dispatch(openSnackbar({ open: true, message: finalMessage, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 

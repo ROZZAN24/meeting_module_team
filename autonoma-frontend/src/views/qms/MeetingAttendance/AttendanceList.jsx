@@ -10,6 +10,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useAuth from 'hooks/useAuth';
 import AttendanceEntryDialog from './AttendanceEntryDialog';
 import { isMobile } from 'react-device-detect';
 
@@ -27,6 +28,7 @@ export default function AttendanceList() {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_ATTENDANCE);
+  const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -83,6 +85,9 @@ export default function AttendanceList() {
   // ── FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (user?.isBosAdmin !== 1 && row.employee?.id !== user?.empId) {
+        return false;
+      }
       const searchText = globalFilters.searchText || '';
       if (searchText) {
         const q = searchText.toLowerCase();
@@ -97,7 +102,7 @@ export default function AttendanceList() {
       }
       return true;
     });
-  }, [rows, globalQuery, globalFilters]);
+  }, [rows, globalQuery, globalFilters, user]);
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 

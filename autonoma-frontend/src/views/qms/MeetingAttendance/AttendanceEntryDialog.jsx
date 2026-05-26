@@ -8,6 +8,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
+import useAuth from 'hooks/useAuth';
 
 const formatTo12h = (time24) => {
   if (!time24) return '-';
@@ -24,6 +25,7 @@ const formatTo12h = (time24) => {
 
 const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const { employees = [] } = useLookups(['EMPLOYEES']);
   const [schedules, setSchedules] = useState([]);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
@@ -54,9 +56,15 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             const response = await axios.get(API_PATHS.QMS.MEETING_SCHEDULES);
             const allSchedules = Array.isArray(response.data) ? response.data : [];
             const now = new Date();
-            const today = now.toISOString().split('T')[0];
+            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
             const eligible = allSchedules.filter(s => {
+              // If not super admin, only show schedules where the current user is a participant
+              if (user && user.isBosAdmin !== 1) {
+                const isParticipant = s.participants?.some(p => Number(p.employee?.id) === Number(user?.empId));
+                if (!isParticipant) return false;
+              }
+
               // Handle potential null/undefined status from backend just like the list page does
               const scheduleStatus = s.status || 'OPEN';
               
@@ -79,7 +87,34 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
               
               return true;
             });
-            setSchedules(eligible);
+            const getStartMs = (s) => {
+              if (!s.startTime) return 0;
+              const [h, m] = s.startTime.split(':').map(Number);
+              return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
+            };
+
+            const sortedEligible = [...eligible].sort((a, b) => {
+              const startA = getStartMs(a);
+              const startB = getStartMs(b);
+              const nowMs = now.getTime();
+
+              const isUpcomingA = startA >= nowMs;
+              const isUpcomingB = startB >= nowMs;
+
+              if (isUpcomingA && !isUpcomingB) return -1;
+              if (!isUpcomingA && isUpcomingB) return 1;
+
+              if (isUpcomingA && isUpcomingB) {
+                return startA - startB; // Earliest upcoming first
+              } else {
+                return startB - startA; // Latest ongoing first (closest to now)
+              }
+            });
+
+            setSchedules(sortedEligible);
+            if (sortedEligible.length > 0) {
+              setSelectedSchedule(sortedEligible[0]);
+            }
           } catch (error) {
             console.error('Failed to load schedules:', error);
           }
@@ -91,9 +126,14 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         setAttendanceStatus('PRESENT');
         setOutTime('');
         setOutTimeRaw('');
+        if (user && user.isBosAdmin !== 1) {
+          setAttendeeName(user.name || '');
+        } else {
+          setAttendeeName('');
+        }
       }
     }
-  }, [open, item, isEdit]);
+  }, [open, item, isEdit, user]);
 
   // Determine attendance status based on time (Only for NEW entries)
   useEffect(() => {
@@ -166,9 +206,14 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
       title={isEdit ? "View/Update Attendance" : "Meeting User Attendance"}
       saveLabel={isEdit ? (item.outTime ? "Close" : "Mark Out") : "Mark In"}
       maxWidth="sm"
+      contentSx={{ overflowY: 'hidden', p: 3 }}
     >
-      <BOSFormSection title={isEdit ? "Attendance Details" : "Attendance Entry"} icon={<IconClock size={22} />}>
-        <Stack spacing={2.5} sx={{ mt: 1 }}>
+      <BOSFormSection 
+        title={isEdit ? "Attendance Details" : "Attendance Entry"} 
+        icon={<IconClock size={22} />}
+        contentSx={{ p: 2 }}
+      >
+        <Stack spacing={2} sx={{ mt: 0.5 }}>
           {isEdit ? (
             <BOSTextField
               label="Schedule No"
@@ -189,7 +234,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             />
           )}
 
-          {isEdit ? (
+          {isEdit || (user && user.isBosAdmin !== 1) ? (
             <BOSTextField
               label="Attendee Name"
               value={attendeeName}
@@ -206,7 +251,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
               )}
               getOptionLabel={(option) => option.employeeName || ''}
               value={employees.find(e => e.employeeName === attendeeName) || null}
-              onChange={(e, val) => setAttendeeName(val ? val.employeeName : 'Current User')}
+              onChange={(e, val) => setAttendeeName(val ? val.employeeName : '')}
               renderInput={(params) => (
                 <BOSTextField {...params} label="Select Attendee" required fullWidth />
               )}
@@ -228,22 +273,13 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             }}
           />
 
-          <Stack direction="row" spacing={2}>
-            <BOSTextField
-              label="In Time"
-              value={inTime}
-              InputProps={{ readOnly: true }}
-              fullWidth
-              sx={{ bgcolor: 'grey.50' }}
-            />
-            <BOSTextField
-              label="Out Time"
-              value={isEdit ? (outTime || 'NOT MARKED') : 'PENDING'}
-              InputProps={{ readOnly: true }}
-              fullWidth
-              sx={{ bgcolor: 'grey.50' }}
-            />
-          </Stack>
+          <BOSTextField
+            label="In Time"
+            value={inTime}
+            InputProps={{ readOnly: true }}
+            fullWidth
+            sx={{ bgcolor: 'grey.50' }}
+          />
 
           {selectedSchedule && (
             <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2, bgcolor: 'primary.lighter' }}>
