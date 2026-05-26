@@ -51,7 +51,7 @@ BEGIN
     EXEC('UPDATE [dbo].[qms_checklist_master]
     SET [TASK_STATUS_INT] = CASE
         WHEN UPPER(LTRIM(RTRIM([TASK_STATUS]))) IN (''IN_PROGRESS'',''INPROGRESS'',''IN PROGRESS'') THEN 1
-        WHEN UPPER(LTRIM(RTRIM([TASK_STATUS]))) IN (''COMPLETED'','''+''DONE'')                        THEN 2
+        WHEN UPPER(LTRIM(RTRIM([TASK_STATUS]))) IN (''COMPLETED'',''DONE'')                        THEN 2
         WHEN UPPER(LTRIM(RTRIM([TASK_STATUS]))) = ''OVERDUE''                                    THEN 3
         WHEN UPPER(LTRIM(RTRIM([TASK_STATUS]))) IN (''CANCELLED'',''CANCELED'')                    THEN 4
         ELSE 0
@@ -77,7 +77,7 @@ GO
 DECLARE @sql NVARCHAR(MAX) = '';
 
 -- Drop constraint for STATUS only if it exists and is varchar/nvarchar
-IF EXISTS (SELECT 1 FROM sys.columns WHERE parent_object_id = OBJECT_ID('[dbo].[qms_checklist_master]') AND name = 'STATUS' AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('[dbo].[qms_checklist_master]') AND name = 'STATUS' AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
 BEGIN
     SELECT @sql += 'ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT ' + QUOTENAME(name) + ';'
     FROM sys.default_constraints
@@ -86,7 +86,7 @@ BEGIN
 END
 
 -- Drop constraint for TASK_STATUS only if it exists and is varchar/nvarchar
-IF EXISTS (SELECT 1 FROM sys.columns WHERE parent_object_id = OBJECT_ID('[dbo].[qms_checklist_master]') AND name = 'TASK_STATUS' AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('[dbo].[qms_checklist_master]') AND name = 'TASK_STATUS' AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
 BEGIN
     SELECT @sql += 'ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT ' + QUOTENAME(name) + ';'
     FROM sys.default_constraints
@@ -95,7 +95,7 @@ BEGIN
 END
 
 -- Drop constraint for VERIFY_STATUS only if it exists and is varchar/nvarchar
-IF EXISTS (SELECT 1 FROM sys.columns WHERE parent_object_id = OBJECT_ID('[dbo].[qms_checklist_master]') AND name = 'VERIFY_STATUS' AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('[dbo].[qms_checklist_master]') AND name = 'VERIFY_STATUS' AND system_type_id IN (TYPE_ID('varchar'), TYPE_ID('nvarchar')))
 BEGIN
     SELECT @sql += 'ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT ' + QUOTENAME(name) + ';'
     FROM sys.default_constraints
