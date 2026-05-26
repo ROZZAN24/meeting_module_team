@@ -55,6 +55,12 @@ public class MasterChecklistMigrationService {
     // ASSIGN STATUS: 0=INACTIVE, 1=ACTIVE
     // ────────────────────────────────────────────────────────────────────────────
 
+    // Helper method to safely extract and trim strings from JDBC ResultSet
+    private String getTrimmedString(java.sql.ResultSet rs, String columnName) throws java.sql.SQLException {
+        String val = rs.getString(columnName);
+        return val != null ? val.trim() : null;
+    }
+
     // ─── MASTER CHECKLIST MIGRATION ─────────────────────────────────────────────
 
     @Transactional
@@ -76,36 +82,35 @@ public class MasterChecklistMigrationService {
         List<MasterChecklist> migratedList = jdbcTemplate.query(sql, (rs, rowNum) -> {
             MasterChecklist checklist = new MasterChecklist();
 
-            // Store legacy row_id as seqNo for cross-reference (used by assignment
-            // migration)
+            // Store legacy row_id as seqNo for cross-reference (used by assignment migration)
             int legacyRowId = rs.getInt("row_id");
             checklist.setSeqNo(String.valueOf(legacyRowId));
 
-            // Map simple string fields
-            checklist.setCheckingPoint(rs.getString("CHECKING_POINT"));
-            checklist.setStockLink(rs.getString("STOCK_LINK"));
-            checklist.setDescription(rs.getString("COMMENTS"));
-            checklist.setCategory(rs.getString("CUST_CATEGORY"));
-            checklist.setPhotoRequired(rs.getString("PHOTO_REQUIRED"));
-            checklist.setVerificationRequired(rs.getString("VERIFICATION_REQUIRED"));
-            checklist.setFrequency(rs.getString("FREQUENCY_LEVEL"));
-            checklist.setAssignTo(rs.getString("ASSIGN_TO"));
-            checklist.setCarryForward(rs.getString("CARRY_FORWARD"));
-            checklist.setRejReason(rs.getString("REJECT_REASON"));
-            checklist.setAmendmentReason(rs.getString("AMENDMENT_REASON"));
+            // Map simple string fields and trim whitespaces
+            checklist.setCheckingPoint(getTrimmedString(rs, "CHECKING_POINT"));
+            checklist.setStockLink(getTrimmedString(rs, "STOCK_LINK"));
+            checklist.setDescription(getTrimmedString(rs, "COMMENTS"));
+            checklist.setCategory(getTrimmedString(rs, "CUST_CATEGORY"));
+            checklist.setPhotoRequired(getTrimmedString(rs, "PHOTO_REQUIRED"));
+            checklist.setVerificationRequired(getTrimmedString(rs, "VERIFICATION_REQUIRED"));
+            checklist.setFrequency(getTrimmedString(rs, "FREQUENCY_LEVEL"));
+            checklist.setAssignTo(getTrimmedString(rs, "ASSIGN_TO"));
+            checklist.setCarryForward(getTrimmedString(rs, "CARRY_FORWARD"));
+            checklist.setRejReason(getTrimmedString(rs, "REJECT_REASON"));
+            checklist.setAmendmentReason(getTrimmedString(rs, "AMENDMENT_REASON"));
 
             // Map status fields as INT (converted from legacy string values)
-            checklist.setStatus(rs.getString("STATUS"));
-            checklist.setTaskStatus(rs.getString("TASK_STATUS"));
-            checklist.setVerifyStatus(rs.getString("APPROVAL_STATUS"));
+            checklist.setStatus(getTrimmedString(rs, "STATUS"));
+            checklist.setTaskStatus(getTrimmedString(rs, "TASK_STATUS"));
+            checklist.setVerifyStatus(getTrimmedString(rs, "APPROVAL_STATUS"));
 
             // Map user and audit fields
-            checklist.setCreatedBy(rs.getString("CREAT_USER_ID_CD"));
+            checklist.setCreatedBy(getTrimmedString(rs, "CREAT_USER_ID_CD"));
             checklist.setCreatedAt(rs.getTimestamp("CREAT_DT"));
-            checklist.setUpdatedBy(rs.getString("LST_UPDT_USER_ID_CD"));
+            checklist.setUpdatedBy(getTrimmedString(rs, "LST_UPDT_USER_ID_CD"));
             checklist.setUpdatedAt(rs.getTimestamp("LST_UPDT_TS"));
 
-            checklist.setVerifiedBy(rs.getString("APPROVED_BY"));
+            checklist.setVerifiedBy(getTrimmedString(rs, "APPROVED_BY"));
             checklist.setVerifiedDate(rs.getTimestamp("APPROVED_DATE"));
 
             // Map dates
@@ -117,11 +122,11 @@ public class MasterChecklistMigrationService {
             checklist.setReminderDays(rs.getInt("REMINDER_DAYS"));
 
             // Handle level list
-            checklist.setLevelIds(rs.getString("LEVEL"));
+            checklist.setLevelIds(getTrimmedString(rs, "LEVEL"));
 
             // Handle Departments mapping
-            String deptNo = rs.getString("DEPT_NO");
-            if (deptNo != null && !deptNo.trim().isEmpty()) {
+            String deptNo = getTrimmedString(rs, "DEPT_NO");
+            if (deptNo != null && !deptNo.isEmpty()) {
                 List<ChecklistDepartment> deptList = new ArrayList<>();
                 for (String dept : deptNo.split(",")) {
                     String cleanDept = dept.trim();
@@ -197,17 +202,17 @@ public class MasterChecklistMigrationService {
             assignment.setAssignedTo(empCode > 0 ? String.valueOf(empCode) : null);
 
             // creat_user_id_cd is who assigned
-            assignment.setAssignedBy(rs.getString("creat_user_id_cd"));
+            assignment.setAssignedBy(getTrimmedString(rs, "creat_user_id_cd"));
             assignment.setAssignedDate(rs.getTimestamp("creat_dt"));
 
             // reassign_empcd - if reassigned, record as updatedBy
             int reassignEmpCode = rs.getInt("reassign_empcd");
             assignment.setUpdatedBy(
-                    reassignEmpCode > 0 ? String.valueOf(reassignEmpCode) : rs.getString("lst_updt_user_id_cd"));
+                    reassignEmpCode > 0 ? String.valueOf(reassignEmpCode) : getTrimmedString(rs, "lst_updt_user_id_cd"));
             assignment.setUpdatedAt(rs.getTimestamp("lst_updt_ts"));
 
             // assign_type
-            assignment.setAssignType(rs.getString("assign_type"));
+            assignment.setAssignType(getTrimmedString(rs, "assign_type"));
 
             // Carry forward count from most frequent email tracking
             int weekCount = rs.getInt("week_count");
@@ -220,7 +225,7 @@ public class MasterChecklistMigrationService {
             assignment.setCarryForwardCount(maxCount);
 
             // Map status using statusMap
-            String legacyStatus = rs.getString("status");
+            String legacyStatus = getTrimmedString(rs, "status");
             if (legacyStatus != null) {
                 String lookupName = "ACTIVE".equalsIgnoreCase(legacyStatus) ? "Pending" : "Not Completed";
                 StatusMaster resolvedStatus = statusMap.get(lookupName.toUpperCase());
@@ -255,14 +260,14 @@ public class MasterChecklistMigrationService {
 
         List<com.autonoma.erp.model.Department> migratedList = jdbcTemplate.query(sql, (rs, rowNum) -> {
             com.autonoma.erp.model.Department dept = new com.autonoma.erp.model.Department();
-            
+
             String legacyDeptNo = rs.getString("DEPT_NO");
             dept.setDepartmentNo(legacyDeptNo != null ? legacyDeptNo.trim() : "");
-            dept.setDepartmentName(rs.getString("DEPT_NAME"));
-            
-            String nda = rs.getString("NDA_CERTIFICATE");
+            dept.setDepartmentName(getTrimmedString(rs, "DEPT_NAME"));
+
+            String nda = getTrimmedString(rs, "NDA_CERTIFICATE");
             dept.setNdaCertificate(nda != null ? nda : "No");
-            
+
             dept.setSequenceNo(rs.getInt("SEQ_NO"));
             dept.setStatus("Active");
             dept.setCreatedBy("SYSTEM");
@@ -331,7 +336,7 @@ public class MasterChecklistMigrationService {
 
         while (hasMore) {
             String sql = "SELECT * FROM HRMS_CHECKLIST_PENDING_MASTER ORDER BY ROW_ID OFFSET " + offset + " ROWS FETCH NEXT " + batchSize + " ROWS ONLY";
-            
+
             List<TempPendingMaster> batchTemps = jdbcTemplate.query(sql, (rs, rowNum) -> {
                 String legacyCheckId = String.valueOf(rs.getInt("CHECK_ROW_ID"));
                 MasterChecklist parentChecklist = checklistByLegacyId.get(legacyCheckId);
@@ -347,18 +352,18 @@ public class MasterChecklistMigrationService {
                 assignment.setAssignedTo(empCd > 0 ? String.valueOf(empCd) : null);
 
                 int assignedBy = rs.getInt("ASSIGNED_BY");
-                assignment.setAssignedBy(assignedBy > 0 ? String.valueOf(assignedBy) : rs.getString("CREAT_USER_ID_CD"));
+                assignment.setAssignedBy(assignedBy > 0 ? String.valueOf(assignedBy) : getTrimmedString(rs, "CREAT_USER_ID_CD"));
                 assignment.setAssignedDate(rs.getTimestamp("CREAT_DT"));
 
-                assignment.setRemarks(rs.getString("COMMENTS"));
+                assignment.setRemarks(getTrimmedString(rs, "COMMENTS"));
                 assignment.setChecklistDate(rs.getDate("CHECKLIST_DATE"));
                 assignment.setCarryForwardCount(rs.getInt("CARRY_FORWARD_COUNT"));
 
-                assignment.setUpdatedBy(rs.getString("LST_UPDT_USER_ID_CD"));
+                assignment.setUpdatedBy(getTrimmedString(rs, "LST_UPDT_USER_ID_CD"));
                 assignment.setUpdatedAt(rs.getTimestamp("LST_UPDT_TS"));
 
                 // Map status
-                String legacyStatus = rs.getString("STATUS");
+                String legacyStatus = getTrimmedString(rs, "STATUS");
                 if (legacyStatus != null) {
                     StatusMaster resolvedStatus = statusMap.get(legacyStatus.toUpperCase());
                     assignment.setStatus(resolvedStatus);
@@ -367,10 +372,10 @@ public class MasterChecklistMigrationService {
                 TempPendingMaster temp = new TempPendingMaster();
                 temp.legacyRowId = rs.getInt("ROW_ID");
                 temp.assignment = assignment;
-                temp.verificationStatus = rs.getString("VERIFICATION_STATUS");
+                temp.verificationStatus = getTrimmedString(rs, "VERIFICATION_STATUS");
                 temp.verificationDate = rs.getTimestamp("VERIFICATION_DATE");
-                temp.rejectionComments = rs.getString("REJECTION_COMMENTS");
-                temp.lstUpdateUserIdCd = rs.getString("LST_UPDT_USER_ID_CD");
+                temp.rejectionComments = getTrimmedString(rs, "REJECTION_COMMENTS");
+                temp.lstUpdateUserIdCd = getTrimmedString(rs, "LST_UPDT_USER_ID_CD");
                 return temp;
             });
 
@@ -427,7 +432,7 @@ public class MasterChecklistMigrationService {
             // Now create and save verifications for assignments that have verification status
             List<ChecklistVerification> verificationsToSave = new ArrayList<>();
             for (TempPendingMaster temp : validTemps) {
-                if (temp.verificationStatus != null && !temp.verificationStatus.trim().isEmpty()) {
+                if (temp.verificationStatus != null && !temp.verificationStatus.isEmpty()) {
                     StatusMaster resolvedVerStatus = statusMap.get(temp.verificationStatus.toUpperCase());
                     ChecklistVerification verification = new ChecklistVerification();
                     verification.setAssignment(temp.assignment);
