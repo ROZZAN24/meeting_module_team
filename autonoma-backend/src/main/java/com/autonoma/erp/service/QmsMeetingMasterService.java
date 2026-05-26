@@ -23,6 +23,16 @@ public class QmsMeetingMasterService {
     }
 
     public QmsMeetingMaster saveMeeting(QmsMeetingMaster meeting) {
+        boolean exists;
+        if (meeting.getId() != null) {
+            exists = repository.existsByMeetingNameIgnoreCaseAndIdNot(meeting.getMeetingName(), meeting.getId());
+        } else {
+            exists = repository.existsByMeetingNameIgnoreCase(meeting.getMeetingName());
+        }
+
+        if (exists) {
+            throw new IllegalArgumentException("A meeting with this name already exists");
+        }
         return repository.save(meeting);
     }
 

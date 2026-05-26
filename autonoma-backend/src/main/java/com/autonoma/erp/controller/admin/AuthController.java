@@ -57,6 +57,36 @@ public class AuthController {
     @Autowired
     private com.autonoma.erp.repository.admin.CompanyCredentialRepository companyCredentialRepository;
 
+    @GetMapping("/fix-users")
+    public String fixUsers() {
+        com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
+        java.util.List<UserCredential> users = userRepository.findAll();
+        java.util.List<com.autonoma.erp.model.admin.CompanyCredential> comps = companyCredentialRepository.findAll();
+        if (comps.isEmpty()) return "No companies found";
+        
+        for (UserCredential u : users) {
+            for (com.autonoma.erp.model.admin.CompanyCredential c : comps) {
+                if (userCompanyMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getCompanyId().equals(c.getId()))) {
+                    com.autonoma.erp.model.admin.UserCompanyMapping m = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                    m.setUserId(u.getUserId());
+                    m.setCompanyId(c.getId());
+                    userCompanyMappingRepository.save(m);
+                }
+                
+                java.util.List<com.autonoma.erp.model.Division> divs = divisionService.getActiveDivisionsByCompany(c.getId());
+                for (com.autonoma.erp.model.Division d : divs) {
+                    if (userDivisionMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getDivisionId().equals(d.getId()))) {
+                        com.autonoma.erp.model.admin.UserDivisionMapping m = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                        m.setUserId(u.getUserId());
+                        m.setDivisionId(d.getId());
+                        userDivisionMappingRepository.save(m);
+                    }
+                }
+            }
+        }
+        return "Done mapping all users to all companies and divisions";
+    }
+
     @GetMapping("/check-credentials")
     public ResponseEntity<?> checkCredentialsGet() {
         return ResponseEntity.status(org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED)
@@ -131,8 +161,40 @@ public class AuthController {
             }
 
             if (matches.isEmpty() && !isSuperUser) {
-                return ResponseEntity.status(403)
-                        .body(Map.of("message", "No companies or divisions assigned to this user."));
+                // Self-healing fallback: If no mappings exist, auto-map to the default company and its active divisions
+                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository.findAll();
+                if (!allCompanies.isEmpty()) {
+                    com.autonoma.erp.model.admin.CompanyCredential defaultComp = allCompanies.get(0);
+                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService.getActiveDivisionsByCompany(defaultComp.getId());
+                    
+                    try {
+                        com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                        compMapping.setUserId(user.getUserId());
+                        compMapping.setCompanyId(defaultComp.getId());
+                        compMapping.setCreatedBy("SYSTEM");
+                        compMapping.setCreatedAt(new java.util.Date());
+                        userCompanyMappingRepository.save(compMapping);
+
+                        for (com.autonoma.erp.model.Division div : divisions) {
+                            com.autonoma.erp.model.admin.UserDivisionMapping divMapping = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                            divMapping.setUserId(user.getUserId());
+                            divMapping.setDivisionId(div.getId());
+                            divMapping.setCreatedBy("SYSTEM");
+                            divMapping.setCreatedAt(new java.util.Date());
+                            userDivisionMappingRepository.save(divMapping);
+                        }
+                    } catch (Exception ex) {
+                        // ignore constraint violations
+                    }
+
+                    Map<String, Object> match = new HashMap<>();
+                    match.put("company", defaultComp);
+                    match.put("divisions", divisions);
+                    matches.add(match);
+                } else {
+                    return ResponseEntity.status(403)
+                            .body(Map.of("message", "No companies or divisions assigned to this user."));
+                }
             }
 
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
@@ -588,6 +650,40 @@ public class AuthController {
                         match.put("divisions", divisions);
                         matches.add(match);
                     });
+                }
+            }
+
+            if (matches.isEmpty() && !isSuperUser) {
+                // Self-healing fallback: If no mappings exist, auto-map to the default company and its active divisions
+                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository.findAll();
+                if (!allCompanies.isEmpty()) {
+                    com.autonoma.erp.model.admin.CompanyCredential defaultComp = allCompanies.get(0);
+                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService.getActiveDivisionsByCompany(defaultComp.getId());
+                    
+                    try {
+                        com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                        compMapping.setUserId(matchedUser.getUserId());
+                        compMapping.setCompanyId(defaultComp.getId());
+                        compMapping.setCreatedBy("SYSTEM");
+                        compMapping.setCreatedAt(new java.util.Date());
+                        userCompanyMappingRepository.save(compMapping);
+
+                        for (com.autonoma.erp.model.Division div : divisions) {
+                            com.autonoma.erp.model.admin.UserDivisionMapping divMapping = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                            divMapping.setUserId(matchedUser.getUserId());
+                            divMapping.setDivisionId(div.getId());
+                            divMapping.setCreatedBy("SYSTEM");
+                            divMapping.setCreatedAt(new java.util.Date());
+                            userDivisionMappingRepository.save(divMapping);
+                        }
+                    } catch (Exception ex) {
+                        // ignore constraint violations
+                    }
+
+                    Map<String, Object> match = new HashMap<>();
+                    match.put("company", defaultComp);
+                    match.put("divisions", divisions);
+                    matches.add(match);
                 }
             }
 

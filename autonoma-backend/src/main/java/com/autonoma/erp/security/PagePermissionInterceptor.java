@@ -39,21 +39,14 @@ public class PagePermissionInterceptor {
         String userId = SecurityUtils.getCurrentUserId();
 
         if (userId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Authentication required"));
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
         }
 
         boolean allowed = authService.hasPermission(userId, permission.pageCode(), permission.action());
 
         if (!allowed) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of(
-                            "error", "Access denied",
-                            "pageCode", permission.pageCode(),
-                            "action", permission.action(),
-                            "message", String.format("You do not have '%s' permission on page '%s'",
-                                    permission.action(), permission.pageCode())
-                    ));
+            throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, 
+                String.format("You do not have '%s' permission on page '%s'", permission.action(), permission.pageCode()));
         }
 
         return joinPoint.proceed();

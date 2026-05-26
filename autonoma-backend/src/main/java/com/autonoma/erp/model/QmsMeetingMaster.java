@@ -46,4 +46,10 @@ public class QmsMeetingMaster {
 
     @Column(name = "updated_by")
     private String updatedBy;
+
+    @Column(name = "attachment_name")
+    private String attachmentName;
+
+    @Column(name = "attachment_url")
+    private String attachmentUrl;
 }

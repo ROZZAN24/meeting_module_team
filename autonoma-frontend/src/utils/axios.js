@@ -64,9 +64,11 @@ axiosServices.interceptors.response.use(
     }
 
     if (!error.response) {
+      console.error(`[Axios Error] Backend unreachable: ${error.config?.url}`, error);
       return Promise.reject('Backend server is unreachable. Please ensure the backend is running.');
     }
 
+    console.error(`[Axios Error] API Call Failed: ${error.config?.url} | Status: ${error.response.status}`, error.response.data);
     return Promise.reject((error.response && error.response.data) || 'Service connection failed. Please try again later.');
   }
 );

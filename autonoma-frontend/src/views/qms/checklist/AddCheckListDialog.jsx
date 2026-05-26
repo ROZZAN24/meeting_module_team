@@ -14,7 +14,7 @@ import axios from 'utils/axios';
 import useLookups from 'hooks/useLookups';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview, BOSAutocomplete } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFilePreview, BOSAutocomplete, BOSDatePicker } from 'ui-component/bos';
 
 // ── Top-level so it never remounts on parent re-render ────────────────────────
 const FileItem = ({ file, onPreview, onRemove }) => (
@@ -263,8 +263,8 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setDepartment((initialData.departments || []).map(d => d.departmentName));
         setStockLink(initialData.stockLink || 'NO');
         setPhotoRequired(initialData.photoRequired || 'NO');
-        setDualCheck(initialData.category === 'RENEWAL' ? (initialData.verificationRequired || '') : (initialData.dualCheck || ''));
-        setCarryForward(initialData.carryForward || '');
+        setDualCheck(initialData.category === 'RENEWAL' ? (initialData.verificationRequired || 'NO') : (initialData.dualCheck || 'NO'));
+        setCarryForward(initialData.carryForward || 'NO');
         setAmendmentReason(initialData.amendmentReason || '');
         setLevelIds(initialData.levelIds ? initialData.levelIds.split(',').map(s => s.trim()).filter(Boolean) : []);
         setStatus(initialData.status || 'Active');
@@ -274,7 +274,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
         setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
         setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-        setStockLink('NO'); setPhotoRequired('NO'); setDualCheck(''); setCarryForward('');
+        setStockLink('NO'); setPhotoRequired('NO'); setDualCheck('NO'); setCarryForward('NO');
         setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
         setAmendmentReason('');
         setLevelIds([]);
@@ -352,7 +352,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     setSeqNo(''); setAssignTo(''); setCategory(''); setEffectiveFrom(''); setExpiryDate(''); setReminderDays('');
     setReminderDate(''); setRenewalPoint(''); setFrequency(''); setDescription('');
     setDepartment([]); setUploadedFiles([]); setScannedFiles([]);
-    setStockLink(''); setPhotoRequired(''); setDualCheck(''); setCarryForward('');
+    setStockLink('NO'); setPhotoRequired('NO'); setDualCheck('NO'); setCarryForward('NO');
     setWeekDays(''); setRepeatEveryValue(''); setRepeatEveryUnit('');
     setAmendmentReason('');
     setLevelIds([]);
@@ -634,15 +634,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
           {category === 'RENEWAL' && (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' }, gap: 3 }}>
-              <BOSTextField
+              <BOSDatePicker
                 label="Expiry Date"
-                type="date"
                 value={expiryDate}
                 onChange={e => setExpiryDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}}
                 required
                 disabled={isViewOnly}
+                minDate={!initialData ? new Date() : undefined}
               />
 
               <BOSTextField
@@ -654,15 +652,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 disabled={isViewOnly}
               />
 
-              <BOSTextField
+              <BOSDatePicker
                 label="Reminder Date"
-                type="date"
                 value={reminderDate}
                 onChange={e => setReminderDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}}
                 required
                 disabled={isViewOnly}
+                minDate={!initialData ? new Date() : undefined}
               />
             </Box>
           )}
@@ -762,15 +758,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             </BOSTextField>
 
             {category !== 'RENEWAL' && (
-              <BOSTextField
+              <BOSDatePicker
                 label="Effective From"
-                type="date"
                 value={effectiveFrom}
                 onChange={e => setEffectiveFrom(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                inputProps={!initialData ? { min: new Date().toISOString().split('T')[0] } : {}}
                 required
                 disabled={isViewOnly}
+                minDate={!initialData ? new Date() : undefined}
               />
             )}
           </Box>

@@ -227,7 +227,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
   let label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Pending'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CloseCheckListRenewal() {
@@ -303,6 +311,7 @@ export default function CloseCheckListRenewal() {
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
         currentUser: user?.name || user?.id || undefined,
+        excludeCompleted: true,
         excludePending: false,
 
         // Add-on filters
@@ -312,9 +321,25 @@ export default function CloseCheckListRenewal() {
         frequency: filters.frequency !== 'All' ? filters.frequency : undefined,
         stockLink: filters.stockLink !== 'All' ? filters.stockLink : undefined
       };
+
+      // If no explicit date range is set, default toDate to today to hide future auto-generated tasks
+      if (!params.fromDate && !params.toDate) {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        params.toDate = `${yyyy}-${mm}-${dd}`;
+      }
+
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+        // Additional client-side filter: exclude any remaining finalized statuses
+        const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed', 'Pending for Verified', 'Pending for Accepted'];
+        const filteredRows = response.data.content.filter((r) => {
+          const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
+          return !finalizedStatuses.includes(statusName);
+        });
+        setRows(filteredRows);
+        setTotalElements(filteredRows.length);
     } catch (error) {
       console.error('Failed to fetch assignments:', error);
     } finally {
@@ -345,7 +370,7 @@ export default function CloseCheckListRenewal() {
   };
 
   const handleUpdateStatus = async (status) => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     try {
       await axios.post('/api/qms/checklist/verify', {
         assignmentId: selectedRowId,
@@ -360,7 +385,7 @@ export default function CloseCheckListRenewal() {
   };
 
   const handleSaveExecution = async (formData) => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     try {
       const uploadedFileNames = [];
       for (const f of formData.actualFiles) {
@@ -395,10 +420,16 @@ export default function CloseCheckListRenewal() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.write && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => handleUpdateStatus('Completed')} disabled={!selectedRowId}>Complete Task</Button>}
+          {perms.write && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => setDialogOpen(true)} disabled={!selectedRowId}>Complete Task</Button>}
           {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }
@@ -477,7 +508,17 @@ export default function CloseCheckListRenewal() {
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>
-                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checklist?.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checklist.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.assignType || 'Mine'}</TableCell>
