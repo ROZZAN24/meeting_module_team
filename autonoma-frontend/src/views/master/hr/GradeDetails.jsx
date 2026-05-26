@@ -97,6 +97,12 @@ export default function GradeDetails() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconAward size={24} />
