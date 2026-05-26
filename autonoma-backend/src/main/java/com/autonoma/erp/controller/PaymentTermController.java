@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.PaymentTerm;
 import com.autonoma.erp.repository.PaymentTermRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ public class PaymentTermController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M5210", action = "write")
     public ResponseEntity<?> create(@RequestBody PaymentTerm item) {
         if (repository.existsByTermNameIgnoreCase(item.getTermName())) {
             return ResponseEntity.badRequest().body("Payment Term Name already exists");
@@ -29,6 +32,7 @@ public class PaymentTermController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M5210", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody PaymentTerm item) {
         return repository.findById(id)
                 .map(existing -> {
@@ -45,6 +49,9 @@ public class PaymentTermController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5210", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();

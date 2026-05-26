@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
 import PropTypes from 'prop-types';
-import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Box, Typography, Paper } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Box, Typography, Paper, Tooltip } from '@mui/material';
 import {
   IconX,
   IconArrowsMove,

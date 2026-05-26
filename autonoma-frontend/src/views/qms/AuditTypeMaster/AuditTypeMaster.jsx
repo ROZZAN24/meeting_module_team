@@ -27,10 +27,10 @@ const columns = [
   { id: 'auditArea', label: 'Audit Area', minWidth: 150 },
   { id: 'criteriaType', label: 'Audit Criteria Type', minWidth: 150 },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 export default function AuditTypeMaster() {
@@ -71,8 +71,8 @@ export default function AuditTypeMaster() {
         id: 'criteriaType', label: 'Criteria Type', type: 'select',
         options: [{ value: 'All', label: 'ALL' }, { value: 'Fixed', label: 'Fixed' }, { value: 'Variable', label: 'Variable' }]
       },
-      { id: 'createdBy', label: 'Created User', type: 'text' },
-      { id: 'updatedBy', label: 'Updated User', type: 'text' }
+      { id: 'createdUser', label: 'CREATED USER', type: 'text' },
+      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -93,13 +93,13 @@ export default function AuditTypeMaster() {
     } catch (error) {
       console.error('Failed to fetch audit types:', error);
       setRows([
-        { id: 1, auditType: 'Internal Audit', standard: 'ISO 9001', description: 'Internal quality assessment', createdBy: 'Admin', createdDate: new Date(), updatedBy: 'Admin', updatedDate: new Date(), status: 'ACTIVE' },
-        { id: 2, auditType: 'External Audit', standard: 'AS9100', description: 'Third party certification', createdBy: 'System', createdDate: new Date(), updatedBy: 'Admin', updatedDate: new Date(), status: 'ACTIVE' }
+        { id: 1, auditType: 'Internal Audit', standard: 'ISO 9001', description: 'Internal quality assessment', createdUser: 'Admin', createdDate: new Date(), updatedUser: 'Admin', updatedDate: new Date(), status: 'ACTIVE' },
+        { id: 2, auditType: 'External Audit', standard: 'AS9100', description: 'Third party certification', createdUser: 'System', createdDate: new Date(), updatedUser: 'Admin', updatedDate: new Date(), status: 'ACTIVE' }
       ]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page, size, globalQuery, globalFilters]);
 
   useEffect(() => { fetchAuditTypes(); }, [fetchAuditTypes]);
 
@@ -136,10 +136,10 @@ export default function AuditTypeMaster() {
       'Audit Type': r.auditType,
       Standard: r.standard,
       Description: r.description,
-      'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
-      'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
+      'CREATED USER': r.createdUser || r.createdBy,
+      'CREATED DATE': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
+      'UPDATED USER': r.updatedUser || r.updatedBy,
+      'UPDATED DATE': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Audit_Type_Details');
@@ -147,29 +147,43 @@ export default function AuditTypeMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'ACTIVE';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const statusFilter = globalFilters?.status || 'ACTIVE';
+      const rowStatusTrimmed = row.status ? row.status.trim() : '';
+      const matchesStatus = statusFilter === 'All' || rowStatusTrimmed === statusFilter;
 
-      const auditTypeFilter = globalFilters.auditType || '';
-      const matchesAuditType = !auditTypeFilter || (row.auditType && row.auditType.toLowerCase().includes(auditTypeFilter.toLowerCase()));
-      const standardFilter = globalFilters.standard || '';
-      const matchesStandard = !standardFilter || (row.standard && row.standard.toLowerCase().includes(standardFilter.toLowerCase()));
-      const descriptionFilter = globalFilters.description || '';
-      const matchesDescription = !descriptionFilter || (row.description && row.description.toLowerCase().includes(descriptionFilter.toLowerCase()));
-      const auditAreaFilter = globalFilters.auditArea || '';
-      const matchesAuditArea = !auditAreaFilter || (row.auditArea && row.auditArea.toLowerCase().includes(auditAreaFilter.toLowerCase()));
-      const criteriaTypeFilter = globalFilters.criteriaType || 'All';
-      const matchesCriteriaType = criteriaTypeFilter === 'All' || row.criteriaType === criteriaTypeFilter;
-      const createdByFilter = globalFilters.createdBy || '';
-      const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
-      const updatedByFilter = globalFilters.updatedBy || '';
-      const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
+      const auditTypeFilter = globalFilters?.auditType || '';
+      const rowAuditTypeTrimmed = row.auditType ? row.auditType.trim() : '';
+      const matchesAuditType = !auditTypeFilter || rowAuditTypeTrimmed.toLowerCase().includes(auditTypeFilter.toLowerCase());
+      
+      const standardFilter = globalFilters?.standard || '';
+      const rowStandardTrimmed = row.standard ? row.standard.trim() : '';
+      const matchesStandard = !standardFilter || rowStandardTrimmed.toLowerCase().includes(standardFilter.toLowerCase());
+      
+      const descriptionFilter = globalFilters?.description || '';
+      const rowDescriptionTrimmed = row.description ? row.description.trim() : '';
+      const matchesDescription = !descriptionFilter || rowDescriptionTrimmed.toLowerCase().includes(descriptionFilter.toLowerCase());
+      
+      const auditAreaFilter = globalFilters?.auditArea || '';
+      const rowAuditAreaTrimmed = row.auditArea ? row.auditArea.trim() : '';
+      const matchesAuditArea = !auditAreaFilter || rowAuditAreaTrimmed.toLowerCase().includes(auditAreaFilter.toLowerCase());
+      
+      const criteriaTypeFilter = globalFilters?.criteriaType || 'All';
+      const rowCriteriaTypeTrimmed = row.criteriaType ? row.criteriaType.trim() : '';
+      const matchesCriteriaType = criteriaTypeFilter === 'All' || rowCriteriaTypeTrimmed === criteriaTypeFilter;
+      
+      const createdUserFilter = globalFilters?.createdUser || '';
+      const rowCreatedUserTrimmed = (row.createdUser || row.createdBy || '').trim();
+      const matchesCreatedUser = !createdUserFilter || rowCreatedUserTrimmed.toLowerCase().includes(createdUserFilter.toLowerCase());
+      
+      const updatedUserFilter = globalFilters?.updatedUser || '';
+      const rowUpdatedUserTrimmed = (row.updatedUser || row.updatedBy || '').trim();
+      const matchesUpdatedUser = !updatedUserFilter || rowUpdatedUserTrimmed.toLowerCase().includes(updatedUserFilter.toLowerCase());
 
       const matchesSearch = !globalQuery ||
-        (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase())) ||
-        (row.standard && row.standard.toLowerCase().includes(globalQuery.toLowerCase()));
+        rowAuditTypeTrimmed.toLowerCase().includes(globalQuery.toLowerCase()) ||
+        rowStandardTrimmed.toLowerCase().includes(globalQuery.toLowerCase());
 
-      return matchesStatus && matchesAuditType && matchesStandard && matchesDescription && matchesAuditArea && matchesCriteriaType && matchesCreatedBy && matchesUpdatedBy && matchesSearch;
+      return matchesStatus && matchesAuditType && matchesStandard && matchesDescription && matchesAuditArea && matchesCriteriaType && matchesCreatedUser && matchesUpdatedUser && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 
@@ -219,14 +233,24 @@ export default function AuditTypeMaster() {
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={(col, row) => {
           const val = row[col.id];
-          if (col.id === 'index') return rows.indexOf(row) + 1;
-          if (col.id === 'createdBy' || col.id === 'updatedBy') return val || '-';
+          if (col.id === 'index') return null;
+          if (col.id === 'createdUser') {
+            const userVal = row.createdUser || row.createdBy;
+            return (userVal ? userVal.trim() : '') || '-';
+          }
+          if (col.id === 'updatedUser') {
+            const userVal = row.updatedUser || row.updatedBy;
+            return (userVal ? userVal.trim() : '') || '-';
+          }
           if (col.id.toLowerCase().includes('date')) {
             if (!val) return '-';
             try { return format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch { return '-'; }
           }
-          if (col.id === 'status') return <Chip label={val} size="small" sx={{ bgcolor: val === 'ACTIVE' ? 'success.light' : 'error.light', color: val === 'ACTIVE' ? 'success.dark' : 'error.dark', fontWeight: 700 }} />;
-          return val ?? '-';
+          if (col.id === 'status') {
+            const trimmed = val ? val.trim() : '';
+            return <Chip label={trimmed} size="small" sx={{ bgcolor: trimmed === 'ACTIVE' ? 'success.light' : 'error.light', color: trimmed === 'ACTIVE' ? 'success.dark' : 'error.dark', fontWeight: 700 }} />;
+          }
+          return (typeof val === 'string' ? val.trim() : val) ?? '-';
         }}
       />
 

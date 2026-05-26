@@ -83,10 +83,10 @@ export default function InterviewCriteria() {
     },
     { id: 'interviewRound', label: 'Round', minWidth: 120 },
     { id: 'attachmentRequired', label: 'Attachment Required', minWidth: 120 },
-    { id: 'createdBy', label: 'Created User', minWidth: 120 },
-    { id: 'createdAt', label: 'Created Date', minWidth: 150 },
-    { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-    { id: 'updatedAt', label: 'Updated Date', minWidth: 150 },
+    { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+    { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+    { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+    { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 },
     {
       id: 'status',
       label: 'Status',
@@ -218,6 +218,8 @@ export default function InterviewCriteria() {
       delete payload.updatedAt;
       delete payload.createdBy;
       delete payload.updatedBy;
+      delete payload.createdUser;
+      delete payload.updatedUser;
       delete payload.index;
 
       if (formData.id) {
@@ -274,6 +276,8 @@ export default function InterviewCriteria() {
       ...r,
       index: i + 1,
       serialNo: r.id.toString(),
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
       updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
     }));

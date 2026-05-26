@@ -8,19 +8,38 @@ import { getInputStyles } from './BOSStyles';
  * Wraps MUI TextField with standardized BOS styles.
  * Handles mandatory (*) indicator, maxLength enforcement, and UTF-8 display.
  */
-export default function BOSTextField({ error, helperText, maxLength, sx, inputProps, InputLabelProps, value, ...rest }) {
+export default function BOSTextField({ error, helperText, maxLength, sx, inputProps, InputLabelProps, value, type, ...rest }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
 
-  // Auto-shrink label if value exists, or if explicitly told to shrink
-  const shouldShrink = value !== undefined && value !== null && value !== '' ? true : undefined;
+  const isDateType = type === 'date' || type === 'datetime-local';
+
+  // Auto-shrink label if value exists, if it's a date type, or if explicitly told to shrink
+  const shouldShrink = isDateType || (value !== undefined && value !== null && value !== '') ? true : undefined;
+
+  // Date inputs: show the native calendar picker icon; non-date inputs: hide it
+  const calendarStyles = isDateType
+    ? {
+        '& input::-webkit-calendar-picker-indicator': {
+          cursor: 'pointer',
+          opacity: 0.6,
+          '&:hover': { opacity: 1 }
+        }
+      }
+    : {
+        '& input::-webkit-calendar-picker-indicator': {
+          display: 'none',
+          webkitAppearance: 'none'
+        }
+      };
 
   return (
     <TextField
       fullWidth
       size="small"
+      type={type}
       error={error}
       helperText={helperText}
       value={value}
@@ -31,10 +50,7 @@ export default function BOSTextField({ error, helperText, maxLength, sx, inputPr
       }}
       sx={{ 
         ...bosInput, 
-        '& input::-webkit-calendar-picker-indicator': {
-          display: 'none',
-          webkitAppearance: 'none'
-        },
+        ...calendarStyles,
         ...sx 
       }}
       {...rest}

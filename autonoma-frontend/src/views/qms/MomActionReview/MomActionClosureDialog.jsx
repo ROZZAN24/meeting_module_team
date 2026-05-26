@@ -57,41 +57,25 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value.toUpperCase() });
 
   const handleAction = async (actionType) => {
-    // Basic validation
+    // Only CLOSE (submit for closure) is allowed from this page
     if (actionType === 'CLOSE') {
       if (!form.actionTaken) {
         dispatch(openSnackbar({ open: true, message: 'Action Taken is mandatory to submit for closure.', variant: 'alert', severity: 'error' }));
-        return;
-      }
-      // If SOP says Attachment Req = YES, validate file upload here. 
-      // (File upload UI omitted for brevity, but logic goes here).
-    }
-
-    if (actionType === 'REJECT') {
-      if (!form.cancelRemarks) {
-        dispatch(openSnackbar({ open: true, message: 'Rejection comments are mandatory.', variant: 'alert', severity: 'error' }));
         return;
       }
     }
 
     setLoading(true);
     try {
-      let endpoint = '';
       const payload = { ...form };
-
-      if (actionType === 'CLOSE') endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/close`;
-      if (actionType === 'APPROVE') endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/approve`;
-      if (actionType === 'REJECT') {
-        endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/reject`;
-        payload.comments = form.cancelRemarks;
-      }
+      const endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/close`;
 
       await axios.put(endpoint, payload);
-      dispatch(openSnackbar({ open: true, message: `Action ${actionType} successful.`, variant: 'alert', severity: 'success' }));
+      dispatch(openSnackbar({ open: true, message: 'Submitted for closure successfully.', variant: 'alert', severity: 'success' }));
       onSave();
     } catch (error) {
       console.error(error);
-      dispatch(openSnackbar({ open: true, message: `Failed to perform ${actionType}`, variant: 'alert', severity: 'error' }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to submit for closure', variant: 'alert', severity: 'error' }));
     } finally {
       setLoading(false);
     }
@@ -100,7 +84,7 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
   const renderCustomActions = () => {
     if (!item) return null;
     return (
-      <Stack direction="row" spacing={1.5}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
         {['OPEN', 'REJECTED'].includes(item.status) && (
           <Tooltip title={!isAssignedToMe ? `This action is assigned to ${item.assignedTo}. Only they can submit for closure.` : ''}>
             <span>
@@ -111,14 +95,14 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
           </Tooltip>
         )}
         {item.status === 'PENDING FOR APPROVAL' && (
-          <>
-            <Button variant="contained" color="error" onClick={() => handleAction('REJECT')} disabled={loading}>
-              Reject
-            </Button>
-            <Button variant="contained" color="success" onClick={() => handleAction('APPROVE')} disabled={loading}>
-              Approve & Close
-            </Button>
-          </>
+          <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'warning.lighter', color: 'warning.dark', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
+            ⏳ Awaiting Approver Action
+          </Typography>
+        )}
+        {item.status === 'CLOSED' && (
+          <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'success.lighter', color: 'success.dark', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'success.main' }}>
+            ✅ Approved & Closed
+          </Typography>
         )}
       </Stack>
     );
@@ -213,22 +197,20 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
                 label="Rejection Comments"
                 name="cancelRemarks"
                 value={form.cancelRemarks}
-                onChange={handleChange}
+                InputProps={{ readOnly: true }}
                 multiline rows={2}
-                InputProps={{ readOnly: item?.status !== 'PENDING FOR APPROVAL' }} // Approver enters it during reject action
                 sx={{ bgcolor: 'warning.lighter', '& .MuiInputBase-input': { fontWeight: 800, color: 'warning.dark' } }}
               />
             )}
             
-            {/* If approver is rejecting, they need a place to enter comments */}
+            {/* Read-only waiting state when closure has been submitted */}
             {item?.status === 'PENDING FOR APPROVAL' && (
-              <BOSTextField
-                label="Approver Rejection Comments (Fill only if Rejecting)"
-                name="cancelRemarks"
-                value={form.cancelRemarks}
-                onChange={handleChange}
-                multiline rows={2}
-              />
+              <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 2, border: '1px solid', borderColor: 'info.main', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <IconClock size={20} />
+                <Typography variant="body2" color="info.dark" fontWeight={700}>
+                  Closure submitted successfully. Waiting for approver to review and take action from the <b>MOM Approval</b> page.
+                </Typography>
+              </Box>
             )}
           </Stack>
         </BOSFormSection>

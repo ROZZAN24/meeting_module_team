@@ -11,6 +11,7 @@ import { loader as productsLoader, productLoader } from 'api/products';
 // dashboard routing
 const DashboardDefault = Loadable(lazy(() => import('views/dashboard/Default')));
 const DashboardAnalytics = Loadable(lazy(() => import('views/dashboard/Analytics')));
+const UserTaskQueue = Loadable(lazy(() => import('views/dashboard/UserTaskQueue')));
 
 // widget routing
 const WidgetStatistics = Loadable(lazy(() => import('views/widget/Statistics')));
@@ -195,6 +196,7 @@ const AuditTrailPage = Loadable(lazy(() => import('views/admin/AuditTrailPage'))
 const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSessionAnalytics')));
 const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 const TicketManagement = Loadable(lazy(() => import('views/admin/TicketManagement')));
+const DataMigration = Loadable(lazy(() => import('views/admin/DataMigration')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -230,6 +232,7 @@ const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/Audit
 const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
 const MeetingMaster = Loadable(lazy(() => import('views/qms/MeetingMaster/MeetingMasterList')));
 const MeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/MeetingScheduleList')));
+const AddMeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/AddMeetingSchedule')));
 const MeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/MomList')));
 const AddMeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/AddMeetingMinutes')));
 const MeetingAttendance = Loadable(lazy(() => import('views/qms/MeetingAttendance/AttendanceList')));
@@ -327,6 +330,10 @@ const MainRoutes = {
     {
       path: '/admin/file-traceability-hub',
       element: <FileTraceabilityHub />
+    },
+    {
+      path: '/admin/data-migration',
+      element: <DataMigration />
     },
     {
       path: '/admin/division',
@@ -889,6 +896,10 @@ const MainRoutes = {
       element: <DashboardAnalytics />
     },
     {
+      path: '/dashboard/user-task-queue',
+      element: <UserTaskQueue />
+    },
+    {
       path: '/dashboard/invoice',
       element: <AppInvoiceDashboard />
     },
@@ -1011,6 +1022,14 @@ const MainRoutes = {
     {
       path: '/qms/meeting-schedule',
       element: <MeetingSchedule />
+    },
+    {
+      path: '/qms/meeting-schedule/create',
+      element: <AddMeetingSchedule />
+    },
+    {
+      path: '/qms/meeting-schedule/edit/:id',
+      element: <AddMeetingSchedule />
     },
     {
       path: '/qms/minutesofmeeting',

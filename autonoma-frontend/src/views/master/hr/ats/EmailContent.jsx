@@ -65,8 +65,10 @@ export default function EmailContent() {
     { id: 'subject', label: 'Subject', bold: true, minWidth: 200 },
     { id: 'bodyContent', label: 'Body/Content', minWidth: 300 },
     { id: 'yoursWindfully', label: 'Yours Windfully', minWidth: 150 },
-    { id: 'createdBy', label: 'Created User', minWidth: 120 },
-    { id: 'createdAt', label: 'Created Date', minWidth: 150 },
+    { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+    { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+    { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+    { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 },
     {
       id: 'status',
       label: 'Status',
@@ -146,6 +148,8 @@ export default function EmailContent() {
       delete payload.updatedAt;
       delete payload.createdBy;
       delete payload.updatedBy;
+      delete payload.createdUser;
+      delete payload.updatedUser;
       delete payload.index;
 
       if (formData.id) {
@@ -201,6 +205,8 @@ export default function EmailContent() {
     return rows.map((r, i) => ({
       ...r,
       index: i + 1,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
       updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
     }));

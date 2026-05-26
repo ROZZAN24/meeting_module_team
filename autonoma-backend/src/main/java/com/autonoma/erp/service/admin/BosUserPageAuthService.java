@@ -56,6 +56,13 @@ public class BosUserPageAuthService {
                 auth.setManager(0);
                 auth.setAdditional1(0);
                 auth.setAdditional2(0);
+
+                // Default Close Checklist / Renewal (QM1120) to enabled & read/write for regular users
+                if ("QM1120".equals(page.getPageCode())) {
+                    auth.setEnable(1);
+                    auth.setReadAcs(1);
+                    auth.setWrite(1);
+                }
             }
             if (isBosAdmin) {
                 auth.setEnable(1);
@@ -100,7 +107,13 @@ public class BosUserPageAuthService {
         if (page == null) return false;
 
         BosUserPageAuth auth = authRepository.findByUserIdAndPageId(userId, page.getPageId());
-        if (auth == null) return true;
+        if (auth == null) {
+            // For regular users without configured page auth record, only allow Close Checklist / Renewal page (QM1120) by default
+            if ("QM1120".equals(page.getPageCode())) {
+                return "read".equalsIgnoreCase(action) || "write".equalsIgnoreCase(action);
+            }
+            return false;
+        }
         if (auth.getEnable() == 0) return false;
 
         return switch (action.toLowerCase()) {

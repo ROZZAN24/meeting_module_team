@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import jakarta.validation.Valid;
 import com.autonoma.erp.security.RequirePagePermission;
 
 @RestController
@@ -27,13 +28,13 @@ public class QmsMeetingScheduleController {
 
     @PostMapping
     @RequirePagePermission(pageCode = "QM1310", action = "write")
-    public ResponseEntity<QmsMeetingSchedule> create(@RequestBody QmsMeetingSchedule schedule) {
+    public ResponseEntity<QmsMeetingSchedule> create(@Valid @RequestBody QmsMeetingSchedule schedule) {
         return ResponseEntity.ok(service.saveSchedule(schedule));
     }
 
     @PutMapping("/{id}")
     @RequirePagePermission(pageCode = "QM1310", action = "write")
-    public ResponseEntity<QmsMeetingSchedule> update(@PathVariable Long id, @RequestBody QmsMeetingSchedule schedule) {
+    public ResponseEntity<QmsMeetingSchedule> update(@PathVariable Long id, @Valid @RequestBody QmsMeetingSchedule schedule) {
         schedule.setId(id);
         return ResponseEntity.ok(service.saveSchedule(schedule));
     }

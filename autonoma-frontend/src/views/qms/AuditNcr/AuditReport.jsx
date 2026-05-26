@@ -26,9 +26,9 @@ const columns = [
   { id: 'pdf', label: 'Pdf', minWidth: 80, align: 'center' },
   { id: 'auditCriteria', label: 'Audit Criteria', minWidth: 200, wrap: true },
   { id: 'observationStatus', label: 'Observation Status', minWidth: 180 },
-  { id: 'createdBy', label: 'CREATED BY', minWidth: 120 },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
-  { id: 'updatedBy', label: 'UPDATED BY', minWidth: 120 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
   { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
@@ -65,7 +65,9 @@ export default function AuditReport() {
         scheduleDate: matchingSch ? matchingSch.scheduleDate : '-',
         auditCriteria: criteriaStr || '-',
         observationStatus: `C: ${row.complianceCount || 0} | O: ${row.ofiCount || 0} | NC: ${row.ncrCount || 0}`,
-        status: row.status || 'PENDING'
+        status: row.status || 'PENDING',
+        createdUser: row.createdUser || row.createdBy || '-',
+        updatedUser: row.updatedUser || row.updatedBy || '-'
       };
     });
   }, [rows, auditSchedules]);
@@ -176,9 +178,9 @@ export default function AuditReport() {
               { header: 'Status', key: 'status' },
               { header: 'Audit Criteria', key: 'auditCriteria' },
               { header: 'Observation Status', key: 'observationStatus' },
-              { header: 'Created By', key: 'createdBy' },
+              { header: 'Created User', key: 'createdUser' },
               { header: 'Created Date', key: 'createdDate' },
-              { header: 'Updated By', key: 'updatedBy' },
+              { header: 'Updated User', key: 'updatedUser' },
               { header: 'Updated Date', key: 'updatedDate' }
             ]}
           />}

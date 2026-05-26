@@ -9,12 +9,60 @@ import java.util.List;
 import java.util.Map;
 import com.autonoma.erp.security.RequirePagePermission;
 
+import com.autonoma.erp.model.admin.UserCredential;
+import com.autonoma.erp.model.admin.UserCompanyMapping;
+import com.autonoma.erp.model.admin.UserDivisionMapping;
+import com.autonoma.erp.model.admin.CompanyCredential;
+import com.autonoma.erp.model.Division;
+import com.autonoma.erp.repository.admin.UserRepository;
+import com.autonoma.erp.repository.admin.UserCompanyMappingRepository;
+import com.autonoma.erp.repository.admin.UserDivisionMappingRepository;
+import com.autonoma.erp.repository.admin.CompanyCredentialRepository;
+import com.autonoma.erp.service.DivisionService;
+import org.springframework.beans.factory.annotation.Autowired;
+
 @RestController
 @RequestMapping("/api/qms/moms")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class QmsMomMasterController {
     private final QmsMomMasterService service;
+
+    @Autowired private UserRepository userRepo;
+    @Autowired private UserCompanyMappingRepository compMapRepo;
+    @Autowired private UserDivisionMappingRepository divMapRepo;
+    @Autowired private CompanyCredentialRepository compRepo;
+    @Autowired private DivisionService divService;
+
+    @GetMapping("/fix-users")
+    public String fixUsers() {
+        com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
+        List<UserCredential> users = userRepo.findAll();
+        List<CompanyCredential> comps = compRepo.findAll();
+        if (comps.isEmpty()) return "No companies found";
+        
+        for (UserCredential u : users) {
+            for (CompanyCredential c : comps) {
+                if (compMapRepo.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getCompanyId().equals(c.getId()))) {
+                    UserCompanyMapping m = new UserCompanyMapping();
+                    m.setUserId(u.getUserId());
+                    m.setCompanyId(c.getId());
+                    compMapRepo.save(m);
+                }
+                
+                List<Division> divs = divService.getActiveDivisionsByCompany(c.getId());
+                for (Division d : divs) {
+                    if (divMapRepo.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getDivisionId().equals(d.getId()))) {
+                        UserDivisionMapping m = new UserDivisionMapping();
+                        m.setUserId(u.getUserId());
+                        m.setDivisionId(d.getId());
+                        divMapRepo.save(m);
+                    }
+                }
+            }
+        }
+        return "Done mapping all users to all companies and divisions";
+    }
 
     @GetMapping
     public List<QmsMomMaster> getAll() {

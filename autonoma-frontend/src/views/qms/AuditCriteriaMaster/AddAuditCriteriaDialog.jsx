@@ -159,7 +159,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         department: initialData.department ? initialData.department.split(', ') : [],
         attachmentRequired: initialData.attachmentRequired || 'NO',
         status: initialData.status || 'ACTIVE',
-        createdBy: initialData.createdBy
+        createdUser: initialData.createdUser
       });
 
       if (initialData.attachmentInfo) {
@@ -257,8 +257,8 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
           serverFileName: att.serverFileName,
           docDetails: att.docDetails || ''
         }))),
-        createdBy: formData.id ? formData.createdBy : (user?.empId || '1001'),
-        updatedBy: user?.empId || '1001'
+        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
+        updatedUser: user?.empId || '1001'
       };
 
       if (formData.id) {

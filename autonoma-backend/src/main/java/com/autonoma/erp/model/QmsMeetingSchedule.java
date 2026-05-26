@@ -1,6 +1,8 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
@@ -13,10 +15,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "qms_meeting_schedule")
+@Table(name = "QMS_MEETING_SCHEDULE")
 @Data
 @NoArgsConstructor
-public class QmsMeetingSchedule {
+public class QmsMeetingSchedule extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -52,10 +54,12 @@ public class QmsMeetingSchedule {
     @Column(name = "supplier_code")
     private String supplierCode;
 
+    @NotNull(message = "Schedule Date is required")
     @Column(name = "meeting_date", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate meetingDate;
 
+    @NotNull(message = "Schedule Time is required")
     @Column(name = "start_time", nullable = false)
     @JsonFormat(pattern = "HH:mm")
     private LocalTime startTime;
@@ -68,6 +72,7 @@ public class QmsMeetingSchedule {
     @JsonFormat(pattern = "HH:mm")
     private LocalTime intervalTime;
 
+    @NotBlank(message = "frequency is required")
     @Column(name = "frequency")
     private String frequency = "NONE";
 
@@ -94,19 +99,11 @@ public class QmsMeetingSchedule {
     @Column(name = "status")
     private String status = "OPEN";
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "updated_by")
-    private String updatedBy;
+
+
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("schedule")

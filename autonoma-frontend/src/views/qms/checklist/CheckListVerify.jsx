@@ -66,9 +66,9 @@ const tableCols = [
   { id: 'days', label: 'Days' },
   { id: 'expireDate', label: 'Expire Date' },
   { id: 'stockLink', label: 'Stock Link' },
-  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdUser', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedUser', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
@@ -113,9 +113,9 @@ const exportColumns = [
   { header: 'Days', key: 'reminderDays' },
   { header: 'Expire Date', key: (r) => formatDate(r.expiryDate) },
   { header: 'Stock Link', key: 'stockLink' },
-  { header: 'CREATED USER', key: 'createdBy' },
+  { header: 'CREATED USER', key: (r) => r.createdUser || r.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
-  { header: 'UPDATED USER', key: 'updatedBy' },
+  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy },
   { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.updatedDate) },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
@@ -190,7 +190,16 @@ function StatusChip({ status }) {
     'Pending for Verify': { color: 'warning', icon: null }
   };
   const cfg = map[status] || { color: 'default', icon: null };
-  return <Chip label={status} size="small" color={cfg.color} icon={cfg.icon} variant="outlined" />;
+  return (
+    <Chip
+      label={status}
+      size="small"
+      color={cfg.color}
+      icon={cfg.icon}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListVerify() {
@@ -313,6 +322,12 @@ export default function CheckListVerify() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -411,9 +426,9 @@ export default function CheckListVerify() {
                   <TableCell>{row.reminderDays}</TableCell>
                   <TableCell>{formatDate(row.expiryDate)}</TableCell>
                   <TableCell>{row.stockLink}</TableCell>
-                  <TableCell>{row.createdBy || '-'}</TableCell>
+                  <TableCell>{row.createdUser || row.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.createdAt || row.createdDate)}</TableCell>
-                  <TableCell>{row.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedUser || row.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.updatedDate)}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
                   <TableCell>{row.verifiedBy}</TableCell>

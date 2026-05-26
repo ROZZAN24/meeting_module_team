@@ -21,10 +21,10 @@ const columns = [
   { id: 'inTime', label: 'In Time', minWidth: 100 },
   { id: 'outTime', label: 'Out Time', minWidth: 100 },
   { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 const TIME_OPTIONS = [
@@ -207,6 +207,13 @@ export default function AuditAttendance() {
   const renderCell = useCallback((col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
     let val = row[col.id];
+
+    if (col.id === 'createdUser') {
+      val = row.createdUser || row.createdBy;
+    }
+    if (col.id === 'updatedUser') {
+      val = row.updatedUser || row.updatedBy;
+    }
 
     if (col.id === 'employeeCode' && (!val || val === '-')) {
       const nameStr = String(row.name || '');

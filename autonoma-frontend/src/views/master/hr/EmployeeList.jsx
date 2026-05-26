@@ -254,6 +254,7 @@ export default function EmployeeList() {
 
       return {
         ...row,
+        empCode: row.oldEmpCode || row.empCode || '-',
         photo: row.employeePhotoUpload,
         firstName: getFirstName(row),
         lastName: getLastName(row),
@@ -293,6 +294,12 @@ export default function EmployeeList() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUsers size={24} />

@@ -23,6 +23,10 @@ const search = createSlice({
     },
     setFilterConfig(state, action) {
       state.config = action.payload;
+      // Reset filter values and query when a new page sets its config,
+      // so each page starts with a clean filter state
+      state.filters = {};
+      state.query = '';
     },
     resetFilters(state) {
       state.filters = {};
