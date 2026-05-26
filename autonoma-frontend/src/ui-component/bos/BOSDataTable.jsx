@@ -105,12 +105,14 @@ export default function BOSDataTable({
       const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
       val = row[snakeCaseId];
       
-      // 2. Audit-Specific Fallbacks (The "Big 4")
+      // 2. Audit-Specific Fallbacks (The "Big 4" + User variants)
       if (val === undefined || val === null || val === '') {
         if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
         if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
-        if (col.id === 'createdBy') val = row['created_by'];
-        if (col.id === 'updatedBy') val = row['updated_by'];
+        if (col.id === 'createdUser') val = row['createdBy'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedUser') val = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+        if (col.id === 'createdBy') val = row['createdUser'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedBy') val = row['updatedUser'] || row['updated_by'] || row['updated_user'];
       }
     }
 
@@ -207,12 +209,14 @@ export default function BOSDataTable({
       const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
       val = row[snakeCaseId];
       
-      // 2. Audit-Specific Fallbacks (The "Big 4")
+      // 2. Audit-Specific Fallbacks (The "Big 4" + User variants)
       if (val === undefined || val === null || val === '') {
         if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
         if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
-        if (col.id === 'createdBy') val = row['created_by'];
-        if (col.id === 'updatedBy') val = row['updated_by'];
+        if (col.id === 'createdUser') val = row['createdBy'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedUser') val = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+        if (col.id === 'createdBy') val = row['createdUser'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedBy') val = row['updatedUser'] || row['updated_by'] || row['updated_user'];
       }
     }
 

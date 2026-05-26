@@ -69,14 +69,14 @@ export default function BOSExportButton({
 
       // Auto-append Audit Columns if they exist in the row data (SOP Standard)
       const auditFields = [
-        { key: 'createdBy', label: 'Created By' },
+        { key: 'createdUser', fallback: 'createdBy', label: 'Created User' },
         { key: 'createdDate', label: 'Created Date' },
-        { key: 'updatedBy', label: 'Updated By' },
+        { key: 'updatedUser', fallback: 'updatedBy', label: 'Updated User' },
         { key: 'updatedDate', label: 'Updated Date' }
       ];
 
       auditFields.forEach(field => {
-        let val = row[field.key];
+        let val = row[field.key] || (field.fallback ? row[field.fallback] : undefined);
         if (val) {
           if (field.key.includes('Date')) {
             try { val = format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch (e) { /* ignore */ }
@@ -151,7 +151,7 @@ export default function BOSExportButton({
         pageName: pageName || computedPageName,
         reportName: `${getFormattedFilename()}.${formatType === 'Excel' ? 'xlsx' : 'pdf'}`,
         filePath: filePath,
-        createdBy: user?.username || user?.email || user?.name || 'SYSTEM'
+        createdUser: user?.username || user?.email || user?.name || 'SYSTEM'
       });
     } catch (err) {
       console.error('Failed to log file traceability:', err);

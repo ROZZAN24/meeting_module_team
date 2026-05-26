@@ -202,8 +202,8 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     { id: 'assignTo', label: 'Assign To', minWidth: 120 },
     { id: 'assignType', label: 'Assign Type', minWidth: 100 },
     { id: 'assignDate', label: 'Assign Date', minWidth: 100 },
-    { id: 'assignedBy', label: 'Created By', minWidth: 100 },
-    { id: 'modifiedBy', label: 'Modified By', minWidth: 100 },
+    { id: 'assignedBy', label: 'CREATED USER', minWidth: 100 },
+    { id: 'modifiedBy', label: 'UPDATED USER', minWidth: 100 },
     { id: 'status', label: 'Status', minWidth: 100 }
   ];
 

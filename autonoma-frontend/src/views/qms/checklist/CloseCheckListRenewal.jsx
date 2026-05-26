@@ -46,10 +46,10 @@ const columns = [
   'Next Renewal Date',
   'Assign To',
   'Verification Status',
-  'Created User',
-  'Created Date',
-  'Updated User',
-  'Updated Date'
+  'CREATED USER',
+  'CREATED DATE',
+  'UPDATED USER',
+  'UPDATED DATE'
 ];
 
 const STATUS_OPTIONS = [
@@ -102,9 +102,9 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'photoRequired', label: 'Photo Required' },
   { id: 'carryForward', label: 'Carry Forward' },
-  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdUser', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedUser', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
@@ -148,10 +148,10 @@ const exportColumns = [
   { header: 'Next Renewal Date', key: (r) => r.checklist?.nextDueDate || formatDate(r.checklist?.expiryDate) },
   { header: 'Assign To', key: (r) => r.assignedTo },
   { header: 'Verification Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
-  { header: 'Created User', key: (r) => r.checklist?.createdBy },
-  { header: 'Created Date', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
-  { header: 'Updated User', key: (r) => r.updatedBy || r.checklist?.updatedBy },
-  { header: 'Updated Date', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
+  { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
+  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
+  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
 const filterConfig = [
@@ -528,9 +528,9 @@ export default function CloseCheckListRenewal() {
                   <TableCell>{row.checklist?.nextDueDate || formatDate(row.checklist?.expiryDate)}</TableCell>
                   <TableCell>{row.assignedTo || '-'}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}

@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "qms_checklist_department")
+@Table(name = "QMS_CHECKLIST_DEPARTMENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

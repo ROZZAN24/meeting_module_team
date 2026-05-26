@@ -347,14 +347,14 @@ export default function AddMeetingMinutes() {
         const currentUser = user?.employeeName || user?.userName || user?.name || 'System';
         const payload = {
           ...form,
-          createdBy: editId ? form.createdBy : currentUser,
-          updatedBy: currentUser,
+          createdUser: editId ? form.createdUser || form.createdBy : currentUser,
+          updatedUser: currentUser,
           details: form.details.map(d => ({
             ...d,
             targetDate: d.targetDate || null,
             reviewDate: d.reviewDate || null,
-            createdBy: d.id ? d.createdBy : currentUser,
-            updatedBy: currentUser
+            createdUser: d.id ? d.createdUser || d.createdBy : currentUser,
+            updatedUser: currentUser
           }))
         };
 

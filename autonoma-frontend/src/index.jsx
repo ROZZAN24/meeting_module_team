@@ -41,7 +41,38 @@ import '@fontsource/poppins/500.css';
 import '@fontsource/poppins/600.css';
 import '@fontsource/poppins/700.css';
 
-// ==============================|| REACT DOM RENDER ||============================== //
+// ==============================|| GLOBAL ERROR CATCHERS ||============================== //
+
+let lastAlertedMsg = '';
+let lastAlertedTime = 0;
+
+window.showAlert = function (msg) {
+  const now = Date.now();
+  if (msg === lastAlertedMsg && now - lastAlertedTime < 1000) {
+    return;
+  }
+  lastAlertedMsg = msg;
+  lastAlertedTime = now;
+  alert(msg);
+};
+
+window.onerror = function (message, source, lineno, colno, error) {
+  const errMsg = error?.stack || `${message} at ${source}:${lineno}:${colno}`;
+  console.error('[Global UI Error]', errMsg);
+  window.showAlert(`UI Rendering / JavaScript Error:\n\n${message}\n\nLocation: ${source}:${lineno}\n\nPlease check console for details.`);
+  return false; // let browser print it to console too
+};
+
+window.addEventListener('unhandledrejection', function (event) {
+  const reason = event.reason;
+  // If it's a promise rejection representing an API error, axios interceptor already handles it
+  if (reason && (reason.config || reason.isAxiosError)) {
+    return;
+  }
+  const errMsg = reason?.stack || reason?.message || (typeof reason === 'string' ? reason : JSON.stringify(reason)) || 'Unhandled promise rejection';
+  console.error('[Global Unhandled Rejection]', errMsg);
+  window.showAlert(`Unhandled Promise Rejection:\n\n${errMsg}`);
+});
 
 const container = document.getElementById('root');
 const root = createRoot(container);

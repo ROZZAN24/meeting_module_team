@@ -15,10 +15,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "qms_meeting_schedule")
+@Table(name = "QMS_MEETING_SCHEDULE")
 @Data
 @NoArgsConstructor
-public class QmsMeetingSchedule {
+public class QmsMeetingSchedule extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -99,31 +99,11 @@ public class QmsMeetingSchedule {
     @Column(name = "status")
     private String status = "OPEN";
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "updated_by")
-    private String updatedBy;
 
-    @PrePersist
-    protected void onCreate() {
-        if (this.createdBy == null) {
-            this.createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
-        }
-    }
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
-    }
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("schedule")

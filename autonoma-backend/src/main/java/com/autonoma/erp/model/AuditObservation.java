@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 @Entity
-@Table(name = "audit_observation")
+@Table(name = "QMS_AUDIT_OBSERVATION")
 @Data
-public class AuditObservation {
+public class AuditObservation extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -57,34 +57,14 @@ public class AuditObservation {
     @Column(name = "ncr_count")
     private Integer ncrCount = 0;
 
-    @Column(name = "created_by")
-    private String createdBy;
     
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate = new Date();
 
-    @Column(name = "updated_by")
-    private String updatedBy;
     
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
 
     @OneToMany(mappedBy = "auditObservation", cascade = CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
     @lombok.EqualsAndHashCode.Exclude
     private List<AuditObservationDetail> details = new ArrayList<>();
-
-    @PrePersist
-    protected void onCreate() {
-        createdDate = new Date();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedDate = new Date();
-    }
 
     @com.fasterxml.jackson.annotation.JsonProperty("auditType")
     public String getAuditType() {

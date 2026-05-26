@@ -110,7 +110,7 @@ export default function AddMeetingSchedule() {
   const handleClear = useCallback(() => {
     setForm({
       ...INITIAL_FORM,
-      createdBy: user?.employeeName || user?.userName || user?.name || 'System'
+      createdUser: user?.employeeName || user?.userName || user?.name || 'System'
     });
     clearErrors();
   }, [user, clearErrors]);
@@ -153,7 +153,7 @@ export default function AddMeetingSchedule() {
     } else {
       setForm({
         ...INITIAL_FORM,
-        createdBy: user?.employeeName || user?.userName || user?.name || 'System'
+        createdUser: user?.employeeName || user?.userName || user?.name || 'System'
       });
     }
     clearErrors();
@@ -162,7 +162,7 @@ export default function AddMeetingSchedule() {
   useEffect(() => {
     if (!id && user) {
       const currentUser = user.employeeName || user.userName || user.name || 'System';
-      setForm(p => ({ ...p, createdBy: currentUser }));
+      setForm(p => ({ ...p, createdUser: currentUser }));
     }
   }, [id, user]);
 
@@ -248,7 +248,7 @@ export default function AddMeetingSchedule() {
           intervalTime: to24h(form.intervalTime),
           departments: form.departments.map(d => ({ department: d })),
           participants: form.participants.map(e => ({ employee: e })),
-          createdBy: form.createdBy || user?.employeeName || user?.userName || user?.name || 'System'
+          createdUser: form.createdUser || user?.employeeName || user?.userName || user?.name || 'System'
         };
 
         if (id) {
@@ -555,7 +555,7 @@ export default function AddMeetingSchedule() {
                       color: isDark ? 'warning.light' : 'warning.main',
                     }}
                   >
-                    {form.createdBy || user?.employeeName || user?.userName || user?.name || 'System'}
+                    {form.createdUser || form.createdBy || user?.employeeName || user?.userName || user?.name || 'System'}
                   </Typography>
                 </Box>
               </Stack>
