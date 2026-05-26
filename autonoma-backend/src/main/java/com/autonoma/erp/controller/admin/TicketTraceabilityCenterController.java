@@ -199,10 +199,6 @@ public class TicketTraceabilityCenterController {
             // Update allowed fields
             if (ticketDetails.getTitle() != null)
                 existingTicket.setTitle(ticketDetails.getTitle());
-            if (ticketDetails.getModuleName() != null)
-                existingTicket.setModuleName(ticketDetails.getModuleName());
-            if (ticketDetails.getPageName() != null)
-                existingTicket.setPageName(ticketDetails.getPageName());
             if (ticketDetails.getEmployeeCode() != null)
                 existingTicket.setEmployeeCode(ticketDetails.getEmployeeCode());
             if (ticketDetails.getEmployeeName() != null)
