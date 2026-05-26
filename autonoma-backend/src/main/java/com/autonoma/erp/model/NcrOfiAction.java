@@ -6,9 +6,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ncr_ofi_actions")
+@Table(name = "QMS_NCR_OFI_ACTION")
 @Data
-public class NcrOfiAction {
+public class NcrOfiAction extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -34,6 +34,4 @@ public class NcrOfiAction {
     private String remarks;
     private String status;
 
-    @Column(name = "created_date")
-    private LocalDateTime createdDate = LocalDateTime.now();
 }

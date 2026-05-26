@@ -36,8 +36,10 @@ const columns = [
   { id: 'hostByName', label: 'Host By', minWidth: 130 },
   { id: 'participantsBy', label: 'Participants By', minWidth: 200 },
   { id: 'review', label: 'Review', minWidth: 80, align: 'center' },
-  { id: 'createdBy', label: 'Created User', minWidth: 110 },
-  { id: 'createdAt', label: 'Created Date', minWidth: 140 },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 110 },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 110 },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140 },
   { id: 'status', label: 'Status', minWidth: 100, align: 'center' }
 ];
 
@@ -79,6 +81,10 @@ export default function MeetingScheduleList() {
           const e = pr.employee;
           return e ? `${e.employeeName} - ${e.empCode}` : '';
         }).filter(Boolean).join(', '),
+        createdUser: row.createdUser || row.createdBy || '-',
+        updatedUser: row.updatedUser || row.updatedBy || '-',
+        createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB') : (row.createdDate ? new Date(row.createdDate).toLocaleString('en-GB') : '-'),
+        updatedAt: row.updatedAt ? new Date(row.updatedAt).toLocaleString('en-GB') : (row.updatedDate ? new Date(row.updatedDate).toLocaleString('en-GB') : '-'),
         status: row.status || 'OPEN'
       };
     });
@@ -330,10 +336,16 @@ export default function MeetingScheduleList() {
           }} 
         />
       );
-    } else if (col.id === 'createdBy') {
+    } else if (col.id === 'createdUser') {
       val = (
         <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
-          {row.createdBy || '-'}
+          {(row.createdUser || row.createdBy) || '-'}
+        </Typography>
+      );
+    } else if (col.id === 'updatedUser') {
+      val = (
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          {(row.updatedUser || row.updatedBy) || '-'}
         </Typography>
       );
     } else {
@@ -397,7 +409,7 @@ export default function MeetingScheduleList() {
               { header: 'Status', key: 'status' },
               { header: 'Chaired By', key: 'chairedByName' },
               { header: 'Host By', key: 'hostByName' },
-              { header: 'Created By', key: 'createdBy' }
+              { header: 'Created User', key: 'createdUser' }
             ]}
           />}
           <Tooltip title="Create Amendment">

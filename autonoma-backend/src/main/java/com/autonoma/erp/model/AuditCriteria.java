@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
-@Table(name = "audit_criterion")
-public class AuditCriteria {
+@Table(name = "QMS_AUDIT_CRITERIA")
+public class AuditCriteria extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,19 +37,9 @@ public class AuditCriteria {
     @Column(name = "level", columnDefinition = "NVARCHAR(100)")
     private String level; // L1,L2...
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate = new Date();
     
-    @Column(name = "updated_by")
-    private String updatedBy;
 
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
 
     // Explicit Getters and Setters
     public Long getId() { return id; }
@@ -72,22 +62,4 @@ public class AuditCriteria {
     public void setAttachmentInfo(String attachmentInfo) { this.attachmentInfo = attachmentInfo; }
     public String getLevel() { return level; }
     public void setLevel(String level) { this.level = level; }
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
-    public String getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
-
-    @PrePersist
-    protected void onCreate() {
-        createdDate = new Date();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedDate = new Date();
-    }
 }

@@ -99,7 +99,10 @@ const columns = [
       />
     )
   },
-  { id: 'createdBy', label: 'Assigned By', minWidth: 120 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 const INITIAL_STATE = {
@@ -432,7 +435,14 @@ const InductionAssignment = () => {
       const matchesSearch = !term || (row[searchByVal] && row[searchByVal].toString().toLowerCase().includes(term));
       
       return matchesStatus && matchesSearch;
-    }).map((r, i) => ({ ...r, index: i + 1 }));
+    }).map((r, i) => ({
+      ...r,
+      index: i + 1,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
+      createdDate: r.createdDate || r.createdAt ? new Date(r.createdDate || r.createdAt).toLocaleString('en-GB') : '-',
+      updatedDate: r.updatedDate || r.updatedAt ? new Date(r.updatedDate || r.updatedAt).toLocaleString('en-GB') : '-'
+    }));
   }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
 
   return (
@@ -624,7 +634,7 @@ const InductionAssignment = () => {
                   <TableCell sx={{ fontWeight: 700 }}>Induction by</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Induction Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Rescheduled</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Created By</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>CREATED USER</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 </TableRow>
               </TableHead>
@@ -652,7 +662,7 @@ const InductionAssignment = () => {
                         />
                       </TableCell>
                       <TableCell>NO</TableCell>
-                      <TableCell>{h.createdBy || '-'}</TableCell>
+                      <TableCell>{(h.createdUser || h.createdBy) || '-'}</TableCell>
                       <TableCell>
                         <Chip 
                           label={h.inductionStatus || 'ACTIVE'} 

@@ -6,10 +6,10 @@ import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "audit_schedule_criteria")
+@Table(name = "QMS_AUDIT_SCHEDULE_CRITERIA")
 @Getter
 @Setter
-public class AuditScheduleCriteria {
+public class AuditScheduleCriteria extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

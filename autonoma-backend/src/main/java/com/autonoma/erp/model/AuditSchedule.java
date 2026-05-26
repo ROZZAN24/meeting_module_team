@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.ArrayList;
 
 @Entity
-@Table(name = "audit_schedule")
+@Table(name = "QMS_AUDIT_SCHEDULE")
 @Getter
 @Setter
-public class AuditSchedule {
+public class AuditSchedule extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -84,19 +84,9 @@ public class AuditSchedule {
     @Column(name = "ncr_approved_by_details", columnDefinition = "NVARCHAR(MAX)")
     private String ncrApprovedByDetails;
 
-    @Column(name = "created_by")
-    private String createdBy;
     
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate = new Date();
     
-    @Column(name = "updated_by")
-    private String updatedBy;
     
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
 
     @OneToMany(mappedBy = "auditSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditScheduleCriteria> criteriaList = new ArrayList<>();
@@ -147,24 +137,5 @@ public class AuditSchedule {
     public void setNcrApprovedByType(String ncrApprovedByType) { this.ncrApprovedByType = ncrApprovedByType; }
     public String getNcrApprovedByDetails() { return ncrApprovedByDetails; }
     public void setNcrApprovedByDetails(String ncrApprovedByDetails) { this.ncrApprovedByDetails = ncrApprovedByDetails; }
-    public String getCreatedBy() { return createdBy; }
-    public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
-    public String getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
-    public List<AuditScheduleCriteria> getCriteriaList() { return criteriaList; }
     public void setCriteriaList(List<AuditScheduleCriteria> criteriaList) { this.criteriaList = criteriaList; }
-
-    @PrePersist
-    protected void onCreate() {
-        createdDate = new Date();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedDate = new Date();
-    }
 }

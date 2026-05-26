@@ -9,7 +9,6 @@ import Box from '@mui/material/Box';
 // project imports
 import LogoSection from '../LogoSection';
 import SearchSection from './SearchSection';
-import PageSearchSection from './PageSearchSection';
 import MobileSection from './MobileSection';
 import ProfileSection from './ProfileSection';
 import LocalizationSection from './LocalizationSection';
@@ -90,7 +89,7 @@ export default function Header() {
       {/* Global Header Search + Session Context */}
       <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2, gap: 1.5 }}>
         <SearchSection />
-        <PageSearchSection />
+        <Box sx={{ flexGrow: 1 }} />
         <SessionInfoBadge />
       </Box>
 

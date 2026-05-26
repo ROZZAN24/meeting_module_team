@@ -71,9 +71,9 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'assignedBy', label: 'Assigned By' },
-  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdUser', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedUser', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'status', label: 'Status' }
 ];
@@ -117,9 +117,9 @@ const exportColumns = [
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Assigned To', key: 'assignedTo' },
   { header: 'Assigned By', key: 'assignedBy' },
-  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
   { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
@@ -423,9 +423,9 @@ export default function CheckListRenewalReport() {
                   <TableCell>{row.checklist?.verificationRequired}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
                   <TableCell>{row.assignedBy}</TableCell>
-                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                 </TableRow>
