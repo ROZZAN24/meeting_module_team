@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Stack, Button, Tooltip, IconButton, Chip } from '@mui/material';
-import { IconPlus, IconUsersGroup, IconRefresh } from '@tabler/icons-react';
+import { IconPlus, IconUsersGroup, IconRefresh, IconDownload } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import { useDispatch, useSelector } from 'react-redux';
@@ -11,6 +11,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useAuth from 'hooks/useAuth';
 import AddMeetingMasterDialog from './AddMeetingMasterDialog';
 
 const columns = [
@@ -22,6 +23,9 @@ const columns = [
   { id: 'employeeName', label: 'Employee Name', minWidth: 250 },
   { id: 'createdBy', label: 'Created User', minWidth: 120 },
   { id: 'createdAt', label: 'Created Date', minWidth: 140 },
+  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
+  { id: 'updatedAt', label: 'Updated Date', minWidth: 140 },
+  { id: 'attachmentName', label: 'Attachment', minWidth: 100 },
   { id: 'status', label: 'Status', minWidth: 100 }
 ];
 
@@ -30,6 +34,7 @@ export default function MeetingMasterList() {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.QMS_MEETING);
+  const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);
@@ -50,7 +55,7 @@ export default function MeetingMasterList() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All'
+        defaultValue: 'ACTIVE'
       },
       {
         id: 'searchBy', label: 'Search By', type: 'select', isStarred: true,
@@ -86,7 +91,7 @@ export default function MeetingMasterList() {
   // ── CLIENT-SIDE FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
+      const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'All' && row.status !== statusFilter) return false;
 
       const nameFilter = globalFilters.meetingName || '';
@@ -112,16 +117,32 @@ export default function MeetingMasterList() {
   const handleSave = async (form) => {
     try {
       if (selectedItem) {
-        await axios.put(`${API_PATHS.QMS.MEETINGS}/${selectedItem.id}`, form);
+        const payload = {
+          ...form,
+          updatedBy: user?.name || ''
+        };
+        await axios.put(`${API_PATHS.QMS.MEETINGS}/${selectedItem.id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
-        await axios.post(API_PATHS.QMS.MEETINGS, form);
+        const payload = {
+          ...form,
+          createdBy: user?.name || ''
+        };
+        await axios.post(API_PATHS.QMS.MEETINGS, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
       setDialogOpen(false);
       fetchData();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save meeting', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      let cleanError = error.details || error.message || error.response?.data?.message || '';
+      if (cleanError.includes('could not execute statement [')) {
+        const match = cleanError.match(/could not execute statement \[(.*?)\]/);
+        if (match && match[1]) {
+          cleanError = match[1];
+        }
+      }
+      const finalMessage = cleanError ? `Failed to save meeting: ${cleanError}` : 'Failed to save meeting';
+      dispatch(openSnackbar({ open: true, message: finalMessage, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
@@ -132,7 +153,9 @@ export default function MeetingMasterList() {
       dispatch(openSnackbar({ open: true, message: 'Meeting deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       fetchData();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete meeting', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      // Axios interceptor un-wraps error.response.data into the 'error' variable directly.
+      const errorMessage = error.message || error.response?.data?.message || 'Failed to delete meeting';
+      dispatch(openSnackbar({ open: true, message: errorMessage, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
     }
   };
 
@@ -145,7 +168,30 @@ export default function MeetingMasterList() {
       return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE')} />;
     }
     if (col.id === 'createdAt') {
-      return row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      const dateVal = row[col.id];
+      return dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+    }
+    if (col.id === 'updatedAt') {
+      const dateVal = row[col.id];
+      return (dateVal && row.updatedBy) ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+    }
+    if (col.id === 'attachmentName') {
+      const url = row.attachmentUrl;
+      const name = row.attachmentName;
+      if (url && name) {
+        return (
+          <Tooltip title={`Download ${name}`}>
+            <IconButton
+              size="small"
+              color="primary"
+              onClick={() => window.open(`${window.location.origin}${API_PATHS.FILES}/download/${url}`, '_blank')}
+            >
+              <IconDownload size={18} />
+            </IconButton>
+          </Tooltip>
+        );
+      }
+      return '-';
     }
     return row[col.id] || '-';
   };
@@ -166,7 +212,10 @@ export default function MeetingMasterList() {
             </IconButton>
           </Tooltip>
           {perms.export && <BOSExportButton
-            data={filteredRows}
+            data={filteredRows.map(row => ({
+              ...row,
+              updatedAt: row.updatedBy ? row.updatedAt : null
+            }))}
             filename="Meeting_Master"
             columns={[
               { header: '#', key: 'index' },
@@ -176,10 +225,13 @@ export default function MeetingMasterList() {
               { header: 'Meeting Agenda', key: 'meetingAgenda' },
               { header: 'Employee Name', key: 'employeeName' },
               { header: 'Created User', key: 'createdBy' },
+              { header: 'Created Date', key: 'createdAt' },
+              { header: 'Updated User', key: 'updatedBy' },
+              { header: 'Updated Date', key: 'updatedAt' },
               { header: 'Status', key: 'status' }
             ]}
           />}
-          {perms.write && <Tooltip title={shortcutTooltip('Add Meeting', 'Ctrl + N')}>
+          {perms.write && <Tooltip title={shortcutTooltip('New Meeting', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New
             </Button>
@@ -196,8 +248,8 @@ export default function MeetingMasterList() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={handleEdit}
-        onEditRow={handleEdit}
+        onDoubleClickRow={perms.write ? handleEdit : undefined}
+        onEditRow={perms.write ? handleEdit : undefined}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="meeting-master-table"
@@ -208,6 +260,7 @@ export default function MeetingMasterList() {
         onClose={() => setDialogOpen(false)}
         onSave={handleSave}
         item={selectedItem}
+        existingData={rows}
       />
 
       <ConfirmDeleteDialog

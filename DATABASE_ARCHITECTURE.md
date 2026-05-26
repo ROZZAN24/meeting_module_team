@@ -24,7 +24,7 @@ All migration files must follow the **TIS Project Standard**:
 `V<Major>.<Minor>__<Description>__TIS.sql`
 *Example*: `V7.0__Create_Sales_Marketing_Lookups__TIS.sql`
 
-## 🚀 Development Workflow (Docker First)
+##  Development Workflow (Docker First)
 
 All developers **MUST** use the Docker-managed MSSQL instance to ensure version parity.
 

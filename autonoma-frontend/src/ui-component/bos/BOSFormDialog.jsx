@@ -110,7 +110,8 @@ export default function BOSFormDialog({
   hideFooter = false,
   secondaryActions,
   sidebar,
-  children
+  children,
+  contentSx = {}
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -347,7 +348,7 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       {!isCollapsed && (
-        <DialogContent sx={ds.content}>
+        <DialogContent sx={{ ...ds.content, ...contentSx }}>
           {sidebar ? (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' }, gap: 4, width: '100%', alignItems: 'start' }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%' }}>
@@ -519,5 +520,6 @@ BOSFormDialog.propTypes = {
   maxWidth: PropTypes.string,
   hideFooter: PropTypes.bool,
   secondaryActions: PropTypes.node,
-  children: PropTypes.node
+  children: PropTypes.node,
+  contentSx: PropTypes.object
 };

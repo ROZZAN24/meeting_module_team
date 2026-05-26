@@ -14,6 +14,7 @@ import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-compo
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ReassignDialog from './ReassignDialog';
+import { isMobile } from 'react-device-detect';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -62,29 +63,48 @@ export default function MomList() {
   // Resolve all complex objects into flat strings for BOSDataTable to handle filtering/extraction
   const resolvedRows = useMemo(() => {
     if (!Array.isArray(flatRows)) return [];
-    return flatRows.map(row => ({
-      ...row,
-      meetingType: row._meetingType || '-',
-      momDate: row._momDate || '-',
-      scheduleNo: row._scheduleNo || '-',
-      minNo: row.id ? `${row._momNo}/${String(row.id).padStart(3, '0')}` : '-',
-      discussedPoint: row.discussedPoint || '-',
-      processType: row.processType || '-',
-      assignedTo: row.assignedTo?.employeeName || '-',
-      assignedBy: row.assignedBy?.employeeName || '-',
-      targetDate: row.targetDate || '-',
-      reviewDate: row.reviewDate || '-',
-      createdBy: row._createdBy || '-',
-      status: row.status || 'OPEN',
-      detailStatus: row.status || 'OPEN', // specifically for the status chip column
-      momNo: row._momNo || '-'
-    }));
+    return flatRows.map(row => {
+      const createdMs = row._createdAt ? new Date(row._createdAt).getTime() : 0;
+      const updatedMs = row._updatedAt ? new Date(row._updatedAt).getTime() : 0;
+      const isUnedited = Math.abs(updatedMs - createdMs) < 2000 || !row._updatedAt;
+
+      return {
+        ...row,
+        meetingType: row._meetingType || '-',
+        momDate: row._momDate || '-',
+        scheduleNo: row._scheduleNo || '-',
+        minNo: row.id ? `${row._momNo}/${String(row.id).padStart(3, '0')}` : '-',
+        discussedPoint: row.discussedPoint || '-',
+        processType: row.processType || '-',
+        assignedTo: row.assignedTo?.employeeName || '-',
+        assignedBy: row.assignedBy?.employeeName || '-',
+        targetDate: row.targetDate || '-',
+        reviewDate: row.reviewDate || '-',
+        createdBy: row._createdBy || '-',
+        createdDate: row._createdAt ? new Date(row._createdAt).toLocaleDateString('en-GB') : '-',
+        updatedBy: isUnedited ? '-' : (row._updatedBy || '-'),
+        updatedDate: isUnedited ? '-' : new Date(row._updatedAt).toLocaleDateString('en-GB'),
+        status: row.status || 'OPEN',
+        detailStatus: row.status || 'OPEN', // specifically for the status chip column
+        momNo: row._momNo || '-'
+      };
+    });
   }, [flatRows]);
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    // Keep specialized filters like Date Range, but let Rule 1 handle the rest
     dispatch(setFilterConfig([
+      {
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
+        options: [
+          { value: 'PENDING', label: 'Pending (Open / In Progress)' },
+          { value: 'CLOSED', label: 'Closed' },
+          { value: 'PENDING FOR APPROVAL', label: 'Pending For Approval' },
+          { value: 'CANCELLED', label: 'Cancelled' },
+          { value: 'All', label: 'All' }
+        ],
+        defaultValue: 'PENDING'
+      },
       { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
       { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
       {
@@ -96,8 +116,47 @@ export default function MomList() {
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
+  // ── FILTERED ROWS (apply status + date filters) ──
+  const filteredRows = useMemo(() => {
+    return resolvedRows.filter((row) => {
+      // Status Filter
+      const statusFilter = globalFilters.status || 'PENDING';
+      if (statusFilter !== 'All') {
+        const rowStatus = (row.status || 'OPEN').toUpperCase();
+        if (statusFilter === 'PENDING') {
+          // PENDING shows everything except CLOSED and CANCELLED
+          if (rowStatus === 'CLOSED' || rowStatus === 'CANCELLED') return false;
+        } else {
+          if (rowStatus !== statusFilter) return false;
+        }
+      }
+
+      // Date Filtering
+      if (globalFilters.considerDate === 'YES' && globalFilters.fromDate && globalFilters.toDate) {
+        const dateVal = row.momDate || '';
+        if (dateVal && dateVal !== '-') {
+          if (dateVal < globalFilters.fromDate || dateVal > globalFilters.toDate) return false;
+        }
+      }
+
+      // Global Quick Search
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.momNo || '').toLowerCase().includes(q) ||
+               (row.discussedPoint || '').toLowerCase().includes(q) ||
+               (row.assignedTo || '').toLowerCase().includes(q) ||
+               (row.scheduleNo || '').toLowerCase().includes(q);
+      }
+
+      return true;
+    });
+  }, [resolvedRows, globalQuery, globalFilters]);
+
   // ── HANDLERS ──
-  const handleAdd = () => { navigate('/qms/minutesofmeeting/add'); };
+  const handleAdd = () => {
+    if (!perms.write) return;
+    navigate('/qms/minutesofmeeting/add');
+  };
   const handleEdit = (item) => {
     const momId = item._momId || item.id;
     navigate(`/qms/minutesofmeeting/edit/${momId}`);
@@ -140,7 +199,10 @@ export default function MomList() {
               _meetingType: mom.meetingType?.meetingName || '-',
               _momDate: mom.momDate,
               _scheduleNo: mom.scheduleNo,
-              _createdBy: mom.createdBy
+              _createdBy: mom.createdBy,
+              _createdAt: mom.createdAt,
+              _updatedBy: mom.updatedBy,
+              _updatedAt: mom.updatedAt
             });
           });
         }
@@ -191,6 +253,8 @@ export default function MomList() {
         </Tooltip>
       );
     }
+
+    let val;
     if (col.id === 'detailStatus') {
       const s = row.status || 'OPEN';
       let chipStatus = 'ACTIVE';
@@ -199,9 +263,32 @@ export default function MomList() {
       if (s === 'CANCELLED') chipStatus = 'INACTIVE';
       if (s === 'OVERDUE') chipStatus = 'INACTIVE';
       if (s === 'PENDING FOR APPROVAL') chipStatus = 'PENDING';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+    } else if (col.id === 'index') {
+      val = idx + 1 + page * size;
+    } else {
+      let rawVal = row[col.id];
+      if (rawVal === undefined || rawVal === null) {
+        const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        rawVal = row[snakeCaseId];
+      }
+      if (typeof rawVal === 'boolean') {
+        val = rawVal ? 'Yes' : 'No';
+      } else if (typeof rawVal === 'object' && rawVal !== null) {
+        val = rawVal.name || rawVal.label || rawVal.id || '-';
+      } else {
+        val = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? String(rawVal) : '-';
+      }
     }
-    return null; // Let BOSDataTable handle default rendering
+
+    const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    return (
+      <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
+        <div style={{ width: '100%' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   return (
@@ -220,7 +307,7 @@ export default function MomList() {
             </IconButton>
           </Tooltip>
           {perms.export && <BOSExportButton
-            data={resolvedRows}
+            data={filteredRows}
             filename="Minutes_of_Meeting"
             columns={[
               { header: 'Meeting Min No', key: 'momNo' },
@@ -256,7 +343,7 @@ export default function MomList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={resolvedRows}
+        rows={filteredRows}
         page={page}
         size={size}
         loading={loading}
