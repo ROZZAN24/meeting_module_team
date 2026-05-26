@@ -65,7 +65,7 @@ export default function Snackbar() {
         <MuiSnackbar
           anchorOrigin={anchorOrigin}
           open={open}
-          autoHideDuration={1500}
+          autoHideDuration={4000}
           onClose={handleClose}
           message={message}
           slots={{ transition: animation[transition] }}
@@ -88,7 +88,7 @@ export default function Snackbar() {
           slots={{ transition: animation[transition] }}
           anchorOrigin={anchorOrigin}
           open={open}
-          autoHideDuration={1500}
+          autoHideDuration={4000}
           onClose={handleClose}
         >
           <Alert

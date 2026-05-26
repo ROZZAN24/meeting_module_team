@@ -2,6 +2,7 @@ package com.autonoma.erp.service;
 
 import com.autonoma.erp.model.*;
 import com.autonoma.erp.repository.*;
+import com.autonoma.erp.repository.admin.UserRepository;
 import jakarta.persistence.criteria.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,13 @@ public class ChecklistService {
 
     @Autowired
     private ChecklistDepartmentRepository deptRepo;
+
+    @Autowired
+<<<<<<< HEAD
+    private DepartmentRepository departmentRepository;
+=======
+    private UserRepository userRepository;
+>>>>>>> 07d6739d72014da2b3010e3e3d1a82f43eae6fde
 
     // --- Master Checklist ---
 
@@ -98,7 +106,8 @@ public class ChecklistService {
 
             if (department != null && !department.isEmpty()) {
                 Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
-                predicates.add(cb.equal(deptJoin.get("departmentName"), department));
+                Join<ChecklistDepartment, Department> dObjJoin = deptJoin.join("department");
+                predicates.add(cb.equal(dObjJoin.get("departmentName"), department));
             }
 
             if (seqNo != null && !seqNo.isEmpty()) {
@@ -154,7 +163,8 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(root.get("createdBy").as(String.class)), searchTerm));
 
                     Join<MasterChecklist, ChecklistDepartment> dJoin = root.join("departments", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dJoin.get("departmentName").as(String.class)), searchTerm));
+                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
+                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName").as(String.class)), searchTerm));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
@@ -204,10 +214,14 @@ public class ChecklistService {
                 checklist.setVerifyStatus("Pending for Verify");
                 checklist.setStatus("Active");
                 checklist.setCreatedDate(new Date());
-                if (checklist.getUpdatedBy() != null) {
+                if (checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty()) {
                     checklist.setCreatedBy(checklist.getUpdatedBy());
-                } else if (checklist.getCreatedBy() == null) {
+                } else if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                     checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                }
+                checklist.setUpdatedDate(new Date());
+                if (checklist.getUpdatedBy() == null || checklist.getUpdatedBy().isEmpty()) {
+                    checklist.setUpdatedBy(checklist.getCreatedBy());
                 }
 
                 MasterChecklist saved = masterRepo.save(checklist);
@@ -216,8 +230,11 @@ public class ChecklistService {
                     for (String deptName : departments) {
                         ChecklistDepartment dept = new ChecklistDepartment();
                         dept.setChecklist(saved);
-                        dept.setDepartmentName(deptName);
-                        deptRepo.save(dept);
+                        Department resolvedDept = departmentRepository.findByDepartmentName(deptName).orElse(null);
+                        if (resolvedDept != null) {
+                            dept.setDepartment(resolvedDept);
+                            deptRepo.save(dept);
+                        }
                     }
                 }
                 return saved;
@@ -285,8 +302,11 @@ public class ChecklistService {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
                     dept.setChecklist(existing);
-                    dept.setDepartmentName(deptName);
-                    existing.getDepartments().add(dept);
+                    Department resolvedDept = departmentRepository.findByDepartmentName(deptName).orElse(null);
+                    if (resolvedDept != null) {
+                        dept.setDepartment(resolvedDept);
+                        existing.getDepartments().add(dept);
+                    }
                 }
             }
             return masterRepo.save(existing);
@@ -301,14 +321,21 @@ public class ChecklistService {
             if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                 checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
             }
+            checklist.setUpdatedDate(new Date());
+            if (checklist.getUpdatedBy() == null || checklist.getUpdatedBy().isEmpty()) {
+                checklist.setUpdatedBy(checklist.getCreatedBy());
+            }
             MasterChecklist saved = masterRepo.save(checklist);
 
             if (departments != null) {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
                     dept.setChecklist(saved);
-                    dept.setDepartmentName(deptName);
-                    deptRepo.save(dept);
+                    Department resolvedDept = departmentRepository.findByDepartmentName(deptName).orElse(null);
+                    if (resolvedDept != null) {
+                        dept.setDepartment(resolvedDept);
+                        deptRepo.save(dept);
+                    }
                 }
             }
 
@@ -358,16 +385,32 @@ public class ChecklistService {
 
             // Task Type Logic (SOP Item 8)
             if ("Mine".equalsIgnoreCase(taskType) && currentUser != null) {
-                predicates.add(cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase()));
+                // Show assignments that are either:
+                // 1. Assigned to the current user (their own tasks), OR
+                // 2. In a pending verification/acceptance state (tasks completed by others
+                //    that need the current user — as admin/manager — to verify)
+                Join<ChecklistAssignment, StatusMaster> mineStatusJoin = root.join("status", JoinType.LEFT);
+                Predicate assignedToMe = cb.equal(cb.lower(root.get("assignedTo")), currentUser.toLowerCase());
+                Predicate pendingVerification = mineStatusJoin.get("name").in("Pending for Verified", "Pending for Accepted");
+                predicates.add(cb.or(assignedToMe, pendingVerification));
             } else if ("Team".equalsIgnoreCase(taskType)) {
                 // For simplicity, we assume 'Team' means tasks for the user's department.
                 // This would normally involve joining with Employee departments.
                 // For now, we allow the UI to pass specific 'assignedTo' names for the team.
             }
 
-            if (status != null && !status.equals("All")) {
+            if (status != null && !status.equals("All") && !status.isEmpty()) {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
-                predicates.add(cb.equal(statusJoin.get("name"), status));
+                if (status.contains(",")) {
+                    String[] statusArr = status.split(",");
+                    List<String> statusList = new ArrayList<>();
+                    for (String s : statusArr) {
+                        statusList.add(s.trim());
+                    }
+                    predicates.add(statusJoin.get("name").in(statusList));
+                } else {
+                    predicates.add(cb.equal(statusJoin.get("name"), status));
+                }
             } else {
                 if (excludeCompleted) {
                     // If "All" is selected and we want to focus on execution, exclude completed/finalized tasks
@@ -437,7 +480,8 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(cJoin.get("frequency")), searchTerm));
 
                     Join<MasterChecklist, ChecklistDepartment> dJoin = cJoin.join("departments", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dJoin.get("departmentName")), searchTerm));
+                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
+                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName")), searchTerm));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
@@ -564,8 +608,18 @@ public class ChecklistService {
 
             if (oldRejected != null) {
                 // Determine the target status for A
-                String nextStatusName = "YES".equalsIgnoreCase(master.getDualCheck())
-                        ? "Pending for Verified" : "Completed";
+                boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
+                        userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
+                        .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                        .orElse(false);
+
+                String nextStatusName;
+                if (!isUserAdmin) {
+                    nextStatusName = "Pending for Verified";
+                } else {
+                    nextStatusName = "YES".equalsIgnoreCase(master.getDualCheck())
+                            ? "Pending for Verified" : "Completed";
+                }
                 StatusMaster aStatus = statusRepo.findByName(nextStatusName).orElseThrow();
 
                 // Promote A
@@ -596,12 +650,30 @@ public class ChecklistService {
         }
         // ─────────────────────────────────────────────────────────────────────
 
-        // DUAL CHECK LOGIC (for original/manager submit flows):
-        // If status is 'Completed' but Master has Dual Check enabled,
-        // force status to 'Pending for Verified'.
+        // DUAL CHECK & WORKFLOW MAPPING LOGIC:
+        // When a user completes their assigned task (submits with status 'Completed'):
+        // If the submitter is NOT an admin, map it to:
+        // - 'Pending for Verified' if verification/dual check is required
+        // - 'Pending' if no verification is required
+        // If the submitter IS an admin, they are closing/verifying it directly:
+        // - If dual check is enabled, it moves to 'Pending for Verified'
+        // - If dual check is disabled, it moves to 'Completed' (closed)
         String finalStatusName = statusName;
-        if ("Completed".equalsIgnoreCase(statusName) && "YES".equalsIgnoreCase(master.getDualCheck())) {
-            finalStatusName = "Pending for Verified";
+        if ("Completed".equalsIgnoreCase(statusName)) {
+            boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
+                    userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
+                    .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                    .orElse(false);
+            
+            if (!isUserAdmin) {
+                finalStatusName = "Pending for Verified";
+            } else {
+                if ("YES".equalsIgnoreCase(master.getDualCheck())) {
+                    finalStatusName = "Pending for Verified";
+                } else {
+                    finalStatusName = "Completed";
+                }
+            }
         }
 
         StatusMaster status = statusRepo.findByName(finalStatusName).orElseThrow();

@@ -1,6 +1,8 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
@@ -52,10 +54,12 @@ public class QmsMeetingSchedule {
     @Column(name = "supplier_code")
     private String supplierCode;
 
+    @NotNull(message = "Schedule Date is required")
     @Column(name = "meeting_date", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate meetingDate;
 
+    @NotNull(message = "Schedule Time is required")
     @Column(name = "start_time", nullable = false)
     @JsonFormat(pattern = "HH:mm")
     private LocalTime startTime;
@@ -68,6 +72,7 @@ public class QmsMeetingSchedule {
     @JsonFormat(pattern = "HH:mm")
     private LocalTime intervalTime;
 
+    @NotBlank(message = "frequency is required")
     @Column(name = "frequency")
     private String frequency = "NONE";
 
@@ -107,6 +112,18 @@ public class QmsMeetingSchedule {
 
     @Column(name = "updated_by")
     private String updatedBy;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdBy == null) {
+            this.createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+    }
 
     @OneToMany(mappedBy = "schedule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("schedule")

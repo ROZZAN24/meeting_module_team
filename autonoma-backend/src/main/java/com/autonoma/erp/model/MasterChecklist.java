@@ -83,7 +83,7 @@ public class MasterChecklist {
     @Column(name = "CREATED_BY")
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_AT")
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date createdAt;
@@ -91,7 +91,7 @@ public class MasterChecklist {
     @Column(name = "UPDATED_BY")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_AT")
     @Temporal(TemporalType.TIMESTAMP)
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date updatedAt;

@@ -110,18 +110,13 @@ public class MasterChecklistMigrationService {
                 for (String dept : deptNo.split(",")) {
                     String cleanDept = dept.trim();
                     if (!cleanDept.isEmpty()) {
-                        ChecklistDepartment department = new ChecklistDepartment();
-                        String lookupKey = cleanDept;
-                        try {
-                            int deptCodeNum = Integer.parseInt(cleanDept);
-                            lookupKey = String.format("DEPT-%03d", deptCodeNum);
-                        } catch (NumberFormatException e) {
-                            // Already in a non-integer format, keep as is
+                        ChecklistDepartment checklistDept = new ChecklistDepartment();
+                        com.autonoma.erp.model.Department resolvedDept = departmentRepository.findByDepartmentNo(cleanDept).orElse(null);
+                        if (resolvedDept != null) {
+                            checklistDept.setDepartment(resolvedDept);
+                            checklistDept.setChecklist(checklist);
+                            deptList.add(checklistDept);
                         }
-                        String resolvedDeptName = deptNoToNameMap.getOrDefault(lookupKey, cleanDept);
-                        department.setDepartmentName(resolvedDeptName);
-                        department.setChecklist(checklist);
-                        deptList.add(department);
                     }
                 }
                 checklist.setDepartments(deptList);
@@ -232,8 +227,8 @@ public class MasterChecklistMigrationService {
         List<com.autonoma.erp.model.Department> migratedList = jdbcTemplate.query(sql, (rs, rowNum) -> {
             com.autonoma.erp.model.Department dept = new com.autonoma.erp.model.Department();
             
-            int legacyDeptNo = rs.getInt("DEPT_NO");
-            dept.setDepartmentNo(String.format("DEPT-%03d", legacyDeptNo));
+            String legacyDeptNo = rs.getString("DEPT_NO");
+            dept.setDepartmentNo(legacyDeptNo != null ? legacyDeptNo.trim() : "");
             dept.setDepartmentName(rs.getString("DEPT_NAME"));
             
             String nda = rs.getString("NDA_CERTIFICATE");

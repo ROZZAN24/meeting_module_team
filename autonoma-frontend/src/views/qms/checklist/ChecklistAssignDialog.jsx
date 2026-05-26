@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
   Dialog,
@@ -13,43 +13,28 @@ import {
   Chip
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { IconUserPlus, IconUsersGroup, IconEdit } from '@tabler/icons-react';
+import { IconUserPlus, IconUsersGroup } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 import useAuth from 'hooks/useAuth';
-import { BOSDataTable, BOSTextField, btnSave, btnCancel, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSTextField, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 
 const isDepartmentMatch = (allowedDepts, empDeptName) => {
   if (!allowedDepts || !allowedDepts.length) return true;
   if (!empDeptName) return false;
   
-  const cleanEmpDept = empDeptName.toUpperCase().trim();
+  const cleanEmpDept = String(empDeptName).toUpperCase().trim();
   
-  // Custom mapping rules for QMS checklist codes vs HRM department names
-  const mappings = {
-    'HRA': ['HUMAN RESOURCES', 'HR', 'HR/ADMIN'],
-    'HR/ADMIN': ['HUMAN RESOURCES', 'HR', 'HRA'],
-    'HUMAN RESOURCES': ['HRA', 'HR', 'HR/ADMIN'],
-    'QUALITY': ['QUALITY MANAGEMENT', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
-    'QUALITY MANAGEMENT': ['QUALITY', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
-    'IT': ['INFORMATION TECHNOLOGY'],
-    'INFORMATION TECHNOLOGY': ['IT'],
-    'FINANCE': ['FINANCE & ACCOUNTS', 'FINANCE AND ACCOUNTS', 'ACCOUNTS'],
-    'FINANCE & ACCOUNTS': ['FINANCE', 'ACCOUNTS'],
-    'MARKETING': ['SALES & MARKETING', 'SALES AND MARKETING', 'SALES'],
-    'SALES & MARKETING': ['MARKETING', 'SALES']
-  };
-
   return allowedDepts.some(allowedDept => {
-    const cleanAllowed = allowedDept.toUpperCase().trim();
-    if (cleanAllowed === cleanEmpDept) return true;
-    if (mappings[cleanAllowed] && mappings[cleanAllowed].includes(cleanEmpDept)) return true;
-    if (mappings[cleanEmpDept] && mappings[cleanEmpDept].includes(cleanAllowed)) return true;
-    return cleanAllowed.includes(cleanEmpDept) || cleanEmpDept.includes(cleanAllowed);
+    if (!allowedDept) return false;
+    const cleanAllowed = String(allowedDept).toUpperCase().trim();
+    return cleanAllowed === cleanEmpDept || 
+           cleanAllowed.includes(cleanEmpDept) || 
+           cleanEmpDept.includes(cleanAllowed);
   });
 };
 
@@ -101,7 +86,6 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedRowId, setSelectedRowId] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     assignTo: '',
     assignType: '',
@@ -132,12 +116,10 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     if (open && checklistId) {
       fetchAssignments();
       setSelectedRowId(null);
-      setIsEditing(false);
     } else {
       setAssignments([]);
       setFormData({ assignTo: '', assignType: '', id: null });
       setSelectedRowId(null);
-      setIsEditing(false);
     }
   }, [open, checklistId]);
 
@@ -199,9 +181,9 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       dispatch(openSnackbar({ open: true, message: formData.id ? 'Assignment updated!' : 'Task assigned!', severity: 'success', variant: 'alert' }));
       setFormData({ assignTo: '', assignType: '', id: null });
       setSelectedRowId(null);
-      setIsEditing(false);
       fetchAssignments();
     } catch (err) {
+      console.error(err);
       dispatch(openSnackbar({ 
         open: true, 
         message: 'Assignment failed', 
@@ -252,7 +234,6 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     const selectedRow = rows.find(r => r.id === selectedRowId);
     if (selectedRow) {
       handleEditAssignment(selectedRow);
-      setIsEditing(true);
       dispatch(openSnackbar({ open: true, message: `Loaded assignment for ${selectedRow.assignTo}. Update fields above.`, severity: 'info', variant: 'alert' }));
     }
   };
@@ -274,6 +255,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       setSelectedAssignmentId(null);
       setSelectedRowId(null);
     } catch (err) {
+      console.error(err);
       dispatch(openSnackbar({ open: true, message: 'Delete failed', severity: 'error', variant: 'alert' }));
     }
   };

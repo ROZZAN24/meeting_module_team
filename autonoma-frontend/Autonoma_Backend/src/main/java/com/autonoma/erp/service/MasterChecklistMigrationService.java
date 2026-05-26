@@ -29,6 +29,9 @@ public class MasterChecklistMigrationService {
     @Autowired
     private ChecklistAssignmentRepository checklistAssignmentRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.DepartmentRepository departmentRepository;
+
     // ─── STATUS int mapping ─────────────────────────────────────────────────────
     // STATUS: 0=INACTIVE/DRAFT, 1=ACTIVE, 2=EXPIRED, 3=PENDING, 4=CANCELLED
     // TASK_STATUS: 0=PENDING, 1=IN_PROGRESS, 2=COMPLETED, 3=OVERDUE, 4=CANCELLED
@@ -93,11 +96,16 @@ public class MasterChecklistMigrationService {
             if (deptNo != null && !deptNo.trim().isEmpty()) {
                 List<ChecklistDepartment> deptList = new ArrayList<>();
                 for (String dept : deptNo.split(",")) {
-                    if (!dept.trim().isEmpty()) {
-                        ChecklistDepartment department = new ChecklistDepartment();
-                        department.setDepartmentName(dept.trim());
-                        department.setChecklist(checklist);
-                        deptList.add(department);
+                    String cleanDept = dept.trim();
+                    if (!cleanDept.isEmpty()) {
+                        ChecklistDepartment checklistDept = new ChecklistDepartment();
+                        com.autonoma.erp.model.Department resolvedDept = departmentRepository
+                                .findByDepartmentNo(cleanDept).orElse(null);
+                        if (resolvedDept != null) {
+                            checklistDept.setDepartment(resolvedDept);
+                            checklistDept.setChecklist(checklist);
+                            deptList.add(checklistDept);
+                        }
                     }
                 }
                 checklist.setDepartments(deptList);

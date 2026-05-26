@@ -175,8 +175,10 @@ export default function BOSExportButton({
     handleClosePreview();
   };
 
-  const previewColumns = columns ? columns.map(c => ({ id: c.header, label: c.header })) :
-    (data.length > 0 ? Object.keys(data[0]).map(k => ({ id: k, label: k })) : []);
+  const getColumnLetter = (n) => String.fromCharCode(65 + n);
+
+  const previewColumns = columns ? columns.map((c, i) => ({ id: c.header, label: getColumnLetter(i) })) :
+    (data.length > 0 ? Object.keys(data[0]).map((k, i) => ({ id: k, label: getColumnLetter(i) })) : []);
 
   const previewRows = useMemo(() => {
     const baseData = prepareData();
@@ -194,11 +196,29 @@ export default function BOSExportButton({
       {}, // Spacer
     ];
 
-    return [...headerRows, ...baseData];
+    // Excel column headers row (MEETING SCH NO, PARTICIPANT, etc.)
+    const colHeadersRow = {};
+    if (columns) {
+      columns.forEach(col => {
+        colHeadersRow[col.header] = col.header.toUpperCase();
+      });
+    } else if (data.length > 0) {
+      Object.keys(data[0]).forEach(k => {
+        colHeadersRow[k] = k.toUpperCase();
+      });
+    }
+
+    return [...headerRows, colHeadersRow, ...baseData];
   }, [data, columns, user, filename, previewColumns]);
 
+  const pdfColumns = columns ? columns.map(c => ({ id: c.header, label: c.header })) :
+    (data.length > 0 ? Object.keys(data[0]).map(k => ({ id: k, label: k })) : []);
+
+  const pdfRows = useMemo(() => {
+    return prepareData();
+  }, [data, columns]);
+
   // Excel simulation helpers
-  const getColumnLetter = (n) => String.fromCharCode(65 + n);
 
   return (
     <>
@@ -278,16 +298,6 @@ export default function BOSExportButton({
                 flexDirection: 'column',
                 position: 'relative'
               }}>
-                {/* COLUMN HEADERS (A, B, C...) */}
-                <Box sx={{ bgcolor: '#f8f9fa', borderBottom: '1px solid #bbb', display: 'flex', position: 'sticky', top: 0, zIndex: 3 }}>
-                  <Box sx={{ width: 40, borderRight: '1px solid #bbb', bgcolor: '#e9ecef' }} />
-                  {previewColumns.map((col, i) => (
-                    <Box key={i} sx={{ flex: 1, textAlign: 'center', fontSize: '11px', fontWeight: 600, color: '#444', py: 0.5, borderRight: '1px solid #bbb' }}>
-                      {getColumnLetter(i)}
-                    </Box>
-                  ))}
-                </Box>
-
                 <Box sx={{ flexGrow: 1, overflow: 'auto', display: 'flex' }}>
                   {/* ROW NUMBERS (1, 2, 3...) */}
                   <Box sx={{ width: 40, bgcolor: '#f8f9fa', borderRight: '1px solid #bbb', position: 'sticky', left: 0, zIndex: 2 }}>
@@ -311,20 +321,32 @@ export default function BOSExportButton({
                       disableSearchFilter={true}
                       sx={{
                         '& th': {
-                          bgcolor: '#fff !important',
-                          color: '#000',
-                          fontWeight: 700,
+                          bgcolor: '#f8f9fa !important',
+                          color: '#444 !important',
+                          fontWeight: '600 !important',
+                          textAlign: 'center',
                           borderRight: '1px solid #bbb',
                           borderBottom: '2px solid #bbb',
                           height: 40,
-                          fontSize: '12px'
+                          fontSize: '11px',
+                          minWidth: '160px !important'
                         },
                         '& td': {
                           borderRight: '1px solid #ccc',
                           borderBottom: '1px solid #ccc',
                           fontSize: '13px',
                           height: 40,
-                          position: 'relative'
+                          position: 'relative',
+                          minWidth: '160px !important'
+                        },
+                        // SPREADSHEET TABLE HEADER ROW (Row 6)
+                        '& tr:nth-of-type(6) td': {
+                          bgcolor: '#f1f3f4 !important',
+                          fontWeight: '700 !important',
+                          color: '#000 !important',
+                          textAlign: 'left',
+                          fontSize: '12px',
+                          borderBottom: '2px solid #bbb !important'
                         },
                         // SELECTED CELL HIGHLIGHT
                         '& tr:first-of-type td:first-of-type': {
@@ -397,7 +419,7 @@ export default function BOSExportButton({
                 <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
                   <thead>
                     <tr style={{ backgroundColor: theme.palette.primary.main, color: 'white' }}>
-                      {previewColumns.map(col => (
+                      {pdfColumns.map(col => (
                         <th key={col.id} style={{ padding: '12px 10px', textAlign: 'left', fontSize: '12px', fontWeight: '700', textTransform: 'uppercase' }}>
                           {col.label}
                         </th>
@@ -405,9 +427,9 @@ export default function BOSExportButton({
                     </tr>
                   </thead>
                   <tbody>
-                    {previewRows.slice(0, 15).map((row, idx) => (
+                    {pdfRows.slice(0, 15).map((row, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid #eee', backgroundColor: idx % 2 === 0 ? 'transparent' : '#fafafa' }}>
-                        {previewColumns.map(col => (
+                        {pdfColumns.map(col => (
                           <td key={col.id} style={{ padding: '12px 10px', fontSize: '11px', color: '#444' }}>
                             {row[col.id]}
                           </td>
@@ -417,10 +439,10 @@ export default function BOSExportButton({
                   </tbody>
                 </table>
 
-                {previewRows.length > 15 && (
+                {pdfRows.length > 15 && (
                   <Box sx={{ p: 2, textAlign: 'center', border: '1px dashed', borderColor: 'divider', borderRadius: '4px' }}>
                     <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-                      [... {previewRows.length - 15} additional records omitted from preview ...]
+                      [... {pdfRows.length - 15} additional records omitted from preview ...]
                     </Typography>
                   </Box>
                 )}

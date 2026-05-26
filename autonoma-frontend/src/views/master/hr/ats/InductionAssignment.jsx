@@ -123,6 +123,35 @@ const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
 const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
 const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
+const TIME_OPTIONS = [
+  { value: '09:00', label: '09:00 AM' },
+  { value: '09:30', label: '09:30 AM' },
+  { value: '10:00', label: '10:00 AM' },
+  { value: '10:30', label: '10:30 AM' },
+  { value: '11:00', label: '11:00 AM' },
+  { value: '11:30', label: '11:30 AM' },
+  { value: '12:00', label: '12:00 PM' },
+  { value: '12:30', label: '12:30 PM' },
+  { value: '13:00', label: '01:00 PM' },
+  { value: '13:30', label: '01:30 PM' },
+  { value: '14:00', label: '02:00 PM' },
+  { value: '14:30', label: '02:30 PM' },
+  { value: '15:00', label: '03:00 PM' },
+  { value: '15:30', label: '03:30 PM' },
+  { value: '16:00', label: '04:00 PM' },
+  { value: '16:30', label: '04:30 PM' },
+  { value: '17:00', label: '05:00 PM' },
+  { value: '17:30', label: '05:30 PM' },
+  { value: '18:00', label: '06:00 PM' },
+  { value: '18:30', label: '06:30 PM' },
+  { value: '19:00', label: '07:00 PM' },
+  { value: '19:30', label: '07:30 PM' },
+  { value: '20:00', label: '08:00 PM' },
+  { value: '20:30', label: '08:30 PM' },
+  { value: '21:00', label: '09:00 PM' }
+];
+
+
 const VALIDATION_RULES = [
   { field: 'empCode', label: 'Employee', required: true },
   { field: 'inductionRound', label: 'Induction Round', required: true },
@@ -408,7 +437,11 @@ const InductionAssignment = () => {
 
   return (
     <MainCard
-      title="Employee Induction Summary"
+      title={
+        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+          Employee Induction Summary
+        </Typography>
+      }
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh">
@@ -434,7 +467,6 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
-        showActions={false}
       />
 
       <BOSFormDialog
@@ -506,25 +538,35 @@ const InductionAssignment = () => {
                 onChange={handleInputChange}
                 required
                 disabled={!perms.write}
-                inputProps={{ min: new Date().toLocaleDateString('en-CA') }}
+                inputProps={{ min: new Date().toISOString().split('T')[0] }}
                 InputLabelProps={{ shrink: true }}
+                onClick={(e) => {
+                  try {
+                    e.target.showPicker();
+                  } catch (err) {
+                    // Fallback
+                  }
+                }}
                 error={!!errors.inductionDate}
                 sx={errorStyle(!!errors.inductionDate)}
               />
             </Box>
             <Box sx={{ flex: 1 }}>
               <BOSTextField
-                type="time"
+                select
                 name="inductionTime"
                 label="INDUCTION TIME"
                 value={formData.inductionTime}
                 onChange={handleInputChange}
                 required
                 disabled={!perms.write}
-                InputLabelProps={{ shrink: true }}
                 error={!!errors.inductionTime}
                 sx={errorStyle(!!errors.inductionTime)}
-              />
+              >
+                {TIME_OPTIONS.map(t => (
+                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                ))}
+              </BOSTextField>
             </Box>
           </Box>
           <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
@@ -563,23 +605,6 @@ const InductionAssignment = () => {
                       {emp.employeeName} ({emp.empCode})
                     </MenuItem>
                   ))}
-              </BOSTextField>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="currentStatus"
-                label="STATUS"
-                value={formData.currentStatus}
-                onChange={handleInputChange}
-                required
-                disabled={!perms.write}
-                error={!!errors.currentStatus}
-                sx={errorStyle(!!errors.currentStatus)}
-              >
-                {STATUS_OPTIONS.map(s => (
-                  <MenuItem key={s} value={s}>{s}</MenuItem>
-                ))}
               </BOSTextField>
             </Box>
           </Box>

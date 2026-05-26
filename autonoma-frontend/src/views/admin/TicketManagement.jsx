@@ -3535,90 +3535,8 @@ export default function TicketManagement({ viewType }) {
                       renderInput={(params) => <TextField {...params} required label="Verified By" placeholder="Search employee..." />}
                     />
                   </Box>
-                </Box>
-              </Box>
-
-              {/* SECTION 4: DESCRIPTION & PLANNING */}
-              <Box sx={{ bgcolor: 'white', p: 2.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 4, height: 16, bgcolor: '#f59e0b', borderRadius: 1 }} />
-                  Details & Due Dates
-                </Typography>
-                <Box sx={{ mb: 3 }}>
-                  <Box sx={{ position: 'relative', mt: 1, width: '100%' }}>
-                    {/* Floating Label */}
-                    <InputLabel
-                      shrink={true}
-                      sx={{
-                        position: 'absolute',
-                        top: -9,
-                        left: 10,
-                        bgcolor: 'white',
-                        px: 0.5,
-                        zIndex: 2,
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: 'text.secondary'
-                      }}
-                    >
-                      Detailed Description *
-                    </InputLabel>
-
-                    {/* Mic Button at top right */}
-                    <Box sx={{ position: 'absolute', top: 6, right: 6, zIndex: 10, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.65rem', userSelect: 'none' }}>
-                        {voiceLang === 'ta-IN' ? 'TA' : voiceLang === 'hi-IN' ? 'HI' : voiceLang === 'te-IN' ? 'TE' : 'EN'}
-                      </Typography>
-                      <Tooltip title={isListening ? "Listening..." : "Start Voice Typing (Say 'English' or 'Tamil' to switch)"}>
-                        <IconButton
-                          color={isListening ? "error" : "primary"}
-                          onClick={handleToggleVoiceTyping}
-                          size="small"
-                          sx={{
-                            bgcolor: isListening ? 'rgba(239,68,68,0.1)' : 'rgba(103,58,183,0.08)',
-                            animation: isListening ? 'pulse-voice 1.5s infinite' : 'none',
-                            '@keyframes pulse-voice': {
-                              '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239,68,68,0.4)' },
-                              '70%': { transform: 'scale(1.1)', boxShadow: '0 0 0 10px rgba(239,68,68,0)' },
-                              '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239,68,68,0)' }
-                            },
-                            '&:hover': { bgcolor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(103,58,183,0.15)' }
-                          }}
-                        >
-                          <MicIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-
-                    {/* Editor */}
-                    <Box sx={{
-                      border: '1px solid',
-                      borderColor: isListening ? 'error.main' : '#cbd5e1',
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      bgcolor: '#fafafa',
-                      transition: 'border-color 0.3s ease',
-                      '& .ql-editor': { minHeight: '150px' }
-                    }}>
-                      <ReactQuillDemo
-                        value={formDesc}
-                        onChange={setFormDesc}
-                        editorMinHeight={150}
-                        placeholder="Type or speak your description here..."
-                      />
-                    </Box>
-                  </Box>
-                </Box>
-                <Box sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  mt: 2,
-                  width: '100%',
-                  flexWrap: 'wrap'
-                }}>
                   {/* Custom "Assigned Time" component exactly as designed */}
-                  <FormControl sx={{ width: 'max-content' }} variant="outlined">
+                  <FormControl sx={{ flex: '1 1 auto', minWidth: 'max-content' }} variant="outlined">
                     <InputLabel shrink={true} required sx={{ bgcolor: 'white', px: 0.5, zIndex: 2 }}>Assigned Time</InputLabel>
                     <OutlinedInput
                       notched={true}
@@ -3786,9 +3704,8 @@ export default function TicketManagement({ viewType }) {
                       }
                     />
                   </FormControl>
-
                   {/* Target Date */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 200px' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 auto', minWidth: '200px' }}>
                     <TextField
                       fullWidth
                       type="date"
@@ -3815,6 +3732,89 @@ export default function TicketManagement({ viewType }) {
                       </IconButton>
                     </HtmlTooltip>
                   </Box>
+                </Box>
+              </Box>
+
+              {/* SECTION 4: DESCRIPTION & PLANNING */}
+              <Box sx={{ bgcolor: 'white', p: 2.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Box sx={{ width: 4, height: 16, bgcolor: '#f59e0b', borderRadius: 1 }} />
+                  Details & Due Dates
+                </Typography>
+                <Box sx={{ mb: 3 }}>
+                  <Box sx={{ position: 'relative', mt: 1, width: '100%' }}>
+                    {/* Floating Label */}
+                    <InputLabel
+                      shrink={true}
+                      sx={{
+                        position: 'absolute',
+                        top: -9,
+                        left: 10,
+                        bgcolor: 'white',
+                        px: 0.5,
+                        zIndex: 2,
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        color: 'text.secondary'
+                      }}
+                    >
+                      Detailed Description *
+                    </InputLabel>
+
+                    {/* Mic Button at top right */}
+                    <Box sx={{ position: 'absolute', top: 6, right: 6, zIndex: 10, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: '#94a3b8', fontWeight: 700, fontSize: '0.65rem', userSelect: 'none' }}>
+                        {voiceLang === 'ta-IN' ? 'TA' : voiceLang === 'hi-IN' ? 'HI' : voiceLang === 'te-IN' ? 'TE' : 'EN'}
+                      </Typography>
+                      <Tooltip title={isListening ? "Listening..." : "Start Voice Typing (Say 'English' or 'Tamil' to switch)"}>
+                        <IconButton
+                          color={isListening ? "error" : "primary"}
+                          onClick={handleToggleVoiceTyping}
+                          size="small"
+                          sx={{
+                            bgcolor: isListening ? 'rgba(239,68,68,0.1)' : 'rgba(103,58,183,0.08)',
+                            animation: isListening ? 'pulse-voice 1.5s infinite' : 'none',
+                            '@keyframes pulse-voice': {
+                              '0%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239,68,68,0.4)' },
+                              '70%': { transform: 'scale(1.1)', boxShadow: '0 0 0 10px rgba(239,68,68,0)' },
+                              '100%': { transform: 'scale(1)', boxShadow: '0 0 0 0 rgba(239,68,68,0)' }
+                            },
+                            '&:hover': { bgcolor: isListening ? 'rgba(239,68,68,0.2)' : 'rgba(103,58,183,0.15)' }
+                          }}
+                        >
+                          <MicIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+
+                    {/* Editor */}
+                    <Box sx={{
+                      border: '1px solid',
+                      borderColor: isListening ? 'error.main' : '#cbd5e1',
+                      borderRadius: '8px',
+                      overflow: 'hidden',
+                      bgcolor: '#fafafa',
+                      transition: 'border-color 0.3s ease',
+                      '& .ql-editor': { minHeight: '150px' }
+                    }}>
+                      <ReactQuillDemo
+                        value={formDesc}
+                        onChange={setFormDesc}
+                        editorMinHeight={150}
+                        placeholder="Type or speak your description here..."
+                      />
+                    </Box>
+                  </Box>
+                </Box>
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  mt: 2,
+                  width: '100%',
+                  flexWrap: 'wrap'
+                }}>
+
 
                   {/* Upload Attachments & Audio Recording */}
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: '1.5 1 280px', minWidth: 260, flexWrap: 'wrap' }}>
@@ -3909,36 +3909,34 @@ export default function TicketManagement({ viewType }) {
                         ))}
                       </Box>
                     )}
+                    <Tooltip title="Ctrl + S" arrow placement="top">
+                      <span style={{ marginLeft: 'auto' }}>
+                        <Button
+                          id="ticket-submit-button"
+                          variant="contained"
+                          type="submit"
+                          disabled={isSaving}
+                          sx={{
+                            height: 43,
+                            bgcolor: '#673ab7',
+                            fontWeight: 700,
+                            px: 4,
+                            borderRadius: '8px',
+                            '&:hover': { bgcolor: '#5e35b1' },
+                            '&.Mui-disabled': { bgcolor: '#b39ddb', color: '#fff' }
+                          }}
+                        >
+                          <SaveIcon sx={{ mr: 1, fontSize: 20 }} />
+                          {isSaving ? 'Saving...' : 'Save'}
+                        </Button>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </Box>
               </Box>
 
             </Stack>
           </DialogContent>
-          <Divider />
-          <DialogActions sx={{ p: 2.5, bgcolor: '#f1f5f9', justifyContent: 'flex-end' }}>
-            <Tooltip title="Ctrl + S" arrow placement="top">
-              <span>
-                <Button
-                  id="ticket-submit-button"
-                  variant="contained"
-                  type="submit"
-                  disabled={isSaving}
-                  sx={{
-                    bgcolor: '#673ab7',
-                    fontWeight: 700,
-                    px: 4,
-                    borderRadius: '8px',
-                    '&:hover': { bgcolor: '#5e35b1' },
-                    '&.Mui-disabled': { bgcolor: '#b39ddb', color: '#fff' }
-                  }}
-                >
-                  <SaveIcon sx={{ mr: 1, fontSize: 20 }} />
-                  {isSaving ? 'Saving...' : 'Save'}
-                </Button>
-              </span>
-            </Tooltip>
-          </DialogActions>
         </form>
       </Dialog>
 
