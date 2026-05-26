@@ -2,6 +2,7 @@ package com.autonoma.erp.service;
 
 import com.autonoma.erp.model.InductionAssignment;
 import com.autonoma.erp.repository.InductionAssignmentRepository;
+import com.autonoma.erp.repository.InductionTrainingDetailRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,9 @@ public class InductionAssignmentService {
 
     @Autowired
     private InductionAssignmentRepository repository;
+
+    @Autowired
+    private InductionTrainingDetailRepository trainingDetailRepository;
 
     public List<InductionAssignment> getAll() {
         return repository.findAll();
@@ -105,5 +109,31 @@ public class InductionAssignmentService {
         } else {
             throw new RuntimeException("Invalid status transition from " + current + " to " + newStatus);
         }
+    }
+
+    @Transactional
+    public List<InductionAssignment> saveAll(List<InductionAssignment> entities, String currentUser) {
+        for (InductionAssignment entity : entities) {
+            save(entity, currentUser);
+        }
+        return entities;
+    }
+
+    public boolean isUsedInTraining(Long id) {
+        List<?> trainingDetails = trainingDetailRepository.findByAssignmentId(id);
+        return trainingDetails != null && !trainingDetails.isEmpty();
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        InductionAssignment existing = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Assignment not found."));
+        
+        List<?> trainingDetails = trainingDetailRepository.findByAssignmentId(id);
+        if (trainingDetails != null && !trainingDetails.isEmpty()) {
+            throw new RuntimeException("Cannot delete this induction assignment because it is already used in training records.");
+        }
+        
+        repository.delete(existing);
     }
 }

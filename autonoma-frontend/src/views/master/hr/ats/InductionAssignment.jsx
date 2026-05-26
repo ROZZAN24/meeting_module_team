@@ -34,6 +34,7 @@ import {
 
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import {
   BOSDataTable,
   BOSFormDialog,
@@ -46,7 +47,7 @@ import {
 import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, resetFilters, setQuery } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
@@ -103,20 +104,24 @@ const columns = [
 ];
 
 const INITIAL_STATE = {
-  id: null,
   empCode: '',
   oldEmpCode: '',
   empName: '',
   department: '',
   designation: '',
-  inductionRound: '',
-  screeningLevel: 'Level 1', 
-  inductionDate: new Date().toISOString().split('T')[0],
-  inductionTime: '09:00',
-  trainerName: '',
-  currentStatus: 'PENDING',
-  inductionStatus: 'ACTIVE',
-  remarks: ''
+  levels: [
+    {
+      id: null,
+      screeningLevel: 'Level 1',
+      inductionRound: '',
+      inductionDate: new Date().toISOString().split('T')[0],
+      inductionTime: '09:00',
+      trainerName: '',
+      currentStatus: 'PENDING',
+      inductionStatus: 'ACTIVE',
+      remarks: ''
+    }
+  ]
 };
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
@@ -160,6 +165,45 @@ const VALIDATION_RULES = [
   { field: 'inductionTime', label: 'Induction Time', required: true },
   { field: 'trainerName', label: 'Trainer Name', required: true }
 ];
+
+const normalizeScreeningLevel = (level) => {
+  if (!level) return '';
+  const trimmed = level.trim();
+  if (trimmed === '-' || trimmed === '') return '';
+  
+  const matchL = trimmed.match(/^L(\d+)$/i);
+  if (matchL) {
+    return `Level ${matchL[1]}`;
+  }
+  
+  const matchLevel = trimmed.match(/^Level\s*(\d+)$/i);
+  if (matchLevel) {
+    return `Level ${matchLevel[1]}`;
+  }
+  
+  const matchNum = trimmed.match(/^(\d+)$/);
+  if (matchNum) {
+    return `Level ${matchNum[1]}`;
+  }
+  
+  return trimmed;
+};
+
+const normalizeInductionTime = (time) => {
+  if (!time) return '';
+  const trimmed = time.trim();
+  if (trimmed === '-' || trimmed === '') return '';
+  
+  const match = trimmed.match(/^(\d{2}):(\d{2})(?::\d{2})?$/);
+  if (match) {
+    const formatted = `${match[1]}:${match[2]}`;
+    if (TIME_OPTIONS.some(option => option.value === formatted)) {
+      return formatted;
+    }
+  }
+  return '';
+};
+
 
 const InductionAssignment = () => {
   const theme = useTheme();
@@ -212,6 +256,8 @@ const InductionAssignment = () => {
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
+      dispatch(resetFilters());
+      dispatch(setQuery(''));
     };
   }, [dispatch]);
 
@@ -219,7 +265,18 @@ const InductionAssignment = () => {
     setLoading(true);
     try {
       const { data } = await axios.get(`/api/hr/induction-assignment/employee/${row.empCode}`);
-      setHistory(data || []);
+      const normalizedHistory = (data || [])
+        .map(h => ({
+          ...h,
+          screeningLevel: normalizeScreeningLevel(h.screeningLevel),
+          inductionTime: normalizeInductionTime(h.inductionTime)
+        }))
+        .sort((a, b) => {
+          const aNum = parseInt(a.screeningLevel.replace(/^\D+/g, ''), 10) || 0;
+          const bNum = parseInt(b.screeningLevel.replace(/^\D+/g, ''), 10) || 0;
+          return aNum - bNum;
+        });
+      setHistory(normalizedHistory);
       
       const cleanData = { ...INITIAL_STATE };
       
@@ -230,11 +287,9 @@ const InductionAssignment = () => {
       });
 
       // Special handling for dates
-      if (row.inductionDate && row.inductionDate !== '-') {
-        cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
-      } else {
-        cleanData.inductionDate = new Date().toISOString().split('T')[0];
-      }
+      const defaultDate = row.inductionDate && row.inductionDate !== '-'
+        ? new Date(row.inductionDate).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
 
       // Add gradeCode/Level info for summary header
       cleanData.gradeCode = row.gradeCode || row.grade?.gradeCode || '-';
@@ -243,7 +298,20 @@ const InductionAssignment = () => {
       cleanData.oldEmpCode = row.oldEmpCode || '';
       cleanData.department = typeof row.department === 'object' ? row.department?.departmentName : (row.department || '');
       cleanData.designation = typeof row.designation === 'object' ? row.designation?.designationName : (row.designation || '');
-      cleanData.inductionStatus = 'ACTIVE'; // Force ACTIVE so it's not overridden by EmployeeMaster's PENDING status
+      
+      cleanData.levels = [
+        {
+          id: row.isVirtual ? null : row.id,
+          screeningLevel: row.screeningLevel && row.screeningLevel !== '-' ? normalizeScreeningLevel(row.screeningLevel) : `Level ${normalizedHistory.length + 1}`,
+          inductionRound: row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : '',
+          inductionDate: defaultDate,
+          inductionTime: row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00',
+          trainerName: row.trainerName && row.trainerName !== '-' ? row.trainerName : '',
+          currentStatus: row.currentStatus || 'PENDING',
+          inductionStatus: row.inductionStatus || 'ACTIVE',
+          remarks: row.remarks || ''
+        }
+      ];
 
       setFormData(cleanData);
       setErrors({});
@@ -251,13 +319,28 @@ const InductionAssignment = () => {
     } catch (err) {
       console.error('History fetch error:', err);
       // Fallback if history fails
+      const defaultDate = row.inductionDate && row.inductionDate !== '-'
+        ? new Date(row.inductionDate).toISOString().split('T')[0]
+        : new Date().toISOString().split('T')[0];
       setFormData({
-        ...INITIAL_STATE,
         empCode: row.empCode,
         empName: row.empName || row.employeeName,
         department: row.department,
         designation: row.designation,
-        oldEmpCode: row.oldEmpCode
+        oldEmpCode: row.oldEmpCode,
+        levels: [
+          {
+            id: row.isVirtual ? null : row.id,
+            screeningLevel: row.screeningLevel && row.screeningLevel !== '-' ? normalizeScreeningLevel(row.screeningLevel) : 'Level 1',
+            inductionRound: row.inductionRound && row.inductionRound !== '-' ? row.inductionRound : '',
+            inductionDate: defaultDate,
+            inductionTime: row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00',
+            trainerName: row.trainerName && row.trainerName !== '-' ? row.trainerName : '',
+            currentStatus: row.currentStatus || 'PENDING',
+            inductionStatus: row.inductionStatus || 'ACTIVE',
+            remarks: row.remarks || ''
+          }
+        ]
       });
       setDialogOpen(true);
     } finally {
@@ -302,6 +385,31 @@ const InductionAssignment = () => {
     }
   ], [handleAssign]);
 
+  const currentLevelOptions = useMemo(() => {
+    const optionsSet = new Set(LEVEL_OPTIONS);
+    if (formData && formData.levels) {
+      formData.levels.forEach(level => {
+        const norm = normalizeScreeningLevel(level.screeningLevel);
+        if (norm) {
+          optionsSet.add(norm);
+        }
+      });
+    }
+    if (history) {
+      history.forEach(h => {
+        const norm = normalizeScreeningLevel(h.screeningLevel);
+        if (norm) {
+          optionsSet.add(norm);
+        }
+      });
+    }
+    return Array.from(optionsSet).sort((a, b) => {
+      const aNum = parseInt(a.replace(/^\D+/g, ''), 10) || 0;
+      const bNum = parseInt(b.replace(/^\D+/g, ''), 10) || 0;
+      return aNum - bNum;
+    });
+  }, [formData, history]);
+
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
@@ -325,6 +433,8 @@ const InductionAssignment = () => {
           employeeId: emp?.id,
           department: empDept,
           designation: empDesig,
+          screeningLevel: normalizeScreeningLevel(a.screeningLevel),
+          inductionTime: normalizeInductionTime(a.inductionTime),
           isVirtual: false 
         });
       });
@@ -357,53 +467,256 @@ const InductionAssignment = () => {
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
+  const [deleteHistoryOpen, setDeleteHistoryOpen] = useState(false);
+  const [historyItemToDelete, setHistoryItemToDelete] = useState(null);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) clearErrors(name);
   };
 
-  const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
-    
-    // Find trainer emp code
-    const selectedTrainer = employees.find(e => e.employeeName === formData.trainerName);
-    
-    // Clean payload to match backend model exactly
-    const payload = {
-      empCode: formData.empCode,
-      empName: formData.empName,
-      oldEmpCode: formData.oldEmpCode,
-      department: formData.department,
-      designation: formData.designation,
-      inductionRound: formData.inductionRound,
-      screeningLevel: formData.screeningLevel,
-      inductionDate: formData.inductionDate,
-      inductionTime: formData.inductionTime,
-      trainerName: formData.trainerName,
-      trainerEmpCode: selectedTrainer?.empCode || '',
-      currentStatus: formData.currentStatus,
-      inductionStatus: formData.inductionStatus,
-      remarks: formData.remarks
-    };
+  const handleLevelInputChange = (index, fieldName, value) => {
+    setFormData(prev => {
+      let updatedLevels = [...prev.levels];
+      updatedLevels[index] = { ...updatedLevels[index], [fieldName]: value };
+      
+      if (fieldName === 'screeningLevel' && value) {
+        const normValue = normalizeScreeningLevel(value);
+        const duplicateInForm = updatedLevels.some((l, idx) => idx !== index && normalizeScreeningLevel(l.screeningLevel) === normValue);
+        const duplicateInHistory = history.some(h => normalizeScreeningLevel(h.screeningLevel) === normValue);
+        
+        if (duplicateInForm || duplicateInHistory) {
+          updatedLevels[index] = { ...updatedLevels[index], screeningLevel: '' };
+          dispatch(openSnackbar({ 
+            open: true, 
+            message: `${normValue} is already assigned or in history.`, 
+            variant: 'alert', 
+            severity: 'warning' 
+          }));
+          return { ...prev, levels: updatedLevels };
+        }
 
-    if (formData.id) {
-      payload.id = formData.id;
+        // Auto-expand next sequential level
+        if (index === updatedLevels.length - 1) {
+          const currentLevelNum = parseInt(normValue.replace(/^\D+/g, ''), 10) || 0;
+          const nextLevelNum = currentLevelNum + 1;
+          const nextLevelStr = `Level ${nextLevelNum}`;
+          
+          const alreadyExists = updatedLevels.some(l => normalizeScreeningLevel(l.screeningLevel) === nextLevelStr) ||
+                                history.some(h => normalizeScreeningLevel(h.screeningLevel) === nextLevelStr);
+                                
+          if (nextLevelNum <= 4 && !alreadyExists) {
+            updatedLevels.push({
+              id: null,
+              screeningLevel: nextLevelStr,
+              inductionRound: '',
+              inductionDate: new Date().toISOString().split('T')[0],
+              inductionTime: '09:00',
+              trainerName: '',
+              currentStatus: 'PENDING',
+              inductionStatus: 'ACTIVE',
+              remarks: ''
+            });
+          }
+        }
+      }
+      return { ...prev, levels: updatedLevels };
+    });
+    
+    const errorKey = `level_${index}_${fieldName}`;
+    if (errors[errorKey]) {
+      setErrors(prev => {
+        const copy = { ...prev };
+        delete copy[errorKey];
+        return copy;
+      });
     }
+  };
 
-    // Additional validation for default values
-    if (formData.screeningLevel === '-' || formData.inductionRound === '-') {
-      dispatch(openSnackbar({ open: true, message: 'Please select a valid Level and Round', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+  const handleAddLevel = () => {
+    const nextLevelNum = formData.levels.length + history.length + 1;
+    setFormData(prev => ({
+      ...prev,
+      levels: [
+        ...prev.levels,
+        {
+          id: null,
+          screeningLevel: `Level ${nextLevelNum}`,
+          inductionRound: '',
+          inductionDate: new Date().toISOString().split('T')[0],
+          inductionTime: '09:00',
+          trainerName: '',
+          currentStatus: 'PENDING',
+          inductionStatus: 'ACTIVE',
+          remarks: ''
+        }
+      ]
+    }));
+  };
+
+  const handleRemoveLevel = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      levels: prev.levels.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleDeleteHistoryItem = async (item) => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get(`/api/hr/induction-assignment/${item.id}/check-references`);
+      if (data && data.isUsed) {
+        dispatch(openSnackbar({ 
+          open: true, 
+          message: 'Cannot delete this induction assignment because it is already used in training records.', 
+          variant: 'alert', 
+          alert: { variant: 'filled' },
+          severity: 'error' 
+        }));
+        return;
+      }
+      setHistoryItemToDelete(item);
+      setDeleteHistoryOpen(true);
+    } catch (err) {
+      console.error('Check references error:', err);
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Failed to verify references for induction assignment', 
+        variant: 'alert', 
+        severity: 'error' 
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const confirmDeleteHistoryItem = async () => {
+    if (!historyItemToDelete) return;
+    try {
+      await axios.delete(`/api/hr/induction-assignment/${historyItemToDelete.id}`);
+      dispatch(openSnackbar({ open: true, message: 'Induction record deleted successfully', variant: 'alert', severity: 'success' }));
+      
+      const { data } = await axios.get(`/api/hr/induction-assignment/employee/${formData.empCode}`);
+      const normalizedHistory = (data || [])
+        .map(h => ({
+          ...h,
+          screeningLevel: normalizeScreeningLevel(h.screeningLevel),
+          inductionTime: normalizeInductionTime(h.inductionTime)
+        }))
+        .sort((a, b) => {
+          const aNum = parseInt(a.screeningLevel.replace(/^\D+/g, ''), 10) || 0;
+          const bNum = parseInt(b.screeningLevel.replace(/^\D+/g, ''), 10) || 0;
+          return aNum - bNum;
+        });
+      setHistory(normalizedHistory);
+      
+      fetchRows();
+    } catch (err) {
+      console.error('Delete error:', err);
+      const errMsg = err.response?.data?.message || err.response?.data || err.message || 'Failed to delete record';
+      let displayMsg = 'Failed to delete record';
+      if (typeof errMsg === 'string' && (
+        errMsg.toLowerCase().includes('conflict') || 
+        errMsg.toLowerCase().includes('reference') || 
+        errMsg.toLowerCase().includes('constraint') || 
+        errMsg.toLowerCase().includes('training')
+      )) {
+        displayMsg = 'Cannot delete this induction assignment because it is already used in training records.';
+      } else if (typeof errMsg === 'string') {
+        displayMsg = errMsg;
+      }
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: displayMsg, 
+        variant: 'alert', 
+        alert: { variant: 'filled' },
+        severity: 'error' 
+      }));
+    } finally {
+      setDeleteHistoryOpen(false);
+      setHistoryItemToDelete(null);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formData.empCode) {
+      dispatch(openSnackbar({ open: true, message: 'Employee Code is mandatory', variant: 'alert', severity: 'error' }));
       return;
     }
 
-    try {
-      if (payload.id) {
-        await axios.put(`/api/hr/induction-assignment/${payload.id}`, payload);
-      } else {
-        await axios.post('/api/hr/induction-assignment', payload);
+    let validationFailed = false;
+    const newErrors = {};
+    
+    formData.levels.forEach((level, index) => {
+      if (!level.screeningLevel || level.screeningLevel === '-') {
+        newErrors[`level_${index}_screeningLevel`] = 'Screening Level is required';
+        validationFailed = true;
       }
-      dispatch(openSnackbar({ open: true, message: 'Assignment saved!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+      if (!level.inductionRound || level.inductionRound === '-') {
+        newErrors[`level_${index}_inductionRound`] = 'Round is required';
+        validationFailed = true;
+      }
+      if (!level.inductionDate) {
+        newErrors[`level_${index}_inductionDate`] = 'Induction Date is required';
+        validationFailed = true;
+      }
+      if (!level.inductionTime) {
+        newErrors[`level_${index}_inductionTime`] = 'Induction Time is required';
+        validationFailed = true;
+      }
+      if (!level.trainerName) {
+        newErrors[`level_${index}_trainerName`] = 'Trainer Name is required';
+        validationFailed = true;
+      }
+    });
+
+    if (validationFailed) {
+      setErrors(newErrors);
+      dispatch(openSnackbar({ open: true, message: 'Please fix validation errors', variant: 'alert', severity: 'error' }));
+      return;
+    }
+
+    // Map all dynamic levels to payloads
+    const payloads = formData.levels.map(level => {
+      const selectedTrainer = employees.find(e => e.employeeName === level.trainerName);
+      const pay = {
+        empCode: formData.empCode,
+        empName: formData.empName,
+        oldEmpCode: formData.oldEmpCode,
+        department: formData.department,
+        designation: formData.designation,
+        inductionRound: level.inductionRound,
+        screeningLevel: normalizeScreeningLevel(level.screeningLevel),
+        inductionDate: level.inductionDate,
+        inductionTime: normalizeInductionTime(level.inductionTime),
+        trainerName: level.trainerName,
+        trainerEmpCode: selectedTrainer?.empCode || '',
+        currentStatus: level.currentStatus,
+        inductionStatus: level.inductionStatus,
+        remarks: level.remarks
+      };
+      if (level.id) {
+        pay.id = level.id;
+      }
+      return pay;
+    });
+
+    // Sort payloads sequentially by screeningLevel
+    payloads.sort((a, b) => {
+      const aNum = parseInt(a.screeningLevel.replace(/^\D+/g, ''), 10) || 0;
+      const bNum = parseInt(b.screeningLevel.replace(/^\D+/g, ''), 10) || 0;
+      return aNum - bNum;
+    });
+
+    try {
+      if (payloads.length === 1 && payloads[0].id) {
+        await axios.put(`/api/hr/induction-assignment/${payloads[0].id}`, payloads[0]);
+      } else {
+        // Bulk save/POST
+        await axios.post('/api/hr/induction-assignment', payloads);
+      }
+      dispatch(openSnackbar({ open: true, message: 'Assignment saved successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       setDialogOpen(false);
       fetchRows();
     } catch (error) {
@@ -477,7 +790,22 @@ const InductionAssignment = () => {
         maxWidth="md"
         onSave={perms.write ? handleSave : null}
         onClear={perms.write ? () => {
-          setFormData(INITIAL_STATE);
+          setFormData(prev => ({
+            ...prev,
+            levels: [
+              {
+                id: null,
+                screeningLevel: 'Level 1',
+                inductionRound: '',
+                inductionDate: new Date().toISOString().split('T')[0],
+                inductionTime: '09:00',
+                trainerName: '',
+                currentStatus: 'PENDING',
+                inductionStatus: 'ACTIVE',
+                remarks: ''
+              }
+            ]
+          }));
           setErrors({});
         } : null}
         isViewOnly={!perms.write}
@@ -490,125 +818,148 @@ const InductionAssignment = () => {
           <Box><Typography variant="caption" color="textSecondary">SCREEN LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{history.length + 1}</Typography></Box>
         </Box>
 
-        <BOSFormSection title="1. Assignment Details">
-          <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="screeningLevel"
-                label="SCREENING LEVEL"
-                value={formData.screeningLevel}
-                onChange={handleInputChange}
-                required
-                disabled={!perms.write}
-                error={!!errors.screeningLevel}
-                sx={errorStyle(!!errors.screeningLevel)}
-              >
-                {LEVEL_OPTIONS.map(l => (
-                  <MenuItem key={l} value={l}>{l}</MenuItem>
-                ))}
-              </BOSTextField>
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="inductionRound"
-                label="ROUND"
-                value={formData.inductionRound}
-                onChange={handleInputChange}
-                required
-                disabled={!perms.write}
-                error={!!errors.inductionRound}
-                sx={errorStyle(!!errors.inductionRound)}
-              >
-                <MenuItem value="">-SELECT-</MenuItem>
-                {ROUND_OPTIONS.map(r => (
-                  <MenuItem key={r} value={r}>{r}</MenuItem>
-                ))}
-              </BOSTextField>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                type="date"
-                name="inductionDate"
-                label="INDUCTION DATE"
-                value={formData.inductionDate}
-                onChange={handleInputChange}
-                required
-                disabled={!perms.write}
-                inputProps={{ min: new Date().toISOString().split('T')[0] }}
-                InputLabelProps={{ shrink: true }}
-                onClick={(e) => {
-                  try {
-                    e.target.showPicker();
-                  } catch (err) {
-                    // Fallback
-                  }
-                }}
-                error={!!errors.inductionDate}
-                sx={errorStyle(!!errors.inductionDate)}
-              />
-            </Box>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="inductionTime"
-                label="INDUCTION TIME"
-                value={formData.inductionTime}
-                onChange={handleInputChange}
-                required
-                disabled={!perms.write}
-                error={!!errors.inductionTime}
-                sx={errorStyle(!!errors.inductionTime)}
-              >
-                {TIME_OPTIONS.map(t => (
-                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
-                ))}
-              </BOSTextField>
-            </Box>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="trainerName"
-                label="INDUCTION PERSON"
-                value={formData.trainerName}
-                onChange={handleInputChange}
-                required
-                disabled={!perms.write}
-                error={!!errors.trainerName}
-                sx={errorStyle(!!errors.trainerName)}
-              >
-                <MenuItem value="">-Select-</MenuItem>
-                {employees
-                  .filter(emp => {
-                    if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
-                    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
-                    const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
-                    const round = formData.inductionRound;
-                    if (round === 'HR') {
-                      return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
-                    }
-                    if (round === 'QMS') {
-                      return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT'].includes(empDept?.toUpperCase());
-                    }
-                    if (round === 'DEPARTMENT') {
-                      return empDept?.toLowerCase() === formData.department?.toLowerCase();
-                    }
-                    return true;
-                  })
-                  .map(emp => (
-                    <MenuItem key={emp.id} value={emp.employeeName}>
-                      {emp.employeeName} ({emp.empCode})
-                    </MenuItem>
+        {(formData.levels || []).map((level, index) => (
+          <BOSFormSection key={index} title={`Level ${index + 1} Assignment`}>
+            {formData.levels.length > 1 && (
+              <Stack direction="row" justifyContent="flex-end" sx={{ mb: 1 }}>
+                <Button 
+                  size="small" 
+                  color="error" 
+                  onClick={() => handleRemoveLevel(index)}
+                  disabled={!perms.write}
+                >
+                  Remove Level
+                </Button>
+              </Stack>
+            )}
+            <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <BOSTextField
+                  select
+                  name="screeningLevel"
+                  label="SCREENING LEVEL"
+                  value={normalizeScreeningLevel(level.screeningLevel)}
+                  onChange={(e) => handleLevelInputChange(index, 'screeningLevel', e.target.value)}
+                  required
+                  disabled={!perms.write}
+                  error={!!errors[`level_${index}_screeningLevel`]}
+                  helperText={errors[`level_${index}_screeningLevel`]}
+                  sx={errorStyle(!!errors[`level_${index}_screeningLevel`])}
+                >
+                  <MenuItem value="">-SELECT-</MenuItem>
+                  {currentLevelOptions.map(l => (
+                    <MenuItem key={l} value={l}>{l}</MenuItem>
                   ))}
-              </BOSTextField>
+                </BOSTextField>
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <BOSTextField
+                  select
+                  name="inductionRound"
+                  label="ROUND"
+                  value={level.inductionRound}
+                  onChange={(e) => handleLevelInputChange(index, 'inductionRound', e.target.value)}
+                  required
+                  disabled={!perms.write}
+                  error={!!errors[`level_${index}_inductionRound`]}
+                  helperText={errors[`level_${index}_inductionRound`]}
+                  sx={errorStyle(!!errors[`level_${index}_inductionRound`])}
+                >
+                  <MenuItem value="">-SELECT-</MenuItem>
+                  {ROUND_OPTIONS.map(r => (
+                    <MenuItem key={r} value={r}>{r}</MenuItem>
+                  ))}
+                </BOSTextField>
+              </Box>
             </Box>
-          </Box>
-        </BOSFormSection>
+            <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <BOSTextField
+                  type="date"
+                  name="inductionDate"
+                  label="INDUCTION DATE"
+                  value={level.inductionDate}
+                  onChange={(e) => handleLevelInputChange(index, 'inductionDate', e.target.value)}
+                  required
+                  disabled={!perms.write}
+                  inputProps={{ min: new Date().toISOString().split('T')[0] }}
+                  InputLabelProps={{ shrink: true }}
+                  onClick={(e) => {
+                    try {
+                      e.target.showPicker();
+                    } catch (err) {
+                      // Fallback
+                    }
+                  }}
+                  error={!!errors[`level_${index}_inductionDate`]}
+                  helperText={errors[`level_${index}_inductionDate`]}
+                  sx={errorStyle(!!errors[`level_${index}_inductionDate`])}
+                />
+              </Box>
+              <Box sx={{ flex: 1 }}>
+                <BOSTextField
+                  select
+                  name="inductionTime"
+                  label="INDUCTION TIME"
+                  value={normalizeInductionTime(level.inductionTime)}
+                  onChange={(e) => handleLevelInputChange(index, 'inductionTime', e.target.value)}
+                  required
+                  disabled={!perms.write}
+                  error={!!errors[`level_${index}_inductionTime`]}
+                  helperText={errors[`level_${index}_inductionTime`]}
+                  sx={errorStyle(!!errors[`level_${index}_inductionTime`])}
+                >
+                  <MenuItem value="">-SELECT-</MenuItem>
+                  {TIME_OPTIONS.map(t => (
+                    <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                  ))}
+                </BOSTextField>
+              </Box>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+              <Box sx={{ flex: 1 }}>
+                <BOSTextField
+                  select
+                  name="trainerName"
+                  label="INDUCTION PERSON"
+                  value={level.trainerName}
+                  onChange={(e) => handleLevelInputChange(index, 'trainerName', e.target.value)}
+                  required
+                  disabled={!perms.write}
+                  error={!!errors[`level_${index}_trainerName`]}
+                  helperText={errors[`level_${index}_trainerName`]}
+                  sx={errorStyle(!!errors[`level_${index}_trainerName`])}
+                >
+                  <MenuItem value="">-Select-</MenuItem>
+                  {employees
+                    .filter(emp => {
+                      if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
+                      if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
+                      const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
+                      const round = level.inductionRound;
+                      if (round === 'HR') {
+                        return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
+                      }
+                      if (round === 'QMS') {
+                        return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT'].includes(empDept?.toUpperCase());
+                      }
+                      if (round === 'DEPARTMENT') {
+                        return empDept?.toLowerCase() === formData.department?.toLowerCase();
+                      }
+                      return true;
+                    })
+                    .map(emp => (
+                      <MenuItem key={emp.id} value={emp.employeeName}>
+                        {emp.employeeName} ({emp.empCode})
+                      </MenuItem>
+                    ))}
+                </BOSTextField>
+              </Box>
+            </Box>
+          </BOSFormSection>
+        ))}
+
+        {/* Manual Add Level Button Removed */}
 
         {/* History Table */}
         <Box sx={{ mt: 4 }}>
@@ -654,12 +1005,25 @@ const InductionAssignment = () => {
                       <TableCell>NO</TableCell>
                       <TableCell>{h.createdBy || '-'}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={h.inductionStatus || 'ACTIVE'} 
-                          size="small" 
-                          variant="outlined" 
-                          color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
-                        />
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Chip 
+                            label={h.inductionStatus || 'ACTIVE'} 
+                            size="small" 
+                            variant="outlined" 
+                            color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
+                          />
+                          {perms.delete && (
+                            <Tooltip title="Delete">
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => handleDeleteHistoryItem(h)}
+                              >
+                                <IconTrash size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))
@@ -669,6 +1033,15 @@ const InductionAssignment = () => {
           </TableContainer>
         </Box>
       </BOSFormDialog>
+
+      <ConfirmDeleteDialog
+        open={deleteHistoryOpen}
+        onClose={() => setDeleteHistoryOpen(false)}
+        onConfirm={confirmDeleteHistoryItem}
+        title="Delete Induction Assignment"
+        message="Are you sure you want to delete this induction assignment?"
+        itemName={historyItemToDelete ? `${historyItemToDelete.screeningLevel} - ${historyItemToDelete.inductionRound}` : ''}
+      />
     </MainCard>
   );
 };
