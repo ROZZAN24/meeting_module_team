@@ -193,16 +193,12 @@ function StatusChip({ status }) {
   const colorMap = { 'Open': 'info', 'Pending for Verified': 'warning', 'Verified': 'success' };
   const label = typeof status === 'object' ? status?.name : status;
   return (
-    <Chip 
-      label={label || 'Open'} 
-      size="small" 
-      color={colorMap[label] || 'default'} 
-      variant="outlined" 
-      sx={{ 
-        width: '160px', 
-        justifyContent: 'center', 
-        fontWeight: 700 
-      }} 
+    <Chip
+      label={label || 'Open'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
     />
   );
 }
@@ -287,8 +283,16 @@ export default function CheckListRenewalReport() {
         assignedBy: filters.assignedBy || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      let displayRows = response.data.content || [];
+      if (filters.status === 'All') {
+        const excludedStatuses = ['Pending', 'Started', 'Pending for Verified', 'Pending for Accepted'];
+        displayRows = displayRows.filter((r) => {
+          const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
+          return !excludedStatuses.includes(statusName);
+        });
+      }
+      setRows(displayRows);
+      setTotalElements(displayRows.length);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
     } finally {

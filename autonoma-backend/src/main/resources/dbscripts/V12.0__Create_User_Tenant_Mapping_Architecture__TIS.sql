@@ -36,3 +36,4 @@ SELECT 'Admin', id, 'SYSTEM' FROM ad_company_credential WHERE NOT EXISTS (SELECT
 
 INSERT INTO [dbo].[AD_USER_DIVISION_MAPPING] ([user_id], [division_id], [created_by])
 SELECT 'Admin', id, 'SYSTEM' FROM ad_division_master WHERE NOT EXISTS (SELECT 1 FROM AD_USER_DIVISION_MAPPING WHERE [user_id] = 'Admin');
+

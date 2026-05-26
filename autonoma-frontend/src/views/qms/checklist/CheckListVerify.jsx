@@ -191,17 +191,13 @@ function StatusChip({ status }) {
   };
   const cfg = map[status] || { color: 'default', icon: null };
   return (
-    <Chip 
-      label={status} 
-      size="small" 
-      color={cfg.color} 
-      icon={cfg.icon} 
-      variant="outlined" 
-      sx={{ 
-        width: '160px', 
-        justifyContent: 'center', 
-        fontWeight: 700 
-      }} 
+    <Chip
+      label={status}
+      size="small"
+      color={cfg.color}
+      icon={cfg.icon}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
     />
   );
 }

@@ -257,7 +257,7 @@ export function JWTProvider({ children }) {
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          // Keep sessionStorage in sync so SessionInfoBadge reads correctly
+          // Keep localStorage in sync so other tabs can read the context
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,

@@ -68,7 +68,7 @@ const columns = [
           size="small" 
           color={isActive ? 'success' : 'error'} 
           variant="outlined" 
-          sx={{ fontWeight: 700 }}
+          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
@@ -92,7 +92,7 @@ const columns = [
           size="small" 
           color={cfg.color} 
           variant="outlined" 
-          sx={{ fontWeight: 700 }}
+          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
@@ -116,11 +116,7 @@ const columns = [
           color={cfg.color} 
           icon={cfg.icon} 
           variant="outlined" 
-          sx={{ 
-            fontWeight: 700,
-            width: '160px',
-            justifyContent: 'center'
-          }}
+          sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
@@ -327,7 +323,8 @@ export default function MasterCheckList() {
   };
 
   const handleAssign = (row) => {
-    if (row?.verifyStatus !== 'Verified') {
+    const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+    if (!isAdmin && row?.verifyStatus !== 'Verified') {
       dispatch(openSnackbar({ open: true, message: 'Only verified checklists can be assigned!', variant: 'alert', severity: 'warning' }));
       return;
     }

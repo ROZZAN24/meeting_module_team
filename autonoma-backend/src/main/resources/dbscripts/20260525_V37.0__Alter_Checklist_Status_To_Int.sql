@@ -43,7 +43,7 @@ GO
 
 UPDATE [dbo].[qms_checklist_master]
 SET [VERIFY_STATUS_INT] = CASE
-    WHEN UPPER(LTRIM(RTRIM([VERIFY_STATUS]))) IN ('APPROVED','APPROVE') THEN 1
+    WHEN UPPER(LTRIM(RTRIM([VERIFY_STATUS]))) IN ('APPROVED','APPROVE','VERIFIED') THEN 1
     WHEN UPPER(LTRIM(RTRIM([VERIFY_STATUS]))) IN ('REJECTED','REJECT')  THEN 2
     WHEN UPPER(LTRIM(RTRIM([VERIFY_STATUS]))) = 'HOLD'                  THEN 3
     ELSE 0
@@ -51,21 +51,33 @@ END
 WHERE [VERIFY_STATUS_INT] IS NULL;
 GO
 
--- STEP 3: Drop old VARCHAR status columns
+-- STEP 3: Drop old string status columns and default constraints
+DECLARE @ConstraintName NVARCHAR(200);
+SELECT @ConstraintName = name
+FROM sys.default_constraints
+WHERE parent_object_id = OBJECT_ID('dbo.qms_checklist_master')
+  AND COL_NAME(parent_object_id, parent_column_id) = 'STATUS';
+
+IF @ConstraintName IS NOT NULL
+BEGIN
+    EXEC('ALTER TABLE [dbo].[qms_checklist_master] DROP CONSTRAINT [' + @ConstraintName + ']');
+END
+GO
+
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'STATUS'
-           AND system_type_id = TYPE_ID('varchar'))
+           AND TYPE_NAME(system_type_id) IN ('varchar', 'nvarchar'))
 BEGIN
     ALTER TABLE [dbo].[qms_checklist_master] DROP COLUMN [STATUS];
 END
 GO
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'TASK_STATUS'
-           AND system_type_id = TYPE_ID('varchar'))
+           AND TYPE_NAME(system_type_id) IN ('varchar', 'nvarchar'))
 BEGIN
     ALTER TABLE [dbo].[qms_checklist_master] DROP COLUMN [TASK_STATUS];
 END
 GO
 IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.qms_checklist_master') AND name = 'VERIFY_STATUS'
-           AND system_type_id = TYPE_ID('varchar'))
+           AND TYPE_NAME(system_type_id) IN ('varchar', 'nvarchar'))
 BEGIN
     ALTER TABLE [dbo].[qms_checklist_master] DROP COLUMN [VERIFY_STATUS];
 END

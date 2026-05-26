@@ -36,8 +36,8 @@ function filterMenuByPermissions(items, permMap) {
       // Leaf item with a pageCode → check if user has enable=true
       if (item.type === 'item' && item.pageCode) {
         const perm = permMap[item.pageCode];
-        // If permission record exists and enable is explicitly false → hide
-        if (perm && perm.enable === false) return null;
+        // If permission record exists and enable is explicitly false or 0 → hide
+        if (perm && (perm.enable === false || perm.enable === 0)) return null;
         return item;
       }
 
