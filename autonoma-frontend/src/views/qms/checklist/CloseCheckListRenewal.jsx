@@ -227,7 +227,19 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
   let label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip 
+      label={label || 'Pending'} 
+      size="small" 
+      color={colorMap[label] || 'default'} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CloseCheckListRenewal() {
@@ -395,6 +407,12 @@ export default function CloseCheckListRenewal() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

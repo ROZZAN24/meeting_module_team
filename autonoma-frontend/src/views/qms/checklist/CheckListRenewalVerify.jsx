@@ -56,7 +56,7 @@ const DEFAULT_FILTERS = {
   fromDate: '',
   toDate: '',
   considerDate: 'All',
-  statuses: [],
+  statuses: ['Pending for Verified', 'Pending for Accepted'],
   assignTo: '',
   category: 'All',
   searchBy: 'All',
@@ -221,7 +221,19 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', Verified: 'success', Rejected: 'error', 'Not Accepted': 'error', Accepted: 'success', Missed: 'error' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip 
+      label={label || 'Pending'} 
+      size="small" 
+      color={colorMap[label] || 'default'} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CheckListRenewalVerify() {
@@ -289,7 +301,7 @@ export default function CheckListRenewalVerify() {
       const params = {
         page,
         size,
-        status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
+        status: filters.statuses.length > 0 ? filters.statuses.join(',') : undefined,
         fromDate: filters.fromDate || undefined,
         toDate: filters.toDate || undefined,
         considerDate: filters.considerDate !== 'All' ? filters.considerDate : undefined,
@@ -438,7 +450,14 @@ export default function CheckListRenewalVerify() {
   const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'All' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + (filters.dualCheck !== 'All' ? 1 : 0);
 
   return (
-    <MainCard title="Check List / Renewal Verify"
+    <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
+      title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}

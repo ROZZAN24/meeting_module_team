@@ -45,6 +45,9 @@ export default function BOSDataTable({
   renderCell,
   sx = {},
   id,
+  onRowMouseEnter,
+  onRowMouseLeave,
+  onRowMouseMove,
   disableSearchFilter = false
 }) {
   const rows = data || rowsProp || [];
@@ -123,11 +126,12 @@ export default function BOSDataTable({
     }
 
     // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
-    const isDateField = col.id.toLowerCase().includes('date') || 
-                       col.id.endsWith('At') || 
-                       col.id.endsWith('_at') || 
-                       col.id === 'entryDate' ||
-                       col.id === 'invoiceDate';
+    const isDateField = (col.id.toLowerCase().includes('date') || 
+                        col.id.endsWith('At') || 
+                        col.id.endsWith('_at') || 
+                        col.id === 'entryDate' ||
+                        col.id === 'invoiceDate') &&
+                        !col.id.toLowerCase().endsWith('by');
     
     // Explicitly exclude false positives like 'state' or 'category'
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
@@ -235,11 +239,12 @@ export default function BOSDataTable({
     }
 
     // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
-    const isDateField = col.id.toLowerCase().includes('date') || 
-                       col.id.endsWith('At') || 
-                       col.id.endsWith('_at') || 
-                       col.id === 'entryDate' ||
-                       col.id === 'invoiceDate';
+    const isDateField = (col.id.toLowerCase().includes('date') || 
+                        col.id.endsWith('At') || 
+                        col.id.endsWith('_at') || 
+                        col.id === 'entryDate' ||
+                        col.id === 'invoiceDate') &&
+                        !col.id.toLowerCase().endsWith('by');
     
     // Explicitly exclude false positives like 'state' or 'category'
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
@@ -341,6 +346,9 @@ export default function BOSDataTable({
                       onClickRow?.(row);
                     }}
                     onDoubleClick={() => onDoubleClickRow ? onDoubleClickRow(row) : (onEditRow ? onEditRow(row) : null)}
+                    onMouseEnter={(e) => onRowMouseEnter?.(e, row)}
+                    onMouseLeave={(e) => onRowMouseLeave?.(e, row)}
+                    onMouseMove={(e) => onRowMouseMove?.(e, row)}
                   >
                   {columns.map((col) => (
                     <TableCell

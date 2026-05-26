@@ -190,7 +190,20 @@ function StatusChip({ status }) {
     'Pending for Verify': { color: 'warning', icon: null }
   };
   const cfg = map[status] || { color: 'default', icon: null };
-  return <Chip label={status} size="small" color={cfg.color} icon={cfg.icon} variant="outlined" />;
+  return (
+    <Chip 
+      label={status} 
+      size="small" 
+      color={cfg.color} 
+      icon={cfg.icon} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CheckListVerify() {
@@ -313,6 +326,12 @@ export default function CheckListVerify() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>

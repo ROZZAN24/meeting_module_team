@@ -204,10 +204,14 @@ public class ChecklistService {
                 checklist.setVerifyStatus("Pending for Verify");
                 checklist.setStatus("Active");
                 checklist.setCreatedDate(new Date());
-                if (checklist.getUpdatedBy() != null) {
+                if (checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty()) {
                     checklist.setCreatedBy(checklist.getUpdatedBy());
-                } else if (checklist.getCreatedBy() == null) {
+                } else if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                     checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                }
+                checklist.setUpdatedDate(new Date());
+                if (checklist.getUpdatedBy() == null || checklist.getUpdatedBy().isEmpty()) {
+                    checklist.setUpdatedBy(checklist.getCreatedBy());
                 }
 
                 MasterChecklist saved = masterRepo.save(checklist);
@@ -301,6 +305,10 @@ public class ChecklistService {
             if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                 checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
             }
+            checklist.setUpdatedDate(new Date());
+            if (checklist.getUpdatedBy() == null || checklist.getUpdatedBy().isEmpty()) {
+                checklist.setUpdatedBy(checklist.getCreatedBy());
+            }
             MasterChecklist saved = masterRepo.save(checklist);
 
             if (departments != null) {
@@ -365,9 +373,18 @@ public class ChecklistService {
                 // For now, we allow the UI to pass specific 'assignedTo' names for the team.
             }
 
-            if (status != null && !status.equals("All")) {
+            if (status != null && !status.equals("All") && !status.isEmpty()) {
                 Join<ChecklistAssignment, StatusMaster> statusJoin = root.join("status");
-                predicates.add(cb.equal(statusJoin.get("name"), status));
+                if (status.contains(",")) {
+                    String[] statusArr = status.split(",");
+                    List<String> statusList = new ArrayList<>();
+                    for (String s : statusArr) {
+                        statusList.add(s.trim());
+                    }
+                    predicates.add(statusJoin.get("name").in(statusList));
+                } else {
+                    predicates.add(cb.equal(statusJoin.get("name"), status));
+                }
             } else {
                 if (excludeCompleted) {
                     // If "All" is selected and we want to focus on execution, exclude completed/finalized tasks

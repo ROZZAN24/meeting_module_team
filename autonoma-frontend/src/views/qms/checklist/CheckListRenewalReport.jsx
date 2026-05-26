@@ -192,7 +192,19 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Open': 'info', 'Pending for Verified': 'warning', 'Verified': 'success' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Open'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip 
+      label={label || 'Open'} 
+      size="small" 
+      color={colorMap[label] || 'default'} 
+      variant="outlined" 
+      sx={{ 
+        width: '160px', 
+        justifyContent: 'center', 
+        fontWeight: 700 
+      }} 
+    />
+  );
 }
 
 export default function CheckListRenewalReport() {
@@ -302,6 +314,12 @@ export default function CheckListRenewalReport() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
