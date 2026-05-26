@@ -274,21 +274,78 @@ public class DataMigrationController {
             assignLog.setStatus("SUCCESS");
             assignLog.setRecordsCount(extractCount(result));
             assignLog.setMessage(result);
-            summary.append("[Assignments] ").append(result);
+            summary.append("[Assignments] ").append(result).append(" | ");
         } catch (Exception e) {
             anyFailed = true;
             assignLog.setStatus("FAILED");
             assignLog.setRecordsCount(0);
             assignLog.setMessage(e.getMessage());
-            summary.append("[Assignments] FAILED: ").append(e.getMessage());
+            summary.append("[Assignments] FAILED: ").append(e.getMessage()).append(" | ");
         } finally {
             auditLogRepository.save(assignLog);
+        }
+
+        // Step 4: Close Checklist Assignments (Pending Master)
+        MigrationAuditLog closeLog = MigrationAuditLog.builder()
+                .tableName("HRMS_CHECKLIST_PENDING_MASTER -> qms_checklist_assignment")
+                .migratedBy(currentUser)
+                .migratedAt(new Date())
+                .build();
+        try {
+            String result = migrationService.migrateCloseChecklists();
+            closeLog.setStatus("SUCCESS");
+            closeLog.setRecordsCount(extractCount(result));
+            closeLog.setMessage(result);
+            summary.append("[Close Checklists] ").append(result);
+        } catch (Exception e) {
+            anyFailed = true;
+            closeLog.setStatus("FAILED");
+            closeLog.setRecordsCount(0);
+            closeLog.setMessage(e.getMessage());
+            summary.append("[Close Checklists] FAILED: ").append(e.getMessage());
+        } finally {
+            auditLogRepository.save(closeLog);
         }
 
         response.put("message", summary.toString());
         return anyFailed
                 ? ResponseEntity.internalServerError().body(response)
                 : ResponseEntity.ok(response);
+    }
+
+    // ─── POST /api/admin/migration/close-checklists ──────────────────────────────
+    @PostMapping("/close-checklists")
+    public ResponseEntity<Map<String, String>> migrateCloseChecklists() {
+        Map<String, String> response = new HashMap<>();
+        String currentUser = resolveCurrentUser();
+
+        MigrationAuditLog auditLog = MigrationAuditLog.builder()
+                .tableName("HRMS_CHECKLIST_PENDING_MASTER -> qms_checklist_assignment")
+                .migratedBy(currentUser)
+                .migratedAt(new Date())
+                .build();
+
+        try {
+            String result = migrationService.migrateCloseChecklists();
+            response.put("message", result);
+
+            auditLog.setStatus("SUCCESS");
+            auditLog.setRecordsCount(extractCount(result));
+            auditLog.setMessage(result);
+            auditLogRepository.save(auditLog);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            String errorMsg = "Close checklist migration failed: " + e.getMessage();
+            response.put("message", errorMsg);
+
+            auditLog.setStatus("FAILED");
+            auditLog.setRecordsCount(0);
+            auditLog.setMessage(e.getMessage());
+            auditLogRepository.save(auditLog);
+
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 
     // ─── GET /api/admin/migration/audit-logs ─────────────────────────────────────
