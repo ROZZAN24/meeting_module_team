@@ -1,12 +1,13 @@
 // assets
-import { IconDashboard, IconDeviceAnalytics, IconFileInvoice, IconArticle, IconLifebuoy } from '@tabler/icons-react';
+import { IconDashboard, IconDeviceAnalytics, IconFileInvoice, IconArticle, IconLifebuoy, IconClipboardList } from '@tabler/icons-react';
 
 const icons = {
   IconDashboard: IconDashboard,
   IconDeviceAnalytics: IconDeviceAnalytics,
   IconFileInvoice: IconFileInvoice,
   IconArticle: IconArticle,
-  IconLifebuoy: IconLifebuoy
+  IconLifebuoy: IconLifebuoy,
+  IconClipboardList: IconClipboardList
 };
 
 // ==============================|| MENU ITEMS - DASHBOARD ||============================== //
@@ -17,6 +18,14 @@ const dashboard = {
   icon: icons.IconDashboard,
   type: 'group',
   children: [
+    {
+      id: 'user-task-queue',
+      title: 'User Task Queue',
+      type: 'item',
+      url: '/dashboard/user-task-queue',
+      icon: icons.IconClipboardList,
+      breadcrumbs: false
+    },
     {
       id: 'default',
       title: 'Default',
