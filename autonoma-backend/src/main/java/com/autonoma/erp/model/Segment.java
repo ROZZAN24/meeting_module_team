@@ -27,11 +27,27 @@ public class Segment {
     private String createdBy;
 
     @Column(name = "created_at")
-    private java.time.LocalDateTime createdAt;
+    private java.util.Date createdDate;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     @Column(name = "updated_at")
-    private java.time.LocalDateTime updatedAt;
+    private java.util.Date updatedDate;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new java.util.Date();
+        if (createdBy == null) {
+            createdBy = "Admin";
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new java.util.Date();
+        if (updatedBy == null) {
+            updatedBy = "Admin";
+        }
+    }
 }

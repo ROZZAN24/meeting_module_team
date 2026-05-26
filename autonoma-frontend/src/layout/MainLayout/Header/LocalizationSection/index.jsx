@@ -1,4 +1,4 @@
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
@@ -38,6 +38,48 @@ const getLangIndicator = (lng) => {
   }
 };
 
+/**
+ * Sets or clears the googtrans cookie so Google Translate picks it up on reload.
+ * - For English (en): clears the cookie to restore original language.
+ * - For other languages: sets googtrans=/en/<lang>.
+ */
+function applyGoogTransCookie(lng) {
+  const googleLang = lng === 'zh' ? 'zh-CN' : lng;
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || /^[0-9.]+$/.test(hostname);
+
+  // Always expire old cookies on all possible domain variants first
+  const expire = 'expires=Thu, 01 Jan 1970 00:00:00 UTC';
+  document.cookie = `googtrans=; ${expire}; path=/`;
+  if (!isLocalhost) {
+    document.cookie = `googtrans=; ${expire}; path=/; domain=${hostname}`;
+    document.cookie = `googtrans=; ${expire}; path=/; domain=.${hostname}`;
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      const rootDomain = parts.slice(-2).join('.');
+      document.cookie = `googtrans=; ${expire}; path=/; domain=.${rootDomain}`;
+    }
+  }
+
+  if (lng === 'en') {
+    // English = restore original; no cookie needed
+    return;
+  }
+
+  const value = `/en/${googleLang}`;
+  // Set cookie without domain attribute for localhost (required for cookies to work on localhost)
+  document.cookie = `googtrans=${value}; path=/`;
+  if (!isLocalhost) {
+    document.cookie = `googtrans=${value}; path=/; domain=${hostname}`;
+    document.cookie = `googtrans=${value}; path=/; domain=.${hostname}`;
+    const parts = hostname.split('.');
+    if (parts.length > 2) {
+      const rootDomain = parts.slice(-2).join('.');
+      document.cookie = `googtrans=${value}; path=/; domain=.${rootDomain}`;
+    }
+  }
+}
+
 // ==============================|| LOCALIZATION ||============================== //
 
 export default function LocalizationSection() {
@@ -53,16 +95,28 @@ export default function LocalizationSection() {
   const anchorRef = useRef(null);
 
   const handleListItemClick = (_event, lng) => {
-    setField('i18n', lng);
-    
-    // Set the googtrans cookie for direct translation
-    const domain = window.location.hostname;
-    document.cookie = `googtrans=/en/${lng}; path=/; domain=${domain}`;
-    document.cookie = `googtrans=/en/${lng}; path=/`; // Localhost fallback
-    
     setOpen(false);
-    
-    // Fast page refresh to sync standard components and let Google Translate mount translated DOM immediately
+
+    // No-op if same language already selected
+    if (lng === i18n) return;
+
+    // Persist the selection in config state (React async, for in-session use)
+    setField('i18n', lng);
+
+    // Synchronously update localStorage before reload — setField triggers an async
+    // useEffect that writes to localStorage, but window.location.reload() fires
+    // before that effect runs, causing the indicator to read the old stale value.
+    try {
+      const STORAGE_KEY = 'berry-config-vite-js';
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const current = stored ? JSON.parse(stored) : {};
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, i18n: lng }));
+    } catch (e) {
+      // ignore storage errors
+    }
+
+    // Apply cookie and reload so Google Translate picks up the new language
+    applyGoogTransCookie(lng);
     window.location.reload();
   };
 
@@ -151,7 +205,7 @@ export default function LocalizationSection() {
           <ClickAwayListener onClickAway={handleClose}>
             <Transitions position={downMD ? 'top-left' : 'top'} in={open} {...TransitionProps}>
               <Paper elevation={16}>
-                <Activity mode={open ? 'visible' : 'hidden'}>
+                {open && (
                   <List
                     sx={{
                       width: '100%',
@@ -233,7 +287,7 @@ export default function LocalizationSection() {
                       />
                     </ListItemButton>
                   </List>
-                </Activity>
+                )}
               </Paper>
             </Transitions>
           </ClickAwayListener>

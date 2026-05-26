@@ -1,0 +1,50 @@
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'accounts_ledger')
+BEGIN
+    ALTER TABLE sm_customer_master ADD accounts_ledger NVARCHAR(200);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'group_name')
+BEGIN
+    ALTER TABLE sm_customer_master ADD group_name NVARCHAR(200);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'prime_customer')
+BEGIN
+    ALTER TABLE sm_customer_master ADD prime_customer NVARCHAR(10);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'pan_no')
+BEGIN
+    ALTER TABLE sm_customer_master ADD pan_no NVARCHAR(50);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'website')
+BEGIN
+    ALTER TABLE sm_customer_master ADD website NVARCHAR(150);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'register_no')
+BEGIN
+    ALTER TABLE sm_customer_master ADD register_no NVARCHAR(100);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'cin_no')
+BEGIN
+    ALTER TABLE sm_customer_master ADD cin_no NVARCHAR(100);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'freight')
+BEGIN
+    ALTER TABLE sm_customer_master ADD freight NVARCHAR(100);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'location')
+BEGIN
+    ALTER TABLE sm_customer_master ADD location NVARCHAR(200);
+END
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'sm_customer_master' AND COLUMN_NAME = 'ld_applicable')
+BEGIN
+    ALTER TABLE sm_customer_master ADD ld_applicable NVARCHAR(10);
+END
+GO

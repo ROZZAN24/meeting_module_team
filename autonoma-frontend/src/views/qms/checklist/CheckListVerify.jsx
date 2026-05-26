@@ -190,7 +190,16 @@ function StatusChip({ status }) {
     'Pending for Verify': { color: 'warning', icon: null }
   };
   const cfg = map[status] || { color: 'default', icon: null };
-  return <Chip label={status} size="small" color={cfg.color} icon={cfg.icon} variant="outlined" />;
+  return (
+    <Chip
+      label={status}
+      size="small"
+      color={cfg.color}
+      icon={cfg.icon}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListVerify() {
@@ -294,7 +303,7 @@ export default function CheckListVerify() {
   };
 
   const handleVerify = async (status, remarks = '') => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     try {
       await axios.post('/api/qms/checklist/verify-master', {
         checklistId: selectedRowId,
@@ -313,6 +322,12 @@ export default function CheckListVerify() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -385,15 +400,25 @@ export default function CheckListVerify() {
                   key={row.id}
                   hover
                   onClick={() => setSelectedRowId(row.id)}
-                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onDoubleClick={() => { if (perms.approval || perms.write) { setSelectedRowId(row.id); setDialogOpen(true); } }}
+                  onMouseEnter={() => { if (perms.approval || perms.write) setShowDoubleTap(true); }}
                   onMouseLeave={() => setShowDoubleTap(false)}
                   onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                  sx={{ cursor: (perms.approval || perms.write) ? 'pointer' : 'default', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.seqNo}</TableCell>
-                  <TableCell>{row.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{row.category}</TableCell>
                   <TableCell>{row.frequency}</TableCell>
                   <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>

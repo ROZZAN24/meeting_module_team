@@ -61,7 +61,12 @@ export const autoUploadFile = async (file, overrideModule = null, onProgress = n
                 }
             }
         });
-        return response.data; // This is the path like "QMS/filename.ext"
+        if (response.data && response.data.path) {
+            return response.data.path;
+        } else if (typeof response.data === 'string') {
+            return response.data;
+        }
+        return response.data; // fallback
     } catch (error) {
         console.error(`[AutoUpload] Failed for module ${module}:`, error);
         throw error;

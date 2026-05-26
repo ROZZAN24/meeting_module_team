@@ -32,6 +32,7 @@ export default function Login() {
   const { isLoggedIn } = useAuth();
   const downMD = useMediaQuery((theme) => theme.breakpoints.down('md'));
   const [AuthLoginComponent, setAuthLoginComponent] = useState(null);
+  const [isFaceMode, setIsFaceMode] = useState(false);
 
   const [searchParams] = useSearchParams();
   const authParam = searchParams.get('auth') || '';
@@ -81,7 +82,8 @@ export default function Login() {
             border: '1px solid rgba(255, 255, 255, 0.3)',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center'
+            alignItems: 'center',
+            transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
           {!isLoggedIn && <ViewOnlyAlert />}
@@ -92,7 +94,11 @@ export default function Login() {
             </Link>
           </Box>
 
-          <Box sx={{ width: '100%' }}>{AuthLoginComponent && <AuthLoginComponent />}</Box>
+          <Box sx={{ width: '100%' }}>
+            {AuthLoginComponent && (
+              <AuthLoginComponent onFaceModeChange={(isFace) => setIsFaceMode(isFace)} />
+            )}
+          </Box>
 
           <Divider sx={{ my: 3, width: '100%' }} />
 

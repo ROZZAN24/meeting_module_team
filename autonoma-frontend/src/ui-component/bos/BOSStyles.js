@@ -110,6 +110,8 @@ export const getDialogStyles = (theme, isDark) => ({
     color: isDark ? '#c9d1d9' : theme.palette.text.primary
   },
   paper: {
+    display: 'flex',
+    flexDirection: 'column',
     height: 'auto',
     maxHeight: '95vh',
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
@@ -129,8 +131,9 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 3.5,
-    px: 4
+    py: 2,
+    px: 3,
+    flexShrink: 0
   },
   titleText: {
     fontWeight: 600,
@@ -142,18 +145,30 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: 5,
+    pt: '24px !important', // Explicit override to prevent touching the DialogTitle header
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
-    overflowX: 'hidden'
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    flexGrow: 1,
+    minHeight: 0,
+    // Ensure poppers and menus are not clipped
+    '& .MuiAutocomplete-popper': {
+      zIndex: '1500 !important'
+    },
+    '& .MuiMenu-root': {
+      zIndex: '1500 !important'
+    }
   },
   footer: {
-    p: 3,
+    py: 2,
+    px: 3,
     borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    bgcolor: isDark ? '#161b22' : theme.palette.background.paper
+    bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
+    flexShrink: 0
   },
   sectionCard: {
     bgcolor: isDark ? 'background.default' : '#ffffff',
@@ -165,7 +180,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   sectionHeader: {
     px: 3,
-    py: 3,
+    py: 1.5,
     borderBottom: '1px solid',
     borderColor: 'divider',
     bgcolor: isDark ? '#1c2128' : 'grey.50',
@@ -191,15 +206,19 @@ export const getAutocompleteStyles = (theme) => ({
 
 export const getInputStyles = (theme, isDark) => ({
   width: '100% !important',
+  scrollMarginTop: '32px',
+  '&.MuiFormControl-root': {
+    scrollMarginTop: '32px'
+  },
   '& .MuiOutlinedInput-root': {
     width: '100%',
     bgcolor: isDark ? 'background.default' : 'grey.50',
-    color: 'text.primary',
+    color: isDark ? '#c9d1d9' : '#121212',
     '& fieldset': { borderColor: 'divider' },
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
-    '& input': { py: 1.2, fontSize: '0.9rem' },
-    '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px' }
+    '& input': { py: 1.2, fontSize: '0.9rem', color: isDark ? '#c9d1d9' : '#121212' },
+    '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px', color: isDark ? '#c9d1d9' : '#121212' }
   },
   '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
   '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
@@ -261,9 +280,10 @@ export const tableActionDeleteSx = {
 
 export const getStatusChipSx = (status) => {
   const isActive = ['ACTIVE', 'Active', 'active'].includes(status);
+  const isSuspended = ['SUSPENDED', 'Suspended', 'suspended'].includes(status);
   return {
-    bgcolor: isActive ? '#e8f5e9' : '#ffebee',
-    color: isActive ? '#2e7d32' : '#c62828',
+    bgcolor: isActive ? '#e8f5e9' : (isSuspended ? '#fffde7' : '#ffebee'),
+    color: isActive ? '#2e7d32' : (isSuspended ? '#f57f17' : '#c62828'),
     fontWeight: 700
   };
 };

@@ -22,6 +22,21 @@ public class TenantContextFilter implements Filter {
         String tenantId = req.getHeader("X-Tenant-ID");
         String divisionIdStr = req.getHeader("X-Division-ID");
 
+        String uri = req.getRequestURI();
+        if (uri.startsWith("/api/users") || 
+            uri.startsWith("/api/account") || 
+            uri.startsWith("/api/user-page-auth") || 
+            uri.startsWith("/api/bos-pages") || 
+            uri.startsWith("/api/preferences") || 
+            uri.startsWith("/api/theme-settings") || 
+            uri.startsWith("/api/company-profile") || 
+            uri.startsWith("/api/prefix-credentials") || 
+            uri.startsWith("/api/audit-trail") || 
+            uri.startsWith("/api/analytics/sessions") || 
+            uri.startsWith("/api/audit/sessions")) {
+            tenantId = "AUTONOMA";
+        }
+
         try {
             if (tenantId != null && !tenantId.trim().isEmpty() && !tenantId.equalsIgnoreCase("AUTONOMA")) {
                 try {

@@ -244,13 +244,13 @@ export default function AddCustomerDialog({ open, handleClose, initialData, read
             <BOSTextField fullWidth name="address" label="Address" value={formData.address} onChange={handleChange} disabled={readOnly} multiline rows={5} placeholder="Enter full address..." />
           </Grid>
           <Grid item xs={12} lg={6}>
-            <Grid container spacing={2}>
-              <R lg={6} md={6}><BOSTextField fullWidth name="city" label="City" value={formData.city} onChange={handleChange} disabled={readOnly} /></R>
-              <R lg={6} md={6}><Autocomplete fullWidth value={formData.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></R>
-              <R lg={6} md={6}><Autocomplete fullWidth value={formData.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={formData.country ? 'No states found' : 'Select country first'} /></R>
-              <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={formData.stateCode} disabled placeholder="Auto-filled" /></R>
-              <R lg={6} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={formData.pincode} onChange={handleChange} disabled={readOnly} /></R>
-              <R lg={6} md={6}><BOSTextField fullWidth name="distance" label="Distance" value={formData.distance} onChange={handleChange} disabled={readOnly} type="number" /></R>
+            <Grid container spacing={2.5} sx={{ width: '100%', m: 0 }}>
+              <Grid item xs={12}><BOSTextField fullWidth name="city" label="City" value={formData.city} onChange={handleChange} disabled={readOnly} /></Grid>
+              <Grid item xs={12}><Autocomplete fullWidth value={formData.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></Grid>
+              <Grid item xs={12}><Autocomplete fullWidth value={formData.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="State Name" sx={acSx} />} noOptionsText={formData.country ? 'No states found' : 'Select country first'} /></Grid>
+              <Grid item xs={12} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={formData.stateCode} disabled placeholder="Auto-filled" /></Grid>
+              <Grid item xs={12} md={6}><BOSTextField fullWidth name="pincode" label="Pin Code" value={formData.pincode} onChange={handleChange} disabled={readOnly} /></Grid>
+              <Grid item xs={12}><BOSTextField fullWidth name="distance" label="Distance" value={formData.distance} onChange={handleChange} disabled={readOnly} type="number" /></Grid>
             </Grid>
           </Grid>
         </Grid>
@@ -298,7 +298,7 @@ export default function AddCustomerDialog({ open, handleClose, initialData, read
       </BOSFormSection>
 
       <BOSFormSection icon={<IconPhone size={20} color={theme.palette.primary.main} />} title="Terms & Logistics">
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
           <R lg={4} md={6}>
             <Autocomplete fullWidth value={formData.currency || null} onChange={handleAutocomplete('currency')} options={currencies.map(c => c.currencyCode)} disabled={readOnly}
               renderOption={(props, option) => { const { key, ...optionProps } = props; const cur = currencies.find(c => c.currencyCode === option); return (<li key={key} {...optionProps}><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{option}</Typography><Typography variant="caption" color="text.secondary">{cur?.currencyName || ''}</Typography></Box></li>); }}
@@ -325,7 +325,7 @@ export default function AddCustomerDialog({ open, handleClose, initialData, read
       </BOSFormSection>
 
       <BOSFormSection icon={<IconFileTypography size={20} color={theme.palette.primary.main} />} title="Documents" action={<Button startIcon={<IconPlus size={18} />} size="small" variant="contained" onClick={() => fileInputRef.current?.click()} disabled={readOnly} sx={{ borderRadius: '8px', textTransform: 'none' }}>Add</Button>}>
-        <Grid container spacing={2}>
+        <Grid container spacing={2} sx={{ width: '100%', m: 0 }}>
           <Grid item xs={12}>
             <input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
             <BOSFileGallery files={attachments} onRemove={(idx) => setAttachments(attachments.filter((_, i) => i !== idx))} isEditing={!readOnly} />

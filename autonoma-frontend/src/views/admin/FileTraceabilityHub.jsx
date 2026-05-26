@@ -44,6 +44,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 import { exportToExcel } from 'utils/excelExport';
 import { getUserImageUrl } from 'utils/upload-helper';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import BOSDataTable from 'ui-component/bos/BOSDataTable';
 
 // assets
@@ -112,6 +113,8 @@ const formatDate = (dateStr) => {
 const FileTraceabilityHub = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
+
+  const perms = usePagePermissions(PAGE_CODES.AD_FILE_TRACEABILITY);
 
   const globalSearch = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -395,125 +398,124 @@ const FileTraceabilityHub = () => {
 
       {/* ── DATA TABLE ── */}
       <MainCard sx={{ borderRadius: '16px' }} content={false}>
-        <TableContainer sx={{ maxHeight: 'calc(100vh - 300px)', minHeight: '400px' }}>
-          {loading && <LinearProgress sx={{ height: 2 }} />}
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow sx={{ '& th': { fontWeight: 800, color: 'text.primary', borderBottom: '2px solid', borderColor: 'divider' } }}>
-                <TableCell>Row ID</TableCell>
-                <TableCell>Timeline Details</TableCell>
-                <TableCell>Page Context</TableCell>
-                <TableCell>Report File Name</TableCell>
-                <TableCell>Exported By</TableCell>
-                <TableCell align="center">Format</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {pagedLogs.map((log) => {
-                const isExcel = log.reportName && (log.reportName.toLowerCase().endsWith('.xls') || log.reportName.toLowerCase().endsWith('.xlsx'));
-                const isPdf = log.reportName && log.reportName.toLowerCase().endsWith('.pdf');
+        {(() => {
+          const columns = [
+            {
+              id: 'rowId',
+              label: 'Row ID',
+              render: (row) => (
+                <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>#{row.rowId}</Typography>
+              )
+            },
+            {
+              id: 'createdAt',
+              label: 'Timeline Details',
+              render: (row) => (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {row.createdAt ? new Date(row.createdAt).toLocaleTimeString() : 'N/A'}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    {row.createdAt ? formatDate(row.createdAt) : ''}
+                  </Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'pageName',
+              label: 'Page Context',
+              render: (row) => (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.dark' }}>
+                    {row.pageName || 'Unknown Page'}
+                  </Typography>
+                  <Typography variant="caption" color="textSecondary">
+                    Page Code: {row.page?.pageCode || row.pageCode || 'N/A'}
+                  </Typography>
+                </Box>
+              )
+            },
+            {
+              id: 'reportName',
+              label: 'Report File Name',
+              render: (row) => (
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08), width: 34, height: 34 }}>
+                    {getFileIcon(row.reportName)}
+                  </Avatar>
+                  <Box>
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: 700,
+                        color: 'primary.main',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        '&:hover': { color: 'primary.dark' }
+                      }}
+                      onClick={() => handlePreviewClick(row)}
+                    >
+                      {row.reportName || 'export_document'}
+                    </Typography>
+                  </Box>
+                </Stack>
+              )
+            },
+            {
+              id: 'createdBy',
+              label: 'Exported By',
+              render: (row) => (
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Avatar
+                    src={row.creatorImg ? getUserImageUrl(row.creatorImg) : undefined}
+                    sx={{ width: 28, height: 28, bgcolor: theme.palette.secondary.main, fontSize: '0.8rem' }}
+                  >
+                    {!row.creatorImg && (row.creatorName || row.createdBy || 'U').charAt(0).toUpperCase()}
+                  </Avatar>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {row.creatorName || row.createdBy || 'System User'}
+                  </Typography>
+                </Stack>
+              )
+            },
+            {
+              id: 'format',
+              label: 'Format',
+              render: (row) => {
+                const isExcel = row.reportName && (row.reportName.toLowerCase().endsWith('.xls') || row.reportName.toLowerCase().endsWith('.xlsx'));
+                const isPdf = row.reportName && row.reportName.toLowerCase().endsWith('.pdf');
 
                 return (
-                  <TableRow key={log.rowId} hover sx={{ '& td': { py: 1.5 } }}>
-                    <TableCell>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>#{log.rowId}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                        {log.createdAt ? new Date(log.createdAt).toLocaleTimeString() : 'N/A'}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        {log.createdAt ? formatDate(log.createdAt) : ''}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'primary.dark' }}>
-                          {log.pageName || 'Unknown Page'}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                          Page Code: {log.page?.pageCode || log.pageCode || 'N/A'}
-                        </Typography>
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar sx={{ bgcolor: alpha(theme.palette.primary.main, 0.08), width: 34, height: 34 }}>
-                          {getFileIcon(log.reportName)}
-                        </Avatar>
-                        <Box>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{
-                              fontWeight: 700,
-                              color: 'primary.main',
-                              cursor: 'pointer',
-                              textDecoration: 'underline',
-                              '&:hover': { color: 'primary.dark' }
-                            }}
-                            onClick={() => handlePreviewClick(log)}
-                          >
-                            {log.reportName || 'export_document'}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Avatar
-                          src={log.creatorImg ? getUserImageUrl(log.creatorImg) : undefined}
-                          sx={{ width: 28, height: 28, bgcolor: theme.palette.secondary.main, fontSize: '0.8rem' }}
-                        >
-                          {!log.creatorImg && (log.creatorName || log.createdBy || 'U').charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                          {log.creatorName || log.createdBy || 'System User'}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Chip
-                        label={isExcel ? 'EXCEL' : isPdf ? 'PDF' : 'DOC'}
-                        size="small"
-                        sx={{
-                          fontWeight: 800, fontSize: '0.65rem',
-                          bgcolor: isExcel ? alpha(theme.palette.success.main, 0.1) :
-                            isPdf ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.primary.main, 0.1),
-                          color: isExcel ? 'success.main' :
-                            isPdf ? 'error.main' : 'primary.main'
-                        }}
-                      />
-                    </TableCell>
-                  </TableRow>
+                  <Chip
+                    label={isExcel ? 'EXCEL' : isPdf ? 'PDF' : 'DOC'}
+                    size="small"
+                    sx={{
+                      fontWeight: 800, fontSize: '0.65rem',
+                      bgcolor: isExcel ? alpha(theme.palette.success.main, 0.1) :
+                        isPdf ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.primary.main, 0.1),
+                      color: isExcel ? 'success.main' :
+                        isPdf ? 'error.main' : 'primary.main'
+                    }}
+                  />
                 );
-              })}
-              {pagedLogs.length === 0 && !loading && (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
-                    <Typography variant="h4" color="textSecondary" sx={{ fontWeight: 600 }}>
-                      No Export Events Logged
-                    </Typography>
-                    <Typography variant="body2" color="textSecondary">
-                      Whenever excel or pdf files are exported, they will appear here.
-                    </Typography>
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              }
+            }
+          ];
 
-        <Box sx={{ p: '1px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider' }}>
-          <TablePagination
-            component="div"
-            count={filteredLogs.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={(e, p) => setPage(p)}
-            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-            sx={{ '& .MuiTablePagination-toolbar': { minHeight: '34px', p: '0 8px' } }}
-          />
-        </Box>
+          return (
+            <BOSDataTable
+              columns={columns}
+              data={filteredLogs}
+              page={page}
+              size={rowsPerPage}
+              totalCount={filteredLogs.length}
+              onPageChange={setPage}
+              onSizeChange={(s) => { setRowsPerPage(s); setPage(0); }}
+              showActions={false}
+              loading={loading}
+            />
+          );
+        })()}
       </MainCard>
 
       {/* ── PREVIEW LOADING BACKDROP ── */}

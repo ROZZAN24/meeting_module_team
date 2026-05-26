@@ -1,4 +1,4 @@
-export const DASHBOARD_PATH = '/dashboard/default';
+export const DASHBOARD_PATH = '/dashboard/user-task-queue';
 export const HORIZONTAL_MAX_ITEM = 20;
 
 export const CSS_VAR_PREFIX = '';
@@ -35,6 +35,13 @@ export let AuthProvider;
   AuthProvider['SUPABASE'] = 'supabase';
 })(AuthProvider || (AuthProvider = {}));
 
+export let DashboardLayout;
+
+(function (DashboardLayout) {
+  DashboardLayout['GLASS'] = 'glass';
+  DashboardLayout['CLASSIC'] = 'classic';
+})(DashboardLayout || (DashboardLayout = {}));
+
 export let DropzopType;
 
 (function (DropzopType) {
@@ -54,7 +61,8 @@ const config = {
   presetColor: 'default',
   i18n: 'en',
   themeDirection: ThemeDirection.LTR,
-  container: false
+  container: false,
+  dashboardLayout: 'glass'
 };
 
 export default config;

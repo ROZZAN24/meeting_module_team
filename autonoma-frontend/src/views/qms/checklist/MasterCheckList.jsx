@@ -68,7 +68,7 @@ const columns = [
           size="small" 
           color={isActive ? 'success' : 'error'} 
           variant="outlined" 
-          sx={{ fontWeight: 700 }}
+          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
@@ -92,7 +92,7 @@ const columns = [
           size="small" 
           color={cfg.color} 
           variant="outlined" 
-          sx={{ fontWeight: 700 }}
+          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
@@ -100,7 +100,7 @@ const columns = [
   { 
     id: 'verifyStatus', 
     label: 'Verify Status',   
-    minWidth: 140,
+    minWidth: 160,
     render: (row) => {
       const statusText = row.verifyStatus || 'Pending for Verify';
       const map = {
@@ -116,7 +116,7 @@ const columns = [
           color={cfg.color} 
           icon={cfg.icon} 
           variant="outlined" 
-          sx={{ fontWeight: 700 }}
+          sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
@@ -212,6 +212,8 @@ export default function MasterCheckList() {
   const [loading,          setLoading]          = useState(false);
   const [selectedRow,      setSelectedRow]      = useState(null);
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
+  const [cursorPos,        setCursorPos]        = useState({ x: 0, y: 0 });
+  const [showDoubleTap,    setShowDoubleTap]    = useState(false);
 
   // Register global filter bar config
   useEffect(() => {
@@ -321,7 +323,8 @@ export default function MasterCheckList() {
   };
 
   const handleAssign = (row) => {
-    if (row?.verifyStatus !== 'Verified') {
+    const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+    if (!isAdmin && row?.verifyStatus !== 'Verified') {
       dispatch(openSnackbar({ open: true, message: 'Only verified checklists can be assigned!', variant: 'alert', severity: 'warning' }));
       return;
     }
@@ -335,6 +338,34 @@ export default function MasterCheckList() {
     'ctrl+n': handleOpenAdd,
     'escape': () => { if (dialogOpen) setDialogOpen(false); }
   });
+
+  // ── Make Checking Point a clickable blue link that opens the edit dialog ─────
+  const tableColumns = useMemo(() => columns.map((col) => (
+    col.id === 'checkingPoint'
+      ? {
+          ...col,
+          render: (row) => {
+            const text = row.checkingPoint;
+            if (!text) return '-';
+            return (
+              <Box
+                component="span"
+                onClick={(e) => { e.stopPropagation(); handleOpenEdit(row); }}
+                sx={{
+                  color: 'primary.main',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  '&:hover': { color: 'primary.dark' }
+                }}
+              >
+                {text}
+              </Box>
+            );
+          }
+        }
+      : col
+  )), [rows]);
 
   // ── Custom action column (Amendment + Assign) ─────────────────────────────────
   const actionColumn = {
@@ -375,6 +406,12 @@ export default function MasterCheckList() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardList size={24} />
@@ -459,8 +496,34 @@ export default function MasterCheckList() {
         </Stack>
       }
     >
+      {/* ── Cursor-following 'Double tap' label ── */}
+      {showDoubleTap && (
+        <Box
+          sx={{
+            position: 'fixed',
+            left: cursorPos.x + 14,
+            top: cursorPos.y - 28,
+            bgcolor: 'grey.800',
+            color: '#fff',
+            px: 1,
+            py: 0.3,
+            borderRadius: 1,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            pointerEvents: 'none',
+            zIndex: 9999,
+            letterSpacing: 0.4,
+            userSelect: 'none',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          Double tap
+        </Box>
+      )}
+
       <BOSDataTable
-        columns={columns}
+        columns={tableColumns}
         rows={resolvedRows}
         page={page}
         size={size}
@@ -475,6 +538,9 @@ export default function MasterCheckList() {
         }}
         selectedRowId={selectedRow?.id}
         actionColumn={actionColumn}
+        onRowMouseEnter={() => setShowDoubleTap(true)}
+        onRowMouseLeave={() => setShowDoubleTap(false)}
+        onRowMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
       />
 
       <AddCheckListDialog

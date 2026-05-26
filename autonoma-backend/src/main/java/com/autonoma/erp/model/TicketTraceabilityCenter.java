@@ -30,12 +30,6 @@ public class TicketTraceabilityCenter {
     @Column(name = "title", nullable = false, length = 255)
     private String title;
 
-    @Column(name = "module_name", length = 100)
-    private String moduleName;
-
-    @Column(name = "page_name", length = 100)
-    private String pageName;
-
     @Column(name = "page_id")
     private Integer pageId;
 
@@ -91,6 +85,9 @@ public class TicketTraceabilityCenter {
 
     @Column(name = "taken_time", length = 100)
     private String takenTime;
+
+    @Column(name = "rework_time", length = 100)
+    private String reworkTime;
 
     @Column(name = "assigned_hours", length = 50)
     private String assignedHours;

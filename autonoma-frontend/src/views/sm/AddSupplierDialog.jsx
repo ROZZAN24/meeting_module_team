@@ -183,13 +183,13 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
         <Grid container spacing={3}>
           <Grid item xs={12} lg={6}><BOSTextField fullWidth name="address" label="Address" value={formData.address} onChange={handleChange} disabled={readOnly} multiline rows={5} placeholder="Enter supplier address..." /></Grid>
           <Grid item xs={12} lg={6}>
-            <Grid container spacing={2}>
-              <R lg={6} md={6}><BOSTextField fullWidth name="city" label="City" value={formData.city} onChange={handleChange} disabled={readOnly} /></R>
-              <R lg={6} md={6}><Autocomplete fullWidth value={formData.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></R>
-              <R lg={6} md={6}><Autocomplete fullWidth value={formData.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="State" sx={acSx} />} noOptionsText={formData.country ? 'No states found' : 'Select country first'} /></R>
+            <Grid container spacing={2.5} sx={{ width: '100%', m: 0 }}>
+              <Grid item xs={12}><BOSTextField fullWidth name="city" label="City" value={formData.city} onChange={handleChange} disabled={readOnly} /></Grid>
+              <Grid item xs={12}><Autocomplete fullWidth value={formData.country || null} onChange={handleCountryChange} options={countries.map(c => c.country)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Country" sx={acSx} />} /></Grid>
+              <Grid item xs={12}><Autocomplete fullWidth value={formData.state || null} onChange={handleStateChange} options={filteredStates.map(s => s.stateName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="State" sx={acSx} />} noOptionsText={formData.country ? 'No states found' : 'Select country first'} /></Grid>
               <R lg={6} md={6}><BOSTextField fullWidth name="stateCode" label="State Code" value={formData.stateCode} disabled placeholder="Auto-filled" /></R>
               <R lg={6} md={6}><BOSTextField fullWidth name="pincode" label="PinCode" value={formData.pincode} onChange={handleChange} disabled={readOnly} /></R>
-              <R lg={6} md={6}><BOSTextField fullWidth name="distance" label="Distance (KM)" value={formData.distance} onChange={handleChange} disabled={readOnly} type="number" /></R>
+              <Grid item xs={12}><BOSTextField fullWidth name="distance" label="Distance (KM)" value={formData.distance} onChange={handleChange} disabled={readOnly} type="number" /></Grid>
             </Grid>
           </Grid>
         </Grid>
@@ -239,7 +239,7 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
       </BOSFormSection>
 
       <BOSFormSection icon={<IconPhone size={20} color={theme.palette.primary.main} />} title="Terms & Logistics">
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ width: '100%', m: 0 }}>
           <R lg={4} md={6}><BOSTextField fullWidth name="dispatchMode" label="Mode of Dispatch" value={formData.dispatchMode} onChange={handleChange} disabled={readOnly} select><MenuItem value="Select">Select</MenuItem><MenuItem value="By Road">By Road</MenuItem><MenuItem value="By Train">By Train</MenuItem><MenuItem value="By Air">By Air</MenuItem><MenuItem value="By Hand">By Hand</MenuItem><MenuItem value="By Sea">By Sea</MenuItem></BOSTextField></R>
           <R lg={4} md={6}><Autocomplete fullWidth value={formData.currency || null} onChange={handleAC('currency')} options={currencies.map(c => c.currencyCode)} disabled={readOnly} renderOption={(props, option) => { const { key, ...optionProps } = props; const c = currencies.find(x => x.currencyCode === option); return (<li key={key} {...optionProps}><Box><Typography variant="body2" sx={{ fontWeight: 600 }}>{option}</Typography><Typography variant="caption" color="text.secondary">{c?.currencyName || ''}</Typography></Box></li>); }} renderInput={(params) => <BOSTextField {...params} label="Currency" sx={acSx} required error={!!errors.currency} helperText={errors.currency} />} /></R>
           <R lg={4} md={6}><BOSTextField fullWidth name="negotiateSupplier" label="Negotiate Supplier" value={formData.negotiateSupplier} onChange={handleChange} disabled={readOnly} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
@@ -247,6 +247,7 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
           
           <R lg={4} md={6}><Autocomplete fullWidth value={formData.paymentTerms || null} onChange={handleAC('paymentTerms')} options={paymentTermsList.map(p => p.termName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Payment Terms" sx={acSx} required error={!!errors.paymentTerms} helperText={errors.paymentTerms} />} /></R>
           <R lg={4} md={6}><Autocomplete fullWidth value={formData.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTermsList.map(d => d.termName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Delivery Terms" sx={acSx} required error={!!errors.deliveryTerms} helperText={errors.deliveryTerms} />} /></R>
+          <R lg={4} md={6}><BOSTextField fullWidth name="status" label="Status" value={formData.status} onChange={handleChange} disabled={readOnly} select><MenuItem value="Active">Active</MenuItem><MenuItem value="Inactive">Inactive</MenuItem></BOSTextField></R>
         </Grid>
       </BOSFormSection>
 

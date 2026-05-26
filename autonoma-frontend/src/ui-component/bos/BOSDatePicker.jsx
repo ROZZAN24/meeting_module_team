@@ -10,12 +10,11 @@ import { parseISO, format, isValid } from 'date-fns';
  * BOS DatePicker — SOP #9, #10
  * Wraps MUI DatePicker with standardized BOS styles and dd/MM/yyyy format.
  */
-export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon = false, ...rest }) {
+export default function BOSDatePicker({ label, value, onChange, disabled, required, error, helperText, showIcon = false, minDate, maxDate, ...rest }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
   const bosInput = getInputStyles(theme, isDark);
-  const [open, setOpen] = React.useState(false);
 
   // Convert string value to Date object for MUI DatePicker
   const dateValue = useMemo(() => {
@@ -29,10 +28,9 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
       label={`${label}${required ? ' *' : ''}`}
       value={dateValue}
       disabled={disabled}
+      minDate={minDate}
+      maxDate={maxDate}
       format="dd/MM/yyyy"
-      open={open}
-      onOpen={() => setOpen(true)}
-      onClose={() => setOpen(false)}
       onChange={(newValue) => {
         if (newValue && isValid(newValue)) {
           const formatted = format(newValue, 'yyyy-MM-dd');
@@ -40,9 +38,6 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
         } else if (newValue === null) {
           onChange({ target: { name: rest.name, value: '' } });
         }
-      }}
-      slots={{
-        openPickerIcon: () => null,
       }}
       slotProps={{
         textField: {
@@ -52,15 +47,21 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
           helperText: helperText,
           sx: { 
             ...bosInput,
-            '& .MuiInputBase-input': { cursor: 'pointer' }
+            '& .MuiInputBase-input': { cursor: 'text' },
+            '& .MuiInputAdornment-root': {
+              marginLeft: 0,
+            },
+            '& .MuiIconButton-root': {
+              padding: '4px',
+              marginRight: '-4px',
+            },
+            '& .MuiSvgIcon-root': {
+              fontSize: '1.2rem'
+            }
           },
           name: rest.name,
           autoComplete: 'off',
-          onClick: () => !disabled && setOpen(true),
           ...rest
-        },
-        openPickerButton: {
-          sx: { display: 'none' }
         }
       }}
     />
@@ -76,5 +77,7 @@ BOSDatePicker.propTypes = {
   error: PropTypes.bool,
   helperText: PropTypes.string,
   name: PropTypes.string,
-  showIcon: PropTypes.bool
+  showIcon: PropTypes.bool,
+  minDate: PropTypes.any,
+  maxDate: PropTypes.any
 };
