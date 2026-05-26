@@ -1,9 +1,13 @@
 package com.autonoma.erp.exception;
 
+import com.autonoma.erp.service.admin.BackendErrorLoggerService;
+import com.autonoma.erp.util.SecurityUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
@@ -13,8 +17,33 @@ import java.util.Map;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    @Autowired
+    private BackendErrorLoggerService backendErrorLoggerService;
+
+    private void logException(Exception ex, WebRequest request, HttpStatus status) {
+        try {
+            String path = "";
+            String method = "";
+            if (request instanceof ServletWebRequest) {
+                jakarta.servlet.http.HttpServletRequest servletReq = ((ServletWebRequest) request).getRequest();
+                path = servletReq.getRequestURI();
+                method = servletReq.getMethod();
+            } else {
+                path = request.getDescription(false);
+            }
+
+            String username = SecurityUtils.getCurrentUserId();
+            // Trigger asynchronous logging safely
+            backendErrorLoggerService.logError(ex, method, path, username, status.value(), null, null);
+        } catch (Throwable t) {
+            System.err.println("[CRITICAL] GlobalExceptionHandler failed to trigger error log: " + t.getMessage());
+        }
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
+        logException(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
+
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("message", "Internal Server Error");
@@ -40,6 +69,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Object> handleRuntimeException(RuntimeException ex, WebRequest request) {
+        logException(ex, request, HttpStatus.BAD_REQUEST);
+
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("message", ex.getMessage());
@@ -49,11 +80,40 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Object> handleIllegalArgument(IllegalArgumentException ex, WebRequest request) {
+        logException(ex, request, HttpStatus.BAD_REQUEST);
+
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
         body.put("message", "Invalid Input Data");
         body.put("details", ex.getMessage());
         
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "Cannot delete or modify this record because it is currently in use by other related modules (Foreign Key Constraint Violation).");
+        body.put("details", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Object> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getReason() != null ? ex.getReason() : ex.getMessage());
+        return new ResponseEntity<>(body, ex.getStatusCode());
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Object> handleHttpMessageNotReadable(org.springframework.http.converter.HttpMessageNotReadableException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "Malformed JSON request");
+        body.put("details", ex.getMessage());
+        ex.printStackTrace();
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }

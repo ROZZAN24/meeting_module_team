@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { createContext, useEffect, useReducer, useState } from 'react';
+import { createContext, useEffect, useReducer, useState, useRef } from 'react';
 
 // third party
 import { Chance } from 'chance';
@@ -27,10 +27,34 @@ const initialState = {
 };
 
 function setSessionContext(tenantId, divisionId, companyName, divisionName) {
-  if (tenantId) sessionStorage.setItem('tenantId', tenantId); else sessionStorage.removeItem('tenantId');
-  if (divisionId) sessionStorage.setItem('divisionId', String(divisionId)); else sessionStorage.removeItem('divisionId');
-  if (companyName) sessionStorage.setItem('companyName', companyName); else sessionStorage.removeItem('companyName');
-  if (divisionName) sessionStorage.setItem('divisionName', divisionName); else sessionStorage.removeItem('divisionName');
+  if (tenantId) {
+    sessionStorage.setItem('tenantId', tenantId);
+    localStorage.setItem('tenantId', tenantId);
+  } else {
+    sessionStorage.removeItem('tenantId');
+    localStorage.removeItem('tenantId');
+  }
+  if (divisionId) {
+    sessionStorage.setItem('divisionId', String(divisionId));
+    localStorage.setItem('divisionId', String(divisionId));
+  } else {
+    sessionStorage.removeItem('divisionId');
+    localStorage.removeItem('divisionId');
+  }
+  if (companyName) {
+    sessionStorage.setItem('companyName', companyName);
+    localStorage.setItem('companyName', companyName);
+  } else {
+    sessionStorage.removeItem('companyName');
+    localStorage.removeItem('companyName');
+  }
+  if (divisionName) {
+    sessionStorage.setItem('divisionName', divisionName);
+    localStorage.setItem('divisionName', divisionName);
+  } else {
+    sessionStorage.removeItem('divisionName');
+    localStorage.removeItem('divisionName');
+  }
 }
 
 function verifyToken(serviceToken) {
@@ -51,9 +75,11 @@ function verifyToken(serviceToken) {
 function setSession(serviceToken) {
   if (serviceToken) {
     sessionStorage.setItem('serviceToken', serviceToken);
+    localStorage.setItem('serviceToken', serviceToken);
     axios.defaults.headers.common.Authorization = `Bearer ${serviceToken}`;
   } else {
     sessionStorage.removeItem('serviceToken');
+    localStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
     setSessionContext(null, null, null, null);
   }
@@ -67,8 +93,9 @@ export function JWTProvider({ children }) {
   const [state, dispatch] = useReducer(accountReducer, initialState);
   const [licenseStatus, setLicenseStatus] = useState(null);
   const [logoutCountdown, setLogoutCountdown] = useState(null);
-  const { setState: setConfigState } = useConfig();
-  const { setMode } = useColorScheme();
+  const { state: configState, setState: setConfigState } = useConfig();
+  const { mode, setMode } = useColorScheme();
+  const lastSavedModeRef = useRef('');
 
   const loadUserThemeSettings = async (token) => {
     try {
@@ -80,6 +107,7 @@ export function JWTProvider({ children }) {
       if (response.data) {
         const dbSettings = response.data;
         if (dbSettings.themeMode) {
+          lastSavedModeRef.current = dbSettings.themeMode;
           localStorage.setItem('theme-mode', dbSettings.themeMode);
           if (setMode) {
             setMode(dbSettings.themeMode);
@@ -119,6 +147,41 @@ export function JWTProvider({ children }) {
       console.error('Failed to load user theme settings from DB:', err);
     }
   };
+
+  // Persist theme mode changes back to DB whenever the colorScheme mode updates
+  useEffect(() => {
+    const token = sessionStorage.getItem('serviceToken');
+    if (!token || !mode || !configState) return;
+
+    // Avoid redundant calls if the mode matches the last saved/loaded one
+    if (lastSavedModeRef.current === mode) {
+      return;
+    }
+
+    const saveThemeModeToDb = async () => {
+      try {
+        await axios.post('/api/theme-settings', {
+          themeMode: mode,
+          menuOrientation: configState.menuOrientation,
+          miniDrawer: configState.miniDrawer,
+          fontFamily: configState.fontFamily,
+          borderRadius: configState.borderRadius,
+          outlinedFilled: configState.outlinedFilled,
+          presetColor: configState.presetColor,
+          i18n: configState.i18n,
+          themeDirection: configState.themeDirection,
+          container: configState.container,
+          dashboardLayout: configState.dashboardLayout || 'glass'
+        });
+        lastSavedModeRef.current = mode;
+      } catch (err) {
+        console.error('Failed to save theme mode change to DB:', err);
+      }
+    };
+
+    const timer = setTimeout(saveThemeModeToDb, 1000);
+    return () => clearTimeout(timer);
+  }, [mode, configState]);
 
   const logout = async () => {
     try {
@@ -173,13 +236,28 @@ export function JWTProvider({ children }) {
   useEffect(() => {
     const init = async () => {
       try {
-        const serviceToken = window.sessionStorage.getItem('serviceToken');
+        let serviceToken = window.sessionStorage.getItem('serviceToken');
+        if (!serviceToken) {
+          const localToken = window.localStorage.getItem('serviceToken');
+          if (localToken && verifyToken(localToken)) {
+            serviceToken = localToken;
+            window.sessionStorage.setItem('serviceToken', localToken);
+            const tenantId = window.localStorage.getItem('tenantId');
+            const divisionId = window.localStorage.getItem('divisionId');
+            const companyName = window.localStorage.getItem('companyName');
+            const divisionName = window.localStorage.getItem('divisionName');
+            if (tenantId) window.sessionStorage.setItem('tenantId', tenantId);
+            if (divisionId) window.sessionStorage.setItem('divisionId', divisionId);
+            if (companyName) window.sessionStorage.setItem('companyName', companyName);
+            if (divisionName) window.sessionStorage.setItem('divisionName', divisionName);
+          }
+        }
         if (serviceToken && verifyToken(serviceToken)) {
           setSession(serviceToken);
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          // Keep sessionStorage in sync so SessionInfoBadge reads correctly
+          // Keep localStorage in sync so other tabs can read the context
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,
@@ -262,8 +340,14 @@ export function JWTProvider({ children }) {
 
   const switchContext = async (tenantId, divisionId) => {
     try {
-      if (tenantId) sessionStorage.setItem('tenantId', tenantId);
-      if (divisionId) sessionStorage.setItem('divisionId', String(divisionId));
+      if (tenantId) {
+        sessionStorage.setItem('tenantId', tenantId);
+        localStorage.setItem('tenantId', tenantId);
+      }
+      if (divisionId) {
+        sessionStorage.setItem('divisionId', String(divisionId));
+        localStorage.setItem('divisionId', String(divisionId));
+      }
 
       const response = await axios.get('/api/account/me', {
         headers: {

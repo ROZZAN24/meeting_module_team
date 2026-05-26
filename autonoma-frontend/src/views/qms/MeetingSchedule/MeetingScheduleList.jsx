@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Stack, Button, Tooltip, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { Box, Typography, Stack, Button, Tooltip, IconButton, Chip, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { IconPlus, IconCalendarEvent, IconRefresh, IconGitBranch } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
@@ -11,7 +13,7 @@ import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcut
 import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
-import AddMeetingScheduleDialog from './AddMeetingScheduleDialog';
+import { isMobile } from 'react-device-detect';
 
 const formatTime12h = (time24) => {
   if (!time24) return '-';
@@ -23,24 +25,27 @@ const formatTime12h = (time24) => {
 };
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 50 },
-  { id: 'scheduleNo', label: 'Schedule No', minWidth: 180, bold: true },
-  { id: 'revSourceScheduleNo', label: 'Amendment Schedule No', minWidth: 180 },
-  { id: 'scheduleDate', label: 'Schedule Date', minWidth: 120 },
-  { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 150 },
-  { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 180 },
-  { id: 'departmentNames', label: 'Department', minWidth: 180 },
-  { id: 'chairedByName', label: 'Chaired By', minWidth: 150 },
-  { id: 'hostByName', label: 'Host By', minWidth: 150 },
-  { id: 'participantsBy', label: 'Participants By', minWidth: 250 },
-  { id: 'review', label: 'Review', minWidth: 80 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
+  { id: 'index', label: '#', minWidth: 50, align: 'center' },
+  { id: 'scheduleNo', label: 'Schedule No', minWidth: 150, bold: true },
+  { id: 'revSourceScheduleNo', label: 'Amendment Schedule No', minWidth: 160 },
+  { id: 'scheduleDate', label: 'Schedule Date', minWidth: 110 },
+  { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 140 },
+  { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 160 },
+  { id: 'departmentNames', label: 'Department', minWidth: 160 },
+  { id: 'chairedByName', label: 'Chaired By', minWidth: 130 },
+  { id: 'hostByName', label: 'Host By', minWidth: 130 },
+  { id: 'participantsBy', label: 'Participants By', minWidth: 200 },
+  { id: 'review', label: 'Review', minWidth: 80, align: 'center' },
+  { id: 'createdBy', label: 'Created User', minWidth: 110 },
   { id: 'createdAt', label: 'Created Date', minWidth: 140 },
-  { id: 'status', label: 'Status', minWidth: 110 }
+  { id: 'status', label: 'Status', minWidth: 100, align: 'center' }
 ];
 
 export default function MeetingScheduleList() {
+  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_SCHEDULE);
@@ -49,8 +54,6 @@ export default function MeetingScheduleList() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [amendDialogOpen, setAmendDialogOpen] = useState(false);
@@ -81,6 +84,23 @@ export default function MeetingScheduleList() {
     });
   }, [rows]);
 
+  // ── FILTERED ROWS ──
+  const filteredRows = useMemo(() => {
+    return resolvedRows.filter((row) => {
+      const statusFilter = globalFilters?.status || 'OPEN';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
+
+      if (globalQuery) {
+        const q = globalQuery.toLowerCase();
+        return (row.scheduleNo || '').toLowerCase().includes(q) ||
+               (row.meetingTypeName || '').toLowerCase().includes(q) ||
+               (row.departmentNames || '').toLowerCase().includes(q) ||
+               (row.participantsBy || '').toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [resolvedRows, globalQuery, globalFilters]);
+
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
     dispatch(setFilterConfig([
@@ -98,6 +118,18 @@ export default function MeetingScheduleList() {
         id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true,
         options: [{ value: 'YES', label: 'Yes' }, { value: 'NO', label: 'No' }],
         defaultValue: 'NO'
+      },
+      {
+        id: 'status', label: 'Status', type: 'select', isStarred: true,
+        options: [
+          { value: 'ALL', label: 'All' },
+          { value: 'OPEN', label: 'Open' },
+          { value: 'RESCHEDULE', label: 'Reschedule' },
+          { value: 'CLOSED', label: 'Closed' },
+          { value: 'AUTO CLOSED', label: 'Auto Closed' },
+          { value: 'CANCELLED', label: 'Cancelled' }
+        ],
+        defaultValue: 'OPEN'
       }
     ]));
     return () => dispatch(setFilterConfig(null));
@@ -121,8 +153,13 @@ export default function MeetingScheduleList() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   // ── HANDLERS ──
-  const handleAdd = () => { setSelectedItem(null); setDialogOpen(true); };
-  const handleEdit = (item) => { setSelectedItem(item); setDialogOpen(true); };
+  const handleAdd = () => {
+    if (!perms.write) return;
+    navigate('/qms/meeting-schedule/create');
+  };
+  const handleEdit = (item) => { 
+    navigate(`/qms/meeting-schedule/edit/${item.id}`); 
+  };
   const handleDeleteClick = (row) => { setDeleteTarget(row); setDeleteDialogOpen(true); };
 
   const handleAmendmentClick = (row) => {
@@ -150,21 +187,7 @@ export default function MeetingScheduleList() {
     }
   };
 
-  const handleSave = async (formData) => {
-    try {
-      if (selectedItem) {
-        await axios.put(`${API_PATHS.QMS.MEETING_SCHEDULES}/${selectedItem.id}`, formData);
-        dispatch(openSnackbar({ open: true, message: 'Meeting Schedule updated Successfully...', variant: 'alert', severity: 'success' }));
-      } else {
-        await axios.post(API_PATHS.QMS.MEETING_SCHEDULES, formData);
-        dispatch(openSnackbar({ open: true, message: 'Meeting Schedule saved Successfully.', variant: 'alert', severity: 'success' }));
-      }
-      setDialogOpen(false);
-      fetchData();
-    } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save schedule', variant: 'alert', severity: 'error' }));
-    }
-  };
+
 
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
@@ -182,39 +205,188 @@ export default function MeetingScheduleList() {
 
   // ── RENDER CELL ──
   const renderCell = (col, row, idx) => {
+    let val;
     if (col.id === 'status') {
       const s = row.status || 'OPEN';
       let chipStatus = 'ACTIVE';
       if (s === 'CLOSED' || s === 'AUTO CLOSED') chipStatus = 'INACTIVE';
       if (s === 'RESCHEDULE') chipStatus = 'PENDING';
       if (s === 'CANCELLED') chipStatus = 'INACTIVE';
-      return <Chip label={s} size="small" sx={getStatusChipSx(chipStatus)} />;
+      val = (
+        <Chip 
+          label={s} 
+          size="small" 
+          sx={{
+            ...getStatusChipSx(chipStatus),
+            fontWeight: 850,
+            borderRadius: '6px',
+            textTransform: 'uppercase'
+          }} 
+        />
+      );
+    } else if (col.id === 'createdAt') {
+      if (!row.createdAt) val = '-';
+      else {
+        const dt = new Date(row.createdAt);
+        const d = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const t = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        val = (
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>{d}</Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t}</Typography>
+          </Box>
+        );
+      }
+    } else if (col.id === 'index') {
+      val = (
+        <Typography variant="body2" color="text.secondary" align="center" sx={{ fontWeight: 600 }}>
+          {idx + 1 + page * size}
+        </Typography>
+      );
+    } else if (col.id === 'scheduleNo') {
+      val = (
+        <Typography variant="body2" sx={{ fontWeight: 800, color: 'primary.main', letterSpacing: '0.3px' }}>
+          {row.scheduleNo || '-'}
+        </Typography>
+      );
+    } else if (col.id === 'revSourceScheduleNo') {
+      val = row.revSourceScheduleNo ? (
+        <Chip 
+          label={row.revSourceScheduleNo} 
+          size="small" 
+          variant="outlined" 
+          color="warning" 
+          sx={{ borderRadius: '6px', fontWeight: 700, height: '22px' }} 
+        />
+      ) : (
+        <Typography variant="body2" color="text.secondary">-</Typography>
+      );
+    } else if (col.id === 'scheduleDate') {
+      val = (
+        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
+          {row.scheduleDate || '-'}
+        </Typography>
+      );
+    } else if (col.id === 'meetingTypeName') {
+      val = (
+        <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          {row.meetingTypeName || '-'}
+        </Typography>
+      );
+    } else if (col.id === 'meetingDateTime') {
+      if (row.meetingDate) {
+        const d = row.meetingDate.split('-').reverse().join('/');
+        const t = formatTime12h(row.startTime);
+        val = (
+          <Box>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              {d}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.1 }}>
+              {t}
+            </Typography>
+          </Box>
+        );
+      } else {
+        val = <Typography variant="body2" color="text.secondary">-</Typography>;
+      }
+    } else if (col.id === 'departmentNames') {
+      const fullDepts = row.departmentNames || '-';
+      const truncated = fullDepts.length > 30 ? `${fullDepts.substring(0, 30)}...` : fullDepts;
+      val = (
+        <Typography variant="body2" sx={{ color: 'text.primary', fontWeight: 500 }}>
+          {truncated}
+        </Typography>
+      );
+    } else if (col.id === 'chairedByName' || col.id === 'hostByName') {
+      const name = col.id === 'chairedByName' ? row.chairedByName : row.hostByName;
+      val = (
+        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
+          {name}
+        </Typography>
+      );
+    } else if (col.id === 'participantsBy') {
+      const fullParts = row.participantsBy || '-';
+      const truncated = fullParts.length > 35 ? `${fullParts.substring(0, 35)}...` : fullParts;
+      val = (
+        <Typography variant="body2" color="text.secondary">
+          {truncated}
+        </Typography>
+      );
+    } else if (col.id === 'review') {
+      const r = row.review || 'NO';
+      val = (
+        <Chip 
+          label={r} 
+          size="small" 
+          variant="outlined" 
+          sx={{ 
+            borderRadius: '6px', 
+            height: '22px', 
+            fontWeight: 700, 
+            color: r === 'YES' ? 'primary.main' : 'text.secondary', 
+            borderColor: r === 'YES' ? 'primary.light' : 'divider',
+            bgcolor: r === 'YES' ? 'primary.lighter' : 'transparent'
+          }} 
+        />
+      );
+    } else if (col.id === 'createdBy') {
+      val = (
+        <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+          {row.createdBy || '-'}
+        </Typography>
+      );
+    } else {
+      let rawVal = row[col.id];
+      if (rawVal === undefined || rawVal === null) {
+        const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+        rawVal = row[snakeCaseId];
+      }
+      if (typeof rawVal === 'boolean') {
+        val = rawVal ? 'Yes' : 'No';
+      } else if (typeof rawVal === 'object' && rawVal !== null) {
+        val = rawVal.name || rawVal.label || rawVal.id || '-';
+      } else {
+        val = (rawVal !== null && rawVal !== undefined && rawVal !== '') ? String(rawVal) : '-';
+      }
     }
-    if (col.id === 'createdAt') {
-      if (!row.createdAt) return '-';
-      const dt = new Date(row.createdAt);
-      return `${dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
+
+    const tooltipHint = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
+    let finalTooltip = tooltipHint;
+    if (col.id === 'departmentNames' && row.departmentNames && row.departmentNames.length > 30) {
+      finalTooltip = `${row.departmentNames} | ${tooltipHint}`;
+    } else if (col.id === 'participantsBy' && row.participantsBy && row.participantsBy.length > 35) {
+      finalTooltip = `${row.participantsBy} | ${tooltipHint}`;
     }
-    return null; // Let BOSDataTable handle default rendering
+
+    return (
+      <Tooltip title={finalTooltip} placement="top" followCursor enterDelay={200}>
+        <div style={{ width: '100%', display: 'flex', justifyContent: col.align === 'center' ? 'center' : 'flex-start' }}>
+          {val}
+        </div>
+      </Tooltip>
+    );
   };
 
   return (
     <MainCard
       title={
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconCalendarEvent size={24} />
-          <Typography variant="h3">Meeting Schedule</Typography>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+          <Box sx={{ p: 1, bgcolor: 'primary.light', borderRadius: 2, display: 'flex' }}>
+            <IconCalendarEvent size={22} color={isDark ? '#fff' : '#1e88e5'} />
+          </Box>
+          <Typography variant="h3" sx={{ fontWeight: 800 }}>Meeting Schedule</Typography>
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={2} alignItems="center">
           <Tooltip title="Refresh">
             <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
           {perms.export && <BOSExportButton
-            data={resolvedRows}
+            data={filteredRows}
             filename="Meeting_Schedule"
             columns={[
               { header: '#', key: 'index' },
@@ -253,25 +425,20 @@ export default function MeetingScheduleList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={resolvedRows}
+        rows={filteredRows}
         page={page}
         size={size}
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleEdit}
-        onEditRow={handleEdit}
+        onEditRow={perms.write ? handleEdit : undefined}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="meeting-schedule-table"
       />
 
-      <AddMeetingScheduleDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSave={handleSave}
-        item={selectedItem}
-      />
+
 
       <ConfirmDeleteDialog
         open={deleteDialogOpen}

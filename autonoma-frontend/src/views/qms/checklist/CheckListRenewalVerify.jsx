@@ -32,7 +32,7 @@ import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
 import { BOSExportButton } from 'ui-component/bos';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
+import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX, IconCheck } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
@@ -56,7 +56,7 @@ const DEFAULT_FILTERS = {
   fromDate: '',
   toDate: '',
   considerDate: 'All',
-  statuses: [],
+  statuses: ['Pending for Verified', 'Pending for Accepted'],
   assignTo: '',
   category: 'All',
   searchBy: 'All',
@@ -221,7 +221,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', Verified: 'success', Rejected: 'error', 'Not Accepted': 'error', Accepted: 'success', Missed: 'error' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Pending'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListRenewalVerify() {
@@ -289,7 +297,7 @@ export default function CheckListRenewalVerify() {
       const params = {
         page,
         size,
-        status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
+        status: filters.statuses.length > 0 ? filters.statuses.join(',') : undefined,
         fromDate: filters.fromDate || undefined,
         toDate: filters.toDate || undefined,
         considerDate: filters.considerDate !== 'All' ? filters.considerDate : undefined,
@@ -354,8 +362,10 @@ export default function CheckListRenewalVerify() {
         return fullName === assigneeName.toLowerCase().trim();
       });
 
+      const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+
       if (!assignee) {
-        if (user?.isBosAdmin !== 1) {
+        if (!isAdmin) {
           dispatch(openSnackbar({
             open: true,
             message: `Assignee '${assigneeName}' not found in Employee Master. Only an administrator can verify.`,
@@ -376,7 +386,7 @@ export default function CheckListRenewalVerify() {
             (employees || []).find(emp => String(emp.id) === String(mapping.verticalHeadId))?.firstName?.toLowerCase() === user?.name?.split(' ')[0]?.toLowerCase()
           );
 
-          if (!isVerticalHead && user?.isBosAdmin !== 1) {
+          if (!isVerticalHead && !isAdmin) {
             dispatch(openSnackbar({
               open: true,
               message: `Only the mapped Vertical Head of '${assigneeName}' can verify or reject this record!`,
@@ -389,7 +399,7 @@ export default function CheckListRenewalVerify() {
           }
         } catch (err) {
           console.error('Failed to verify manager mapping:', err);
-          if (user?.isBosAdmin !== 1) {
+          if (!isAdmin) {
             dispatch(openSnackbar({
               open: true,
               message: 'Failed to validate manager permissions. Only administrators can bypass.',
@@ -438,7 +448,14 @@ export default function CheckListRenewalVerify() {
   const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'All' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + (filters.dualCheck !== 'All' ? 1 : 0);
 
   return (
-    <MainCard title="Check List / Renewal Verify"
+    <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
+      title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}

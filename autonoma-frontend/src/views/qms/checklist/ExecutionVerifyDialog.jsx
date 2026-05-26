@@ -286,13 +286,25 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
                   />
                 </>
               ) : (
-                <BOSTextField 
-                  label="Execution Comments" 
-                  value={data.remarks || 'No comments provided.'} 
-                  multiline 
-                  rows={2} 
-                  disabled 
-                />
+                <Stack spacing={2.5}>
+                  <BOSTextField 
+                    label="Execution Comments" 
+                    value={data.remarks || 'No comments provided.'} 
+                    multiline 
+                    rows={2} 
+                    disabled 
+                  />
+                  {(onVerify || onReject) && (
+                    <BOSTextField 
+                      label="Verification Remarks" 
+                      value={verifyRemarks} 
+                      onChange={(e) => setVerifyRemarks(e.target.value)}
+                      multiline 
+                      rows={2} 
+                      placeholder="Enter verification comments..."
+                    />
+                  )}
+                </Stack>
               )}
               
               {data.rejReason && (

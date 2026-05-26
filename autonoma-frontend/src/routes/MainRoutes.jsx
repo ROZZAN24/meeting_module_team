@@ -232,6 +232,7 @@ const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/Audit
 const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
 const MeetingMaster = Loadable(lazy(() => import('views/qms/MeetingMaster/MeetingMasterList')));
 const MeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/MeetingScheduleList')));
+const AddMeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/AddMeetingSchedule')));
 const MeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/MomList')));
 const AddMeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/AddMeetingMinutes')));
 const MeetingAttendance = Loadable(lazy(() => import('views/qms/MeetingAttendance/AttendanceList')));
@@ -1022,6 +1023,14 @@ const MainRoutes = {
     {
       path: '/qms/meeting-schedule',
       element: <MeetingSchedule />
+    },
+    {
+      path: '/qms/meeting-schedule/create',
+      element: <AddMeetingSchedule />
+    },
+    {
+      path: '/qms/meeting-schedule/edit/:id',
+      element: <AddMeetingSchedule />
     },
     {
       path: '/qms/minutesofmeeting',
