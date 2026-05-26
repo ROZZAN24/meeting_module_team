@@ -25,13 +25,15 @@ public class ChecklistDepartment {
     @lombok.ToString.Exclude
     private MasterChecklist checklist;
 
-    @Column(name = "DEPARTMENT_NAME")
-    private String departmentName;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "DEPARTMENT_ID")
+    private Department department;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public MasterChecklist getChecklist() { return checklist; }
     public void setChecklist(MasterChecklist checklist) { this.checklist = checklist; }
-    public String getDepartmentName() { return departmentName; }
-    public void setDepartmentName(String departmentName) { this.departmentName = departmentName; }
+    public Department getDepartment() { return department; }
+    public void setDepartment(Department department) { this.department = department; }
+    public String getDepartmentName() { return department != null ? department.getDepartmentName() : null; }
 }

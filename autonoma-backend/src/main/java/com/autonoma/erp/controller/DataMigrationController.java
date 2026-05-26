@@ -153,6 +153,64 @@ public class DataMigrationController {
         }
     }
 
+    // ─── POST /api/admin/migration/checklists-and-assignments ────────────────────
+    @PostMapping("/checklists-and-assignments")
+    public ResponseEntity<Map<String, String>> migrateChecklistsAndAssignments() {
+        Map<String, String> response = new HashMap<>();
+        String currentUser = resolveCurrentUser();
+        StringBuilder summary = new StringBuilder();
+        boolean anyFailed = false;
+
+        // Part 1: Master Checklists
+        MigrationAuditLog masterLog = MigrationAuditLog.builder()
+                .tableName("HRMS_MASTER_CHECKLIST -> qms_checklist_master")
+                .migratedBy(currentUser)
+                .migratedAt(new Date())
+                .build();
+        try {
+            String result = migrationService.migrateOldChecklists();
+            masterLog.setStatus("SUCCESS");
+            masterLog.setRecordsCount(extractCount(result));
+            masterLog.setMessage(result);
+            summary.append("[Master] ").append(result).append(" | ");
+        } catch (Exception e) {
+            anyFailed = true;
+            masterLog.setStatus("FAILED");
+            masterLog.setRecordsCount(0);
+            masterLog.setMessage(e.getMessage());
+            summary.append("[Master] FAILED: ").append(e.getMessage()).append(" | ");
+        } finally {
+            auditLogRepository.save(masterLog);
+        }
+
+        // Part 2: Checklist Assignments
+        MigrationAuditLog assignLog = MigrationAuditLog.builder()
+                .tableName("QMS_ASSIGN_CHECKLIST -> qms_checklist_assignment")
+                .migratedBy(currentUser)
+                .migratedAt(new Date())
+                .build();
+        try {
+            String result = migrationService.migrateChecklistAssignments();
+            assignLog.setStatus("SUCCESS");
+            assignLog.setRecordsCount(extractCount(result));
+            assignLog.setMessage(result);
+            summary.append("[Assignments] ").append(result);
+        } catch (Exception e) {
+            anyFailed = true;
+            assignLog.setStatus("FAILED");
+            assignLog.setRecordsCount(0);
+            assignLog.setMessage(e.getMessage());
+            summary.append("[Assignments] FAILED: ").append(e.getMessage());
+        } finally {
+            auditLogRepository.save(assignLog);
+        }
+
+        response.put("message", summary.toString());
+        return anyFailed
+                ? ResponseEntity.internalServerError().body(response)
+                : ResponseEntity.ok(response);
+    }
+
     // ─── POST /api/admin/migration/all ───────────────────────────────────────────
     @PostMapping("/all")
     public ResponseEntity<Map<String, String>> migrateAll() {

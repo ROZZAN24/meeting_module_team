@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface DepartmentRepository extends JpaRepository<Department, Long> {
     Optional<Department> findByDepartmentNo(String departmentNo);
+    Optional<Department> findByDepartmentName(String departmentName);
     @org.springframework.data.jpa.repository.Query(value = "SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM hrm_department_master WHERE LOWER(LTRIM(RTRIM(dept_name))) = LOWER(LTRIM(RTRIM(:name)))", nativeQuery = true)
     int existsByNameNative(@org.springframework.data.repository.query.Param("name") String name);
 
