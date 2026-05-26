@@ -56,7 +56,7 @@ const DEFAULT_FILTERS = {
   fromDate: '',
   toDate: '',
   considerDate: 'All',
-  statuses: [],
+  statuses: ['Pending for Verified', 'Pending for Accepted'],
   assignTo: '',
   category: 'All',
   searchBy: 'All',
@@ -297,7 +297,7 @@ export default function CheckListRenewalVerify() {
       const params = {
         page,
         size,
-        status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
+        status: filters.statuses.length > 0 ? filters.statuses.join(',') : undefined,
         fromDate: filters.fromDate || undefined,
         toDate: filters.toDate || undefined,
         considerDate: filters.considerDate !== 'All' ? filters.considerDate : undefined,

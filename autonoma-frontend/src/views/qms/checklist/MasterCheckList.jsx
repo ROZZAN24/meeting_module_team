@@ -100,7 +100,7 @@ const columns = [
   { 
     id: 'verifyStatus', 
     label: 'Verify Status',   
-    minWidth: 140,
+    minWidth: 160,
     render: (row) => {
       const statusText = row.verifyStatus || 'Pending for Verify';
       const map = {

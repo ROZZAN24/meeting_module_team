@@ -126,11 +126,12 @@ export default function BOSDataTable({
     }
 
     // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
-    const isDateField = col.id.toLowerCase().includes('date') || 
-                       col.id.endsWith('At') || 
-                       col.id.endsWith('_at') || 
-                       col.id === 'entryDate' ||
-                       col.id === 'invoiceDate';
+    const isDateField = (col.id.toLowerCase().includes('date') || 
+                        col.id.endsWith('At') || 
+                        col.id.endsWith('_at') || 
+                        col.id === 'entryDate' ||
+                        col.id === 'invoiceDate') &&
+                        !col.id.toLowerCase().endsWith('by');
     
     // Explicitly exclude false positives like 'state' or 'category'
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
@@ -228,11 +229,12 @@ export default function BOSDataTable({
     }
 
     // Date Formatting (SOP Compliance - Removes +00:00 via formatDate)
-    const isDateField = col.id.toLowerCase().includes('date') || 
-                       col.id.endsWith('At') || 
-                       col.id.endsWith('_at') || 
-                       col.id === 'entryDate' ||
-                       col.id === 'invoiceDate';
+    const isDateField = (col.id.toLowerCase().includes('date') || 
+                        col.id.endsWith('At') || 
+                        col.id.endsWith('_at') || 
+                        col.id === 'entryDate' ||
+                        col.id === 'invoiceDate') &&
+                        !col.id.toLowerCase().endsWith('by');
     
     // Explicitly exclude false positives like 'state' or 'category'
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
