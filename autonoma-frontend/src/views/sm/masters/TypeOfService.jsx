@@ -24,6 +24,8 @@ const columns = [
 ];
 
 export default function TypeOfService() {
+  const dispatch = useDispatch();
+  const globalQuery = useSelector((state) => state.search.query);
   const perms = usePagePermissions(PAGE_CODES.SM_TYPE_OF_SERVICE);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);

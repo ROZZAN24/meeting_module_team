@@ -1,5 +1,7 @@
 package com.autonoma.erp.controller;
 
+
+import com.autonoma.erp.security.RequirePagePermission;
 import com.autonoma.erp.model.Currency;
 import com.autonoma.erp.repository.CurrencyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +23,7 @@ public class CurrencyController {
     }
 
     @PostMapping
+    @RequirePagePermission(pageCode = "M5230", action = "write")
     public ResponseEntity<?> create(@RequestBody Currency item) {
         if (repository.existsByCurrencyCodeIgnoreCase(item.getCurrencyCode())) {
             return ResponseEntity.badRequest().body("Currency Code already exists");
@@ -32,6 +35,7 @@ public class CurrencyController {
     }
 
     @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M5230", action = "write")
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Currency item) {
         return repository.findById(id)
                 .map(existing -> {
@@ -52,6 +56,9 @@ public class CurrencyController {
     }
 
     @DeleteMapping("/{id}")
+
+
+    @RequirePagePermission(pageCode = "M5230", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         repository.deleteById(id);
         return ResponseEntity.ok().build();
