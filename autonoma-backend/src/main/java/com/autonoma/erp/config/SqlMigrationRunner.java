@@ -63,7 +63,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         // Country/State audit sync
         "20260518_V14.8__Sync_Country_State_Audit.sql",
         // Checklist status migration (complex T-SQL with temp tables)
-        "20260525_V37.0__Alter_Checklist_Status_To_Int.sql"
+        "20260525_V37.0__Alter_Checklist_Status_To_Int.sql",
+        // T-SQL scripts for column standardization & INT conversions
+        "20260526_V40.0__Fix_Missing_Audit_Columns__TIS.sql",
+        "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
