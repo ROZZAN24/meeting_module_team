@@ -215,7 +215,7 @@ export default function CheckListRenewalReport() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDoubleTap, setShowDoubleTap] = useState(false);
-  const activeRow = rows.find((r) => r.id === selectedRowId) || null;
+  const activeRow = (rows || []).find((r) => r?.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_REPORT);
@@ -283,7 +283,7 @@ export default function CheckListRenewalReport() {
         assignedBy: filters.assignedBy || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      let displayRows = response.data.content || [];
+      let displayRows = response?.data?.content || [];
       if (filters.status === 'All') {
         const excludedStatuses = ['Pending', 'Started', 'Pending for Verified', 'Pending for Accepted'];
         displayRows = displayRows.filter((r) => {
@@ -295,6 +295,8 @@ export default function CheckListRenewalReport() {
       setTotalElements(displayRows.length);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
+      setRows([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
@@ -327,7 +329,7 @@ export default function CheckListRenewalReport() {
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />}
+          {perms.export && <BOSExportButton data={rows || []} filename="Checklist_Report" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -381,7 +383,7 @@ export default function CheckListRenewalReport() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : rows.length === 0 ? (
+              ) : (rows || []).length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
                     <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -391,7 +393,7 @@ export default function CheckListRenewalReport() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : rows.map((row, idx) => (
+              ) : (rows || []).map((row, idx) => (
                 <TableRow
                   key={row.id}
                   hover

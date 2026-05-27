@@ -27,7 +27,16 @@ import { setQuery, setFilters, resetFilters, setFilterPreferences } from 'store/
 import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
-import { IconSearch, IconX, IconAdjustmentsHorizontal, IconFilter, IconCheck, IconPlus, IconRefresh, IconMicrophone } from '@tabler/icons-react';
+import {
+  IconSearch,
+  IconX,
+  IconAdjustmentsHorizontal,
+  IconFilter,
+  IconCheck,
+  IconPlus,
+  IconRefresh,
+  IconMicrophone
+} from '@tabler/icons-react';
 
 function HeaderAvatar({ children, ...others }) {
   const theme = useTheme();
@@ -138,9 +147,7 @@ export default function SearchSection() {
     recog.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       if (transcript) {
-        const cleaned = transcript
-          .replace(/^[.,\/#!$%\^&\*;:{}=\-_`~()?"']+|[.,\/#!$%\^&\*;:{}=\-_`~()?"']+$/g, '')
-          .trim();
+        const cleaned = transcript.replace(/^[.,\/#!$%\^&\*;:{}=\-_`~()?"']+|[.,\/#!$%\^&\*;:{}=\-_`~()?"']+$/g, '').trim();
         dispatch(setQuery(cleaned));
       }
       setIsListening(false);
@@ -182,36 +189,45 @@ export default function SearchSection() {
       recog.onresult = null;
       recog.onerror = null;
       recog.onend = null;
-      try { recog.abort(); } catch (_) {}
+      try {
+        recog.abort();
+      } catch {}
       recognitionRef.current = null;
     };
   }, [dispatch]);
 
-  const handleMicClick = useCallback((e) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
-    const recog = recognitionRef.current;
-    if (isListening) {
-      if (recog) recog.stop();
-    } else {
-      if (recog) {
-        try { recog.start(); } catch (err) { console.warn('Mic start error:', err); }
-      } else {
-        dispatch(
-          openSnackbar({
-            open: true,
-            message: 'Speech Recognition is not supported by your browser.',
-            variant: 'alert',
-            alert: { variant: 'filled' },
-            severity: 'warning',
-            close: false
-          })
-        );
+  const handleMicClick = useCallback(
+    (e) => {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
       }
-    }
-  }, [isListening, dispatch]);
+      const recog = recognitionRef.current;
+      if (isListening) {
+        if (recog) recog.stop();
+      } else {
+        if (recog) {
+          try {
+            recog.start();
+          } catch (err) {
+            console.warn('Mic start error:', err);
+          }
+        } else {
+          dispatch(
+            openSnackbar({
+              open: true,
+              message: 'Speech Recognition is not supported by your browser.',
+              variant: 'alert',
+              alert: { variant: 'filled' },
+              severity: 'warning',
+              close: false
+            })
+          );
+        }
+      }
+    },
+    [isListening, dispatch]
+  );
 
   const anchorRef = useRef(null);
   const isAdvancedOpen = Boolean(advancedAnchorEl);
@@ -234,20 +250,21 @@ export default function SearchSection() {
     const baseConfig = Array.isArray(searchConfig) ? searchConfig : [];
     const list = [...baseConfig];
     if (Array.isArray(tableConfig)) {
-      tableConfig.forEach(col => {
+      tableConfig.forEach((col) => {
         if (!col || col.id === 'index' || col.id === 'photo' || col.id === 'actions') return;
-        if (!list.find(f => f && f.id === col.id)) {
-          const isDateCol = (col.id.toLowerCase().includes('date') || 
-                             col.id.endsWith('At') || 
-                             col.id.endsWith('_at') || 
-                             col.id === 'entryDate' ||
-                             col.id === 'invoiceDate') &&
-                            !(col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category'));
+        if (!list.find((f) => f && f.id === col.id)) {
+          const isDateCol =
+            (col.id.toLowerCase().includes('date') ||
+              col.id.endsWith('At') ||
+              col.id.endsWith('_at') ||
+              col.id === 'entryDate' ||
+              col.id === 'invoiceDate') &&
+            !(col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category'));
 
-          list.push({ 
-            id: col.id, 
-            label: col.label || col.id, 
-            type: isDateCol ? 'dateRange' : (col.options && col.options.length > 0 ? 'autocomplete' : 'text'), 
+          list.push({
+            id: col.id,
+            label: col.label || col.id,
+            type: isDateCol ? 'dateRange' : col.options && col.options.length > 0 ? 'autocomplete' : 'text',
             isRequired: col.required,
             options: col.options || []
           });
@@ -274,23 +291,22 @@ export default function SearchSection() {
   useEffect(() => {
     if (combinedConfig && combinedConfig.length > 0) {
       // Always start from the starred defaults for this filterConfig
-      const starredDefaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
+      const starredDefaults = combinedConfig.filter((f) => f.isStarred || f.isRequired).map((f) => f.id);
 
       // If user has saved prefs, merge them: starred always show + user's extras
       if (currentPrefs !== undefined) {
         // Keep starred visible, plus any extra filters the user has manually added
-        const extras = currentPrefs.filter(id => !starredDefaults.includes(id));
+        const extras = currentPrefs.filter((id) => !starredDefaults.includes(id));
         setVisibleFilterIds([...starredDefaults, ...extras]);
       } else {
         if (starredDefaults.length > 0) {
           setVisibleFilterIds(starredDefaults);
         } else {
-          const firstTwo = combinedConfig.slice(0, 2).map(f => f.id);
+          const firstTwo = combinedConfig.slice(0, 2).map((f) => f.id);
           setVisibleFilterIds(firstTwo);
         }
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [combinedConfig, location.pathname, currentPrefs]);
 
   const updateVisibleFilters = (newIds) => {
@@ -419,21 +435,23 @@ export default function SearchSection() {
                       <IconMicrophone stroke={1.5} size="20px" />
                     </IconButton>
                   </Tooltip>
-                  <IconButton
-                    size="small"
-                    ref={anchorRef}
-                    onClick={handleAdvancedClick}
-                    sx={{
-                      p: 0.5,
-                      opacity: isHovered || isFocused || isAdvancedOpen ? 1 : 0,
-                      visibility: isHovered || isFocused || isAdvancedOpen ? 'visible' : 'hidden',
-                      transition: 'all 0.2s ease-in-out',
-                      color: isAdvancedOpen ? 'primary.main' : 'text.secondary',
-                      '&:hover': { color: 'primary.main' }
-                    }}
-                  >
-                    <IconFilter stroke={1.5} size="20px" />
-                  </IconButton>
+                  {combinedConfig && combinedConfig.length > 0 && (
+                    <IconButton
+                      size="small"
+                      ref={anchorRef}
+                      onClick={handleAdvancedClick}
+                      sx={{
+                        p: 0.5,
+                        opacity: isHovered || isFocused || isAdvancedOpen ? 1 : 0,
+                        visibility: isHovered || isFocused || isAdvancedOpen ? 'visible' : 'hidden',
+                        transition: 'all 0.2s ease-in-out',
+                        color: isAdvancedOpen ? 'primary.main' : 'text.secondary',
+                        '&:hover': { color: 'primary.main' }
+                      }}
+                    >
+                      <IconFilter stroke={1.5} size="20px" />
+                    </IconButton>
+                  )}
                   <Popover
                     open={isAdvancedOpen}
                     anchorEl={advancedAnchorEl}
@@ -443,155 +461,244 @@ export default function SearchSection() {
                     slotProps={{
                       paper: {
                         sx: {
-                          mt: 1.2, width: 420, maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+                          mt: 1.2,
+                          width: 420,
+                          maxHeight: '80vh',
+                          display: 'flex',
+                          flexDirection: 'column',
                           boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                          borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'hidden'
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          overflow: 'hidden'
                         }
                       }
                     }}
                   >
-                    <Box sx={{ filter: isAddFilterOpen ? 'blur(2.5px)' : 'none', transition: 'filter 0.25s ease', display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
-                      <Box sx={{
-                        p: 2,
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
+                    <Box
+                      sx={{
+                        filter: isAddFilterOpen ? 'blur(2.5px)' : 'none',
+                        transition: 'filter 0.25s ease',
                         display: 'flex',
-                        alignItems: 'center',
-                        background: (theme) => theme.palette.mode === 'dark' ? 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2))' : 'linear-gradient(135deg, #f8f9fa, #ffffff)'
-                      }}>
-                        <Box sx={{
-                          p: 0.8,
-                          borderRadius: '10px',
-                          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-                          color: '#fff',
+                        flexDirection: 'column',
+                        flexGrow: 1,
+                        minHeight: 0,
+                        overflow: 'hidden'
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderBottom: '1px solid',
+                          borderColor: 'divider',
                           display: 'flex',
                           alignItems: 'center',
-                          mr: 1.5
-                        }}>
+                          background: (theme) =>
+                            theme.palette.mode === 'dark'
+                              ? 'linear-gradient(135deg, rgba(255,255,255,0.05), rgba(0,0,0,0.2))'
+                              : 'linear-gradient(135deg, #f8f9fa, #ffffff)'
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            p: 0.8,
+                            borderRadius: '10px',
+                            background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
+                            color: '#fff',
+                            display: 'flex',
+                            alignItems: 'center',
+                            mr: 1.5
+                          }}
+                        >
                           <IconAdjustmentsHorizontal size={18} />
                         </Box>
                         <Typography variant="subtitle1" fontWeight={800} sx={{ flexGrow: 1, letterSpacing: '-0.3px' }}>
                           Filter Criteria
                         </Typography>
-                        <IconButton size="small" onClick={handleAdvancedClose} sx={{
-                          transition: 'all 0.2s',
-                          '&:hover': { transform: 'rotate(90deg)', bgcolor: 'action.hover' }
-                        }}>
+                        <IconButton
+                          size="small"
+                          onClick={handleAdvancedClose}
+                          sx={{
+                            transition: 'all 0.2s',
+                            '&:hover': { transform: 'rotate(90deg)', bgcolor: 'action.hover' }
+                          }}
+                        >
                           <IconX size={16} />
                         </IconButton>
                       </Box>
 
                       <Box sx={{ p: 2.5, overflowY: 'auto', flexGrow: 1, minHeight: 0 }}>
                         <Stack spacing={2.2}>
-                          {combinedConfig?.filter(f => f && (f.isConstant || (Array.isArray(visibleFilterIds) && visibleFilterIds.includes(f.id)))).map((field) => (
-                            <Stack spacing={0.6} key={field.id}>
-                              <Typography variant="caption" color="text.primary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.5px', opacity: 0.85 }}>
-                                {field.label} {field.isRequired && '*'}
-                              </Typography>
-                              {field.type === 'autocomplete' ? (
-                                <Autocomplete
-                                  multiple={field.multiple}
-                                  size="small"
-                                  options={field.options || []}
-                                  getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
-                                  value={
-                                    field.multiple 
-                                      ? (field.options || []).filter(opt => (filters[field.id] || []).includes(opt.value))
-                                      : (field.options || []).find(opt => opt.value === filters[field.id]) || null
-                                  }
-                                  onChange={(e, newVal) => {
-                                    const val = field.multiple 
-                                      ? (newVal || []).map(v => typeof v === 'object' ? v.value : v)
-                                      : (newVal && typeof newVal === 'object' ? newVal.value : newVal);
-                                    handleFilterChange(field.id, val);
-                                  }}
-                                  renderInput={(params) => (
-                                    <TextField {...params} variant="outlined" placeholder={`Select ${field.label}...`} />
-                                  )}
-                                  sx={{
-                                    '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } },
-                                    '& .MuiAutocomplete-tag': { borderRadius: '6px', fontWeight: 600 }
-                                  }}
-                                />
-                              ) : field.type === 'select' ? (
-                                <Select
-                                  fullWidth size="small"
-                                  variant="outlined"
-                                  value={filters[field.id] || field.defaultValue || 'All'}
-                                  onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                  sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
+                          {combinedConfig
+                            ?.filter((f) => f && (f.isConstant || (Array.isArray(visibleFilterIds) && visibleFilterIds.includes(f.id))))
+                            .map((field) => (
+                              <Stack spacing={0.6} key={field.id}>
+                                <Typography
+                                  variant="caption"
+                                  color="text.primary"
+                                  fontWeight={700}
+                                  sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.5px', opacity: 0.85 }}
                                 >
-                                  {field.options.map((opt) => (
-                                    <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>
-                                      {opt.label}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              ) : field.type === 'dateRange' ? (
-                                <Stack direction="row" spacing={1} alignItems="center">
+                                  {field.label} {field.isRequired && '*'}
+                                </Typography>
+                                {field.type === 'autocomplete' ? (
+                                  <Autocomplete
+                                    multiple={field.multiple}
+                                    size="small"
+                                    options={field.options || []}
+                                    getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
+                                    value={
+                                      field.multiple
+                                        ? (field.options || []).filter((opt) => (filters[field.id] || []).includes(opt.value))
+                                        : (field.options || []).find((opt) => opt.value === filters[field.id]) || null
+                                    }
+                                    onChange={(e, newVal) => {
+                                      const val = field.multiple
+                                        ? (newVal || []).map((v) => (typeof v === 'object' ? v.value : v))
+                                        : newVal && typeof newVal === 'object'
+                                          ? newVal.value
+                                          : newVal;
+                                      handleFilterChange(field.id, val);
+                                    }}
+                                    renderInput={(params) => (
+                                      <TextField {...params} variant="outlined" placeholder={`Select ${field.label}...`} />
+                                    )}
+                                    sx={{
+                                      '& .MuiOutlinedInput-root': {
+                                        borderRadius: '10px',
+                                        transition: 'all 0.2s',
+                                        '&:hover': { bgcolor: 'action.hover' }
+                                      },
+                                      '& .MuiAutocomplete-tag': { borderRadius: '6px', fontWeight: 600 }
+                                    }}
+                                  />
+                                ) : field.type === 'select' ? (
+                                  <Select
+                                    fullWidth
+                                    size="small"
+                                    variant="outlined"
+                                    value={filters[field.id] || field.defaultValue || 'All'}
+                                    onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                    sx={{
+                                      borderRadius: '10px',
+                                      fontWeight: 500,
+                                      transition: 'all 0.2s',
+                                      '&:hover': { bgcolor: 'action.hover' }
+                                    }}
+                                  >
+                                    {field.options.map((opt) => (
+                                      <MenuItem
+                                        key={opt.value}
+                                        value={opt.value}
+                                        sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}
+                                      >
+                                        {opt.label}
+                                      </MenuItem>
+                                    ))}
+                                  </Select>
+                                ) : field.type === 'dateRange' ? (
+                                  <Stack direction="row" spacing={1} alignItems="center">
+                                    <TextField
+                                      type="date"
+                                      label="From"
+                                      fullWidth
+                                      size="small"
+                                      variant="outlined"
+                                      value={filters[`${field.id}Start`] || ''}
+                                      onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
+                                      slotProps={{ inputLabel: { shrink: true } }}
+                                      sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                          borderRadius: '10px',
+                                          transition: 'all 0.2s',
+                                          '&:hover': { bgcolor: 'action.hover' }
+                                        }
+                                      }}
+                                    />
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                                      to
+                                    </Typography>
+                                    <TextField
+                                      type="date"
+                                      label="To"
+                                      fullWidth
+                                      size="small"
+                                      variant="outlined"
+                                      value={filters[`${field.id}End`] || ''}
+                                      onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
+                                      slotProps={{ inputLabel: { shrink: true } }}
+                                      sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                          borderRadius: '10px',
+                                          transition: 'all 0.2s',
+                                          '&:hover': { bgcolor: 'action.hover' }
+                                        }
+                                      }}
+                                    />
+                                  </Stack>
+                                ) : field.type === 'date' ? (
                                   <TextField
                                     type="date"
-                                    label="From"
-                                    fullWidth size="small"
+                                    fullWidth
+                                    size="small"
                                     variant="outlined"
-                                    value={filters[`${field.id}Start`] || ''}
-                                    onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
+                                    value={filters[field.id] || ''}
+                                    onChange={(e) => handleFilterChange(field.id, e.target.value)}
                                     slotProps={{ inputLabel: { shrink: true } }}
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                    sx={{
+                                      '& .MuiOutlinedInput-root': {
+                                        borderRadius: '10px',
+                                        transition: 'all 0.2s',
+                                        '&:hover': { bgcolor: 'action.hover' }
+                                      }
+                                    }}
                                   />
-                                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
+                                ) : (
                                   <TextField
-                                    type="date"
-                                    label="To"
-                                    fullWidth size="small"
+                                    fullWidth
+                                    size="small"
                                     variant="outlined"
-                                    value={filters[`${field.id}End`] || ''}
-                                    onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
-                                    slotProps={{ inputLabel: { shrink: true } }}
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                    value={filters[field.id] || ''}
+                                    onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                    placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                    sx={{
+                                      '& .MuiOutlinedInput-root': {
+                                        borderRadius: '10px',
+                                        transition: 'all 0.2s',
+                                        '&:hover': { bgcolor: 'action.hover' }
+                                      }
+                                    }}
                                   />
-                                </Stack>
-                              ) : field.type === 'date' ? (
-                                <TextField
-                                  type="date"
-                                  fullWidth size="small"
-                                  variant="outlined"
-                                  value={filters[field.id] || ''}
-                                  onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                  slotProps={{ inputLabel: { shrink: true } }}
-                                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
-                                />
-                              ) : (
-                                <TextField
-                                  fullWidth size="small"
-                                  variant="outlined"
-                                  value={filters[field.id] || ''}
-                                  onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                  placeholder={`Enter ${field.label.toLowerCase()}...`}
-                                  sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
-                                />
-                              )}
-                            </Stack>
-                          ))}
+                                )}
+                              </Stack>
+                            ))}
                         </Stack>
                       </Box>
 
-                      <Box sx={{
-                        p: 2,
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        background: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.02)'
-                      }}>
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderTop: '1px solid',
+                          borderColor: 'divider',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          background: (theme) => (theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.02)')
+                        }}
+                      >
                         <Box>
                           <Button
                             variant="text"
                             size="small"
                             startIcon={<IconPlus size={16} />}
                             onClick={handleOpenAddFilter}
-                            sx={{ borderRadius: '10px', fontWeight: 700, px: 1.5, color: 'primary.main', '&:hover': { bgcolor: 'primary.light', color: 'primary.dark' } }}
+                            sx={{
+                              borderRadius: '10px',
+                              fontWeight: 700,
+                              px: 1.5,
+                              color: 'primary.main',
+                              '&:hover': { bgcolor: 'primary.light', color: 'primary.dark' }
+                            }}
                           >
                             Add Filter
                           </Button>
@@ -605,14 +712,16 @@ export default function SearchSection() {
                               paper: {
                                 sx: {
                                   p: 1.5,
-                                  boxShadow: (theme) => `0 12px 30px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.15)'}`,
+                                  boxShadow: (theme) =>
+                                    `0 12px 30px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.15)'}`,
                                   border: '1px solid',
                                   borderColor: 'divider',
                                   width: 360,
                                   mb: 1,
                                   borderRadius: '16px',
                                   backdropFilter: 'blur(16px)',
-                                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 32, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)'
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === 'dark' ? 'rgba(30, 32, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)'
                                 }
                               }
                             }}
@@ -620,42 +729,69 @@ export default function SearchSection() {
                             <Stack spacing={1.5}>
                               <Stack spacing={1}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 0.5 }}>
-                                  <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.65rem', letterSpacing: '0.6px' }}>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ fontWeight: 800, color: 'primary.main', fontSize: '0.65rem', letterSpacing: '0.6px' }}
+                                  >
                                     DYNAMIC DATA COLUMNS
                                   </Typography>
-                                  <IconButton size="small" onClick={handleCloseAddFilter} sx={{ p: 0.2, color: 'text.secondary', '&:hover': { color: 'text.primary', bgcolor: 'action.hover' } }}>
+                                  <IconButton
+                                    size="small"
+                                    onClick={handleCloseAddFilter}
+                                    sx={{ p: 0.2, color: 'text.secondary', '&:hover': { color: 'text.primary', bgcolor: 'action.hover' } }}
+                                  >
                                     <IconX size={14} />
                                   </IconButton>
                                 </Stack>
                                 <Divider sx={{ my: '4px !important' }} />
                                 <Box sx={{ maxHeight: 240, overflowY: 'auto', overflowX: 'hidden' }}>
                                   <Grid container spacing={0}>
-                                    {combinedConfig?.filter(field => !field.isConstant).map((field) => (
-                                      <Grid size={6} key={field.id}>
-                                        <FormControlLabel
-                                          sx={{ m: 0, px: 1, py: 0.5, width: '100%', borderRadius: '8px', transition: 'all 0.15s', '&:hover': { bgcolor: 'action.hover' } }}
-                                          control={
-                                            <Checkbox
-                                              size="small"
-                                              checked={tempSelectedIds.includes(field.id)}
-                                              onChange={(e) => {
-                                                if (e.target.checked) {
-                                                  setTempSelectedIds([...tempSelectedIds, field.id]);
-                                                } else {
-                                                  setTempSelectedIds(tempSelectedIds.filter(id => id !== field.id));
-                                                }
-                                              }}
-                                              sx={{ p: 0.5, mr: 0.5 }}
-                                            />
-                                          }
-                                          label={
-                                            <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: field.isRequired ? 800 : 600, color: field.isRequired ? 'primary.main' : 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                              {field.label} {field.isRequired && '*'}
-                                            </Typography>
-                                          }
-                                        />
-                                      </Grid>
-                                    ))}
+                                    {combinedConfig
+                                      ?.filter((field) => !field.isConstant)
+                                      .map((field) => (
+                                        <Grid size={6} key={field.id}>
+                                          <FormControlLabel
+                                            sx={{
+                                              m: 0,
+                                              px: 1,
+                                              py: 0.5,
+                                              width: '100%',
+                                              borderRadius: '8px',
+                                              transition: 'all 0.15s',
+                                              '&:hover': { bgcolor: 'action.hover' }
+                                            }}
+                                            control={
+                                              <Checkbox
+                                                size="small"
+                                                checked={tempSelectedIds.includes(field.id)}
+                                                onChange={(e) => {
+                                                  if (e.target.checked) {
+                                                    setTempSelectedIds([...tempSelectedIds, field.id]);
+                                                  } else {
+                                                    setTempSelectedIds(tempSelectedIds.filter((id) => id !== field.id));
+                                                  }
+                                                }}
+                                                sx={{ p: 0.5, mr: 0.5 }}
+                                              />
+                                            }
+                                            label={
+                                              <Typography
+                                                variant="caption"
+                                                sx={{
+                                                  fontSize: '0.75rem',
+                                                  fontWeight: field.isRequired ? 800 : 600,
+                                                  color: field.isRequired ? 'primary.main' : 'inherit',
+                                                  whiteSpace: 'nowrap',
+                                                  overflow: 'hidden',
+                                                  textOverflow: 'ellipsis'
+                                                }}
+                                              >
+                                                {field.label} {field.isRequired && '*'}
+                                              </Typography>
+                                            }
+                                          />
+                                        </Grid>
+                                      ))}
                                   </Grid>
                                 </Box>
                               </Stack>
@@ -668,10 +804,18 @@ export default function SearchSection() {
                                   startIcon={<IconRefresh size={14} />}
                                   onClick={() => {
                                     // Reset to Rule 2 Defaults (Required fields)
-                                    const defaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
-                                    setTempSelectedIds(defaults.length > 0 ? defaults : combinedConfig.slice(0, 2).map(f => f.id));
+                                    const defaults = combinedConfig.filter((f) => f.isStarred || f.isRequired).map((f) => f.id);
+                                    setTempSelectedIds(defaults.length > 0 ? defaults : combinedConfig.slice(0, 2).map((f) => f.id));
                                   }}
-                                  sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.75rem', px: 1.5, py: 0.4, border: '1px solid', borderColor: 'text.disabled' }}
+                                  sx={{
+                                    borderRadius: '8px',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    px: 1.5,
+                                    py: 0.4,
+                                    border: '1px solid',
+                                    borderColor: 'text.disabled'
+                                  }}
                                 >
                                   Reset
                                 </Button>
@@ -698,12 +842,20 @@ export default function SearchSection() {
                             onClick={() => {
                               dispatch(resetFilters());
                               if (combinedConfig && combinedConfig.length > 0) {
-                                const starredDefaults = combinedConfig.filter(f => f.isStarred || f.isRequired).map(f => f.id);
-                                const defaultIds = starredDefaults.length > 0 ? starredDefaults : combinedConfig.slice(0, 2).map(f => f.id);
+                                const starredDefaults = combinedConfig.filter((f) => f.isStarred || f.isRequired).map((f) => f.id);
+                                const defaultIds =
+                                  starredDefaults.length > 0 ? starredDefaults : combinedConfig.slice(0, 2).map((f) => f.id);
                                 updateVisibleFilters(defaultIds);
                               }
                             }}
-                            sx={{ borderRadius: '10px', fontWeight: 600, border: '1.5px solid', borderColor: 'text.secondary', px: 2, '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' } }}
+                            sx={{
+                              borderRadius: '10px',
+                              fontWeight: 600,
+                              border: '1.5px solid',
+                              borderColor: 'text.secondary',
+                              px: 2,
+                              '&:hover': { bgcolor: 'action.hover', borderColor: 'text.primary' }
+                            }}
                           >
                             Reset
                           </Button>
@@ -713,7 +865,13 @@ export default function SearchSection() {
                             size="small"
                             startIcon={<IconCheck size={15} />}
                             onClick={handleAdvancedClose}
-                            sx={{ borderRadius: '10px', fontWeight: 700, px: 2.5, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', '&:hover': { transform: 'translateY(-1px)' } }}
+                            sx={{
+                              borderRadius: '10px',
+                              fontWeight: 700,
+                              px: 2.5,
+                              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                              '&:hover': { transform: 'translateY(-1px)' }
+                            }}
                           >
                             Apply Filters
                           </Button>
