@@ -6,7 +6,7 @@ import org.hibernate.annotations.Nationalized;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "hrm_designation_master")
+@Table(name = "HR_DESIGNATION_MASTER")
 @Data
 public class Designation {
     @Id

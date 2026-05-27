@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "hrm_employee_kyc")
+@Table(name = "HR_EMPLOYEE_KYC")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
