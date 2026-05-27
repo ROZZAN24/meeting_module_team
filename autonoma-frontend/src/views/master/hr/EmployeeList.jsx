@@ -132,9 +132,8 @@ export default function EmployeeList() {
     setSelectedRow(prev => prev && prev.id === row.id ? null : row);
   };
 
-  const handleOpenAdd = () => navigate('/hra/employee/master/create');
-  const handleOpenEdit = (row) => navigate(`/hra/employee/master/create?id=${row.id}`);
-
+  const handleOpenAdd = () => navigate('/hr/employee/master/create');
+  const handleOpenEdit = (row) => navigate(`/hr/employee/master/create?id=${row.id}`);
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.id);
     setDeleteTargetName(row.firstName ? `${row.firstName} ${row.lastName || ''}`.trim() : `Employee #${row.empCode}`);

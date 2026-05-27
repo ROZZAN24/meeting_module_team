@@ -17,8 +17,8 @@ export const getModuleFromPath = () => {
     if (path.includes('/sm/quotations')) return 'SALES_QUOTATION';
     
     // Check HRA modules
-    if (path.includes('/hra/employee/master')) return 'HRA_PROFILE';
-    if (path.includes('/hra/')) return 'HRA';
+    if (path.includes('/hr/employee/master')) return 'HRA_PROFILE';
+    if (path.includes('/hr/')) return 'HRA';
     
     // Then general modules
     if (path.includes('/user-overview') || path.includes('/profile')) return 'USER_PROFILE';
