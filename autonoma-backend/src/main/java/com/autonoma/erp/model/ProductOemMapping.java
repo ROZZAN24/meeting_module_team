@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "npd_oem_mapping")
+@Table(name = "NPD_OEM_MAPPING")
 @Getter
 @Setter
 public class ProductOemMapping {

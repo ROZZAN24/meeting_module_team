@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/hrm")
+@RequestMapping("/api/master/hr")
 @CrossOrigin(origins = "*")
 public class ClassificationController {
 

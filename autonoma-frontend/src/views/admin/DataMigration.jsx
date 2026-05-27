@@ -38,6 +38,14 @@ const SCOPE_DATA = {
       { table: 'qms_checklist_assignment', tag: 'Target', desc: 'Imports history of checklist assignments, employee tasks, dates, carry forward counters, and verification parameters.' },
       { table: 'ad_migration_audit_log', tag: 'Audit', desc: 'Logs execution timestamp, user identity, record count, and status for this migration step.' }
     ]
+  },
+  closeChecklists: {
+    title: 'Close Checklist Scope',
+    subtitle: 'Target tables for legacy pending master checklist tasks',
+    items: [
+      { table: 'qms_checklist_assignment', tag: 'Target', desc: 'Migrates active, completed, or pending checklist tasks from legacy HRMS_CHECKLIST_PENDING_MASTER table.' },
+      { table: 'ad_migration_audit_log', tag: 'Audit', desc: 'Logs execution timestamp, user identity, record count, and status for this migration step.' }
+    ]
   }
 };
 
@@ -50,7 +58,7 @@ export default function DataMigration() {
   const [activeTab, setActiveTab] = useState(0);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [scopeOpen, setScopeOpen] = useState(null); // null | 'all' | 'departments' | 'checklistsAndAssignments'
+  const [scopeOpen, setScopeOpen] = useState(null); // null | 'all' | 'departments' | 'checklistsAndAssignments' | 'closeChecklists'
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const showNotification = (message, severity = 'success') => {
@@ -171,7 +179,7 @@ export default function DataMigration() {
                       Run All Migrations (Recommended)
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Runs Department Migration and Checklist & Assignment Migration sequentially.
+                      Runs Department Migration, Checklist & Assignment Migration, and Close Checklist Migration sequentially.
                     </Typography>
                   </Box>
                 </Stack>
@@ -212,7 +220,7 @@ export default function DataMigration() {
           </Grid>
 
           {/* Grid of steps */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Card variant="outlined" sx={{ borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transform: 'translateY(-2px)', transition: 'all 0.3s' } }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -254,7 +262,7 @@ export default function DataMigration() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={4}>
             <Card variant="outlined" sx={{ borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transform: 'translateY(-2px)', transition: 'all 0.3s' } }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
@@ -287,6 +295,48 @@ export default function DataMigration() {
                     size="small"
                     startIcon={<IconInfoCircle size={14} />}
                     onClick={() => setScopeOpen('checklistsAndAssignments')}
+                    sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.75rem' }}
+                  >
+                    View Scope
+                  </Button>
+                </Stack>
+              </Box>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={4}>
+            <Card variant="outlined" sx={{ borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 6px 20px rgba(0,0,0,0.05)', transform: 'translateY(-2px)', transition: 'all 0.3s' } }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" color="primary" sx={{ fontWeight: 800, mb: 1, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  Container 3
+                </Typography>
+                <Typography variant="h3" sx={{ fontWeight: 700, mb: 1.5 }}>
+                  Close Checklists
+                </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ lineHeight: 1.6, mb: 3 }}>
+                  Imports active, completed, or pending/rejected checklist assignments from legacy pending master records.
+                </Typography>
+              </CardContent>
+              <Box sx={{ p: 3, pt: 0 }}>
+                <Stack spacing={1.5}>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconPlayerPlay size={16} />}
+                    onClick={() => runMigration('/api/admin/migration/close-checklists', 'Close checklists migrated successfully.')}
+                    disabled={loading}
+                    sx={{ borderRadius: '8px', py: 1, fontWeight: 700 }}
+                  >
+                    {loading ? 'Migrating Close Checklists...' : 'Migrate Close Checklists'}
+                  </Button>
+                  <Button
+                    variant="text"
+                    color="secondary"
+                    fullWidth
+                    size="small"
+                    startIcon={<IconInfoCircle size={14} />}
+                    onClick={() => setScopeOpen('closeChecklists')}
                     sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.75rem' }}
                   >
                     View Scope

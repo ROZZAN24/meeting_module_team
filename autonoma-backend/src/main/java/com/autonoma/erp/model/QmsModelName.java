@@ -6,10 +6,10 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "qms_model_name")
+@Table(name = "QMS_MODEL_NAME")
 @Getter
 @Setter
-public class QmsModelName {
+public class QmsModelName extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,30 +24,4 @@ public class QmsModelName {
     @Column(nullable = false, length = 20)
     private String status = "ACTIVE";
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
-        if (this.status == null) {
-            this.status = "ACTIVE";
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

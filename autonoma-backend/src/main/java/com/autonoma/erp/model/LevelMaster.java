@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "hrm_level_master")
+@Table(name = "HR_LEVEL_MASTER")
 @Data
 @NoArgsConstructor
 public class LevelMaster {

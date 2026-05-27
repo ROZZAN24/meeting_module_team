@@ -25,8 +25,10 @@ const columns = [
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 120 },
-  { id: 'createdBy', label: 'Created By', minWidth: 100 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 export default function AuditScheduleList() {
@@ -162,12 +164,18 @@ export default function AuditScheduleList() {
 
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
-    const val = row[col.id];
+    let val = row[col.id];
+    if (col.id === 'createdUser') {
+      val = row.createdUser || row.createdBy;
+    }
+    if (col.id === 'updatedUser') {
+      val = row.updatedUser || row.updatedBy;
+    }
     if (col.id === 'status') {
       const statusText = typeof val === 'object' ? val?.name : val;
       return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
     }
-    if (col.id === 'auditDate' || col.id === 'createdDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'auditDate' || col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
     
     if (typeof val === 'object' && val !== null) {
       return val.name || val.label || val.id || '-';

@@ -7,11 +7,11 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "hr_induction_training_detail")
+@Table(name = "IND_INDUCTION_TRAINING_DETAIL")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InductionTrainingDetail {
+public class InductionTrainingDetail extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -57,17 +57,7 @@ public class InductionTrainingDetail {
     private String attachmentRequired;
 
     // === Audit ===
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
 
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
 
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
 
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
 }

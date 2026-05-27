@@ -63,6 +63,53 @@ axiosServices.interceptors.response.use(
       window.location.pathname = '/login';
     }
 
+    // Extract exact error message
+    let errMsg = 'Service connection failed. Please try again later.';
+    if (!error.response) {
+      errMsg = 'Backend server is unreachable. Please ensure the backend is running.';
+    } else if (error.response.data) {
+      const data = error.response.data;
+      if (typeof data === 'string') {
+        errMsg = data;
+      } else {
+        errMsg = data.message || data.details || data.error || JSON.stringify(data);
+      }
+    } else if (error.message) {
+      errMsg = error.message;
+    }
+
+    // Log the error details to the console always
+    console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status || 'Network Error'} | Error: ${errMsg}`, error);
+
+    // Only alert for non-auth errors
+    if (error.response?.status !== 401) {
+      // Trigger a blocking browser alert with details
+      if (window.showAlert) {
+        window.showAlert(`Server / Database Error:\n${errMsg}`);
+      } else {
+        alert(`Server / Database Error:\n${errMsg}`);
+      }
+
+      // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
+      import('../store').then(({ dispatch }) => {
+        import('../store/slices/snackbar').then(({ openSnackbar }) => {
+          try {
+            dispatch(
+              openSnackbar({
+                open: true,
+                message: errMsg,
+                variant: 'alert',
+                severity: 'error',
+                anchorOrigin: { vertical: 'top', horizontal: 'right' }
+              })
+            );
+          } catch (e) {
+            console.warn('Failed to dispatch snackbar action:', e);
+          }
+        }).catch(err => console.warn('Failed to load snackbar slice:', err));
+      }).catch(err => console.warn('Failed to load store dynamically:', err));
+    }
+
     if (!error.response) {
       console.error(`[Axios Error] Backend unreachable: ${error.config?.url}`, error);
       return Promise.reject('Backend server is unreachable. Please ensure the backend is running.');

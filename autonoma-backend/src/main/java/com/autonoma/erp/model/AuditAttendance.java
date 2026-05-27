@@ -5,9 +5,9 @@ import lombok.Data;
 import java.util.Date;
 
 @Entity
-@Table(name = "audit_attendance")
+@Table(name = "QMS_AUDIT_ATTENDANCE")
 @Data
-public class AuditAttendance {
+public class AuditAttendance extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,28 +29,4 @@ public class AuditAttendance {
 
     @Column(name = "attendance_status", columnDefinition = "NVARCHAR(50)")
     private String attendanceStatus;
-
-    @Column(name = "created_by")
-    private String createdBy;
-    
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate = new Date();
-
-    @Column(name = "updated_by")
-    private String updatedBy;
-    
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
-
-    @PrePersist
-    protected void onCreate() {
-        createdDate = new Date();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedDate = new Date();
-    }
 }

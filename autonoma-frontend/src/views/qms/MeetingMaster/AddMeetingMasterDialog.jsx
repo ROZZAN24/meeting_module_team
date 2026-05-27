@@ -289,15 +289,15 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
       {item && (
         <>
           <BOSTextField
-            name="createdBy"
+            name="createdUser"
             label="Created User"
-            value={form.createdBy || '-'}
+            value={form.createdUser || form.createdBy || '-'}
             disabled
           />
           <BOSTextField
-            name="updatedBy"
+            name="updatedUser"
             label="Updated User"
-            value={form.updatedBy || '-'}
+            value={form.updatedUser || form.updatedBy || '-'}
             disabled
           />
         </>

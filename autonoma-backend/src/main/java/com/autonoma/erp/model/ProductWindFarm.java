@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "npd_wind_farm")
+@Table(name = "NPD_WIND_FARM")
 @Getter
 @Setter
 public class ProductWindFarm {
