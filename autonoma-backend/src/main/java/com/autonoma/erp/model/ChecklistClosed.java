@@ -37,7 +37,7 @@ public class ChecklistClosed extends BaseAuditEntity {
     @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "CHECKLIST_DATE")
@@ -63,10 +63,10 @@ public class ChecklistClosed extends BaseAuditEntity {
     @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedDate;
 
-    @Column(name = "COMMENTS", columnDefinition = "TEXT")
+    @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "FILE_PATHS", columnDefinition = "TEXT")
+    @Column(name = "FILE_PATHS", columnDefinition = "NVARCHAR(MAX)")
     private String filePaths;
 
     @Column(name = "FREQUENCY", nullable = false)
