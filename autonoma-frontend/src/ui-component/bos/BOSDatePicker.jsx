@@ -47,7 +47,17 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
           helperText: helperText,
           sx: { 
             ...bosInput,
-            '& .MuiInputBase-input': { cursor: 'text' },
+            '& .MuiOutlinedInput-root': {
+              ...bosInput['& .MuiOutlinedInput-root'],
+              backgroundColor: isDark ? 'background.default !important' : 'grey.50 !important',
+              borderRadius: '12px !important',
+            },
+            '& .MuiInputBase-input': { 
+              cursor: 'text',
+              paddingTop: '9.6px !important',
+              paddingBottom: '9.6px !important',
+              height: 'auto !important'
+            },
             '& .MuiInputAdornment-root': {
               marginLeft: 0,
             },

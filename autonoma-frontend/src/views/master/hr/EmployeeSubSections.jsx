@@ -12,7 +12,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 const API = API_PATHS.HRM.EMPLOYEES;
 const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
 
-const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg} xl={lg}>{children}</Grid>;
 
 function Section1to1({ title, icon, endpoint, employeeId, fields, validation, onPreview }) {
   const theme = useTheme();

@@ -945,11 +945,11 @@ const MainRoutes = {
       element: <HraApplicationTrackingSystem />
     },
     {
-      path: '/hra/employee/master',
+      path: '/hr/employee/master',
       element: <MasterHrEmployeeList />
     },
     {
-      path: '/hra/employee/master/create',
+      path: '/hr/employee/master/create',
       element: <MasterHrEmployee />
     },
     {

@@ -171,7 +171,7 @@ const RULES = [
   { field: 'dateOfJoining', label: 'Date Of Joining', required: true }
 ];
 
-const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg} xl={4}>{children}</Grid>;
+const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg} xl={lg}>{children}</Grid>;
 
 export default function EmployeeMaster() {
   const theme = useTheme();
@@ -223,15 +223,7 @@ export default function EmployeeMaster() {
     const { name, value } = e.target;
     setForm((p) => {
       const next = { ...p, [name]: value };
-      if (name === 'departmentId') {
-        const dept = departments.find(d => d.id === value || d.id.toString() === value.toString());
-        const deptName = dept?.departmentName?.toUpperCase();
-        if (deptName && ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(deptName)) {
-          next.inductionStatus = 'COMPLETED';
-        } else {
-          next.inductionStatus = 'PENDING';
-        }
-      }
+
       return next;
     });
     if (errors[name]) clearErrors(name);
@@ -291,7 +283,7 @@ export default function EmployeeMaster() {
       } else {
         const { data } = await axios.post(API_PATHS.HRM.EMPLOYEES, payload);
         dispatch(openSnackbar({ open: true, message: 'New Employee Master created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
-        navigate(`/hra/employee/master/create?id=${data.id}`, { replace: true });
+        navigate(`/hr/employee/master/create?id=${data.id}`, { replace: true });
         return;
       }
     } catch (e) {
@@ -444,9 +436,9 @@ export default function EmployeeMaster() {
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{employeeId ? 'Edit Employee' : 'New Employee'}</Typography></Stack>}
       secondary={
         <Stack direction="row" spacing={1.5}>
-          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hra/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
+          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hr/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
           {employeeId && <Tooltip title="Delete"><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
-          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hra/employee/master/create', { replace: true }); }} sx={btnClear}>Clear</Button></Tooltip>
+          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hr/employee/master/create', { replace: true }); }} sx={btnClear}>Clear</Button></Tooltip>
           <Tooltip title="Save"><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
         </Stack>
       }
@@ -652,16 +644,7 @@ export default function EmployeeMaster() {
                 name="inductionStatus" 
                 label="Induction Status" 
                 value={form.inductionStatus || 'PENDING'} 
-                InputProps={{
-                  readOnly: true,
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => navigate('/master/hr/ats/induction-trainee')} size="small" color="primary">
-                        <IconEye size={18} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
+                InputProps={{ readOnly: true }}
               />
             </R>
             <R><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
@@ -822,7 +805,7 @@ export default function EmployeeMaster() {
           try { 
             await axios.delete(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`); 
             dispatch(openSnackbar({ open: true, message: 'Employee Master deleted permanently.', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' })); 
-            navigate('/hra/employee/master'); 
+            navigate('/hr/employee/master'); 
           } catch (e) { 
             console.error('Error deleting employee:', e);
             let errorMessage = 'Failed to delete record.';

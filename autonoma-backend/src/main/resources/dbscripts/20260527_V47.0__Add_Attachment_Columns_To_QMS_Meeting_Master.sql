@@ -1,5 +1,5 @@
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-27
 -- Description: Add attachment_name and attachment_url columns to QMS_MEETING_MASTER.
 --              The previous migration (20260525_V38.0) targeted the old lowercase table name
