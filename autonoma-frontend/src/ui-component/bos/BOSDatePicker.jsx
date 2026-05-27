@@ -49,24 +49,41 @@ export default function BOSDatePicker({ label, value, onChange, disabled, requir
             ...bosInput,
             '& .MuiOutlinedInput-root': {
               ...bosInput['& .MuiOutlinedInput-root'],
-              backgroundColor: isDark ? 'background.default !important' : 'grey.50 !important',
+              backgroundColor: isDark ? 'background.default !important' : '#fafafa !important',
+              height: '38px !important',
               borderRadius: '12px !important',
+              '& .MuiOutlinedInput-notchedOutline': {
+                borderRadius: '12px !important',
+                borderColor: 'divider !important',
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: isDark ? '#8b949e !important' : `${theme.palette.primary.main} !important`,
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: isDark ? '#58a6ff !important' : `${theme.palette.primary.main} !important`,
+                borderWidth: '2px !important',
+              }
             },
             '& .MuiInputBase-input': { 
               cursor: 'text',
-              paddingTop: '9.6px !important',
-              paddingBottom: '9.6px !important',
-              height: 'auto !important'
+              paddingTop: '0px !important',
+              paddingBottom: '0px !important',
+              height: '38px !important',
+              lineHeight: '38px !important',
+              boxSizing: 'border-box !important',
+              backgroundColor: 'transparent !important',
             },
             '& .MuiInputAdornment-root': {
               marginLeft: 0,
+              height: '100% !important',
+              alignSelf: 'center !important',
             },
             '& .MuiIconButton-root': {
-              padding: '4px',
-              marginRight: '-4px',
+              padding: '4px !important',
+              marginRight: '-4px !important',
             },
             '& .MuiSvgIcon-root': {
-              fontSize: '1.2rem'
+              fontSize: '1.2rem !important'
             }
           },
           name: rest.name,
