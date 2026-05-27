@@ -87,8 +87,8 @@ const exportColumns = [
   { header: 'Status', key: (r) => (typeof r.status === 'object' ? r.status?.name : r.status) },
   { header: 'Next Due Date', key: (r) => formatDate(r.checklist?.nextDueDate) },
   { header: 'Assigned To', key: 'assignedTo' },
-  { header: 'Dual Check', key: (r) => (r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No') },
-  { header: 'Verification Required', key: (r) => (r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No') },
+  { header: 'Dual Check', key: (r) => (String(r.checklist?.dualCheck || '').toUpperCase() === 'YES' ? 'yes' : 'No') },
+  { header: 'Verification Required', key: (r) => (String(r.checklist?.dualCheck || '').toUpperCase() === 'YES' ? 'yes' : 'No') },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired || 'NO' },
   { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
@@ -456,8 +456,8 @@ export default function CheckListRenewalVerify() {
                     </TableCell>
                     <TableCell>{formatDate(row.checklist?.nextDueDate)}</TableCell>
                     <TableCell>{row.assignedTo}</TableCell>
-                    <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
-                    <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                    <TableCell>{String(row.checklist?.dualCheck || '').toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                    <TableCell>{String(row.checklist?.dualCheck || '').toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
                     <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
                     <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
                     <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>

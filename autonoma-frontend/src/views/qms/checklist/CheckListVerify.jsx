@@ -320,7 +320,7 @@ export default function CheckListVerify() {
     }
   };
 
-  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.searchBy && filters.searchByValue ? 1 : 0);
+  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + (filters.departments?.length || 0) + (filters.searchBy && filters.searchByValue ? 1 : 0);
 
   return (
     <MainCard

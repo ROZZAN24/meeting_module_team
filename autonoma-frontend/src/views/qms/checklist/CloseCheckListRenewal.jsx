@@ -143,7 +143,7 @@ const exportColumns = [
   { header: 'Category', key: (r) => r.checklist?.category },
   { header: 'Assign Type', key: (r) => r.assignType || 'Mine' },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired },
-  { header: 'Verification Required', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
+  { header: 'Verification Required', key: (r) => String(r.checklist?.dualCheck || '').toUpperCase() === 'YES' ? 'yes' : 'No' },
   { header: 'Assign Date', key: (r) => formatDate(r.assignedDate) },
   { header: 'Next Renewal Date', key: (r) => r.checklist?.nextDueDate || formatDate(r.checklist?.expiryDate) },
   { header: 'Assign To', key: (r) => r.assignedTo },
@@ -523,7 +523,7 @@ export default function CloseCheckListRenewal() {
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.assignType || 'Mine'}</TableCell>
                   <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
-                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                  <TableCell>{String(row.checklist?.dualCheck || '').toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
                   <TableCell>{formatDate(row.assignedDate)}</TableCell>
                   <TableCell>{row.checklist?.nextDueDate || formatDate(row.checklist?.expiryDate)}</TableCell>
                   <TableCell>{row.assignedTo || '-'}</TableCell>
