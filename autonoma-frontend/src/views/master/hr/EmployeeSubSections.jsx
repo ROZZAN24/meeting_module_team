@@ -599,6 +599,60 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         ]}
       />
 
+      {/* 16. SELF ASSESSMENT */}
+      <Section1to1 title="Self Assessment" icon={<IconActivity size={20} color={pc} />} endpoint="self-assessment" employeeId={employeeId} fields={[
+        { type: 'subheader', label: '1. Personal Details' },
+        { name: 'q1_native', label: '1. Native Place', max: 255 },
+        { name: 'q2_presentAddress', label: '2. Present Address', multiline: true, rows: 2, lg: 6 },
+        { name: 'q3_permanentAddress', label: '3. Permanent Address', multiline: true, rows: 2, lg: 6 },
+        { name: 'q4_fatherOccupation', label: "4. Father's Occupation", max: 255 },
+        { name: 'q5_motherOccupation', label: "5. Mother's Occupation", max: 255 },
+        { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: ['UNMARRIED', 'MARRIED', 'WIDOW', 'DIVORCED'] },
+        { name: 'q7_spouseOccupation', label: "7. Spouse's Occupation", max: 255 },
+        { name: 'q8_children', label: '8. No. of Children', max: 255 },
+        { name: 'q9_hasRelativesInCompany', label: '9. Relatives in Company', select: true, options: ['YES', 'NO'] },
+        { name: 'q10_relativesDetails', label: '10. Relatives Details', multiline: true, rows: 2, lg: 6 },
+        { name: 'q11_siblingsOccupations', label: '11. Siblings Occupations', multiline: true, rows: 2, lg: 6 },
+
+        { type: 'subheader', label: '2. Preferences & Assets' },
+        { name: 'q12_hasTwoWheeler', label: '12. Have Two Wheeler?', select: true, options: ['YES', 'NO'] },
+        { name: 'q13_hasAndroidPhone', label: '13. Have Android Mobile?', select: true, options: ['YES', 'NO'] },
+        { name: 'q14_knowsCarDriving', label: '14. Know Car Driving?', select: true, options: ['YES', 'NO'] },
+        { name: 'q15_willingToTravel', label: '15. Willing to Travel?', select: true, options: ['YES', 'NO'] },
+        { name: 'q16_covidVaccination', label: '16. Covid Vaccination Details', select: true, options: ['1st DOSE', '2nd DOSE', 'BOOSTER', 'NOT DONE'] },
+
+        { type: 'subheader', label: '3. Goals & Suggestions' },
+        { name: 'q17_positivePoints', label: '17. Positive Points (Strengths)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q18_negativePoints', label: '18. Negative Points (Weaknesses)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q19_lifeGoals', label: '19. Life Goals (1 & 3 Years)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q20_improvementSuggestions', label: '20. Suggestions for Company', multiline: true, rows: 2, lg: 6 },
+
+        { type: 'subheader', label: '4. Experience & Salary Details' },
+        { name: 'q21_isExperienced', label: '21. Are you Experienced?', select: true, options: ['YES', 'NO'] },
+        { name: 'q22_totalExperience', label: '22. Total Experience (Years/Months)', max: 50 },
+        { name: 'q23_coreExperience', label: '23. Core Experience details', max: 50 },
+        { name: 'q24_prevNetSalary', label: '24. Previous Net Salary', max: 50 },
+        { name: 'q25_prevGrossSalary', label: '25. Previous Gross Salary', max: 50 },
+        { name: 'q26_expectedNetSalary', label: '26. Expected Net Salary', max: 50 },
+        { name: 'q27_expectedGrossSalary', label: '27. Expected Gross Salary', max: 50 },
+        { name: 'q28_pfHigherPension', label: '28. PF Higher Pension Contribution?', select: true, options: ['YES', 'NO'] },
+        { name: 'q29_pfDeductionAmount', label: '29. PF Deduction Amount', max: 50 },
+        { name: 'q30_alternativeDepartment', label: '30. Alternative Department Choice', max: 100 },
+
+        { type: 'subheader', label: '5. Work Environment & References' },
+        { name: 'q31_prevLocation', label: '31. Previous Work Location', max: 255 },
+        { name: 'q32_prevShift', label: '32. Previous Shift details', max: 50 },
+        { name: 'q33_reasonForLeaving', label: '33. Reason for Leaving', multiline: true, rows: 2, lg: 6 },
+        { name: 'q34_noticePeriod', label: '34. Notice Period', max: 50 },
+        { name: 'q35_prevDeptPosition', label: '35. Previous Dept & Position', max: 255 },
+        { name: 'q36_prevDeptCount', label: '36. Previous Dept Team Count', max: 50 },
+        { name: 'q37_prevReportingTo', label: '37. Previous Reporting Manager', max: 255 },
+        { name: 'q38_handleMistake', label: '38. How do you handle a mistake?', multiline: true, rows: 2, lg: 6 },
+        { name: 'q39_handleOpinionDifference', label: '39. How do you handle opinion differences?', multiline: true, rows: 2, lg: 6 },
+        { name: 'q40_computerSelfRating', label: '40. Computer Knowledge self-rating', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'BASIC', 'NONE'] },
+        { name: 'payslipPath', label: 'Payslip Upload', type: 'file' }
+      ]} />
+
     </Stack>
   );
 }
