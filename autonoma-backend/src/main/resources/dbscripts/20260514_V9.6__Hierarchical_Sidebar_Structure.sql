@@ -3,6 +3,7 @@
 -- 1. Add parent_sub_mod_id to bos_sub_modules
 IF NOT EXISTS(SELECT * FROM sys.columns WHERE Name = N'parent_sub_mod_id' AND Object_ID = Object_ID(N'bos_sub_modules'))
     ALTER TABLE bos_sub_modules ADD parent_sub_mod_id INT NULL;
+GO
 
 -- 2. Clear existing data to re-seed hierarchy
 DELETE FROM bos_user_page_auth;
