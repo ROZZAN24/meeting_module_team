@@ -1,5 +1,5 @@
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-25
 -- Description: Add missing attachment columns to qms_meeting_master table to prevent save failures
 -- =============================================
