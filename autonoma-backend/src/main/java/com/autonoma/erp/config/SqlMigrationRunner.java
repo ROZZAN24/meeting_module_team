@@ -66,7 +66,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260525_V37.0__Alter_Checklist_Status_To_Int.sql",
         // T-SQL scripts for column standardization & INT conversions
         "20260526_V40.0__Fix_Missing_Audit_Columns__TIS.sql",
-        "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql"
+        "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql",
+        "20260512_V2.4__Sync_Company_Credentials.sql",
+        "V13.0__Fix_User_Mapping_FK_References.sql",
+        "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
@@ -253,6 +256,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
 
         ensureDesignationColumns(targetJdbcTemplate);
+        ensureTicketTraceabilityColumns(targetJdbcTemplate);
         ensureAtsColumns(targetJdbcTemplate);
 
         System.out.println("======================================");
@@ -883,10 +887,40 @@ public class SqlMigrationRunner implements CommandLineRunner {
             return null;
         }
 
+        // Disable H2 referential integrity constraints during migrations to allow drop/alter without FK issues
+        sql = "SET REFERENTIAL_INTEGRITY FALSE;\n" + sql + "\nSET REFERENTIAL_INTEGRITY TRUE;";
+
         // Clean up dbo prefix and brackets at the start for regex ease
         sql = sql.replace("[dbo].", "");
         sql = sql.replace("dbo.", "");
         sql = sql.replace("[", "").replace("]", "");
+
+        // Translate drop table statements to use CASCADE on H2 to safely bypass foreign key constraints
+        sql = sql.replaceAll("(?is)\\bDROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?([a-zA-Z0-9_]+)\\s*;?", "DROP TABLE IF EXISTS $1 CASCADE;");
+
+        // Translate legacy audit column names to newly standardized Hibernate-generated columns on H2 for QMS/Audit/Checklist tables
+        {
+            java.util.List<String> stdTables = java.util.Arrays.asList(
+                "qms_audit_area", "qms_audit_criteria", "qms_audit_observation", "qms_audit_schedule", "qms_audit_type",
+                "ind_induction_assignment", "ind_induction_master", "ind_induction_training_detail", "qms_checklist_master",
+                "qms_meeting_master", "qms_meeting_schedule", "qms_meeting_user_attendance", "qms_model_name",
+                "qms_mom_detail", "qms_mom_master", "qms_uom"
+            );
+            String lowerSql = sql.toLowerCase();
+            boolean hasStdTable = false;
+            for (String tbl : stdTables) {
+                if (lowerSql.contains(tbl)) {
+                    hasStdTable = true;
+                    break;
+                }
+            }
+            if (hasStdTable) {
+                sql = sql.replaceAll("(?i)\\bcreated_by\\b", "CREATED_USER");
+                sql = sql.replaceAll("(?i)\\bupdated_by\\b", "UPDATED_USER");
+                sql = sql.replaceAll("(?i)\\bcreated_at\\b", "CREATED_DATE");
+                sql = sql.replaceAll("(?i)\\bupdated_at\\b", "UPDATED_DATE");
+            }
+        }
 
         // Remove ANSI_NULLS and QUOTED_IDENTIFIER SET statements
         sql = sql.replaceAll("(?is)SET\\s+ANSI_NULLS\\s+(ON|OFF)\\s*;?", "");
@@ -1340,6 +1374,63 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
     }
 
+    private void ensureTicketTraceabilityColumns(JdbcTemplate targetJdbcTemplate) {
+        String tableName = "ticket_Tracability_center";
+        try {
+            boolean isH2 = false;
+            try {
+                String url = targetJdbcTemplate.getDataSource().getConnection().getMetaData().getURL();
+                if (url != null && url.contains(":h2:")) {
+                    isH2 = true;
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            // Check if table exists
+            Integer tableCount = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                Integer.class,
+                tableName.toUpperCase()
+            );
+            if (tableCount == null || tableCount == 0) {
+                return;
+            }
+
+            // Columns to ensure and their definitions for H2 / SQL Server
+            String[][] cols = {
+                {"page_id", "INT NULL", "INT NULL"},
+                {"rework_time", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"assigned_by", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"developer_name", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"developer_email", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"developer_mobile_no", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"},
+                {"assigned_hours", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"}
+            };
+
+            for (String[] colDef : cols) {
+                String colName = colDef[0];
+                String h2Type = colDef[1];
+                String sqlServerType = colDef[2];
+
+                Integer count = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ? AND UPPER(COLUMN_NAME) = ?",
+                    Integer.class,
+                    tableName.toUpperCase(),
+                    colName.toUpperCase()
+                );
+
+                if (count == null || count == 0) {
+                    String type = isH2 ? h2Type : sqlServerType;
+                    System.out.println("[Self-Healing] Adding missing column " + colName + " to table " + tableName);
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD " + colName + " " + type);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error ensuring ticket traceability columns: " + e.getMessage());
+        }
+    }
+
     private void ensureAtsColumns(JdbcTemplate targetJdbcTemplate) {
         String[] tableNames = {"hrm_employee_master", "HR_EMPLOYEE_MASTER"};
         for (String tableName : tableNames) {
@@ -1413,6 +1504,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
             }
         }
     }
+
 
     private void renameTableIfExists(JdbcTemplate targetJdbcTemplate, String oldTable, String newTable) {
         try {
