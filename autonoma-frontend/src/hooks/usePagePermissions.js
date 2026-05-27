@@ -65,7 +65,7 @@ export default function usePagePermissions(pageCode) {
 
     // Find the permission record for this specific pageCode
     const pageAuth = Array.isArray(auths)
-      ? auths.find((a) => a.page?.pageCode === pageCode)
+      ? auths.find((a) => a?.page?.pageCode === pageCode)
       : null;
 
     // If no record found (page not registered or not assigned), default to read-only

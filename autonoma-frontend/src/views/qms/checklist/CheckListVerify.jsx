@@ -66,9 +66,9 @@ const tableCols = [
   { id: 'days', label: 'Days' },
   { id: 'expireDate', label: 'Expire Date' },
   { id: 'stockLink', label: 'Stock Link' },
-  { id: 'createdUser', label: 'CREATED USER' },
+  { id: 'createdBy', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedUser', label: 'UPDATED USER' },
+  { id: 'updatedBy', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
@@ -113,9 +113,9 @@ const exportColumns = [
   { header: 'Days', key: 'reminderDays' },
   { header: 'Expire Date', key: (r) => formatDate(r.expiryDate) },
   { header: 'Stock Link', key: 'stockLink' },
-  { header: 'CREATED USER', key: (r) => r.createdUser || r.createdBy },
+  { header: 'CREATED USER', key: 'createdBy' },
   { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy },
+  { header: 'UPDATED USER', key: 'updatedBy' },
   { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.updatedDate) },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
@@ -197,7 +197,7 @@ function StatusChip({ status }) {
       color={cfg.color}
       icon={cfg.icon}
       variant="outlined"
-      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+      sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
     />
   );
 }
@@ -215,7 +215,7 @@ export default function CheckListVerify() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDoubleTap, setShowDoubleTap] = useState(false);
-  const activeRow = rows.find((r) => r.id === selectedRowId) || null;
+  const activeRow = (rows || []).find((r) => r?.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_VERIFY);
@@ -271,10 +271,12 @@ export default function CheckListVerify() {
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined
       };
       const response = await axios.get('/api/qms/checklist', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      setRows(response?.data?.content || []);
+      setTotalElements(response?.data?.totalElements || 0);
     } catch (error) {
       console.error('Failed to fetch checklists for verification:', error);
+      setRows([]);
+      setTotalElements(0);
     } finally {
       setLoading(false);
     }
@@ -331,7 +333,7 @@ export default function CheckListVerify() {
       title="Check List Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />}
+          {perms.export && <BOSExportButton data={rows || []} filename="Checklist_Verify" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -385,7 +387,7 @@ export default function CheckListVerify() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : rows.length === 0 ? (
+              ) : (rows || []).length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
                     <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -395,7 +397,7 @@ export default function CheckListVerify() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : rows.map((row, idx) => (
+              ) : (rows || []).map((row, idx) => (
                 <TableRow
                   key={row.id}
                   hover
@@ -426,9 +428,9 @@ export default function CheckListVerify() {
                   <TableCell>{row.reminderDays}</TableCell>
                   <TableCell>{formatDate(row.expiryDate)}</TableCell>
                   <TableCell>{row.stockLink}</TableCell>
-                  <TableCell>{row.createdUser || row.createdBy || '-'}</TableCell>
+                  <TableCell>{row.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.createdAt || row.createdDate)}</TableCell>
-                  <TableCell>{row.updatedUser || row.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.updatedDate)}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
                   <TableCell>{row.verifiedBy}</TableCell>

@@ -55,7 +55,7 @@ const permissionsSlice = createSlice({
         const map = {};
         if (Array.isArray(action.payload)) {
           action.payload.forEach((auth) => {
-            const code = auth.page?.pageCode;
+            const code = auth?.page?.pageCode;
             if (code) {
               map[code] = {
                 enable: auth.enable === 1,
