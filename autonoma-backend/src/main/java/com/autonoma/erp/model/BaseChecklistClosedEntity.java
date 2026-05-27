@@ -1,28 +1,20 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
 import java.util.Date;
-import java.util.List;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Entity
-@Table(name = "QMS_CHECKLIST_ASSIGNMENT")
+@MappedSuperclass
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
-@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ChecklistAssignment extends BaseAuditEntity {
+@EqualsAndHashCode(callSuper = true)
+public abstract class BaseChecklistClosedEntity extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHECKLIST_ID")
-    @lombok.EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
     private MasterChecklist checklist;
 
     @Column(name = "ASSIGNED_TO")
@@ -103,19 +95,4 @@ public class ChecklistAssignment extends BaseAuditEntity {
     public void setComments(String comments) { this.comments = comments; }
     public String getFilePaths() { return filePaths; }
     public void setFilePaths(String filePaths) { this.filePaths = filePaths; }
-
-    public List<String> getActualFiles() {
-        if (filePaths == null || filePaths.trim().isEmpty()) {
-            return new java.util.ArrayList<>();
-        }
-        return java.util.Arrays.asList(filePaths.split(","));
-    }
-
-    public void setActualFiles(List<String> files) {
-        if (files == null || files.isEmpty()) {
-            this.filePaths = null;
-        } else {
-            this.filePaths = String.join(",", files);
-        }
-    }
 }
