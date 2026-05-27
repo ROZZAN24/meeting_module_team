@@ -17,6 +17,7 @@ import {
   IconCalendar,
   IconX
 } from '@tabler/icons-react';
+import { drawFaceDetection } from 'utils/faceApi';
 
 const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFaceScanning, success, errorMessage, userId }) => {
   const theme = useTheme();
@@ -68,21 +69,57 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
     };
   }, [open, isFaceScanning, errorMessage, success]);
 
+  useEffect(() => {
+    let animationFrameId;
+    let isDrawing = true;
+
+    const renderLoop = async () => {
+      if (!isDrawing) return;
+      const video = document.getElementById('webcam-video');
+      const canvas = document.getElementById('webcam-canvas');
+
+      if (video && canvas && video.readyState >= 2) {
+        try {
+          await drawFaceDetection(video, canvas);
+        } catch (e) {
+          // ignore transient drawing errors
+        }
+      }
+      
+      if (isDrawing) {
+        animationFrameId = requestAnimationFrame(renderLoop);
+      }
+    };
+
+    if (webcamActive) {
+      renderLoop();
+    }
+
+    return () => {
+      isDrawing = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    };
+  }, [webcamActive]);
+
   // Derive effective scan step and error states
   let effectiveScanStep = scanStep;
   let errorStep = -1;
-  
+
   if (errorMessage) {
     const errStr = errorMessage.toLowerCase();
     if (errStr.includes('no face detected') || errStr.includes('camera')) {
       effectiveScanStep = 0;
       errorStep = 0;
-    } else if (errStr.includes('liveness')) {
+    } else if (errStr.includes('liveness') || errStr.includes('fake') || errStr.includes('spoof')) {
       effectiveScanStep = 1;
       errorStep = 1;
-    } else {
+    } else if (errStr.includes('match') || errStr.includes('recognize') || errStr.includes('mismatch') || errStr.includes('invalid face')) {
       effectiveScanStep = 2; // Face Matched failed
       errorStep = 2;
+    } else {
+      // e.g., "Face ID login is disabled", "Account suspended", "User not found"
+      effectiveScanStep = 3; // Verification failed
+      errorStep = 3;
     }
   } else if (success) {
     effectiveScanStep = 4;
@@ -93,46 +130,47 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
   }
 
   const statusItems = [
-    { 
-      title: 'Face Detected', 
-      subtitle: effectiveScanStep > 0 || success ? 'High Quality' : (errorStep === 0 ? 'No Face Found' : 'Scanning...'), 
-      icon: <IconFaceId size={16} color="#00e676" /> 
+    {
+      title: 'Face Detected',
+      subtitle: effectiveScanStep > 0 || success ? 'High Quality' : (errorStep === 0 ? 'No Face Found' : 'Scanning...'),
+      icon: <IconFaceId size={16} color="#00e676" />
     },
-    { 
-      title: 'Liveness Check', 
-      subtitle: effectiveScanStep > 1 || success ? 'Real Person' : (errorStep === 1 ? 'Check Failed' : 'Analyzing...'), 
-      icon: <IconActivity size={16} color="#00e676" /> 
+    {
+      title: 'Liveness Check',
+      subtitle: effectiveScanStep > 1 || success ? 'Real Person' : (errorStep === 1 ? 'Check Failed' : 'Analyzing...'),
+      icon: <IconActivity size={16} color="#00e676" />
     },
-    { 
-      title: 'Face Matched', 
-      subtitle: effectiveScanStep > 2 || success ? '100% Match' : (errorStep === 2 ? 'Mismatch' : 'Comparing...'), 
-      icon: <IconUserCheck size={16} color="#00e676" /> 
+    {
+      title: 'Face Matched',
+      subtitle: effectiveScanStep > 2 || success ? '100% Match' : (errorStep === 2 ? 'Mismatch' : 'Comparing...'),
+      icon: <IconUserCheck size={16} color="#00e676" />
     },
-    { 
-      title: 'Verification', 
-      subtitle: effectiveScanStep === 4 ? 'Completed' : (errorMessage ? 'Denied' : 'Pending...'), 
-      icon: <IconShieldCheck size={16} color="#00e676" /> 
+    {
+      title: 'Verification',
+      subtitle: effectiveScanStep === 4 ? 'Completed' : (errorMessage ? 'Denied' : 'Pending...'),
+      icon: <IconShieldCheck size={16} color="#00e676" />
     }
   ];
 
   return (
     <Box
       sx={{
-        background: 'linear-gradient(145deg, #0a1128 0%, #030815 100%)',
+        background: '#ffffffd9',
+        backdropFilter: 'blur(10px)',
         borderRadius: '18px',
-        border: '1.5px solid #a88444',
-        boxShadow: '0 0 30px rgba(0,0,0,0.8), inset 0 0 15px rgba(168, 132, 68, 0.15)',
+        border: '1.5px solid rgba(0,0,0,0.05)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
         p: 2,
         position: 'relative',
         overflow: 'hidden',
-        color: '#fff'
+        color: '#111'
       }}
     >
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, mb: 1.5 }}>
         {/* Left Column */}
         <Box sx={{ flex: '0 0 48%', display: 'flex', flexDirection: 'column' }}>
           {/* Header - Icon */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5, position: 'relative' }}>
+          {/* <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5, position: 'relative' }}>
             <Box
               sx={{
                 width: 60,
@@ -152,11 +190,11 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
                 <IconFaceId size={32} color="#00f0ff" stroke={1.5} />
               </Box>
             </Box>
-          </Box>
+          </Box> */}
 
           {/* Title */}
           <Box sx={{ mb: 2, textAlign: 'center' }}>
-            <Typography sx={{ color: '#fff', fontWeight: 700, letterSpacing: '0.8px', fontSize: '0.75rem', mb: 0.2 }}>
+            <Typography sx={{ color: '#333', fontWeight: 700, letterSpacing: '0.8px', fontSize: '0.75rem', mb: 0.2 }}>
               FACE DETECTION &
             </Typography>
             <Typography
@@ -164,16 +202,14 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
                 fontWeight: 800,
                 letterSpacing: '1.5px',
                 fontSize: '1.1rem',
-                background: 'linear-gradient(90deg, #00d4ff 0%, #00e676 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                color: '#00e676',
                 mb: 0.5,
                 lineHeight: 1.1
               }}
             >
               VERIFICATION
             </Typography>
-            <Typography sx={{ color: effectiveScanStep === 4 ? '#00e676' : (errorMessage ? '#ff5252' : '#a88444'), fontSize: '0.65rem', fontWeight: 700 }}>
+            <Typography sx={{ color: effectiveScanStep === 4 ? '#00e676' : (errorMessage ? '#ff5252' : '#00f0ff'), fontSize: '0.65rem', fontWeight: 700 }}>
               {effectiveScanStep === 4 ? 'Identity Verified Successfully' : (errorMessage ? 'Verification Failed' : 'Scanning Protocol Initiated...')}
             </Typography>
           </Box>
@@ -183,12 +219,12 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
             {statusItems.map((item, index) => {
               const isActive = effectiveScanStep > index || success;
               const isError = errorStep === index;
-              
-              let outerBorder = '1px solid rgba(255,255,255,0.06)';
-              let iconBg = 'rgba(255,255,255,0.03)';
+
+              let outerBorder = '1px solid rgba(0,0,0,0.06)';
+              let iconBg = 'rgba(0,0,0,0.03)';
               let iconBorder = '1px solid transparent';
-              let iconColor = '#555';
-              let circleBorder = '1.5px solid #333';
+              let iconColor = '#888';
+              let circleBorder = '1.5px solid #ccc';
               let circleShadow = 'none';
 
               if (isActive && !isError) {
@@ -217,7 +253,7 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
                     py: 0.8,
                     px: 1,
                     borderRadius: '8px',
-                    background: 'rgba(255,255,255,0.03)',
+                    background: 'rgba(0,0,0,0.02)',
                     border: outerBorder,
                     transition: 'all 0.4s ease'
                   }}
@@ -238,10 +274,10 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
                       {React.cloneElement(item.icon, { size: 14, color: iconColor })}
                     </Box>
                     <Box>
-                      <Typography sx={{ color: isActive || isError ? '#fff' : '#777', fontWeight: 600, fontSize: '0.7rem', lineHeight: 1.2 }}>
+                      <Typography sx={{ color: isActive || isError ? '#222' : '#999', fontWeight: 600, fontSize: '0.7rem', lineHeight: 1.2 }}>
                         {item.title}
                       </Typography>
-                      <Typography sx={{ color: isActive ? '#999' : (isError ? '#ff5252' : '#444'), fontSize: '0.55rem', lineHeight: 1, display: 'block', mt: 0.3 }}>
+                      <Typography sx={{ color: isActive ? '#666' : (isError ? '#ff5252' : '#aaa'), fontSize: '0.55rem', lineHeight: 1, display: 'block', mt: 0.3 }}>
                         {isError ? 'Failed' : item.subtitle}
                       </Typography>
                     </Box>
@@ -279,7 +315,7 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
               height: '100%',
               minHeight: '260px',
               borderRadius: '14px',
-              border: '1.5px solid rgba(168, 132, 68, 0.3)',
+              border: '1.5px solid rgba(0, 240, 255, 0.15)',
               background: '#040b17',
               position: 'relative',
               overflow: 'hidden',
@@ -324,20 +360,35 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
 
             {/* Video Feed */}
             {webcamActive ? (
-              <video
-                id="webcam-video"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transform: 'scaleX(-1)',
-                  position: 'relative',
-                  zIndex: 2
-                }}
-                autoPlay
-                playsInline
-                muted
-              />
+              <>
+                <video
+                  id="webcam-video"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    transform: 'scaleX(-1)',
+                    position: 'relative',
+                    zIndex: 2
+                  }}
+                  autoPlay
+                  playsInline
+                  muted
+                />
+                <canvas
+                  id="webcam-canvas"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    transform: 'scaleX(-1)',
+                    zIndex: 3,
+                    pointerEvents: 'none'
+                  }}
+                />
+              </>
             ) : (
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', zIndex: 4, position: 'relative' }}>
                 <IconCameraOff size={56} color="#333" stroke={1.2} />
@@ -356,7 +407,7 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
                 height: 60,
                 borderRadius: '50%',
                 background: '#040b17',
-                border: '4px solid #a88444',
+                border: '4px solid #00e676',
                 boxShadow: '0 0 20px rgba(0,230,118,0.5), inset 0 0 10px rgba(0,230,118,0.2)',
                 display: 'flex',
                 alignItems: 'center',
@@ -409,7 +460,7 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
             ? 'linear-gradient(90deg, rgba(4,32,48,1) 0%, rgba(9,45,68,1) 50%, rgba(4,32,48,1) 100%)'
             : (errorMessage ? 'linear-gradient(90deg, rgba(48,4,4,1) 0%, rgba(68,9,9,1) 50%, rgba(48,4,4,1) 100%)' : 'linear-gradient(90deg, rgba(10,17,40,1) 0%, rgba(15,25,55,1) 50%, rgba(10,17,40,1) 100%)'),
           borderRadius: '12px',
-          border: effectiveScanStep === 4 ? '1.5px solid #00e676' : (errorMessage ? '1.5px solid #ff5252' : '1.5px solid rgba(168, 132, 68, 0.4)'),
+          border: effectiveScanStep === 4 ? '1.5px solid #00e676' : (errorMessage ? '1.5px solid #ff5252' : '1.5px solid rgba(255, 255, 255, 0.05)'),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -418,7 +469,7 @@ const FaceDetectionDashboard = ({ open, onClose, webcamActive, webcamError, isFa
           overflow: 'hidden',
           boxShadow: effectiveScanStep === 4
             ? '0 0 20px rgba(0, 230, 118, 0.2), inset 0 0 20px rgba(0, 230, 118, 0.1)'
-            : (errorMessage ? '0 0 20px rgba(255, 82, 82, 0.2), inset 0 0 20px rgba(255, 82, 82, 0.1)' : 'inset 0 0 20px rgba(168, 132, 68, 0.05)'),
+            : (errorMessage ? '0 0 20px rgba(255, 82, 82, 0.2), inset 0 0 20px rgba(255, 82, 82, 0.1)' : 'inset 0 0 20px rgba(0, 240, 255, 0.05)'),
           transition: 'all 0.5s ease'
         }}
       >

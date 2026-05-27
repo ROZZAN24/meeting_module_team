@@ -83,13 +83,6 @@ axiosServices.interceptors.response.use(
 
     // Only alert for non-auth errors
     if (error.response?.status !== 401) {
-      // Trigger a blocking browser alert with details
-      if (window.showAlert) {
-        window.showAlert(`Server / Database Error:\n${errMsg}`);
-      } else {
-        alert(`Server / Database Error:\n${errMsg}`);
-      }
-
       // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
       import('../store').then(({ dispatch }) => {
         import('../store/slices/snackbar').then(({ openSnackbar }) => {
