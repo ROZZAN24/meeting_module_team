@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography,
   Button,
@@ -1249,7 +1249,7 @@ export default function ApplicationTrackingSystem() {
                   </Grid>
 
                   {/* Row 2: Candidate basic info */}
-                  <Grid item xs={12} sm={6} md={1.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       select
                       label="Title"
@@ -1262,7 +1262,7 @@ export default function ApplicationTrackingSystem() {
                       ))}
                     </BOSTextField>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="First Name"
@@ -1274,7 +1274,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.firstName)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="Last Name"
@@ -1286,7 +1286,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.lastName)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       type="date"
                       required
@@ -1300,7 +1300,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.birthDate)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={1.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Age"
                       name="age"
@@ -1311,7 +1311,7 @@ export default function ApplicationTrackingSystem() {
                   </Grid>
 
                   {/* Row 3: Contact & ID info */}
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="Mobile No"
@@ -1324,7 +1324,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.mobileNo)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="Email ID"
@@ -1337,7 +1337,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.emailId)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <Stack spacing={1}>
                       <BOSTextField
                         required
@@ -1542,7 +1542,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
@@ -1550,7 +1550,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
@@ -1558,7 +1558,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Email Id"
                       name="emailId"
@@ -1586,7 +1586,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="City"
                       name="city"
@@ -1594,7 +1594,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="State"
                       name="state"
@@ -2111,216 +2111,118 @@ export default function ApplicationTrackingSystem() {
               )}
 
               {/* 8. SELF ASSESSMENT */}
-              {activeTab === 7 && (
-                <Grid container spacing={2.5}>
-                  {/* Group 1: Personal & Family Details */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      I. PERSONAL & FAMILY DETAILS
-                    </Typography>
-                  </Grid>
+              {activeTab === 7 && (() => {
+                const selfAssessmentQuestions = [
+                  {
+                    group: 'I. PERSONAL & FAMILY DETAILS',
+                    fields: [
+                      { name: 'q1_native', label: '1. Native Place' },
+                      { name: 'q2_presentAddress', label: '2. Present Address', multiline: true, rows: 2 },
+                      { name: 'q3_permanentAddress', label: '3. Permanent Address', multiline: true, rows: 2 },
+                      { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
+                      { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
+                      { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
+                      { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
+                      { name: 'q8_children', label: '8. Children' },
+                      { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q10_relativesDetails', label: '10. Relative or friends details', multiline: true, rows: 2 },
+                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations', multiline: true, rows: 2 }
+                    ]
+                  },
+                  {
+                    group: 'II. GENERAL HABITS, VEHICLE & HEALTH',
+                    fields: [
+                      { name: 'q12_hasTwoWheeler', label: '12. Do you have two wheeler?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q13_hasAndroidPhone', label: '13. Do you have Android phone?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q14_knowsCarDriving', label: '14. Do you know car driving?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q15_willingToTravel', label: '15. Willing to travel?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q16_covidVaccination', label: '16. COVID vaccination with booster?', select: true, options: ['NO', 'YES'] }
+                    ]
+                  },
+                  {
+                    group: 'III. PERSONAL GOALS & REFLECTION',
+                    fields: [
+                      { name: 'q17_positivePoints', label: '17. Brief about positive points', multiline: true, rows: 3 },
+                      { name: 'q18_negativePoints', label: '18. Brief about negative points', multiline: true, rows: 3 },
+                      { name: 'q19_lifeGoals', label: "19. What's your life goals?", multiline: true, rows: 3 },
+                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas', multiline: true, rows: 3 }
+                    ]
+                  },
+                  {
+                    group: 'IV. CAREER, SALARY & BENEFITS',
+                    fields: [
+                      { name: 'q21_isExperienced', label: '21. Experienced?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q22_totalExperience', label: '22. Total years of experience' },
+                      { name: 'q23_coreExperience', label: '23. Core department experience years' },
+                      { name: 'q24_prevNetSalary', label: '24. Previous Net Salary' },
+                      { name: 'q25_prevGrossSalary', label: '25. Previous Gross Salary' },
+                      { name: 'q26_expectedNetSalary', label: '26. Expected Net Salary' },
+                      { name: 'q27_expectedGrossSalary', label: '27. Expected Gross Salary' },
+                      { name: 'q28_pfHigherPension', label: '28. PF higher pension required?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q29_pfDeductionAmount', label: '29. PF deduction amount' },
+                      { name: 'q30_alternativeDepartment', label: '30. Alternate department interest' }
+                    ]
+                  },
+                  {
+                    group: 'V. PREVIOUS EMPLOYMENT DETAILS',
+                    fields: [
+                      { name: 'q31_prevLocation', label: '31. Previous/current company location' },
+                      { name: 'q32_prevShift', label: '32. Previously worked shift' },
+                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job', multiline: true, rows: 2 },
+                      { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
+                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details', multiline: true, rows: 2 },
+                      { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
+                      { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
+                    ]
+                  },
+                  {
+                    group: 'VI. BEHAVIORAL & WORK RATINGS',
+                    fields: [
+                      { name: 'q38_handleMistake', label: '38. How you handle mistakes', multiline: true, rows: 3 },
+                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences', multiline: true, rows: 3 },
+                      { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
+                      { name: 'payslip', label: 'PAY SLIP', type: 'file' }
+                    ]
+                  }
+                ];
 
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="1. Native" value={assessmentData.q1_native} onChange={(e) => setAssessmentData(p => ({ ...p, q1_native: e.target.value }))} />
+                return (
+                  <Grid container spacing={3}>
+                    {selfAssessmentQuestions.map((g, gIdx) => (
+                      <React.Fragment key={gIdx}>
+                        <Grid item xs={12}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main', mt: gIdx > 0 ? 3 : 1, borderBottom: '2px solid', borderColor: 'primary.light', pb: 0.5 }}>
+                            {g.group}
+                          </Typography>
+                        </Grid>
+                        {g.fields.map(f => (
+                          <Grid item xs={12} key={f.name}>
+                            <Box sx={{ borderBottom: '1px solid', borderColor: 'grey.100', pb: 2.5, pt: 1.5 }}>
+                              <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.95rem', mb: 1.5 }}>
+                                {f.label}
+                              </Typography>
+                              {f.type === 'file' ? (
+                                <BOSFileUpload
+                                  label="Upload Payslip"
+                                  files={assessmentData.payslip ? [assessmentData.payslip] : []}
+                                  onChange={(files) => setAssessmentData(p => ({ ...p, payslip: files[0] || null }))}
+                                  multiple={false}
+                                />
+                              ) : f.select ? (
+                                <BOSTextField size="medium" select fullWidth value={assessmentData[f.name] || ''} onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}>
+                                  {(f.options || []).map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                </BOSTextField>
+                              ) : (
+                                <BOSTextField size="medium" fullWidth value={assessmentData[f.name] || ''} onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))} multiline={f.multiline} rows={f.rows} />
+                              )}
+                            </Box>
+                          </Grid>
+                        ))}
+                      </React.Fragment>
+                    ))}
                   </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="2. Present Address" value={assessmentData.q2_presentAddress} onChange={(e) => setAssessmentData(p => ({ ...p, q2_presentAddress: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="3. Permanent Address" value={assessmentData.q3_permanentAddress} onChange={(e) => setAssessmentData(p => ({ ...p, q3_permanentAddress: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="4. Father's Occupation" value={assessmentData.q4_fatherOccupation} onChange={(e) => setAssessmentData(p => ({ ...p, q4_fatherOccupation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="5. Mother's Occupation" value={assessmentData.q5_motherOccupation} onChange={(e) => setAssessmentData(p => ({ ...p, q5_motherOccupation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="6. Marital Status" value={assessmentData.q6_maritalStatus} onChange={(e) => setAssessmentData(p => ({ ...p, q6_maritalStatus: e.target.value }))}>
-                      {MARITAL_STATUSES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="7. Occupation of Spouse" value={assessmentData.q7_spouseOccupation} onChange={(e) => setAssessmentData(p => ({ ...p, q7_spouseOccupation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="8. Children" value={assessmentData.q8_children} onChange={(e) => setAssessmentData(p => ({ ...p, q8_children: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="9. Any relative or friends working here?" value={assessmentData.q9_hasRelativesInCompany} onChange={(e) => setAssessmentData(p => ({ ...p, q9_hasRelativesInCompany: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="10. Relative or friends details" value={assessmentData.q10_relativesDetails} onChange={(e) => setAssessmentData(p => ({ ...p, q10_relativesDetails: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="11. Siblings and their occupations" value={assessmentData.q11_siblingsOccupations} onChange={(e) => setAssessmentData(p => ({ ...p, q11_siblingsOccupations: e.target.value }))} multiline rows={2} />
-                  </Grid>
-
-                  {/* Group 2: General Habits, Vehicle & Health */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      II. GENERAL HABITS, VEHICLE & HEALTH
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="12. Do you have two wheeler?" value={assessmentData.q12_hasTwoWheeler} onChange={(e) => setAssessmentData(p => ({ ...p, q12_hasTwoWheeler: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="13. Do you have Android phone?" value={assessmentData.q13_hasAndroidPhone} onChange={(e) => setAssessmentData(p => ({ ...p, q13_hasAndroidPhone: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="14. Do you know car driving?" value={assessmentData.q14_knowsCarDriving} onChange={(e) => setAssessmentData(p => ({ ...p, q14_knowsCarDriving: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="15. Willing to travel?" value={assessmentData.q15_willingToTravel} onChange={(e) => setAssessmentData(p => ({ ...p, q15_willingToTravel: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="16. COVID vaccination with booster?" value={assessmentData.q16_covidVaccination} onChange={(e) => setAssessmentData(p => ({ ...p, q16_covidVaccination: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-
-                  {/* Group 3: Personal Goals & Reflection */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      III. PERSONAL GOALS & REFLECTION
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <BOSTextField label="17. Brief about positive points" value={assessmentData.q17_positivePoints} onChange={(e) => setAssessmentData(p => ({ ...p, q17_positivePoints: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="18. Brief about negative points" value={assessmentData.q18_negativePoints} onChange={(e) => setAssessmentData(p => ({ ...p, q18_negativePoints: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="19. What's your life goals?" value={assessmentData.q19_lifeGoals} onChange={(e) => setAssessmentData(p => ({ ...p, q19_lifeGoals: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="20. Productivity suggestion ideas" value={assessmentData.q20_improvementSuggestions} onChange={(e) => setAssessmentData(p => ({ ...p, q20_improvementSuggestions: e.target.value }))} multiline rows={3} />
-                  </Grid>
-
-                  {/* Group 4: Career, Salary & Benefits */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      IV. CAREER, SALARY & BENEFITS
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="21. Experienced?" value={assessmentData.q21_isExperienced} onChange={(e) => setAssessmentData(p => ({ ...p, q21_isExperienced: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="22. Total years of experience" value={assessmentData.q22_totalExperience} onChange={(e) => setAssessmentData(p => ({ ...p, q22_totalExperience: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="23. Core department experience years" value={assessmentData.q23_coreExperience} onChange={(e) => setAssessmentData(p => ({ ...p, q23_coreExperience: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="24. Previous Net Salary" value={assessmentData.q24_prevNetSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q24_prevNetSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="25. Previous Gross Salary" value={assessmentData.q25_prevGrossSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q25_prevGrossSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="26. Expected Net Salary" value={assessmentData.q26_expectedNetSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q26_expectedNetSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="27. Expected Gross Salary" value={assessmentData.q27_expectedGrossSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q27_expectedGrossSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="28. PF higher pension required?" value={assessmentData.q28_pfHigherPension} onChange={(e) => setAssessmentData(p => ({ ...p, q28_pfHigherPension: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="29. PF deduction amount" value={assessmentData.q29_pfDeductionAmount} onChange={(e) => setAssessmentData(p => ({ ...p, q29_pfDeductionAmount: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="30. Alternate department interest" value={assessmentData.q30_alternativeDepartment} onChange={(e) => setAssessmentData(p => ({ ...p, q30_alternativeDepartment: e.target.value }))} />
-                  </Grid>
-
-                  {/* Group 5: Previous Employment Details */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      V. PREVIOUS EMPLOYMENT DETAILS
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="31. Previous/current company location" value={assessmentData.q31_prevLocation} onChange={(e) => setAssessmentData(p => ({ ...p, q31_prevLocation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="32. Previously worked shift" value={assessmentData.q32_prevShift} onChange={(e) => setAssessmentData(p => ({ ...p, q32_prevShift: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="33. Reason for leaving previous job" value={assessmentData.q33_reasonForLeaving} onChange={(e) => setAssessmentData(p => ({ ...p, q33_reasonForLeaving: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="34. Notice period (days)" value={assessmentData.q34_noticePeriod} onChange={(e) => setAssessmentData(p => ({ ...p, q34_noticePeriod: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="35. Prev dept and position details" value={assessmentData.q35_prevDeptPosition} onChange={(e) => setAssessmentData(p => ({ ...p, q35_prevDeptPosition: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="36. Prev dept employee count" value={assessmentData.q36_prevDeptCount} onChange={(e) => setAssessmentData(p => ({ ...p, q36_prevDeptCount: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="37. Prev manager/reporting to" value={assessmentData.q37_prevReportingTo} onChange={(e) => setAssessmentData(p => ({ ...p, q37_prevReportingTo: e.target.value }))} />
-                  </Grid>
-
-                  {/* Group 6: Behavioral & Work Ratings */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      VI. BEHAVIORAL & WORK RATINGS
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <BOSTextField label="38. How you handle mistakes" value={assessmentData.q38_handleMistake} onChange={(e) => setAssessmentData(p => ({ ...p, q38_handleMistake: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="39. Handle team opinion differences" value={assessmentData.q39_handleOpinionDifference} onChange={(e) => setAssessmentData(p => ({ ...p, q39_handleOpinionDifference: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="40. Self rating (MS-Office, Outlook)" value={assessmentData.q40_computerSelfRating} onChange={(e) => setAssessmentData(p => ({ ...p, q40_computerSelfRating: e.target.value }))}>
-                      <MenuItem value="EXCELLENT">EXCELLENT</MenuItem>
-                      <MenuItem value="GOOD">GOOD</MenuItem>
-                      <MenuItem value="AVERAGE">AVERAGE</MenuItem>
-                      <MenuItem value="POOR">POOR</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSFileUpload
-                      label="PAY SLIP"
-                      files={assessmentData.payslip ? [assessmentData.payslip] : []}
-                      onChange={(files) => setAssessmentData(p => ({ ...p, payslip: files[0] || null }))}
-                      multiple={false}
-                    />
-                  </Grid>
-                </Grid>
-              )}
+                );
+              })()}
 
               {/* 9. SKILLS */}
               {activeTab === 8 && (
