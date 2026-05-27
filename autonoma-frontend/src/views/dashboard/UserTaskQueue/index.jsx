@@ -38,10 +38,11 @@ import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import FilterListRoundedIcon from '@mui/icons-material/FilterListRounded';
 import ScheduleRoundedIcon from '@mui/icons-material/ScheduleRounded';
 import PersonSearchRoundedIcon from '@mui/icons-material/PersonSearchRounded';
-import ViewModuleRoundedIcon from '@mui/icons-material/ViewModuleRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
+import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
+import StarRoundedIcon from '@mui/icons-material/StarRounded';
 
 // ─── Keyframes ────────────────────────────────────────────────────────────────
 const slideUp = keyframes`
@@ -80,6 +81,11 @@ const pulseGlow = keyframes`
   50%      { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
 `;
 
+const pulseRedGlow = keyframes`
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+`;
+
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -96,6 +102,41 @@ const bounce = keyframes`
   60% { transform: translateY(-7px); }
 `;
 
+const confettiFall = keyframes`
+  0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+`;
+
+const ConfettiPiece = styled('div')(({ color, left, delay, duration }) => ({
+  position: 'absolute',
+  width: '8px',
+  height: '16px',
+  backgroundColor: color,
+  top: '-20px',
+  left: `${left}%`,
+  opacity: 0,
+  animation: `${confettiFall} ${duration}s ease-in ${delay}s forwards`,
+  zIndex: 0,
+}));
+
+const Confetti = () => {
+  const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FFC107', '#FF9800', '#FF5722'];
+  const pieces = Array.from({ length: 50 }).map((_, i) => ({
+    left: Math.random() * 100,
+    delay: Math.random() * 3,
+    duration: Math.random() * 2 + 2,
+    color: colors[Math.floor(Math.random() * colors.length)],
+  }));
+
+  return (
+    <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+      {pieces.map((p, i) => (
+        <ConfettiPiece key={i} color={p.color} left={p.left} delay={p.delay} duration={p.duration} />
+      ))}
+    </Box>
+  );
+};
+
 // ─── Design System ────────────────────────────────────────────────────────────
 const PALETTE = {
   indigo: { solid: '#6366F1', light: '#EEF2FF', dark: '#4338CA', glow: 'rgba(99,102,241,0.3)' },
@@ -111,43 +152,47 @@ const RADIUS = { xs: 8, sm: 12, md: 16, lg: 20, xl: 24, xxl: 28 };
 
 // ─── Styled Components ────────────────────────────────────────────────────────
 
-const PageRoot = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme, isDark }) => ({
-  minHeight: '100vh',
-  background: isDark
-    ? 'linear-gradient(160deg, #0B0F1A 0%, #111827 40%, #0F172A 100%)'
-    : 'linear-gradient(160deg, #F8FAFF 0%, #EFF4FF 40%, #F1F5F9 100%)',
-  padding: theme.spacing(2.5),
-  [theme.breakpoints.up('md')]: { padding: theme.spacing(3.5) },
-}));
+const PageRoot = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark }) => {
+  return {
+    minHeight: '100vh',
+    background: isDark
+      ? 'linear-gradient(160deg, #0B0F1A 0%, #111827 40%, #0F172A 100%)'
+      : 'linear-gradient(160deg, #F8FAFF 0%, #EFF4FF 40%, #F1F5F9 100%)',
+    padding: theme.spacing(2.5),
+    [theme.breakpoints.up('md')]: { padding: theme.spacing(3.5) },
+  };
+});
 
 /* ── Hero Banner ── */
-const HeroBanner = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme, isDark }) => ({
-  borderRadius: RADIUS.md,
-  padding: theme.spacing(2, 3),
-  position: 'relative',
-  overflow: 'hidden',
-  marginBottom: theme.spacing(2.5),
-  animation: `${slideUp} 0.6s cubic-bezier(0.22,1,0.36,1)`,
-  background: isDark
-    ? 'linear-gradient(168deg, #0F172A 40%, #991B1B 100%)'
-    : 'linear-gradient(168deg, #def7e1ff 40%, #0d7ba7ff 100%)',
-  border: isDark
-    ? '1px solid rgba(255,255,255,0.08)'
-    : '1px solid rgba(226,232,240, 1)',
-  color: isDark ? '#F8FAFC' : '#0F172A',
-  boxShadow: isDark
-    ? '0 10px 30px -10px rgba(0,0,0,0.5)'
-    : '0 10px 30px -10px rgba(0,0,0,0.05)',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: 0, right: 0, bottom: 0, left: 0,
+const HeroBanner = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark }) => {
+  return {
+    borderRadius: RADIUS.md,
+    padding: theme.spacing(2, 3),
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: theme.spacing(2.5),
+    animation: `${slideUp} 0.6s cubic-bezier(0.22,1,0.36,1)`,
     background: isDark
-      ? 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.1) 0%, transparent 60%)'
-      : 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.08) 0%, transparent 60%)',
-    pointerEvents: 'none',
-  }
-}));
+      ? 'linear-gradient(168deg, #0F172A 40%, #991B1B 100%)'
+      : 'linear-gradient(168deg, #def7e1ff 40%, #0d7ba7ff 100%)',
+    border: isDark
+      ? '1px solid rgba(255,255,255,0.08)'
+      : '1px solid rgba(226,232,240, 1)',
+    color: isDark ? '#F8FAFC' : '#0F172A',
+    boxShadow: isDark
+      ? '0 10px 30px -10px rgba(0,0,0,0.5)'
+      : '0 10px 30px -10px rgba(0,0,0,0.05)',
+    '&::before': {
+      content: '""',
+      position: 'absolute',
+      top: 0, right: 0, bottom: 0, left: 0,
+      background: isDark
+        ? 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.1) 0%, transparent 60%)'
+        : 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.08) 0%, transparent 60%)',
+      pointerEvents: 'none',
+    }
+  };
+});
 
 /* ── Stat Summary Card (inside banner) ── */
 const StatBubble = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme }) => {
@@ -172,7 +217,6 @@ const StatBubble = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ 
 /* ── Glass Card ── */
 const GlassCard = styled(Box)(({ theme, palettekey = 'indigo', selected }) => {
   const pal = PALETTE[palettekey] || PALETTE.indigo;
-  const isDark = theme.palette.mode === 'dark';
   return {
     borderRadius: RADIUS.xl,
     padding: theme.spacing(3),
@@ -218,9 +262,8 @@ const GlassCard = styled(Box)(({ theme, palettekey = 'indigo', selected }) => {
 });
 
 /* ── Metric Icon Container ── */
-const MetricIconWrap = styled(Box)(({ theme, palettekey = 'indigo' }) => {
+const MetricIconWrap = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, palettekey = "indigo" }) => {
   const pal = PALETTE[palettekey] || PALETTE.indigo;
-  const isDark = theme.palette.mode === 'dark';
   return {
     width: 52,
     height: 52,
@@ -239,23 +282,24 @@ const MetricIconWrap = styled(Box)(({ theme, palettekey = 'indigo' }) => {
 });
 
 /* ── Filter Bar ── */
-const FilterBar = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: 4,
-  borderRadius: RADIUS.md,
-  background: isDark
-    ? 'rgba(17,24,39,0.5)'
-    : 'rgba(255,255,255,0.7)',
-  backdropFilter: 'blur(16px)',
-  border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
-  marginBottom: theme.spacing(2.5),
-  flexWrap: 'wrap',
-}));
+const FilterBar = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark }) => {
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: 4,
+    borderRadius: RADIUS.md,
+    background: isDark
+      ? 'rgba(17,24,39,0.5)'
+      : 'rgba(255,255,255,0.7)',
+    backdropFilter: 'blur(16px)',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+    marginBottom: theme.spacing(2.5),
+    flexWrap: 'wrap',
+  };
+});
 
-const FilterChip = styled(Box)(({ theme, active }) => {
-  const isDark = theme.palette.mode === 'dark';
+const FilterChip = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, active }) => {
   return {
     display: 'inline-flex',
     alignItems: 'center',
@@ -289,8 +333,7 @@ const FilterChip = styled(Box)(({ theme, active }) => {
 });
 
 /* ── Task Card ── */
-const TaskCard = styled(Box)(({ theme, isoverdue, taskpalette = 'indigo' }) => {
-  const isDark = theme.palette.mode === 'dark';
+const TaskCard = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, isoverdue, taskpalette = "indigo" }) => {
   const pal = PALETTE[taskpalette] || PALETTE.indigo;
   return {
     borderRadius: RADIUS.lg,
@@ -328,9 +371,8 @@ const TaskCard = styled(Box)(({ theme, isoverdue, taskpalette = 'indigo' }) => {
 });
 
 /* ── Task Icon Avatar ── */
-const TaskIconAvatar = styled(Avatar)(({ palettekey = 'indigo', theme }) => {
+const TaskIconAvatar = styled(Avatar, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, palettekey = "indigo" }) => {
   const pal = PALETTE[palettekey] || PALETTE.indigo;
-  const isDark = theme.palette.mode === 'dark';
   return {
     width: 46,
     height: 46,
@@ -345,9 +387,8 @@ const TaskIconAvatar = styled(Avatar)(({ palettekey = 'indigo', theme }) => {
 });
 
 /* ── Pill Badges ── */
-const TypeBadge = styled(Box)(({ palettekey = 'indigo', theme }) => {
+const TypeBadge = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, palettekey = "indigo" }) => {
   const pal = PALETTE[palettekey] || PALETTE.indigo;
-  const isDark = theme.palette.mode === 'dark';
   return {
     display: 'inline-flex',
     alignItems: 'center',
@@ -365,7 +406,7 @@ const TypeBadge = styled(Box)(({ palettekey = 'indigo', theme }) => {
   };
 });
 
-const StatusBadge = styled(Box)(({ statuscolor, statusbg, theme }) => ({
+const StatusBadge = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, statuscolor, statusbg }) => ({
   display: 'inline-flex',
   alignItems: 'center',
   gap: 4,
@@ -381,8 +422,7 @@ const StatusBadge = styled(Box)(({ statuscolor, statusbg, theme }) => ({
   border: `1px solid ${alpha(statuscolor, 0.15)}`,
 }));
 
-const DueDateBadge = styled(Box)(({ theme, isoverdue }) => {
-  const isDark = theme.palette.mode === 'dark';
+const DueDateBadge = styled(Box, { shouldForwardProp: (p) => p !== "isDark" })(({ theme, isDark, isoverdue }) => {
   return {
     display: 'inline-flex',
     alignItems: 'center',
@@ -475,12 +515,12 @@ const TAB_TYPES = [null, 'CHECKLIST', 'MEETING', 'TICKET', 'AUDIT'];
 const TYPE_CONFIG = {
   CHECKLIST: { label: 'Checklist', palette: 'rose', icon: <ChecklistRtlIcon sx={{ fontSize: 22 }} /> },
   MEETING: { label: 'Meeting', palette: 'emerald', icon: <GroupsIcon sx={{ fontSize: 22 }} /> },
-TICKET: { label: 'Ticket', palette: 'indigo', icon: <ConfirmationNumberIcon sx={{ fontSize: 22 }} /> },
+  TICKET: { label: 'Ticket', palette: 'indigo', icon: <ConfirmationNumberIcon sx={{ fontSize: 22 }} /> },
   AUDIT: { label: 'Audit', palette: 'amber', icon: <PolicyIcon sx={{ fontSize: 22 }} /> },
 };
 
 // ─── Metric Card Component ─────────────────────────────────────────────────
-const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, isDark, active, index = 0, onClick }) => {
+const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, active, index = 0, onClick }) => {
   const pal = PALETTE[paletteKey] || PALETTE.indigo;
   const floatDelay = `${(index * 0.4)}s`;
 
@@ -558,14 +598,9 @@ const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, isDar
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function UserTaskQueue() {
-  const baseTheme = useTheme();
-  const colorSchemeObj = useColorScheme() || {};
-  const mode = colorSchemeObj.mode || colorSchemeObj.colorScheme || 'light';
-  const isDark = mode === 'dark' || baseTheme.palette.mode === 'dark';
-  const theme = React.useMemo(() => ({
-    ...baseTheme,
-    palette: { ...baseTheme.palette, mode: mode || 'light' }
-  }), [baseTheme, mode]);
+  const theme = useTheme();
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -735,8 +770,7 @@ export default function UserTaskQueue() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <ThemeProvider theme={theme}>
-      <PageRoot isDark={isDark}>
+    <PageRoot isDark={isDark}>
 
       {/* ── Refreshing overlay ── */}
       {refreshing && (
@@ -783,23 +817,27 @@ export default function UserTaskQueue() {
 
                 {/* Stat bubbles */}
                 <Stack direction="row" alignItems="center" gap={1}>
-                  <StatBubble isDark={isDark} sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff' }}>
+                  <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.3)' }}>
+                    <EmojiEventsRoundedIcon sx={{ fontSize: 14, color: '#10B981' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem', color: isDark ? '#34D399' : '#059669' }}>
+                      Score: {(() => {
+                        const activeObj = allUsers.find(u => String(u.userId || u.empCode) === String(activeUserId)) || user || {};
+                        return activeObj.overallScore || activeObj.score || 0;
+                      })()}
+                    </Typography>
+                  </StatBubble>
+                  <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff' }}>
                     <DashboardRoundedIcon sx={{ fontSize: 14 }} />
                     <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
                       {tasks.length} Pending
                     </Typography>
                   </StatBubble>
                   {overdueCount > 0 && (
-                    <StatBubble isDark={isDark} sx={{
+                    <StatBubble sx={{
                       py: 0.25, px: 1, minHeight: 26,
                       background: 'rgba(244,63,94,0.15)',
                       border: '1px solid rgba(244,63,94,0.3)',
-                      animation: `${pulseGlow} 2s ease-in-out infinite`,
-                      animationName: pulseGlow,
-                      '@keyframes pulseGlow': {
-                        '0%, 100%': { boxShadow: '0 0 0 0 rgba(244,63,94,0.4)' },
-                        '50%': { boxShadow: '0 0 0 6px rgba(244,63,94,0)' },
-                      },
+                      animation: `${pulseRedGlow} 2s ease-in-out infinite`,
                     }}>
                       <WarningAmberRoundedIcon sx={{ fontSize: 14, color: '#F87171' }} />
                       <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
@@ -808,7 +846,7 @@ export default function UserTaskQueue() {
                     </StatBubble>
                   )}
                   {isViewingOther && (
-                    <StatBubble isDark={isDark} sx={{ py: 0.25, px: 1, minHeight: 26, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
+                    <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
                       <PersonSearchRoundedIcon sx={{ fontSize: 14 }} />
                       <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
                         Viewing: {activeUserId}
@@ -982,7 +1020,7 @@ export default function UserTaskQueue() {
               modulesToRender.push(mod);
             });
 
-            return modulesToRender.map((mod, i) => (
+            return modulesToRender.filter(mod => mod.count > 0).map((mod, i) => (
               <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i}>
                 <DashboardMetricCard
                   moduleName={mod.name}
@@ -1001,7 +1039,216 @@ export default function UserTaskQueue() {
         )}
       </Grid>
 
-        </PageRoot>
-    </ThemeProvider>
+      {/* ═══════════════════════════════════ TASK LIST ════════════════════════ */}
+      {/* Column header */}
+      {!loading && visibleTasks.length > 0 && (
+        <Stack direction="row" alignItems="center" sx={{
+          px: 3, pb: 1, pt: 0.5, opacity: 0.5,
+          animation: `${fadeIn} 0.5s ease-out`,
+          mt: 4
+        }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', flex: 1, ml: 7.5 }}>
+            Task
+          </Typography>
+          <Stack direction="row" gap={1} sx={{ flexShrink: 0 }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', width: 100, textAlign: 'center' }}>
+              Due Date
+            </Typography>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', width: 90, textAlign: 'center' }}>
+              Status
+            </Typography>
+            <Box sx={{ width: 24 }} />
+          </Stack>
+        </Stack>
+      )}
+
+      <Box sx={{ mt: 1 }}>
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <TaskCard key={i} isDark={isDark} isoverdue="false" taskpalette="slate" sx={{ animationDelay: `${i * 70}ms` }}>
+              <Skeleton variant="rounded" width={46} height={46} sx={{ borderRadius: `${RADIUS.sm}px`, flexShrink: 0 }} />
+              <Box flex={1}>
+                <Skeleton width="50%" height={20} sx={{ mb: 0.75, borderRadius: 1 }} />
+                <Stack direction="row" gap={1}>
+                  <Skeleton width={70} height={18} sx={{ borderRadius: 1 }} />
+                  <Skeleton width={90} height={18} sx={{ borderRadius: 1 }} />
+                </Stack>
+              </Box>
+              <Stack direction="row" gap={1}>
+                <Skeleton width={90} height={26} sx={{ borderRadius: 1.5 }} />
+                <Skeleton width={80} height={26} sx={{ borderRadius: 1.5 }} />
+              </Stack>
+            </TaskCard>
+          ))
+        ) : visibleTasks.length === 0 ? (
+          <Box sx={{
+            py: 8,
+            px: 3,
+            display: 'flex',
+            justifyContent: 'center',
+            animation: `${slideUp} 0.6s cubic-bezier(0.22,1,0.36,1)`,
+          }}>
+            <Box sx={{
+              position: 'relative',
+              maxWidth: 480,
+              width: '100%',
+              borderRadius: RADIUS.xxl,
+              p: 5,
+              textAlign: 'center',
+              overflow: 'hidden',
+              background: theme.palette.mode === 'dark'
+                ? 'linear-gradient(145deg, rgba(30,41,59,0.7) 0%, rgba(15,23,42,0.8) 100%)'
+                : 'linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.8) 100%)',
+              backdropFilter: 'blur(24px)',
+              border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)'}`,
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 20px 40px -10px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)'
+                : '0 20px 40px -10px rgba(99,102,241,0.15), inset 0 1px 0 rgba(255,255,255,1)',
+            }}>
+              <Box sx={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 200,
+                height: 200,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${PALETTE.amber.glow} 0%, transparent 70%)`,
+                filter: 'blur(20px)',
+                zIndex: 0,
+                animation: `${pulseGlow} 4s ease-in-out infinite`,
+              }} />
+
+              <StarRoundedIcon sx={{ position: 'absolute', top: 40, left: 60, color: PALETTE.amber.solid, fontSize: 24, opacity: 0.8, animation: `${float} 3s ease-in-out infinite`, zIndex: 1 }} />
+              <StarRoundedIcon sx={{ position: 'absolute', top: 60, right: 70, color: PALETTE.amber.solid, fontSize: 18, opacity: 0.6, animation: `${float} 4s ease-in-out infinite 1s`, zIndex: 1 }} />
+              <StarRoundedIcon sx={{ position: 'absolute', bottom: 80, left: 80, color: PALETTE.amber.solid, fontSize: 14, opacity: 0.5, animation: `${float} 3.5s ease-in-out infinite 0.5s`, zIndex: 1 }} />
+
+              <Box sx={{
+                width: 100, height: 100, borderRadius: '50%', mx: 'auto', mb: 3,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'relative', zIndex: 2,
+                background: theme.palette.mode === 'dark'
+                  ? `linear-gradient(135deg, ${alpha(PALETTE.amber.solid, 0.2)}, ${alpha(PALETTE.amber.dark, 0.1)})`
+                  : `linear-gradient(135deg, ${PALETTE.amber.light}, ${alpha(PALETTE.amber.solid, 0.1)})`,
+                border: `2px solid ${theme.palette.mode === 'dark' ? alpha(PALETTE.amber.solid, 0.2) : '#fff'}`,
+                boxShadow: `0 10px 25px ${PALETTE.amber.glow}`,
+                animation: `${bounce} 3s ease-in-out infinite`,
+              }}>
+                <EmojiEventsRoundedIcon sx={{
+                  fontSize: 52, color: PALETTE.amber.solid,
+                  filter: `drop-shadow(0 4px 12px ${PALETTE.amber.glow})`,
+                }} />
+              </Box>
+
+              <Typography variant="h3" sx={{
+                fontWeight: 800, mb: 1.5, position: 'relative', zIndex: 2,
+                background: `linear-gradient(135deg, ${PALETTE.amber.solid}, #F59E0B)`,
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                filter: `drop-shadow(0 2px 4px ${alpha(PALETTE.amber.solid, 0.2)})`
+              }}>
+                Exceptional Work!
+              </Typography>
+
+              <Typography sx={{ fontSize: '1.05rem', color: 'text.secondary', position: 'relative', zIndex: 2, lineHeight: 1.6, px: 2 }}>
+                You have successfully completed all your pending tasks. Take a moment to relax—you've earned it!
+              </Typography>
+            </Box>
+          </Box>
+        ) : (
+          visibleTasks.map((task, i) => {
+            const overdue = isOverdue(task.dueDate) && !['Closed', 'Resolved', 'Approved', 'Completed'].includes(task.status);
+            const cfg = TYPE_CONFIG[task.type] || TYPE_CONFIG.TICKET;
+            const pal = PALETTE[cfg.palette];
+
+            const statusColor = overdue ? PALETTE.rose.solid
+              : task.status === 'In Progress' ? PALETTE.emerald.solid
+                : task.status === 'Assigned' ? PALETTE.indigo.solid
+                  : PALETTE.amber.solid;
+            const statusBg = overdue
+              ? (theme.palette.mode === 'dark' ? alpha(PALETTE.rose.solid, 0.15) : PALETTE.rose.light)
+              : task.status === 'In Progress'
+                ? (theme.palette.mode === 'dark' ? alpha(PALETTE.emerald.solid, 0.15) : PALETTE.emerald.light)
+                : task.status === 'Assigned'
+                  ? (theme.palette.mode === 'dark' ? alpha(PALETTE.indigo.solid, 0.15) : PALETTE.indigo.light)
+                  : (theme.palette.mode === 'dark' ? alpha(PALETTE.amber.solid, 0.15) : PALETTE.amber.light);
+            const statusIcon = overdue
+              ? <ErrorRoundedIcon sx={{ fontSize: 11 }} />
+              : task.status === 'In Progress' ? <PlayArrowRoundedIcon sx={{ fontSize: 11 }} />
+                : task.status === 'Assigned' ? <AssignmentIndIcon sx={{ fontSize: 11 }} />
+                  : <AccessTimeFilledIcon sx={{ fontSize: 11 }} />;
+
+            return (
+              <TaskCard
+                key={task.id}
+                isoverdue={String(overdue)}
+                taskpalette={cfg.palette}
+                onClick={() => navigate(task.link)}
+                sx={{ animationDelay: `${i * 50}ms` }}
+              >
+
+                {/* Icon */}
+                <TaskIconAvatar isDark={isDark} className="task-icon-wrap" palettekey={cfg.palette}>
+                  {cfg.icon}
+                </TaskIconAvatar>
+
+                {/* Title + meta */}
+                <Box flex={1} minWidth={0}>
+                  <Typography sx={{
+                    fontWeight: 700, fontSize: '0.92rem', color: 'text.primary',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mb: 0.5,
+                    lineHeight: 1.3
+                  }}>
+                    {task.title}
+                  </Typography>
+                  <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
+                    <TypeBadge isDark={isDark} palettekey={cfg.palette}>
+                      {cfg.label}
+                    </TypeBadge>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.72rem' }}>
+                      <AssignmentIndIcon sx={{ fontSize: 12, opacity: 0.7 }} />{task.assignedBy}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
+                      {task.desc}
+                    </Typography>
+                  </Stack>
+                </Box>
+
+                {/* Badges */}
+                <Stack direction="row" alignItems="center" gap={1} flexShrink={0}>
+                  <DueDateBadge isDark={isDark} isoverdue={String(overdue)}>
+                    <TodayIcon sx={{ fontSize: 12 }} />
+                    {fmtDate(task.dueDate)}
+                  </DueDateBadge>
+                  <StatusBadge isDark={isDark} statuscolor={statusColor} statusbg={statusBg}>
+                    {statusIcon}
+                    {overdue ? 'Overdue' : task.status}
+                  </StatusBadge>
+                  <ArrowForwardRoundedIcon className="task-arrow"
+                    sx={{
+                      fontSize: 18, color: 'text.disabled', opacity: 0,
+                      transform: 'translateX(-8px)', transition: 'all 0.25s ease'
+                    }} />
+                </Stack>
+              </TaskCard>
+            );
+          })
+        )}
+      </Box>
+
+      {/* ── Footer summary ── */}
+      {!loading && visibleTasks.length > 0 && (
+        <Stack direction="row" justifyContent="center" alignItems="center" gap={1.5} sx={{
+          mt: 4, py: 2, opacity: 0.5,
+          animation: `${fadeIn} 0.6s ease-out 0.3s both`,
+        }}>
+          <ScheduleRoundedIcon sx={{ fontSize: 14 }} />
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.04em' }}>
+            Showing {visibleTasks.length} of {tasks.length} tasks • Auto-refresh in {countdown}s
+          </Typography>
+        </Stack>
+      )}
+
+    </PageRoot>
   );
 }

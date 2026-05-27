@@ -257,6 +257,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
         ensureDesignationColumns(targetJdbcTemplate);
         ensureTicketTraceabilityColumns(targetJdbcTemplate);
+        ensureAtsColumns(targetJdbcTemplate);
 
         System.out.println("======================================");
         System.out.println("SQL MIGRATION COMPLETED FOR DYNAMIC TEMPLATE");
@@ -1373,6 +1374,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
     }
 
+<<<<<<< HEAD
     private void ensureTicketTraceabilityColumns(JdbcTemplate targetJdbcTemplate) {
         String tableName = "ticket_Tracability_center";
         try {
@@ -1430,6 +1432,81 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
     }
 
+=======
+    private void ensureAtsColumns(JdbcTemplate targetJdbcTemplate) {
+        String[] tableNames = {"hrm_employee_master", "HR_EMPLOYEE_MASTER"};
+        for (String tableName : tableNames) {
+            try {
+                Integer tableCount = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                    Integer.class,
+                    tableName.toUpperCase()
+                );
+                if (tableCount == null || tableCount == 0) {
+                    continue;
+                }
+                List<String> columns = targetJdbcTemplate.queryForList(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                    String.class,
+                    tableName.toUpperCase()
+                );
+
+                if (columns.stream().noneMatch(c -> c.equalsIgnoreCase("age"))) {
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD applicant_date DATE");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD age INT");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD position_look_for VARCHAR(100)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD call_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD interview_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD offer_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD verification_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q1_native NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q2_present_address NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q3_permanent_address NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q4_father_occupation NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q5_mother_occupation NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q6_marital_status VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q7_spouse_occupation NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q8_children NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q9_has_relatives VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q10_relatives_details NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q11_siblings_occupations NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q12_has_two_wheeler VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q13_has_android_phone VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q14_knows_car_driving VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q15_willing_to_travel VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q16_covid_vaccination VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q17_positive_points NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q18_negative_points NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q19_life_goals NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q20_improvement_suggestions NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q21_is_experienced VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q22_total_experience VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q23_core_experience VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q24_prev_net_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q25_prev_gross_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q26_expected_net_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q27_expected_gross_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q28_pf_higher_pension VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q29_pf_deduction_amount VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q30_alternative_department VARCHAR(100)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q31_prev_location NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q32_prev_shift VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q33_reason_for_leaving NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q34_notice_period VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q35_prev_dept_position NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q36_prev_dept_count VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q37_prev_reporting_to NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q38_handle_mistake NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q39_handle_opinion_difference NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q40_computer_self_rating VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD payslip_path NVARCHAR(MAX)");
+                }
+            } catch (Exception e) {
+                System.out.println("Error ensuring ATS columns on table " + tableName + ": " + e.getMessage());
+            }
+        }
+    }
+>>>>>>> origin/main
 
     private void renameTableIfExists(JdbcTemplate targetJdbcTemplate, String oldTable, String newTable) {
         try {

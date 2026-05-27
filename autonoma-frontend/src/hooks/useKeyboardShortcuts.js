@@ -40,8 +40,8 @@ export default function useKeyboardShortcuts(shortcuts = {}, enabled = true) {
       if (e.shiftKey) parts.push('shift');
       if (e.altKey) parts.push('alt');
 
-      const key = e.key.toLowerCase();
-      if (!['control', 'meta', 'shift', 'alt'].includes(key)) {
+      const key = e.key ? e.key.toLowerCase() : '';
+      if (key && !['control', 'meta', 'shift', 'alt'].includes(key)) {
         parts.push(key === 'enter' ? 'enter' : key === 'escape' ? 'escape' : key);
       }
 

@@ -159,7 +159,11 @@ public class TicketTraceabilityCenterController {
             allFinalPaths.addAll(finalVoices);
 
             if (!allFinalPaths.isEmpty()) {
-                savedTicket.setAttachmentPath(String.join(",", allFinalPaths));
+                String joinedPaths = String.join(",", allFinalPaths);
+                if (joinedPaths.length() > 500) {
+                    joinedPaths = joinedPaths.substring(0, 500);
+                }
+                savedTicket.setAttachmentPath(joinedPaths);
                 savedTicket = ticketRepository.save(savedTicket);
             }
 
@@ -209,6 +213,7 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setMobileNo(ticketDetails.getMobileNo());
             if (ticketDetails.getDepartment() != null)
                 existingTicket.setDepartment(ticketDetails.getDepartment());
+            if (ticketDetails.getAdditionalRequirement() != null) existingTicket.setAdditionalRequirement(ticketDetails.getAdditionalRequirement());
             if (ticketDetails.getDescription() != null)
                 existingTicket.setDescription(ticketDetails.getDescription());
             if (ticketDetails.getPriorityLevel() != null)
@@ -273,6 +278,12 @@ public class TicketTraceabilityCenterController {
             if (ticketDetails.getTempVoiceRecordings() != null && !ticketDetails.getTempVoiceRecordings().isEmpty()) {
                 moveTempFiles(ticketDetails.getTempVoiceRecordings(), existingTicket.getTicketId(), existingTicket.getRowId(), "Voice Recording", "Voice Recordings");
             }
+            if (ticketDetails.getTempAdditionalAttachments() != null && !ticketDetails.getTempAdditionalAttachments().isEmpty()) {
+                moveTempFiles(ticketDetails.getTempAdditionalAttachments(), existingTicket.getTicketId(), existingTicket.getRowId(), "Additional Requirement Attachment", "Additional Requirement");
+            }
+            if (ticketDetails.getTempAdditionalVoiceRecordings() != null && !ticketDetails.getTempAdditionalVoiceRecordings().isEmpty()) {
+                moveTempFiles(ticketDetails.getTempAdditionalVoiceRecordings(), existingTicket.getTicketId(), existingTicket.getRowId(), "Additional Requirement Voice", "Additional Requirement");
+            }
 
             // Sync the comma-separated attachment_path column in DB
             List<SupportTicketAttachment> allDbAttachments = attachmentRepository.findByTicketRowIdOrderByUploadedAtAsc(existingTicket.getRowId());
@@ -280,7 +291,11 @@ public class TicketTraceabilityCenterController {
             for (SupportTicketAttachment att : allDbAttachments) {
                 dbPaths.add(att.getFilePath());
             }
-            existingTicket.setAttachmentPath(String.join(",", dbPaths));
+            String joinedPaths = String.join(",", dbPaths);
+            if (joinedPaths.length() > 500) {
+                joinedPaths = joinedPaths.substring(0, 500);
+            }
+            existingTicket.setAttachmentPath(joinedPaths);
 
             // Handle status updates and workflow transitions
             if (ticketDetails.getTicketStatus() != null) {
@@ -495,7 +510,11 @@ public class TicketTraceabilityCenterController {
             for (SupportTicketAttachment att : allDbAttachments) {
                 dbPaths.add(att.getFilePath());
             }
-            ticket.setAttachmentPath(String.join(",", dbPaths));
+            String joinedPaths = String.join(",", dbPaths);
+            if (joinedPaths.length() > 500) {
+                joinedPaths = joinedPaths.substring(0, 500);
+            }
+            ticket.setAttachmentPath(joinedPaths);
             ticketRepository.save(ticket);
 
             return ResponseEntity.ok(saved);

@@ -17,9 +17,8 @@ GO
 -- Register the page M3180 for Process Master under NPD > Product (mod_id = 1, sub_mod_id = 31)
 IF NOT EXISTS (SELECT 1 FROM bos_pages WHERE page_code = 'M3180')
 BEGIN
-    INSERT INTO bos_pages (page_id, mod_id, sub_mod_id, page_code, page_name, enabled, page_url, icon)
-    SELECT ISNULL(MAX(page_id), 0) + 1, 1, 31, 'M3180', 'Process Master', 1, '/master/npd/product-process', 'IconSitemap'
-    FROM bos_pages;
+    INSERT INTO bos_pages (mod_id, sub_mod_id, page_code, page_name, enabled, page_url, icon)
+    VALUES (1, 31, 'M3180', 'Process Master', 1, '/master/npd/product-process', 'IconSitemap');
 END
 GO
 

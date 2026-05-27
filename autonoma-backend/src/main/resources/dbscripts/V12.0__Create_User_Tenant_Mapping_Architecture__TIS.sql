@@ -1,6 +1,6 @@
 
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-16
 -- Description: Create User-Company and User-Division Mapping tables for Multi-Tenancy
 -- =============================================

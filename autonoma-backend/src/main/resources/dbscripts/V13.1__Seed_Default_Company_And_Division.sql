@@ -1,5 +1,5 @@
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-24
 -- Description: Seed Default Company, Division, and User-Company/Division Mappings
 -- =============================================

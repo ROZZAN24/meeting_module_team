@@ -33,7 +33,7 @@ import CustomFormControl from 'ui-component/extended/Form/CustomFormControl';
 import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
 import axios from 'utils/axios';
-import { getFaceDescriptor } from 'utils/faceApi';
+import { getFaceDescriptor, checkLiveness } from 'utils/faceApi';
 import FaceDetectionDashboard from './FaceDetectionDashboard';
 
 // assets
@@ -91,7 +91,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
       setWebcamStream(stream);
       webcamStreamRef.current = stream;
       setWebcamActive(true);
-      
+
       setTimeout(() => {
         const videoElement = document.getElementById('webcam-video');
         if (videoElement) {
@@ -228,7 +228,18 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
     setCheckError(null);
 
     try {
-      // Get face descriptor using face-api.js
+      const livenessStatus = await checkLiveness(videoElement);
+      if (livenessStatus === 'no_face') {
+        setCheckError('No face detected. Please ensure your face is clearly visible.');
+        setIsFaceScanning(false);
+        return;
+      } else if (livenessStatus === 'spoof') {
+        setCheckError('Liveness Check Failed: No movement or blink detected. Static photo suspected.');
+        setIsFaceScanning(false);
+        return;
+      }
+
+      // 2. Get face descriptor using face-api.js
       const descriptorArray = await getFaceDescriptor(videoElement);
       const faceDescriptor = descriptorArray ? JSON.stringify(descriptorArray) : null;
 
@@ -241,9 +252,9 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
       const faceImageBase64 = canvas.toDataURL('image/jpeg', 0.85);
 
       if (!faceDescriptor) {
-          setCheckError('No face detected. Please ensure your face is clearly visible.');
-          setIsFaceScanning(false);
-          return;
+        setCheckError('No face detected. Please ensure your face is clearly visible.');
+        setIsFaceScanning(false);
+        return;
       }
 
       // Verify face image with backend
@@ -376,9 +387,9 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                   : Yup.string().max(255).nullable(),
                 password: loginMethod === 'password'
                   ? Yup.string()
-                      .required('Password is required')
-                      .test('no-spaces', 'Password cannot start or end with spaces', (v) => v === v?.trim())
-                      .max(50, 'Password must be under 50 characters')
+                    .required('Password is required')
+                    .test('no-spaces', 'Password cannot start or end with spaces', (v) => v === v?.trim())
+                    .max(50, 'Password must be under 50 characters')
                   : Yup.string().nullable()
               })}
               onSubmit={(values) => {
@@ -413,8 +424,9 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                   <Box
                     sx={{
                       display: 'flex',
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                      p: 0.5,
+                      bgcolor: loginMethod === 'face' ? 'transparent' : alpha(theme.palette.primary.main, 0.08),
+                      p: loginMethod === 'face' ? 0 : 0.5,
+                      gap: loginMethod === 'face' ? 1 : 0,
                       borderRadius: '12px',
                       mb: 3
                     }}
@@ -427,16 +439,17 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                         stopWebcam();
                         setCheckError(null);
                       }}
-                      variant={loginMethod === 'password' ? 'contained' : 'text'}
+                      variant={loginMethod === 'password' ? 'contained' : (loginMethod === 'face' ? 'contained' : 'text')}
                       sx={{
                         borderRadius: '10px',
                         py: 1,
                         fontSize: '0.875rem',
                         fontWeight: 700,
-                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : 'transparent',
-                        color: loginMethod === 'password' ? '#fff' : theme.palette.text.secondary,
+                        textTransform: 'none',
+                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : (loginMethod === 'face' ? theme.palette.primary.main : 'transparent'),
+                        color: loginMethod === 'password' ? '#fff' : (loginMethod === 'face' ? '#fff' : theme.palette.text.secondary),
                         '&:hover': {
-                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
+                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : (loginMethod === 'face' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15))
                         }
                       }}
                     >
@@ -456,44 +469,48 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                         py: 1,
                         fontSize: '0.875rem',
                         fontWeight: 700,
-                        bgcolor: loginMethod === 'face' ? theme.palette.primary.main : 'transparent',
+                        textTransform: loginMethod === 'face' ? 'uppercase' : 'none',
+                        bgcolor: loginMethod === 'face' ? '#7f9eb5' : 'transparent',
                         color: loginMethod === 'face' ? '#fff' : theme.palette.text.secondary,
+                        border: loginMethod === 'face' ? '1px solid #FFD700' : 'none',
+                        boxShadow: loginMethod === 'face' ? '0 0 10px rgba(255, 215, 0, 0.6)' : 'none',
                         '&:hover': {
-                          bgcolor: loginMethod === 'face' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
+                          bgcolor: loginMethod === 'face' ? '#6f8ea5' : alpha(theme.palette.primary.main, 0.15),
+                          boxShadow: loginMethod === 'face' ? '0 0 15px rgba(255, 215, 0, 0.8)' : 'none'
                         }
                       }}
                     >
-                      Face ID
+                      Face Id
                     </Button>
                   </Box>
 
                   {loginMethod === 'password' && (
                     <CustomFormControl fullWidth error={Boolean(touched.email && errors.email)} sx={{ mb: 2 }}>
-                    <InputLabel htmlFor="login-userid">User ID / Email</InputLabel>
-                    <OutlinedInput
-                      id="login-userid"
-                      type="text"
-                      value={values.email}
-                      name="email"
-                      onBlur={handleBlur}
-                      onChange={(e) => {
-                        handleChange(e);
-                        if (checkError) setCheckError(null);
-                      }}
-                      label="User ID / Email"
-                      autoComplete="username"
-                      sx={{
-                        borderRadius: '12px',
-                        bgcolor: alpha(theme.palette.background.paper, 0.5),
-                        backdropFilter: 'blur(4px)'
-                      }}
-                    />
-                    {touched.email && errors.email && (
-                      <FormHelperText error id="standard-weight-helper-text-email-login">
-                        {errors.email}
-                      </FormHelperText>
-                    )}
-                  </CustomFormControl>
+                      <InputLabel htmlFor="login-userid">User ID / Email</InputLabel>
+                      <OutlinedInput
+                        id="login-userid"
+                        type="text"
+                        value={values.email}
+                        name="email"
+                        onBlur={handleBlur}
+                        onChange={(e) => {
+                          handleChange(e);
+                          if (checkError) setCheckError(null);
+                        }}
+                        label="User ID / Email"
+                        autoComplete="username"
+                        sx={{
+                          borderRadius: '12px',
+                          bgcolor: alpha(theme.palette.background.paper, 0.5),
+                          backdropFilter: 'blur(4px)'
+                        }}
+                      />
+                      {touched.email && errors.email && (
+                        <FormHelperText error id="standard-weight-helper-text-email-login">
+                          {errors.email}
+                        </FormHelperText>
+                      )}
+                    </CustomFormControl>
                   )}
 
                   {loginMethod === 'password' ? (

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -9,17 +8,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
-import Drawer from '@mui/material/Drawer';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControl from '@mui/material/FormControl';
-import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
@@ -32,7 +21,6 @@ import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
 import { BOSExportButton } from 'ui-component/bos';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX, IconCheck } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
@@ -206,17 +194,7 @@ const filterConfig = [
   }
 ];
 
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <Box sx={{ mb: 0.5 }}>
-      <Box onClick={onToggle} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', py: 1, px: 2, '&:hover': { bgcolor: 'action.hover' }, borderRadius: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{title}</Typography>
-        {open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-      </Box>
-      <Collapse in={open}><Box sx={{ px: 2, pb: 1 }}>{children}</Box></Collapse>
-    </Box>
-  );
-}
+// Local Filter drawer helper functions removed (filtering managed globally)
 
 function StatusChip({ status }) {
   const colorMap = { 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', Verified: 'success', Rejected: 'error', 'Not Accepted': 'error', Accepted: 'success', Missed: 'error' };
@@ -251,10 +229,7 @@ export default function CheckListRenewalVerify() {
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_RENEWAL_VERIFY);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-  const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, assignTo: false, category: false, searchBy: false, dualCheck: false });
-  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
   // Configure global search bar filters on mount
   useEffect(() => {
@@ -462,20 +437,6 @@ export default function CheckListRenewalVerify() {
         </Box>
       }
     >
-      {activeCount > 0 && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>Filters:</Typography>
-          {filters.taskType !== 'All' && <Chip label={`Task: ${filters.taskType}`} size="small" color="primary" onDelete={() => setFilter('taskType', 'All')} />}
-          {filters.fromDate && <Chip label={`From: ${filters.fromDate}`} size="small" color="info" onDelete={() => setFilter('fromDate', '')} />}
-          {filters.toDate && <Chip label={`To: ${filters.toDate}`} size="small" color="info" onDelete={() => setFilter('toDate', '')} />}
-          {filters.considerDate !== 'All' && <Chip label={`Consider Date: ${filters.considerDate}`} size="small" color="secondary" onDelete={() => setFilter('considerDate', 'All')} />}
-          {filters.statuses.map((s) => <Chip key={s} label={s} size="small" color="warning" onDelete={() => toggleStatus(s)} />)}
-          {filters.assignTo && <Chip label={`Assign To: ${filters.assignTo}`} size="small" color="info" onDelete={() => setFilter('assignTo', '')} />}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category', 'All')} />}
-          {filters.dualCheck !== 'All' && <Chip label={`Dual Check: ${filters.dualCheck}`} size="small" color="secondary" onDelete={() => setFilter('dualCheck', 'All')} />}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml: 1 }}>Clear All</Button>
-        </Box>
-      )}
 
       {/* ── Cursor-following 'Double tap' label ── */}
       {showDoubleTap && (
@@ -611,71 +572,6 @@ export default function CheckListRenewalVerify() {
         />
       </Box>
 
-
-      {/* FILTER DRAWER */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 320 } }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Filters</Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20} /></IconButton>
-        </Box>
-        <Box sx={{ overflowY: 'auto', flex: 1 }}>
-          <FilterSection title="Task Type" open={openSections.taskType} onToggle={() => toggleSection('taskType')}>
-            <FormControl><RadioGroup value={filters.taskType} onChange={(e) => setFilter('taskType', e.target.value)}>
-              {['All', 'Mine', 'Team', 'Company'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Date Range" open={openSections.dateRange} onToggle={() => toggleSection('dateRange')}>
-            <Box sx={{ mb: 1.5 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>From</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.fromDate} onChange={(e) => setFilter('fromDate', e.target.value)} InputLabelProps={{ shrink: true }} />
-            </Box>
-            <Box>
-              <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>To</Typography>
-              <TextField size="small" type="date" fullWidth value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} InputLabelProps={{ shrink: true }} />
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Consider Date?" open={openSections.considerDate} onToggle={() => toggleSection('considerDate')}>
-            <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => setFilter('considerDate', e.target.value)}>
-              {['All', 'Yes', 'No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <Box>
-              {STATUS_OPTIONS.map((s) => <FormControlLabel key={s} sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }} control={<Checkbox size="small" checked={filters.statuses.includes(s)} onChange={() => toggleStatus(s)} sx={{ p: 0.5 }} />} label={<Typography variant="body2">{s}</Typography>} />)}
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Assign To" open={openSections.assignTo} onToggle={() => toggleSection('assignTo')}>
-            <TextField size="small" fullWidth placeholder="Search employee..." value={filters.assignTo} onChange={(e) => setFilter('assignTo', e.target.value)} />
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
-            <FormControl><RadioGroup value={filters.category} onChange={(e) => setFilter('category', e.target.value)}>
-              {['All', 'RENEWAL', 'CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Dual Check" open={openSections.dualCheck} onToggle={() => toggleSection('dualCheck')}>
-            <FormControl><RadioGroup value={filters.dualCheck} onChange={(e) => setFilter('dualCheck', e.target.value)}>
-              {['All', 'YES', 'NO'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
-            <FormControl fullWidth><RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
-              {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small" />} label={<Typography variant="body2">{opt.label}</Typography>} />)}
-            </RadioGroup></FormControl>
-            {filters.searchBy && <TextField size="small" fullWidth placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}...`} value={filters.searchByValue} onChange={(e) => setFilter('searchByValue', e.target.value)} sx={{ mt: 1 }} />}
-          </FilterSection>
-        </Box>
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
-        </Box>
-      </Drawer>
       <ExecutionVerifyDialog
         open={dialogOpen}
         handleClose={() => { setDialogOpen(false); setVerifyRemarks(''); }}

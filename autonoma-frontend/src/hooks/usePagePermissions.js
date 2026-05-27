@@ -65,7 +65,7 @@ export default function usePagePermissions(pageCode) {
 
     // Find the permission record for this specific pageCode
     const pageAuth = Array.isArray(auths)
-      ? auths.find((a) => a.page?.pageCode === pageCode)
+      ? auths.find((a) => a?.page?.pageCode === pageCode)
       : null;
 
     // If no record found (page not registered or not assigned), default to read-only
@@ -116,6 +116,9 @@ export default function usePagePermissions(pageCode) {
  * Usage: const perms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
  */
 export const PAGE_CODES = {
+  // ── HRA ──
+  HRA_ATS: 'HA1110',
+
   // ── Masters > HR > ATS ──
   ATS_INTERVIEW_CRITERIA: 'M2110',
   ATS_EMAIL_CONTENT: 'M2120',

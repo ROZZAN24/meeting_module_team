@@ -111,7 +111,8 @@ export default function BOSFormDialog({
   secondaryActions,
   sidebar,
   children,
-  contentSx = {}
+  contentSx = {},
+  hideCollapse = false
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -309,18 +310,20 @@ export default function BOSFormDialog({
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} className="no-drag">
           {/* Minimize / Collapse Button */}
-          <Tooltip title={isCollapsed ? "Expand Height" : "Collapse Dialog"}>
-            <IconButton
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              size="small"
-              sx={{
-                color: isDark ? '#8b949e' : 'text.secondary',
-                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
-              }}
-            >
-              {isCollapsed ? <IconChevronDown size={20} /> : <IconChevronUp size={20} />}
-            </IconButton>
-          </Tooltip>
+          {!hideCollapse && (
+            <Tooltip title={isCollapsed ? "Expand Height" : "Collapse Dialog"}>
+              <IconButton
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                size="small"
+                sx={{
+                  color: isDark ? '#8b949e' : 'text.secondary',
+                  '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
+                }}
+              >
+                {isCollapsed ? <IconChevronDown size={20} /> : <IconChevronUp size={20} />}
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Maximize / Restore Button */}
           <Tooltip title={isMaximized ? "Restore Size" : "Maximize Screen"}>
@@ -521,5 +524,6 @@ BOSFormDialog.propTypes = {
   hideFooter: PropTypes.bool,
   secondaryActions: PropTypes.node,
   children: PropTypes.node,
-  contentSx: PropTypes.object
+  contentSx: PropTypes.object,
+  hideCollapse: PropTypes.bool
 };
