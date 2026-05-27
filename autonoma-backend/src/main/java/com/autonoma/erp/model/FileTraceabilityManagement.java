@@ -10,7 +10,7 @@ import com.autonoma.erp.model.admin.BosPage;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "file_traceability_management")
+@Table(name = "FILE_TRACEABILITY_MANAGEMENT")
 @Data
 @Builder
 @NoArgsConstructor

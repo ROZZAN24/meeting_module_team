@@ -51,6 +51,9 @@ public class TicketTraceabilityCenter {
     @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
+    @Column(name = "additional_requirement", columnDefinition = "NVARCHAR(MAX)")
+    private String additionalRequirement;
+
     @Column(name = "priority_level", length = 50)
     private String priorityLevel;
 
@@ -137,6 +140,12 @@ public class TicketTraceabilityCenter {
 
     @Transient
     private List<String> tempVoiceRecordings;
+
+    @Transient
+    private List<String> tempAdditionalAttachments;
+
+    @Transient
+    private List<String> tempAdditionalVoiceRecordings;
 
     @PrePersist
     protected void onCreate() {

@@ -241,7 +241,7 @@ const UserOverview = () => {
   const fetchEmployees = async () => {
     if (employees.length > 0) return;
     try {
-      const response = await axios.get('/api/master/employee');
+      const response = await axios.get('/api/master/hr/employees');
       const data = response.data;
       setEmployees(data);
       const map = {};

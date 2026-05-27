@@ -381,14 +381,14 @@ export default function BOSConnect() {
     }
 
     try {
-      const resEmployees = await axiosServices.get('/api/master/employee/filter/active');
+      const resEmployees = await axiosServices.get('/api/master/hr/employees/filter/active');
       setActiveEmployees(resEmployees.data || []);
     } catch (e) {
       console.warn("Failed to fetch active employees", e);
     }
 
     try {
-      const resDepts = await axiosServices.get('/api/hrm/departments/active');
+      const resDepts = await axiosServices.get('/api/master/hr/departments/active');
       setActiveDepartments(resDepts.data || []);
     } catch (e) {
       console.warn("Failed to fetch active departments", e);

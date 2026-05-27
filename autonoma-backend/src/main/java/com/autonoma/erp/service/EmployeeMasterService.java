@@ -157,6 +157,10 @@ public class EmployeeMasterService {
         if (e.getIsInterviewer() == null)          e.setIsInterviewer("NO");
         if (e.getIsEnquiryAssignee() == null)      e.setIsEnquiryAssignee("NO");
         if (e.getIsPrAssignee() == null)           e.setIsPrAssignee("NO");
+        if (e.getCallStatus() == null)             e.setCallStatus("PENDING");
+        if (e.getInterviewStatus() == null)        e.setInterviewStatus("PENDING");
+        if (e.getOfferStatus() == null)            e.setOfferStatus("PENDING");
+        if (e.getVerificationStatus() == null)     e.setVerificationStatus("PENDING");
     }
 
     private String incrementSequence(String latest, String prefix) {

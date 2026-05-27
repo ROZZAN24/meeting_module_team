@@ -265,7 +265,10 @@ public class ChecklistService {
                 existing.setStatus("Active");
             }
 
-            if (checklist.getVerifyStatus() != null) {
+            // If the checklist was already Verified, and an edit occurs, drop it back to "Pending for Verify"
+            if ("Verified".equals(existing.getVerifyStatus())) {
+                existing.setVerifyStatus("Pending for Verify");
+            } else if (checklist.getVerifyStatus() != null) {
                 existing.setVerifyStatus(checklist.getVerifyStatus());
             } else if (existing.getVerifyStatus() == null || "Rejected".equals(existing.getVerifyStatus())) {
                 existing.setVerifyStatus("Pending for Verify");

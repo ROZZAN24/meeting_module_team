@@ -1,5 +1,5 @@
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-18
 -- Description: Fix FK constraints on AD_USER_DIVISION_MAPPING and AD_USER_COMPANY_MAPPING
 --              to reference the active 'ad_user_credential' table instead of the legacy

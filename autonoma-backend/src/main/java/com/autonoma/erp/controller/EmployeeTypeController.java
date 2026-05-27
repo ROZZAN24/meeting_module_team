@@ -10,7 +10,7 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/hrm/employee-types")
+@RequestMapping("/api/master/hr/employee-types")
 @CrossOrigin(origins = "*")
 public class EmployeeTypeController {
 

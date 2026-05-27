@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "hrm_employee_master")
+@Table(name = "HR_EMPLOYEE_MASTER")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -294,6 +294,152 @@ public class EmployeeMaster {
 
     @Column(name = "is_pr_assignee", length = 10)
     private String isPrAssignee = "NO";
+
+    // === ATS Integration Fields ===
+    @Column(name = "applicant_date")
+    @Temporal(TemporalType.DATE)
+    private Date applicantDate;
+
+    @Column(name = "age")
+    private Integer age;
+
+    @Column(name = "position_look_for", length = 100)
+    private String positionLookFor;
+
+    @Column(name = "call_status", length = 20)
+    private String callStatus = "PENDING";
+
+    @Column(name = "interview_status", length = 20)
+    private String interviewStatus = "PENDING";
+
+    @Column(name = "offer_status", length = 20)
+    private String offerStatus = "PENDING";
+
+    @Column(name = "verification_status", length = 20)
+    private String verificationStatus = "PENDING";
+
+    @Column(name = "q1_native", length = 255)
+    private String q1_native;
+
+    @Column(name = "q2_present_address", columnDefinition = "NVARCHAR(MAX)")
+    private String q2_presentAddress;
+
+    @Column(name = "q3_permanent_address", columnDefinition = "NVARCHAR(MAX)")
+    private String q3_permanentAddress;
+
+    @Column(name = "q4_father_occupation", length = 255)
+    private String q4_fatherOccupation;
+
+    @Column(name = "q5_mother_occupation", length = 255)
+    private String q5_motherOccupation;
+
+    @Column(name = "q6_marital_status", length = 50)
+    private String q6_maritalStatus;
+
+    @Column(name = "q7_spouse_occupation", length = 255)
+    private String q7_spouseOccupation;
+
+    @Column(name = "q8_children", length = 255)
+    private String q8_children;
+
+    @Column(name = "q9_has_relatives", length = 10)
+    private String q9_hasRelativesInCompany;
+
+    @Column(name = "q10_relatives_details", columnDefinition = "NVARCHAR(MAX)")
+    private String q10_relativesDetails;
+
+    @Column(name = "q11_siblings_occupations", columnDefinition = "NVARCHAR(MAX)")
+    private String q11_siblingsOccupations;
+
+    @Column(name = "q12_has_two_wheeler", length = 10)
+    private String q12_hasTwoWheeler;
+
+    @Column(name = "q13_has_android_phone", length = 10)
+    private String q13_hasAndroidPhone;
+
+    @Column(name = "q14_knows_car_driving", length = 10)
+    private String q14_knowsCarDriving;
+
+    @Column(name = "q15_willing_to_travel", length = 10)
+    private String q15_willingToTravel;
+
+    @Column(name = "q16_covid_vaccination", length = 10)
+    private String q16_covidVaccination;
+
+    @Column(name = "q17_positive_points", columnDefinition = "NVARCHAR(MAX)")
+    private String q17_positivePoints;
+
+    @Column(name = "q18_negative_points", columnDefinition = "NVARCHAR(MAX)")
+    private String q18_negativePoints;
+
+    @Column(name = "q19_life_goals", columnDefinition = "NVARCHAR(MAX)")
+    private String q19_lifeGoals;
+
+    @Column(name = "q20_improvement_suggestions", columnDefinition = "NVARCHAR(MAX)")
+    private String q20_improvementSuggestions;
+
+    @Column(name = "q21_is_experienced", length = 10)
+    private String q21_isExperienced;
+
+    @Column(name = "q22_total_experience", length = 50)
+    private String q22_totalExperience;
+
+    @Column(name = "q23_core_experience", length = 50)
+    private String q23_coreExperience;
+
+    @Column(name = "q24_prev_net_salary", length = 50)
+    private String q24_prevNetSalary;
+
+    @Column(name = "q25_prev_gross_salary", length = 50)
+    private String q25_prevGrossSalary;
+
+    @Column(name = "q26_expected_net_salary", length = 50)
+    private String q26_expectedNetSalary;
+
+    @Column(name = "q27_expected_gross_salary", length = 50)
+    private String q27_expectedGrossSalary;
+
+    @Column(name = "q28_pf_higher_pension", length = 10)
+    private String q28_pfHigherPension;
+
+    @Column(name = "q29_pf_deduction_amount", length = 50)
+    private String q29_pfDeductionAmount;
+
+    @Column(name = "q30_alternative_department", length = 100)
+    private String q30_alternativeDepartment;
+
+    @Column(name = "q31_prev_location", length = 255)
+    private String q31_prevLocation;
+
+    @Column(name = "q32_prev_shift", length = 50)
+    private String q32_prevShift;
+
+    @Column(name = "q33_reason_for_leaving", columnDefinition = "NVARCHAR(MAX)")
+    private String q33_reasonForLeaving;
+
+    @Column(name = "q34_notice_period", length = 50)
+    private String q34_noticePeriod;
+
+    @Column(name = "q35_prev_dept_position", length = 255)
+    private String q35_prevDeptPosition;
+
+    @Column(name = "q36_prev_dept_count", length = 50)
+    private String q36_prevDeptCount;
+
+    @Column(name = "q37_prev_reporting_to", length = 255)
+    private String q37_prevReportingTo;
+
+    @Column(name = "q38_handle_mistake", columnDefinition = "NVARCHAR(MAX)")
+    private String q38_handleMistake;
+
+    @Column(name = "q39_handle_opinion_difference", columnDefinition = "NVARCHAR(MAX)")
+    private String q39_handleOpinionDifference;
+
+    @Column(name = "q40_computer_self_rating", length = 50)
+    private String q40_computerSelfRating;
+
+    @Column(name = "payslip_path", columnDefinition = "NVARCHAR(MAX)")
+    private String payslipPath;
 
     // === System ===
     @Column(name = "status", length = 50)

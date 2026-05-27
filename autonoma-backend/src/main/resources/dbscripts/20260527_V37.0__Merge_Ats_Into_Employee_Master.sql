@@ -1,0 +1,62 @@
+-- 20260527_V37.0__Merge_Ats_Into_Employee_Master.sql
+
+-- Drop separate old ATS tables if they exist
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'hra_applicant_experience') DROP TABLE hra_applicant_experience;
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'hra_applicant_education') DROP TABLE hra_applicant_education;
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'hra_applicant_kyc') DROP TABLE hra_applicant_kyc;
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'hra_applicant_skills') DROP TABLE hra_applicant_skills;
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'hra_applicants') DROP TABLE hra_applicants;
+
+-- Add new ATS-specific columns to hrm_employee_master
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('hrm_employee_master') AND name = 'applicant_date')
+BEGIN
+    ALTER TABLE hrm_employee_master ADD
+        applicant_date DATE,
+        age INT,
+        position_look_for VARCHAR(100),
+        call_status VARCHAR(20) DEFAULT 'PENDING',
+        interview_status VARCHAR(20) DEFAULT 'PENDING',
+        offer_status VARCHAR(20) DEFAULT 'PENDING',
+        verification_status VARCHAR(20) DEFAULT 'PENDING',
+        q1_native NVARCHAR(255),
+        q2_present_address NVARCHAR(MAX),
+        q3_permanent_address NVARCHAR(MAX),
+        q4_father_occupation NVARCHAR(255),
+        q5_mother_occupation NVARCHAR(255),
+        q6_marital_status VARCHAR(50),
+        q7_spouse_occupation NVARCHAR(255),
+        q8_children NVARCHAR(255),
+        q9_has_relatives VARCHAR(10),
+        q10_relatives_details NVARCHAR(MAX),
+        q11_siblings_occupations NVARCHAR(MAX),
+        q12_has_two_wheeler VARCHAR(10),
+        q13_has_android_phone VARCHAR(10),
+        q14_knows_car_driving VARCHAR(10),
+        q15_willing_to_travel VARCHAR(10),
+        q16_covid_vaccination VARCHAR(10),
+        q17_positive_points NVARCHAR(MAX),
+        q18_negative_points NVARCHAR(MAX),
+        q19_life_goals NVARCHAR(MAX),
+        q20_improvement_suggestions NVARCHAR(MAX),
+        q21_is_experienced VARCHAR(10),
+        q22_total_experience VARCHAR(50),
+        q23_core_experience VARCHAR(50),
+        q24_prev_net_salary VARCHAR(50),
+        q25_prev_gross_salary VARCHAR(50),
+        q26_expected_net_salary VARCHAR(50),
+        q27_expected_gross_salary VARCHAR(50),
+        q28_pf_higher_pension VARCHAR(10),
+        q29_pf_deduction_amount VARCHAR(50),
+        q30_alternative_department VARCHAR(100),
+        q31_prev_location NVARCHAR(255),
+        q32_prev_shift VARCHAR(50),
+        q33_reason_for_leaving NVARCHAR(MAX),
+        q34_notice_period VARCHAR(50),
+        q35_prev_dept_position NVARCHAR(255),
+        q36_prev_dept_count VARCHAR(50),
+        q37_prev_reporting_to NVARCHAR(255),
+        q38_handle_mistake NVARCHAR(MAX),
+        q39_handle_opinion_difference NVARCHAR(MAX),
+        q40_computer_self_rating VARCHAR(50),
+        payslip_path NVARCHAR(MAX);
+END
