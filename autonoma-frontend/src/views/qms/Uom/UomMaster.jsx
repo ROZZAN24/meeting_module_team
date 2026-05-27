@@ -19,9 +19,9 @@ const columns = [
   { id: 'uomCode', label: 'UOM Code', minWidth: 180, bold: true },
   { id: 'uomDescription', label: 'Description', minWidth: 220 },
   { id: 'status', label: 'Status', minWidth: 120, status: true },
-  { id: 'createdBy', label: 'CREATED USER', minWidth: 140 },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 140 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 160 },
-  { id: 'updatedBy', label: 'UPDATED USER', minWidth: 140 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 140 },
   { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 160 }
 ];
 
@@ -127,7 +127,13 @@ export default function UomMaster() {
         (row.uomDescription && row.uomDescription.toLowerCase().includes(globalQuery.toLowerCase()));
 
       return matchesStatus && matchesUomCodeContains && matchesSearch;
-    });
+    }).map((r) => ({
+      ...r,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
+      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString('en-GB') : '-',
+      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString('en-GB') : '-'
+    }));
   }, [rows, globalQuery, globalFilters]);
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
@@ -154,8 +160,10 @@ export default function UomMaster() {
               { header: 'UOM Code', key: 'uomCode' },
               { header: 'Description', key: 'uomDescription' },
               { header: 'Status', key: 'status' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Created Date', key: 'createdAt' }
+              { header: 'Created User', key: 'createdUser' },
+              { header: 'Created Date', key: 'createdAt' },
+              { header: 'Updated User', key: 'updatedUser' },
+              { header: 'Updated Date', key: 'updatedAt' }
             ]}
           />
           <Tooltip title={shortcutTooltip('Create New UOM', 'Ctrl + N')}>

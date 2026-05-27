@@ -182,7 +182,6 @@ export const PAGE_CODES = {
 
   // ── Masters > Vendor ──
   VEN_SUPPLIER: 'M4110',
-  VEN_SUBCONTRACTOR: 'M4210',
 
   // ── QMS Transactions ──
   QMS_CHECKLIST_VERIFY: 'QM1110',

@@ -57,7 +57,7 @@ export default function GradeDetails() {
   const fetchGrades = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/master/hr/grade');
+      const response = await axios.get('/api/master/hr/grades');
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch grades:', error);
@@ -81,7 +81,7 @@ export default function GradeDetails() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/master/hr/grade/${deleteTargetId}`);
+      await axios.delete(`/api/master/hr/grades/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Grade deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchGrades();
     } catch (error) {
@@ -97,6 +97,12 @@ export default function GradeDetails() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconAward size={24} />

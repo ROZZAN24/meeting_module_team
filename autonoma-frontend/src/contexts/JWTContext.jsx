@@ -122,7 +122,7 @@ export function JWTProvider({ children }) {
         try {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) localI18n = JSON.parse(stored)?.i18n || null;
-        } catch (_) {}
+        } catch {}
 
         const mappedSettings = {
           menuOrientation: dbSettings.menuOrientation,

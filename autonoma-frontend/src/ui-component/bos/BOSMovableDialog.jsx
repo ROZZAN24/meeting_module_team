@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, forwardRef } from 'react';
 import PropTypes from 'prop-types';
-import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Box, Typography, Paper, Tooltip, Fade } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Box, Typography, Paper, Tooltip } from '@mui/material';
 import {
   IconX,
   IconArrowsMove,
@@ -29,15 +29,13 @@ const CustomPaper = forwardRef(({ position, isMaximized, isCollapsed, style, ...
           position: 'fixed',
           borderRadius: 0,
         } : {
-          transform: `${style?.transform || ''} translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0px)`,
+          transform: `${style?.transform || ''} translate(${position?.x || 0}px, ${position?.y || 0}px)`,
         }),
         ...(isCollapsed ? {
           height: 'auto',
           minHeight: 0,
           maxHeight: 'none',
-        } : {}),
-        willChange: 'transform, opacity',
-        backfaceVisibility: 'hidden',
+        } : {})
       }}
       {...other}
     />
@@ -53,10 +51,6 @@ CustomPaper.propTypes = {
   isCollapsed: PropTypes.bool,
   style: PropTypes.object
 };
-
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Fade ref={ref} {...props} />;
-});
 
 /**
  * BOS Movable & Resizable Dialog.
@@ -79,13 +73,6 @@ export default function BOSMovableDialog({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [preMaximizedSize, setPreMaximizedSize] = useState({ width: defaultWidth, height: defaultHeight });
   const [preMaximizedPosition, setPreMaximizedPosition] = useState({ x: 0, y: 0 });
-
-  const handleExited = useCallback(() => {
-    setPosition({ x: 0, y: 0 });
-    setSize({ width: defaultWidth, height: defaultHeight });
-    setIsMaximized(false);
-    setIsCollapsed(false);
-  }, [defaultWidth, defaultHeight]);
 
   const dragState = useRef(null);   // { type: 'drag'|'resize-w'|'resize-h'|'resize-both', startX, startY, startPosX, startPosY, startW, startH }
 
@@ -213,8 +200,6 @@ export default function BOSMovableDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      TransitionComponent={Transition}
-      TransitionProps={{ onExited: handleExited }}
       maxWidth={false}
       PaperComponent={CustomPaper}
       PaperProps={{
@@ -317,7 +302,6 @@ export default function BOSMovableDialog({
         <DialogContent
           sx={{
             p: 2.5,
-            pt: '20px !important', // Explicit override to prevent touching the DialogTitle header
             flexGrow: 1,
             overflowY: 'auto',
             overflowX: 'hidden',

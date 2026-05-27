@@ -116,17 +116,17 @@ const columns = [
           color={cfg.color} 
           icon={cfg.icon} 
           variant="outlined" 
-          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
   },
   { id: 'verifiedBy',   label: 'Verified By',     minWidth: 120 },
   { id: 'verifiedDate', label: 'Verified Date',   minWidth: 120 },
-  { id: 'createdBy',    label: 'Created By',      minWidth: 120 },
-  { id: 'createdDate',  label: 'Created Date',    minWidth: 140 },
-  { id: 'updatedBy',    label: 'Updated By',      minWidth: 120 },
-  { id: 'updatedDate',  label: 'Updated Date',    minWidth: 140 },
+  { id: 'createdUser',  label: 'CREATED USER',    minWidth: 120 },
+  { id: 'createdDate',  label: 'CREATED DATE',    minWidth: 140 },
+  { id: 'updatedUser',  label: 'UPDATED USER',    minWidth: 120 },
+  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 140 },
 ];
 
 // ── Export columns ──────────────────────────────────────────────────────────────
@@ -153,10 +153,10 @@ const exportColumns = [
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
   { header: 'Verified Date',      key: (r) => formatDate(r.verifiedDate) },
-  { header: 'Created By',         key: 'createdBy' },
-  { header: 'Created Date',       key: (r) => formatDate(r.createdAt) },
-  { header: 'Updated By',         key: 'updatedBy' },
-  { header: 'Updated Date',       key: (r) => formatDate(r.updatedAt) },
+  { header: 'CREATED USER',       key: 'createdUser' },
+  { header: 'CREATED DATE',       key: (r) => formatDate(r.createdAt) },
+  { header: 'UPDATED USER',       key: 'updatedUser' },
+  { header: 'UPDATED DATE',       key: (r) => formatDate(r.updatedAt) },
 ];
 
 // ── Filter config for the global search bar ─────────────────────────────────────
@@ -274,7 +274,9 @@ export default function MasterCheckList() {
     expiryDate:    formatDate(row.expiryDate),
     reminderDate:  formatDate(row.reminderDate),
     verifiedDate:  formatDate(row.verifiedDate),
+    createdUser:   row.createdUser || row.createdBy || '-',
     createdDate:   formatDate(row.createdAt),
+    updatedUser:   row.updatedUser || row.updatedBy || '-',
     updatedDate:   formatDate(row.updatedAt),
     status:        row.status || 'Active',
   })), [rows]);
@@ -287,7 +289,7 @@ export default function MasterCheckList() {
       const body = Object.fromEntries(
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v)
       );
-      body.updatedBy = user?.name || user?.id || 'Admin';
+      body.updatedUser = user?.name || user?.id || 'Admin';
       const qs = new URLSearchParams();
       departments.forEach((d) => qs.append('departments', d));
       await axios.post(`/api/qms/checklist?${qs.toString()}`, body);

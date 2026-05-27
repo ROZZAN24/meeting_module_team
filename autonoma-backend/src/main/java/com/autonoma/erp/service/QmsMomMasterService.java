@@ -54,7 +54,7 @@ public class QmsMomMasterService {
             dto.setActionTaken(d.getActionTaken());
             dto.setActionObservation(d.getActionObservation());
             dto.setCancelRemarks(d.getCancelRemarks());
-            dto.setCreatedAt(d.getCreatedAt());
+            dto.setCreatedAt(d.getCreatedAt() != null ? d.getCreatedAt().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null);
             dto.setCreatedBy(d.getCreatedBy());
             return dto;
         }).toList();

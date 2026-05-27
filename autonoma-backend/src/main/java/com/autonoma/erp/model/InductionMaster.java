@@ -7,11 +7,11 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "hr_induction_master")
+@Table(name = "IND_INDUCTION_MASTER")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class InductionMaster {
+public class InductionMaster extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -40,17 +40,7 @@ public class InductionMaster {
     @Column(name = "status")
     private String status; // ACTIVE, IN ACTIVE
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
 
-    @Column(name = "updated_by")
-    private String updatedBy;
 
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
 }

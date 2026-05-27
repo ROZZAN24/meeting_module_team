@@ -189,7 +189,8 @@ const UserAccess = () => {
             approval: sourceItem.approval,
             manager: sourceItem.manager,
             additional1: sourceItem.additional1,
-            additional2: sourceItem.additional2
+            additional2: sourceItem.additional2,
+            addTaskEnable: sourceItem.addTaskEnable
           };
         }
         return targetItem;
@@ -236,7 +237,8 @@ const UserAccess = () => {
     { id: 'approval', label: 'Approval', color: '#00bcd4' },
     { id: 'manager', label: 'Manager', color: '#78909c' },
     { id: 'additional1', label: 'Add 1', color: '#b0bec5' },
-    { id: 'additional2', label: 'Add 2', color: '#b0bec5' }
+    { id: 'additional2', label: 'Add 2', color: '#b0bec5' },
+    { id: 'addTaskEnable', label: 'Add Task', color: '#6e16a9' }
   ];
 
   const PermissionHeaderCell = ({ header }) => (

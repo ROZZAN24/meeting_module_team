@@ -35,4 +35,10 @@ public class DataSourceConfig {
         routingDataSource.afterPropertiesSet();
         return routingDataSource;
     }
+
+    @Bean
+    @Primary
+    public org.springframework.jdbc.core.JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new org.springframework.jdbc.core.JdbcTemplate(dataSource);
+    }
 }

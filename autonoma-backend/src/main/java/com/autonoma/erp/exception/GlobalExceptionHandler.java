@@ -14,8 +14,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.autonoma.erp.util.LogHelper;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @Autowired
     private BackendErrorLoggerService backendErrorLoggerService;
@@ -46,12 +50,15 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "Internal Server Error");
+        body.put("message", ex.getMessage() != null ? ex.getMessage() : "Internal Server Error");
         body.put("details", ex.getMessage());
         body.put("path", request.getDescription(false));
 
-        // Log the stack trace for developers (this will show in console)
-        ex.printStackTrace();
+        // Log formatted error to console
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("path", request.getDescription(false));
+        meta.put("exceptionType", ex.getClass().getName());
+        LogHelper.error(log, "GlobalExceptionHandler", "handleAllExceptions", ex.getMessage(), ex, meta);
 
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -87,6 +94,33 @@ public class GlobalExceptionHandler {
         body.put("message", "Invalid Input Data");
         body.put("details", ex.getMessage());
         
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "Cannot delete or modify this record because it is currently in use by other related modules (Foreign Key Constraint Violation).");
+        body.put("details", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(org.springframework.web.server.ResponseStatusException.class)
+    public ResponseEntity<Object> handleResponseStatusException(org.springframework.web.server.ResponseStatusException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", ex.getReason() != null ? ex.getReason() : ex.getMessage());
+        return new ResponseEntity<>(body, ex.getStatusCode());
+    }
+
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public ResponseEntity<Object> handleHttpMessageNotReadable(org.springframework.http.converter.HttpMessageNotReadableException ex, WebRequest request) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "Malformed JSON request");
+        body.put("details", ex.getMessage());
+        ex.printStackTrace();
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }

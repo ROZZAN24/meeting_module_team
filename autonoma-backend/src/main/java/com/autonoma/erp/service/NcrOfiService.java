@@ -179,7 +179,7 @@ public class NcrOfiService {
             ncrOfiMasterRepository.findByObservationDetailId(observationDetailId.intValue()).ifPresent(master -> {
                 master.setApprovalStatus("APPROVED");
                 master.setStatus("CLOSED");
-                master.setUpdatedDate(LocalDateTime.now());
+                master.setUpdatedAt(new java.util.Date());
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
@@ -195,7 +195,7 @@ public class NcrOfiService {
             ncrOfiMasterRepository.findByObservationDetailId(observationDetailId.intValue()).ifPresent(master -> {
                 master.setApprovalStatus("REJECTED");
                 master.setStatus("OPEN");
-                master.setUpdatedDate(LocalDateTime.now());
+                master.setUpdatedAt(new java.util.Date());
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 // In a real app, we'd store remarks in a history or comments table
                 ncrOfiMasterRepository.save(master);
@@ -212,7 +212,7 @@ public class NcrOfiService {
             ncrOfiMasterRepository.findByObservationDetailId(observationDetailId.intValue()).ifPresent(master -> {
                 master.setApprovalStatus("REWORK");
                 master.setStatus("ACTION PENDING");
-                master.setUpdatedDate(LocalDateTime.now());
+                master.setUpdatedAt(new java.util.Date());
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
@@ -237,7 +237,7 @@ public class NcrOfiService {
         action.setActionType(type);
         action.setActionDescription(desc);
         action.setStatus("COMPLETED");
-        action.setCreatedDate(LocalDateTime.now());
+        action.setCreatedAt(new java.util.Date());
         actionRepository.save(action);
     }
 
@@ -258,7 +258,7 @@ public class NcrOfiService {
         if (ncrOfi.getNcrOfiNo() == null || ncrOfi.getNcrOfiNo().isEmpty()) {
             ncrOfi.setNcrOfiNo(generateNcrOfiNo(ncrOfi.getType()));
         }
-        ncrOfi.setUpdatedDate(LocalDateTime.now());
+        ncrOfi.setUpdatedAt(new java.util.Date());
         return ncrOfiMasterRepository.save(ncrOfi);
     }
 

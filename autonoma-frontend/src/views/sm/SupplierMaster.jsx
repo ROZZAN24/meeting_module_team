@@ -274,7 +274,7 @@ export default function SupplierMaster() {
 
   return (
     <MainCard
-      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{supplierId ? 'Edit Supplier' : 'New Supplier'}</Typography></Stack>}
+      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{supplierId ? 'Edit Vendor' : 'New Vendor'}</Typography></Stack>}
       secondary={
         <Stack direction="row" spacing={1.5}>
           <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/sm/suppliers')} sx={btnCancel}>Back</Button></Tooltip>

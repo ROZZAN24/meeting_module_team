@@ -96,7 +96,7 @@ export default function AuditNcrClose() {
     try {
       const [fRes, eRes] = await Promise.all([
         axios.get('/api/qms/audit/observation/ncr/findings', { params: { ...globalFilters, query: globalQuery } }),
-        axios.get('/api/master/employee')
+        axios.get('/api/master/hr/employees')
       ]);
       setRows(fRes.data || []);
       setEmployees(eRes.data || []);

@@ -61,49 +61,71 @@ public class DataInitializer implements CommandLineRunner {
 
         // Self-healing database migration for local H2: drop all stale constraints referencing the old QMS_MASTER_CHECKLIST table
         try {
-            // 1. Direct drop of known stale constraints to be absolutely sure
+            System.out.println("[QMS DB Fix] Starting self-healing schema migration for H2...");
+            
+            // 1. Direct drop of all possible stale foreign keys to be absolutely sure
+            String[] tables = {
+                "QMS_CHECKLIST_ASSIGNMENT", "qms_checklist_assignment",
+                "QMS_CHECKLIST_VERIFICATION", "qms_checklist_verification",
+                "QMS_CHECKLIST_DEPARTMENT", "qms_checklist_department"
+            };
+            
+            String[] constraints = {
+                "FK9GLT0I2UPGH0V6C3W3SHK90EF",
+                "FK_Assignment_Checklist",
+                "FK_Assignment_Checklist_Master",
+                "FK_Dept_Checklist",
+                "FK_Dept_Checklist_Master",
+                "FKMKOR0WTRYERIKOC8PFCEYDGAB",
+                "FK_Verification_Assignment",
+                "FK_VERIFICATION_ASSIGNMENT",
+                "FK_Verification_Assignment_Master"
+            };
+            
+            for (String tbl : tables) {
+                for (String constraint : constraints) {
+                    try {
+                        jdbcTemplate.execute("ALTER TABLE " + tbl + " DROP CONSTRAINT IF EXISTS " + constraint);
+                    } catch (Exception ex) {
+                        // ignore if table or constraint doesn't exist
+                    }
+                }
+            }
+            System.out.println("[QMS DB Fix] Dropped all known stale constraints.");
+
+            // 2. Drop the old obsolete table if it exists
             try {
-                jdbcTemplate.execute("ALTER TABLE QMS_CHECKLIST_DEPARTMENT DROP CONSTRAINT IF EXISTS FKMKOR0WTRYERIKOC8PFCEYDGAB");
-                System.out.println("[QMS DB Fix] Attempted direct drop of FKMKOR0WTRYERIKOC8PFCEYDGAB on QMS_CHECKLIST_DEPARTMENT");
+                jdbcTemplate.execute("DROP TABLE IF EXISTS QMS_MASTER_CHECKLIST CASCADE");
+                System.out.println("[QMS DB Fix] Dropped obsolete table QMS_MASTER_CHECKLIST");
             } catch (Exception ex) {
-                System.out.println("[QMS DB Fix] Direct drop of FKMKOR0WTRYERIKOC8PFCEYDGAB skipped: " + ex.getMessage());
+                System.out.println("[QMS DB Fix] Dropping obsolete table QMS_MASTER_CHECKLIST skipped: " + ex.getMessage());
             }
 
-            // 2. Dynamic check using H2 v2 column names (FK_NAME)
+            // 3. Re-create the correct constraints pointing to the active Hibernate table 'qms_checklist_master'
             try {
-                java.util.List<java.util.Map<String, Object>> staleFKs = jdbcTemplate.queryForList(
-                    "SELECT FK_NAME AS CONSTRAINT_NAME, FKTABLE_NAME AS TABLE_NAME FROM INFORMATION_SCHEMA.CROSS_REFERENCES WHERE UPPER(PKTABLE_NAME) = 'QMS_MASTER_CHECKLIST'"
-                );
-                for (java.util.Map<String, Object> fk : staleFKs) {
-                    String constName = (String) fk.get("CONSTRAINT_NAME");
-                    String tableName = (String) fk.get("TABLE_NAME");
-                    if (constName != null && tableName != null) {
-                        jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS " + constName);
-                        System.out.println("[QMS DB Fix] Dynamic H2-v2: Dropped stale foreign key " + constName + " on " + tableName + " referencing old QMS_MASTER_CHECKLIST table.");
-                    }
-                }
-            } catch (Exception ex2) {
-                System.out.println("[QMS DB Fix] Dynamic H2-v2 constraint clean-up skipped: " + ex2.getMessage());
+                jdbcTemplate.execute("ALTER TABLE qms_checklist_assignment ADD CONSTRAINT FK_Assignment_Checklist_Master FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist_master(id) ON DELETE CASCADE");
+                System.out.println("[QMS DB Fix] Added FK_Assignment_Checklist_Master pointing to qms_checklist_master");
+            } catch (Exception ex) {
+                System.out.println("[QMS DB Fix] Adding FK_Assignment_Checklist_Master skipped/already exists: " + ex.getMessage());
             }
 
-            // 3. Dynamic check using traditional column names (CONSTRAINT_NAME)
             try {
-                java.util.List<java.util.Map<String, Object>> staleFKs = jdbcTemplate.queryForList(
-                    "SELECT CONSTRAINT_NAME, FKTABLE_NAME AS TABLE_NAME FROM INFORMATION_SCHEMA.CROSS_REFERENCES WHERE UPPER(PKTABLE_NAME) = 'QMS_MASTER_CHECKLIST'"
-                );
-                for (java.util.Map<String, Object> fk : staleFKs) {
-                    String constName = (String) fk.get("CONSTRAINT_NAME");
-                    String tableName = (String) fk.get("TABLE_NAME");
-                    if (constName != null && tableName != null) {
-                        jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP CONSTRAINT IF EXISTS " + constName);
-                        System.out.println("[QMS DB Fix] Dynamic traditional: Dropped stale foreign key " + constName + " on " + tableName + " referencing old QMS_MASTER_CHECKLIST table.");
-                    }
-                }
-            } catch (Exception ex3) {
-                // Ignore traditional query failures as they are expected under H2 v2
+                jdbcTemplate.execute("ALTER TABLE qms_checklist_department ADD CONSTRAINT FK_Dept_Checklist_Master FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist_master(id) ON DELETE CASCADE");
+                System.out.println("[QMS DB Fix] Added FK_Dept_Checklist_Master pointing to qms_checklist_master");
+            } catch (Exception ex) {
+                System.out.println("[QMS DB Fix] Adding FK_Dept_Checklist_Master skipped/already exists: " + ex.getMessage());
             }
+
+            try {
+                jdbcTemplate.execute("ALTER TABLE qms_checklist_verification ADD CONSTRAINT FK_Verification_Assignment_Master FOREIGN KEY (ASSIGNMENT_ID) REFERENCES qms_checklist_assignment(id) ON DELETE CASCADE");
+                System.out.println("[QMS DB Fix] Added FK_Verification_Assignment_Master pointing to qms_checklist_assignment");
+            } catch (Exception ex) {
+                System.out.println("[QMS DB Fix] Adding FK_Verification_Assignment_Master skipped/already exists: " + ex.getMessage());
+            }
+
+            System.out.println("[QMS DB Fix] Self-healing schema migration completed successfully!");
         } catch (Exception e) {
-            System.out.println("[QMS DB Fix] Stale H2 constraint clean-up skipped: " + e.getMessage());
+            System.out.println("[QMS DB Fix] Self-healing migration failed: " + e.getMessage());
         }
 
         Optional<UserCredential> existingAdmin = userRepository.findByUserId("Admin");

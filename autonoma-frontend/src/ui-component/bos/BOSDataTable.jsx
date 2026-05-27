@@ -105,12 +105,14 @@ export default function BOSDataTable({
       const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
       val = row[snakeCaseId];
       
-      // 2. Audit-Specific Fallbacks (The "Big 4")
+      // 2. Audit-Specific Fallbacks (The "Big 4" + User variants)
       if (val === undefined || val === null || val === '') {
         if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
-        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'] || row['createdDate'] || row['createdAt'] || row['created_at'];
-        if (col.id === 'createdBy') val = row['created_by'];
-        if (col.id === 'updatedBy') val = row['updated_by'] || row['createdBy'] || row['created_by'];
+        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
+        if (col.id === 'createdUser') val = row['createdBy'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedUser') val = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+        if (col.id === 'createdBy') val = row['createdUser'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedBy') val = row['updatedUser'] || row['updated_by'] || row['updated_user'];
       }
     }
 
@@ -186,6 +188,16 @@ export default function BOSDataTable({
     });
   }, [rows, searchQuery, globalFilters, columns, disableSearchFilter, page, size]);
 
+  const paginatedRows = useMemo(() => {
+    // If the rows are already sliced/paginated by the caller (i.e. rows.length <= size and totalCount is larger),
+    // we should render them directly without slicing.
+    if (totalCount !== undefined && totalCount > filteredRows.length && filteredRows.length <= size) {
+      return filteredRows;
+    }
+    // Otherwise, do local pagination
+    return filteredRows.slice(page * size, page * size + size);
+  }, [filteredRows, page, size, totalCount]);
+
   const defaultRenderCell = (col, row, idx) => {
     if (col.render) return col.render(row, idx);
     
@@ -197,18 +209,20 @@ export default function BOSDataTable({
       const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
       val = row[snakeCaseId];
       
-      // 2. Audit-Specific Fallbacks (The "Big 4")
+      // 2. Audit-Specific Fallbacks (The "Big 4" + User variants)
       if (val === undefined || val === null || val === '') {
         if (col.id === 'createdDate') val = row['createdAt'] || row['created_at'];
-        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'] || row['createdDate'] || row['createdAt'] || row['created_at'];
-        if (col.id === 'createdBy') val = row['created_by'];
-        if (col.id === 'updatedBy') val = row['updated_by'] || row['createdBy'] || row['created_by'];
+        if (col.id === 'updatedDate') val = row['updatedAt'] || row['updated_at'];
+        if (col.id === 'createdUser') val = row['createdBy'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedUser') val = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+        if (col.id === 'createdBy') val = row['createdUser'] || row['created_by'] || row['created_user'];
+        if (col.id === 'updatedBy') val = row['updatedUser'] || row['updated_by'] || row['updated_user'];
       }
     }
 
     if (col.renderCell) return col.renderCell(val, row);
 
-    if (col.id === 'index') return (page * size) + (filteredRows.indexOf(row) + 1);
+    if (col.id === 'index') return (page * size) + idx + 1;
 
     // Standard Photo Rendering (SOP Compliance)
     if (col.id === 'photo' || col.id === 'employeePhotoUpload' || col.id === 'avatar') {
@@ -304,7 +318,7 @@ export default function BOSDataTable({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRows?.slice(page * size, page * size + size).map((row, idx) => {
+              paginatedRows.map((row, idx) => {
                 const rowId = row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`;
                 const isSelected = activeSelectedId === rowId || activeSelectedId === row.id;
                 

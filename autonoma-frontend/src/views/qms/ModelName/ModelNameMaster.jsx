@@ -19,9 +19,9 @@ const columns = [
   { id: 'modelName', label: 'Model Name', minWidth: 180, bold: true },
   { id: 'description', label: 'Description', minWidth: 220 },
   { id: 'status', label: 'Status', minWidth: 120, status: true },
-  { id: 'createdBy', label: 'CREATED USER', minWidth: 140 },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 140 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 160 },
-  { id: 'updatedBy', label: 'UPDATED USER', minWidth: 140 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 140 },
   { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 160 }
 ];
 
@@ -127,7 +127,13 @@ export default function ModelNameMaster() {
         (row.description && row.description.toLowerCase().includes(globalQuery.toLowerCase()));
 
       return matchesStatus && matchesModelNameContains && matchesSearch;
-    });
+    }).map((r) => ({
+      ...r,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
+      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString('en-GB') : '-',
+      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString('en-GB') : '-'
+    }));
   }, [rows, globalQuery, globalFilters]);
 
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
@@ -154,8 +160,10 @@ export default function ModelNameMaster() {
               { header: 'Model Name', key: 'modelName' },
               { header: 'Description', key: 'description' },
               { header: 'Status', key: 'status' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Created Date', key: 'createdAt' }
+              { header: 'CREATED USER', key: 'createdUser' },
+              { header: 'CREATED DATE', key: 'createdAt' },
+              { header: 'UPDATED USER', key: 'updatedUser' },
+              { header: 'UPDATED DATE', key: 'updatedAt' }
             ]}
           />
           <Tooltip title={shortcutTooltip('Create New Model Name', 'Ctrl + N')}>

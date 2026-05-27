@@ -35,6 +35,9 @@ public class ChecklistService {
     private ChecklistDepartmentRepository deptRepo;
 
     @Autowired
+    private DepartmentRepository departmentRepository;
+
+    @Autowired
     private UserRepository userRepository;
 
     // --- Master Checklist ---
@@ -102,7 +105,8 @@ public class ChecklistService {
 
             if (department != null && !department.isEmpty()) {
                 Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
-                predicates.add(cb.equal(deptJoin.get("departmentName"), department));
+                Join<ChecklistDepartment, Department> dObjJoin = deptJoin.join("department");
+                predicates.add(cb.equal(dObjJoin.get("departmentName"), department));
             }
 
             if (seqNo != null && !seqNo.isEmpty()) {
@@ -158,7 +162,8 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(root.get("createdBy").as(String.class)), searchTerm));
 
                     Join<MasterChecklist, ChecklistDepartment> dJoin = root.join("departments", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dJoin.get("departmentName").as(String.class)), searchTerm));
+                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
+                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName").as(String.class)), searchTerm));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
@@ -224,8 +229,11 @@ public class ChecklistService {
                     for (String deptName : departments) {
                         ChecklistDepartment dept = new ChecklistDepartment();
                         dept.setChecklist(saved);
-                        dept.setDepartmentName(deptName);
-                        deptRepo.save(dept);
+                        Department resolvedDept = departmentRepository.findByDepartmentName(deptName).orElse(null);
+                        if (resolvedDept != null) {
+                            dept.setDepartment(resolvedDept);
+                            deptRepo.save(dept);
+                        }
                     }
                 }
                 return saved;
@@ -293,8 +301,11 @@ public class ChecklistService {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
                     dept.setChecklist(existing);
-                    dept.setDepartmentName(deptName);
-                    existing.getDepartments().add(dept);
+                    Department resolvedDept = departmentRepository.findByDepartmentName(deptName).orElse(null);
+                    if (resolvedDept != null) {
+                        dept.setDepartment(resolvedDept);
+                        existing.getDepartments().add(dept);
+                    }
                 }
             }
             return masterRepo.save(existing);
@@ -319,8 +330,11 @@ public class ChecklistService {
                 for (String deptName : departments) {
                     ChecklistDepartment dept = new ChecklistDepartment();
                     dept.setChecklist(saved);
-                    dept.setDepartmentName(deptName);
-                    deptRepo.save(dept);
+                    Department resolvedDept = departmentRepository.findByDepartmentName(deptName).orElse(null);
+                    if (resolvedDept != null) {
+                        dept.setDepartment(resolvedDept);
+                        deptRepo.save(dept);
+                    }
                 }
             }
 
@@ -465,7 +479,8 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(cJoin.get("frequency")), searchTerm));
 
                     Join<MasterChecklist, ChecklistDepartment> dJoin = cJoin.join("departments", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dJoin.get("departmentName")), searchTerm));
+                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
+                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName")), searchTerm));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }

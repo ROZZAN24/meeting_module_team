@@ -8,7 +8,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
 import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import axios from 'axios';
+import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -24,6 +24,8 @@ const columns = [
 ];
 
 export default function TypeOfService() {
+  const dispatch = useDispatch();
+  const globalQuery = useSelector((state) => state.search.query);
   const perms = usePagePermissions(PAGE_CODES.SM_TYPE_OF_SERVICE);
   const [rows, setRows] = useState([]);
   const [page, setPage] = useState(0);

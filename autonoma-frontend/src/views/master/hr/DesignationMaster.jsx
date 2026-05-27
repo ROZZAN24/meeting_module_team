@@ -50,7 +50,7 @@ export default function DesignationMaster() {
   const fetchDesignations = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/hrm/designations');
+      const response = await axios.get('/api/master/hr/designations');
       setRows(response.data || []);
     } catch (error) {
       console.error('Failed to fetch designations:', error);
@@ -105,7 +105,7 @@ export default function DesignationMaster() {
   const handleDeleteConfirm = async () => {
     if (!selectedRow) return;
     try {
-      await axios.delete(`/api/hrm/designations/${selectedRow.id}`);
+      await axios.delete(`/api/master/hr/designations/${selectedRow.id}`);
       dispatch(openSnackbar({ open: true, message: 'Designation deleted successfully', severity: 'success', variant: 'alert' }));
       fetchDesignations();
       setDeleteDialogOpen(false);
@@ -121,6 +121,12 @@ export default function DesignationMaster() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconBriefcase size={24} />

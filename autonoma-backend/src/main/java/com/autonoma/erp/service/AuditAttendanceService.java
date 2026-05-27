@@ -12,6 +12,10 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 
+import com.autonoma.erp.util.LogHelper;
+import java.util.Map;
+import java.util.HashMap;
+
 @Service
 public class AuditAttendanceService {
 
@@ -26,19 +30,6 @@ public class AuditAttendanceService {
         
         if (scheduleOpt.isPresent()) {
             AuditSchedule schedule = scheduleOpt.get();
-            
-            /* 
-            // SOP: 10 minutes before audit start time restriction
-            LocalDateTime now = LocalDateTime.now();
-            LocalDateTime auditStartDateTime = convertToDateTime(schedule.getAuditDate(), schedule.getStartTime());
-            
-            long minutesUntilStart = ChronoUnit.MINUTES.between(now, auditStartDateTime);
-            
-            if (minutesUntilStart > 10) {
-                throw new RuntimeException("Too early! Attendance for " + schedule.getScheduleNo() + 
-                    " can only be marked 10 minutes before start time (" + schedule.getStartTime() + ").");
-            }
-            */
         }
 
         // Duplicate Check: Prevent multiple records for same employee in same audit
@@ -54,14 +45,23 @@ public class AuditAttendanceService {
         }
 
         if (attendance.getCreatedBy() == null) attendance.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-        org.slf4j.LoggerFactory.getLogger(AuditAttendanceService.class).info("[AttendanceSave] Attempting save for {}: {}", attendance.getName(), attendance.getAuditScheduleNo());
+        
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("name", attendance.getName());
+        metadata.put("scheduleNo", attendance.getAuditScheduleNo());
+        LogHelper.info(org.slf4j.LoggerFactory.getLogger(AuditAttendanceService.class), "AuditAttendanceService", "saveAttendance", "Attempting save for employee", metadata);
+        
         try {
             return attendanceRepository.save(attendance);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            org.slf4j.LoggerFactory.getLogger(AuditAttendanceService.class).error("[AttendanceSave] Duplicate entry detected via DB constraint: {}", e.getMessage());
+            Map<String, Object> errMeta = new HashMap<>();
+            errMeta.put("error", e.getMessage());
+            LogHelper.error(org.slf4j.LoggerFactory.getLogger(AuditAttendanceService.class), "AuditAttendanceService", "saveAttendance", "Duplicate entry detected via DB constraint", errMeta);
             throw new RuntimeException("Duplicate Entry! This person is already marked for this audit schedule.");
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(AuditAttendanceService.class).error("[AttendanceSave] Database error: {}", e.getMessage());
+            Map<String, Object> errMeta = new HashMap<>();
+            errMeta.put("error", e.getMessage());
+            LogHelper.error(org.slf4j.LoggerFactory.getLogger(AuditAttendanceService.class), "AuditAttendanceService", "saveAttendance", "Database error during save", errMeta);
             throw e;
         }
     }

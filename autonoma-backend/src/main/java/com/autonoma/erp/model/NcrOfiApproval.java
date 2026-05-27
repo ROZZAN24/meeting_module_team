@@ -5,9 +5,9 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ncr_ofi_approval")
+@Table(name = "QMS_NCR_OFI_APPROVAL")
 @Data
-public class NcrOfiApproval {
+public class NcrOfiApproval extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;

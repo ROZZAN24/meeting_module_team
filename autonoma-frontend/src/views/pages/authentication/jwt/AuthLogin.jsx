@@ -34,6 +34,7 @@ import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
 import axios from 'utils/axios';
 import { getFaceDescriptor } from 'utils/faceApi';
+import FaceDetectionDashboard from './FaceDetectionDashboard';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
@@ -42,7 +43,7 @@ import { IconBuilding, IconBuildingFactory2, IconArrowLeft, IconLogin, IconShiel
 
 // ===============================|| JWT - TWO-STEP LOGIN ||=============================== //
 
-export default function JWTLogin({ ...others }) {
+export default function JWTLogin({ onFaceModeChange, ...others }) {
   const theme = useTheme();
   const { login, faceLogin } = useAuth();
   const scriptedRef = useScriptRef();
@@ -55,6 +56,13 @@ export default function JWTLogin({ ...others }) {
   const [loginError, setLoginError] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [faceScanSuccess, setFaceScanSuccess] = useState(false);
+
+  useEffect(() => {
+    if (onFaceModeChange) {
+      onFaceModeChange(loginMethod === 'face' && step === 'credentials');
+    }
+  }, [loginMethod, step, onFaceModeChange]);
 
   // Webcam states
   const [webcamStream, setWebcamStream] = useState(null);
@@ -103,6 +111,7 @@ export default function JWTLogin({ ...others }) {
     }
     setWebcamStream(null);
     setWebcamActive(false);
+    setFaceScanSuccess(false);
   };
 
   // Auto start camera on mount
@@ -252,6 +261,10 @@ export default function JWTLogin({ ...others }) {
         return;
       }
 
+      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
+      setFaceScanSuccess(true);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       stopWebcam();
 
       // If super user (BOS admin) and only 0 or 1 company is available, auto-login directly.
@@ -293,7 +306,6 @@ export default function JWTLogin({ ...others }) {
         }
       }
 
-      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
       setCompanies(matches);
       setSelectedCompanyIndex(0);
       const firstDivs = matches[0]?.divisions || [];
@@ -379,21 +391,23 @@ export default function JWTLogin({ ...others }) {
             >
               {({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
                 <form noValidate onSubmit={handleSubmit}>
-                  <Box sx={{ mb: 3 }}>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 800,
-                        color: theme.palette.primary.main,
-                        letterSpacing: '-0.5px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                      }}
-                    >
-                      <IconShieldCheck size={28} /> Welcome Back
-                    </Typography>
-                  </Box>
+                  {loginMethod === 'password' && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          fontWeight: 800,
+                          color: theme.palette.primary.main,
+                          letterSpacing: '-0.5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                      >
+                        <IconShieldCheck size={28} /> Welcome Back
+                      </Typography>
+                    </Box>
+                  )}
 
                   {/* Login Method Toggle */}
                   <Box
@@ -523,143 +537,21 @@ export default function JWTLogin({ ...others }) {
                       )}
                     </CustomFormControl>
                   ) : (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        mb: 2,
-                        position: 'relative'
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 260,
-                          height: 260,
-                          position: 'relative',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          my: 2
-                        }}
-                      >
-                        {/* Orbiting Frosted Rings */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            inset: -20,
-                            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                            borderRadius: '50%',
-                            backdropFilter: 'blur(4px)',
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)}, transparent)`,
-                            animation: 'slowSpin 15s linear infinite',
-                            pointerEvents: 'none',
-                            '@keyframes slowSpin': {
-                              '0%': { transform: 'rotate(0deg)' },
-                              '100%': { transform: 'rotate(360deg)' }
-                            },
-                            '&::before': {
-                              content: '""',
-                              position: 'absolute',
-                              top: -4, left: '50%',
-                              width: 8, height: 8,
-                              bgcolor: theme.palette.primary.main,
-                              borderRadius: '50%',
-                              boxShadow: `0 0 15px 3px ${theme.palette.primary.main}`
-                            }
-                          }}
-                        />
-
-                        {/* Morphing Liquid Container */}
-                        <Box
-                          sx={{
-                            width: 200,
-                            height: 200,
-                            position: 'relative',
-                            overflow: 'hidden',
-                            animation: 'morph 8s ease-in-out infinite',
-                            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
-                            border: `2px solid ${alpha('#ffffff', 0.1)}`,
-                            boxShadow: `0 20px 50px ${alpha(theme.palette.primary.dark, 0.4)}, inset 0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha('#000000', 0.4)} 100%)`,
-                            backdropFilter: 'blur(16px)',
-                            zIndex: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            '@keyframes morph': {
-                              '0%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
-                              '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
-                              '100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }
-                            }
-                          }}
-                        >
-                          {webcamActive ? (
-                            <>
-                              <video
-                                id="webcam-video"
-                                style={{
-                                  width: '120%', // Slightly larger to cover the morphing shape
-                                  height: '120%',
-                                  objectFit: 'cover',
-                                  transform: 'scaleX(-1)',
-                                  position: 'relative',
-                                  zIndex: 2
-                                }}
-                                autoPlay
-                                playsInline
-                                muted
-                              />
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  inset: 0,
-                                  background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.3)} 50%, transparent 100%)`,
-                                  backgroundSize: '100% 200%',
-                                  animation: 'volumetricScan 3s ease-in-out infinite',
-                                  zIndex: 3,
-                                  pointerEvents: 'none',
-                                  mixBlendMode: 'overlay',
-                                  '@keyframes volumetricScan': {
-                                    '0%': { backgroundPosition: '0% -100%' },
-                                    '100%': { backgroundPosition: '0% 200%' }
-                                  }
-                                }}
-                              />
-                            </>
-                          ) : (
-                            <Box 
-                              sx={{ 
-                                color: theme.palette.primary.main, 
-                                zIndex: 4,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                animation: 'breathe 3s ease-in-out infinite',
-                                '@keyframes breathe': {
-                                  '0%': { transform: 'scale(0.9)', opacity: 0.7, filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' },
-                                  '50%': { transform: 'scale(1.05)', opacity: 1, filter: `drop-shadow(0 0 25px ${theme.palette.primary.main})` },
-                                  '100%': { transform: 'scale(0.9)', opacity: 0.7, filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' }
-                                }
-                              }}
-                            >
-                              <IconFaceId size={88} stroke={1} />
-                            </Box>
-                          )}
-                        </Box>
-                      </Box>
-
-
-
-                      {webcamError && (
-                        <Typography variant="caption" color="error" sx={{ mt: 1, textAlign: 'center', display: 'block' }}>
-                          {webcamError}
-                        </Typography>
-                      )}
+                    <Box sx={{ width: '100%', mt: 2 }}>
+                      <FaceDetectionDashboard
+                        open={loginMethod === 'face' && step === 'credentials'}
+                        onClose={() => setLoginMethod('password')}
+                        webcamActive={webcamActive}
+                        webcamError={webcamError}
+                        isFaceScanning={isFaceScanning}
+                        success={faceScanSuccess}
+                        errorMessage={checkError}
+                        userId={pendingCredentials?.username}
+                      />
                     </Box>
                   )}
 
-                  {checkError && (
+                  {checkError && loginMethod === 'password' && (
                     <Box sx={{ mt: 2 }}>
                       <Alert
                         severity="error"
@@ -704,14 +596,7 @@ export default function JWTLogin({ ...others }) {
                         </Button>
                       </AnimateButton>
                     </Box>
-                  ) : (
-                    <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 56 }}>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        {isFaceScanning ? <CircularProgress size={18} color="primary" /> : <IconScan size={20} color={theme.palette.primary.main} />}
-                        {isFaceScanning ? 'Scanning your face automatically...' : 'Looking for a face...'}
-                      </Typography>
-                    </Box>
-                  )}
+                  ) : null}
                 </form>
               )}
             </Formik>

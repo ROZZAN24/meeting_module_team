@@ -12,7 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/hrm/departments")
+@RequestMapping("/api/master/hr/departments")
 @CrossOrigin(origins = "*")
 @Tag(name = "HRM - Departments", description = "Endpoints for managing organization departments")
 public class DepartmentController {

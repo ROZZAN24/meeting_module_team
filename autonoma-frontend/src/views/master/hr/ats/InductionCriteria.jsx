@@ -40,10 +40,10 @@ const columns = [
     minWidth: 100,
     render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
   },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdAt', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Edited By', minWidth: 120 },
-  { id: 'updatedAt', label: 'Edited Date', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 const INITIAL_STATE = {
@@ -181,6 +181,34 @@ export default function InductionCriteria() {
     if (errors[name]) clearErrors(name);
   };
 
+  const handleDepartmentChange = (event) => {
+    const { value } = event.target;
+    if (value.includes('all')) {
+      if (formData.departmentCodes.length === departments.length) {
+        setFormData((prev) => ({ ...prev, departmentCodes: [] }));
+      } else {
+        setFormData((prev) => ({ ...prev, departmentCodes: departments.map((d) => d.id.toString()) }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, departmentCodes: typeof value === 'string' ? value.split(',') : value }));
+    }
+    if (errors.departmentCodes) clearErrors('departmentCodes');
+  };
+
+  const handleLevelChange = (event) => {
+    const { value } = event.target;
+    if (value.includes('all')) {
+      if (formData.levelCodes.length === LEVEL_OPTIONS.length) {
+        setFormData((prev) => ({ ...prev, levelCodes: [] }));
+      } else {
+        setFormData((prev) => ({ ...prev, levelCodes: LEVEL_OPTIONS.map((l) => l.code) }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, levelCodes: typeof value === 'string' ? value.split(',') : value }));
+    }
+    if (errors.levelCodes) clearErrors('levelCodes');
+  };
+
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
 
@@ -209,6 +237,8 @@ export default function InductionCriteria() {
       };
       delete payload.createdAt;
       delete payload.updatedAt;
+      delete payload.createdUser;
+      delete payload.updatedUser;
       delete payload.createdBy;
       delete payload.updatedBy;
       delete payload.index;
@@ -270,6 +300,8 @@ export default function InductionCriteria() {
         ...r,
         index: i + 1,
         serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+        createdUser: r.createdUser || r.createdBy || '-',
+        updatedUser: r.updatedUser || r.updatedBy || '-',
         createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
         updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
       })),
@@ -317,7 +349,7 @@ export default function InductionCriteria() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardCheck size={24} />
-          <Typography variant="h3">Induction Criteria</Typography>
+          <Typography variant="h4">Induction Criteria</Typography>
         </Stack>
       }
       secondary={
@@ -505,7 +537,7 @@ export default function InductionCriteria() {
                     name="departmentCodes"
                     label="DEPARTMENT"
                     value={formData.departmentCodes}
-                    onChange={handleInputChange}
+                    onChange={handleDepartmentChange}
                     SelectProps={{
                       multiple: true,
                       renderValue: (selected) => {
@@ -520,6 +552,16 @@ export default function InductionCriteria() {
                     error={!!errors.departmentCodes}
                     sx={errorStyle(!!errors.departmentCodes)}
                   >
+                    <MenuItem value="all">
+                      <Checkbox
+                        checked={formData.departmentCodes.length === departments.length && departments.length > 0}
+                        indeterminate={
+                          formData.departmentCodes.length > 0 &&
+                          formData.departmentCodes.length < departments.length
+                        }
+                      />
+                      <ListItemText primary="Select All" />
+                    </MenuItem>
                     {departments.map((d) => (
                       <MenuItem key={d.id} value={d.id.toString()}>
                         <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
@@ -532,7 +574,7 @@ export default function InductionCriteria() {
                     name="levelCodes"
                     label="LEVEL"
                     value={formData.levelCodes}
-                    onChange={handleInputChange}
+                    onChange={handleLevelChange}
                     SelectProps={{
                       multiple: true,
                       renderValue: (selected) => {
@@ -547,6 +589,16 @@ export default function InductionCriteria() {
                     error={!!errors.levelCodes}
                     sx={errorStyle(!!errors.levelCodes)}
                   >
+                    <MenuItem value="all">
+                      <Checkbox
+                        checked={formData.levelCodes.length === LEVEL_OPTIONS.length && LEVEL_OPTIONS.length > 0}
+                        indeterminate={
+                          formData.levelCodes.length > 0 &&
+                          formData.levelCodes.length < LEVEL_OPTIONS.length
+                        }
+                      />
+                      <ListItemText primary="Select All" />
+                    </MenuItem>
                     {LEVEL_OPTIONS.map((l) => (
                       <MenuItem key={l.code} value={l.code}>
                         <Checkbox checked={formData.levelCodes.includes(l.code)} />

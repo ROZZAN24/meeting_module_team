@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "freight_master")
+@Table(name = "FREIGHT_MASTER")
 @Data
 public class Freight {
     @Id

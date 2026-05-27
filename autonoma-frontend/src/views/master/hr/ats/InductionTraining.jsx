@@ -281,9 +281,7 @@ export default function InductionTraining() {
         rows={resolvedRows}
         loading={loading}
         onDoubleClickRow={(row) => {
-          if (['PENDING', 'RESCHEDULE', 'TRAINING STARTED'].includes(row.currentStatus)) {
-            handleStartTraining(row);
-          }
+          handleStartTraining(row);
         }}
         actionColumn={{
           render: (row) => (
@@ -312,10 +310,10 @@ export default function InductionTraining() {
         title="Induction Training Process"
         fullWidth
         maxWidth="xl"
-        onSave={perms.write ? handleSaveProgress : null}
-        isViewOnly={!perms.write}
+        onSave={perms.write && !['COMPLETED', 'TRAINING GIVEN'].includes(selectedAssignment?.currentStatus) ? handleSaveProgress : null}
+        isViewOnly={!perms.write || ['COMPLETED', 'TRAINING GIVEN'].includes(selectedAssignment?.currentStatus)}
         saveLabel="Save Progress"
-        extraActions={perms.write && (
+        extraActions={perms.write && !['COMPLETED', 'TRAINING GIVEN'].includes(selectedAssignment?.currentStatus) && (
           <Button
             variant="contained"
             color="success"
@@ -391,7 +389,7 @@ export default function InductionTraining() {
                             size="small"
                             value={detail.trainerStatus || 'PENDING'}
                             onChange={(e) => updateDetail(detail.id, 'trainerStatus', e.target.value)}
-                            disabled={!perms.write}
+                            disabled={!perms.write || ['COMPLETED', 'TRAINING GIVEN'].includes(selectedAssignment?.currentStatus)}
                             fullWidth
                             sx={{ minWidth: 120 }}
                           >
@@ -404,7 +402,7 @@ export default function InductionTraining() {
                             <Rating
                               value={detail.skillRating || 0}
                               onChange={(e, newValue) => updateDetail(detail.id, 'skillRating', newValue)}
-                              readOnly={!perms.write}
+                              readOnly={!perms.write || ['COMPLETED', 'TRAINING GIVEN'].includes(selectedAssignment?.currentStatus)}
                               size="small"
                               max={5}
                             />
@@ -420,7 +418,7 @@ export default function InductionTraining() {
                             maxRows={3}
                             value={detail.trainerComments || ''}
                             onChange={(e) => updateDetail(detail.id, 'trainerComments', e.target.value)}
-                            disabled={!perms.write}
+                            disabled={!perms.write || ['COMPLETED', 'TRAINING GIVEN'].includes(selectedAssignment?.currentStatus)}
                             placeholder="Comments..."
                             fullWidth
                           />

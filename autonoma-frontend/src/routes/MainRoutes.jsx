@@ -232,6 +232,7 @@ const QmsAuditNcrApproval = Loadable(lazy(() => import('views/qms/AuditNcr/Audit
 const QmsAuditReport = Loadable(lazy(() => import('views/qms/AuditNcr/AuditReport')));
 const MeetingMaster = Loadable(lazy(() => import('views/qms/MeetingMaster/MeetingMasterList')));
 const MeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/MeetingScheduleList')));
+const AddMeetingSchedule = Loadable(lazy(() => import('views/qms/MeetingSchedule/AddMeetingSchedule')));
 const MeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/MomList')));
 const AddMeetingMinutes = Loadable(lazy(() => import('views/qms/MeetingMinutes/AddMeetingMinutes')));
 const MeetingAttendance = Loadable(lazy(() => import('views/qms/MeetingAttendance/AttendanceList')));
@@ -247,7 +248,6 @@ const SmEnquiryDashboard = Loadable(lazy(() => import('views/sm/EnquiryDashboard
 const SmPriceMasterList = Loadable(lazy(() => import('views/sm/PriceMasterList')));
 const SmSupplierList = Loadable(lazy(() => import('views/sm/SupplierList')));
 const SmSupplierMaster = Loadable(lazy(() => import('views/sm/SupplierMaster')));
-const SmSubContractorList = Loadable(lazy(() => import('views/sm/SubContractorList')));
 const SmQuotationList = Loadable(lazy(() => import('views/sm/QuotationList')));
 const SmEnquiryList = Loadable(lazy(() => import('views/sm/EnquiryList')));
 
@@ -1024,6 +1024,14 @@ const MainRoutes = {
       element: <MeetingSchedule />
     },
     {
+      path: '/qms/meeting-schedule/create',
+      element: <AddMeetingSchedule />
+    },
+    {
+      path: '/qms/meeting-schedule/edit/:id',
+      element: <AddMeetingSchedule />
+    },
+    {
       path: '/qms/minutesofmeeting',
       children: [
         {
@@ -1127,10 +1135,6 @@ const MainRoutes = {
     {
       path: '/sm/suppliers/edit/:id',
       element: <SmSupplierMaster />
-    },
-    {
-      path: '/sm/sub-contractors',
-      element: <SmSubContractorList />
     },
     {
       path: '/sm/quotations',

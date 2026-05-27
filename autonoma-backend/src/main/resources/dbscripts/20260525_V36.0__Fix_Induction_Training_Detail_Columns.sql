@@ -41,12 +41,12 @@ GO
 -- 6. Migrate data from old columns to new ones if old columns exist
 IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='hr_induction_training_detail' AND COLUMN_NAME='current_status')
 BEGIN
-    UPDATE hr_induction_training_detail SET trainer_status = current_status WHERE trainer_status IS NULL OR trainer_status = 'PENDING';
+    EXEC('UPDATE hr_induction_training_detail SET trainer_status = current_status WHERE trainer_status IS NULL OR trainer_status = ''PENDING''');
 END
 GO
 
 IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='hr_induction_training_detail' AND COLUMN_NAME='trainee_response')
 BEGIN
-    UPDATE hr_induction_training_detail SET trainee_status = trainee_response WHERE trainee_status IS NULL;
+    EXEC('UPDATE hr_induction_training_detail SET trainee_status = trainee_response WHERE trainee_status IS NULL');
 END
 GO
