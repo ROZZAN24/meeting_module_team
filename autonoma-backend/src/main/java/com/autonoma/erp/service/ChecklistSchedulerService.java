@@ -194,7 +194,7 @@ public class ChecklistSchedulerService {
             
             assignment.setUpdatedAt(new Date());
             assignment.setUpdatedBy("System Scheduler");
-            assignRepo.save(assignment);
+            checklistService.saveAssignment(assignment);
         }
         
         log.info("Completed processing of uncompleted checklists.");

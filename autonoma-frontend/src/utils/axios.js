@@ -65,17 +65,43 @@ axiosServices.interceptors.response.use(
 
     // Extract exact error message
     let errMsg = 'Service connection failed. Please try again later.';
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
     if (!error.response) {
-      errMsg = 'Backend server is unreachable. Please ensure the backend is running.';
-    } else if (error.response.data) {
+      errMsg = isLocalhost
+        ? 'Backend server is unreachable. Please ensure the Spring Boot backend is running on port 8081.'
+        : 'Backend server is unreachable. Please check your network connection.';
+    } else {
       const data = error.response.data;
-      if (typeof data === 'string') {
-        errMsg = data;
-      } else {
-        errMsg = data.message || data.details || data.error || JSON.stringify(data);
+      const status = error.response.status;
+
+      let serverMsg = '';
+      if (data) {
+        if (typeof data === 'string') {
+          serverMsg = data;
+        } else {
+          serverMsg = data.message || data.details || data.error || JSON.stringify(data);
+        }
       }
-    } else if (error.message) {
-      errMsg = error.message;
+
+      // Check if it's a proxy error from Vite dev server when backend is down
+      const isProxyError = (status === 500 || status === 502 || status === 503 || status === 504) && (
+        !serverMsg || 
+        serverMsg.includes('ECONNREFUSED') || 
+        serverMsg.includes('proxy error') || 
+        serverMsg.includes('Gateway') ||
+        serverMsg.includes('Bad Gateway')
+      );
+
+      if (isProxyError && isLocalhost) {
+        errMsg = 'Backend server is unreachable (Connection Refused on port 8081). Please ensure the Spring Boot backend is running.';
+      } else if (serverMsg) {
+        errMsg = serverMsg;
+      } else if (error.message) {
+        errMsg = error.message;
+      } else {
+        errMsg = `Request failed with status code ${status}`;
+      }
     }
 
     // Log the error details to the console always
@@ -103,13 +129,7 @@ axiosServices.interceptors.response.use(
       }).catch(err => console.warn('Failed to load store dynamically:', err));
     }
 
-    if (!error.response) {
-      console.error(`[Axios Error] Backend unreachable: ${error.config?.url}`, error);
-      return Promise.reject('Backend server is unreachable. Please ensure the backend is running.');
-    }
-
-    console.error(`[Axios Error] API Call Failed: ${error.config?.url} | Status: ${error.response.status}`, error.response.data);
-    return Promise.reject((error.response && error.response.data) || 'Service connection failed. Please try again later.');
+    return Promise.reject(errMsg);
   }
 );
 
