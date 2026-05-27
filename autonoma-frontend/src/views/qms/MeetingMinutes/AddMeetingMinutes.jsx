@@ -484,8 +484,8 @@ export default function AddMeetingMinutes() {
                     { label: 'Meeting Minutes No', component: <BOSTextField fullWidth value={form.momNo} onChange={(e) => {
                       const newNo = e.target.value.toUpperCase();
                       setForm({ ...form, momNo: newNo, details: syncMeetNumbers(newNo, form.details) });
-                    }} disabled={!perms.write} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { fontWeight: 800, color: 'secondary.dark', py: 0.8 } }} /> },
-                    { label: 'Meeting Minutes Date', component: <BOSTextField fullWidth type="date" value={form.momDate} onChange={(e) => setForm({...form, momDate: e.target.value})} disabled={!perms.write} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { py: 0.8 } }} /> },
+                    }} disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { fontWeight: 800, color: 'secondary.dark', py: 0.8 } }} /> },
+                    { label: 'Meeting Minutes Date', component: <BOSTextField fullWidth type="date" value={form.momDate} onChange={(e) => setForm({...form, momDate: e.target.value})} disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} sx={{ bgcolor: 'secondary.lighter', '& .MuiInputBase-input': { py: 0.8 } }} /> },
                     { label: 'Meeting Schedule No', component: (
                       <Autocomplete
                         fullWidth
@@ -496,11 +496,11 @@ export default function AddMeetingMinutes() {
                           handleScheduleChange(e, val);
                           if (errors.schedule) clearErrors('schedule');
                         }}
-                        disabled={!perms.write}
+                        disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Schedule" required error={!!errors.schedule} sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
-                    { label: 'Meeting Agenda', component: <BOSTextField fullWidth name="agenda" value={form.agenda} onChange={(e) => handleInputChange(e, setForm)} multiline rows={2} placeholder="Enter Agenda..." disabled={!perms.write} sx={{ '& .MuiInputBase-root': { py: 0.5 } }} /> },
+                    { label: 'Meeting Agenda', component: <BOSTextField fullWidth name="agenda" value={form.agenda} onChange={(e) => handleInputChange(e, setForm)} multiline rows={2} placeholder="Enter Agenda..." disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} sx={{ '& .MuiInputBase-root': { py: 0.5 } }} /> },
                     { label: 'Chaired By', component: (
                       <Autocomplete
                         fullWidth
@@ -511,12 +511,12 @@ export default function AddMeetingMinutes() {
                           setForm({...form, chairedBy: val});
                           if (errors.chairedBy) clearErrors('chairedBy');
                         }}
-                        disabled={!perms.write}
+                        disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                         renderInput={(params) => <BOSTextField {...params} placeholder="Select Chaired By" sx={{ '& .MuiInputBase-root': { py: 0 } }} />}
                       />
                     ) },
-                    { label: 'Meeting Start Time', component: <BOSTextField fullWidth type="time" value={form.startTime} onChange={(e) => setForm({...form, startTime: e.target.value})} placeholder="" disabled={!perms.write} InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> },
-                    { label: 'Meeting End Time', component: <BOSTextField fullWidth type="time" value={form.endTime} onChange={(e) => setForm({...form, endTime: e.target.value})} placeholder="" disabled={!perms.write} InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> }
+                    { label: 'Meeting Start Time', component: <BOSTextField fullWidth type="time" value={form.startTime} onChange={(e) => setForm({...form, startTime: e.target.value})} placeholder="" disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> },
+                    { label: 'Meeting End Time', component: <BOSTextField fullWidth type="time" value={form.endTime} onChange={(e) => setForm({...form, endTime: e.target.value})} placeholder="" disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} InputLabelProps={{ shrink: true }} sx={{ '& .MuiInputBase-input': { py: 0.8 } }} /> }
                   ].map((row, idx) => (
                     <TableRow key={idx}>
                       <TableCell sx={{ width: '150px', whiteSpace: 'nowrap' }}>
@@ -564,9 +564,10 @@ export default function AddMeetingMinutes() {
                           <TableCell sx={{ 
                             fontWeight: 800, 
                             fontSize: '0.65rem', 
-                            color: att.employee?.id === form.schedule?.hostBy?.id ? 'error.main' : 'text.primary' 
+                            color: att.employee?.id === form.schedule?.hostBy?.id ? 'error.main' : (att.attendanceStatus === 'Absent' ? 'error.light' : 'text.primary') 
                           }}>
                             {att.employee?.employeeName?.toUpperCase()}
+                            {att.employee?.id === form.schedule?.hostBy?.id && " (HOST)"}
                           </TableCell>
                           <TableCell>
                             <BOSTextField 
@@ -589,16 +590,12 @@ export default function AddMeetingMinutes() {
                                 list[idx].outTime = e.target.value;
                                 setForm({...form, attendanceList: list});
                               }} 
-                              disabled={
-                                !perms.write || 
-                                Number(user?.empId) !== Number(form.schedule?.hostBy?.id) || 
-                                att.attendanceStatus === 'ABSENT'
-                              }
+                              disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
                               sx={{ 
                                 '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' },
-                                bgcolor: (Number(user?.empId) === Number(form.schedule?.hostBy?.id) && att.attendanceStatus !== 'ABSENT') ? 'inherit' : 'grey.50'
+                                bgcolor: (!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT') ? 'grey.50' : 'inherit'
                               }} 
                             />
                           </TableCell>
@@ -706,7 +703,7 @@ export default function AddMeetingMinutes() {
                           value={det.discussedPoint} 
                           onChange={(e) => handleDetailChange(idx, 'discussedPoint', e.target.value.toUpperCase())}
                           placeholder="Enter details..."
-                          disabled={!perms.write}
+                          disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                           sx={{ 
                             ...seamlessInputSx, 
                             '& .MuiInputBase-root': { py: 1, px: 1 },
@@ -722,7 +719,7 @@ export default function AddMeetingMinutes() {
                       
                       {/* Details */}
                       <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.type || 'RM'} onChange={(e) => handleDetailChange(idx, 'type', e.target.value)} disabled={!perms.write} sx={seamlessInputSx}>
+                        <BOSTextField select value={det.type || 'RM'} onChange={(e) => handleDetailChange(idx, 'type', e.target.value)} disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} sx={seamlessInputSx}>
                           <MenuItem value="RM">RM</MenuItem>
                           <MenuItem value="PRODUCT">PRODUCT</MenuItem>
                         </BOSTextField>
@@ -746,7 +743,7 @@ export default function AddMeetingMinutes() {
                       
                       {/* Responsibility */}
                       <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.processType} onChange={(e) => handleProcessChange(idx, e.target.value)} disabled={!perms.write} sx={seamlessInputSx}>
+                        <BOSTextField select value={det.processType} onChange={(e) => handleProcessChange(idx, e.target.value)} disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'} sx={seamlessInputSx}>
                           <MenuItem value="INFO">INFO</MenuItem>
                           <MenuItem value="ACTION">ACTION</MenuItem>
                         </BOSTextField>
@@ -792,7 +789,7 @@ export default function AddMeetingMinutes() {
                           type="date" 
                           value={det.reviewDate} 
                           onChange={(e) => handleDetailChange(idx, 'reviewDate', e.target.value)} 
-                          disabled={!perms.write}
+                          disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                           sx={seamlessInputSx} 
                           inputProps={{ min: det.targetDate || TODAY }}
                           error={(det.reviewDate && det.targetDate && det.reviewDate < det.targetDate) || (det.reviewDate && det.reviewDate < TODAY)}
@@ -812,7 +809,7 @@ export default function AddMeetingMinutes() {
                             select 
                             value={det.status || 'OPEN'} 
                             onChange={(e) => handleDetailChange(idx, 'status', e.target.value)}
-                            disabled={!perms.write}
+                            disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                             sx={{ 
                               ...seamlessInputSx,
                               '& .MuiSelect-select': { 
@@ -879,3 +876,5 @@ export default function AddMeetingMinutes() {
     </MainCard>
   );
 }
+
+
