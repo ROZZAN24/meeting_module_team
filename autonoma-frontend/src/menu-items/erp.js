@@ -647,7 +647,7 @@ export const hra = {
       title: 'Application Tracking System',
       type: 'item',
       url: '/hra/ats',
-      icon: icons.IconSearch,
+      icon: icons.IconUserPlus,
       pageCode: 'HA1110'
     }
   ]

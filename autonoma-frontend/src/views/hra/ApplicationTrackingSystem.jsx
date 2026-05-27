@@ -43,6 +43,7 @@ import {
   IconCurrencyDollar,
   IconAddressBook,
   IconUserCheck,
+  IconUserPlus,
   IconLock,
   IconStar,
   IconTrendingUp
@@ -133,32 +134,32 @@ const INITIAL_PERSONAL_STATE = {
 };
 
 const INITIAL_SALARY_STATE = {
-  basic: 0,
-  da: 0,
-  hra: 0,
-  splAllowance: 0,
-  perfIncentive: 0,
-  statutoryBonus: 0,
-  canteenAllowance: 0,
-  attendanceAllow1: 0,
-  attendanceAllow2: 0,
-  uniform: 0,
-  shoes: 0,
-  mobileCug: 0,
-  otAmount: 0,
-  petrolAllow: 0,
-  appraisalPer: 0,
-  otherAllow: 0,
-  pfEmployee: 0,
-  pfEmployer: 0,
-  esiEmployee: 0,
-  esiEmployer: 0,
-  canteenDeduct: 0,
-  profTax: 0,
-  labourWelFundEmp: 0,
-  labourWelFundEmployer: 0,
-  otherDeduct: 0,
-  suspenseDeduct: 0
+  basic: '',
+  da: '',
+  hra: '',
+  splAllowance: '',
+  perfIncentive: '',
+  statutoryBonus: '',
+  canteenAllowance: '',
+  attendanceAllow1: '',
+  attendanceAllow2: '',
+  uniform: '',
+  shoes: '',
+  mobileCug: '',
+  otAmount: '',
+  petrolAllow: '',
+  appraisalPer: '',
+  otherAllow: '',
+  pfEmployee: '',
+  pfEmployer: '',
+  esiEmployee: '',
+  esiEmployer: '',
+  canteenDeduct: '',
+  profTax: '',
+  labourWelFundEmp: '',
+  labourWelFundEmployer: '',
+  otherDeduct: '',
+  suspenseDeduct: ''
 };
 
 const INITIAL_EVALUATION_STATE = {
@@ -231,7 +232,7 @@ const RELIGIONS = ['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKHISM', 'BUDDHISM'];
 const EVALUATION_STATUSES = ['SELECTED', 'HOLD', 'REJECTED'];
 
 const VALIDATION_RULES = [
-  { field: 'enRolledNo', label: 'En Rolled No', required: true },
+  { field: 'enRolledNo', label: 'Enrolled NO', required: true },
   { field: 'firstName', label: 'First Name', required: true },
   { field: 'lastName', label: 'Last Name', required: true },
   { field: 'department', label: 'Department', required: true },
@@ -255,7 +256,7 @@ export default function ApplicationTrackingSystem() {
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
-  
+
   // Dialog State
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -414,32 +415,32 @@ export default function ApplicationTrackingSystem() {
       });
 
       setSalaryData({
-        basic: original.basic || 0,
-        da: original.da || 0,
-        hra: original.hra || 0,
-        splAllowance: original.splAllowance || 0,
-        perfIncentive: original.perfIncentive || 0,
-        statutoryBonus: original.statutoryBonus || 0,
-        canteenAllowance: original.canteenAllowance || 0,
-        attendanceAllow1: original.attendanceAllow1 || 0,
-        attendanceAllow2: original.attendanceAllow2 || 0,
-        uniform: original.uniform || 0,
-        shoes: original.shoes || 0,
-        mobileCug: original.mobileCug || 0,
-        otAmount: original.otAmount || 0,
-        petrolAllow: original.petrolAllow || 0,
-        appraisalPer: original.appraisalPer || 0,
-        otherAllow: original.otherAllow || 0,
-        pfEmployee: original.pfEmployee || 0,
-        pfEmployer: original.pfEmployer || 0,
-        esiEmployee: original.esiEmployee || 0,
-        esiEmployer: original.esiEmployer || 0,
-        canteenDeduct: original.canteenDeduct || 0,
-        profTax: original.profTax || 0,
-        labourWelFundEmp: original.labourWelFundEmp || 0,
-        labourWelFundEmployer: original.labourWelFundEmployer || 0,
-        otherDeduct: original.otherDeduct || 0,
-        suspenseDeduct: original.suspenseDeduct || 0
+        basic: original.basic || '',
+        da: original.da || '',
+        hra: original.hra || '',
+        splAllowance: original.splAllowance || '',
+        perfIncentive: original.perfIncentive || '',
+        statutoryBonus: original.statutoryBonus || '',
+        canteenAllowance: original.canteenAllowance || '',
+        attendanceAllow1: original.attendanceAllow1 || '',
+        attendanceAllow2: original.attendanceAllow2 || '',
+        uniform: original.uniform || '',
+        shoes: original.shoes || '',
+        mobileCug: original.mobileCug || '',
+        otAmount: original.otAmount || '',
+        petrolAllow: original.petrolAllow || '',
+        appraisalPer: original.appraisalPer || '',
+        otherAllow: original.otherAllow || '',
+        pfEmployee: original.pfEmployee || '',
+        pfEmployer: original.pfEmployer || '',
+        esiEmployee: original.esiEmployee || '',
+        esiEmployer: original.esiEmployer || '',
+        canteenDeduct: original.canteenDeduct || '',
+        profTax: original.profTax || '',
+        labourWelFundEmp: original.labourWelFundEmp || '',
+        labourWelFundEmployer: original.labourWelFundEmployer || '',
+        otherDeduct: original.otherDeduct || '',
+        suspenseDeduct: original.suspenseDeduct || ''
       });
 
       setEvaluationData({
@@ -621,7 +622,7 @@ export default function ApplicationTrackingSystem() {
   const handleInputChange = (e) => {
     const { name, value, checked, type } = e.target;
     const finalVal = type === 'checkbox' ? checked : value;
-    
+
     setFormData(prev => {
       const updated = { ...prev, [name]: finalVal };
       if (name === 'birthDate') {
@@ -632,7 +633,7 @@ export default function ApplicationTrackingSystem() {
       }
       return updated;
     });
-    
+
     if (errors[name]) clearErrors(name);
     if (name === 'refMode') clearErrors('refComments');
   };
@@ -657,7 +658,7 @@ export default function ApplicationTrackingSystem() {
 
   // Salary Calculations
   const computedGross = useMemo(() => {
-    const sum = 
+    const sum =
       Number(salaryData.basic || 0) +
       Number(salaryData.da || 0) +
       Number(salaryData.hra || 0) +
@@ -677,7 +678,7 @@ export default function ApplicationTrackingSystem() {
   }, [salaryData]);
 
   const computedNet = useMemo(() => {
-    const deduct = 
+    const deduct =
       Number(salaryData.pfEmployee || 0) +
       Number(salaryData.esiEmployee || 0) +
       Number(salaryData.canteenDeduct || 0) +
@@ -689,7 +690,7 @@ export default function ApplicationTrackingSystem() {
   }, [computedGross, salaryData]);
 
   const computedCTC = useMemo(() => {
-    const employerCost = 
+    const employerCost =
       Number(salaryData.pfEmployer || 0) +
       Number(salaryData.esiEmployer || 0) +
       Number(salaryData.labourWelFundEmployer || 0);
@@ -698,7 +699,7 @@ export default function ApplicationTrackingSystem() {
 
   const handleSalaryChange = (e) => {
     const { name, value } = e.target;
-    setSalaryData(prev => ({ ...prev, [name]: Number(value) }));
+    setSalaryData(prev => ({ ...prev, [name]: value }));
   };
 
   // Save the master applicant form
@@ -794,11 +795,11 @@ export default function ApplicationTrackingSystem() {
         hrInterviewedBy: evaluationData.hrInterviewedBy,
 
         // Tab 6 Contact Details
-        contactAddress1: contactData.address1,
-        contactAddress2: contactData.address2,
-        contactCity: contactData.city,
-        contactPhone: contactData.phoneNo,
-        contactMobile: contactData.mobileNo || formData.mobileNo,
+        contactAddress1: personalData.permAdd1,
+        contactAddress2: personalData.permAdd2,
+        contactCity: personalData.city,
+        contactPhone: personalData.phoneNo,
+        contactMobile: formData.mobileNo,
 
         // Tab 8 Self Assessment
         q1_native: assessmentData.q1_native,
@@ -908,7 +909,34 @@ export default function ApplicationTrackingSystem() {
   };
 
   const handleExperienceRowChange = (index, field, value) => {
-    setExperienceRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+    setExperienceRows(prev =>
+      prev.map((row, i) => {
+        if (i === index) {
+          const updatedRow = { ...row, [field]: value };
+          if (field === 'fromDate' || field === 'toDate') {
+            const fromDateVal = field === 'fromDate' ? value : row.fromDate;
+            const toDateVal = field === 'toDate' ? value : row.toDate;
+            if (fromDateVal && toDateVal) {
+              const from = new Date(fromDateVal);
+              const to = new Date(toDateVal);
+              if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
+                const diffTime = to - from;
+                if (diffTime > 0) {
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  updatedRow.expYears = Math.round(diffDays / 365.25);
+                } else {
+                  updatedRow.expYears = 0;
+                }
+              }
+            } else {
+              updatedRow.expYears = '';
+            }
+          }
+          return updatedRow;
+        }
+        return row;
+      })
+    );
   };
 
   const handleAddEducationRow = () => {
@@ -969,7 +997,7 @@ export default function ApplicationTrackingSystem() {
       )
     },
     { id: 'index', label: 'Sl.no', minWidth: 60 },
-    { id: 'enRolledNo', label: 'En.Rolled.No', minWidth: 120, bold: true, color: 'primary.main' },
+    { id: 'enRolledNo', label: 'Enrolled No', minWidth: 120, bold: true, color: 'primary.main' },
     { id: 'firstName', label: 'First Name', minWidth: 120 },
     { id: 'lastName', label: 'Last Name', minWidth: 120 },
     {
@@ -1062,7 +1090,7 @@ export default function ApplicationTrackingSystem() {
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconTrendingUp size={24} />
+          <IconUserPlus size={24} />
           <Typography variant="h3">Application Tracking System</Typography>
         </Stack>
       }
@@ -1085,7 +1113,7 @@ export default function ApplicationTrackingSystem() {
               startIcon={<IconPlus size={18} />}
               sx={{ borderRadius: '8px', textTransform: 'none', px: 2 }}
             >
-              + New
+              New
             </Button>
           </Tooltip>
         </Stack>
@@ -1185,7 +1213,7 @@ export default function ApplicationTrackingSystem() {
                   <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
-                      label="En Rolled No"
+                      label="Enrolled NO"
                       name="enRolledNo"
                       value={formData.enRolledNo}
                       onChange={handleInputChange}
@@ -1240,11 +1268,8 @@ export default function ApplicationTrackingSystem() {
                     >
                       <MenuItem value="">-SELECT-</MenuItem>
                       {departments.map(d => (
-                        <MenuItem key={d.id} value={d.departmentName || d.id.toString()}>{d.departmentName}</MenuItem>
+                        <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
                       ))}
-                      <MenuItem value="Development">Development</MenuItem>
-                      <MenuItem value="Human Resources">Human Resources</MenuItem>
-                      <MenuItem value="Finance">Finance</MenuItem>
                     </BOSTextField>
                   </Grid>
 
@@ -1452,17 +1477,17 @@ export default function ApplicationTrackingSystem() {
 
             {/* TAB CONTENTS */}
             <Box sx={{ minHeight: '300px', p: 1 }}>
-              
+
               {/* 1. PERSONAL DETAILS */}
               {activeTab === 0 && (
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
-                      label="En Roll.No"
+                      label="Enrolled NO"
                       name="enRollNo"
-                      value={personalData.enRollNo}
-                      onChange={handlePersonalChange}
-                      required
+                      value={formData.enRolledNo}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -1499,8 +1524,9 @@ export default function ApplicationTrackingSystem() {
                       type="date"
                       label="Birth Date"
                       name="birthDate"
-                      value={personalData.birthDate}
-                      onChange={handlePersonalChange}
+                      value={formData.birthDate}
+                      disabled
+                      InputProps={{ readOnly: true }}
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
@@ -1862,8 +1888,9 @@ export default function ApplicationTrackingSystem() {
                               type="number"
                               label={f.label}
                               name={f.name}
-                              value={salaryData[f.name]}
+                              value={salaryData[f.name] === 0 || salaryData[f.name] === '0' ? '' : salaryData[f.name]}
                               onChange={handleSalaryChange}
+                              placeholder="0"
                               InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                             />
                           </Grid>
@@ -1892,8 +1919,9 @@ export default function ApplicationTrackingSystem() {
                                 type="number"
                                 label={f.label}
                                 name={f.name}
-                                value={salaryData[f.name]}
+                                value={salaryData[f.name] === 0 || salaryData[f.name] === '0' ? '' : salaryData[f.name]}
                                 onChange={handleSalaryChange}
+                                placeholder="0"
                                 InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                               />
                             </Grid>
@@ -1914,8 +1942,9 @@ export default function ApplicationTrackingSystem() {
                                 type="number"
                                 label={f.label}
                                 name={f.name}
-                                value={salaryData[f.name]}
+                                value={salaryData[f.name] === 0 || salaryData[f.name] === '0' ? '' : salaryData[f.name]}
                                 onChange={handleSalaryChange}
+                                placeholder="0"
                                 InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                               />
                             </Grid>
@@ -1952,9 +1981,9 @@ export default function ApplicationTrackingSystem() {
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
-                      label="En Rolled No"
+                      label="Enrolled No"
                       name="enRolledNo"
-                      value={evaluationData.enRolledNo || formData.enRolledNo}
+                      value={formData.enRolledNo}
                       disabled
                       InputProps={{ readOnly: true }}
                     />
@@ -2016,9 +2045,9 @@ export default function ApplicationTrackingSystem() {
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
-                      label="En Rolled No"
+                      label="Enrolled No"
                       name="enRolledNo"
-                      value={contactData.enRolledNo || formData.enRolledNo}
+                      value={formData.enRolledNo}
                       disabled
                       InputProps={{ readOnly: true }}
                     />
@@ -2027,40 +2056,45 @@ export default function ApplicationTrackingSystem() {
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
-                      value={contactData.phoneNo}
-                      onChange={(e) => setContactData(prev => ({ ...prev, phoneNo: e.target.value }))}
+                      value={personalData.phoneNo}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
-                      value={contactData.mobileNo || formData.mobileNo}
-                      onChange={(e) => setContactData(prev => ({ ...prev, mobileNo: e.target.value }))}
+                      value={formData.mobileNo}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="City"
                       name="city"
-                      value={contactData.city}
-                      onChange={(e) => setContactData(prev => ({ ...prev, city: e.target.value }))}
+                      value={personalData.city}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="Address line 1"
                       name="address1"
-                      value={contactData.address1}
-                      onChange={(e) => setContactData(prev => ({ ...prev, address1: e.target.value }))}
+                      value={personalData.permAdd1}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="Address line 2"
                       name="address2"
-                      value={contactData.address2}
-                      onChange={(e) => setContactData(prev => ({ ...prev, address2: e.target.value }))}
+                      value={personalData.permAdd2}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                 </Grid>
@@ -2187,40 +2221,55 @@ export default function ApplicationTrackingSystem() {
                 ];
 
                 return (
-                  <Grid container spacing={3}>
+                  <Stack spacing={3}>
                     {selfAssessmentQuestions.map((g, gIdx) => (
-                      <React.Fragment key={gIdx}>
-                        <Grid item xs={12}>
-                          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main', mt: gIdx > 0 ? 3 : 1, borderBottom: '2px solid', borderColor: 'primary.light', pb: 0.5 }}>
-                            {g.group}
-                          </Typography>
-                        </Grid>
-                        {g.fields.map(f => (
-                          <Grid item xs={12} key={f.name}>
-                            <Box sx={{ borderBottom: '1px solid', borderColor: 'grey.100', pb: 2.5, pt: 1.5 }}>
-                              <Typography sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.95rem', mb: 1.5 }}>
-                                {f.label}
-                              </Typography>
+                      <Card key={gIdx} variant="outlined" sx={{ p: 2.5, borderRadius: '12px', border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="h5" color="primary" sx={{ mb: 2.5, fontWeight: 700, borderBottom: '1.5px solid', borderColor: 'primary.light', pb: 1 }}>
+                          {g.group}
+                        </Typography>
+                        <Grid container spacing={2.5}>
+                          {g.fields.map(f => (
+                            <Grid item xs={12} sm={f.multiline || f.type === 'file' ? 12 : 6} md={f.multiline || f.type === 'file' ? 12 : 4} key={f.name}>
                               {f.type === 'file' ? (
-                                <BOSFileUpload
-                                  label="Upload Payslip"
-                                  files={assessmentData.payslip ? [assessmentData.payslip] : []}
-                                  onChange={(files) => setAssessmentData(p => ({ ...p, payslip: files[0] || null }))}
-                                  multiple={false}
-                                />
+                                <Box>
+                                  <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
+                                    {f.label}
+                                  </Typography>
+                                  <BOSFileUpload
+                                    label="Upload Payslip"
+                                    files={assessmentData.payslip ? [assessmentData.payslip] : []}
+                                    onChange={(files) => setAssessmentData(p => ({ ...p, payslip: files[0] || null }))}
+                                    multiple={false}
+                                  />
+                                </Box>
                               ) : f.select ? (
-                                <BOSTextField size="medium" select fullWidth value={assessmentData[f.name] || ''} onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}>
-                                  {(f.options || []).map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
+                                <BOSTextField
+                                  select
+                                  fullWidth
+                                  label={f.label}
+                                  value={assessmentData[f.name] || ''}
+                                  onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
+                                >
+                                  {(f.options || []).map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                  ))}
                                 </BOSTextField>
                               ) : (
-                                <BOSTextField size="medium" fullWidth value={assessmentData[f.name] || ''} onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))} multiline={f.multiline} rows={f.rows} />
+                                <BOSTextField
+                                  fullWidth
+                                  label={f.label}
+                                  value={assessmentData[f.name] || ''}
+                                  onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
+                                  multiline={f.multiline}
+                                  rows={f.rows}
+                                />
                               )}
-                            </Box>
-                          </Grid>
-                        ))}
-                      </React.Fragment>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Card>
                     ))}
-                  </Grid>
+                  </Stack>
                 );
               })()}
 
