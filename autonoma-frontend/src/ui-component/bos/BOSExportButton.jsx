@@ -165,7 +165,7 @@ export default function BOSExportButton({
         pageName: pageName || computedPageName,
         reportName: `${getFormattedFilename()}.${formatType === 'Excel' ? 'xlsx' : 'pdf'}`,
         filePath: filePath,
-        createdBy: user?.username || user?.email || user?.name || 'SYSTEM'
+        createdUser: user?.username || user?.email || user?.name || 'SYSTEM'
       });
     } catch (err) {
       console.error('Failed to log file traceability:', err);

@@ -91,8 +91,10 @@ export default function VerificationCriteria() {
       minWidth: 100,
       render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
     },
-    { id: 'createdBy', label: 'Created By', minWidth: 120 },
-    { id: 'createdAt', label: 'Created Date', minWidth: 150 }
+    { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+    { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+    { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+    { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
   ], [selectedRows, handleSelectRow]);
 
   // Dispatch starred filter configuration matching Status
@@ -166,6 +168,8 @@ export default function VerificationCriteria() {
       delete payload.updatedAt;
       delete payload.createdBy;
       delete payload.updatedBy;
+      delete payload.createdUser;
+      delete payload.updatedUser;
       delete payload.index;
 
       if (formData.id) {
@@ -221,6 +225,8 @@ export default function VerificationCriteria() {
     return rows.map((r, i) => ({
       ...r,
       index: i + 1,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
       updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
     }));

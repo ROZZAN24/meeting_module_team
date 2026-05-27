@@ -248,7 +248,6 @@ const SmEnquiryDashboard = Loadable(lazy(() => import('views/sm/EnquiryDashboard
 const SmPriceMasterList = Loadable(lazy(() => import('views/sm/PriceMasterList')));
 const SmSupplierList = Loadable(lazy(() => import('views/sm/SupplierList')));
 const SmSupplierMaster = Loadable(lazy(() => import('views/sm/SupplierMaster')));
-const SmSubContractorList = Loadable(lazy(() => import('views/sm/SubContractorList')));
 const SmQuotationList = Loadable(lazy(() => import('views/sm/QuotationList')));
 const SmEnquiryList = Loadable(lazy(() => import('views/sm/EnquiryList')));
 
@@ -941,11 +940,11 @@ const MainRoutes = {
       element: <EmployeeType />
     },
     {
-      path: '/hra/employee/master',
+      path: '/hr/employee/master',
       element: <MasterHrEmployeeList />
     },
     {
-      path: '/hra/employee/master/create',
+      path: '/hr/employee/master/create',
       element: <MasterHrEmployee />
     },
     {
@@ -1136,10 +1135,6 @@ const MainRoutes = {
     {
       path: '/sm/suppliers/edit/:id',
       element: <SmSupplierMaster />
-    },
-    {
-      path: '/sm/sub-contractors',
-      element: <SmSubContractorList />
     },
     {
       path: '/sm/quotations',

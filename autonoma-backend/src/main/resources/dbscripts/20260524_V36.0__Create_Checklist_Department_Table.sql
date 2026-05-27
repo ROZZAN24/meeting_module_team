@@ -1,5 +1,5 @@
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-24
 -- Description: Create missing qms_checklist_department table for checklist mapping
 -- =============================================

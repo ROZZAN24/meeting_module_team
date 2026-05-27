@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 
 @Data
 @Entity
-@Table(name = "qms_meeting_master")
-public class QmsMeetingMaster {
+@Table(name = "QMS_MEETING_MASTER")
+public class QmsMeetingMaster extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -33,19 +33,9 @@ public class QmsMeetingMaster {
     @Column(name = "status")
     private String status = "ACTIVE";
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "updated_by")
-    private String updatedBy;
 
     @Column(name = "attachment_name")
     private String attachmentName;

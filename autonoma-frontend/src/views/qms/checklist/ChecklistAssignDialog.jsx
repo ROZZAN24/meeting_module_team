@@ -45,7 +45,9 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS']);
   
   // Get allowed department names for this checklist
-  const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
+  const allowedDeptNames = (initialData?.departments || [])
+    .map(d => d.departmentName || d.department?.departmentName)
+    .filter(Boolean);
   const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
   
   // Filter employees whose department matches one of the checklist's departments,
@@ -69,12 +71,18 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     return true;
   });
 
-  // Fallback: If no employees match the checklist's department, show all employees who are active and credentialed.
+  // Fallback 1: If no employees match after applying department filters, relax the department filter but keep credentialed check
   if (filteredEmployees.length === 0) {
     filteredEmployees = (lookups.employees || []).filter(emp => {
       return emp.status === 'Active' && 
              userEmpIds.includes(Number(emp.id));
     });
+  }
+
+  // Fallback 2: If there are STILL no employees (e.g. no users have credentials created yet or credentials API is empty/loading),
+  // show all active employees so they are never blocked from assigning!
+  if (filteredEmployees.length === 0) {
+    filteredEmployees = (lookups.employees || []).filter(emp => emp.status === 'Active');
   }
 
   const employeeOptions = filteredEmployees.map(e => ({
@@ -202,8 +210,8 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     { id: 'assignTo', label: 'Assign To', minWidth: 120 },
     { id: 'assignType', label: 'Assign Type', minWidth: 100 },
     { id: 'assignDate', label: 'Assign Date', minWidth: 100 },
-    { id: 'assignedBy', label: 'Created By', minWidth: 100 },
-    { id: 'modifiedBy', label: 'Modified By', minWidth: 100 },
+    { id: 'assignedBy', label: 'CREATED USER', minWidth: 100 },
+    { id: 'modifiedBy', label: 'UPDATED USER', minWidth: 100 },
     { id: 'status', label: 'Status', minWidth: 100 }
   ];
 

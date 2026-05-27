@@ -32,10 +32,10 @@ const columns = [
   { id: 'targetDate', label: 'Target Date', minWidth: 120 },
   { id: 'reviewDate', label: 'Review Date', minWidth: 120 },
   { id: 'pdf', label: 'PDF', minWidth: 80, align: 'center' },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated By', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 export default function MomList() {
@@ -80,9 +80,9 @@ export default function MomList() {
         assignedBy: row.assignedBy?.employeeName || '-',
         targetDate: row.targetDate || '-',
         reviewDate: row.reviewDate || '-',
-        createdBy: row._createdBy || '-',
+        createdUser: row._createdUser || row._createdBy || '-',
         createdDate: row._createdAt ? new Date(row._createdAt).toLocaleDateString('en-GB') : '-',
-        updatedBy: isUnedited ? '-' : (row._updatedBy || '-'),
+        updatedUser: isUnedited ? '-' : (row._updatedUser || row._updatedBy || '-'),
         updatedDate: isUnedited ? '-' : new Date(row._updatedAt).toLocaleDateString('en-GB'),
         status: row.status || 'OPEN',
         detailStatus: row.status || 'OPEN', // specifically for the status chip column
@@ -199,8 +199,10 @@ export default function MomList() {
               _meetingType: mom.meetingType?.meetingName || '-',
               _momDate: mom.momDate,
               _scheduleNo: mom.scheduleNo,
+              _createdUser: mom.createdUser,
               _createdBy: mom.createdBy,
               _createdAt: mom.createdAt,
+              _updatedUser: mom.updatedUser,
               _updatedBy: mom.updatedBy,
               _updatedAt: mom.updatedAt
             });

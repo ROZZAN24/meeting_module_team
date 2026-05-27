@@ -192,7 +192,7 @@ export const masters = {
               id: 'master-hr-employee-master',
               title: 'Employee Master',
               type: 'item',
-              url: '/hra/employee/master',
+              url: '/hr/employee/master',
               icon: icons.IconUserPlus,
               pageCode: 'M2210'
             },
@@ -486,28 +486,12 @@ export const masters = {
       ]
     },
     {
-      id: 'master-vendor',
+      id: 'sm-supplier-master',
       title: 'Vendor Master',
-      type: 'collapse',
+      type: 'item',
+      url: '/sm/suppliers',
       icon: icons.IconTruckDelivery,
-      children: [
-        {
-          id: 'sm-supplier-master',
-          title: 'Supplier Master',
-          type: 'item',
-          url: '/sm/suppliers',
-          icon: icons.IconTruckDelivery,
-          pageCode: 'M4110'
-        },
-        {
-          id: 'sm-subcontractor',
-          title: 'Sub Contractor',
-          type: 'item',
-          url: '/sm/sub-contractors',
-          icon: icons.IconTool,
-          pageCode: 'M4210'
-        }
-      ]
+      pageCode: 'M4110'
     },
     {
       id: 'master-sales',

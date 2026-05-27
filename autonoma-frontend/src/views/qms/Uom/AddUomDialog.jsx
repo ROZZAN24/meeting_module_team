@@ -42,7 +42,7 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         uomCode: initialData.uomCode || '',
         uomDescription: initialData.uomDescription || '',
         status: initialData.status || 'ACTIVE',
-        createdBy: initialData.createdBy,
+        createdUser: initialData.createdUser,
         createdAt: initialData.createdAt
       });
       setIsEditing(false);
@@ -71,8 +71,8 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         uomCode: formData.uomCode,
         uomDescription: formData.uomDescription,
         status: formData.status,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdUser: formData.id ? formData.createdUser : (user?.name || 'Admin'),
+        updatedUser: user?.name || 'Admin',
         createdAt: formData.createdAt
       };
 

@@ -5,7 +5,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
 import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import axios from 'axios';
+import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';

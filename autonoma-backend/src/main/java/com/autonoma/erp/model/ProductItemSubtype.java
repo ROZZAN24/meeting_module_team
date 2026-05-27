@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "npd_item_subtype")
+@Table(name = "NPD_ITEM_SUBTYPE")
 @Getter
 @Setter
 public class ProductItemSubtype {

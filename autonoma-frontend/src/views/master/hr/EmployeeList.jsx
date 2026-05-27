@@ -96,7 +96,7 @@ export default function EmployeeList() {
 
   const fetchMappings = useCallback(async () => {
     try {
-      const response = await axios.get('/api/master/employee/manager-mapping');
+      const response = await axios.get('/api/master/hr/employees/manager-mapping');
       if (Array.isArray(response.data)) {
         setMappings(response.data);
       }
@@ -132,9 +132,8 @@ export default function EmployeeList() {
     setSelectedRow(prev => prev && prev.id === row.id ? null : row);
   };
 
-  const handleOpenAdd = () => navigate('/hra/employee/master/create');
-  const handleOpenEdit = (row) => navigate(`/hra/employee/master/create?id=${row.id}`);
-
+  const handleOpenAdd = () => navigate('/hr/employee/master/create');
+  const handleOpenEdit = (row) => navigate(`/hr/employee/master/create?id=${row.id}`);
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.id);
     setDeleteTargetName(row.firstName ? `${row.firstName} ${row.lastName || ''}`.trim() : `Employee #${row.empCode}`);
@@ -168,11 +167,11 @@ export default function EmployeeList() {
 
     try {
       // Fetch eligible managers
-      const managersRes = await axios.get(`/api/master/employee/manager-mapping/eligible-managers?empId=${selectedRow.id}`);
+      const managersRes = await axios.get(`/api/master/hr/employees/manager-mapping/eligible-managers?empId=${selectedRow.id}`);
       setEligibleManagers(managersRes.data || []);
 
       // Fetch current mapping for this employee
-      const mappingRes = await axios.get(`/api/master/employee/manager-mapping/${selectedRow.id}`);
+      const mappingRes = await axios.get(`/api/master/hr/employees/manager-mapping/${selectedRow.id}`);
       const cur = mappingRes.data || {};
       setMappingState({
         homeManagerId: cur.homeManagerId || '',
@@ -196,7 +195,7 @@ export default function EmployeeList() {
 
   const handleMapManagerSave = async () => {
     try {
-      await axios.post('/api/master/employee/manager-mapping', {
+      await axios.post('/api/master/hr/employees/manager-mapping', {
         empId: selectedRow.id,
         homeManagerId: mappingState.homeManagerId || null,
         businessManagerId: mappingState.businessManagerId || null,
@@ -294,6 +293,12 @@ export default function EmployeeList() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUsers size={24} />

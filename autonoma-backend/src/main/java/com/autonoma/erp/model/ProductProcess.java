@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "npd_process")
+@Table(name = "NPD_PROCESS")
 @Getter
 @Setter
 public class ProductProcess {
@@ -18,7 +18,7 @@ public class ProductProcess {
     @Column(name = "process_name", nullable = false, unique = true, length = 150)
     private String processName;
 
-    @Column(length = 500)
+    @Column(name = "description", length = 500)
     private String description;
 
     @Column(nullable = false, length = 20)

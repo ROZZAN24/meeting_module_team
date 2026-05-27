@@ -27,7 +27,7 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
   useEffect(() => {
     const fetchNextCode = async () => {
       try {
-        const { data } = await axios.get('/api/master/hr/grade/next-no');
+        const { data } = await axios.get('/api/master/hr/grades/next-no');
         setFormData(prev => ({ ...prev, gradeCode: data }));
       } catch (e) {
         setFormData(prev => ({ ...prev, gradeCode: 'GRD-001' }));
@@ -71,10 +71,10 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
 
     try {
       if (formData.id) {
-        await axios.put(`/api/master/hr/grade/${formData.id}`, formData);
+        await axios.put(`/api/master/hr/grades/${formData.id}`, formData);
         dispatch(openSnackbar({ open: true, message: 'Grade updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
-        await axios.post('/api/master/hr/grade', formData);
+        await axios.post('/api/master/hr/grades', formData);
         dispatch(openSnackbar({ open: true, message: 'Grade created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
       handleClose(true);
@@ -86,7 +86,7 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
   const handleDeleteConfirm = async () => {
     setDeleteOpen(false);
     try {
-      await axios.delete(`/api/master/hr/grade/${formData.id}`);
+      await axios.delete(`/api/master/hr/grades/${formData.id}`);
       dispatch(openSnackbar({ open: true, message: 'Grade deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       handleClose(true);
     } catch (error) {
@@ -99,7 +99,7 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
   const handleClear = async () => {
     resetForm();
     try {
-      const { data } = await axios.get('/api/master/hr/grade/next-no');
+      const { data } = await axios.get('/api/master/hr/grades/next-no');
       setFormData(prev => ({ ...prev, gradeCode: data }));
     } catch (e) {
       setFormData(prev => ({ ...prev, gradeCode: 'GRD-001' }));

@@ -52,7 +52,7 @@ export default function AddDesignationLevelDialog({ open, handleClose, initialDa
 
     const fetchNextScreeningLevel = async () => {
         try {
-            const res = await axios.get('/api/master/hr/designationlevel/next-screening-level');
+            const res = await axios.get('/api/master/hr/designation-levels/next-screening-level');
             setFormData(prev => ({ ...prev, screeningLevel: res.data }));
         } catch (e) {
             console.error('Failed to fetch next screening level');
@@ -70,9 +70,9 @@ export default function AddDesignationLevelDialog({ open, handleClose, initialDa
 
         try {
             if (isEditing) {
-                await axios.put(`/api/master/hr/designationlevel/${initialData.rowId}`, formData);
+                await axios.put(`/api/master/hr/designation-levels/${initialData.rowId}`, formData);
             } else {
-                await axios.post('/api/master/hr/designationlevel', formData);
+                await axios.post('/api/master/hr/designation-levels', formData);
             }
             dispatch(openSnackbar({ open: true, message: `Designation Level ${isEditing ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
             handleClose(true);

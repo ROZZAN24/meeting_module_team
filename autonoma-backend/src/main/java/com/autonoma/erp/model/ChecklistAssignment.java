@@ -9,12 +9,12 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "qms_checklist_assignment")
+@Table(name = "QMS_CHECKLIST_ASSIGNMENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ChecklistAssignment {
+public class ChecklistAssignment extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -63,13 +63,6 @@ public class ChecklistAssignment {
     @Column(name = "FILE_PATH")
     private List<String> actualFiles;
 
-    @Column(name = "UPDATED_BY")
-    private String updatedBy;
-
-    @Column(name = "UPDATED_AT")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public MasterChecklist getChecklist() { return checklist; }
@@ -96,8 +89,4 @@ public class ChecklistAssignment {
     public void setAssignType(String assignType) { this.assignType = assignType; }
     public List<String> getActualFiles() { return actualFiles; }
     public void setActualFiles(List<String> actualFiles) { this.actualFiles = actualFiles; }
-    public String getUpdatedBy() { return updatedBy; }
-    public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
 }

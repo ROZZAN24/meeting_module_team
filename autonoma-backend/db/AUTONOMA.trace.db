@@ -1,25 +1,98 @@
-2026-05-09 15:07:07.821201+05:30 jdbc[25]: exception
-org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement "/****** Object:  Table [dbo].[APP_PREFERENCE]    Script Date: 06-05-2026 11:57:19 ******/\000aSET [*]ANSI_NULLS ON\000aGO\000a\000aSET QUOTED_IDENTIFIER ON\000aGO\000a\000aCREATE TABLE [dbo].[AD_APP_PREFERENCE](\000a\0009[ROW_ID] [int] IDENTITY(1,1) NOT NULL,\000a\0009[PREF_NAME] [nvarchar](100) NOT NULL,\000a\0009[PREF_VALUE] [nvarchar](100) NULL,\000a\0009[COMMENTS] [nvarchar](500) NULL,\000a\0009[PREF_TYPE] [nvarchar](100) NULL,\000a\0009[CREATED_BY] [nvarchar](100) NOT NULL,\000a\0009[CREATED_DATE] [datetime] NULL,\000a\0009[UPDATED_BY] [nvarchar](100) NULL,\000a\0009[UPDATED_DATE] [datetime] NULL,\000a CONSTRAINT [PK_AD_APP_PREFERENCE] PRIMARY KEY CLUSTERED \000a(\000a\0009[ROW_ID] ASC\000a)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]\000a) ON [PRIMARY]\000aGO"; expected "@, AUTOCOMMIT, EXCLUSIVE, IGNORECASE, PASSWORD, SALT, MODE, DATABASE, COLLATION, CLUSTER, DATABASE_EVENT_LISTENER, ALLOW_LITERALS, DEFAULT_TABLE_TYPE, SCHEMA, CATALOG, SCHEMA_SEARCH_PATH, JAVA_OBJECT_SERIALIZER, IGNORE_CATALOGS, SESSION, TRANSACTION, TIME, NON_KEYWORDS, DEFAULT_NULL_ORDERING"; SQL statement:
-/****** Object:  Table [dbo].[APP_PREFERENCE]    Script Date: 06-05-2026 11:57:19 ******/
-SET ANSI_NULLS ON
-GO
-
-SET QUOTED_IDENTIFIER ON
-GO
-
-CREATE TABLE [dbo].[AD_APP_PREFERENCE](
-	[ROW_ID] [int] IDENTITY(1,1) NOT NULL,
-	[PREF_NAME] [nvarchar](100) NOT NULL,
-	[PREF_VALUE] [nvarchar](100) NULL,
-	[COMMENTS] [nvarchar](500) NULL,
-	[PREF_TYPE] [nvarchar](100) NULL,
-	[CREATED_BY] [nvarchar](100) NOT NULL,
-	[CREATED_DATE] [datetime] NULL,
-	[UPDATED_BY] [nvarchar](100) NULL,
-	[UPDATED_DATE] [datetime] NULL,
- CONSTRAINT [PK_AD_APP_PREFERENCE] PRIMARY KEY CLUSTERED 
-(
-	[ROW_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO [42001-224]
+2026-05-26 23:44:09.791266+05:30 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "ADDRESS_1" not found; SQL statement:
+UPDATE AD_COMPANY_CREDENTIAL SET ADDRESS = ADDRESS_1 WHERE ADDRESS IS NULL [42122-224]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.expression.ExpressionColumn.getColumnException(ExpressionColumn.java:244)
+	at org.h2.expression.ExpressionColumn.optimizeOther(ExpressionColumn.java:226)
+	at org.h2.expression.ExpressionColumn.optimize(ExpressionColumn.java:213)
+	at org.h2.command.dml.SetClauseList$SetSimple.mapAndOptimize(SetClauseList.java:409)
+	at org.h2.command.dml.SetClauseList.mapAndOptimize(SetClauseList.java:219)
+	at org.h2.command.dml.Update.doPrepare(Update.java:132)
+	at org.h2.command.dml.DataChangeStatement.prepare(DataChangeStatement.java:37)
+	at org.h2.command.Parser.prepareCommand(Parser.java:489)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:639)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:559)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1166)
+	at org.h2.jdbc.JdbcStatement.executeInternal(JdbcStatement.java:245)
+	at org.h2.jdbc.JdbcStatement.execute(JdbcStatement.java:231)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at com.autonoma.erp.config.SqlMigrationRunner.lambda$runMigrations$1(SqlMigrationRunner.java:212)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:346)
+	at com.autonoma.erp.config.SqlMigrationRunner.runMigrations(SqlMigrationRunner.java:201)
+	at com.autonoma.erp.config.SqlMigrationRunner.run(SqlMigrationRunner.java:78)
+	at org.springframework.boot.SpringApplication.lambda$callRunner$5(SpringApplication.java:790)
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:83)
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60)
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:88)
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:798)
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:789)
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:774)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:571)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:774)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:341)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
+	at com.autonoma.erp.AutonomaBackendApplication.main(AutonomaBackendApplication.java:13)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+2026-05-27 09:23:48.937545+05:30 jdbc[5]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "ADDRESS_1" not found; SQL statement:
+UPDATE AD_COMPANY_CREDENTIAL SET ADDRESS = ADDRESS_1 WHERE ADDRESS IS NULL [42122-224]
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:514)
+	at org.h2.message.DbException.getJdbcSQLException(DbException.java:489)
+	at org.h2.message.DbException.get(DbException.java:223)
+	at org.h2.message.DbException.get(DbException.java:199)
+	at org.h2.expression.ExpressionColumn.getColumnException(ExpressionColumn.java:244)
+	at org.h2.expression.ExpressionColumn.optimizeOther(ExpressionColumn.java:226)
+	at org.h2.expression.ExpressionColumn.optimize(ExpressionColumn.java:213)
+	at org.h2.command.dml.SetClauseList$SetSimple.mapAndOptimize(SetClauseList.java:409)
+	at org.h2.command.dml.SetClauseList.mapAndOptimize(SetClauseList.java:219)
+	at org.h2.command.dml.Update.doPrepare(Update.java:132)
+	at org.h2.command.dml.DataChangeStatement.prepare(DataChangeStatement.java:37)
+	at org.h2.command.Parser.prepareCommand(Parser.java:489)
+	at org.h2.engine.SessionLocal.prepareLocal(SessionLocal.java:639)
+	at org.h2.engine.SessionLocal.prepareCommand(SessionLocal.java:559)
+	at org.h2.jdbc.JdbcConnection.prepareCommand(JdbcConnection.java:1166)
+	at org.h2.jdbc.JdbcStatement.executeInternal(JdbcStatement.java:245)
+	at org.h2.jdbc.JdbcStatement.execute(JdbcStatement.java:231)
+	at com.zaxxer.hikari.pool.ProxyStatement.execute(ProxyStatement.java:94)
+	at com.zaxxer.hikari.pool.HikariProxyStatement.execute(HikariProxyStatement.java)
+	at com.autonoma.erp.config.SqlMigrationRunner.lambda$runMigrations$1(SqlMigrationRunner.java:212)
+	at org.springframework.jdbc.core.JdbcTemplate.execute(JdbcTemplate.java:346)
+	at com.autonoma.erp.config.SqlMigrationRunner.runMigrations(SqlMigrationRunner.java:201)
+	at com.autonoma.erp.config.SqlMigrationRunner.run(SqlMigrationRunner.java:78)
+	at org.springframework.boot.SpringApplication.lambda$callRunner$5(SpringApplication.java:790)
+	at org.springframework.util.function.ThrowingConsumer$1.acceptWithException(ThrowingConsumer.java:83)
+	at org.springframework.util.function.ThrowingConsumer.accept(ThrowingConsumer.java:60)
+	at org.springframework.util.function.ThrowingConsumer$1.accept(ThrowingConsumer.java:88)
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:798)
+	at org.springframework.boot.SpringApplication.callRunner(SpringApplication.java:789)
+	at org.springframework.boot.SpringApplication.lambda$callRunners$3(SpringApplication.java:774)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.accept(ForEachOps.java:186)
+	at java.base/java.util.stream.SortedOps$SizedRefSortingSink.end(SortedOps.java:357)
+	at java.base/java.util.stream.AbstractPipeline.copyInto(AbstractPipeline.java:571)
+	at java.base/java.util.stream.AbstractPipeline.wrapAndCopyInto(AbstractPipeline.java:560)
+	at java.base/java.util.stream.ForEachOps$ForEachOp.evaluateSequential(ForEachOps.java:153)
+	at java.base/java.util.stream.ForEachOps$ForEachOp$OfRef.evaluateSequential(ForEachOps.java:176)
+	at java.base/java.util.stream.AbstractPipeline.evaluate(AbstractPipeline.java:265)
+	at java.base/java.util.stream.ReferencePipeline.forEach(ReferencePipeline.java:632)
+	at org.springframework.boot.SpringApplication.callRunners(SpringApplication.java:774)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:341)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1354)
+	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1343)
+	at com.autonoma.erp.AutonomaBackendApplication.main(AutonomaBackendApplication.java:13)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)

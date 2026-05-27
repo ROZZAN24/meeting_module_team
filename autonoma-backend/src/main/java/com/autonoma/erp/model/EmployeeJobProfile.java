@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "hrm_employee_job_profile")
+@Table(name = "HR_EMPLOYEE_JOB_PROFILE")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

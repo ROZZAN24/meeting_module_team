@@ -56,7 +56,7 @@ export default function DepartmentDetails() {
   const fetchDepartments = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/hrm/departments');
+      const response = await axios.get('/api/master/hr/departments');
       setRows(response.data);
     } catch (error) {
       console.error('Failed to fetch departments:', error);
@@ -117,7 +117,7 @@ export default function DepartmentDetails() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`/api/hrm/departments/${deleteTargetId}`);
+      await axios.delete(`/api/master/hr/departments/${deleteTargetId}`);
       dispatch(openSnackbar({ open: true, message: 'Department deleted successfully!', variant: 'alert', severity: 'success' }));
       fetchDepartments();
     } catch (error) {
@@ -133,6 +133,12 @@ export default function DepartmentDetails() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconBuilding size={24} />

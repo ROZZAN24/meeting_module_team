@@ -26,10 +26,10 @@ const columns = [
   { id: 'department', label: 'Department', minWidth: 120 },
   { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 export default function AuditCriteriaMaster() {
@@ -66,8 +66,8 @@ export default function AuditCriteriaMaster() {
       { id: 'clause', label: 'Clause', type: 'text', placeholder: 'Filter by Clause...', isStarred: true },
       { id: 'criteriaText', label: 'Criteria', type: 'text', placeholder: 'Filter by Criteria...' },
       { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Department...' },
-      { id: 'createdBy', label: 'Created User', type: 'text' },
-      { id: 'updatedBy', label: 'Updated User', type: 'text' }
+      { id: 'createdUser', label: 'CREATED USER', type: 'text' },
+      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' }
     ];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
@@ -133,10 +133,10 @@ export default function AuditCriteriaMaster() {
       'Clause': r.clause,
       'Criteria': r.criteriaText,
       'Department': r.department,
-      'Created User': r.createdBy || 'Admin',
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
-      'Updated User': r.updatedBy || 'Admin',
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
+      'CREATED USER': r.createdUser || r.createdBy || 'Admin',
+      'CREATED DATE': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
+      'UPDATED USER': r.updatedUser || r.updatedBy || 'Admin',
+      'UPDATED DATE': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Audit_Criteria_Details');
@@ -154,16 +154,16 @@ export default function AuditCriteriaMaster() {
       const matchesCriteria = !criteriaFilter || (row.criteriaText && row.criteriaText.toLowerCase().includes(criteriaFilter.toLowerCase()));
       const departmentFilter = globalFilters.department || '';
       const matchesDepartment = !departmentFilter || (row.department && row.department.toLowerCase().includes(departmentFilter.toLowerCase()));
-      const createdByFilter = globalFilters.createdBy || '';
-      const matchesCreatedBy = !createdByFilter || (row.createdBy && row.createdBy.toLowerCase().includes(createdByFilter.toLowerCase()));
-      const updatedByFilter = globalFilters.updatedBy || '';
-      const matchesUpdatedBy = !updatedByFilter || (row.updatedBy && row.updatedBy.toLowerCase().includes(updatedByFilter.toLowerCase()));
+      const createdUserFilter = globalFilters.createdUser || '';
+      const matchesCreatedUser = !createdUserFilter || ((row.createdUser || row.createdBy || '').toLowerCase().includes(createdUserFilter.toLowerCase()));
+      const updatedUserFilter = globalFilters.updatedUser || '';
+      const matchesUpdatedUser = !updatedUserFilter || ((row.updatedUser || row.updatedBy || '').toLowerCase().includes(updatedUserFilter.toLowerCase()));
 
       const matchesSearch = !globalQuery ||
         (row.criteriaText && row.criteriaText.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.auditType && row.auditType.toLowerCase().includes(globalQuery.toLowerCase()));
       
-      return matchesStatus && matchesAuditType && matchesClause && matchesCriteria && matchesDepartment && matchesCreatedBy && matchesUpdatedBy && matchesSearch;
+      return matchesStatus && matchesAuditType && matchesClause && matchesCriteria && matchesDepartment && matchesCreatedUser && matchesUpdatedUser && matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 
@@ -186,7 +186,8 @@ export default function AuditCriteriaMaster() {
       );
     }
     if (col.id === 'status') return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
-    if (col.id === 'createdBy' || col.id === 'updatedBy') return val || 'Admin';
+    if (col.id === 'createdUser') return row.createdUser || row.createdBy || 'Admin';
+    if (col.id === 'updatedUser') return row.updatedUser || row.updatedBy || 'Admin';
     if (col.id.toLowerCase().includes('date')) {
       if (!val) return '-';
       try { return format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch { return '-'; }

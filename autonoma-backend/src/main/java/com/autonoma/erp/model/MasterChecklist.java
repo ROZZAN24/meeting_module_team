@@ -11,12 +11,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "qms_checklist_master")
+@Table(name = "QMS_CHECKLIST_MASTER")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties(value = { "hibernateLazyInitializer", "handler" }, ignoreUnknown = true)
-public class MasterChecklist {
+public class MasterChecklist extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -80,21 +80,9 @@ public class MasterChecklist {
     @Temporal(TemporalType.DATE)
     private Date nextDueDate;
 
-    @Column(name = "CREATED_BY")
-    private String createdBy;
 
-    @Column(name = "CREATED_AT")
-    @Temporal(TemporalType.TIMESTAMP)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date createdAt;
 
-    @Column(name = "UPDATED_BY")
-    private String updatedBy;
 
-    @Column(name = "UPDATED_AT")
-    @Temporal(TemporalType.TIMESTAMP)
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private Date updatedAt;
 
     @Column(name = "DUAL_CHECK")
     private String dualCheck;
@@ -289,53 +277,17 @@ public class MasterChecklist {
         this.nextDueDate = nextDueDate;
     }
 
-    public String getCreatedBy() {
-        return createdBy;
-    }
 
-    public void setCreatedBy(String createdBy) {
-        this.createdBy = createdBy;
-    }
 
-    public Date getCreatedAt() {
-        return createdAt;
-    }
 
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
 
-    public Date getCreatedDate() {
-        return createdAt;
-    }
 
-    public void setCreatedDate(Date createdDate) {
-        this.createdAt = createdDate;
-    }
 
-    public String getUpdatedBy() {
-        return updatedBy;
-    }
 
-    public void setUpdatedBy(String updatedBy) {
-        this.updatedBy = updatedBy;
-    }
 
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
 
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 
-    public Date getUpdatedDate() {
-        return updatedAt;
-    }
 
-    public void setUpdatedDate(Date updatedDate) {
-        this.updatedAt = updatedDate;
-    }
 
     public String getDualCheck() {
         return dualCheck;

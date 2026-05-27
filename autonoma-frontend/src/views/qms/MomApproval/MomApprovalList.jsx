@@ -21,9 +21,11 @@ const columns = [
   { id: 'actionObservation', label: 'Action Observation', minWidth: 200 },
   { id: 'targetDate', label: 'Target Date', minWidth: 120 },
   { id: 'assignedTo', label: 'Assigned To', minWidth: 130 },
-  { id: 'createdBy', label: 'Created By', minWidth: 120 },
-  { id: 'status', label: 'Status', minWidth: 160 },
-  { id: 'createdAt', label: 'Created Date', minWidth: 140 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140 },
+  { id: 'status', label: 'Status', minWidth: 160 }
 ];
 
 export default function MomApprovalList() {
@@ -97,6 +99,9 @@ export default function MomApprovalList() {
               _momDate: mom.momDate,
               _scheduleNo: mom.schedule?.scheduleNo || '',
               _createdAt: detail.createdAt || mom.createdAt,
+              _updatedAt: detail.updatedAt || mom.updatedAt,
+              createdUser: detail.createdUser || detail.createdBy || mom.createdUser || mom.createdBy || '-',
+              updatedUser: detail.updatedUser || detail.updatedBy || mom.updatedUser || mom.updatedBy || '-',
               _mom: mom
             });
           }
@@ -149,11 +154,18 @@ export default function MomApprovalList() {
     else if (col.id === 'actionObservation') val = row.actionObservation || '-';
     else if (col.id === 'targetDate') val = row.targetDate || '-';
     else if (col.id === 'assignedTo') val = row.assignedTo?.employeeName || '-';
-    else if (col.id === 'createdBy') val = row.createdBy || '-';
+    else if (col.id === 'createdUser') val = row.createdUser || '-';
+    else if (col.id === 'updatedUser') val = row.updatedUser || '-';
     else if (col.id === 'createdAt') {
       if (!row._createdAt) val = '-';
       else {
         const dt = new Date(row._createdAt);
+        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+    } else if (col.id === 'updatedAt') {
+      if (!row._updatedAt) val = '-';
+      else {
+        const dt = new Date(row._updatedAt);
         val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
       }
     } else if (col.id === 'status') {

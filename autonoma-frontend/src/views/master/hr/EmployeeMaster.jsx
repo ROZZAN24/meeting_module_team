@@ -121,7 +121,24 @@ const RULES = [
   { field: 'dateOfJoining', label: 'Date Of Joining', required: true }
 ];
 
-const R = ({ children, lg = 4 }) => <Grid item xs={12} sm={6} md={4} lg={lg} xl={4}>{children}</Grid>;
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object' 
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5 }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn }}>{children}</Box>;
+};
 
 export default function EmployeeMaster() {
   const theme = useTheme();
@@ -173,15 +190,7 @@ export default function EmployeeMaster() {
     const { name, value } = e.target;
     setForm((p) => {
       const next = { ...p, [name]: value };
-      if (name === 'departmentId') {
-        const dept = departments.find(d => d.id === value || d.id.toString() === value.toString());
-        const deptName = dept?.departmentName?.toUpperCase();
-        if (deptName && ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(deptName)) {
-          next.inductionStatus = 'COMPLETED';
-        } else {
-          next.inductionStatus = 'PENDING';
-        }
-      }
+
       return next;
     });
     if (errors[name]) clearErrors(name);
@@ -241,7 +250,7 @@ export default function EmployeeMaster() {
       } else {
         const { data } = await axios.post(API_PATHS.HRM.EMPLOYEES, payload);
         dispatch(openSnackbar({ open: true, message: 'New Employee Master created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
-        navigate(`/hra/employee/master/create?id=${data.id}`, { replace: true });
+        navigate(`/hr/employee/master/create?id=${data.id}`, { replace: true });
         return;
       }
     } catch (e) {
@@ -394,9 +403,9 @@ export default function EmployeeMaster() {
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{employeeId ? 'Edit Employee' : 'New Employee'}</Typography></Stack>}
       secondary={
         <Stack direction="row" spacing={1.5}>
-          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hra/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
+          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hr/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
           {employeeId && <Tooltip title="Delete"><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
-          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hra/employee/master/create', { replace: true }); }} sx={btnClear}>Clear</Button></Tooltip>
+          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hr/employee/master/create', { replace: true }); }} sx={btnClear}>Clear</Button></Tooltip>
           <Tooltip title="Save"><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
         </Stack>
       }
@@ -404,7 +413,7 @@ export default function EmployeeMaster() {
       <Stack spacing={4}>
         {/* --- SECTION 1: CLASSIFICATION & IDENTITY --- */}
         <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Classification & Identity">
-          <Grid container spacing={2.5}>
+          <GridContainer>
             {/* empCode is hidden in the UI but preserved in form state for backend/database */}
             <R>
               <BOSTextField 
@@ -443,7 +452,7 @@ export default function EmployeeMaster() {
             </R>
             <R><BOSTextField name="employeeName" label="Employee Name *" value={form.employeeName} onChange={h} error={!!errors.employeeName} helperText={errors.employeeName} /></R>
             <R><BOSTextField name="fatherHusbandName" label="Father/Husband Name" value={form.fatherHusbandName} onChange={h} /></R>
-          </Grid>
+          </GridContainer>
           
           <Divider sx={{ my: 1.5 }} />
           
@@ -451,8 +460,8 @@ export default function EmployeeMaster() {
             Required Documents & Photos
           </Typography>
           
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6} md={3}>
+          <GridContainer columns={{ xs: 1, sm: 2, md: 4 }}>
+            <Box>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.employeePhotoUpload && form.employeePhotoUpload !== '-' && form.employeePhotoUpload !== 'null' && form.employeePhotoUpload !== 'undefined') ? [{ fileName: form.employeePhotoUpload.split('/').pop(), serverFileName: form.employeePhotoUpload, isServer: true }] : []}
@@ -465,8 +474,8 @@ export default function EmployeeMaster() {
                   label="Employee Photo Upload"
                 />
               </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.employeeSignatureUpload && form.employeeSignatureUpload !== '-' && form.employeeSignatureUpload !== 'null' && form.employeeSignatureUpload !== 'undefined') ? [{ fileName: form.employeeSignatureUpload.split('/').pop(), serverFileName: form.employeeSignatureUpload, isServer: true }] : []}
@@ -479,8 +488,8 @@ export default function EmployeeMaster() {
                   label="Employee Signature Upload"
                 />
               </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.ndaUpload && form.ndaUpload !== '-' && form.ndaUpload !== 'null' && form.ndaUpload !== 'undefined') ? [{ fileName: form.ndaUpload.split('/').pop(), serverFileName: form.ndaUpload, isServer: true }] : []}
@@ -493,8 +502,8 @@ export default function EmployeeMaster() {
                   label="NDA Upload"
                 />
               </Box>
-            </Grid>
-            <Grid item xs={12} sm={6} md={3}>
+            </Box>
+            <Box>
               <Box sx={{ minHeight: 100 }}>
                 <BOSFileUpload
                   files={(form.fitnessCertificateUpload && form.fitnessCertificateUpload !== '-' && form.fitnessCertificateUpload !== 'null' && form.fitnessCertificateUpload !== 'undefined') ? [{ fileName: form.fitnessCertificateUpload.split('/').pop(), serverFileName: form.fitnessCertificateUpload, isServer: true }] : []}
@@ -507,13 +516,13 @@ export default function EmployeeMaster() {
                   label="Fitness Certificate Upload"
                 />
               </Box>
-            </Grid>
-          </Grid>
+            </Box>
+          </GridContainer>
         </BOSFormSection>
 
         {/* --- SECTION 2: ORGANIZATION --- */}
         <BOSFormSection icon={<IconBriefcase size={20} color={theme.palette.secondary.main} />} title="Organization">
-          <Grid container spacing={2.5}>
+          <GridContainer>
             <R>
               <BOSTextField select name="departmentId" label="Department *" value={form.departmentId} onChange={h} error={!!errors.departmentId} helperText={errors.departmentId}>
                 {departments.map((d) => <MenuItem key={d.id} value={d.id}>{d.departmentName}</MenuItem>)}
@@ -559,7 +568,7 @@ export default function EmployeeMaster() {
             <R><BOSTextField name="pfRestriction" label="PF Restriction" value={form.pfRestriction} onChange={h} type="number" /></R>
             <R><BOSTextField select name="permissionToggle" label="Permission" value={form.permissionToggle} onChange={h}>{YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}</BOSTextField></R>
             <R><BOSTextField name="permissionLimit" label="Permission Limit" value={form.permissionLimit} onChange={h} disabled={form.permissionToggle !== 'YES'} type="number" /></R>
-
+ 
             <R>
               {form.categoryId !== 1 && (
                 <BOSTextField name="vendorName" label="Vendor Name" value={form.vendorName} onChange={h} placeholder="Enter Vendor" />
@@ -570,30 +579,32 @@ export default function EmployeeMaster() {
                 {REF_MODES.map((m) => <MenuItem key={m} value={m}>{m}</MenuItem>)}
               </BOSTextField>
             </R>
-            <R>
-              {form.referMode === 'EMPLOYEE' ? (
-                <BOSTextField select name="referenceComments" label="Referring Employee *" value={form.referenceComments} onChange={h}>
-                  <MenuItem value="">-Select-</MenuItem>
-                  {employees.filter(e => e.status === 'Active').map(e => (
-                    <MenuItem key={e.id} value={e.employeeName}>{e.employeeName} ({e.empCode})</MenuItem>
-                  ))}
-                </BOSTextField>
-              ) : (
-                <BOSTextField 
-                  name="referenceComments" 
-                  label={`Reference Comments ${form.referMode === 'OTHERS' ? '*' : ''}`} 
-                  value={form.referenceComments} 
-                  onChange={h} 
-                  placeholder="Enter details..." 
-                />
-              )}
-            </R>
-          </Grid>
+            {form.referMode && form.referMode !== '-SELECT-' && (
+              <R>
+                {form.referMode === 'EMPLOYEE' ? (
+                  <BOSTextField select name="referenceComments" label="Referring Employee *" value={form.referenceComments} onChange={h}>
+                    <MenuItem value="">-Select-</MenuItem>
+                    {employees.filter(e => e.status === 'Active').map(e => (
+                      <MenuItem key={e.id} value={e.employeeName}>{e.employeeName} ({e.empCode})</MenuItem>
+                    ))}
+                  </BOSTextField>
+                ) : (
+                  <BOSTextField 
+                    name="referenceComments" 
+                    label={`Reference Comments ${form.referMode === 'OTHERS' ? '*' : ''}`} 
+                    value={form.referenceComments} 
+                    onChange={h} 
+                    placeholder="Enter details..." 
+                  />
+                )}
+              </R>
+            )}
+          </GridContainer>
         </BOSFormSection>
  
         {/* --- SECTION 3: DATES & SCHEDULING --- */}
         <BOSFormSection icon={<IconCalendar size={20} color={theme.palette.primary.main} />} title="Date & Scheduling">
-          <Grid container spacing={2.5}>
+          <GridContainer>
             <R><BOSDatePicker name="dateOfJoining" label="Date Of Joining" value={form.dateOfJoining} onChange={h} error={!!errors.dateOfJoining} helperText={errors.dateOfJoining} required /></R>
             <R><BOSTextField name="probationPeriod" label="Probation (Months)" value={form.probationPeriod} onChange={h} type="number" /></R>
             <R><BOSDatePicker name="confirmationDate" label="Confirmation Date" value={form.confirmationDate} onChange={h} /></R>
@@ -602,16 +613,7 @@ export default function EmployeeMaster() {
                 name="inductionStatus" 
                 label="Induction Status" 
                 value={form.inductionStatus || 'PENDING'} 
-                InputProps={{
-                  readOnly: true,
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={() => navigate('/master/hr/ats/induction-trainee')} size="small" color="primary">
-                        <IconEye size={18} />
-                      </IconButton>
-                    </InputAdornment>
-                  )
-                }}
+                InputProps={{ readOnly: true }}
               />
             </R>
             <R><BOSDatePicker name="exitDate" label="Exit Date" value={form.exitDate} onChange={h} /></R>
@@ -643,12 +645,12 @@ export default function EmployeeMaster() {
               />
             </R>
             <R><BOSDatePicker name="rejoiningDate" label="Rejoining Date" value={form.rejoiningDate} onChange={h} /></R>
-          </Grid>
+          </GridContainer>
         </BOSFormSection>
  
         {/* --- SECTION 4: OPERATIONS --- */}
         <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Operations And Allowances">
-          <Grid container spacing={2.5}>
+          <GridContainer>
             <R><BOSTextField name="graceMinutes" label="Grace Minutes" value={form.graceMinutes} onChange={h} type="number" /></R>
             <R><BOSTextField select name="petrolMode" label="Petrol Mode" value={form.petrolMode} onChange={h}><MenuItem value="FIXED">FIXED</MenuItem><MenuItem value="KM BASED">KM BASED</MenuItem><MenuItem value="NA">NA</MenuItem></BOSTextField></R>
             <R><BOSTextField name="petrolAllowance" label="Petrol Allowance" value={form.petrolAllowance} onChange={h} type="number" disabled={form.petrolMode === 'NA'} /></R>
@@ -667,7 +669,7 @@ export default function EmployeeMaster() {
               </BOSTextField>
             </R>
             <R><BOSTextField name="shiftDuration" label="Shift Duration" value={form.shiftDuration} inputProps={{ readOnly: true }} /></R>
-          </Grid>
+          </GridContainer>
         </BOSFormSection>
 
         <EmployeeSubSections employeeId={employeeId} />
@@ -700,7 +702,7 @@ export default function EmployeeMaster() {
                 <IconBriefcase size={20} /> Strategic Mapping
               </Typography>
               <Paper sx={{ p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50', boxShadow: 'none' }}>
-                <Grid container spacing={2}>
+                <GridContainer columns={{ xs: 1, sm: 2, md: 2 }}>
                   <R lg={6}>
                     <BOSTextField select name="segment" label="Segment" value={form.segment} onChange={h}>
                       <MenuItem value="">-Select Segment-</MenuItem>
@@ -713,8 +715,7 @@ export default function EmployeeMaster() {
                       {subSegments.map(s => <MenuItem key={s.id} value={s.subSegmentName}>{s.subSegmentName}</MenuItem>)}
                     </BOSTextField>
                   </R>
-                </Grid>
-              </Paper>
+                </GridContainer>              </Paper>
             </Box>
 
             <Divider />
@@ -735,28 +736,28 @@ export default function EmployeeMaster() {
                 <IconUser size={20} /> Internal Assignments
               </Typography>
               <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider', bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'grey.50', boxShadow: 'none' }}>
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6} md={3}>
+                <GridContainer columns={{ xs: 1, sm: 2, md: 4 }}>
+                  <Box>
                     <BOSTextField select name="isInductionEligible" label="Induction" value={form.isInductionEligible} onChange={h} fullWidth>
                       {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box>
                     <BOSTextField select name="isInterviewer" label="Interviewer" value={form.isInterviewer} onChange={h} fullWidth>
                       {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box>
                     <BOSTextField select name="isEnquiryAssignee" label="Enquiry Assign" value={form.isEnquiryAssignee} onChange={h} fullWidth>
                       {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Box>
+                  <Box>
                     <BOSTextField select name="isPrAssignee" label="PR Assign" value={form.isPrAssignee} onChange={h} fullWidth>
                       {YES_NO.map(o => <MenuItem key={o} value={o}>{o}</MenuItem>)}
                     </BOSTextField>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </GridContainer>
               </Paper>
             </Box>
 
@@ -772,7 +773,7 @@ export default function EmployeeMaster() {
           try { 
             await axios.delete(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`); 
             dispatch(openSnackbar({ open: true, message: 'Employee Master deleted permanently.', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' })); 
-            navigate('/hra/employee/master'); 
+            navigate('/hr/employee/master'); 
           } catch (e) { 
             console.error('Error deleting employee:', e);
             let errorMessage = 'Failed to delete record.';

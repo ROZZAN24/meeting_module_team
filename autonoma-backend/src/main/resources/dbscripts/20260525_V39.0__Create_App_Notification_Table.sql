@@ -1,5 +1,5 @@
 -- =============================================
--- Author:      Antigravity
+-- Author:      Autonoma ERP Team
 -- Create date: 2026-05-25
 -- Description: Create sys_app_notification table for system notifications
 -- =============================================

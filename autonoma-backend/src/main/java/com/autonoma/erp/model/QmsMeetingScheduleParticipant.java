@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "qms_meeting_schedule_participant")
+@Table(name = "QMS_MEETING_SCHEDULE_PARTICIPANT")
 @Data
 @NoArgsConstructor
 public class QmsMeetingScheduleParticipant {

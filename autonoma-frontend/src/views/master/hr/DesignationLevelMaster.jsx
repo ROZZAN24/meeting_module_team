@@ -48,7 +48,7 @@ export default function DesignationLevelMaster() {
     const fetchDesignationLevels = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/master/hr/designationlevel');
+            const response = await axios.get('/api/master/hr/designation-levels');
             setRows(response.data || []);
         } catch (error) {
             console.error('Failed to fetch designation levels:', error);
@@ -66,7 +66,7 @@ export default function DesignationLevelMaster() {
     const handleDeleteConfirm = async () => {
         if (!selectedRow) return;
         try {
-            await axios.delete(`/api/master/hr/designationlevel/${selectedRow.rowId}`);
+            await axios.delete(`/api/master/hr/designation-levels/${selectedRow.rowId}`);
             dispatch(openSnackbar({ open: true, message: 'Designation Level deleted successfully', severity: 'success', variant: 'alert' }));
             fetchDesignationLevels();
             setDeleteDialogOpen(false);
@@ -113,6 +113,12 @@ export default function DesignationLevelMaster() {
 
     return (
         <MainCard
+            contentSX={{ p: 0 }}
+            sx={{
+                mx: { xs: -2, sm: -3 },
+                width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+                borderRadius: 0
+            }}
             title={
                 <Stack direction="row" alignItems="center" spacing={1.5}>
                     <IconBriefcase size={24} />
