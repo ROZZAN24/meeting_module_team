@@ -10,7 +10,8 @@ import {
   Typography,
   MenuItem,
   Box,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconUserPlus, IconUsersGroup } from '@tabler/icons-react';
@@ -18,78 +19,54 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
-import useLookups from 'hooks/useLookups';
 import useAuth from 'hooks/useAuth';
 import { BOSDataTable, BOSTextField, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-
-const isDepartmentMatch = (allowedDepts, empDeptName) => {
-  if (!allowedDepts || !allowedDepts.length) return true;
-  if (!empDeptName) return false;
-  
-  const cleanEmpDept = String(empDeptName).toUpperCase().trim();
-  
-  return allowedDepts.some(allowedDept => {
-    if (!allowedDept) return false;
-    const cleanAllowed = String(allowedDept).toUpperCase().trim();
-    return cleanAllowed === cleanEmpDept || 
-           cleanAllowed.includes(cleanEmpDept) || 
-           cleanEmpDept.includes(cleanAllowed);
-  });
-};
 
 export default function ChecklistAssignDialog({ open, onClose, checklistId, initialData }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const { user } = useAuth();
-  const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS']);
-  
-  // Get allowed department names for this checklist
+
+  // Department names attached to this checklist
   const allowedDeptNames = (initialData?.departments || [])
     .map(d => d.departmentName || d.department?.departmentName)
     .filter(Boolean);
-  const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
-  
-  // Filter employees whose department matches one of the checklist's departments,
-  // and who are active and have credentials created.
-  let filteredEmployees = (lookups.employees || []).filter(emp => {
-    // 1. Same department (if checklist has allowed departments)
-    if (allowedDeptNames.length > 0) {
-      const empDept = (lookups.departments || []).find(d => String(d.id) === String(emp.departmentId));
-      if (!empDept || !isDepartmentMatch(allowedDeptNames, empDept.departmentName)) {
-        return false;
-      }
-    }
-    // 2. Active status
-    if (emp.status !== 'Active') {
-      return false;
-    }
-    // 3. Credentials created (exists in user list)
-    if (!userEmpIds.includes(Number(emp.id))) {
-      return false;
-    }
-    return true;
-  });
 
-  // Fallback 1: If no employees match after applying department filters, relax the department filter but keep credentialed check
-  if (filteredEmployees.length === 0) {
-    filteredEmployees = (lookups.employees || []).filter(emp => {
-      return emp.status === 'Active' && 
-             userEmpIds.includes(Number(emp.id));
-    });
-  }
+  // Employees fetched from API filtered by the checklist's departments
+  const [employeeOptions, setEmployeeOptions] = useState([]);
+  const [empLoading, setEmpLoading] = useState(false);
 
-  // Fallback 2: If there are STILL no employees (e.g. no users have credentials created yet or credentials API is empty/loading),
-  // show all active employees so they are never blocked from assigning!
-  if (filteredEmployees.length === 0) {
-    filteredEmployees = (lookups.employees || []).filter(emp => emp.status === 'Active');
-  }
-
-  const employeeOptions = filteredEmployees.map(e => ({
-    label: `${e.employeeName || (e.firstName + ' ' + e.lastName)} (${(lookups.departments || []).find(d => String(d.id) === String(e.departmentId))?.departmentName || 'No Dept'})${e.status !== 'Active' ? ' - INACTIVE' : ''}`,
-    value: e.employeeName || (e.firstName + ' ' + e.lastName),
-    status: e.status
-  }));
+  useEffect(() => {
+    if (!open) {
+      setEmployeeOptions([]);
+      return;
+    }
+    setEmpLoading(true);
+    axios.get('/api/master/hr/employees')
+      .then(res => {
+        const all = res.data || [];
+        // Filter: only Active employees whose department is in the checklist's departments
+        const filtered = all.filter(emp => {
+          if (emp.status !== 'Active') return false;
+          if (allowedDeptNames.length === 0) return true;
+          const empDept = (emp.departmentName || emp.department?.departmentName || '').trim().toUpperCase();
+          return allowedDeptNames.some(d => d.trim().toUpperCase() === empDept);
+        });
+        setEmployeeOptions(
+          filtered.map(e => ({
+            label: `${e.employeeName || [e.firstName, e.lastName].filter(Boolean).join(' ')} (${e.departmentName || e.department?.departmentName || 'No Dept'})`,
+            value: e.employeeName || [e.firstName, e.lastName].filter(Boolean).join(' ')
+          }))
+        );
+      })
+      .catch(err => {
+        console.error('Failed to load employees for assign dialog', err);
+        setEmployeeOptions([]);
+      })
+      .finally(() => setEmpLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, checklistId]);
 
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -289,14 +266,24 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               
               <BOSTextField
                 select
-                label="Assign To"
+                label={empLoading ? 'Loading employees…' : `Assign To (${visibleEmployeeOptions.length} available)`}
                 value={formData.assignTo}
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
+                disabled={empLoading}
+                InputProps={empLoading ? { endAdornment: <CircularProgress size={16} sx={{ mr: 1 }} /> } : {}}
               >
-                {visibleEmployeeOptions.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
+                {empLoading ? (
+                  <MenuItem disabled><em>Loading…</em></MenuItem>
+                ) : visibleEmployeeOptions.length === 0 ? (
+                  <MenuItem disabled>
+                    <em>No active employees found for the assigned department(s)</em>
+                  </MenuItem>
+                ) : (
+                  visibleEmployeeOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))
+                )}
               </BOSTextField>
 
               <BOSTextField

@@ -36,12 +36,7 @@ const columns = [
   'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE', 'Status'
 ];
 
-const DEPARTMENTS = [
-  'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT',
-  'HRA', 'LOGISTICS', 'MAINTENANCE', 'MANAGEMENT', 'MANAGEMENT REPRESENTATIVE',
-  'OPERATIONS', 'PLANNING', 'PRODUCT DEVELOPMENT', 'PRODUCTION', 'PURCHASE',
-  'QMS', 'QUALITY', 'SALES & MARKETING', 'STORES', 'STRATEGIC PROCUREMENT', 'TOP MANAGEMENT'
-];
+
 
 const DEFAULT_FILTERS = {
   fromDate: '',
@@ -124,7 +119,7 @@ const exportColumns = [
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
-const filterConfig = [
+const getFilterConfig = (departments) => [
   { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
   { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
   {
@@ -152,7 +147,7 @@ const filterConfig = [
     ]
   },
   { id: 'checkingPoint', label: 'Check Point', type: 'text', isStarred: false },
-  { id: 'department', label: 'Dept', type: 'autocomplete', multiple: true, isStarred: false, options: DEPARTMENTS.map(d => ({ value: d, label: d })) },
+  { id: 'department', label: 'Dept', type: 'autocomplete', multiple: true, isStarred: false, options: departments.map(d => ({ value: d, label: d })) },
   { id: 'level', label: 'Level', type: 'text', isStarred: false },
   {
     id: 'frequency', label: 'Frequency', type: 'select', isStarred: false, defaultValue: 'All', options: [
@@ -224,15 +219,30 @@ export default function CheckListRenewalReport() {
   const [openSections, setOpenSections] = useState({ dateRange:true, considerDate:false, status:true });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
 
+  const [departmentsList, setDepartmentsList] = useState([]);
+
+  useEffect(() => {
+    axios.get('/api/master/hr/departments')
+      .then(res => {
+        const list = (res.data || [])
+          .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
+          .map(d => d.departmentName);
+        setDepartmentsList(list);
+      })
+      .catch(err => {
+        console.error("Failed to load departments from master", err);
+      });
+  }, []);
+
   // Configure global search bar filters on mount
   useEffect(() => {
-    dispatch(setFilterConfig(filterConfig));
+    dispatch(setFilterConfig(getFilterConfig(departmentsList)));
     dispatch(setTableConfig(tableCols));
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(setTableConfig(null));
     };
-  }, [dispatch]);
+  }, [dispatch, departmentsList]);
 
   // Sync global search filters with local filters
   useEffect(() => {
