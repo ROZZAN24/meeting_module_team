@@ -6,4 +6,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SubSegmentRepository extends JpaRepository<SubSegment, Long> {
+    boolean existsBySubSegmentCodeIgnoreCase(String subSegmentCode);
+    boolean existsBySubSegmentNameIgnoreCase(String subSegmentName);
 }

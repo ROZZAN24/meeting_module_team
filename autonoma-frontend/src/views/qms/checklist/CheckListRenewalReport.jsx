@@ -71,9 +71,9 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'assignedBy', label: 'Assigned By' },
-  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdUser', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedUser', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'status', label: 'Status' }
 ];
@@ -117,9 +117,9 @@ const exportColumns = [
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Assigned To', key: 'assignedTo' },
   { header: 'Assigned By', key: 'assignedBy' },
-  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
   { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
@@ -192,7 +192,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Open': 'info', 'Pending for Verified': 'warning', 'Verified': 'success' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Open'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Open'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListRenewalReport() {
@@ -275,8 +283,16 @@ export default function CheckListRenewalReport() {
         assignedBy: filters.assignedBy || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      setRows(response.data.content);
-      setTotalElements(response.data.totalElements);
+      let displayRows = response.data.content || [];
+      if (filters.status === 'All') {
+        const excludedStatuses = ['Pending', 'Started', 'Pending for Verified', 'Pending for Accepted'];
+        displayRows = displayRows.filter((r) => {
+          const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
+          return !excludedStatuses.includes(statusName);
+        });
+      }
+      setRows(displayRows);
+      setTotalElements(displayRows.length);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
     } finally {
@@ -302,6 +318,12 @@ export default function CheckListRenewalReport() {
 
   return (
     <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -382,7 +404,17 @@ export default function CheckListRenewalReport() {
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
-                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checklist?.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checklist.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
                   <TableCell>{row.checklist?.levelIds || '-'}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
@@ -391,9 +423,9 @@ export default function CheckListRenewalReport() {
                   <TableCell>{row.checklist?.verificationRequired}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
                   <TableCell>{row.assignedBy}</TableCell>
-                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                 </TableRow>

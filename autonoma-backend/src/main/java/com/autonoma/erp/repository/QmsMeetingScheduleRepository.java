@@ -12,4 +12,6 @@ public interface QmsMeetingScheduleRepository extends JpaRepository<QmsMeetingSc
     Optional<Long> findMaxId();
     
     Optional<QmsMeetingSchedule> findByScheduleNo(String scheduleNo);
+    
+    java.util.List<QmsMeetingSchedule> findByScheduleNoStartingWith(String prefix);
 }

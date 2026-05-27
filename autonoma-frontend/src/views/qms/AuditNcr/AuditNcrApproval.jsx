@@ -27,7 +27,7 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
-  { id: 'ncrNo', label: 'NCR No', minWidth: 130, bold: true },
+  { id: 'ncrNo', label: 'NC No', minWidth: 130, bold: true },
   { id: 'departmentName', label: 'Department', minWidth: 130 },
   { id: 'remarks', label: 'Comment', minWidth: 200 },
   { id: 'rootCause', label: 'Root Cause', minWidth: 200 },
@@ -78,9 +78,9 @@ export default function AuditNcrApproval() {
       { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
-      { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NCR', label: 'NCR' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NCR' },
+      { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
       { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING APPROVAL' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'REJECTED', label: 'REJECTED' }], defaultValue: 'WAITING_APPROVAL' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NCR No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' }
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' }
     ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -124,7 +124,7 @@ export default function AuditNcrApproval() {
       await axios.put(`/api/qms/audit/observation/ncr/${endpoint}/${selectedFinding.id}`, null, {
         params: { remarks: formData.remarks }
       });
-      dispatch(openSnackbar({ open: true, message: `NCR / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
+      dispatch(openSnackbar({ open: true, message: `NC / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
       setDialogOpen(false);
       fetchData();
     } catch (e) { dispatch(openSnackbar({ open: true, message: 'Process failed', severity: 'error' })); }
@@ -151,15 +151,15 @@ export default function AuditNcrApproval() {
 
   return (
     <MainCard
-      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconChecks size={24} /><Typography variant="h3">NCR / OFI Approval & CAPA Management</Typography></Stack>}
+      title={<Stack direction="row" alignItems="center" spacing={1.5}><IconChecks size={24} /><Typography variant="h3">NC / OFI Approval & CAPA Management</Typography></Stack>}
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
           {perms.export && <BOSExportButton
             data={rows}
-            filename="NCR_Approval_Report"
+            filename="NC_Approval_Report"
             columns={[
-              { header: 'NCR No', key: 'ncrNo' },
+              { header: 'NC No', key: 'ncrNo' },
               { header: 'Department', key: 'departmentName' },
               { header: 'Observation No', key: 'observationNo' },
               { header: 'Status', key: 'ncrStatus' }
@@ -170,7 +170,7 @@ export default function AuditNcrApproval() {
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenReview} renderCell={renderCell} customActions={(row) => (<Tooltip title="Review & Approve"><IconButton size="small" color="success" onClick={() => handleOpenReview(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}><IconEye size={18} /></IconButton></Tooltip>)} />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={() => handleProcessApproval('APPROVED')} onClear={resetForm} title="NCR / OFI Approval Workflow" maxWidth="lg"
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={() => handleProcessApproval('APPROVED')} onClear={resetForm} title="NC / OFI Approval Workflow" maxWidth="lg"
         customButtons={
           <Stack direction="row" spacing={2}>
             <Button variant="outlined" color="error" startIcon={<IconX size={20} />} onClick={() => handleProcessApproval('REJECTED')}>Reject CAPA</Button>
@@ -183,7 +183,7 @@ export default function AuditNcrApproval() {
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <Box sx={{ p: 2.5, bgcolor: 'primary.light', borderRadius: '12px', border: '1px solid', borderColor: 'primary.200' }}>
                <Grid container spacing={2}>
-                  <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>NCR / OFI NO</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.ncrNo || 'N/A'}</Typography></Grid>
+                  <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>NC / OFI NO</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.ncrNo || 'N/A'}</Typography></Grid>
                   <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>OBS NO</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.observationNo || 'N/A'}</Typography></Grid>
                   <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>DATE</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : '-'}</Typography></Grid>
                   <Grid item xs={3}><Typography variant="caption" color="error.main" fontWeight={700}>DELAY DAYS</Typography><Typography variant="h4" fontWeight={800} color="error.main">{getDelayDays()} Days</Typography></Grid>

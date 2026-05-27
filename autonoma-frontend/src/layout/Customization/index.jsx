@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Activity, useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 
 // material-ui
@@ -40,9 +40,9 @@ import { IconSettings, IconPlus, IconTextSize, IconColorSwatch } from '@tabler/i
 function CustomTabPanel({ children, value, index, ...other }) {
   return (
     <div role="tabpanel" hidden={value !== index} id={`simple-tabpanel-${index}`} aria-labelledby={`simple-tab-${index}`} {...other}>
-      <Activity mode={value === index ? 'visible' : 'hidden'}>
+      {value === index && (
         <Box>{children}</Box>
-      </Activity>
+      )}
     </div>
   );
 }
@@ -111,7 +111,7 @@ export default function Customization() {
         </Fab>
       </Tooltip> */}
       <Drawer anchor="right" onClose={handleToggle} open={customizationOpen} slotProps={{ paper: { sx: { width: 375 } } }}>
-        <Activity mode={customizationOpen ? 'visible' : 'hidden'}>
+        {customizationOpen && (
           <SimpleBar>
             <MainCard content={false} border={false}>
               <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', p: 2.5, gap: 1.5 }}>
@@ -198,7 +198,7 @@ export default function Customization() {
               </CustomTabPanel>
             </MainCard>
           </SimpleBar>
-        </Activity>
+        )}
       </Drawer>
     </>
   );

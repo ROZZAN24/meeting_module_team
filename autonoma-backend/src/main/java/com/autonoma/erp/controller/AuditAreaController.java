@@ -31,14 +31,38 @@ public class AuditAreaController {
 
     @PostMapping
     @RequirePagePermission(pageCode = "M1120", action = "write")
-    @Operation(summary = "Create/Update Audit Area", description = "Creates a new audit area or updates an existing one")
-    public AuditArea createAuditArea(@RequestBody AuditArea auditArea) {
+    @Operation(summary = "Create Audit Area", description = "Creates a new audit area")
+    public ResponseEntity<?> createAuditArea(@RequestBody AuditArea auditArea) {
         log.info("Saving audit area: {}", auditArea);
-        if (auditArea.getId() == null) {
-            auditArea.setUpdatedBy(null);
-            auditArea.setUpdatedDate(null);
+        if (auditArea.getDescription() != null && auditAreaRepository.existsByDescriptionIgnoreCase(auditArea.getDescription().trim())) {
+            return ResponseEntity.badRequest().body("Duplicate value on field description");
         }
-        return auditAreaRepository.save(auditArea);
+        auditArea.setUpdatedBy(null);
+        auditArea.setUpdatedDate(null);
+        AuditArea saved = auditAreaRepository.save(auditArea);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PutMapping("/{id}")
+    @RequirePagePermission(pageCode = "M1120", action = "write")
+    @Operation(summary = "Update Audit Area", description = "Updates an existing audit area")
+    public ResponseEntity<?> updateAuditArea(@PathVariable Long id, @RequestBody AuditArea auditArea) {
+        log.info("Updating audit area with id: {}, data: {}", id, auditArea);
+        AuditArea existing = auditAreaRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+        if (auditArea.getDescription() != null && auditAreaRepository.existsByDescriptionIgnoreCaseAndIdNot(auditArea.getDescription().trim(), id)) {
+            return ResponseEntity.badRequest().body("Duplicate value on field description");
+        }
+        
+        // Preserve created info
+        auditArea.setId(id);
+        auditArea.setCreatedBy(existing.getCreatedBy());
+        auditArea.setCreatedDate(existing.getCreatedDate());
+        
+        AuditArea saved = auditAreaRepository.save(auditArea);
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/{id}")

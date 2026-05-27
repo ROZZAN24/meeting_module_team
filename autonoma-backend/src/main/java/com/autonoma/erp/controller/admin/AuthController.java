@@ -57,16 +57,63 @@ public class AuthController {
     @Autowired
     private com.autonoma.erp.repository.admin.CompanyCredentialRepository companyCredentialRepository;
 
+    @GetMapping("/fix-users")
+    public String fixUsers() {
+        com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
+        java.util.List<UserCredential> users = userRepository.findAll();
+        java.util.List<com.autonoma.erp.model.admin.CompanyCredential> comps = companyCredentialRepository.findAll();
+        if (comps.isEmpty()) return "No companies found";
+        
+        for (UserCredential u : users) {
+            for (com.autonoma.erp.model.admin.CompanyCredential c : comps) {
+                if (userCompanyMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getCompanyId().equals(c.getId()))) {
+                    com.autonoma.erp.model.admin.UserCompanyMapping m = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                    m.setUserId(u.getUserId());
+                    m.setCompanyId(c.getId());
+                    userCompanyMappingRepository.save(m);
+                }
+                
+                java.util.List<com.autonoma.erp.model.Division> divs = divisionService.getActiveDivisionsByCompany(c.getId());
+                for (com.autonoma.erp.model.Division d : divs) {
+                    if (userDivisionMappingRepository.findByUserId(u.getUserId()).stream().noneMatch(m -> m.getDivisionId().equals(d.getId()))) {
+                        com.autonoma.erp.model.admin.UserDivisionMapping m = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                        m.setUserId(u.getUserId());
+                        m.setDivisionId(d.getId());
+                        userDivisionMappingRepository.save(m);
+                    }
+                }
+            }
+        }
+        return "Done mapping all users to all companies and divisions";
+    }
+
+    @GetMapping("/check-credentials")
+    public ResponseEntity<?> checkCredentialsGet() {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED)
+                .body(Map.of("message", "Request method 'GET' is not supported for check-credentials. Use 'POST' with a JSON request body containing 'username' and 'password' instead."));
+    }
+
     @PostMapping("/check-credentials")
     public ResponseEntity<?> checkCredentials(@RequestBody LoginRequest loginRequest) {
         // Step 1: Validate credentials from master database
         com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
-        Optional<UserCredential> userOpt = userRepository.findByUserId(loginRequest.getUsername());
+        String usernameInput = loginRequest.getUsername();
+        Optional<UserCredential> userOpt = userRepository.findByUserId(usernameInput);
+        if (!userOpt.isPresent()) {
+            userOpt = userRepository.findAll().stream()
+                    .filter(u -> u.getUserId().equalsIgnoreCase(usernameInput))
+                    .findFirst();
+        }
 
         if (userOpt.isPresent() && passwordEncoder.matches(loginRequest.getPassword(), userOpt.get().getPassword())) {
             UserCredential user = userOpt.get();
             if (user.getStatus() != null && user.getStatus() != 1) {
                 return ResponseEntity.status(403).body(Map.of("message", "Account is inactive"));
+            }
+
+            // Validate Preferred Auth Method
+            if (user.getAuthMethod() != null && "FACE".equalsIgnoreCase(user.getAuthMethod())) {
+                return ResponseEntity.status(403).body(Map.of("message", "Password login is disabled for this account. Please use Face ID."));
             }
 
             // Step 2: Fetch mapped companies and divisions
@@ -114,8 +161,40 @@ public class AuthController {
             }
 
             if (matches.isEmpty() && !isSuperUser) {
-                return ResponseEntity.status(403)
-                        .body(Map.of("message", "No companies or divisions assigned to this user."));
+                // Self-healing fallback: If no mappings exist, auto-map to the default company and its active divisions
+                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository.findAll();
+                if (!allCompanies.isEmpty()) {
+                    com.autonoma.erp.model.admin.CompanyCredential defaultComp = allCompanies.get(0);
+                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService.getActiveDivisionsByCompany(defaultComp.getId());
+                    
+                    try {
+                        com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                        compMapping.setUserId(user.getUserId());
+                        compMapping.setCompanyId(defaultComp.getId());
+                        compMapping.setCreatedBy("SYSTEM");
+                        compMapping.setCreatedAt(new java.util.Date());
+                        userCompanyMappingRepository.save(compMapping);
+
+                        for (com.autonoma.erp.model.Division div : divisions) {
+                            com.autonoma.erp.model.admin.UserDivisionMapping divMapping = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                            divMapping.setUserId(user.getUserId());
+                            divMapping.setDivisionId(div.getId());
+                            divMapping.setCreatedBy("SYSTEM");
+                            divMapping.setCreatedAt(new java.util.Date());
+                            userDivisionMappingRepository.save(divMapping);
+                        }
+                    } catch (Exception ex) {
+                        // ignore constraint violations
+                    }
+
+                    Map<String, Object> match = new HashMap<>();
+                    match.put("company", defaultComp);
+                    match.put("divisions", divisions);
+                    matches.add(match);
+                } else {
+                    return ResponseEntity.status(403)
+                            .body(Map.of("message", "No companies or divisions assigned to this user."));
+                }
             }
 
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
@@ -214,6 +293,13 @@ public class AuthController {
                     return ResponseEntity.status(403).body(error);
                 }
 
+                // Validate Preferred Auth Method
+                if (user.getAuthMethod() != null && "FACE".equalsIgnoreCase(user.getAuthMethod())) {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("message", "Password login is disabled for this account. Please use Face ID.");
+                    return ResponseEntity.status(403).body(error);
+                }
+
                 // License Check
                 java.util.List<com.autonoma.erp.model.admin.CompanyCredential> configs = companyCredentialRepository
                         .findAll();
@@ -270,6 +356,7 @@ public class AuthController {
                 userMap.put("imgName", user.getImgName());
                 userMap.put("isBosAdmin", user.getIsBosAdmin());
                 userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
+                userMap.put("faceDescriptor", user.getFaceDescriptor());
 
                 enrichUserMapWithTenantInfo(userMap);
 
@@ -315,6 +402,7 @@ public class AuthController {
                         userMap.put("imgName", user.getImgName());
                         userMap.put("isBosAdmin", user.getIsBosAdmin());
                         userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
+                        userMap.put("faceDescriptor", user.getFaceDescriptor());
 
                         enrichUserMapWithTenantInfo(userMap);
 
@@ -516,6 +604,13 @@ public class AuthController {
         }
 
         if (matchedUser != null) {
+            // Validate Preferred Auth Method
+            if (matchedUser.getAuthMethod() != null && "PASSWORD".equalsIgnoreCase(matchedUser.getAuthMethod())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Face ID login is disabled for this account. Please use Password login.");
+                return ResponseEntity.status(403).body(error);
+            }
+
             java.util.List<Map<String, Object>> matches = new java.util.ArrayList<>();
 
             java.util.List<com.autonoma.erp.model.admin.UserCompanyMapping> compMappings = userCompanyMappingRepository
@@ -555,6 +650,40 @@ public class AuthController {
                         match.put("divisions", divisions);
                         matches.add(match);
                     });
+                }
+            }
+
+            if (matches.isEmpty() && !isSuperUser) {
+                // Self-healing fallback: If no mappings exist, auto-map to the default company and its active divisions
+                java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository.findAll();
+                if (!allCompanies.isEmpty()) {
+                    com.autonoma.erp.model.admin.CompanyCredential defaultComp = allCompanies.get(0);
+                    java.util.List<com.autonoma.erp.model.Division> divisions = divisionService.getActiveDivisionsByCompany(defaultComp.getId());
+                    
+                    try {
+                        com.autonoma.erp.model.admin.UserCompanyMapping compMapping = new com.autonoma.erp.model.admin.UserCompanyMapping();
+                        compMapping.setUserId(matchedUser.getUserId());
+                        compMapping.setCompanyId(defaultComp.getId());
+                        compMapping.setCreatedBy("SYSTEM");
+                        compMapping.setCreatedAt(new java.util.Date());
+                        userCompanyMappingRepository.save(compMapping);
+
+                        for (com.autonoma.erp.model.Division div : divisions) {
+                            com.autonoma.erp.model.admin.UserDivisionMapping divMapping = new com.autonoma.erp.model.admin.UserDivisionMapping();
+                            divMapping.setUserId(matchedUser.getUserId());
+                            divMapping.setDivisionId(div.getId());
+                            divMapping.setCreatedBy("SYSTEM");
+                            divMapping.setCreatedAt(new java.util.Date());
+                            userDivisionMappingRepository.save(divMapping);
+                        }
+                    } catch (Exception ex) {
+                        // ignore constraint violations
+                    }
+
+                    Map<String, Object> match = new HashMap<>();
+                    match.put("company", defaultComp);
+                    match.put("divisions", divisions);
+                    matches.add(match);
                 }
             }
 
@@ -649,6 +778,13 @@ public class AuthController {
 
         if (matchedUser != null) {
             UserCredential user = matchedUser;
+            // Validate Preferred Auth Method
+            if (user.getAuthMethod() != null && "PASSWORD".equalsIgnoreCase(user.getAuthMethod())) {
+                Map<String, String> error = new HashMap<>();
+                error.put("message", "Face ID login is disabled for this account. Please use Password login.");
+                return ResponseEntity.status(403).body(error);
+            }
+
             if (user.getStatus() != null && user.getStatus() != 1) {
                 Map<String, String> error = new HashMap<>();
                 error.put("message", "Account is inactive");
@@ -704,6 +840,7 @@ public class AuthController {
             userMap.put("imgName", user.getImgName());
             userMap.put("isBosAdmin", user.getIsBosAdmin());
             userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
+            userMap.put("faceDescriptor", user.getFaceDescriptor());
 
             enrichUserMapWithTenantInfo(userMap);
             response.put("user", userMap);

@@ -1,4 +1,4 @@
-import { Activity, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 // material-ui
@@ -127,46 +127,44 @@ export default function NotificationSection() {
           <ClickAwayListener onClickAway={handleClose}>
             <Transitions position={downMD ? 'top' : 'top-right'} in={open} {...TransitionProps}>
               <Paper>
-                <Activity mode={open ? 'visible' : 'hidden'}>
-                  <MainCard border={false} elevation={16} content={false} boxShadow shadow={theme.shadows[16]} sx={{ maxWidth: 330 }}>
-                    <Stack sx={{ gap: 2 }}>
-                      <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', pt: 2, px: 2 }}>
-                        <Stack direction="row" sx={{ gap: 2 }}>
-                          <Typography variant="subtitle1">All Notification</Typography>
-                          <Chip size="small" label="01" variant="filled" sx={{ color: 'background.default', bgcolor: 'warning.dark' }} />
-                        </Stack>
-                        <Typography component={Link} to="#" variant="subtitle2" sx={{ color: 'primary.main' }}>
-                          Mark as all read
-                        </Typography>
+                <MainCard border={false} elevation={16} content={false} boxShadow shadow={theme.shadows[16]} sx={{ maxWidth: 330 }}>
+                  <Stack sx={{ gap: 2 }}>
+                    <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', pt: 2, px: 2 }}>
+                      <Stack direction="row" sx={{ gap: 2 }}>
+                        <Typography variant="subtitle1">All Notification</Typography>
+                        <Chip size="small" label="01" variant="filled" sx={{ color: 'background.default', bgcolor: 'warning.dark' }} />
                       </Stack>
-                      <Box sx={{ height: 1, maxHeight: 'calc(100vh - 205px)', overflowX: 'hidden', '&::-webkit-scrollbar': { width: 5 } }}>
-                        <Box sx={{ px: 2, pt: 0.25 }}>
-                          <TextField
-                            id="outlined-select-currency-native"
-                            select
-                            fullWidth
-                            value={value}
-                            onChange={handleChange}
-                            slotProps={{ select: { native: true } }}
-                          >
-                            {status.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </TextField>
-                        </Box>
-                        <Divider sx={{ mt: 2 }} />
-                        <NotificationList />
-                      </Box>
+                      <Typography component={Link} to="#" variant="subtitle2" sx={{ color: 'primary.main' }}>
+                        Mark as all read
+                      </Typography>
                     </Stack>
-                    <CardActions sx={{ p: 1.25, justifyContent: 'center' }}>
-                      <Button size="small" disableElevation>
-                        View All
-                      </Button>
-                    </CardActions>
-                  </MainCard>
-                </Activity>
+                    <Box sx={{ height: 1, maxHeight: 'calc(100vh - 205px)', overflowX: 'hidden', '&::-webkit-scrollbar': { width: 5 } }}>
+                      <Box sx={{ px: 2, pt: 0.25 }}>
+                        <TextField
+                          id="outlined-select-currency-native"
+                          select
+                          fullWidth
+                          value={value}
+                          onChange={handleChange}
+                          slotProps={{ select: { native: true } }}
+                        >
+                          {status.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </TextField>
+                      </Box>
+                      <Divider sx={{ mt: 2 }} />
+                      <NotificationList />
+                    </Box>
+                  </Stack>
+                  <CardActions sx={{ p: 1.25, justifyContent: 'center' }}>
+                    <Button size="small" disableElevation>
+                      View All
+                    </Button>
+                  </CardActions>
+                </MainCard>
               </Paper>
             </Transitions>
           </ClickAwayListener>

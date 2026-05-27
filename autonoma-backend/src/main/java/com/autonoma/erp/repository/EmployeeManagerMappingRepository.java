@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface EmployeeManagerMappingRepository extends JpaRepository<EmployeeManagerMapping, Long> {
     Optional<EmployeeManagerMapping> findByEmpId(Long empId);
     Optional<EmployeeManagerMapping> findByEmpIdAndStatus(Long empId, String status);
+    void deleteByEmpId(Long empId);
 }

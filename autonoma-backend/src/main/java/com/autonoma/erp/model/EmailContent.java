@@ -7,11 +7,11 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "hr_email_content")
+@Table(name = "IND_EMAIL_CONTENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmailContent {
+public class EmailContent extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -30,18 +30,4 @@ public class EmailContent {
 
     @Column(name = "status")
     private String status; // ACTIVE, INACTIVE
-
-    @Column(name = "created_by")
-    private String createdBy;
-
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
-
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
 }

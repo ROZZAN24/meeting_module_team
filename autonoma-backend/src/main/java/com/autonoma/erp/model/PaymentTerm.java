@@ -30,11 +30,23 @@ public class PaymentTerm {
     private String createdBy;
 
     @Column(name = "created_at")
-    private java.time.LocalDateTime createdAt;
+    private java.time.LocalDateTime createdDate;
 
     @Column(name = "updated_by")
     private String updatedBy;
 
     @Column(name = "updated_at")
-    private java.time.LocalDateTime updatedAt;
+    private java.time.LocalDateTime updatedDate;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = java.time.LocalDateTime.now();
+        if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = java.time.LocalDateTime.now();
+        if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
+    }
 }

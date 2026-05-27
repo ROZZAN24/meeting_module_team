@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { createContext, useMemo, useState, useEffect } from 'react';
+import { createContext, useMemo, useState, useEffect, useRef } from 'react';
 
 // project imports
 import config from 'config';
@@ -15,8 +15,30 @@ export const ConfigContext = createContext(undefined);
 export function ConfigProvider({ children }) {
   const { state, setState, setField, resetState } = useLocalStorage('berry-config-vite-js', config);
   const [customizationOpen, setCustomizationOpen] = useState(false);
+  const [currentMode, setCurrentMode] = useState(() => localStorage.getItem('theme-mode') || 'system');
+  const isInitialMount = useRef(true);
+
+  // Monitor DOM attribute changes for theme mode updates
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const mode = localStorage.getItem('theme-mode') || 'system';
+      setCurrentMode(mode);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-color-scheme']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
     const token = sessionStorage.getItem('serviceToken');
     if (!token) return;
 
@@ -32,7 +54,8 @@ export function ConfigProvider({ children }) {
           presetColor: state.presetColor,
           i18n: state.i18n,
           themeDirection: state.themeDirection,
-          container: state.container
+          container: state.container,
+          dashboardLayout: state.dashboardLayout || 'glass'
         });
       } catch (err) {
         console.error('Failed to save theme settings to DB:', err);
@@ -41,7 +64,7 @@ export function ConfigProvider({ children }) {
 
     const timer = setTimeout(saveToDb, 1000);
     return () => clearTimeout(timer);
-  }, [state]);
+  }, [state, currentMode]);
 
   const memoizedValue = useMemo(
     () => ({ state, setState, setField, resetState, customizationOpen, setCustomizationOpen }),

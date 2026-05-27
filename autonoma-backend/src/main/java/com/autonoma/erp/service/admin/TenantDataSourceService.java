@@ -17,6 +17,9 @@ public class TenantDataSourceService {
     @Autowired
     private DataSourceProperties dataSourceProperties;
 
+    @Autowired
+    private com.autonoma.erp.config.SqlMigrationRunner sqlMigrationRunner;
+
     public void createTenantDataSource(String tenantId) {
         if (!(dataSource instanceof DynamicRoutingDataSource)) {
             return;
@@ -58,6 +61,16 @@ public class TenantDataSourceService {
 
             routingDataSource.addDataSource(tenantId, tenantDs);
             System.out.println("Lazy-initialized connection pool for tenant: " + tenantId);
+
+            // Execute SQL Migrations dynamically for this tenant database
+            try {
+                org.springframework.jdbc.core.JdbcTemplate tenantJdbcTemplate = new org.springframework.jdbc.core.JdbcTemplate(tenantDs);
+                sqlMigrationRunner.runMigrations(tenantJdbcTemplate);
+                System.out.println("Successfully migrated database schema for tenant: " + tenantId);
+            } catch (Exception e) {
+                System.err.println("Failed to migrate database schema for tenant: " + tenantId);
+                e.printStackTrace();
+            }
         }
     }
 }

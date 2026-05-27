@@ -248,7 +248,8 @@ export default function InductionTrainee() {
         title="Induction Review — Trainee Response"
         fullWidth
         maxWidth="xl"
-        onSave={handleSubmit}
+        onSave={perms.write ? handleSubmit : null}
+        isViewOnly={!perms.write}
         saveLabel="Submit Response"
       >
         {selectedAssignment && (
@@ -325,6 +326,7 @@ export default function InductionTrainee() {
                             size="small"
                             value={detail.traineeStatus || ''}
                             onChange={(e) => updateDetail(detail.id, 'traineeStatus', e.target.value)}
+                            disabled={!perms.write}
                             fullWidth
                             sx={{ minWidth: 150 }}
                           >
@@ -341,6 +343,7 @@ export default function InductionTrainee() {
                             maxRows={3}
                             value={detail.traineeComments || ''}
                             onChange={(e) => updateDetail(detail.id, 'traineeComments', e.target.value)}
+                            disabled={!perms.write}
                             placeholder="Your comments... (mandatory)"
                             fullWidth
                             required

@@ -339,6 +339,7 @@
   "Department": "Department",
   "Designation": "Designation",
   "Level": "Level",
+  "Grade": "Grade",
   "Employee Satisfaction Criteria": "Employee Satisfaction Criteria",
   "Division Master (Units)": "Division Master (Units)",
   "Induction Criteria": "Induction Criteria",
@@ -364,5 +365,10 @@
   "Wind Farm": "Wind Farm",
   "Wind Farm Master": "Wind Farm Master",
   "Customer Potential": "Customer Potential",
-  "Customer Potential Master": "Customer Potential Master"
+  "Customer Potential Master": "Customer Potential Master",
+  "Unified Work Dashboard": "Unified Work Dashboard",
+  "Ticket Management": "Ticket Management",
+  "Ticket Center": "Ticket Center",
+  "System & Support Tickets": "System & Support Tickets",
+  "Process Master": "Process Master"
 }

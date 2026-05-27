@@ -101,7 +101,7 @@ export default function SupplierList() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUserPlus size={24} />
-          <Typography variant="h3">Supplier Master</Typography>
+          <Typography variant="h3">Vendor Master</Typography>
         </Stack>
       }
       secondary={

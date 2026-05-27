@@ -163,6 +163,7 @@ export const PAGE_CODES = {
   NPD_CAPACITY: 'M3170',
   NPD_ITEM_GROUP: 'M3110',
   NPD_WIND_FARM: 'M3210',
+  NPD_PROCESS: 'M3180',
 
   // ── Masters > Sales > CRM ──
   CRM_SATISFACTION: 'M5110',
@@ -184,7 +185,6 @@ export const PAGE_CODES = {
 
   // ── Masters > Vendor ──
   VEN_SUPPLIER: 'M4110',
-  VEN_SUBCONTRACTOR: 'M4210',
 
   // ── QMS Transactions ──
   QMS_CHECKLIST_VERIFY: 'QM1110',

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Activity, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 // material-ui
@@ -206,7 +206,7 @@ export default function MegaMenuSection() {
                   maxWidth: { xl: 900, md: 764 }
                 }}
               >
-                <Activity mode={open ? 'visible' : 'hidden'}>
+                {open && (
                   <MainCard
                     border={false}
                     elevation={16}
@@ -267,7 +267,7 @@ export default function MegaMenuSection() {
                       </Grid>
                     </Grid>
                   </MainCard>
-                </Activity>
+                )}
               </Paper>
             </Transitions>
           </ClickAwayListener>

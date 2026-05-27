@@ -32,7 +32,7 @@ import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
 import { BOSExportButton } from 'ui-component/bos';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX } from '@tabler/icons-react';
+import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconFileDownload, IconX, IconCheck } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
@@ -56,7 +56,7 @@ const DEFAULT_FILTERS = {
   fromDate: '',
   toDate: '',
   considerDate: 'All',
-  statuses: [],
+  statuses: ['Pending for Verified', 'Pending for Accepted'],
   assignTo: '',
   category: 'All',
   searchBy: 'All',
@@ -83,9 +83,9 @@ const tableCols = [
   { id: 'nextDueDate', label: 'Next Due Date' },
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'dualCheck', label: 'Dual Check' },
-  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdUser', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedUser', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' }
 ];
 
@@ -133,9 +133,9 @@ const exportColumns = [
   { header: 'Dual Check', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
   { header: 'Verification Required', key: (r) => r.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No' },
   { header: 'Photo Required', key: (r) => r.checklist?.photoRequired || 'NO' },
-  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
   { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
@@ -221,7 +221,15 @@ function FilterSection({ title, open, onToggle, children }) {
 function StatusChip({ status }) {
   const colorMap = { 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', Verified: 'success', Rejected: 'error', 'Not Accepted': 'error', Accepted: 'success', Missed: 'error' };
   const label = typeof status === 'object' ? status?.name : status;
-  return <Chip label={label || 'Pending'} size="small" color={colorMap[label] || 'default'} variant="outlined" />;
+  return (
+    <Chip
+      label={label || 'Pending'}
+      size="small"
+      color={colorMap[label] || 'default'}
+      variant="outlined"
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+    />
+  );
 }
 
 export default function CheckListRenewalVerify() {
@@ -289,7 +297,7 @@ export default function CheckListRenewalVerify() {
       const params = {
         page,
         size,
-        status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
+        status: filters.statuses.length > 0 ? filters.statuses.join(',') : undefined,
         fromDate: filters.fromDate || undefined,
         toDate: filters.toDate || undefined,
         considerDate: filters.considerDate !== 'All' ? filters.considerDate : undefined,
@@ -343,7 +351,7 @@ export default function CheckListRenewalVerify() {
   };
 
   const handleVerify = async (status, remarks) => {
-    if (!selectedRowId) return;
+    if (selectedRowId === null || selectedRowId === undefined) return;
     if (!activeRow) return;
 
     // ── Mapped Vertical Head Validation ──
@@ -354,8 +362,10 @@ export default function CheckListRenewalVerify() {
         return fullName === assigneeName.toLowerCase().trim();
       });
 
+      const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+
       if (!assignee) {
-        if (user?.isBosAdmin !== 1) {
+        if (!isAdmin) {
           dispatch(openSnackbar({
             open: true,
             message: `Assignee '${assigneeName}' not found in Employee Master. Only an administrator can verify.`,
@@ -376,7 +386,7 @@ export default function CheckListRenewalVerify() {
             (employees || []).find(emp => String(emp.id) === String(mapping.verticalHeadId))?.firstName?.toLowerCase() === user?.name?.split(' ')[0]?.toLowerCase()
           );
 
-          if (!isVerticalHead && user?.isBosAdmin !== 1) {
+          if (!isVerticalHead && !isAdmin) {
             dispatch(openSnackbar({
               open: true,
               message: `Only the mapped Vertical Head of '${assigneeName}' can verify or reject this record!`,
@@ -389,7 +399,7 @@ export default function CheckListRenewalVerify() {
           }
         } catch (err) {
           console.error('Failed to verify manager mapping:', err);
-          if (user?.isBosAdmin !== 1) {
+          if (!isAdmin) {
             dispatch(openSnackbar({
               open: true,
               message: 'Failed to validate manager permissions. Only administrators can bypass.',
@@ -438,7 +448,14 @@ export default function CheckListRenewalVerify() {
   const activeCount = (filters.taskType !== 'All' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'All' ? 1 : 0) + (filters.statuses?.length || 0) + (filters.assignTo ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + (filters.dualCheck !== 'All' ? 1 : 0);
 
   return (
-    <MainCard title="Check List / Renewal Verify"
+    <MainCard
+      contentSX={{ p: 0 }}
+      sx={{
+        mx: { xs: -2, sm: -3 },
+        width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+        borderRadius: 0
+      }}
+      title="Check List / Renewal Verify"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}
@@ -514,16 +531,26 @@ export default function CheckListRenewalVerify() {
                   key={row.id}
                   hover
                   onClick={() => setSelectedRowId(row.id)}
-                  onDoubleClick={() => { setSelectedRowId(row.id); setDialogOpen(true); }}
-                  onMouseEnter={() => setShowDoubleTap(true)}
+                  onDoubleClick={() => { if (perms.approval || perms.write) { setSelectedRowId(row.id); setDialogOpen(true); } }}
+                  onMouseEnter={() => { if (perms.approval || perms.write) setShowDoubleTap(true); }}
                   onMouseLeave={() => setShowDoubleTap(false)}
                   onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                  sx={{ cursor: 'pointer', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                  sx={{ cursor: (perms.approval || perms.write) ? 'pointer' : 'default', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
                 >
                   <TableCell>{page * size + idx + 1}</TableCell>
                   <TableCell>{row.assignType || 'Mine'}</TableCell>
                   <TableCell>{row.checklist?.seqNo}</TableCell>
-                  <TableCell>{row.checklist?.checkingPoint}</TableCell>
+                  <TableCell>
+                    {row.checklist?.checkingPoint ? (
+                      <Box
+                        component="span"
+                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      >
+                        {row.checklist.checkingPoint}
+                      </Box>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell>{row.checklist?.description}</TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
@@ -536,9 +563,9 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
                   <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
                   <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
-                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}

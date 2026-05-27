@@ -34,6 +34,7 @@ import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
 import axios from 'utils/axios';
 import { getFaceDescriptor } from 'utils/faceApi';
+import FaceDetectionDashboard from './FaceDetectionDashboard';
 
 // assets
 import Visibility from '@mui/icons-material/Visibility';
@@ -42,7 +43,7 @@ import { IconBuilding, IconBuildingFactory2, IconArrowLeft, IconLogin, IconShiel
 
 // ===============================|| JWT - TWO-STEP LOGIN ||=============================== //
 
-export default function JWTLogin({ ...others }) {
+export default function JWTLogin({ onFaceModeChange, ...others }) {
   const theme = useTheme();
   const { login, faceLogin } = useAuth();
   const scriptedRef = useScriptRef();
@@ -55,6 +56,13 @@ export default function JWTLogin({ ...others }) {
   const [loginError, setLoginError] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [faceScanSuccess, setFaceScanSuccess] = useState(false);
+
+  useEffect(() => {
+    if (onFaceModeChange) {
+      onFaceModeChange(loginMethod === 'face' && step === 'credentials');
+    }
+  }, [loginMethod, step, onFaceModeChange]);
 
   // Webcam states
   const [webcamStream, setWebcamStream] = useState(null);
@@ -103,6 +111,7 @@ export default function JWTLogin({ ...others }) {
     }
     setWebcamStream(null);
     setWebcamActive(false);
+    setFaceScanSuccess(false);
   };
 
   // Auto start camera on mount
@@ -252,6 +261,10 @@ export default function JWTLogin({ ...others }) {
         return;
       }
 
+      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
+      setFaceScanSuccess(true);
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
       stopWebcam();
 
       // If super user (BOS admin) and only 0 or 1 company is available, auto-login directly.
@@ -293,7 +306,6 @@ export default function JWTLogin({ ...others }) {
         }
       }
 
-      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
       setCompanies(matches);
       setSelectedCompanyIndex(0);
       const firstDivs = matches[0]?.divisions || [];
@@ -379,21 +391,23 @@ export default function JWTLogin({ ...others }) {
             >
               {({ errors, handleBlur, handleChange, handleSubmit, touched, values }) => (
                 <form noValidate onSubmit={handleSubmit}>
-                  <Box sx={{ mb: 3 }}>
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        fontWeight: 800,
-                        color: theme.palette.primary.main,
-                        letterSpacing: '-0.5px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 1
-                      }}
-                    >
-                      <IconShieldCheck size={28} /> Welcome Back
-                    </Typography>
-                  </Box>
+                  {loginMethod === 'password' && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          fontWeight: 800,
+                          color: theme.palette.primary.main,
+                          letterSpacing: '-0.5px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                      >
+                        <IconShieldCheck size={28} /> Welcome Back
+                      </Typography>
+                    </Box>
+                  )}
 
                   {/* Login Method Toggle */}
                   <Box
@@ -523,143 +537,21 @@ export default function JWTLogin({ ...others }) {
                       )}
                     </CustomFormControl>
                   ) : (
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        mb: 2,
-                        position: 'relative'
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 260,
-                          height: 260,
-                          position: 'relative',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          my: 2
-                        }}
-                      >
-                        {/* Orbiting Frosted Rings */}
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            inset: -20,
-                            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                            borderRadius: '50%',
-                            backdropFilter: 'blur(4px)',
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)}, transparent)`,
-                            animation: 'slowSpin 15s linear infinite',
-                            pointerEvents: 'none',
-                            '@keyframes slowSpin': {
-                              '0%': { transform: 'rotate(0deg)' },
-                              '100%': { transform: 'rotate(360deg)' }
-                            },
-                            '&::before': {
-                              content: '""',
-                              position: 'absolute',
-                              top: -4, left: '50%',
-                              width: 8, height: 8,
-                              bgcolor: theme.palette.primary.main,
-                              borderRadius: '50%',
-                              boxShadow: `0 0 15px 3px ${theme.palette.primary.main}`
-                            }
-                          }}
-                        />
-
-                        {/* Morphing Liquid Container */}
-                        <Box
-                          sx={{
-                            width: 200,
-                            height: 200,
-                            position: 'relative',
-                            overflow: 'hidden',
-                            animation: 'morph 8s ease-in-out infinite',
-                            borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%',
-                            border: `2px solid ${alpha('#ffffff', 0.1)}`,
-                            boxShadow: `0 20px 50px ${alpha(theme.palette.primary.dark, 0.4)}, inset 0 0 20px ${alpha(theme.palette.primary.main, 0.3)}`,
-                            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.15)} 0%, ${alpha('#000000', 0.4)} 100%)`,
-                            backdropFilter: 'blur(16px)',
-                            zIndex: 2,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            '@keyframes morph': {
-                              '0%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
-                              '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
-                              '100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' }
-                            }
-                          }}
-                        >
-                          {webcamActive ? (
-                            <>
-                              <video
-                                id="webcam-video"
-                                style={{
-                                  width: '120%', // Slightly larger to cover the morphing shape
-                                  height: '120%',
-                                  objectFit: 'cover',
-                                  transform: 'scaleX(-1)',
-                                  position: 'relative',
-                                  zIndex: 2
-                                }}
-                                autoPlay
-                                playsInline
-                                muted
-                              />
-                              <Box
-                                sx={{
-                                  position: 'absolute',
-                                  inset: 0,
-                                  background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.3)} 50%, transparent 100%)`,
-                                  backgroundSize: '100% 200%',
-                                  animation: 'volumetricScan 3s ease-in-out infinite',
-                                  zIndex: 3,
-                                  pointerEvents: 'none',
-                                  mixBlendMode: 'overlay',
-                                  '@keyframes volumetricScan': {
-                                    '0%': { backgroundPosition: '0% -100%' },
-                                    '100%': { backgroundPosition: '0% 200%' }
-                                  }
-                                }}
-                              />
-                            </>
-                          ) : (
-                            <Box 
-                              sx={{ 
-                                color: theme.palette.primary.main, 
-                                zIndex: 4,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                animation: 'breathe 3s ease-in-out infinite',
-                                '@keyframes breathe': {
-                                  '0%': { transform: 'scale(0.9)', opacity: 0.7, filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' },
-                                  '50%': { transform: 'scale(1.05)', opacity: 1, filter: `drop-shadow(0 0 25px ${theme.palette.primary.main})` },
-                                  '100%': { transform: 'scale(0.9)', opacity: 0.7, filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5))' }
-                                }
-                              }}
-                            >
-                              <IconFaceId size={88} stroke={1} />
-                            </Box>
-                          )}
-                        </Box>
-                      </Box>
-
-
-
-                      {webcamError && (
-                        <Typography variant="caption" color="error" sx={{ mt: 1, textAlign: 'center', display: 'block' }}>
-                          {webcamError}
-                        </Typography>
-                      )}
+                    <Box sx={{ width: '100%', mt: 2 }}>
+                      <FaceDetectionDashboard
+                        open={loginMethod === 'face' && step === 'credentials'}
+                        onClose={() => setLoginMethod('password')}
+                        webcamActive={webcamActive}
+                        webcamError={webcamError}
+                        isFaceScanning={isFaceScanning}
+                        success={faceScanSuccess}
+                        errorMessage={checkError}
+                        userId={pendingCredentials?.username}
+                      />
                     </Box>
                   )}
 
-                  {checkError && (
+                  {checkError && loginMethod === 'password' && (
                     <Box sx={{ mt: 2 }}>
                       <Alert
                         severity="error"
@@ -704,14 +596,7 @@ export default function JWTLogin({ ...others }) {
                         </Button>
                       </AnimateButton>
                     </Box>
-                  ) : (
-                    <Box sx={{ mt: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 56 }}>
-                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        {isFaceScanning ? <CircularProgress size={18} color="primary" /> : <IconScan size={20} color={theme.palette.primary.main} />}
-                        {isFaceScanning ? 'Scanning your face automatically...' : 'Looking for a face...'}
-                      </Typography>
-                    </Box>
-                  )}
+                  ) : null}
                 </form>
               )}
             </Formik>
@@ -895,101 +780,83 @@ export default function JWTLogin({ ...others }) {
                     No active divisions found. You will be signed in with Company-wide Administrative access to configure divisions.
                   </Alert>
                 ) : (
-                  <Box
-                    sx={{
-                      maxHeight: 150,
-                      overflowY: 'auto',
-                      pr: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 1.2,
-                      '&::-webkit-scrollbar': { width: '6px' },
-                      '&::-webkit-scrollbar-track': { bgcolor: alpha(theme.palette.divider, 0.05), borderRadius: '6px' },
-                      '&::-webkit-scrollbar-thumb': {
-                        bgcolor: alpha(theme.palette.secondary.main, 0.25),
-                        borderRadius: '6px',
-                        '&:hover': { bgcolor: alpha(theme.palette.secondary.main, 0.45) }
-                      }
-                    }}
-                  >
-                    {currentDivisions.map((div) => (
-                      <Paper
-                        key={div.id}
-                        variant="outlined"
-                        onClick={() => { setSelectedDivisionId(String(div.id)); setLoginError(null); }}
-                        sx={{
-                          flexShrink: 0,
-                          px: 1.5,
-                          py: 0.8,
-                          borderRadius: '12px',
-                          cursor: 'pointer',
+                  <FormControl fullWidth>
+                    <Select
+                      value={selectedDivisionId}
+                      onChange={(e) => {
+                        setSelectedDivisionId(e.target.value);
+                        setLoginError(null);
+                      }}
+                      sx={{
+                        borderRadius: '16px',
+                        background: `linear-gradient(145deg, ${alpha(theme.palette.background.paper, 0.9)}, ${alpha(theme.palette.background.paper, 0.5)})`,
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid',
+                        borderColor: alpha(theme.palette.common.white, 0.6),
+                        boxShadow: `0 8px 32px ${alpha(theme.palette.secondary.main, 0.08)}`,
+                        py: 0.3,
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          borderColor: theme.palette.secondary.main,
+                          boxShadow: `0 10px 36px ${alpha(theme.palette.secondary.main, 0.15)}`
+                        },
+                        '& .MuiSelect-select': {
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 1.2,
-                          border: selectedDivisionId === String(div.id) ? '2px solid' : '1px solid',
-                          borderColor: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : alpha(theme.palette.common.white, 0.6),
-                          background: selectedDivisionId === String(div.id)
-                            ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.15)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`
-                            : alpha(theme.palette.background.paper, 0.7),
-                          backdropFilter: 'blur(20px)',
-                          boxShadow: selectedDivisionId === String(div.id) ? `0 8px 24px ${alpha(theme.palette.secondary.main, 0.28)}` : `0 4px 12px ${alpha(theme.palette.common.black, 0.03)}`,
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          '&:hover': {
-                            borderColor: theme.palette.secondary.main,
-                            background: selectedDivisionId === String(div.id)
-                              ? `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.18)} 0%, ${alpha(theme.palette.secondary.main, 0.08)} 100%)`
-                              : alpha(theme.palette.common.white, 0.95),
-                            transform: 'translateY(-2px)',
-                            boxShadow: `0 12px 25px ${alpha(theme.palette.secondary.main, 0.2)}`
-                          }
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            width: 30,
-                            height: 30,
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : alpha(theme.palette.secondary.main, 0.12),
-                            color: selectedDivisionId === String(div.id) ? '#fff' : theme.palette.secondary.main,
-                            transition: 'all 0.3s',
-                            boxShadow: selectedDivisionId === String(div.id) ? `0 4px 14px ${alpha(theme.palette.secondary.main, 0.4)}` : 'none'
-                          }}
-                        >
-                          <IconBuildingFactory2 size={16} stroke={2.2} />
-                        </Box>
-                        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-                          <Typography variant="body2" sx={{ fontWeight: selectedDivisionId === String(div.id) ? 800 : 700, color: selectedDivisionId === String(div.id) ? 'text.primary' : 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
-                            {div.divisionName}
-                          </Typography>
-                          <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
-                            Division ID: <span style={{ color: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : theme.palette.text.secondary, fontWeight: 700 }}>{div.id}</span>
-                          </Typography>
-                        </Box>
-                        {selectedDivisionId === String(div.id) && (
-                          <Chip
-                            icon={<IconCheck size={14} />}
-                            label="Active"
-                            size="small"
-                            sx={{
-                              height: 22,
-                              fontSize: '0.68rem',
-                              fontWeight: 800,
-                              bgcolor: alpha(theme.palette.secondary.main, 0.15),
-                              color: theme.palette.secondary.dark,
-                              borderColor: alpha(theme.palette.secondary.main, 0.3),
-                              border: '1px solid',
-                              px: 0.5
-                            }}
-                          />
-                        )}
-                      </Paper>
-                    ))}
-                  </Box>
+                          gap: 1.5,
+                          pl: 2
+                        }
+                      }}
+                    >
+                      {currentDivisions.map((div) => (
+                        <MenuItem key={div.id} value={String(div.id)} sx={{ py: 1.2, borderRadius: '10px', mx: 1, my: 0.2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%' }}>
+                            <Box
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: '10px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                bgcolor: selectedDivisionId === String(div.id) ? theme.palette.secondary.main : alpha(theme.palette.secondary.main, 0.12),
+                                color: selectedDivisionId === String(div.id) ? '#fff' : theme.palette.secondary.main,
+                                boxShadow: selectedDivisionId === String(div.id) ? `0 4px 12px ${alpha(theme.palette.secondary.main, 0.4)}` : 'none',
+                                transition: 'all 0.3s'
+                              }}
+                            >
+                              <IconBuildingFactory2 size={18} stroke={2.2} />
+                            </Box>
+                            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                              <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.88rem' }}>
+                                {div.divisionName}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: theme.palette.text.secondary, fontWeight: 600, display: 'block', fontSize: '0.72rem' }}>
+                                Division ID: <span style={{ color: theme.palette.secondary.main, fontWeight: 700 }}>{div.id}</span>
+                              </Typography>
+                            </Box>
+                            {selectedDivisionId === String(div.id) && (
+                              <Chip
+                                icon={<IconCheck size={14} />}
+                                label="Active"
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.68rem',
+                                  fontWeight: 800,
+                                  bgcolor: alpha(theme.palette.secondary.main, 0.15),
+                                  color: theme.palette.secondary.dark,
+                                  borderColor: alpha(theme.palette.secondary.main, 0.3),
+                                  border: '1px solid',
+                                  px: 0.5
+                                }}
+                              />
+                            )}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
                 )}
               </Box>
 

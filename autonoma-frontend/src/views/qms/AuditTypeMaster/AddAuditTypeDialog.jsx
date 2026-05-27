@@ -54,7 +54,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
         auditArea: initialData.auditArea ? initialData.auditArea.split(', ') : [],
         criteriaType: initialData.criteriaType || 'Fixed',
         status: initialData.status || 'ACTIVE',
-        createdBy: initialData.createdBy
+        createdUser: initialData.createdUser
       });
       setIsEditing(false);
     } else {
@@ -120,8 +120,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
       const payload = {
         ...formData,
         auditArea: Array.isArray(formData.auditArea) ? formData.auditArea.join(', ') : formData.auditArea,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
+        updatedUser: user?.empId || '1001'
       };
 
       if (formData.id) {
@@ -243,7 +243,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           disabled={isViewOnly}
         >
           <MenuItem value="Fixed">Fixed</MenuItem>
-          <MenuItem value="Variable">Variable</MenuItem>
+          <MenuItem value="Variable">Open</MenuItem>
         </BOSTextField>
 
         <BOSTextField

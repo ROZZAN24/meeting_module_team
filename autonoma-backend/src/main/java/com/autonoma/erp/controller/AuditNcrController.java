@@ -35,8 +35,8 @@ public class AuditNcrController {
             detail.setClosedBy("Admin");
             detail.setNcrStatus("WAITING_APPROVAL");
             
-            // Generate NCR No if not present (only for NCR status)
-            if (detail.getNcrNo() == null && "NCR".equals(detail.getObservationStatus())) {
+            // Generate NCR No if not present (only for NCR/NC status)
+            if (detail.getNcrNo() == null && ("NCR".equals(detail.getObservationStatus()) || "NC".equals(detail.getObservationStatus()))) {
                 detail.setNcrNo(generateNcrNo());
             }
             
@@ -61,15 +61,29 @@ public class AuditNcrController {
 
     private String generateNcrNo() {
         AuditObservationDetail latest = detailRepository.findFirstByNcrNoIsNotNullOrderByNcrNoDesc();
-        String prefix = "NCR-" + (Calendar.getInstance().get(Calendar.YEAR) % 100) + "-";
+        String yearSuffix = String.valueOf(Calendar.getInstance().get(Calendar.YEAR) % 100);
+        String prefix = "NC-" + yearSuffix + "-";
+        String oldPrefix = "NCR-" + yearSuffix + "-";
         
-        if (latest == null || !latest.getNcrNo().startsWith(prefix)) {
+        if (latest == null) {
+            return prefix + "0001";
+        }
+
+        // Support both old NCR- and new NC- prefixed records
+        String latestNo = latest.getNcrNo();
+        String numPart = null;
+        if (latestNo.startsWith(prefix)) {
+            numPart = latestNo.substring(prefix.length());
+        } else if (latestNo.startsWith(oldPrefix)) {
+            numPart = latestNo.substring(oldPrefix.length());
+        }
+
+        if (numPart == null) {
             return prefix + "0001";
         }
         
         try {
-            String lastNo = latest.getNcrNo().substring(prefix.length());
-            int nextVal = Integer.parseInt(lastNo) + 1;
+            int nextVal = Integer.parseInt(numPart) + 1;
             return prefix + String.format("%04d", nextVal);
         } catch (Exception e) {
             return prefix + "0001";
