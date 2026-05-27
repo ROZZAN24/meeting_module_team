@@ -80,6 +80,11 @@ const pulseGlow = keyframes`
   50%      { box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
 `;
 
+const pulseRedGlow = keyframes`
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+  50%      { box-shadow: 0 0 0 6px rgba(244, 63, 94, 0); }
+`;
+
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -779,23 +784,18 @@ export default function UserTaskQueue() {
 
                 {/* Stat bubbles */}
                 <Stack direction="row" alignItems="center" gap={1}>
-                  <StatBubble isDark={isDark} sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff' }}>
+                  <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff' }}>
                     <DashboardRoundedIcon sx={{ fontSize: 14 }} />
                     <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
                       {tasks.length} Pending
                     </Typography>
                   </StatBubble>
                   {overdueCount > 0 && (
-                    <StatBubble isDark={isDark} sx={{
+                    <StatBubble sx={{
                       py: 0.25, px: 1, minHeight: 26,
                       background: 'rgba(244,63,94,0.15)',
                       border: '1px solid rgba(244,63,94,0.3)',
-                      animation: `${pulseGlow} 2s ease-in-out infinite`,
-                      animationName: pulseGlow,
-                      '@keyframes pulseGlow': {
-                        '0%, 100%': { boxShadow: '0 0 0 0 rgba(244,63,94,0.4)' },
-                        '50%': { boxShadow: '0 0 0 6px rgba(244,63,94,0)' },
-                      },
+                      animation: `${pulseRedGlow} 2s ease-in-out infinite`,
                     }}>
                       <WarningAmberRoundedIcon sx={{ fontSize: 14, color: '#F87171' }} />
                       <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
@@ -804,7 +804,7 @@ export default function UserTaskQueue() {
                     </StatBubble>
                   )}
                   {isViewingOther && (
-                    <StatBubble isDark={isDark} sx={{ py: 0.25, px: 1, minHeight: 26, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
+                    <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: 'rgba(14,165,233,0.15)', border: '1px solid rgba(14,165,233,0.3)' }}>
                       <PersonSearchRoundedIcon sx={{ fontSize: 14 }} />
                       <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.75rem' }}>
                         Viewing: {activeUserId}
@@ -997,6 +997,163 @@ export default function UserTaskQueue() {
         )}
       </Grid>
 
-        </PageRoot>
+      {/* ═══════════════════════════════════ TASK LIST ════════════════════════ */}
+      {/* Column header */}
+      {!loading && visibleTasks.length > 0 && (
+        <Stack direction="row" alignItems="center" sx={{
+          px: 3, pb: 1, pt: 0.5, opacity: 0.5,
+          animation: `${fadeIn} 0.5s ease-out`,
+          mt: 4
+        }}>
+          <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', flex: 1, ml: 7.5 }}>
+            Task
+          </Typography>
+          <Stack direction="row" gap={1} sx={{ flexShrink: 0 }}>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', width: 100, textAlign: 'center' }}>
+              Due Date
+            </Typography>
+            <Typography sx={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', width: 90, textAlign: 'center' }}>
+              Status
+            </Typography>
+            <Box sx={{ width: 24 }} />
+          </Stack>
+        </Stack>
+      )}
+
+      <Box sx={{ mt: 1 }}>
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => (
+            <TaskCard key={i} isoverdue="false" taskpalette="slate" sx={{ animationDelay: `${i * 70}ms` }}>
+              <Skeleton variant="rounded" width={46} height={46} sx={{ borderRadius: `${RADIUS.sm}px`, flexShrink: 0 }} />
+              <Box flex={1}>
+                <Skeleton width="50%" height={20} sx={{ mb: 0.75, borderRadius: 1 }} />
+                <Stack direction="row" gap={1}>
+                  <Skeleton width={70} height={18} sx={{ borderRadius: 1 }} />
+                  <Skeleton width={90} height={18} sx={{ borderRadius: 1 }} />
+                </Stack>
+              </Box>
+              <Stack direction="row" gap={1}>
+                <Skeleton width={90} height={26} sx={{ borderRadius: 1.5 }} />
+                <Skeleton width={80} height={26} sx={{ borderRadius: 1.5 }} />
+              </Stack>
+            </TaskCard>
+          ))
+        ) : visibleTasks.length === 0 ? (
+          <Box sx={{
+            textAlign: 'center', py: 10,
+            animation: `${slideUp} 0.5s cubic-bezier(0.22,1,0.36,1)`,
+          }}>
+            <Box sx={{
+              width: 88, height: 88, borderRadius: '50%', mx: 'auto', mb: 3,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: theme.palette.mode === 'dark'
+                ? 'rgba(16,185,129,0.1)' : alpha(PALETTE.emerald.solid, 0.08),
+              animation: `${float} 3s ease-in-out infinite`,
+            }}>
+              <CheckCircleRoundedIcon sx={{
+                fontSize: 48, color: PALETTE.emerald.solid,
+                filter: `drop-shadow(0 4px 16px ${PALETTE.emerald.glow})`,
+              }} />
+            </Box>
+            <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, color: 'text.primary' }}>All Clear!</Typography>
+            <Typography color="text.secondary" sx={{ fontSize: '0.92rem' }}>
+              No pending tasks in this category. You're all caught up!
+            </Typography>
+          </Box>
+        ) : (
+          visibleTasks.map((task, i) => {
+            const overdue = isOverdue(task.dueDate) && !['Closed', 'Resolved', 'Approved', 'Completed'].includes(task.status);
+            const cfg = TYPE_CONFIG[task.type] || TYPE_CONFIG.TICKET;
+            const pal = PALETTE[cfg.palette];
+
+            const statusColor = overdue ? PALETTE.rose.solid
+              : task.status === 'In Progress' ? PALETTE.emerald.solid
+              : task.status === 'Assigned' ? PALETTE.indigo.solid
+              : PALETTE.amber.solid;
+            const statusBg = overdue
+              ? (theme.palette.mode === 'dark' ? alpha(PALETTE.rose.solid, 0.15) : PALETTE.rose.light)
+              : task.status === 'In Progress'
+                ? (theme.palette.mode === 'dark' ? alpha(PALETTE.emerald.solid, 0.15) : PALETTE.emerald.light)
+                : task.status === 'Assigned'
+                  ? (theme.palette.mode === 'dark' ? alpha(PALETTE.indigo.solid, 0.15) : PALETTE.indigo.light)
+                  : (theme.palette.mode === 'dark' ? alpha(PALETTE.amber.solid, 0.15) : PALETTE.amber.light);
+            const statusIcon = overdue
+              ? <ErrorRoundedIcon sx={{ fontSize: 11 }} />
+              : task.status === 'In Progress' ? <PlayArrowRoundedIcon sx={{ fontSize: 11 }} />
+                : task.status === 'Assigned' ? <AssignmentIndIcon sx={{ fontSize: 11 }} />
+                  : <AccessTimeFilledIcon sx={{ fontSize: 11 }} />;
+
+            return (
+              <TaskCard
+                key={task.id}
+                isoverdue={String(overdue)}
+                taskpalette={cfg.palette}
+                onClick={() => navigate(task.link)}
+                sx={{ animationDelay: `${i * 50}ms` }}
+              >
+
+                {/* Icon */}
+                <TaskIconAvatar className="task-icon-wrap" palettekey={cfg.palette}>
+                  {cfg.icon}
+                </TaskIconAvatar>
+
+                {/* Title + meta */}
+                <Box flex={1} minWidth={0}>
+                  <Typography sx={{
+                    fontWeight: 700, fontSize: '0.92rem', color: 'text.primary',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', mb: 0.5,
+                    lineHeight: 1.3
+                  }}>
+                    {task.title}
+                  </Typography>
+                  <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
+                    <TypeBadge palettekey={cfg.palette}>
+                      {cfg.label}
+                    </TypeBadge>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.72rem' }}>
+                      <AssignmentIndIcon sx={{ fontSize: 12, opacity: 0.7 }} />{task.assignedBy}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontSize: '0.72rem' }}>
+                      {task.desc}
+                    </Typography>
+                  </Stack>
+                </Box>
+
+                {/* Badges */}
+                <Stack direction="row" alignItems="center" gap={1} flexShrink={0}>
+                  <DueDateBadge isoverdue={String(overdue)}>
+                    <TodayIcon sx={{ fontSize: 12 }} />
+                    {fmtDate(task.dueDate)}
+                  </DueDateBadge>
+                  <StatusBadge statuscolor={statusColor} statusbg={statusBg}>
+                    {statusIcon}
+                    {overdue ? 'Overdue' : task.status}
+                  </StatusBadge>
+                  <ArrowForwardRoundedIcon className="task-arrow"
+                    sx={{
+                      fontSize: 18, color: 'text.disabled', opacity: 0,
+                      transform: 'translateX(-8px)', transition: 'all 0.25s ease'
+                    }} />
+                </Stack>
+              </TaskCard>
+            );
+          })
+        )}
+      </Box>
+
+      {/* ── Footer summary ── */}
+      {!loading && visibleTasks.length > 0 && (
+        <Stack direction="row" justifyContent="center" alignItems="center" gap={1.5} sx={{
+          mt: 4, py: 2, opacity: 0.5,
+          animation: `${fadeIn} 0.6s ease-out 0.3s both`,
+        }}>
+          <ScheduleRoundedIcon sx={{ fontSize: 14 }} />
+          <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.04em' }}>
+            Showing {visibleTasks.length} of {tasks.length} tasks • Auto-refresh in {countdown}s
+          </Typography>
+        </Stack>
+      )}
+
+    </PageRoot>
   );
 }
