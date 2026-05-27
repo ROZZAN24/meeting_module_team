@@ -519,7 +519,7 @@ const TYPE_CONFIG = {
 };
 
 // ─── Metric Card Component ─────────────────────────────────────────────────
-const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, active, index = 0, onClick }) => {
+const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, active, index = 0, onClick, isDark }) => {
   const pal = PALETTE[paletteKey] || PALETTE.indigo;
   const floatDelay = `${(index * 0.4)}s`;
 
@@ -825,9 +825,9 @@ export default function UserTaskQueue() {
                       })()}
                     </Typography>
                   </StatBubble>
-                  <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff' }}>
+                  <StatBubble sx={{ py: 0.25, px: 1, minHeight: 26, background: '#f7df03ff', color: isDark ? '#01301fff' : '#960505ff' }}>
                     <DashboardRoundedIcon sx={{ fontSize: 14 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.75rem', color: isDark ? '#000000ff' : '#960505ff' }}>
                       {tasks.length} Pending
                     </Typography>
                   </StatBubble>
@@ -1019,7 +1019,7 @@ export default function UserTaskQueue() {
               modulesToRender.push(mod);
             });
 
-            return modulesToRender.filter(mod => mod.count > 0).map((mod, i) => (
+            return modulesToRender.map((mod, i) => (
               <Grid item xs={12} sm={6} md={3} lg={2.4} key={mod.name + i}>
                 <DashboardMetricCard
                   moduleName={mod.name}
