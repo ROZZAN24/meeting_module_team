@@ -35,11 +35,10 @@ public class ChecklistService {
     private ChecklistDepartmentRepository deptRepo;
 
     @Autowired
-<<<<<<< HEAD
     private DepartmentRepository departmentRepository;
-=======
+
+    @Autowired
     private UserRepository userRepository;
->>>>>>> 07d6739d72014da2b3010e3e3d1a82f43eae6fde
 
     // --- Master Checklist ---
 

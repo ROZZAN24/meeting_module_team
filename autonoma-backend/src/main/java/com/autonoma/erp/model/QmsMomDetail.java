@@ -12,11 +12,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "qms_mom_detail")
+@Table(name = "QMS_MOM_DETAIL")
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class QmsMomDetail {
+public class QmsMomDetail extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -77,17 +77,7 @@ public class QmsMomDetail {
     @Column(name = "amendment_comments", columnDefinition = "NVARCHAR(MAX)")
     private String amendmentComments;
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "updated_by")
-    private String updatedBy;
 }

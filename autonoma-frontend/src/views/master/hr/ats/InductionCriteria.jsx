@@ -25,7 +25,6 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
 
-
 const INITIAL_STATE = {
   id: null,
   inductionDetails: '',
@@ -306,6 +305,8 @@ export default function InductionCriteria() {
       // Clean up audit fields and helper fields before sending to backend
       delete payload.createdAt;
       delete payload.updatedAt;
+      delete payload.createdUser;
+      delete payload.updatedUser;
       delete payload.createdBy;
       delete payload.updatedBy;
       delete payload.index; // from table mapper
@@ -364,6 +365,8 @@ export default function InductionCriteria() {
       ...r,
       index: i + 1,
       serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
       updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
     }));

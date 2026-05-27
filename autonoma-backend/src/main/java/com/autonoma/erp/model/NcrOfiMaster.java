@@ -6,9 +6,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "ncr_ofi_master")
+@Table(name = "QMS_NCR_OFI_MASTER")
 @Data
-public class NcrOfiMaster {
+public class NcrOfiMaster extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -55,15 +55,7 @@ public class NcrOfiMaster {
     @Column(name = "approval_status")
     private String approvalStatus = "PENDING";
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "created_date")
-    private LocalDateTime createdDate = LocalDateTime.now();
 
-    @Column(name = "updated_by")
-    private String updatedBy;
 
-    @Column(name = "updated_date")
-    private LocalDateTime updatedDate = LocalDateTime.now();
 }

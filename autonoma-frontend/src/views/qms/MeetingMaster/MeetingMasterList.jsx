@@ -21,10 +21,10 @@ const columns = [
   { id: 'meetingPrefix', label: 'Meeting Prefix', minWidth: 100 },
   { id: 'meetingAgenda', label: 'Meeting AGENDA', minWidth: 200 },
   { id: 'employeeName', label: 'Employee Name', minWidth: 250 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
-  { id: 'createdAt', label: 'Created Date', minWidth: 140 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedAt', label: 'Updated Date', minWidth: 140 },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140 },
   { id: 'attachmentName', label: 'Attachment', minWidth: 100 },
   { id: 'status', label: 'Status', minWidth: 100 }
 ];
@@ -119,14 +119,14 @@ export default function MeetingMasterList() {
       if (selectedItem) {
         const payload = {
           ...form,
-          updatedBy: user?.name || ''
+          updatedUser: user?.name || ''
         };
         await axios.put(`${API_PATHS.QMS.MEETINGS}/${selectedItem.id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
         const payload = {
           ...form,
-          createdBy: user?.name || ''
+          createdUser: user?.name || ''
         };
         await axios.post(API_PATHS.QMS.MEETINGS, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
@@ -171,9 +171,15 @@ export default function MeetingMasterList() {
       const dateVal = row[col.id];
       return dateVal ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
     }
+    if (col.id === 'createdUser') {
+      return row.createdUser || row.createdBy || '-';
+    }
+    if (col.id === 'updatedUser') {
+      return row.updatedUser || row.updatedBy || '-';
+    }
     if (col.id === 'updatedAt') {
       const dateVal = row[col.id];
-      return (dateVal && row.updatedBy) ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+      return (dateVal && (row.updatedUser || row.updatedBy)) ? new Date(dateVal).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
     }
     if (col.id === 'attachmentName') {
       const url = row.attachmentUrl;
@@ -214,7 +220,9 @@ export default function MeetingMasterList() {
           {perms.export && <BOSExportButton
             data={filteredRows.map(row => ({
               ...row,
-              updatedAt: row.updatedBy ? row.updatedAt : null
+              createdUser: row.createdUser || row.createdBy || '-',
+              updatedUser: row.updatedUser || row.updatedBy || '-',
+              updatedAt: (row.updatedUser || row.updatedBy) ? row.updatedAt : null
             }))}
             filename="Meeting_Master"
             columns={[
@@ -224,9 +232,9 @@ export default function MeetingMasterList() {
               { header: 'Meeting Prefix', key: 'meetingPrefix' },
               { header: 'Meeting Agenda', key: 'meetingAgenda' },
               { header: 'Employee Name', key: 'employeeName' },
-              { header: 'Created User', key: 'createdBy' },
+              { header: 'Created User', key: 'createdUser' },
               { header: 'Created Date', key: 'createdAt' },
-              { header: 'Updated User', key: 'updatedBy' },
+              { header: 'Updated User', key: 'updatedUser' },
               { header: 'Updated Date', key: 'updatedAt' },
               { header: 'Status', key: 'status' }
             ]}

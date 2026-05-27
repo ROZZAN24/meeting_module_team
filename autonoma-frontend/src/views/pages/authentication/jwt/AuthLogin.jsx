@@ -261,6 +261,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
         return;
       }
 
+      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
       setFaceScanSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -305,7 +306,6 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
         }
       }
 
-      setPendingCredentials({ username: matchedUserId.trim(), password: '', faceImage: faceImageBase64, faceDescriptor });
       setCompanies(matches);
       setSelectedCompanyIndex(0);
       const firstDivs = matches[0]?.divisions || [];
@@ -545,11 +545,13 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                         webcamError={webcamError}
                         isFaceScanning={isFaceScanning}
                         success={faceScanSuccess}
+                        errorMessage={checkError}
+                        userId={pendingCredentials?.username}
                       />
                     </Box>
                   )}
 
-                  {checkError && (
+                  {checkError && loginMethod === 'password' && (
                     <Box sx={{ mt: 2 }}>
                       <Alert
                         severity="error"

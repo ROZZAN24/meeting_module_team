@@ -5,9 +5,9 @@ import lombok.Data;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "audit_observation_detail")
+@Table(name = "QMS_AUDIT_OBSERVATION_DETAIL")
 @Data
-public class AuditObservationDetail {
+public class AuditObservationDetail extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
        uniqueConstraints = @UniqueConstraint(columnNames = {"schedule_id", "employee_id"}))
 @Data
 @NoArgsConstructor
-public class QmsMeetingUserAttendance {
+public class QmsMeetingUserAttendance extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -38,17 +38,7 @@ public class QmsMeetingUserAttendance {
     @Column(name = "status")
     private String status = "PRESENT"; // PRESENT, LATE, ABSENT
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
-    private String createdBy;
 
-    @Column(name = "updated_by")
-    private String updatedBy;
 }

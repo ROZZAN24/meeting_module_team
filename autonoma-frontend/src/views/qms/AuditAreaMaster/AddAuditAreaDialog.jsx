@@ -41,7 +41,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
         type: initialData.type || 'AREA',
         description: initialData.description || '',
         status: initialData.status || 'ACTIVE',
-        createdBy: initialData.createdBy
+        createdUser: initialData.createdUser
       });
       setIsEditing(false);
     } else {
@@ -69,8 +69,8 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
     try {
       const payload = {
         ...formData,
-        createdBy: formData.id ? formData.createdBy : (user?.empId || '1001'),
-        ...(formData.id ? { updatedBy: user?.empId || '1001' } : {})
+        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
+        ...(formData.id ? { updatedUser: user?.empId || '1001' } : {})
       };
 
       if (formData.id) {

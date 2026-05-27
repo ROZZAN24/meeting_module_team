@@ -22,10 +22,10 @@ const columns = [
   { id: 'type', label: 'Type', minWidth: 100, bold: true },
   { id: 'description', label: 'Description', minWidth: 300 },
   { id: 'status', label: 'Status', minWidth: 100 },
-  { id: 'createdBy', label: 'Created User', minWidth: 120 },
-  { id: 'createdDate', label: 'Created Date', minWidth: 150 },
-  { id: 'updatedBy', label: 'Updated User', minWidth: 120 },
-  { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
 export default function AuditAreaMaster() {
@@ -119,10 +119,10 @@ export default function AuditAreaMaster() {
       '#': i + 1,
       Type: r.type,
       Description: r.description,
-      'Created User': r.createdBy,
-      'Created Date': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
-      'Updated User': r.updatedBy,
-      'Updated Date': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
+      'CREATED USER': r.createdUser || r.createdBy,
+      'CREATED DATE': r.createdDate ? format(new Date(r.createdDate), 'dd/MM/yyyy HH:mm') : '',
+      'UPDATED USER': r.updatedUser || r.updatedBy,
+      'UPDATED DATE': r.updatedDate ? format(new Date(r.updatedDate), 'dd/MM/yyyy HH:mm') : '',
       Status: r.status
     }));
     exportToExcel(exportData, 'Audit_Area_Details');
@@ -144,8 +144,11 @@ export default function AuditAreaMaster() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   const renderCell = useCallback((col, row) => {
-    if (col.id === 'updatedBy') {
-      return row.updatedBy || '-';
+    if (col.id === 'createdUser') {
+      return row.createdUser || row.createdBy || '-';
+    }
+    if (col.id === 'updatedUser') {
+      return row.updatedUser || row.updatedBy || '-';
     }
     if (col.id === 'updatedDate') {
       return row.updatedDate ? format(new Date(row.updatedDate), 'dd/MM/yyyy HH:mm') : '-';

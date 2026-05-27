@@ -14,8 +14,12 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.autonoma.erp.util.LogHelper;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @Autowired
     private BackendErrorLoggerService backendErrorLoggerService;
@@ -46,12 +50,15 @@ public class GlobalExceptionHandler {
 
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "Internal Server Error");
+        body.put("message", ex.getMessage() != null ? ex.getMessage() : "Internal Server Error");
         body.put("details", ex.getMessage());
         body.put("path", request.getDescription(false));
 
-        // Log the stack trace for developers (this will show in console)
-        ex.printStackTrace();
+        // Log formatted error to console
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("path", request.getDescription(false));
+        meta.put("exceptionType", ex.getClass().getName());
+        LogHelper.error(log, "GlobalExceptionHandler", "handleAllExceptions", ex.getMessage(), ex, meta);
 
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
