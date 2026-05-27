@@ -116,6 +116,9 @@ export default function usePagePermissions(pageCode) {
  * Usage: const perms = usePagePermissions(PAGE_CODES.NPD_ITEM_GROUP);
  */
 export const PAGE_CODES = {
+  // ── HRA ──
+  HRA_ATS: 'HA1110',
+
   // ── Masters > HR > ATS ──
   ATS_INTERVIEW_CRITERIA: 'M2110',
   ATS_EMAIL_CONTENT: 'M2120',

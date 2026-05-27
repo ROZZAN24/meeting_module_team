@@ -99,7 +99,57 @@ const INITIAL = {
   isPrAssignee: 'NO',
 
   // System
-  createdBy: null, createdAt: null, updatedBy: null, updatedAt: null
+  createdBy: null, createdAt: null, updatedBy: null, updatedAt: null,
+
+  // ATS integration
+  applicantDate: null,
+  age: null,
+  positionLookFor: '',
+  callStatus: 'PENDING',
+  interviewStatus: 'PENDING',
+  offerStatus: 'PENDING',
+  verificationStatus: 'PENDING',
+  q1_native: '',
+  q2_presentAddress: '',
+  q3_permanentAddress: '',
+  q4_fatherOccupation: '',
+  q5_motherOccupation: '',
+  q6_maritalStatus: 'UNMARRIED',
+  q7_spouseOccupation: '',
+  q8_children: '',
+  q9_hasRelativesInCompany: 'NO',
+  q10_relativesDetails: '',
+  q11_siblingsOccupations: '',
+  q12_hasTwoWheeler: 'NO',
+  q13_hasAndroidPhone: 'NO',
+  q14_knowsCarDriving: 'NO',
+  q15_willingToTravel: 'NO',
+  q16_covidVaccination: 'NOT DONE',
+  q17_positivePoints: '',
+  q18_negativePoints: '',
+  q19_lifeGoals: '',
+  q20_improvementSuggestions: '',
+  q21_isExperienced: 'NO',
+  q22_totalExperience: '',
+  q23_coreExperience: '',
+  q24_prevNetSalary: '',
+  q25_prevGrossSalary: '',
+  q26_expectedNetSalary: '',
+  q27_expectedGrossSalary: '',
+  q28_pfHigherPension: 'NO',
+  q29_pfDeductionAmount: '',
+  q30_alternativeDepartment: '',
+  q31_prevLocation: '',
+  q32_prevShift: '',
+  q33_reasonForLeaving: '',
+  q34_noticePeriod: '',
+  q35_prevDeptPosition: '',
+  q36_prevDeptCount: '',
+  q37_prevReportingTo: '',
+  q38_handleMistake: '',
+  q39_handleOpinionDifference: '',
+  q40_computerSelfRating: 'NONE',
+  payslipPath: ''
 };
 
 const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
@@ -334,7 +384,7 @@ export default function EmployeeMaster() {
                   <TableRow key={toggleName} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                     <TableCell sx={{ fontWeight: 600, py: 1 }}>{label}</TableCell>
                     <TableCell sx={{ py: 1 }}>
-                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 85 }}>
+                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 85, '& .MuiSelect-select': { minWidth: 'auto !important' } }}>
                         <MenuItem value="YES">YES</MenuItem>
                         <MenuItem value="NO">NO</MenuItem>
                       </BOSTextField>

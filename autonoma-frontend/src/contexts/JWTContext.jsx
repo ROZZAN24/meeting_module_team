@@ -29,31 +29,23 @@ const initialState = {
 function setSessionContext(tenantId, divisionId, companyName, divisionName) {
   if (tenantId) {
     sessionStorage.setItem('tenantId', tenantId);
-    localStorage.setItem('tenantId', tenantId);
   } else {
     sessionStorage.removeItem('tenantId');
-    localStorage.removeItem('tenantId');
   }
   if (divisionId) {
     sessionStorage.setItem('divisionId', String(divisionId));
-    localStorage.setItem('divisionId', String(divisionId));
   } else {
     sessionStorage.removeItem('divisionId');
-    localStorage.removeItem('divisionId');
   }
   if (companyName) {
     sessionStorage.setItem('companyName', companyName);
-    localStorage.setItem('companyName', companyName);
   } else {
     sessionStorage.removeItem('companyName');
-    localStorage.removeItem('companyName');
   }
   if (divisionName) {
     sessionStorage.setItem('divisionName', divisionName);
-    localStorage.setItem('divisionName', divisionName);
   } else {
     sessionStorage.removeItem('divisionName');
-    localStorage.removeItem('divisionName');
   }
 }
 
@@ -75,11 +67,9 @@ function verifyToken(serviceToken) {
 function setSession(serviceToken) {
   if (serviceToken) {
     sessionStorage.setItem('serviceToken', serviceToken);
-    localStorage.setItem('serviceToken', serviceToken);
     axios.defaults.headers.common.Authorization = `Bearer ${serviceToken}`;
   } else {
     sessionStorage.removeItem('serviceToken');
-    localStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
     setSessionContext(null, null, null, null);
   }
@@ -233,31 +223,48 @@ export function JWTProvider({ children }) {
     return () => clearInterval(interval);
   }, [state.isLoggedIn, state.user?.isBosAdmin, logoutCountdown === null]);
 
+  // --- SESSION WATCHDOG ---
+  // Periodically update 'lastActiveTime' in localStorage. If the browser is closed entirely,
+  // this stops. When the browser is reopened (even if it restores sessionStorage via "Continue where you left off"),
+  // the time gap will be large, allowing us to accurately force a logout.
+  useEffect(() => {
+    const updateActiveTime = () => {
+      window.localStorage.setItem('lastActiveTime', Date.now().toString());
+    };
+
+    updateActiveTime(); // Initial update
+    const intervalId = setInterval(updateActiveTime, 3000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        updateActiveTime();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       try {
-        let serviceToken = window.sessionStorage.getItem('serviceToken');
-        if (!serviceToken) {
-          const localToken = window.localStorage.getItem('serviceToken');
-          if (localToken && verifyToken(localToken)) {
-            serviceToken = localToken;
-            window.sessionStorage.setItem('serviceToken', localToken);
-            const tenantId = window.localStorage.getItem('tenantId');
-            const divisionId = window.localStorage.getItem('divisionId');
-            const companyName = window.localStorage.getItem('companyName');
-            const divisionName = window.localStorage.getItem('divisionName');
-            if (tenantId) window.sessionStorage.setItem('tenantId', tenantId);
-            if (divisionId) window.sessionStorage.setItem('divisionId', divisionId);
-            if (companyName) window.sessionStorage.setItem('companyName', companyName);
-            if (divisionName) window.sessionStorage.setItem('divisionName', divisionName);
-          }
+        // Enforce true browser close logout
+        const lastActive = window.localStorage.getItem('lastActiveTime');
+        if (lastActive && (Date.now() - parseInt(lastActive) > 15000)) {
+          console.warn('Session expired due to browser close or prolonged inactivity. Forcing logout.');
+          window.sessionStorage.clear();
         }
+
+        let serviceToken = window.sessionStorage.getItem('serviceToken');
         if (serviceToken && verifyToken(serviceToken)) {
           setSession(serviceToken);
           loadUserThemeSettings(serviceToken);
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
-          // Keep localStorage in sync so other tabs can read the context
+          // Ensure session context is initialized
           setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
           dispatch({
             type: LOGIN,
@@ -342,11 +349,9 @@ export function JWTProvider({ children }) {
     try {
       if (tenantId) {
         sessionStorage.setItem('tenantId', tenantId);
-        localStorage.setItem('tenantId', tenantId);
       }
       if (divisionId) {
         sessionStorage.setItem('divisionId', String(divisionId));
-        localStorage.setItem('divisionId', String(divisionId));
       }
 
       const response = await axios.get('/api/account/me', {
