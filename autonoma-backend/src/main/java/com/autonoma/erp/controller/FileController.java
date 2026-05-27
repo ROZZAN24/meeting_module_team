@@ -87,10 +87,26 @@ public class FileController {
                     contentType = "application/octet-stream";
             }
 
+            String rawFilename = resource.getFilename();
+            String safeFilename = "";
+            if (rawFilename != null) {
+                StringBuilder sb = new StringBuilder();
+                for (char c : rawFilename.toCharArray()) {
+                    if (c == '\u202F' || c == '\u2007' || c == '\u00A0') {
+                        sb.append(' ');
+                    } else if (c > 255) {
+                        sb.append('_');
+                    } else {
+                        sb.append(c);
+                    }
+                }
+                safeFilename = sb.toString();
+            }
+
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            (inline ? "inline" : "attachment") + "; filename=\"" + resource.getFilename() + "\"")
+                            (inline ? "inline" : "attachment") + "; filename=\"" + safeFilename + "\"")
                     .body(resource);
         } catch (Exception e) {
             return ResponseEntity.status(404).build();

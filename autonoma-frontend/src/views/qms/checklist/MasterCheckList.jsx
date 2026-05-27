@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, Chip, Box } from '@mui/material';
+import { Typography, Button, Stack, Tooltip, IconButton, Chip, Box, Popover, Checkbox } from '@mui/material';
 import { IconRefresh, IconEdit, IconUserPlus, IconFileDots, IconClipboardList, IconAdjustmentsHorizontal, IconCheck, IconBan } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -116,17 +116,17 @@ const columns = [
           color={cfg.color} 
           icon={cfg.icon} 
           variant="outlined" 
-          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
         />
       );
     }
   },
   { id: 'verifiedBy',   label: 'Verified By',     minWidth: 120 },
   { id: 'verifiedDate', label: 'Verified Date',   minWidth: 120 },
-  { id: 'createdBy',    label: 'Created By',      minWidth: 120 },
-  { id: 'createdDate',  label: 'Created Date',    minWidth: 140 },
-  { id: 'updatedBy',    label: 'Updated By',      minWidth: 120 },
-  { id: 'updatedDate',  label: 'Updated Date',    minWidth: 140 },
+  { id: 'createdUser',  label: 'CREATED USER',    minWidth: 120 },
+  { id: 'createdDate',  label: 'CREATED DATE',    minWidth: 140 },
+  { id: 'updatedUser',  label: 'UPDATED USER',    minWidth: 120 },
+  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 140 },
 ];
 
 // ── Export columns ──────────────────────────────────────────────────────────────
@@ -153,10 +153,10 @@ const exportColumns = [
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
   { header: 'Verified Date',      key: (r) => formatDate(r.verifiedDate) },
-  { header: 'Created By',         key: 'createdBy' },
-  { header: 'Created Date',       key: (r) => formatDate(r.createdAt) },
-  { header: 'Updated By',         key: 'updatedBy' },
-  { header: 'Updated Date',       key: (r) => formatDate(r.updatedAt) },
+  { header: 'CREATED USER',       key: 'createdUser' },
+  { header: 'CREATED DATE',       key: (r) => formatDate(r.createdAt) },
+  { header: 'UPDATED USER',       key: 'updatedUser' },
+  { header: 'UPDATED DATE',       key: (r) => formatDate(r.updatedAt) },
 ];
 
 // ── Filter config for the global search bar ─────────────────────────────────────
@@ -214,6 +214,32 @@ export default function MasterCheckList() {
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
   const [cursorPos,        setCursorPos]        = useState({ x: 0, y: 0 });
   const [showDoubleTap,    setShowDoubleTap]    = useState(false);
+
+  // Column picker states & toggles
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [visibleColumnIds, setVisibleColumnIds] = useState(() => columns.map(c => c.id));
+
+  const handlePopoverOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handlePopoverClose = () => {
+    setAnchorEl(null);
+  };
+  const handleToggleColumn = (colId) => {
+    setVisibleColumnIds((prev) => {
+      if (prev.includes(colId)) {
+        if (colId === 'index' || colId === 'seqNo' || colId === 'checkingPoint') {
+          return prev;
+        }
+        return prev.filter((id) => id !== colId);
+      } else {
+        return [...prev, colId];
+      }
+    });
+  };
+  const handleSelectAllColumns = () => {
+    setVisibleColumnIds(columns.map(c => c.id));
+  };
 
   // Register global filter bar config
   useEffect(() => {
@@ -274,7 +300,9 @@ export default function MasterCheckList() {
     expiryDate:    formatDate(row.expiryDate),
     reminderDate:  formatDate(row.reminderDate),
     verifiedDate:  formatDate(row.verifiedDate),
+    createdUser:   row.createdUser || row.createdBy || '-',
     createdDate:   formatDate(row.createdAt),
+    updatedUser:   row.updatedUser || row.updatedBy || '-',
     updatedDate:   formatDate(row.updatedAt),
     status:        row.status || 'Active',
   })), [rows]);
@@ -287,7 +315,7 @@ export default function MasterCheckList() {
       const body = Object.fromEntries(
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v)
       );
-      body.updatedBy = user?.name || user?.id || 'Admin';
+      body.updatedUser = user?.name || user?.id || 'Admin';
       const qs = new URLSearchParams();
       departments.forEach((d) => qs.append('departments', d));
       await axios.post(`/api/qms/checklist?${qs.toString()}`, body);
@@ -340,32 +368,34 @@ export default function MasterCheckList() {
   });
 
   // ── Make Checking Point a clickable blue link that opens the edit dialog ─────
-  const tableColumns = useMemo(() => columns.map((col) => (
-    col.id === 'checkingPoint'
-      ? {
-          ...col,
-          render: (row) => {
-            const text = row.checkingPoint;
-            if (!text) return '-';
-            return (
-              <Box
-                component="span"
-                onClick={(e) => { e.stopPropagation(); handleOpenEdit(row); }}
-                sx={{
-                  color: 'primary.main',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                  fontWeight: 500,
-                  '&:hover': { color: 'primary.dark' }
-                }}
-              >
-                {text}
-              </Box>
-            );
+  const tableColumns = useMemo(() => columns
+    .filter((col) => visibleColumnIds.includes(col.id))
+    .map((col) => (
+      col.id === 'checkingPoint'
+        ? {
+            ...col,
+            render: (row) => {
+              const text = row.checkingPoint;
+              if (!text) return '-';
+              return (
+                <Box
+                  component="span"
+                  onClick={(e) => { e.stopPropagation(); handleOpenEdit(row); }}
+                  sx={{
+                    color: 'primary.main',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                    '&:hover': { color: 'primary.dark' }
+                  }}
+                >
+                  {text}
+                </Box>
+              );
+            }
           }
-        }
-      : col
-  )), [rows]);
+        : col
+    )), [visibleColumnIds, rows]);
 
   // ── Custom action column (Amendment + Assign) ─────────────────────────────────
   const actionColumn = {
@@ -431,6 +461,20 @@ export default function MasterCheckList() {
               }}
             >
               <IconRefresh size={20} />
+            </IconButton>
+          </Tooltip>
+
+          <Tooltip title="Column Visibility">
+            <IconButton
+              onClick={handlePopoverOpen}
+              color="primary"
+              size="small"
+              sx={{
+                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
+                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
+              }}
+            >
+              <IconAdjustmentsHorizontal size={20} />
             </IconButton>
           </Tooltip>
 
@@ -557,6 +601,80 @@ export default function MasterCheckList() {
         checklistId={selectedRow?.id}
         initialData={selectedRow}
       />
+
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={handlePopoverClose}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            p: 2,
+            width: 280,
+            maxHeight: 450,
+            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
+            borderRadius: '12px',
+            border: '1px solid',
+            borderColor: 'divider',
+            display: 'flex',
+            flexDirection: 'column',
+          }
+        }}
+      >
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Toggle Columns</Typography>
+          <Button size="small" onClick={handleSelectAllColumns} sx={{ textTransform: 'none', fontWeight: 600 }}>
+            Show All
+          </Button>
+        </Stack>
+
+        <Box sx={{ overflowY: 'auto', flex: 1, py: 1, my: 1, pr: 0.5, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '4px' } }}>
+          <Stack spacing={0.5}>
+            {columns.map((col) => {
+              const isRequired = col.id === 'index' || col.id === 'seqNo' || col.id === 'checkingPoint';
+              return (
+                <Box
+                  key={col.id}
+                  onClick={() => !isRequired && handleToggleColumn(col.id)}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    py: 0.5,
+                    px: 1,
+                    borderRadius: '6px',
+                    cursor: isRequired ? 'default' : 'pointer',
+                    bgcolor: isRequired ? 'grey.50' : 'transparent',
+                    opacity: isRequired ? 0.7 : 1,
+                    '&:hover': {
+                      bgcolor: isRequired ? 'grey.50' : 'grey.100',
+                    }
+                  }}
+                >
+                  <Typography variant="body2" sx={{ fontWeight: isRequired ? 600 : 400 }}>
+                    {col.label}
+                  </Typography>
+                  <Checkbox
+                    size="small"
+                    checked={visibleColumnIds.includes(col.id)}
+                    disabled={isRequired}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={() => handleToggleColumn(col.id)}
+                    sx={{ p: 0.5 }}
+                  />
+                </Box>
+              );
+            })}
+          </Stack>
+        </Box>
+      </Popover>
     </MainCard>
   );
 }

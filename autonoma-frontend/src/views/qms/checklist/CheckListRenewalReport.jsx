@@ -71,9 +71,9 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'assignedTo', label: 'Assigned To' },
   { id: 'assignedBy', label: 'Assigned By' },
-  { id: 'createdBy', label: 'CREATED USER' },
+  { id: 'createdUser', label: 'CREATED USER' },
   { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedBy', label: 'UPDATED USER' },
+  { id: 'updatedUser', label: 'UPDATED USER' },
   { id: 'updatedDate', label: 'UPDATED DATE' },
   { id: 'status', label: 'Status' }
 ];
@@ -117,9 +117,9 @@ const exportColumns = [
   { header: 'Verification Required', key: (r) => r.checklist?.verificationRequired },
   { header: 'Assigned To', key: 'assignedTo' },
   { header: 'Assigned By', key: 'assignedBy' },
-  { header: 'CREATED USER', key: (r) => r.checklist?.createdBy },
+  { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedBy || r.checklist?.updatedBy },
+  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
   { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
@@ -198,7 +198,7 @@ function StatusChip({ status }) {
       size="small"
       color={colorMap[label] || 'default'}
       variant="outlined"
-      sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
     />
   );
 }
@@ -215,7 +215,7 @@ export default function CheckListRenewalReport() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showDoubleTap, setShowDoubleTap] = useState(false);
-  const activeRow = (rows || []).find((r) => r?.id === selectedRowId) || null;
+  const activeRow = rows.find((r) => r.id === selectedRowId) || null;
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_REPORT);
@@ -283,7 +283,7 @@ export default function CheckListRenewalReport() {
         assignedBy: filters.assignedBy || undefined
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
-      let displayRows = response?.data?.content || [];
+      let displayRows = response.data.content || [];
       if (filters.status === 'All') {
         const excludedStatuses = ['Pending', 'Started', 'Pending for Verified', 'Pending for Accepted'];
         displayRows = displayRows.filter((r) => {
@@ -295,8 +295,6 @@ export default function CheckListRenewalReport() {
       setTotalElements(displayRows.length);
     } catch (error) {
       console.error('Failed to fetch report data:', error);
-      setRows([]);
-      setTotalElements(0);
     } finally {
       setLoading(false);
     }
@@ -329,7 +327,7 @@ export default function CheckListRenewalReport() {
       title="Check List / Renewal Report"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows || []} filename="Checklist_Report" columns={exportColumns} size="small" />}
+          {perms.export && <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />}
         </Box>
       }
     >
@@ -383,7 +381,7 @@ export default function CheckListRenewalReport() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : (rows || []).length === 0 ? (
+              ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
                     <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
@@ -393,7 +391,7 @@ export default function CheckListRenewalReport() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : (rows || []).map((row, idx) => (
+              ) : rows.map((row, idx) => (
                 <TableRow
                   key={row.id}
                   hover
@@ -425,9 +423,9 @@ export default function CheckListRenewalReport() {
                   <TableCell>{row.checklist?.verificationRequired}</TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
                   <TableCell>{row.assignedBy}</TableCell>
-                  <TableCell>{row.checklist?.createdBy || '-'}</TableCell>
+                  <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                  <TableCell>{row.updatedBy || row.checklist?.updatedBy || '-'}</TableCell>
+                  <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                 </TableRow>

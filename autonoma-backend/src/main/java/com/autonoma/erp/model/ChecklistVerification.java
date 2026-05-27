@@ -1,41 +1,32 @@
 package com.autonoma.erp.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-@Entity
-@Table(name = "QMS_CHECKLIST_VERIFICATION")
+// NOTE: @Entity removed – ChecklistVerification is now a plain DTO.
+// Verification data is stored directly in the QMS_CHECKLIST_CLOSED_* frequency tables.
+// The QMS_CHECKLIST_VERIFICATION table is deprecated; no FK constraints are created.
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ChecklistVerification extends BaseAuditEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ChecklistVerification {
+
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ASSIGNMENT_ID")
     @lombok.EqualsAndHashCode.Exclude
     @lombok.ToString.Exclude
     private ChecklistAssignment assignment;
 
-    @Column(name = "VERIFIED_BY")
     private String verifiedBy;
 
-    @ManyToOne
-    @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
     private String remarks;
 
-    @Column(name = "VERIFIED_DATE")
-    @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedDate;
 
     public Long getId() { return id; }

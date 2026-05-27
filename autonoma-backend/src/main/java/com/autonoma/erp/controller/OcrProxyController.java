@@ -43,6 +43,25 @@ public class OcrProxyController {
         return forwardPost(url, null);
     }
 
+    @GetMapping("/inbox/{emailId}/attachments")
+    public ResponseEntity<String> getAttachments(@PathVariable String emailId) {
+        String url = ocrServiceUrl + "/api/inbox/" + emailId + "/attachments";
+        return forwardGet(url);
+    }
+
+    @GetMapping("/inbox/{emailId}/attachments/{attachmentId}")
+    public ResponseEntity<byte[]> getAttachmentFile(@PathVariable String emailId, @PathVariable String attachmentId) {
+        String url = ocrServiceUrl + "/api/inbox/" + emailId + "/attachments/" + attachmentId;
+        try {
+            ResponseEntity<byte[]> response = restTemplate.exchange(url, HttpMethod.GET, null, byte[].class);
+            return ResponseEntity.status(response.getStatusCode())
+                    .headers(response.getHeaders())
+                    .body(response.getBody());
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
+    }
+
     // ─── Processing Request Endpoints ───────────────────────────────
 
     @GetMapping("/processing-requests")

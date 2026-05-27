@@ -27,11 +27,12 @@ import Box from '@mui/material/Box';
 import { FormattedMessage } from 'react-intl';
 
 // project imports
-import UpgradePlanCard from './UpgradePlanCard';
 import MainCard from 'ui-component/cards/MainCard';
 import Transitions from 'ui-component/extended/Transitions';
 import useAuth from 'hooks/useAuth';
+import useLookups from 'hooks/useLookups';
 import { getUserImageUrl } from 'utils/upload-helper';
+import axios from 'utils/axios'; // Or standard axios if utils/axios is not present, let's just use regular axios or the one from 'utils/axios'
 
 // assets
 import User1 from 'assets/images/users/avatar-1.png';
@@ -39,6 +40,13 @@ import { IconLogout, IconSearch, IconSettings, IconUser } from '@tabler/icons-re
 import useConfig from 'hooks/useConfig';
 
 // ==============================|| PROFILE MENU ||============================== //
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good Morning,';
+  if (h < 17) return 'Good Afternoon,';
+  return 'Good Evening,';
+}
 
 export default function ProfileSection() {
   const theme = useTheme();
@@ -53,7 +61,44 @@ export default function ProfileSection() {
   const [notification, setNotification] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { logout, user } = useAuth();
+  const { departments = [], designations = [], levels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS']);
   const [open, setOpen] = useState(false);
+
+  const [empInfo, setEmpInfo] = useState('Loading...');
+
+  useEffect(() => {
+    if (user) {
+      axios.get('/api/master/hr/employees')
+        .then(res => {
+          const allEmps = res.data || [];
+          const empRecord = allEmps.find(e =>
+            (e.id && user.empId && String(e.id) === String(user.empId)) ||
+            (e.empCode && user.empCode && String(e.empCode) === String(user.empCode))
+          );
+          if (empRecord) {
+            const getDesigName = (id, fallback) => String(designations.find(d => String(d.id) === String(id))?.designationName || fallback || '');
+            const getDeptName = (id, fallback) => String(departments.find(d => String(d.id) === String(id))?.departmentName || fallback || '');
+            const getLevelName = (id, fallback) => String(levels.find(l => String(l.rowId) === String(id))?.level || fallback || '');
+
+            const desig = empRecord.designationId ? getDesigName(empRecord.designationId, empRecord.designationName || empRecord.designation) : (user.designation?.name || user.designation || empRecord.designationName || empRecord.designation || '');
+            const dept = empRecord.departmentId ? getDeptName(empRecord.departmentId, empRecord.departmentName || empRecord.department) : (user.department?.name || user.department || empRecord.departmentName || empRecord.department || '');
+            const level = empRecord.empLevelId ? getLevelName(empRecord.empLevelId, empRecord.levelName || empRecord.level) : '';
+
+            const combinedText = (level ? `${level} - ` : '') + [desig, dept].filter(Boolean).join(' / ');
+            setEmpInfo(combinedText.toUpperCase() || 'USER');
+          } else {
+            const desig = user.designation?.name || user.designation || '';
+            const dept = user.department?.name || user.department || '';
+            const combinedText = [desig, dept].filter(Boolean).join(' / ');
+            setEmpInfo(combinedText.toUpperCase() || 'USER');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          setEmpInfo('USER');
+        });
+    }
+  }, [user, departments, designations, levels]);
 
   /**
    * anchorRef is used on different components and specifying one type leads to other components throwing an error
@@ -163,30 +208,20 @@ export default function ProfileSection() {
                 {open && (
                   <MainCard border={false} elevation={16} content={false} boxShadow shadow={theme.shadows[16]}>
                     <Box sx={{ p: 2, pb: 0 }}>
-                      <Stack>
-                        <Stack direction="row" sx={{ alignItems: 'center', gap: 0.5 }}>
-                          <Typography variant="h4">Good Morning,</Typography>
-                          <Typography component="span" variant="h4" sx={{ fontWeight: 400 }}>
+                      <Stack spacing={0.5}>
+                        <Stack direction="row" sx={{ alignItems: 'baseline', gap: 0.75 }}>
+                          <Typography variant="h4" sx={{ color: '#f5d60bff', fontWeight: 600 }}>
+                            {getGreeting()}
+                          </Typography>
+                          <Typography variant="h3" sx={{ fontWeight: 800, color: 'primary.main' }}>
                             {user?.name}
                           </Typography>
                         </Stack>
-                        <Typography variant="subtitle2">Project Admin</Typography>
+                        <Typography variant="subtitle2" sx={{ mt: 0.5 }}>
+                          {empInfo}
+                        </Typography>
                       </Stack>
-                      <OutlinedInput
-                        sx={{ width: '100%', pr: 1, pl: 2, my: 2 }}
-                        id="input-search-profile"
-                        value={value}
-                        onChange={(e) => setValue(e.target.value)}
-                        placeholder="Search profile options"
-                        startAdornment={
-                          <InputAdornment position="start">
-                            <IconSearch stroke={1.5} size="16px" />
-                          </InputAdornment>
-                        }
-                        aria-describedby="search-helper-text"
-                        slotProps={{ input: { 'aria-label': 'weight' } }}
-                      />
-                      <Divider />
+                      <Divider sx={{ mt: 2 }} />
                     </Box>
                     <Box
                       sx={{
@@ -198,8 +233,7 @@ export default function ProfileSection() {
                         '&::-webkit-scrollbar': { width: 5 }
                       }}
                     >
-                      <UpgradePlanCard />
-                      <Divider />
+                      <Divider sx={{ display: 'none' }} />
                       <Card sx={{ bgcolor: 'primary.light', ...theme.applyStyles('dark', { bgcolor: 'dark.800' }), my: 2 }}>
                         <CardContent>
                           <Stack sx={{ gap: 3 }}>

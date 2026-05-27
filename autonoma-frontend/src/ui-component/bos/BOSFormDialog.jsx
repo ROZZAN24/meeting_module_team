@@ -8,7 +8,7 @@ import {
   Typography,
   Button,
   IconButton,
-  Slide,
+  Fade,
   Tooltip,
   useTheme,
   Paper
@@ -48,13 +48,15 @@ const CustomPaper = forwardRef(({ position, isMaximized, isCollapsed, style, ...
           position: 'fixed',
           borderRadius: 0,
         } : {
-          transform: `${style?.transform || ''} translate(${position?.x || 0}px, ${position?.y || 0}px)`,
+          transform: `${style?.transform || ''} translate3d(${position?.x || 0}px, ${position?.y || 0}px, 0px)`,
         }),
         ...(isCollapsed ? {
           height: 'auto',
           minHeight: 0,
           maxHeight: 'none',
-        } : {})
+        } : {}),
+        willChange: 'transform, opacity',
+        backfaceVisibility: 'hidden',
       }}
       {...other}
     />
@@ -72,7 +74,7 @@ CustomPaper.propTypes = {
 };
 
 const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
+  return <Fade ref={ref} {...props} />;
 });
 
 /**
@@ -108,8 +110,9 @@ export default function BOSFormDialog({
   hideFooter = false,
   secondaryActions,
   sidebar,
-  saveLoading = false,
-  children
+  children,
+  contentSx = {},
+  hideCollapse = false
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -122,6 +125,13 @@ export default function BOSFormDialog({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [preMaximizedSize, setPreMaximizedSize] = useState({ width: null, height: null });
   const [preMaximizedPosition, setPreMaximizedPosition] = useState({ x: 0, y: 0 });
+
+  const handleExited = useCallback(() => {
+    setPosition({ x: 0, y: 0 });
+    setSize({ width: null, height: null });
+    setIsMaximized(false);
+    setIsCollapsed(false);
+  }, []);
 
   const dragState = useRef(null);   // { type: 'drag'|'resize-w'|'resize-h'|'resize-both', startX, startY, startPosX, startPosY, startW, startH }
 
@@ -262,6 +272,7 @@ export default function BOSFormDialog({
     <Dialog
       open={open}
       TransitionComponent={Transition}
+      TransitionProps={{ onExited: handleExited }}
       keepMounted
       onClose={() => onClose()}
       maxWidth={sidebar ? 'lg' : maxWidth}
@@ -287,6 +298,7 @@ export default function BOSFormDialog({
         onMouseDown={startDrag}
         sx={{
           ...ds.titleBar,
+          borderRadius: isMaximized ? 0 : '24px 24px 0 0',
           cursor: isMaximized ? 'default' : 'grab',
           userSelect: 'none',
           '&:active': { cursor: isMaximized ? 'default' : 'grabbing' },
@@ -298,18 +310,20 @@ export default function BOSFormDialog({
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} className="no-drag">
           {/* Minimize / Collapse Button */}
-          <Tooltip title={isCollapsed ? "Expand Height" : "Collapse Dialog"}>
-            <IconButton
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              size="small"
-              sx={{
-                color: isDark ? '#8b949e' : 'text.secondary',
-                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
-              }}
-            >
-              {isCollapsed ? <IconChevronDown size={20} /> : <IconChevronUp size={20} />}
-            </IconButton>
-          </Tooltip>
+          {!hideCollapse && (
+            <Tooltip title={isCollapsed ? "Expand Height" : "Collapse Dialog"}>
+              <IconButton
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                size="small"
+                sx={{
+                  color: isDark ? '#8b949e' : 'text.secondary',
+                  '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)' }
+                }}
+              >
+                {isCollapsed ? <IconChevronDown size={20} /> : <IconChevronUp size={20} />}
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Maximize / Restore Button */}
           <Tooltip title={isMaximized ? "Restore Size" : "Maximize Screen"}>
@@ -337,7 +351,7 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       {!isCollapsed && (
-        <DialogContent sx={ds.content}>
+        <DialogContent sx={{ ...ds.content, ...contentSx }}>
           {sidebar ? (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 320px' }, gap: 4, width: '100%', alignItems: 'start' }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%' }}>
@@ -357,7 +371,12 @@ export default function BOSFormDialog({
 
       {/* ── FOOTER ACTION BUTTONS (SOP #1, #12) ── */}
       {!hideFooter && !isCollapsed && (
-        <Box sx={ds.footer}>
+        <Box 
+          sx={{
+            ...ds.footer,
+            borderRadius: isMaximized ? 0 : '0 0 24px 24px'
+          }}
+        >
           {isViewOnly ? (
             <Box sx={{ display: 'flex', gap: 2, ml: 'auto', alignItems: 'center' }}>
               {secondaryActions}
@@ -406,8 +425,8 @@ export default function BOSFormDialog({
                 {secondaryActions}
                 {onSave && (
                   <Tooltip title={shortcutTooltip('Save Changes', 'Ctrl + S')}>
-                    <Button onClick={onSave} variant="contained" sx={btnSave} startIcon={<IconCheck size={20} />} disabled={saveLoading}>
-                      {saveLoading ? 'Saving...' : 'Save'}
+                    <Button onClick={onSave} variant="contained" sx={btnSave} startIcon={<IconCheck size={20} />}>
+                      Save
                     </Button>
                   </Tooltip>
                 )}
@@ -504,6 +523,7 @@ BOSFormDialog.propTypes = {
   maxWidth: PropTypes.string,
   hideFooter: PropTypes.bool,
   secondaryActions: PropTypes.node,
-  saveLoading: PropTypes.bool,
-  children: PropTypes.node
+  children: PropTypes.node,
+  contentSx: PropTypes.object,
+  hideCollapse: PropTypes.bool
 };

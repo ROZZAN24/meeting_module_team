@@ -1,10 +1,3 @@
-/**
- * faceApi.js — Browser-side face embedding utility using face-api.js
- *
- * Generates 128-dimensional face descriptors (embeddings) from video/image
- * elements using TensorFlow.js models. Descriptors are compared via
- * Euclidean distance on the backend (threshold ≤ 0.6 = same person).
- */
 import * as faceapi from 'face-api.js';
 
 const MODEL_URL = '/models';
@@ -12,14 +5,9 @@ let modelsLoaded = false;
 let modelsLoading = false;
 let modelLoadCallbacks = [];
 
-/**
- * Load face-api.js models (lazy, singleton, safe for concurrent calls).
- * Models are served from /public/models/ at runtime.
- */
 export async function loadFaceApiModels() {
   if (modelsLoaded) return;
   if (modelsLoading) {
-    // Wait for the in-progress load to finish
     return new Promise((resolve, reject) => {
       modelLoadCallbacks.push({ resolve, reject });
     });
@@ -44,13 +32,6 @@ export async function loadFaceApiModels() {
   }
 }
 
-/**
- * Detect a single face in a video/canvas/image element and return its
- * 128-dimensional descriptor as a plain JS number array.
- *
- * @param {HTMLVideoElement|HTMLCanvasElement|HTMLImageElement} element
- * @returns {number[]|null} descriptor array, or null if no face detected
- */
 export async function getFaceDescriptor(element) {
   await loadFaceApiModels();
 
@@ -60,38 +41,18 @@ export async function getFaceDescriptor(element) {
     .withFaceDescriptor();
 
   if (!detection) return null;
-  return Array.from(detection.descriptor); // Float32Array → number[128]
+  return Array.from(detection.descriptor);
 }
 
-/**
- * Calculate Euclidean distance between two 128-D descriptor arrays.
- * Distance < 0.6 → same person (industry-standard face-api.js threshold).
- *
- * @param {number[]} d1
- * @param {number[]} d2
- * @returns {number}
- */
 export function euclideanDistance(d1, d2) {
   if (!d1 || !d2 || d1.length !== d2.length) return Infinity;
   return Math.sqrt(d1.reduce((sum, v, i) => sum + Math.pow(v - d2[i], 2), 0));
 }
 
-/**
- * Check whether two descriptors match (distance below threshold).
- * @param {number[]} d1
- * @param {number[]} d2
- * @param {number} threshold defaults to 0.6
- * @returns {boolean}
- */
 export function descriptorsMatch(d1, d2, threshold = 0.6) {
   return euclideanDistance(d1, d2) <= threshold;
 }
 
-/**
- * Draw a face detection overlay on a canvas element (for visual feedback).
- * @param {HTMLVideoElement} video
- * @param {HTMLCanvasElement} canvas
- */
 export async function drawFaceDetection(video, canvas) {
   await loadFaceApiModels();
   const displaySize = { width: video.videoWidth || video.width, height: video.videoHeight || video.height };
@@ -108,7 +69,75 @@ export async function drawFaceDetection(video, canvas) {
     const resized = faceapi.resizeResults(detection, displaySize);
     faceapi.draw.drawDetections(canvas, resized);
     faceapi.draw.drawFaceLandmarks(canvas, resized);
-    return true; // face found
+    return true;
   }
-  return false; // no face
+  return false;
+}
+
+function dist2D(p1, p2) {
+  return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+function getEAR(eyePoints) {
+  const p2_p6 = dist2D(eyePoints[1], eyePoints[5]);
+  const p3_p5 = dist2D(eyePoints[2], eyePoints[4]);
+  const p1_p4 = dist2D(eyePoints[0], eyePoints[3]);
+  return (p2_p6 + p3_p5) / (2.0 * p1_p4);
+}
+
+export async function checkLiveness(videoElement, timeoutMs = 2500) {
+  await loadFaceApiModels();
+  const startTime = Date.now();
+  let minEAR = 1.0;
+  let maxEAR = 0.0;
+  let positions = [];
+  let faceFoundCount = 0;
+
+  while (Date.now() - startTime < timeoutMs) {
+    const detection = await faceapi
+      .detectSingleFace(videoElement, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 }))
+      .withFaceLandmarks();
+
+    if (detection) {
+      faceFoundCount++;
+      const leftEye = detection.landmarks.getLeftEye();
+      const rightEye = detection.landmarks.getRightEye();
+
+      const leftEAR = getEAR(leftEye);
+      const rightEAR = getEAR(rightEye);
+      const ear = (leftEAR + rightEAR) / 2.0;
+
+      minEAR = Math.min(minEAR, ear);
+      maxEAR = Math.max(maxEAR, ear);
+
+      if (maxEAR - minEAR > 0.04 && minEAR < 0.28) {
+        return 'live'; 
+      }
+
+      const nose = detection.landmarks.getNose()[0];
+      positions.push(nose);
+      
+      // Reduce frame requirement to 3 frames (~300-500ms) for a much faster check
+      if (positions.length >= 3) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (let p of positions) {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        // Very lenient micro-movement (1.5px) due to natural camera noise/pulse
+        if ((maxX - minX > 1.5) || (maxY - minY > 1.5)) {
+           return 'live'; 
+        }
+      }
+    }
+    // Reduced wait time between frames
+    await new Promise(r => setTimeout(r, 20)); 
+  }
+  
+  if (faceFoundCount === 0) {
+    return 'no_face';
+  }
+  return 'spoof';
 }

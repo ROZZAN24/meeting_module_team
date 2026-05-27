@@ -9,20 +9,18 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "QMS_CHECKLIST_ASSIGNMENT")
+@Table(name = "QMS_CHECKLIST_CLOSED")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class ChecklistAssignment extends BaseAuditEntity {
+public class ChecklistClosed extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CHECKLIST_ID")
-    @lombok.EqualsAndHashCode.Exclude
-    @lombok.ToString.Exclude
     private MasterChecklist checklist;
 
     @Column(name = "ASSIGNED_TO")
@@ -71,6 +69,9 @@ public class ChecklistAssignment extends BaseAuditEntity {
     @Column(name = "FILE_PATHS", columnDefinition = "TEXT")
     private String filePaths;
 
+    @Column(name = "FREQUENCY", nullable = false)
+    private String frequency;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public MasterChecklist getChecklist() { return checklist; }
@@ -103,6 +104,8 @@ public class ChecklistAssignment extends BaseAuditEntity {
     public void setComments(String comments) { this.comments = comments; }
     public String getFilePaths() { return filePaths; }
     public void setFilePaths(String filePaths) { this.filePaths = filePaths; }
+    public String getFrequency() { return frequency; }
+    public void setFrequency(String frequency) { this.frequency = frequency; }
 
     public List<String> getActualFiles() {
         if (filePaths == null || filePaths.trim().isEmpty()) {
