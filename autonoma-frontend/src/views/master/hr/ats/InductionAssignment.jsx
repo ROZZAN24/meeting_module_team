@@ -423,6 +423,13 @@ const InductionAssignment = () => {
         const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation;
 
         if (empAssignments.length === 0) {
+          const editors = [];
+          const creator = emp.createdUser || emp.createdBy;
+          const updater = emp.updatedUser || emp.updatedBy;
+          if (creator) editors.push(creator.trim());
+          if (updater) editors.push(updater.trim());
+          const combinedEditors = [...new Set(editors)].filter(Boolean).join(', ') || '-';
+
           finalRows.push({ 
             ...emp, 
             id: null,
@@ -433,7 +440,9 @@ const InductionAssignment = () => {
             isVirtual: true, 
             currentStatus: 'PENDING', 
             inductionRound: '-', 
-            screeningLevel: '-' 
+            screeningLevel: '-',
+            updatedUser: combinedEditors,
+            updatedBy: combinedEditors
           });
         } else {
           // Sort assignments by screening level descending, then by ID descending
@@ -447,6 +456,15 @@ const InductionAssignment = () => {
           // Prioritize ACTIVE status assignments
           const activeAssign = sorted.find(a => a.inductionStatus === 'ACTIVE') || sorted[0];
 
+          const editors = [];
+          empAssignments.forEach(a => {
+            const creator = a.createdUser || a.createdBy;
+            const updater = a.updatedUser || a.updatedBy;
+            if (creator) editors.push(creator.trim());
+            if (updater) editors.push(updater.trim());
+          });
+          const combinedEditors = [...new Set(editors)].filter(Boolean).join(', ') || '-';
+
           finalRows.push({
             ...emp,
             ...activeAssign,
@@ -457,7 +475,9 @@ const InductionAssignment = () => {
             designation: empDesig || activeAssign.designation,
             screeningLevel: normalizeScreeningLevel(activeAssign.screeningLevel),
             inductionTime: normalizeInductionTime(activeAssign.inductionTime),
-            isVirtual: false
+            isVirtual: false,
+            updatedUser: combinedEditors,
+            updatedBy: combinedEditors
           });
         }
       });
