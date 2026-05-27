@@ -334,7 +334,7 @@ export default function EmployeeMaster() {
                   <TableRow key={toggleName} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                     <TableCell sx={{ fontWeight: 600, py: 1 }}>{label}</TableCell>
                     <TableCell sx={{ py: 1 }}>
-                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 85 }}>
+                      <BOSTextField select name={toggleName} value={form[toggleName]} onChange={h} size="small" sx={{ width: 85, '& .MuiSelect-select': { minWidth: 'auto !important' } }}>
                         <MenuItem value="YES">YES</MenuItem>
                         <MenuItem value="NO">NO</MenuItem>
                       </BOSTextField>
