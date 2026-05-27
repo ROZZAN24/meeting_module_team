@@ -1374,7 +1374,6 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
     }
 
-<<<<<<< HEAD
     private void ensureTicketTraceabilityColumns(JdbcTemplate targetJdbcTemplate) {
         String tableName = "ticket_Tracability_center";
         try {
@@ -1432,7 +1431,6 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
     }
 
-=======
     private void ensureAtsColumns(JdbcTemplate targetJdbcTemplate) {
         String[] tableNames = {"hrm_employee_master", "HR_EMPLOYEE_MASTER"};
         for (String tableName : tableNames) {
@@ -1506,7 +1504,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
             }
         }
     }
->>>>>>> origin/main
+
 
     private void renameTableIfExists(JdbcTemplate targetJdbcTemplate, String oldTable, String newTable) {
         try {
