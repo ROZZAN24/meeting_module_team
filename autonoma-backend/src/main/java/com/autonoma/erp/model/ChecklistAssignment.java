@@ -39,7 +39,7 @@ public class ChecklistAssignment extends BaseAuditEntity {
     @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", length = 2000)
     private String remarks;
 
     @Column(name = "CHECKLIST_DATE")
@@ -65,10 +65,10 @@ public class ChecklistAssignment extends BaseAuditEntity {
     @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedDate;
 
-    @Column(name = "COMMENTS", columnDefinition = "TEXT")
+    @Column(name = "COMMENTS", length = 2000)
     private String comments;
 
-    @Column(name = "FILE_PATHS", columnDefinition = "TEXT")
+    @Column(name = "FILE_PATHS", length = 2000)
     private String filePaths;
 
     public Long getId() { return id; }

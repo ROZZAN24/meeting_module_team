@@ -50,13 +50,13 @@ public class SmPriceMaster {
     @Temporal(TemporalType.DATE)
     private Date validTo;
 
-    @Column(name = "terms_and_conditions", columnDefinition = "TEXT")
+    @Column(name = "terms_and_conditions", columnDefinition = "NVARCHAR(MAX)")
     private String termsAndConditions;
 
     @Column(name = "ocr_document_path", length = 500)
     private String ocrDocumentPath;
 
-    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
+    @Column(name = "ocr_extracted_text", columnDefinition = "NVARCHAR(MAX)")
     private String ocrExtractedText;
 
     @Column(name = "ocr_confidence", length = 10)
@@ -65,7 +65,7 @@ public class SmPriceMaster {
     @Column(name = "status", length = 50)
     private String status = "Active";
 
-    @Column(name = "remarks", columnDefinition = "TEXT")
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "created_by", length = 100)

@@ -42,7 +42,7 @@ public class SmEnquiry {
     @Column(name = "subject", length = 500)
     private String subject;
 
-    @Column(name = "requirements", columnDefinition = "TEXT")
+    @Column(name = "requirements", columnDefinition = "NVARCHAR(MAX)")
     private String requirements;
 
     @Column(name = "source", length = 100)
@@ -54,7 +54,7 @@ public class SmEnquiry {
     @Column(name = "ocr_document_path", length = 500)
     private String ocrDocumentPath;
 
-    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
+    @Column(name = "ocr_extracted_text", columnDefinition = "NVARCHAR(MAX)")
     private String ocrExtractedText;
 
     @Column(name = "ocr_confidence", length = 10)
@@ -63,7 +63,7 @@ public class SmEnquiry {
     @Column(name = "status", length = 50)
     private String status = "Open";
 
-    @Column(name = "remarks", columnDefinition = "TEXT")
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "created_by", length = 100)

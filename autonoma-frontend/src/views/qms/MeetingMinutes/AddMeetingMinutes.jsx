@@ -60,6 +60,21 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 const DEFAULT_MOM_NO = 'MM/CCRM/2026-2027/001';
 const TODAY = new Date().toISOString().split('T')[0];
 
+const formatTo24hString = (time) => {
+  if (!time) return '';
+  if (Array.isArray(time)) {
+    const [h, m] = time;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  if (typeof time === 'string') {
+    const parts = time.split(':');
+    if (parts.length >= 2) {
+      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+    }
+  }
+  return time;
+};
+
 const INITIAL_FORM = {
   momNo: 'AUTO-GENERATE',
   momDate: TODAY,
@@ -148,6 +163,14 @@ export default function AddMeetingMinutes() {
     try {
       const { data } = await axios.get(`${API_PATHS.QMS.MOMS}/${editId}`);
       if (data.momDate) data.momDate = data.momDate.split('T')[0];
+      if (data.attendanceList) {
+        data.attendanceList = data.attendanceList.map(att => ({
+          ...att,
+          inTime: formatTo24hString(att.inTime),
+          outTime: formatTo24hString(att.outTime),
+          attendanceStatus: att.attendanceStatus ? att.attendanceStatus.toUpperCase() : 'ABSENT'
+        }));
+      }
       if (data.details) {
         data.details = data.details.map(d => ({
           ...d,
@@ -191,8 +214,8 @@ export default function AddMeetingMinutes() {
         if (record) {
           return {
             employee: p.employee,
-            inTime: record.inTime || val.startTime || '09:00',
-            outTime: record.outTime || val.endTime || '10:00',
+            inTime: formatTo24hString(record.inTime) || formatTo24hString(val.startTime) || '09:00',
+            outTime: formatTo24hString(record.outTime) || formatTo24hString(val.endTime) || '10:00',
             attendanceStatus: record.status ? record.status.toUpperCase() : 'PRESENT'
           };
         } else {
@@ -201,7 +224,7 @@ export default function AddMeetingMinutes() {
             employee: p.employee,
             inTime: '',
             outTime: '',
-            attendanceStatus: 'Absent'
+            attendanceStatus: 'ABSENT'
           };
         }
       });
@@ -231,7 +254,7 @@ export default function AddMeetingMinutes() {
         employee: p.employee,
         inTime: '',
         outTime: '',
-        attendanceStatus: 'Absent'
+        attendanceStatus: 'ABSENT'
       }));
       
       setForm(p => ({
@@ -294,6 +317,20 @@ export default function AddMeetingMinutes() {
       { field: 'schedule', label: 'Meeting Schedule', required: true },
       { field: 'agenda', label: 'Agenda', required: true }
     ];
+
+    // Validation: Out Time is required for all present/late attendees
+    const missingOutTime = form.attendanceList.some(att => 
+      att.attendanceStatus !== 'ABSENT' && (!att.outTime || !att.outTime.trim())
+    );
+    if (missingOutTime) {
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: "It is mandatory to enter the out time before saving", 
+        variant: 'alert', 
+        severity: 'error' 
+      }));
+      return;
+    }
 
     // SOP: Discussed Point Validation
     const invalidPoints = form.details.filter(d => {
@@ -423,8 +460,8 @@ export default function AddMeetingMinutes() {
               <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
                 <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={() => setForm(INITIAL_FORM)} sx={btnClear}>Clear</Button>
               </Tooltip>
-              <Tooltip title={shortcutTooltip('Save Master', 'Ctrl + S')}>
-                <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save Master</Button>
+              <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}>
+                <Button variant="contained" color="secondary" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} sx={btnSave}>Save</Button>
               </Tooltip>
             </>
           )}
@@ -527,17 +564,17 @@ export default function AddMeetingMinutes() {
                           <TableCell sx={{ 
                             fontWeight: 800, 
                             fontSize: '0.65rem', 
-                            color: att.employee?.id === form.schedule?.host?.id ? 'error.main' : (att.attendanceStatus === 'Absent' ? 'error.light' : 'text.primary') 
+                            color: att.employee?.id === form.schedule?.hostBy?.id ? 'error.main' : (att.attendanceStatus === 'Absent' ? 'error.light' : 'text.primary') 
                           }}>
                             {att.employee?.employeeName?.toUpperCase()}
-                            {att.employee?.id === form.schedule?.host?.id && " (HOST)"}
+                            {att.employee?.id === form.schedule?.hostBy?.id && " (HOST)"}
                           </TableCell>
                           <TableCell>
                             <BOSTextField 
-                              type={att.attendanceStatus === 'Absent' ? 'text' : 'time'} 
+                              type={att.attendanceStatus === 'ABSENT' ? 'text' : 'time'} 
                               size="small" 
-                              value={att.attendanceStatus === 'Absent' ? '' : att.inTime} 
-                              InputProps={{ readOnly: true }}
+                              value={att.attendanceStatus === 'ABSENT' ? '' : att.inTime} 
+                              disabled
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
                               sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' }, bgcolor: 'grey.50' }} 
@@ -545,20 +582,20 @@ export default function AddMeetingMinutes() {
                           </TableCell>
                           <TableCell>
                             <BOSTextField 
-                              type={att.attendanceStatus === 'Absent' ? 'text' : 'time'} 
+                              type={att.attendanceStatus === 'ABSENT' ? 'text' : 'time'} 
                               size="small" 
-                              value={att.attendanceStatus === 'Absent' ? '' : att.outTime} 
+                              value={att.attendanceStatus === 'ABSENT' ? '' : att.outTime} 
                               onChange={(e) => {
                                 const list = [...form.attendanceList];
                                 list[idx].outTime = e.target.value;
                                 setForm({...form, attendanceList: list});
                               }} 
-                              disabled={!perms.write || att.employee?.id !== form.schedule?.host?.id}
+                              disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
                               sx={{ 
                                 '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' },
-                                bgcolor: att.employee?.id === form.schedule?.host?.id ? 'inherit' : 'grey.50'
+                                bgcolor: (!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT') ? 'grey.50' : 'inherit'
                               }} 
                             />
                           </TableCell>
@@ -570,8 +607,8 @@ export default function AddMeetingMinutes() {
                               disabled
                               sx={{ 
                                 '& .MuiSelect-select': { 
-                                  bgcolor: att.attendanceStatus === 'LATE' ? 'warning.lighter' : (att.attendanceStatus === 'Present' ? 'success.lighter' : 'error.lighter'),
-                                  color: att.attendanceStatus === 'LATE' ? 'warning.dark' : (att.attendanceStatus === 'Present' ? 'success.dark' : 'error.dark'),
+                                  bgcolor: att.attendanceStatus === 'LATE' ? 'warning.lighter' : (att.attendanceStatus === 'PRESENT' ? 'success.lighter' : 'error.lighter'),
+                                  color: att.attendanceStatus === 'LATE' ? 'warning.dark' : (att.attendanceStatus === 'PRESENT' ? 'success.dark' : 'error.dark'),
                                   fontWeight: 900,
                                   fontSize: '0.55rem',
                                   textAlign: 'center',
@@ -581,9 +618,9 @@ export default function AddMeetingMinutes() {
                                 } 
                               }}
                             >
-                              <MenuItem value="Present">PRESENT</MenuItem>
+                              <MenuItem value="PRESENT">PRESENT</MenuItem>
                               <MenuItem value="LATE">LATE</MenuItem>
-                              <MenuItem value="Absent">ABSENT</MenuItem>
+                              <MenuItem value="ABSENT">ABSENT</MenuItem>
                             </BOSTextField>
                           </TableCell>
                           <TableCell>
@@ -615,7 +652,7 @@ export default function AddMeetingMinutes() {
           >
             {(() => {
               const meetingUsers = form.attendanceList
-                .filter(a => a.attendanceStatus !== 'Absent')
+                .filter(a => a.attendanceStatus !== 'ABSENT')
                 .map(a => a.employee || a)
                 .filter(emp => emp && emp.id);
               return (
@@ -839,3 +876,5 @@ export default function AddMeetingMinutes() {
     </MainCard>
   );
 }
+
+

@@ -31,7 +31,7 @@ public class CustomerAddress {
     @Column(name = "shipment", length = 100)
     private String shipment;
 
-    @Column(name = "address", columnDefinition = "TEXT")
+    @Column(name = "address", columnDefinition = "NVARCHAR(MAX)")
     private String address;
 
     @Column(name = "city", length = 100)

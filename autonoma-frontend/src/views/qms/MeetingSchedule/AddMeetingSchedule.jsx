@@ -118,12 +118,18 @@ export default function AddMeetingSchedule() {
 
 
   const filteredTimeOptions = useMemo(() => {
+    // TEMPORARY OVERRIDE for testing: allow permission for whole day
+    // (If you want to reset, use command "reset tempo")
+    return ALL_TIME_OPTIONS.map((t) => t.label);
+
+    /*
     const limit = id ? 21 : 23;
     return ALL_TIME_OPTIONS.filter((t) => {
       const isAfter9AM = t.hour24 >= 9;
       const isBeforeLimit = t.hour24 < limit || (t.hour24 === limit && t.minutes === 0);
       return isAfter9AM && isBeforeLimit;
     }).map((t) => t.label);
+    */
   }, [id]);
 
   const fetchSchedule = useCallback(async () => {

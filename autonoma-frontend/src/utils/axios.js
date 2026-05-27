@@ -107,8 +107,22 @@ axiosServices.interceptors.response.use(
     // Log the error details to the console always
     console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status || 'Network Error'} | Error: ${errMsg}`, error);
 
-    // Only alert for non-auth errors
-    if (error.response?.status !== 401) {
+    // Only alert for non-auth errors, and skip auth-related endpoints where
+    // 403/400 are expected validation responses handled locally by the login form.
+    const isAuthEndpoint = error.config?.url && (
+      error.config.url.includes('/check-credentials') ||
+      error.config.url.includes('/account/login') ||
+      error.config.url.includes('/account/face-login')
+    );
+    const isExpectedAuthError = isAuthEndpoint && [400, 403, 405].includes(error.response?.status);
+
+    if (error.response?.status !== 401 && !isExpectedAuthError) {
+      // Trigger a blocking browser alert with details
+      if (window.showAlert) {
+        window.showAlert(`Server / Database Error:\n${errMsg}`);
+      } else {
+        alert(`Server / Database Error:\n${errMsg}`);
+      }
       // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
       import('../store').then(({ dispatch }) => {
         import('../store/slices/snackbar').then(({ openSnackbar }) => {

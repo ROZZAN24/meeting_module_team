@@ -49,7 +49,7 @@ public class CustomerMaster {
     @Column(name = "domain_name", length = 150)
     private String domainName;
 
-    @Column(name = "address", columnDefinition = "TEXT")
+    @Column(name = "address", columnDefinition = "NVARCHAR(MAX)")
     private String address;
 
     @Column(name = "pincode", length = 20)

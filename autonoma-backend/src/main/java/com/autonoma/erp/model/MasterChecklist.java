@@ -27,7 +27,7 @@ public class MasterChecklist extends BaseAuditEntity {
     @Column(name = "CHECKING_POINT")
     private String checkingPoint;
 
-    @Column(name = "DESCRIPTION", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "CATEGORY")
@@ -93,16 +93,16 @@ public class MasterChecklist extends BaseAuditEntity {
     @Column(name = "CARRY_FORWARD_STATUS")
     private String carryForwardStatus;
 
-    @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
+    @Column(name = "AMENDMENT_REASON", columnDefinition = "NVARCHAR(MAX)")
     private String amendmentReason;
 
     @Column(name = "LEVEL_IDS")
     private String levelIds;
 
-    @Column(name = "UPLOADED_FILES", columnDefinition = "TEXT")
+    @Column(name = "UPLOADED_FILES", columnDefinition = "NVARCHAR(MAX)")
     private String uploadedFiles;
 
-    @Column(name = "SCANNED_FILES", columnDefinition = "TEXT")
+    @Column(name = "SCANNED_FILES", columnDefinition = "NVARCHAR(MAX)")
     private String scannedFiles;
 
     @Column(name = "STATUS")

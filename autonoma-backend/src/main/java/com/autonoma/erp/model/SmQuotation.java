@@ -39,7 +39,7 @@ public class SmQuotation {
     @Column(name = "product_name", length = 200)
     private String productName;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "quantity", length = 50)
@@ -66,7 +66,7 @@ public class SmQuotation {
     @Column(name = "ocr_document_path", length = 500)
     private String ocrDocumentPath;
 
-    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
+    @Column(name = "ocr_extracted_text", columnDefinition = "NVARCHAR(MAX)")
     private String ocrExtractedText;
 
     @Column(name = "ocr_confidence", length = 10)
@@ -75,7 +75,7 @@ public class SmQuotation {
     @Column(name = "status", length = 50)
     private String status = "Draft";
 
-    @Column(name = "remarks", columnDefinition = "TEXT")
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "created_by", length = 100)

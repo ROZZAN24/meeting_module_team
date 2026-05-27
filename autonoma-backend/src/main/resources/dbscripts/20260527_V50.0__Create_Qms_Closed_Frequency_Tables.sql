@@ -17,7 +17,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_DAILY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -33,7 +33,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_DAILY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Daily_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Daily_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Daily_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 2. QMS_CHECKLIST_CLOSED_WEEKLY
@@ -43,7 +43,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_WEEKLY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -59,7 +59,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_WEEKLY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Weekly_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Weekly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Weekly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 3. QMS_CHECKLIST_CLOSED_FORTNIGHTLY
@@ -69,7 +69,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_FORTNIGHTLY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -85,7 +85,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_FORTNIGHTLY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Fortnightly_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Fortnightly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Fortnightly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 4. QMS_CHECKLIST_CLOSED_MONTHLY
@@ -95,7 +95,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_MONTHLY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -111,7 +111,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_MONTHLY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Monthly_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Monthly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Monthly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 5. QMS_CHECKLIST_CLOSED_QUARTERLY
@@ -121,7 +121,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_QUARTERLY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -137,7 +137,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_QUARTERLY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Quarterly_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Quarterly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Quarterly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 6. QMS_CHECKLIST_CLOSED_HALF_YEARLY
@@ -147,7 +147,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_HALF_YEARLY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -163,7 +163,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_HALF_YEARLY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_HalfYearly_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_HalfYearly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_HalfYearly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 7. QMS_CHECKLIST_CLOSED_YEARLY
@@ -173,7 +173,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_YEARLY] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -189,7 +189,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_YEARLY] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Yearly_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Yearly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Yearly_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
 
 -- 8. QMS_CHECKLIST_CLOSED_CUSTOM
@@ -199,7 +199,7 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_CUSTOM] (
     [assigned_to] NVARCHAR(100),
     [assigned_by] NVARCHAR(100),
     [assigned_date] DATETIME,
-    [status_id] INT,
+    [status_id] BIGINT,
     [remarks] NVARCHAR(MAX),
     [checklist_date] DATE,
     [carry_forward] VARCHAR(10),
@@ -215,5 +215,5 @@ CREATE TABLE [dbo].[QMS_CHECKLIST_CLOSED_CUSTOM] (
     [UPDATED_USER] NVARCHAR(100),
     [UPDATED_DATE] DATETIME,
     CONSTRAINT [FK_Closed_Custom_Checklist] FOREIGN KEY ([checklist_id]) REFERENCES [dbo].[QMS_CHECKLIST_MASTER]([id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Closed_Custom_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[STATUS_MASTER]([id])
+    CONSTRAINT [FK_Closed_Custom_Status] FOREIGN KEY ([status_id]) REFERENCES [dbo].[AD_STATUS_MASTER]([id])
 );
