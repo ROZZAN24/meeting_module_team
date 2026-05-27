@@ -87,6 +87,68 @@ public class EmployeeMasterController {
         return ResponseEntity.ok().build();
     }
 
+    // ======================== SELF ASSESSMENT ========================
+
+    @GetMapping("/{id}/self-assessment")
+    @Operation(summary = "Get employee self-assessment details")
+    public ResponseEntity<EmployeeMaster> getSelfAssessment(@PathVariable Long id) {
+        EmployeeMaster emp = service.getEmployeeById(id);
+        return emp != null ? ResponseEntity.ok(emp) : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/{id}/self-assessment")
+    @RequirePagePermission(pageCode = "M2210", action = "write")
+    @Operation(summary = "Save/update employee self-assessment details")
+    public ResponseEntity<EmployeeMaster> saveSelfAssessment(@PathVariable Long id, @RequestBody EmployeeMaster details) {
+        EmployeeMaster emp = service.getEmployeeById(id);
+        if (emp == null) return ResponseEntity.notFound().build();
+
+        emp.setQ1_native(details.getQ1_native());
+        emp.setQ2_presentAddress(details.getQ2_presentAddress());
+        emp.setQ3_permanentAddress(details.getQ3_permanentAddress());
+        emp.setQ4_fatherOccupation(details.getQ4_fatherOccupation());
+        emp.setQ5_motherOccupation(details.getQ5_motherOccupation());
+        emp.setQ6_maritalStatus(details.getQ6_maritalStatus());
+        emp.setQ7_spouseOccupation(details.getQ7_spouseOccupation());
+        emp.setQ8_children(details.getQ8_children());
+        emp.setQ9_hasRelativesInCompany(details.getQ9_hasRelativesInCompany());
+        emp.setQ10_relativesDetails(details.getQ10_relativesDetails());
+        emp.setQ11_siblingsOccupations(details.getQ11_siblingsOccupations());
+        emp.setQ12_hasTwoWheeler(details.getQ12_hasTwoWheeler());
+        emp.setQ13_hasAndroidPhone(details.getQ13_hasAndroidPhone());
+        emp.setQ14_knowsCarDriving(details.getQ14_knowsCarDriving());
+        emp.setQ15_willingToTravel(details.getQ15_willingToTravel());
+        emp.setQ16_covidVaccination(details.getQ16_covidVaccination());
+        emp.setQ17_positivePoints(details.getQ17_positivePoints());
+        emp.setQ18_negativePoints(details.getQ18_negativePoints());
+        emp.setQ19_lifeGoals(details.getQ19_lifeGoals());
+        emp.setQ20_improvementSuggestions(details.getQ20_improvementSuggestions());
+        emp.setQ21_isExperienced(details.getQ21_isExperienced());
+        emp.setQ22_totalExperience(details.getQ22_totalExperience());
+        emp.setQ23_coreExperience(details.getQ23_coreExperience());
+        emp.setQ24_prevNetSalary(details.getQ24_prevNetSalary());
+        emp.setQ25_prevGrossSalary(details.getQ25_prevGrossSalary());
+        emp.setQ26_expectedNetSalary(details.getQ26_expectedNetSalary());
+        emp.setQ27_expectedGrossSalary(details.getQ27_expectedGrossSalary());
+        emp.setQ28_pfHigherPension(details.getQ28_pfHigherPension());
+        emp.setQ29_pfDeductionAmount(details.getQ29_pfDeductionAmount());
+        emp.setQ30_alternativeDepartment(details.getQ30_alternativeDepartment());
+        emp.setQ31_prevLocation(details.getQ31_prevLocation());
+        emp.setQ32_prevShift(details.getQ32_prevShift());
+        emp.setQ33_reasonForLeaving(details.getQ33_reasonForLeaving());
+        emp.setQ34_noticePeriod(details.getQ34_noticePeriod());
+        emp.setQ35_prevDeptPosition(details.getQ35_prevDeptPosition());
+        emp.setQ36_prevDeptCount(details.getQ36_prevDeptCount());
+        emp.setQ37_prevReportingTo(details.getQ37_prevReportingTo());
+        emp.setQ38_handleMistake(details.getQ38_handleMistake());
+        emp.setQ39_handleOpinionDifference(details.getQ39_handleOpinionDifference());
+        emp.setQ40_computerSelfRating(details.getQ40_computerSelfRating());
+        emp.setPayslipPath(details.getPayslipPath());
+
+        EmployeeMaster updated = service.updateEmployee(id, emp);
+        return ResponseEntity.ok(updated);
+    }
+
     // ======================== PERSONAL DETAIL ========================
 
     @GetMapping("/{id}/personal")

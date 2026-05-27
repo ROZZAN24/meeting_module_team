@@ -216,6 +216,7 @@ const VerificationCriteria = Loadable(lazy(() => import('views/master/hr/ats/Ver
 const InductionAssignment = Loadable(lazy(() => import('views/master/hr/ats/InductionAssignment')));
 const InductionTraining = Loadable(lazy(() => import('views/master/hr/ats/InductionTraining')));
 const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/InductionTrainee')));
+const HraApplicationTrackingSystem = Loadable(lazy(() => import('views/hra/ApplicationTrackingSystem')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
 const QmsAuditAreaMaster = Loadable(lazy(() => import('views/qms/AuditAreaMaster/AuditAreaMaster')));
 const QmsAuditCriteriaMaster = Loadable(lazy(() => import('views/qms/AuditCriteriaMaster/AuditCriteriaMaster')));
@@ -927,6 +928,10 @@ const MainRoutes = {
     {
       path: '/master/hr/employee-type',
       element: <EmployeeType />
+    },
+    {
+      path: '/hra/ats',
+      element: <HraApplicationTrackingSystem />
     },
     {
       path: '/hra/employee/master',

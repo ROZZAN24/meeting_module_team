@@ -27,5 +27,16 @@ export default function ErrorBoundary() {
     }
   }
 
-  return <Alert severity="error">Under Maintenance</Alert>;
+  return (
+    <Alert severity="error">
+      <div>Under Maintenance</div>
+      {error && (
+        <pre style={{ marginTop: '10px', whiteSpace: 'pre-wrap', textAlign: 'left' }}>
+          {error.message || String(error)}
+          {error.stack && `\n\nStack Trace:\n${error.stack}`}
+        </pre>
+      )}
+    </Alert>
+  );
 }
+
