@@ -310,7 +310,7 @@ const InductionAssignment = () => {
     try {
       const [assignRes, empRes] = await Promise.all([
         axios.get('/api/hr/induction-assignment'),
-        axios.get('/api/master/employee/filter/active')
+        axios.get('/api/master/hr/employees/filter/active')
       ]);
 
       const assignments = assignRes.data;

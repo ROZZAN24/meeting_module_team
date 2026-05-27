@@ -606,7 +606,7 @@ export default function UserTaskQueue() {
           axios.get('/api/users/all').then(res => setAllUsers(res.data || [])).catch(e => console.error(e));
         }
 
-        axios.get('/api/master/employee').then(res => setAllEmployees(res.data || [])).catch(e => console.error(e));
+        axios.get('/api/master/hr/employees').then(res => setAllEmployees(res.data || [])).catch(e => console.error(e));
       }
     }
   }, [user, initialized]);

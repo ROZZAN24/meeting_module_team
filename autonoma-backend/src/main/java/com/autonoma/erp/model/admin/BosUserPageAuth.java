@@ -10,7 +10,7 @@ import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "bos_user_page_auth")
+@Table(name = "BOS_USER_PAGE_AUTH")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

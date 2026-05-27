@@ -6,7 +6,7 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "npd_model")
+@Table(name = "NPD_MODEL")
 @Getter
 @Setter
 public class ProductModel {

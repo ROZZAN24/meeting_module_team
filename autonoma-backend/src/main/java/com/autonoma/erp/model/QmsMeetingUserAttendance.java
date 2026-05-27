@@ -10,7 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
-@Table(name = "qms_meeting_user_attendance",
+@Table(name = "QMS_MEETING_USER_ATTENDANCE",
        uniqueConstraints = @UniqueConstraint(columnNames = {"schedule_id", "employee_id"}))
 @Data
 @NoArgsConstructor

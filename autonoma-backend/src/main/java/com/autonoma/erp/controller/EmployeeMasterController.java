@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/master/employee")
+@RequestMapping("/api/master/hr/employees")
 @CrossOrigin(origins = "*", maxAge = 3600)
 @Tag(name = "HRM - Employee Master", description = "Full Employee Master CRUD with sub-resources")
 public class EmployeeMasterController {

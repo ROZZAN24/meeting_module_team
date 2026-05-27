@@ -84,7 +84,7 @@ export default function EmployeeType() {
   const fetchRows = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/hrm/employee-types');
+      const response = await axios.get('/api/master/hr/employee-types');
       setRows(response.data || []);
     } catch (error) {
       console.error('Failed to fetch employee types:', error);
@@ -133,7 +133,7 @@ export default function EmployeeType() {
       delete payload.index;
 
       if (formData.id) {
-        await axios.put(`/api/hrm/employee-types/${formData.id}`, payload);
+        await axios.put(`/api/master/hr/employee-types/${formData.id}`, payload);
         dispatch(openSnackbar({
           open: true,
           message: 'Employee Type Updated Successfully',
@@ -142,7 +142,7 @@ export default function EmployeeType() {
           severity: 'success'
         }));
       } else {
-        await axios.post('/api/hrm/employee-types', payload);
+        await axios.post('/api/master/hr/employee-types', payload);
         dispatch(openSnackbar({
           open: true,
           message: 'Employee Type Saved Successfully',
@@ -172,7 +172,7 @@ export default function EmployeeType() {
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`/api/hrm/employee-types/${deleteTarget.id}`);
+      await axios.delete(`/api/master/hr/employee-types/${deleteTarget.id}`);
       dispatch(openSnackbar({ open: true, message: 'Employee Type Inactivated Successfully', variant: 'alert', severity: 'success' }));
       setDeleteDialogOpen(false);
       fetchRows();

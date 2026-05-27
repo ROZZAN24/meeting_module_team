@@ -96,7 +96,7 @@ export default function EmployeeList() {
 
   const fetchMappings = useCallback(async () => {
     try {
-      const response = await axios.get('/api/master/employee/manager-mapping');
+      const response = await axios.get('/api/master/hr/employees/manager-mapping');
       if (Array.isArray(response.data)) {
         setMappings(response.data);
       }
@@ -168,11 +168,11 @@ export default function EmployeeList() {
 
     try {
       // Fetch eligible managers
-      const managersRes = await axios.get(`/api/master/employee/manager-mapping/eligible-managers?empId=${selectedRow.id}`);
+      const managersRes = await axios.get(`/api/master/hr/employees/manager-mapping/eligible-managers?empId=${selectedRow.id}`);
       setEligibleManagers(managersRes.data || []);
 
       // Fetch current mapping for this employee
-      const mappingRes = await axios.get(`/api/master/employee/manager-mapping/${selectedRow.id}`);
+      const mappingRes = await axios.get(`/api/master/hr/employees/manager-mapping/${selectedRow.id}`);
       const cur = mappingRes.data || {};
       setMappingState({
         homeManagerId: cur.homeManagerId || '',
@@ -196,7 +196,7 @@ export default function EmployeeList() {
 
   const handleMapManagerSave = async () => {
     try {
-      await axios.post('/api/master/employee/manager-mapping', {
+      await axios.post('/api/master/hr/employees/manager-mapping', {
         empId: selectedRow.id,
         homeManagerId: mappingState.homeManagerId || null,
         businessManagerId: mappingState.businessManagerId || null,

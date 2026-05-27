@@ -378,7 +378,7 @@ export default function CheckListRenewalVerify() {
         }
       } else {
         try {
-          const mappingRes = await axios.get(`/api/master/employee/manager-mapping/${assignee.id}`);
+          const mappingRes = await axios.get(`/api/master/hr/employees/manager-mapping/${assignee.id}`);
           const mapping = mappingRes.data;
           
           const isVerticalHead = mapping && mapping.verticalHeadId && (
