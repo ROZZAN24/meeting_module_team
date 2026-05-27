@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "bos_pages")
+@Table(name = "BOS_PAGES")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

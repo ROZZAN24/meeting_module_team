@@ -16,7 +16,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "hrm_designation_level")
+@Table(name = "HR_DESIGNATION_LEVEL")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
