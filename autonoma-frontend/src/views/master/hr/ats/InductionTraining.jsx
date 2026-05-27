@@ -668,7 +668,7 @@ export default function InductionTraining() {
                           <Tooltip 
                             title={
                               <Box sx={{ p: 0.5, maxWidth: 300 }}>
-                                <Typography variant="body2" sx={{ whiteSpace: 'pre-line', lineHeight: 1.4 }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-line', lineHeight: 1.4, color: 'common.white' }}>
                                   {detail.answer || "No expected answer provided"}
                                 </Typography>
                               </Box>

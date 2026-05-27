@@ -376,7 +376,7 @@ const InductionAssignment = () => {
         );
       }
     },
-    { id: 'updatedUser', label: 'Updated By', minWidth: 120 },
+    { id: 'updatedUser', label: 'Updated By', minWidth: 120, render: (row) => row.updatedUser || row.updatedBy || '-' },
     { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
   ], []);
 
