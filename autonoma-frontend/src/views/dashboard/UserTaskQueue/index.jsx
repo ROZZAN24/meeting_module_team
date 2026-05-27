@@ -150,7 +150,7 @@ const HeroBanner = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ 
 }));
 
 /* ── Stat Summary Card (inside banner) ── */
-const StatBubble = styled(Box)(({ theme }) => {
+const StatBubble = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme }) => {
   const isDark = theme.palette.mode === 'dark';
   return {
     display: 'flex',

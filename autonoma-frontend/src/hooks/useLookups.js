@@ -20,10 +20,14 @@ export const useLookups = (lookupTypes = []) => {
     try {
       const settledResults = await Promise.allSettled(
         lookupTypes.map(async (type) => {
-          const path = API_PATHS.HRM[type] || API_PATHS.QMS[type] || API_PATHS.SM[type];
+          let path = API_PATHS.HRM[type] || API_PATHS.QMS[type] || API_PATHS.SM[type];
           if (!path) {
             console.warn(`Lookup type "${type}" not found in API_PATHS`);
             return null;
+          }
+          // SOP: For AUDIT_TYPE lookup, fetch from the /active unpaginated endpoint to get all active options
+          if (type === 'AUDIT_TYPE') {
+            path = `${path}/active`;
           }
           const response = await axios.get(path);
           const data = response.data;
