@@ -11,7 +11,7 @@ import com.autonoma.erp.security.RequirePagePermission;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/master/hr/designationlevel")
+@RequestMapping("/api/master/hr/designation-levels")
 @CrossOrigin(origins = "*")
 public class DesignationLevelController {
 

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "ad_backend_error_log")
+@Table(name = "AD_BACKEND_ERROR_LOG")
 @Data
 @Builder
 @NoArgsConstructor

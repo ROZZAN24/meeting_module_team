@@ -12,7 +12,24 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 const API = API_PATHS.HRM.EMPLOYEES;
 const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
 
-const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object' 
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5 }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn }}>{children}</Box>;
+};
 
 function Section1to1({ title, icon, endpoint, employeeId, fields, validation, onPreview }) {
   const theme = useTheme();
@@ -56,12 +73,12 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
 
   if (!loaded) return null;
   const content = (
-    <Grid container spacing={2.5}>
+    <GridContainer>
       {fields.map((f, i) => {
         const isHidden = f.hideIf && f.hideIf(form);
         if (isHidden) return null;
         if (f.type === 'subheader') return (
-          <Grid item xs={12} key={`sub-${i}`} sx={{ flexBasis: '100% !important', maxWidth: '100% !important' }}>
+          <Box key={`sub-${i}`} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, width: '100%' }}>
             <Box sx={{ mt: i === 0 ? 0 : 4, mb: 1.5, width: '100%' }}>
               <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: 1 }} />
@@ -69,7 +86,7 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
               </Typography>
               <Divider sx={{ mt: 1, borderColor: 'primary.light', borderBottomWidth: 2, opacity: 0.2 }} />
             </Box>
-          </Grid>
+          </Box>
         );
       return (
         <R key={f.name || i} lg={f.lg || 4}>
@@ -117,7 +134,7 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
           </R>
         );
       })}
-    </Grid>
+    </GridContainer>
   );
 
   const footer = employeeId ? (
@@ -225,7 +242,7 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, tra
 
   return (
     <BOSFormSection icon={icon || <IconFileText size={20} color={theme.palette.primary.main} />} title={title}>
-      <Grid container spacing={2.5}>
+      <GridContainer>
         {fields.map((f) => (
           <R key={f.name} lg={f.lg || 4}>
             {f.type === 'file' ? (
@@ -250,7 +267,7 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, tra
             )}
           </R>
         ))}
-      </Grid>
+      </GridContainer>
 
       {!disabled && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 2 }}>

@@ -870,7 +870,7 @@ export default function TicketManagement({ viewType }) {
 
   const fetchAllEmployees = async () => {
     try {
-      const res = await axios.get('/api/master/employee');
+      const res = await axios.get('/api/master/hr/employees');
       setEmployeesList(res.data || []);
     } catch (err) {
       console.warn('Could not load employees list', err);
@@ -1269,8 +1269,8 @@ export default function TicketManagement({ viewType }) {
   const fetchEmployeeDetails = async () => {
     try {
       const [empRes, contactRes] = await Promise.all([
-        axios.get(`/api/master/employee/${user.empId}`),
-        axios.get(`/api/master/employee/${user.empId}/contact`).catch(() => ({ data: null }))
+        axios.get(`/api/master/hr/employees/${user.empId}`),
+        axios.get(`/api/master/hr/employees/${user.empId}/contact`).catch(() => ({ data: null }))
       ]);
 
       if (empRes.data) {
@@ -2737,7 +2737,7 @@ export default function TicketManagement({ viewType }) {
                                         setDetailDevName(selectedEmp.employeeName || '');
                                         setDetailDevEmail(selectedEmp.officeMail || '');
                                         setDetailDevMobile('');
-                                        axios.get(`/api/master/employee/${selectedEmp.id}/contact`)
+                                        axios.get(`/api/master/hr/employees/${selectedEmp.id}/contact`)
                                           .then(c => {
                                             if (c.data?.mobile) setDetailDevMobile(c.data.mobile);
                                           }).catch(() => { });
@@ -3470,7 +3470,7 @@ export default function TicketManagement({ viewType }) {
                         if (selectedEmp) {
                           setFormDevName(selectedEmp.employeeName || '');
                           setFormDevEmail(selectedEmp.officeMail || '');
-                          axios.get(`/api/master/employee/${selectedEmp.id}/contact`)
+                          axios.get(`/api/master/hr/employees/${selectedEmp.id}/contact`)
                             .then(c => {
                               if (c.data?.mobile) setFormDevMobile(c.data.mobile);
                             }).catch(() => { });

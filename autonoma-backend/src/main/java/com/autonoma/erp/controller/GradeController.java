@@ -19,7 +19,7 @@ import com.autonoma.erp.service.EmpGradeService;
 import com.autonoma.erp.security.RequirePagePermission;
 
 @RestController
-@RequestMapping("/api/master/hr/grade")
+@RequestMapping("/api/master/hr/grades")
 @CrossOrigin(origins = "*")
 public class GradeController {
 
