@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "npd_item_type")
+@Table(name = "NPD_ITEM_TYPE")
 @Data
 @NoArgsConstructor
 public class ProductItemType {

@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.Date;
 
 @Entity
-@Table(name = "ad_user_theme_setting")
+@Table(name = "AD_USER_THEME_SETTING")
 @Data
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class UserThemeSetting {

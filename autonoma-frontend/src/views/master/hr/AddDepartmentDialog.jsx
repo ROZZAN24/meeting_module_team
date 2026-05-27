@@ -48,8 +48,8 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
   const fetchNextValues = async () => {
     try {
       const [codeRes, seqRes] = await Promise.all([
-        axios.get('/api/hrm/departments/next-code'),
-        axios.get('/api/hrm/departments/next-seq')
+        axios.get('/api/master/hr/departments/next-code'),
+        axios.get('/api/master/hr/departments/next-seq')
       ]);
       setFormData(prev => ({ ...prev, departmentNo: codeRes.data, sequenceNo: seqRes.data }));
     } catch (e) {
@@ -76,10 +76,10 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
 
     try {
       if (formData.id) {
-        await axios.put(`/api/hrm/departments/${formData.id}`, formData);
+        await axios.put(`/api/master/hr/departments/${formData.id}`, formData);
         dispatch(openSnackbar({ open: true, message: 'Department updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
-        await axios.post('/api/hrm/departments', formData);
+        await axios.post('/api/master/hr/departments', formData);
         dispatch(openSnackbar({ open: true, message: 'Department created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
       handleClose(true);
@@ -98,7 +98,7 @@ const AddDepartmentDialog = ({ open, handleClose, initialData, readOnly = false 
   const handleDeleteConfirm = async () => {
     setDeleteOpen(false);
     try {
-      await axios.delete(`/api/hrm/departments/${formData.id}`);
+      await axios.delete(`/api/master/hr/departments/${formData.id}`);
       dispatch(openSnackbar({ open: true, message: 'Department deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       handleClose(true);
     } catch (error) {

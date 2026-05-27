@@ -134,7 +134,7 @@ export default function InterviewCriteria() {
 
   const fetchLevels = useCallback(async () => {
     try {
-      const res = await axios.get('/api/master/hr/designationlevel');
+      const res = await axios.get('/api/master/hr/designation-levels');
       setLevels(res.data || []);
     } catch (err) {
       console.error('Failed to fetch designation levels:', err);

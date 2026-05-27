@@ -16,7 +16,7 @@ import java.util.Date;
  * via the BaseDivisionTenantEntity filter.
  */
 @Entity
-@Table(name = "ad_division_master")
+@Table(name = "AD_DIVISION_MASTER")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
