@@ -159,10 +159,14 @@ export default function InductionCriteria() {
     const deptIds = deptCodes.map(
       (code) => departments.find((d) => d.departmentNo === code)?.id?.toString() || code
     );
+    const order = LEVEL_OPTIONS.map(l => l.code);
+    const rawLevels = row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [];
+    const sortedLevels = [...rawLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
     setFormData({
       ...row,
       departmentCodes: deptIds,
-      levelCodes: row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [],
+      levelCodes: sortedLevels,
       inductionAttachment: row.inductionAttachment
         ? row.inductionAttachment.split(',').filter(Boolean).map((path) => ({
             id: path,
@@ -205,7 +209,10 @@ export default function InductionCriteria() {
         setFormData((prev) => ({ ...prev, levelCodes: LEVEL_OPTIONS.map((l) => l.code) }));
       }
     } else {
-      setFormData((prev) => ({ ...prev, levelCodes: typeof value === 'string' ? value.split(',') : value }));
+      const rawCodes = typeof value === 'string' ? value.split(',') : value;
+      const order = LEVEL_OPTIONS.map(l => l.code);
+      const sortedCodes = [...rawCodes].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+      setFormData((prev) => ({ ...prev, levelCodes: sortedCodes }));
     }
     if (errors.levelCodes) clearErrors('levelCodes');
   };
