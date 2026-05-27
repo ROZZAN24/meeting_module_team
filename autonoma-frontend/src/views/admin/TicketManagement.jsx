@@ -780,6 +780,19 @@ export default function TicketManagement({ viewType }) {
     return () => window.removeEventListener('keydown', handleSaveShortcut, { capture: true });
   }, [createOpen, detailsOpen, isSaving]);
 
+  // Handle Escape to close details
+  useEffect(() => {
+    const handleEscapeShortcut = (e) => {
+      if (e.key === 'Escape' && detailsOpen) {
+        e.preventDefault();
+        setDetailsOpen(false);
+        setSelectedTicket(null);
+      }
+    };
+    window.addEventListener('keydown', handleEscapeShortcut, { capture: true });
+    return () => window.removeEventListener('keydown', handleEscapeShortcut, { capture: true });
+  }, [detailsOpen]);
+
   // When a ticket is selected, load its comments/timeline
   useEffect(() => {
     if (selectedTicket) {
@@ -799,7 +812,7 @@ export default function TicketManagement({ viewType }) {
       setDetailDevMobile(selectedTicket.developerMobileNo || '');
       setDetailResolution(selectedTicket.resolutionSummary || '');
       setDetailRootCause(selectedTicket.rootCause || '');
-      setDetailAdditionalRequirement(selectedTicket.additional_requirement || '');
+      setDetailAdditionalRequirement(selectedTicket.additionalRequirement || '');
 
       const isReopenedStatus = selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
       if (isReopenedStatus) {
@@ -1622,7 +1635,14 @@ export default function TicketManagement({ viewType }) {
           }
         }
 
+        const commonPayload = {
+          additionalRequirement: detailAdditionalRequirement,
+          tempAdditionalAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
+          tempAdditionalVoiceRecordings: formVoiceFiles
+        };
+
         const payload = {
+          ...commonPayload,
           ticketStatus: detailStatus,
           assignedTo: detailAssignedTo,
           assignedBy: user?.name || user?.username || 'Admin',
@@ -1630,7 +1650,6 @@ export default function TicketManagement({ viewType }) {
           developerEmail: detailDevEmail,
           developerMobileNo: detailDevMobile,
           resolutionSummary: detailResolution,
-          additional_requirement: detailAdditionalRequirement,
           takenTime: newTakenTime,
           reworkTime: newReworkTime,
           targetDate: detailTargetDate ? new Date(detailTargetDate) : null,
@@ -1649,64 +1668,62 @@ export default function TicketManagement({ viewType }) {
         showSnackbar('Ticket updated successfully!');
         fetchTickets();
         setHasSavedInDetails(true);
+        setFormAttachments([]);
+        setFormVoiceFiles([]);
         return;
       }
 
       // ─── RAISED BY ME RULES ────────────────────────────────────────────────
       if (currentViewType === 'raised-by-me') {
+        const payload = {
+          additionalRequirement: detailAdditionalRequirement,
+          tempAdditionalAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
+          tempAdditionalVoiceRecordings: formVoiceFiles
+        };
+
+        let isStatusUpdate = false;
         // REOPEN: assigned user gets REWORK status
         if (detailStatus === 'Reopened') {
-          const payload = {
-            ticketStatus: 'Reopened',
-            assignedUserStatus: 'Rework',  // signal backend to set assigned user's status to REWORK
-            resolutionSummary: detailResolution,
-          };
-          const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
-          setSelectedTicket(res.data);
-          setDetailResolution('');
-          await fetchTicketSubresources(selectedTicket.rowId);
-          showSnackbar('Ticket reopened — assigned user status set to REWORK');
-          fetchTickets();
-          setHasSavedInDetails(true);
-          return;
-        }
-
-        // COMPLETED: ticket final complete
-        if (detailStatus === 'Completed') {
-          const payload = {
-            ticketStatus: 'Completed',
-            resolutionSummary: detailResolution,
-            completedAt: new Date().toISOString(),
-          };
-          const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
-          setSelectedTicket(res.data);
-          setDetailResolution('');
-          await fetchTicketSubresources(selectedTicket.rowId);
-          showSnackbar('Ticket marked as Completed!');
-          fetchTickets();
-          setHasSavedInDetails(true);
-          return;
-        }
-
-        // Default: current status view only — no action needed
-        if (detailAdditionalRequirement !== (selectedTicket.additional_requirement || '') || formAttachments.length > 0 || formVoiceFiles.length > 0) {
-          const payload = {
-            additional_requirement: detailAdditionalRequirement,
-            attachments: [...(selectedTicket.attachments || []), ...formAttachments, ...formVoiceFiles]
-          };
-          try {
-            const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
-            setSelectedTicket(res.data);
-            await fetchTicketSubresources(selectedTicket.rowId);
-            showSnackbar('Ticket updated successfully!');
-            fetchTickets();
-            setHasSavedInDetails(true);
-            setFormAttachments([]);
-            setFormVoiceFiles([]);
-          } catch (e) { showSnackbar('Failed to update ticket', 'error'); }
+          payload.ticketStatus = 'Reopened';
+          payload.assignedUserStatus = 'Rework';  // signal backend to set assigned user's status to REWORK
+          payload.resolutionSummary = detailResolution;
+          isStatusUpdate = true;
+        } else if (detailStatus === 'Completed') {
+          // COMPLETED: ticket final complete
+          payload.ticketStatus = 'Completed';
+          payload.resolutionSummary = detailResolution;
+          payload.completedAt = new Date().toISOString();
+          isStatusUpdate = true;
         } else {
-          showSnackbar('No changes to apply', 'info');
+          // Default: current status view only — no action needed
+          if (detailAdditionalRequirement === (selectedTicket.additionalRequirement || '') && formAttachments.length === 0 && formVoiceFiles.length === 0) {
+            showSnackbar('No changes to apply', 'info');
+            setIsSaving(false);
+            return;
+          }
         }
+
+        try {
+          const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
+          setSelectedTicket(res.data);
+          if (isStatusUpdate) {
+            setDetailResolution('');
+          }
+          await fetchTicketSubresources(selectedTicket.rowId);
+          
+          if (detailStatus === 'Reopened') {
+            showSnackbar('Ticket reopened — assigned user status set to REWORK');
+          } else if (detailStatus === 'Completed') {
+            showSnackbar('Ticket marked as Completed!');
+          } else {
+            showSnackbar('Ticket updated successfully!');
+          }
+          
+          fetchTickets();
+          setHasSavedInDetails(true);
+          setFormAttachments([]);
+          setFormVoiceFiles([]);
+        } catch (e) { showSnackbar('Failed to update ticket', 'error'); }
       }
     } catch (error) {
       showSnackbar('Failed to update ticket workflow', 'error');
@@ -2224,7 +2241,9 @@ export default function TicketManagement({ viewType }) {
           const sep = <Typography component="span" sx={{ color: '#cbd5e1', mx: 0.5 }}>|</Typography>;
           return (
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, pb: 1.5, borderBottom: '1px solid #e2e8f0', gap: 1.5, flexWrap: 'wrap' }}>
-              <Button startIcon={<ArrowBackIcon />} variant="outlined" onClick={() => { setDetailsOpen(false); setSelectedTicket(null); }} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, flexShrink: 0, height: 36 }}>Back</Button>
+              <Tooltip title="Esc" arrow placement="bottom">
+                <Button startIcon={<ArrowBackIcon />} variant="outlined" onClick={() => { setDetailsOpen(false); setSelectedTicket(null); }} sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600, flexShrink: 0, height: 36 }}>Back</Button>
+              </Tooltip>
               <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#1e293b', flexShrink: 0 }}>Ticket Details</Typography>
               <Box sx={{ width: '1px', height: 20, bgcolor: '#cbd5e1', flexShrink: 0 }} />
               <Typography variant="body2" sx={{ color: '#334155', fontWeight: 600 }}>
@@ -2239,6 +2258,29 @@ export default function TicketManagement({ viewType }) {
                 <strong>Complete Date:</strong> {selectedTicket.resolvedAt ? format(new Date(selectedTicket.resolvedAt), 'dd/MM/yyyy hh:mm aa') : '-'}
                 {delayStr && <>{sep}<strong>Delay Hrs:</strong> <span style={{ color: delayColor, fontWeight: 800 }}>{delayStr}</span></>}
               </Typography>
+
+              {selectedTicket.ticketStatus !== 'Closed' && (
+                <Box sx={{ ml: 'auto' }}>
+                  <Tooltip title="Ctrl + S" arrow placement="bottom">
+                    <span>
+                      <Button
+                        id="ticket-update-button"
+                        variant="contained" color="secondary"
+                        startIcon={<SaveIcon />}
+                        onClick={handleUpdateTicketDetails}
+                        disabled={isSaving || (hasSavedInDetails && detailStatus === selectedTicket.ticketStatus)}
+                        sx={{
+                          height: 36, px: 4, fontWeight: 700, borderRadius: '8px',
+                          transition: 'all 0.3s ease',
+                          '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 4px 8px rgba(0,0,0,0.15)' }
+                        }}
+                      >
+                        {isSaving ? 'Saving...' : 'Save'}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                </Box>
+              )}
             </Box>
           );
         })()}
@@ -2612,29 +2654,6 @@ export default function TicketManagement({ viewType }) {
                         </Stack>
                       </Box>
 
-                      {/* Sticky Save Footer */}
-                      {selectedTicket.ticketStatus !== 'Closed' && (
-                        <Box sx={{ p: 2, pt: 1.5, pb: 3, borderTop: '1px solid #e2e8f0', bgcolor: '#fff', flexShrink: 0, position: 'sticky', bottom: 0, zIndex: 10 }}>
-                          <Tooltip title="Ctrl + S" arrow placement="top">
-                            <span>
-                              <Button
-                                id="ticket-update-button"
-                                variant="contained" color="secondary" fullWidth
-                                startIcon={<SaveIcon />}
-                                onClick={handleUpdateTicketDetails}
-                                disabled={isSaving || (hasSavedInDetails && detailStatus === selectedTicket.ticketStatus)}
-                                sx={{
-                                  height: 46, fontWeight: 700, fontSize: '1rem', borderRadius: '8px',
-                                  transition: 'all 0.3s ease',
-                                  '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 6px 12px rgba(0,0,0,0.15)' }
-                                }}
-                              >
-                                {isSaving ? 'Saving...' : 'Save'}
-                              </Button>
-                            </span>
-                          </Tooltip>
-                        </Box>
-                      )}
                     </Box>
                   )}
                   {/* placeholder to close original tab 0 box — replaced above */}
@@ -2954,8 +2973,12 @@ export default function TicketManagement({ viewType }) {
                   {tabValue === 1 && (
                     <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
                       <Stack spacing={2} sx={{ mb: 2 }}>
-                        {ticketAttachments.map((file) => {
-                          const isVoice = file.fileType === 'Voice Recording' ||
+                        {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').length > 0 && (
+                          <>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 1 }}>General Attachments</Typography>
+                            {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').map((file) => {
+                              const isVoice = file.fileType === 'Voice Recording' ||
+
                             /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
                           return (
                             <Box key={file.id} sx={{ p: 1.5, border: '1px solid #eee', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -2985,6 +3008,45 @@ export default function TicketManagement({ viewType }) {
                             </Box>
                           );
                         })}
+                          </>
+                        )}
+
+                        {ticketAttachments.filter(f => f.fileType === 'Additional Requirement Attachment' || f.fileType === 'Additional Requirement Voice').length > 0 && (
+                          <>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 2 }}>Additional Requirement</Typography>
+                            {ticketAttachments.filter(f => f.fileType === 'Additional Requirement Attachment' || f.fileType === 'Additional Requirement Voice').map((file) => {
+                              const isVoice = file.fileType === 'Additional Requirement Voice' ||
+                                /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
+                              return (
+                                <Box key={file.id} sx={{ p: 1.5, border: '1px solid #eee', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{file.fileName}</Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
+                                      </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                      {!isVoice && (
+                                        <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                          Preview
+                                        </Button>
+                                      )}
+                                      <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
+                                        Download
+                                      </Button>
+                                    </Box>
+                                  </Box>
+                                  {isVoice && (
+                                    <Box sx={{ width: '100%', mt: 0.5 }}>
+                                      <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '36px' }} />
+                                    </Box>
+                                  )}
+                                </Box>
+                              );
+                            })}
+                          </>
+                        )}
                       </Stack>
                       <Divider sx={{ my: 2 }} />
                       <Button component="label" variant="contained" fullWidth startIcon={<CloudUploadIcon />}>
