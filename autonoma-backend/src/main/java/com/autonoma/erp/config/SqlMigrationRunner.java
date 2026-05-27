@@ -68,7 +68,8 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260526_V40.0__Fix_Missing_Audit_Columns__TIS.sql",
         "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql",
         "20260512_V2.4__Sync_Company_Credentials.sql",
-        "V13.0__Fix_User_Mapping_FK_References.sql"
+        "V13.0__Fix_User_Mapping_FK_References.sql",
+        "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
