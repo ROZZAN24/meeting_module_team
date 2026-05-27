@@ -209,6 +209,7 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setMobileNo(ticketDetails.getMobileNo());
             if (ticketDetails.getDepartment() != null)
                 existingTicket.setDepartment(ticketDetails.getDepartment());
+            if (ticketDetails.getAdditionalRequirement() != null) existingTicket.setAdditionalRequirement(ticketDetails.getAdditionalRequirement());
             if (ticketDetails.getDescription() != null)
                 existingTicket.setDescription(ticketDetails.getDescription());
             if (ticketDetails.getPriorityLevel() != null)

@@ -656,6 +656,7 @@ export default function TicketManagement({ viewType }) {
   const [reopenTargetDate, setReopenTargetDate] = useState('');
   const [reopenTiming, setReopenTiming] = useState('');
   const [isReassigning, setIsReassigning] = useState(false);
+  const [detailAdditionalRequirement, setDetailAdditionalRequirement] = useState('');
 
   // Snackbar Notification State
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -798,6 +799,7 @@ export default function TicketManagement({ viewType }) {
       setDetailDevMobile(selectedTicket.developerMobileNo || '');
       setDetailResolution(selectedTicket.resolutionSummary || '');
       setDetailRootCause(selectedTicket.rootCause || '');
+      setDetailAdditionalRequirement(selectedTicket.additional_requirement || '');
 
       const isReopenedStatus = selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
       if (isReopenedStatus) {
@@ -1628,6 +1630,7 @@ export default function TicketManagement({ viewType }) {
           developerEmail: detailDevEmail,
           developerMobileNo: detailDevMobile,
           resolutionSummary: detailResolution,
+          additional_requirement: detailAdditionalRequirement,
           takenTime: newTakenTime,
           reworkTime: newReworkTime,
           targetDate: detailTargetDate ? new Date(detailTargetDate) : null,
@@ -1686,7 +1689,24 @@ export default function TicketManagement({ viewType }) {
         }
 
         // Default: current status view only — no action needed
-        showSnackbar('No changes to apply', 'info');
+        if (detailAdditionalRequirement !== (selectedTicket.additional_requirement || '') || formAttachments.length > 0 || formVoiceFiles.length > 0) {
+          const payload = {
+            additional_requirement: detailAdditionalRequirement,
+            attachments: [...(selectedTicket.attachments || []), ...formAttachments, ...formVoiceFiles]
+          };
+          try {
+            const res = await axios.put(`/api/tickets/${selectedTicket.rowId}`, payload);
+            setSelectedTicket(res.data);
+            await fetchTicketSubresources(selectedTicket.rowId);
+            showSnackbar('Ticket updated successfully!');
+            fetchTickets();
+            setHasSavedInDetails(true);
+            setFormAttachments([]);
+            setFormVoiceFiles([]);
+          } catch (e) { showSnackbar('Failed to update ticket', 'error'); }
+        } else {
+          showSnackbar('No changes to apply', 'info');
+        }
       }
     } catch (error) {
       showSnackbar('Failed to update ticket workflow', 'error');
@@ -2280,6 +2300,111 @@ export default function TicketManagement({ viewType }) {
                     </Grid>
                   )}
                 </Grid>
+              
+              {/* Additional Requirement */}
+              <Box sx={{ mt: 3, pt: 2, borderTop: '1px dashed #e2e8f0' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1 }}>Additional Requirement</Typography>
+                {currentViewType === 'raised-by-me' ? (
+                  <>
+                  <Box sx={{ '.ql-container': { minHeight: '100px !important' }, mb: 2 }}>
+                    <ReactQuillDemo value={detailAdditionalRequirement} onChange={setDetailAdditionalRequirement} />
+                  </Box>
+                  <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Button
+                      component="label"
+                      variant="outlined"
+                      startIcon={<CloudUploadIcon />}
+                      sx={{
+                        height: 40,
+                        borderStyle: 'dashed',
+                        borderColor: '#94a3b8',
+                        color: '#475569',
+                        borderRadius: '8px',
+                        px: 2,
+                        '&:hover': { borderStyle: 'dashed', borderColor: '#673ab7', bgcolor: 'rgba(103,58,183,0.04)' }
+                      }}
+                    >
+                      {uploading ? 'Uploading...' : 'Upload Attachments'}
+                      <input type="file" multiple hidden onChange={(e) => handleFileUpload(e, false)} />
+                    </Button>
+                    <Tooltip title={isRecordingAudio ? "Stop & Save Recording" : "Record Voice Audio Note"}>
+                      <Button
+                        variant={isRecordingAudio ? "contained" : "outlined"}
+                        color={isRecordingAudio ? "error" : "secondary"}
+                        onClick={handleToggleLiveRecording}
+                        sx={{
+                          height: 40,
+                          borderStyle: isRecordingAudio ? 'solid' : 'dashed',
+                          borderRadius: '8px',
+                          px: 2,
+                          animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none'
+                        }}
+                        startIcon={isRecordingAudio ? <StopIcon /> : <SettingsVoiceIcon />}
+                      >
+                        {isRecordingAudio ? "Recording..." : "Record Audio"}
+                      </Button>
+                    </Tooltip>
+                  </Box>
+                  {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto', mb: 2 }}>
+                      {formAttachments.map((fileObj, idx) => {
+                        const isUrlStr = typeof fileObj === 'string';
+                        const url = isUrlStr ? fileObj : fileObj.url;
+                        const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
+                        const size = isUrlStr ? null : fileObj.size;
+                        const canPreview = isPreviewable(name);
+
+                        return (
+                          <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
+                            <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                              <Tooltip title={name} arrow>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {name}
+                                </Typography>
+                              </Tooltip>
+                            </Box>
+                            <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                              {getFileTypeDisplay(name)}
+                            </Typography>
+                            <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                              {size ? formatFileSize(size) : 'Unknown'}
+                            </Typography>
+                            <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                              {canPreview ? (
+                                <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                  <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
+                                </Button>
+                              ) : (
+                                <Button size="small" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(url)}`, '_blank')} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                  <DownloadIcon sx={{ fontSize: 14, mr: 0.5 }} /> Download
+                                </Button>
+                              )}
+                            </Box>
+                            <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ color: 'error.main', p: 0.25 }}>
+                              <CloseIcon sx={{ fontSize: 14 }} />
+                            </IconButton>
+                          </Box>
+                        );
+                      })}
+                      {formVoiceFiles.map((url, idx) => (
+                        <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
+                          <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
+                            🎤 Audio Note
+                          </Typography>
+                          <audio src={'/api/files/download?path=' + encodeURIComponent(url)} controls style={{ height: '32px', flexGrow: 1, maxWidth: '250px' }} />
+                          <IconButton size="small" onClick={() => setFormVoiceFiles(formVoiceFiles.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                            <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  )}
+                  </>
+                ) : (
+                  <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2 }} dangerouslySetInnerHTML={{ __html: detailAdditionalRequirement || '<span style="color:#94a3b8">No additional requirements</span>' }} />
+                )}
+              </Box>
               </Box>
             </Collapse>
           </Box>
@@ -3070,6 +3195,25 @@ export default function TicketManagement({ viewType }) {
         </Box>
 
 
+        {/* INLINE ATTACHMENT PREVIEW */}
+        <Dialog open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '12px', height: '80vh', zIndex: 1400 } }}>
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', py: 1.5 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <VisibilityIcon sx={{ color: '#64748b' }} />
+              <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{previewFileData?.name}</Typography>
+            </Box>
+            <IconButton onClick={() => setPreviewModalOpen(false)} size="small" sx={{ color: '#64748b' }}>
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent sx={{ p: 0, bgcolor: '#e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            {previewFileData?.type === 'PDF' ? (
+              <iframe src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
+            ) : (
+              <img src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+            )}
+          </DialogContent>
+        </Dialog>
       </Box>
     );
   }
