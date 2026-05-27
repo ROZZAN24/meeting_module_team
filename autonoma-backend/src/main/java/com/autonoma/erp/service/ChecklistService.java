@@ -40,28 +40,7 @@ public class ChecklistService {
     private UserRepository userRepository;
 
     @Autowired
-    private ChecklistClosedDailyRepository closedDailyRepo;
-
-    @Autowired
-    private ChecklistClosedWeeklyRepository closedWeeklyRepo;
-
-    @Autowired
-    private ChecklistClosedFortnightlyRepository closedFortnightlyRepo;
-
-    @Autowired
-    private ChecklistClosedMonthlyRepository closedMonthlyRepo;
-
-    @Autowired
-    private ChecklistClosedQuarterlyRepository closedQuarterlyRepo;
-
-    @Autowired
-    private ChecklistClosedHalfYearlyRepository closedHalfYearlyRepo;
-
-    @Autowired
-    private ChecklistClosedYearlyRepository closedYearlyRepo;
-
-    @Autowired
-    private ChecklistClosedCustomRepository closedCustomRepo;
+    private ChecklistClosedRepository closedRepo;
 
     // --- Master Checklist ---
 
@@ -555,7 +534,7 @@ public class ChecklistService {
         assignment.setAssignedDate(new Date());
         assignment.setChecklistDate(checklistDate);
 
-        BaseChecklistClosedEntity saved = saveToFrequencyTable(assignment);
+        ChecklistClosed saved = saveToFrequencyTable(assignment);
         assignment.setId(saved.getId());
         ChecklistAssignment savedAssignment = assignment;
 
@@ -575,7 +554,7 @@ public class ChecklistService {
         return savedAssignment;
     }
 
-    private void copyProperties(ChecklistAssignment src, BaseChecklistClosedEntity dest) {
+    private void copyProperties(ChecklistAssignment src, ChecklistClosed dest) {
         dest.setChecklist(src.getChecklist());
         dest.setAssignedTo(src.getAssignedTo());
         dest.setAssignedBy(src.getAssignedBy());
@@ -595,112 +574,25 @@ public class ChecklistService {
         dest.setCreatedAt(src.getCreatedAt());
         dest.setUpdatedUser(src.getUpdatedUser());
         dest.setUpdatedAt(src.getUpdatedAt());
+
+        String freq = src.getChecklist().getFrequency();
+        if (freq == null) {
+            freq = "DAILY";
+        }
+        dest.setFrequency(freq.toUpperCase());
     }
 
-    private BaseChecklistClosedEntity saveToFrequencyTable(ChecklistAssignment source) {
-        String freq = source.getChecklist().getFrequency();
-        if (freq == null) freq = "DAILY";
-        
-        switch (freq.toUpperCase()) {
-            case "DAILY": {
-                ChecklistClosedDaily d = closedDailyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedDaily());
-                copyProperties(source, d);
-                return closedDailyRepo.save(d);
-            }
-            case "WEEKLY": {
-                ChecklistClosedWeekly w = closedWeeklyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedWeekly());
-                copyProperties(source, w);
-                return closedWeeklyRepo.save(w);
-            }
-            case "FORTNIGHTLY": {
-                ChecklistClosedFortnightly f = closedFortnightlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedFortnightly());
-                copyProperties(source, f);
-                return closedFortnightlyRepo.save(f);
-            }
-            case "MONTHLY": {
-                ChecklistClosedMonthly m = closedMonthlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedMonthly());
-                copyProperties(source, m);
-                return closedMonthlyRepo.save(m);
-            }
-            case "QUARTERLY": {
-                ChecklistClosedQuarterly q = closedQuarterlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedQuarterly());
-                copyProperties(source, q);
-                return closedQuarterlyRepo.save(q);
-            }
-            case "HALF YEARLY":
-            case "HALF_YEARLY": {
-                ChecklistClosedHalfYearly h = closedHalfYearlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedHalfYearly());
-                copyProperties(source, h);
-                return closedHalfYearlyRepo.save(h);
-            }
-            case "YEARLY": {
-                ChecklistClosedYearly y = closedYearlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedYearly());
-                copyProperties(source, y);
-                return closedYearlyRepo.save(y);
-            }
-            case "CUSTOM":
-            default: {
-                ChecklistClosedCustom c = closedCustomRepo.findByChecklistIdAndAssignedToAndChecklistDate(
-                        source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
-                        .orElse(new ChecklistClosedCustom());
-                copyProperties(source, c);
-                return closedCustomRepo.save(c);
-            }
-        }
+    private ChecklistClosed saveToFrequencyTable(ChecklistAssignment source) {
+        ChecklistClosed closed = closedRepo.findByChecklistIdAndAssignedToAndChecklistDate(
+                source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
+                .orElse(new ChecklistClosed());
+        copyProperties(source, closed);
+        return closedRepo.save(closed);
     }
 
     private void deleteFromFrequencyTable(Long checklistId, String assignedTo, Date checklistDate, String freq) {
-        if (freq == null) freq = "DAILY";
-        switch (freq.toUpperCase()) {
-            case "DAILY":
-                closedDailyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedDailyRepo::delete);
-                break;
-            case "WEEKLY":
-                closedWeeklyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedWeeklyRepo::delete);
-                break;
-            case "FORTNIGHTLY":
-                closedFortnightlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedFortnightlyRepo::delete);
-                break;
-            case "MONTHLY":
-                closedMonthlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedMonthlyRepo::delete);
-                break;
-            case "QUARTERLY":
-                closedQuarterlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedQuarterlyRepo::delete);
-                break;
-            case "HALF YEARLY":
-            case "HALF_YEARLY":
-                closedHalfYearlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedHalfYearlyRepo::delete);
-                break;
-            case "YEARLY":
-                closedYearlyRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedYearlyRepo::delete);
-                break;
-            case "CUSTOM":
-            default:
-                closedCustomRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
-                        .ifPresent(closedCustomRepo::delete);
-                break;
-        }
+        closedRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
+                .ifPresent(closedRepo::delete);
     }
 
     @Transactional
@@ -973,7 +865,7 @@ public class ChecklistService {
 
     @Transactional
     public ChecklistAssignment saveAssignment(ChecklistAssignment assignment) {
-        BaseChecklistClosedEntity saved = saveToFrequencyTable(assignment);
+        ChecklistClosed saved = saveToFrequencyTable(assignment);
         assignment.setId(saved.getId());
         return assignment;
     }
