@@ -71,7 +71,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
   const fileInputRef = useRef(null);
 
   const handlePreview = async (emailId, attachmentId, fileName, contentType = '') => {
-    const url = `http://localhost:9090/api/inbox/${emailId}/attachments/${attachmentId}`;
+    const url = `/api/ocr/inbox/${emailId}/attachments/${attachmentId}`;
     const ext = fileName.includes('.') ? fileName.split('.').pop().toLowerCase() : '';
     
     setPreviewLoading(true);
@@ -108,7 +108,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     console.debug(`[AddWorkItemDialog] Fetching attachments for emailId: ${emailId}`);
     setLoadingAttachments(true);
     try {
-      const res = await axios.get(`http://localhost:9090/api/inbox/${emailId}/attachments`);
+      const res = await axios.get(`/api/ocr/inbox/${emailId}/attachments`);
       console.debug(`[AddWorkItemDialog] Attachments fetched:`, res.data);
       setAttachments(res.data || []);
     } catch (err) {
@@ -128,7 +128,7 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
   };
 
   const handleDownload = (emailId, attachmentId) => {
-    const url = `http://localhost:9090/api/inbox/${emailId}/attachments/${attachmentId}`;
+    const url = `/api/ocr/inbox/${emailId}/attachments/${attachmentId}`;
     window.open(url, '_blank');
   };
 
@@ -223,9 +223,9 @@ export default function WorkItemMasterDialog({ open, handleClose, initialData, r
     const payload = { ...formData, emailBodyPreview: formData.emailBody };
     try {
       if (isEdit) {
-        await axios.put(`http://localhost:9090/api/processing-requests/${initialData.id}`, payload);
+        await axios.put(`/api/ocr/processing-requests/${initialData.id}`, payload);
       } else {
-        await axios.post('http://localhost:9090/api/processing-requests', payload);
+        await axios.post('/api/ocr/processing-requests', payload);
       }
       dispatch(openSnackbar({ open: true, message: `Work Item ${isEdit ? 'updated' : 'created'} successfully!`, variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       handleClose(true);

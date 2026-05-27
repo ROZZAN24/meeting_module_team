@@ -627,6 +627,12 @@ export default function TicketManagement({ viewType }) {
   const [detailTakenHoursFocused, setDetailTakenHoursFocused] = useState(false);
   const [detailTakenMinutesFocused, setDetailTakenMinutesFocused] = useState(false);
   const [detailReworkTime, setDetailReworkTime] = useState('');
+  const [detailEstimatedTime, setDetailEstimatedTime] = useState('');
+  const [detailEstimatedHours, setDetailEstimatedHours] = useState('');
+  const [detailEstimatedMinutes, setDetailEstimatedMinutes] = useState('');
+  const [isDetailEstimatedTimeFocused, setIsDetailEstimatedTimeFocused] = useState(false);
+  const [detailEstimatedHoursFocused, setDetailEstimatedHoursFocused] = useState(false);
+  const [detailEstimatedMinutesFocused, setDetailEstimatedMinutesFocused] = useState(false);
   const [hasSavedInDetails, setHasSavedInDetails] = useState(false);
 
   // Validation Popup Reason Dialog State
@@ -834,6 +840,16 @@ export default function TicketManagement({ viewType }) {
         }
       }
       setDetailReworkTime('');
+      if (selectedTicket.assignedHours) {
+        const estMins = parseDurationToMinutes(selectedTicket.assignedHours);
+        setDetailEstimatedHours(String(Math.floor(estMins / 60)).padStart(2, '0'));
+        setDetailEstimatedMinutes(String(estMins % 60).padStart(2, '0'));
+        setDetailEstimatedTime(`${String(Math.floor(estMins / 60)).padStart(2, '0')}:${String(estMins % 60).padStart(2, '0')}`);
+      } else {
+        setDetailEstimatedHours('');
+        setDetailEstimatedMinutes('');
+        setDetailEstimatedTime('');
+      }
       setDetailTargetDate(selectedTicket.targetDate ? format(new Date(selectedTicket.targetDate), 'yyyy-MM-dd') : '');
       setIsReassigning(false);
 
@@ -844,6 +860,30 @@ export default function TicketManagement({ viewType }) {
       }
     }
   }, [selectedTicket]);
+
+  useEffect(() => {
+    if (detailEstimatedHours !== '' || detailEstimatedMinutes !== '') {
+      const h = detailEstimatedHours !== '' ? detailEstimatedHours : '00';
+      const m = detailEstimatedMinutes !== '' ? detailEstimatedMinutes : '00';
+      const newEstTime = `${h}:${m}`;
+      setDetailEstimatedTime(newEstTime);
+      
+      // If estimated time changes, recalculate target date
+      if (selectedTicket && newEstTime !== selectedTicket.assignedHours) {
+        const calculateDetailTargetDateFromTime = async () => {
+          const dev = detailDevName || selectedTicket.developerName;
+          if (!dev) return;
+          const trail = await buildWorkloadTrail(dev, newEstTime, selectedTicket.ticketId);
+          setDetailDevWorkloadTrail(trail);
+          const finalDay = trail.find(t => t.isFinal) || trail[trail.length - 1];
+          if (finalDay) setDetailTargetDate(finalDay.dateKey);
+        };
+        calculateDetailTargetDateFromTime();
+      }
+    } else {
+      setDetailEstimatedTime('');
+    }
+  }, [detailEstimatedHours, detailEstimatedMinutes]);
 
   useEffect(() => {
     if (detailTakenHours !== '' || detailTakenMinutes !== '') {
@@ -1582,8 +1622,8 @@ export default function TicketManagement({ viewType }) {
   const handleUpdateTicketDetails = async () => {
     if (!selectedTicket) return;
 
-    // Comments mandatory for ANY status change
-    if (!detailResolution || !detailResolution.trim()) {
+    // Comments mandatory if status is changed
+    if (detailStatus !== selectedTicket.ticketStatus && (!detailResolution || !detailResolution.trim())) {
       showSnackbar('Comments are mandatory for every status change', 'error');
       return;
     }
@@ -1681,6 +1721,13 @@ export default function TicketManagement({ viewType }) {
           tempAdditionalVoiceRecordings: formVoiceFiles
         };
 
+        if (detailEstimatedTime && detailEstimatedTime !== selectedTicket.assignedHours) {
+          payload.assignedHours = detailEstimatedTime;
+          if (detailTargetDate) {
+            payload.targetDate = new Date(detailTargetDate);
+          }
+        }
+
         let isStatusUpdate = false;
         // REOPEN: assigned user gets REWORK status
         if (detailStatus === 'Reopened') {
@@ -1696,7 +1743,7 @@ export default function TicketManagement({ viewType }) {
           isStatusUpdate = true;
         } else {
           // Default: current status view only — no action needed
-          if (detailAdditionalRequirement === (selectedTicket.additionalRequirement || '') && formAttachments.length === 0 && formVoiceFiles.length === 0) {
+          if (detailAdditionalRequirement === (selectedTicket.additionalRequirement || '') && formAttachments.length === 0 && formVoiceFiles.length === 0 && !payload.assignedHours) {
             showSnackbar('No changes to apply', 'info');
             setIsSaving(false);
             return;
@@ -2484,47 +2531,137 @@ export default function TicketManagement({ viewType }) {
                       <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
                         <Stack spacing={2.5}>
 
-                          {/* STATUS */}
-                          <Box sx={{ mb: 3 }}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status <span style={{ color: '#dc2626' }}>*</span></Typography>
-                            {currentViewType === 'raised-for-me' ? (
-                              (() => {
-                                const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
-                                return (
-                                  <TextField
-                                    fullWidth select size="small"
-                                    value={detailStatus}
-                                    onChange={(e) => {
-                                      setDetailStatus(e.target.value);
-                                      setDetailResolution('');
-                                      setDetailTakenTime('');
-                                      setDetailTakenHours('');
-                                      setDetailTakenMinutes('');
-                                      setDetailReworkTime('');
-                                    }}
-                                    sx={{ mt: 0.5 }}
-                                  >
-                                    {!isReopenedTicket && <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'}>OPEN</MenuItem>}
-                                    {!isReopenedTicket && <MenuItem key="InProgress" value="In Progress">IN PROGRESS</MenuItem>}
-                                    <MenuItem key="ToBeTested" value="To Be Tested">TO BE TESTED</MenuItem>
-                                    {isReopenedTicket && <MenuItem key="Rework" value="Rework">REWORK</MenuItem>}
-                                    <MenuItem key="Reopened" value="Reopened" disabled>REOPEN</MenuItem>
-                                  </TextField>
-                                );
-                              })()
-                            ) : (
-                              <TextField
-                                fullWidth select size="small"
-                                value={detailStatus}
-                                onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setDetailTakenTime(''); }}
-                                sx={{ mt: 0.5 }}
-                              >
-                                <MenuItem key="current" value={selectedTicket.ticketStatus} disabled>{selectedTicket.ticketStatus.toUpperCase()} (Current Status)</MenuItem>
-                                <MenuItem key="Reopened" value="Reopened">REOPEN</MenuItem>
-                                <MenuItem key="Completed" value="Completed">COMPLETED</MenuItem>
-                              </TextField>
-                            )}
-                          </Box>
+                          {/* STATUS & ESTIMATED TIME */}
+                          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
+                            {/* STATUS */}
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Status <span style={{ color: '#dc2626' }}>*</span></Typography>
+                              {currentViewType === 'raised-for-me' ? (
+                                (() => {
+                                  const isReopenedTicket = ticketReopens.length > 0 || (selectedTicket.reopenedCount && selectedTicket.reopenedCount > 0) || selectedTicket.ticketStatus === 'Reopened' || selectedTicket.ticketStatus === 'Rework';
+                                  return (
+                                    <TextField
+                                      fullWidth select size="small"
+                                      value={detailStatus}
+                                      onChange={(e) => {
+                                        setDetailStatus(e.target.value);
+                                        setDetailResolution('');
+                                        setDetailTakenTime('');
+                                        setDetailTakenHours('');
+                                        setDetailTakenMinutes('');
+                                        setDetailReworkTime('');
+                                      }}
+                                      sx={{ mt: 0.5 }}
+                                    >
+                                      {!isReopenedTicket && <MenuItem key="Open" value="Open" disabled={selectedTicket.ticketStatus !== 'Open'}>OPEN</MenuItem>}
+                                      {!isReopenedTicket && <MenuItem key="InProgress" value="In Progress">IN PROGRESS</MenuItem>}
+                                      <MenuItem key="ToBeTested" value="To Be Tested">TO BE TESTED</MenuItem>
+                                      {isReopenedTicket && <MenuItem key="Rework" value="Rework">REWORK</MenuItem>}
+                                      <MenuItem key="Reopened" value="Reopened" disabled>REOPEN</MenuItem>
+                                    </TextField>
+                                  );
+                                })()
+                              ) : (
+                                <TextField
+                                  fullWidth select size="small"
+                                  value={detailStatus}
+                                  onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setDetailTakenTime(''); }}
+                                  sx={{ mt: 0.5 }}
+                                >
+                                  <MenuItem key="current" value={selectedTicket.ticketStatus} disabled>{selectedTicket.ticketStatus.toUpperCase()} (Current Status)</MenuItem>
+                                  <MenuItem key="Reopened" value="Reopened">REOPEN</MenuItem>
+                                  <MenuItem key="Completed" value="Completed">COMPLETED</MenuItem>
+                                </TextField>
+                              )}
+                            </Box>
+
+                            {/* ESTIMATED TIME */}
+                            <Box sx={{ flex: 1 }}>
+                              <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Estimated Time
+                              </Typography>
+                              <FormControl sx={{ width: 'max-content', mt: 0 }} variant="outlined">
+                                <OutlinedInput
+                                  notched={false}
+                                  inputProps={{ sx: { display: 'none' }, readOnly: true }}
+                                  sx={{
+                                    p: 0, height: '42px',
+                                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: currentViewType === 'raised-by-me' ? '#1976d2' : 'transparent', borderWidth: '2px' }
+                                  }}
+                                  onFocus={() => { if (currentViewType === 'raised-by-me') setIsDetailEstimatedTimeFocused(true); }}
+                                  onBlur={(e) => { if (!e.relatedTarget && currentViewType === 'raised-by-me') setIsDetailEstimatedTimeFocused(false); }}
+                                  startAdornment={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', p: '0 10px', gap: 1 }}>
+                                      <AccessTimeIcon sx={{ color: '#64748b', fontSize: 20 }} />
+                                      <Box sx={{
+                                        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                        border: detailEstimatedHoursFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
+                                        bgcolor: detailEstimatedHoursFocused ? '#f0f7ff' : (currentViewType === 'raised-for-me' ? '#f8fafc' : 'white'),
+                                        borderRadius: '6px', width: '60px', height: '34px', cursor: currentViewType === 'raised-for-me' ? 'default' : 'pointer', transition: 'all 0.2s',
+                                        '&:hover': { borderColor: currentViewType === 'raised-for-me' ? '#e2e8f0' : '#1976d2' },
+                                        pointerEvents: currentViewType === 'raised-for-me' ? 'none' : 'auto'
+                                      }}>
+                                        <Select variant="standard" disableUnderline value={detailEstimatedHours || '00'}
+                                          onChange={(e) => { const val = e.target.value; setDetailEstimatedHours(val); if (val === '24') setDetailEstimatedMinutes('00'); setIsDetailEstimatedTimeFocused(true); }}
+                                          onOpen={() => setDetailEstimatedHoursFocused(true)} onClose={() => setDetailEstimatedHoursFocused(false)}
+                                          MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }} sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, zIndex: 1, cursor: currentViewType === 'raised-for-me' ? 'default' : 'pointer' }}>
+                                          {Array.from({ length: 25 }, (_, i) => { const val = String(i).padStart(2, '0'); return <MenuItem key={val} value={val}>{val}</MenuItem>; })}
+                                        </Select>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
+                                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
+                                            <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{detailEstimatedHours || '00'}</Typography>
+                                            <Typography sx={{ fontSize: '0.5rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Hours</Typography>
+                                          </Box>
+                                          {currentViewType === 'raised-by-me' && (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                              <IconButton size="small" sx={{ p: 0 }} onClick={(e) => { e.stopPropagation(); let h = parseInt(detailEstimatedHours || '0', 10); h = (h + 1) % 25; setDetailEstimatedHours(String(h).padStart(2, '0')); if (h === 24) setDetailEstimatedMinutes('00'); }}>
+                                                <KeyboardArrowUpIcon sx={{ fontSize: 12, color: '#64748b' }} />
+                                              </IconButton>
+                                              <IconButton size="small" sx={{ p: 0 }} onClick={(e) => { e.stopPropagation(); let h = parseInt(detailEstimatedHours || '0', 10); h = h - 1 < 0 ? 24 : h - 1; setDetailEstimatedHours(String(h).padStart(2, '0')); if (h === 24) setDetailEstimatedMinutes('00'); }}>
+                                                <KeyboardArrowDownIcon sx={{ fontSize: 12, color: '#64748b' }} />
+                                              </IconButton>
+                                            </Box>
+                                          )}
+                                        </Box>
+                                      </Box>
+                                      <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b', pb: 0.5 }}>:</Typography>
+                                      <Box sx={{
+                                        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                                        border: detailEstimatedMinutesFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
+                                        bgcolor: detailEstimatedMinutesFocused ? '#f0f7ff' : (currentViewType === 'raised-for-me' ? '#f8fafc' : 'white'),
+                                        borderRadius: '6px', width: '60px', height: '34px', cursor: currentViewType === 'raised-for-me' ? 'default' : 'pointer', transition: 'all 0.2s',
+                                        '&:hover': { borderColor: currentViewType === 'raised-for-me' ? '#e2e8f0' : '#1976d2' },
+                                        pointerEvents: currentViewType === 'raised-for-me' ? 'none' : 'auto'
+                                      }}>
+                                        <Select variant="standard" disableUnderline value={detailEstimatedMinutes || '00'}
+                                          onChange={(e) => { setDetailEstimatedMinutes(e.target.value); setIsDetailEstimatedTimeFocused(true); }}
+                                          onOpen={() => setDetailEstimatedMinutesFocused(true)} onClose={() => setDetailEstimatedMinutesFocused(false)}
+                                          MenuProps={{ PaperProps: { sx: { maxHeight: 250 } } }} sx={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, zIndex: 1, cursor: currentViewType === 'raised-for-me' ? 'default' : 'pointer' }}>
+                                          {Array.from({ length: 60 }, (_, i) => { const val = String(i).padStart(2, '0'); return <MenuItem key={val} value={val} disabled={detailEstimatedHours === '24' && val !== '00'}>{val}</MenuItem>; })}
+                                        </Select>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
+                                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
+                                            <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{detailEstimatedMinutes || '00'}</Typography>
+                                            <Typography sx={{ fontSize: '0.5rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Minutes</Typography>
+                                          </Box>
+                                          {currentViewType === 'raised-by-me' && (
+                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2 }}>
+                                              <IconButton size="small" sx={{ p: 0 }} disabled={detailEstimatedHours === '24'} onClick={(e) => { e.stopPropagation(); if (detailEstimatedHours === '24') return; let m = parseInt(detailEstimatedMinutes || '0', 10); m = (m + 1) % 60; setDetailEstimatedMinutes(String(m).padStart(2, '0')); }}>
+                                                <KeyboardArrowUpIcon sx={{ fontSize: 12, color: detailEstimatedHours === '24' ? '#cbd5e1' : '#64748b' }} />
+                                              </IconButton>
+                                              <IconButton size="small" sx={{ p: 0 }} disabled={detailEstimatedHours === '24'} onClick={(e) => { e.stopPropagation(); if (detailEstimatedHours === '24') return; let m = parseInt(detailEstimatedMinutes || '0', 10); m = m - 1 < 0 ? 59 : m - 1; setDetailEstimatedMinutes(String(m).padStart(2, '0')); }}>
+                                                <KeyboardArrowDownIcon sx={{ fontSize: 12, color: detailEstimatedHours === '24' ? '#cbd5e1' : '#64748b' }} />
+                                              </IconButton>
+                                            </Box>
+                                          )}
+                                        </Box>
+                                      </Box>
+                                    </Box>
+                                  }
+                                />
+                              </FormControl>
+                            </Box>
+                          </Stack>
 
                           {/* TAKEN TIME / REWORK TIME — only for TO BE TESTED (raised-for-me) */}
                           {currentViewType === 'raised-for-me' && detailStatus === 'To Be Tested' && (() => {
@@ -2624,27 +2761,6 @@ export default function TicketManagement({ viewType }) {
                             />
                           </Box>
 
-                          {/* REASSIGN — only for raised-for-me */}
-                          {currentViewType === 'raised-for-me' && selectedTicket.ticketStatus !== 'Closed' && (
-                            <Box sx={{ border: '1px solid #e2e8f0', borderRadius: '10px', p: 2, bgcolor: '#fafafa' }}>
-                              <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', mb: 1 }}>Reassign Ticket</Typography>
-                              {isReassigning ? (
-                                <Stack spacing={1.5}>
-                                  <Autocomplete
-                                    options={employeesList}
-                                    getOptionLabel={(option) => option.employeeName || ''}
-                                    value={employeesList.find(e => e.employeeName === detailAssignedTo) || null}
-                                    onChange={(event, newValue) => { setDetailAssignedTo(newValue ? newValue.employeeName : ''); }}
-                                    renderInput={(params) => (<TextField {...params} size="small" label="Select New Assignee" fullWidth />)}
-                                    sx={{ '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff' } }}
-                                  />
-                                  <Button variant="outlined" color="secondary" fullWidth size="small" onClick={() => setIsReassigning(false)} sx={{ fontWeight: 700, borderRadius: '8px' }}>Cancel</Button>
-                                </Stack>
-                              ) : (
-                                <Button variant="outlined" color="secondary" fullWidth size="small" onClick={() => setIsReassigning(true)} sx={{ fontWeight: 700, borderRadius: '8px', height: 36 }}>+ Reassign</Button>
-                              )}
-                            </Box>
-                          )}
 
                           {/* CLOSED NOTICE */}
                           {selectedTicket.ticketStatus === 'Closed' && (
