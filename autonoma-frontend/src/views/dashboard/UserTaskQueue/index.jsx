@@ -239,20 +239,23 @@ const MetricIconWrap = styled(Box)(({ theme, palettekey = 'indigo' }) => {
 });
 
 /* ── Filter Bar ── */
-const FilterBar = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: 4,
-  borderRadius: RADIUS.md,
-  background: isDark
-    ? 'rgba(17,24,39,0.5)'
-    : 'rgba(255,255,255,0.7)',
-  backdropFilter: 'blur(16px)',
-  border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
-  marginBottom: theme.spacing(2.5),
-  flexWrap: 'wrap',
-}));
+const FilterBar = styled(Box)(({ theme }) => {
+  const isDark = theme.palette.mode === 'dark';
+  return {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: 4,
+    borderRadius: RADIUS.md,
+    background: isDark
+      ? 'rgba(17,24,39,0.5)'
+      : 'rgba(255,255,255,0.7)',
+    backdropFilter: 'blur(16px)',
+    border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'}`,
+    marginBottom: theme.spacing(2.5),
+    flexWrap: 'wrap',
+  };
+});
 
 const FilterChip = styled(Box)(({ theme, active }) => {
   const isDark = theme.palette.mode === 'dark';
@@ -558,14 +561,8 @@ const DashboardMetricCard = ({ moduleName, count, icon, paletteKey, theme, isDar
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function UserTaskQueue() {
-  const baseTheme = useTheme();
-  const colorSchemeObj = useColorScheme() || {};
-  const mode = colorSchemeObj.mode || colorSchemeObj.colorScheme || 'light';
-  const isDark = mode === 'dark' || baseTheme.palette.mode === 'dark';
-  const theme = React.useMemo(() => ({
-    ...baseTheme,
-    palette: { ...baseTheme.palette, mode: mode || 'light' }
-  }), [baseTheme, mode]);
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -735,8 +732,7 @@ export default function UserTaskQueue() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <ThemeProvider theme={theme}>
-      <PageRoot isDark={isDark}>
+    <PageRoot isDark={isDark}>
 
       {/* ── Refreshing overlay ── */}
       {refreshing && (
@@ -1002,6 +998,5 @@ export default function UserTaskQueue() {
       </Grid>
 
         </PageRoot>
-    </ThemeProvider>
   );
 }
