@@ -92,6 +92,35 @@ public class QmsMomMasterController {
         return ResponseEntity.ok(service.saveMom(mom));
     }
 
+    @PutMapping("/{id}/attendance-out-times")
+    public ResponseEntity<?> updateAttendanceOutTimes(@PathVariable Long id, @RequestBody List<Map<String, Object>> outTimes) {
+        String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED)
+                .body(Map.of("message", "Authentication required"));
+        }
+        
+        QmsMomMaster mom = service.getMomById(id);
+        if (mom == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        if (mom.getSchedule() != null && mom.getSchedule().getHostBy() != null) {
+            Long hostEmpId = mom.getSchedule().getHostBy().getId();
+            java.util.Optional<com.autonoma.erp.model.admin.UserCredential> userOpt = userRepo.findByUserId(userId);
+            if (!userOpt.isPresent() || userOpt.get().getEmpId() == null || !userOpt.get().getEmpId().equals(hostEmpId)) {
+                return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Only the host of this meeting is permitted to update attendance out times"));
+            }
+        } else {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "No meeting schedule or host found for this MOM"));
+        }
+        
+        service.updateAttendanceOutTimes(id, outTimes);
+        return ResponseEntity.ok(Map.of("message", "Attendance out times updated successfully"));
+    }
+
     @DeleteMapping("/{id}")
     @RequirePagePermission(pageCode = "QM1320", action = "delete")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

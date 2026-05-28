@@ -76,33 +76,71 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
         hideFooter={true}
       >
         {/* Header Info */}
-        <Box sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.light' }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={3}>
-              <Typography variant="caption" color="text.secondary">Meeting Action No</Typography>
-              <Typography variant="subtitle1" fontWeight={700}>{item._momNo || '-'}</Typography>
-            </Grid>
-            <Grid item xs={6} sm={2}>
-              <Typography variant="caption" color="text.secondary">Date</Typography>
-              <Typography variant="subtitle1" fontWeight={700}>
-                {item._createdAt ? new Date(item._createdAt).toLocaleDateString('en-GB') + ' ' + new Date(item._createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'}
-              </Typography>
-            </Grid>
-            <Grid item xs={6} sm={2}>
-              <Typography variant="caption" color="text.secondary">Assign To</Typography>
-              <Typography variant="subtitle1" fontWeight={700}>{item.assignedTo?.employeeName || '-'}</Typography>
-            </Grid>
-            <Grid item xs={6} sm={2}>
-              <Typography variant="caption" color="text.secondary">Target Date</Typography>
-              <Typography variant="subtitle1" fontWeight={700}>{item.targetDate || '-'}</Typography>
-            </Grid>
-            <Grid item xs={6} sm={2}>
-              <Typography variant="caption" color="text.secondary">Delay Days</Typography>
-              <Typography variant="subtitle1" fontWeight={700} color={delayDays > 0 ? 'error.main' : 'success.main'}>
-                {delayDays}
-              </Typography>
-            </Grid>
-          </Grid>
+        <Box 
+          sx={{ 
+            p: 2, 
+            bgcolor: 'background.paper', 
+            borderRadius: 2, 
+            border: '1px solid', 
+            borderColor: 'divider',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+            width: '100%',
+            mb: 2
+          }}
+        >
+          <Box sx={{ flex: 1.2, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Meeting Action Number
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="primary.main" noWrap sx={{ mt: 0.5 }}>
+              {item._momNo || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1.1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Date
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 0.5 }}>
+              {item._createdAt ? new Date(item._createdAt).toLocaleDateString('en-GB') + ' ' + new Date(item._createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Assign To
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 0.5 }}>
+              {item.assignedTo?.employeeName || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Target Date
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="warning.dark" sx={{ mt: 0.5 }}>
+              {item.targetDate || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Delay Days
+            </Typography>
+            <Typography 
+              variant="subtitle1" 
+              fontWeight={800} 
+              color={delayDays > 0 ? 'error.main' : 'success.main'}
+              sx={{ mt: 0.5 }}
+            >
+              {delayDays} Days
+            </Typography>
+          </Box>
         </Box>
 
         <Divider sx={{ my: 1 }} />

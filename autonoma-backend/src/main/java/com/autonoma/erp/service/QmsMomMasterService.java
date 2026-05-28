@@ -64,32 +64,102 @@ public class QmsMomMasterService {
     public QmsMomMaster saveMom(QmsMomMaster mom) {
         if (mom.getId() == null) {
             mom.setMomNo(generateMomNo(mom));
-        }
-
-        // Business Logic: INFO -> CLOSED, ACTION -> OPEN
-        if (mom.getDetails() != null) {
-            mom.getDetails().forEach(detail -> {
-                detail.setMom(mom);
-                
-                // Prefix discussedPoint with momNo if not already present (Request #8)
-                String prefix = "[" + mom.getMomNo() + "] ";
-                if (detail.getDiscussedPoint() != null && !detail.getDiscussedPoint().startsWith("[")) {
-                    detail.setDiscussedPoint(prefix + detail.getDiscussedPoint());
+            if (mom.getDetails() != null) {
+                mom.getDetails().forEach(detail -> {
+                    detail.setMom(mom);
+                    String prefix = "[" + mom.getMomNo() + "] ";
+                    if (detail.getDiscussedPoint() != null && !detail.getDiscussedPoint().startsWith("[")) {
+                        detail.setDiscussedPoint(prefix + detail.getDiscussedPoint());
+                    }
+                    if ("INFO".equalsIgnoreCase(detail.getProcessType())) {
+                        detail.setStatus("CLOSED");
+                    } else if ("ACTION".equalsIgnoreCase(detail.getProcessType())) {
+                        detail.setStatus("OPEN");
+                    }
+                });
+            }
+            if (mom.getAttendanceList() != null) {
+                mom.getAttendanceList().forEach(att -> att.setMom(mom));
+            }
+            return repository.save(mom);
+        } else {
+            QmsMomMaster existing = repository.findById(mom.getId())
+                    .orElseThrow(() -> new RuntimeException("MOM not found"));
+            
+            existing.setMomNo(mom.getMomNo());
+            existing.setMomDate(mom.getMomDate());
+            existing.setSchedule(mom.getSchedule());
+            existing.setAgenda(mom.getAgenda());
+            existing.setChairedBy(mom.getChairedBy());
+            existing.setStartTime(mom.getStartTime());
+            existing.setEndTime(mom.getEndTime());
+            existing.setStatus(mom.getStatus());
+            existing.setUpdatedUser(mom.getUpdatedUser());
+            existing.setUpdatedDate(mom.getUpdatedDate());
+            
+            existing.getDetails().clear();
+            if (mom.getDetails() != null) {
+                for (QmsMomDetail d : mom.getDetails()) {
+                    d.setMom(existing);
+                    String prefix = "[" + existing.getMomNo() + "] ";
+                    if (d.getDiscussedPoint() != null && !d.getDiscussedPoint().startsWith("[")) {
+                        d.setDiscussedPoint(prefix + d.getDiscussedPoint());
+                    }
+                    if ("INFO".equalsIgnoreCase(d.getProcessType())) {
+                        d.setStatus("CLOSED");
+                    } else if ("ACTION".equalsIgnoreCase(d.getProcessType())) {
+                        d.setStatus("OPEN");
+                    }
+                    existing.getDetails().add(d);
                 }
-
-                if ("INFO".equalsIgnoreCase(detail.getProcessType())) {
-                    detail.setStatus("CLOSED");
-                } else if ("ACTION".equalsIgnoreCase(detail.getProcessType())) {
-                    detail.setStatus("OPEN");
+            }
+            
+            existing.getAttendanceList().clear();
+            if (mom.getAttendanceList() != null) {
+                for (QmsMomAttendance att : mom.getAttendanceList()) {
+                    att.setMom(existing);
+                    existing.getAttendanceList().add(att);
                 }
-            });
+            }
+            
+            return repository.save(existing);
         }
+    }
 
+    @Transactional
+    public void updateAttendanceOutTimes(Long momId, List<Map<String, Object>> outTimes) {
+        QmsMomMaster mom = getMomById(momId);
         if (mom.getAttendanceList() != null) {
-            mom.getAttendanceList().forEach(att -> att.setMom(mom));
+            for (Map<String, Object> entry : outTimes) {
+                Long empId = null;
+                if (entry.get("employeeId") != null) {
+                    empId = Long.parseLong(entry.get("employeeId").toString());
+                }
+                Long attId = null;
+                if (entry.get("attendanceId") != null) {
+                    attId = Long.parseLong(entry.get("attendanceId").toString());
+                }
+                String outTimeStr = (String) entry.get("outTime");
+                
+                for (QmsMomAttendance att : mom.getAttendanceList()) {
+                    boolean matches = false;
+                    if (attId != null && attId.equals(att.getId())) {
+                        matches = true;
+                    } else if (empId != null && att.getEmployee() != null && empId.equals(att.getEmployee().getId())) {
+                        matches = true;
+                    }
+                    
+                    if (matches) {
+                        if (outTimeStr == null || outTimeStr.trim().isEmpty()) {
+                            att.setOutTime(null);
+                        } else {
+                            att.setOutTime(java.time.LocalTime.parse(outTimeStr));
+                        }
+                    }
+                }
+            }
         }
-
-        return repository.save(mom);
+        repository.save(mom);
     }
 
     @Transactional

@@ -20,11 +20,13 @@ import {
   useTheme,
   CircularProgress,
   Tooltip,
-  Divider
+  Divider,
+  Chip
 } from '@mui/material';
 import {
   BOSFormSection,
   BOSTextField,
+  BOSFormDialog,
   btnSave,
   btnCancel,
   btnClear,
@@ -119,6 +121,148 @@ export default function AddMeetingMinutes() {
   const [loading, setLoading] = useState(false);
   const [materialDialog, setMaterialDialog] = useState({ open: false, rowIdx: null, type: 'RM' });
 
+
+  const isHost = user && form.schedule?.hostBy && (String(user.empId) === String(form.schedule.hostBy.id));
+  const canSave = perms.write || isHost;
+  const canEditOutTime = isHost;
+
+  const meetingUsers = form.attendanceList
+    .filter(a => a.attendanceStatus !== 'ABSENT')
+    .map(a => a.employee || a)
+    .filter(emp => emp && emp.id);
+
+  const [detailDialog, setDetailDialog] = useState({
+    open: false,
+    rowIdx: null,
+    form: {
+      meetNo: '',
+      amendMeetNo: '',
+      discussedPoint: '',
+      type: 'RM',
+      materialList: '',
+      processType: 'INFO',
+      assignedBy: null,
+      assignedTo: null,
+      targetDate: '',
+      reviewDate: '',
+      attachmentRequired: 'NO',
+      status: 'CLOSED',
+      isAmended: false
+    }
+  });
+
+  const handleOpenDetailDialog = (idx) => {
+    if (idx === null) {
+      setDetailDialog({
+        open: true,
+        rowIdx: null,
+        form: {
+          meetNo: '',
+          amendMeetNo: '',
+          discussedPoint: '',
+          type: 'RM',
+          materialList: '',
+          processType: 'INFO',
+          assignedBy: null,
+          assignedTo: null,
+          targetDate: '',
+          reviewDate: '',
+          attachmentRequired: 'NO',
+          status: 'CLOSED',
+          isAmended: false
+        }
+      });
+    } else {
+      const det = form.details[idx];
+      setDetailDialog({
+        open: true,
+        rowIdx: idx,
+        form: {
+          meetNo: det.meetNo || '',
+          amendMeetNo: det.amendMeetNo || '',
+          discussedPoint: det.discussedPoint || '',
+          type: det.type || 'RM',
+          materialList: det.materialList || '',
+          processType: det.processType || 'INFO',
+          assignedBy: det.assignedBy || null,
+          assignedTo: det.assignedTo || null,
+          targetDate: det.targetDate || '',
+          reviewDate: det.reviewDate || '',
+          attachmentRequired: det.attachmentRequired || 'NO',
+          status: det.status || 'CLOSED',
+          isAmended: det.isAmended || false
+        }
+      });
+    }
+  };
+
+  const handleSaveDetailDialog = () => {
+    const { rowIdx, form: dialogForm } = detailDialog;
+    
+    // Character validation inside the dialog
+    const minLen = dialogForm.attachmentRequired === 'YES' ? 50 : 150;
+    if (dialogForm.discussedPoint.length < minLen) {
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: `Discussed Point must be at least ${minLen} characters (current: ${dialogForm.discussedPoint.length}).`, 
+        variant: 'alert', 
+        severity: 'error' 
+      }));
+      return;
+    }
+
+    // Action process validation inside the dialog
+    if (dialogForm.processType === 'ACTION') {
+      if (!dialogForm.assignedTo || !dialogForm.assignedBy) {
+        dispatch(openSnackbar({ 
+          open: true, 
+          message: 'Assignee and Assignor are required for ACTION points.', 
+          variant: 'alert', 
+          severity: 'error' 
+        }));
+        return;
+      }
+      if (dialogForm.reviewDate && dialogForm.targetDate && dialogForm.reviewDate < dialogForm.targetDate) {
+        dispatch(openSnackbar({ open: true, message: 'Review Date cannot be before Target Date', variant: 'alert', severity: 'error' }));
+        return;
+      }
+      if ((dialogForm.targetDate && dialogForm.targetDate < TODAY) || (dialogForm.reviewDate && dialogForm.reviewDate < TODAY)) {
+        dispatch(openSnackbar({ open: true, message: 'Target/Review Date cannot be in the past', variant: 'alert', severity: 'error' }));
+        return;
+      }
+    }
+
+    if (rowIdx === null) {
+      const newDetails = [{ ...dialogForm }, ...form.details];
+      setForm(p => ({
+        ...p,
+        details: syncMeetNumbers(p.momNo, newDetails)
+      }));
+    } else {
+      const newDetails = [...form.details];
+      newDetails[rowIdx] = { ...newDetails[rowIdx], ...dialogForm };
+      setForm(p => ({
+        ...p,
+        details: syncMeetNumbers(p.momNo, newDetails)
+      }));
+    }
+    setDetailDialog({ open: false, rowIdx: null, form: {
+      meetNo: '',
+      amendMeetNo: '',
+      discussedPoint: '',
+      type: 'RM',
+      materialList: '',
+      processType: 'INFO',
+      assignedBy: null,
+      assignedTo: null,
+      targetDate: '',
+      reviewDate: '',
+      attachmentRequired: 'NO',
+      status: 'CLOSED',
+      isAmended: false
+    } });
+  };
+
   // Keyboard Shortcuts
   useKeyboardShortcuts({
     'ctrl+s': (e) => { e.preventDefault(); handleSave(); },
@@ -162,6 +306,11 @@ export default function AddMeetingMinutes() {
     setLoading(true);
     try {
       const { data } = await axios.get(`${API_PATHS.QMS.MOMS}/${editId}`);
+      if (data.momNo && data.momNo.endsWith('/AUTO') && data.schedule?.scheduleNo) {
+        const scheduleParts = data.schedule.scheduleNo.split('/');
+        const scheduleSeq = scheduleParts.length > 0 ? scheduleParts[scheduleParts.length - 1] : 'AUTO';
+        data.momNo = data.momNo.replace(/\/AUTO$/, `/${scheduleSeq}`);
+      }
       if (data.momDate) data.momDate = data.momDate.split('T')[0];
       if (data.attendanceList) {
         data.attendanceList = data.attendanceList.map(att => ({
@@ -202,6 +351,15 @@ export default function AddMeetingMinutes() {
     if (!val) return;
     
     setLoading(true);
+    const typePrefix = val.meetingType?.meetingPrefix || 'MEET';
+    const year = new Date().getFullYear();
+    const yearRange = `${year}-${year + 1}`;
+    
+    // Extract sequence number from the schedule number (e.g. "1" from "ARM/2026-2027/1")
+    const scheduleParts = val.scheduleNo ? val.scheduleNo.split('/') : [];
+    const scheduleSeq = scheduleParts.length > 0 ? scheduleParts[scheduleParts.length - 1] : 'AUTO';
+    const dynamicMomNo = `MM/${typePrefix}/${yearRange}/${scheduleSeq}`;
+
     try {
       // 1. Fetch actual attendance records for this schedule
       const { data: attendanceRecords } = await axios.get(`${API_PATHS.QMS.MEETING_ATTENDANCE}/schedule/${val.id}`);
@@ -229,11 +387,6 @@ export default function AddMeetingMinutes() {
         }
       });
 
-      const typePrefix = val.meetingType?.meetingPrefix || 'MEET';
-      const year = new Date().getFullYear();
-      const yearRange = `${year}-${year + 1}`;
-      const dynamicMomNo = `MM/${typePrefix}/${yearRange}/AUTO`;
-
       setForm(p => ({
         ...p,
         momNo: dynamicMomNo,
@@ -259,12 +412,14 @@ export default function AddMeetingMinutes() {
       
       setForm(p => ({
         ...p,
+        momNo: dynamicMomNo,
         schedule: val,
         agenda: val.agenda || '',
         chairedBy: val.chairedBy,
         startTime: val.startTime || '09:00',
         endTime: val.endTime || '10:00',
-        attendanceList: fallbackParticipants
+        attendanceList: fallbackParticipants,
+        details: syncMeetNumbers(dynamicMomNo, p.details)
       }));
     } finally {
       setLoading(false);
@@ -317,6 +472,26 @@ export default function AddMeetingMinutes() {
       { field: 'schedule', label: 'Meeting Schedule', required: true },
       { field: 'agenda', label: 'Agenda', required: true }
     ];
+
+    // Validation: Host's Out Time must be filled if other participants' Out Times are entered
+    const hostAtt = form.attendanceList.find(att => att.employee?.id === form.schedule?.hostBy?.id);
+    const hostOutTimeEmpty = !hostAtt || !hostAtt.outTime || !hostAtt.outTime.trim();
+    const otherOutTimeFilled = form.attendanceList.some(att => 
+      att.employee?.id !== form.schedule?.hostBy?.id && 
+      att.attendanceStatus !== 'ABSENT' && 
+      att.outTime && 
+      att.outTime.trim()
+    );
+
+    if (hostOutTimeEmpty && otherOutTimeFilled) {
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: "Please enter the host's outTime first before proceeding", 
+        variant: 'alert', 
+        severity: 'error' 
+      }));
+      return;
+    }
 
     // Validation: Out Time is required for all present/late attendees
     const missingOutTime = form.attendanceList.some(att => 
@@ -385,19 +560,29 @@ export default function AddMeetingMinutes() {
         const payload = {
           ...form,
           createdUser: editId ? form.createdUser || form.createdBy : currentUser,
-          updatedUser: currentUser,
+          updatedUser: editId ? currentUser : null,
           details: form.details.map(d => ({
             ...d,
             targetDate: d.targetDate || null,
             reviewDate: d.reviewDate || null,
             createdUser: d.id ? d.createdUser || d.createdBy : currentUser,
-            updatedUser: currentUser
+            updatedUser: d.id ? currentUser : null
           }))
         };
 
         if (editId) {
-          await axios.put(`${API_PATHS.QMS.MOMS}/${editId}`, payload);
-          dispatch(openSnackbar({ open: true, message: 'Meeting Minutes updated Successfully...', variant: 'alert', severity: 'success' }));
+          if (isHost && !perms.write) {
+            const outTimePayload = form.attendanceList.map(att => ({
+              employeeId: att.employee?.id,
+              attendanceId: att.id,
+              outTime: att.outTime
+            }));
+            await axios.put(`${API_PATHS.QMS.MOMS}/${editId}/attendance-out-times`, outTimePayload);
+            dispatch(openSnackbar({ open: true, message: 'Attendance out times updated Successfully...', variant: 'alert', severity: 'success' }));
+          } else {
+            await axios.put(`${API_PATHS.QMS.MOMS}/${editId}`, payload);
+            dispatch(openSnackbar({ open: true, message: 'Meeting Minutes updated Successfully...', variant: 'alert', severity: 'success' }));
+          }
         } else {
           await axios.post(API_PATHS.QMS.MOMS, payload);
           dispatch(openSnackbar({ open: true, message: 'Meeting Minutes saved Successfully..', variant: 'alert', severity: 'success' }));
@@ -455,7 +640,7 @@ export default function AddMeetingMinutes() {
           <Tooltip title={shortcutTooltip('Back', 'Esc')}>
             <Button variant="outlined" color="error" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/qms/minutesofmeeting')} sx={btnCancel}>Back</Button>
           </Tooltip>
-          {perms.write && (
+          {canSave && (
             <>
               <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
                 <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={() => setForm(INITIAL_FORM)} sx={btnClear}>Clear</Button>
@@ -590,12 +775,12 @@ export default function AddMeetingMinutes() {
                                 list[idx].outTime = e.target.value;
                                 setForm({...form, attendanceList: list});
                               }} 
-                              disabled={!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
+                              disabled={!canEditOutTime || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
                               placeholder="" 
                               InputLabelProps={{ shrink: true }} 
                               sx={{ 
                                 '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' },
-                                bgcolor: (!perms.write || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT') ? 'grey.50' : 'inherit'
+                                bgcolor: (!canEditOutTime || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT') ? 'grey.50' : 'inherit'
                               }} 
                             />
                           </TableCell>
@@ -624,8 +809,13 @@ export default function AddMeetingMinutes() {
                             </BOSTextField>
                           </TableCell>
                           <TableCell>
-                            {perms.write && (
-                              <IconButton size="small" color="success" sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.main', color: 'white' }, p: 0.3 }}>
+                            {canSave && (
+                              <IconButton 
+                                size="small" 
+                                color="success" 
+                                onClick={handleSave}
+                                sx={{ bgcolor: 'success.lighter', '&:hover': { bgcolor: 'success.main', color: 'white' }, p: 0.3 }}
+                              >
                                 <IconSave size={10} />
                               </IconButton>
                             )}
@@ -650,191 +840,156 @@ export default function AddMeetingMinutes() {
             icon={<IconMessageDots size={20} />}
             contentSx={{ p: 0 }}
           >
-            {(() => {
-              const meetingUsers = form.attendanceList
-                .filter(a => a.attendanceStatus !== 'ABSENT')
-                .map(a => a.employee || a)
-                .filter(emp => emp && emp.id);
-              return (
-                <TableContainer component={Paper} elevation={0} sx={{ border: 'none', borderRadius: 2, overflow: 'auto', maxHeight: 600 }}>
-              <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 2600, '& td, & th': { borderRight: '1px solid', borderColor: 'divider', verticalAlign: 'top' } }}>
+            <TableContainer component={Paper} elevation={0} sx={{ border: 'none', borderRadius: 2, overflow: 'auto', maxHeight: 600 }}>
+              <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 1890, '& td, & th': { borderRight: '1px solid', borderColor: 'divider', verticalAlign: 'middle' } }}>
                 <TableHead>
                   <TableRow>
+                    {/* Action Left (Add/Edit) */}
+                    <TableCell sx={{ ...headerSx, width: 60, textAlign: 'center', zIndex: 12, left: 0, position: 'sticky' }}>
+                      {perms.write && (
+                        <Tooltip title="Add New Row" placement="top" arrow>
+                          <IconButton 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => handleOpenDetailDialog(null)}
+                            sx={{ bgcolor: 'primary.lighter', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}
+                          >
+                            <IconPlus size={16} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
                     {/* Sticky Sl No Header */}
-                    <TableCell sx={{ ...headerSx, width: 50, textAlign: 'center', zIndex: 12, left: 0, position: 'sticky' }}>Sl No</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 50, textAlign: 'center' }}>Sl No</TableCell>
                     <TableCell sx={{ ...headerSx, width: 160 }}>Min No</TableCell>
                     <TableCell sx={{ ...headerSx, width: 160 }}>Amend Min No</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 450 }}>Discussed Point</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 130 }}>Type</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 250 }}>Material List</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 120 }}>Process</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 200 }}>Assigned To</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 200 }}>Assigned By</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 130 }}>Target Date</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 130 }}>Review Date</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 120 }}>Attachment Req</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 130 }}>Status</TableCell>
-                    <TableCell sx={{ ...headerSx, width: 110, textAlign: 'center', zIndex: 12, right: 0, position: 'sticky', borderRight: 'none' }}>Actions</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 400 }}>Discussed Point</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 80 }}>Type</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 200 }}>Material List</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 90, textAlign: 'center' }}>Process</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 130 }}>Assigned To</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 130 }}>Assigned By</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 110 }}>Target Date</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 110 }}>Review Date</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 110, textAlign: 'center' }}>Attachment Req</TableCell>
+                    <TableCell sx={{ ...headerSx, width: 90, textAlign: 'center', zIndex: 12, right: 0, position: 'sticky', borderRight: 'none' }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {form.details.map((det, idx) => (
                     <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { bgcolor: 'grey.50' }, '&:hover': { bgcolor: 'primary.lighter' } }}>
+                      {/* Action Left: Edit Icon */}
+                      <TableCell sx={{ position: 'sticky', left: 0, bgcolor: 'inherit', zIndex: 10, textAlign: 'center' }}>
+                        {perms.write ? (
+                          <Tooltip title="Edit Row" placement="top" arrow>
+                            <IconButton 
+                              size="small" 
+                              color="secondary" 
+                              onClick={() => handleOpenDetailDialog(idx)}
+                              sx={{ bgcolor: 'secondary.lighter', '&:hover': { bgcolor: 'secondary.main', color: 'white' } }}
+                            >
+                              <IconEdit size={14} />
+                            </IconButton>
+                          </Tooltip>
+                        ) : '-'}
+                      </TableCell>
+
                       {/* Sticky Sl No Body */}
-                      <TableCell align="center" sx={{ position: 'sticky', left: 0, bgcolor: 'inherit', zIndex: 10, fontSize: '0.75rem', fontWeight: 800, pt: 1.5 }}>
+                      <TableCell align="center" sx={{ fontSize: '0.75rem', fontWeight: 800 }}>
                         {form.details.length - idx}
                       </TableCell>
                       
-                      {/* References (AUTO GENERATED) */}
-                      <TableCell sx={{ p: 0 }}>
-                        <BOSTextField fullWidth value={det.meetNo} InputProps={{ readOnly: true }} sx={{ ...seamlessInputSx, '& .MuiInputBase-input': { fontWeight: 800, color: 'text.secondary', pt: 1.5 } }} />
+                      {/* References */}
+                      <TableCell sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', px: 1 }}>
+                        {det.meetNo || '-'}
                       </TableCell>
-                      <TableCell sx={{ p: 0 }}>
-                        <BOSTextField fullWidth value={det.amendMeetNo} InputProps={{ readOnly: true }} sx={{ ...seamlessInputSx, '& .MuiInputBase-input': { fontWeight: 800, color: 'text.secondary', pt: 1.5 } }} />
+                      <TableCell sx={{ fontSize: '0.75rem', fontWeight: 700, color: 'text.secondary', px: 1 }}>
+                        {det.amendMeetNo || '-'}
                       </TableCell>
                       
-                      {/* Discussed Point */}
-                      <TableCell sx={{ p: 0 }}>
-                        <BOSTextField 
-                          fullWidth 
-                          multiline 
-                          minRows={2}
-                          maxRows={8}
-                          value={det.discussedPoint} 
-                          onChange={(e) => handleDetailChange(idx, 'discussedPoint', e.target.value.toUpperCase())}
-                          placeholder="Enter details..."
-                          disabled={!perms.write}
-                          sx={{ 
-                            ...seamlessInputSx, 
-                            '& .MuiInputBase-root': { py: 1, px: 1 },
-                            '& .MuiInputBase-input': { 
-                              whiteSpace: 'pre-wrap', 
-                              wordBreak: 'break-word',
-                              overflowX: 'hidden',
-                              overflowY: 'auto'
-                            } 
-                          }}
-                        />
+                      {/* Discussed Point (Truncated, Clickable) */}
+                      <TableCell 
+                        onClick={() => perms.write && handleOpenDetailDialog(idx)}
+                        sx={{ 
+                          p: 1.5, 
+                          cursor: perms.write ? 'pointer' : 'default',
+                          '&:hover': perms.write ? { bgcolor: 'action.hover' } : {}
+                        }}
+                      >
+                        <Tooltip title={perms.write ? "Click to Edit" : ""} placement="top" arrow>
+                          <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+                            <Typography 
+                              variant="body2" 
+                              sx={{ 
+                                fontSize: '0.75rem', 
+                                wordBreak: 'break-word',
+                                color: det.discussedPoint ? 'text.primary' : 'text.disabled',
+                                fontStyle: det.discussedPoint ? 'normal' : 'italic',
+                                fontWeight: 500,
+                                pr: 1
+                              }}
+                            >
+                              {det.discussedPoint 
+                                ? (det.discussedPoint.length > 120 
+                                    ? `${det.discussedPoint.substring(0, 120)}...` 
+                                    : det.discussedPoint) 
+                                : 'Click to enter discussed point...'}
+                            </Typography>
+                          </Stack>
+                        </Tooltip>
                       </TableCell>
                       
                       {/* Details */}
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.type || 'RM'} onChange={(e) => handleDetailChange(idx, 'type', e.target.value)} disabled={!perms.write} sx={seamlessInputSx}>
-                          <MenuItem value="RM">RM</MenuItem>
-                          <MenuItem value="PRODUCT">PRODUCT</MenuItem>
-                        </BOSTextField>
+                      <TableCell sx={{ fontSize: '0.75rem', px: 1 }}>
+                        {det.type || '-'}
                       </TableCell>
-                      <TableCell sx={{ p: 0 }}>
-                        <BOSTextField 
-                          fullWidth 
-                          multiline 
-                          minRows={2} 
-                          maxRows={4} 
-                          value={det.materialList} 
-                          onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: idx, type: det.type || 'RM' })}
-                          InputProps={{ 
-                            readOnly: true,
-                            sx: { cursor: perms.write ? 'pointer' : 'default' }
-                          }}
-                          placeholder={perms.write ? "Click to select..." : "N/A"}
-                          sx={{ ...seamlessInputSx, '& .MuiInputBase-root': { py: 1, px: 1 } }} 
-                        />
+                      <TableCell sx={{ fontSize: '0.75rem', px: 1, color: 'text.secondary' }}>
+                        {det.materialList || '-'}
                       </TableCell>
                       
                       {/* Responsibility */}
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.processType} onChange={(e) => handleProcessChange(idx, e.target.value)} disabled={!perms.write} sx={seamlessInputSx}>
-                          <MenuItem value="INFO">INFO</MenuItem>
-                          <MenuItem value="ACTION">ACTION</MenuItem>
-                        </BOSTextField>
-                      </TableCell>
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <Autocomplete
-                          options={meetingUsers}
-                          getOptionLabel={(option) => option.employeeName || ''}
-                          isOptionEqualToValue={(opt, val) => opt.id === val?.id}
-                          value={det.assignedTo}
-                          onChange={(e, val) => handleDetailChange(idx, 'assignedTo', val)}
-                          disabled={!perms.write || det.processType === 'INFO'}
-                          renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignee"} sx={seamlessInputSx} />}
+                      <TableCell align="center">
+                        <Chip 
+                          label={det.processType || 'INFO'} 
+                          size="small" 
+                          sx={{ 
+                            fontSize: '0.65rem', 
+                            fontWeight: 800,
+                            bgcolor: det.processType === 'ACTION' ? 'secondary.lighter' : 'primary.lighter',
+                            color: det.processType === 'ACTION' ? 'secondary.dark' : 'primary.dark',
+                            border: '1px solid',
+                            borderColor: det.processType === 'ACTION' ? 'secondary.main' : 'primary.main'
+                          }} 
                         />
                       </TableCell>
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <Autocomplete
-                          options={meetingUsers}
-                          getOptionLabel={(option) => option.employeeName || ''}
-                          isOptionEqualToValue={(opt, val) => opt.id === val?.id}
-                          value={det.assignedBy}
-                          onChange={(e, val) => handleDetailChange(idx, 'assignedBy', val)}
-                          disabled={!perms.write || det.processType === 'INFO'}
-                          renderInput={(params) => <BOSTextField {...params} placeholder={det.processType === 'INFO' ? "N/A" : "Select Assignor"} sx={seamlessInputSx} />}
-                        />
+                      <TableCell sx={{ fontSize: '0.75rem', px: 1 }}>
+                        {det.assignedTo?.employeeName || '-'}
+                      </TableCell>
+                      <TableCell sx={{ fontSize: '0.75rem', px: 1 }}>
+                        {det.assignedBy?.employeeName || '-'}
                       </TableCell>
                       
                       {/* Timeline */}
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField 
-                          type="date" 
-                          value={det.targetDate} 
-                          onChange={(e) => handleDetailChange(idx, 'targetDate', e.target.value)} 
-                          disabled={!perms.write || det.processType === 'INFO'} 
-                          error={isSunday(det.targetDate) || (det.targetDate && det.targetDate < TODAY)}
-                          helperText={isSunday(det.targetDate) ? 'Sunday!' : (det.targetDate && det.targetDate < TODAY ? 'Past Date!' : '')}
-                          inputProps={{ min: TODAY }}
-                          sx={seamlessInputSx} 
-                        />
+                      <TableCell sx={{ fontSize: '0.75rem', px: 1 }}>
+                        {det.targetDate ? det.targetDate.split('-').reverse().join('/') : '-'}
                       </TableCell>
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField 
-                          type="date" 
-                          value={det.reviewDate} 
-                          onChange={(e) => handleDetailChange(idx, 'reviewDate', e.target.value)} 
-                          disabled={!perms.write}
-                          sx={seamlessInputSx} 
-                          inputProps={{ min: det.targetDate || TODAY }}
-                          error={(det.reviewDate && det.targetDate && det.reviewDate < det.targetDate) || (det.reviewDate && det.reviewDate < TODAY)}
-                          helperText={det.reviewDate && det.reviewDate < TODAY ? 'Past Date!' : ''}
-                        />
+                      <TableCell sx={{ fontSize: '0.75rem', px: 1 }}>
+                        {det.reviewDate ? det.reviewDate.split('-').reverse().join('/') : '-'}
                       </TableCell>
                       
                       {/* Closure */}
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                        <BOSTextField select value={det.attachmentRequired} onChange={(e) => handleDetailChange(idx, 'attachmentRequired', e.target.value)} disabled={!perms.write || det.processType === 'INFO'} sx={seamlessInputSx}>
-                          <MenuItem value="YES">YES</MenuItem>
-                          <MenuItem value="NO">NO</MenuItem>
-                        </BOSTextField>
-                      </TableCell>
-                      <TableCell sx={{ p: 0, pt: 0.5 }}>
-                         <BOSTextField 
-                            select 
-                            value={det.status || 'OPEN'} 
-                            onChange={(e) => handleDetailChange(idx, 'status', e.target.value)}
-                            disabled={!perms.write}
-                            sx={{ 
-                              ...seamlessInputSx,
-                              '& .MuiSelect-select': { 
-                                fontWeight: 900, 
-                                color: det.status === 'CLOSED' ? 'success.dark' : (det.status === 'IN_PROGRESS' ? 'warning.dark' : 'error.dark') 
-                              } 
-                            }}
-                          >
-                            <MenuItem value="OPEN">OPEN</MenuItem>
-                            <MenuItem value="IN_PROGRESS">IN PROGRESS</MenuItem>
-                            <MenuItem value="CLOSED">CLOSED</MenuItem>
-                         </BOSTextField>
+                      <TableCell align="center" sx={{ fontSize: '0.75rem', px: 1 }}>
+                        {det.attachmentRequired || 'NO'}
                       </TableCell>
                       
                       {/* Sticky Actions Body */}
-                      <TableCell sx={{ position: 'sticky', right: 0, bgcolor: 'inherit', zIndex: 10, borderRight: 'none', pt: 1 }}>
+                      <TableCell sx={{ position: 'sticky', right: 0, bgcolor: 'inherit', zIndex: 10, borderRight: 'none', textAlign: 'center' }}>
                         {perms.write ? (
                           <Stack direction="row" spacing={0.5} justifyContent="center">
                             <Tooltip title={det.isAmended ? "Revert Amendment" : "Mark as Amendment"}>
                               <IconButton size="small" color={det.isAmended ? "warning" : "primary"} onClick={() => toggleAmendment(idx)} sx={{ bgcolor: det.isAmended ? 'warning.lighter' : 'primary.lighter' }}>
                                 <IconEdit size={16} />
                               </IconButton>
-                            </Tooltip>
-                            <Tooltip title="Save Row">
-                              <IconButton size="small" color="primary" onClick={handleSave} sx={{ bgcolor: 'primary.lighter' }}><IconCheck size={16} /></IconButton>
                             </Tooltip>
                             <Tooltip title="Delete Row">
                               <IconButton size="small" color="error" onClick={() => removeDetailRow(idx)} disabled={form.details.length === 1} sx={{ bgcolor: 'error.lighter' }}><IconTrash size={16} /></IconButton>
@@ -847,15 +1002,13 @@ export default function AddMeetingMinutes() {
                 </TableBody>
               </Table>
             </TableContainer>
-            );
-            })()}
             {perms.write && (
               <Box sx={{ mt: 1.5, mb: 1.5, mr: 2, display: 'flex', justifyContent: 'flex-end' }}>
                  <Button 
                   variant="contained" 
                   color="primary" 
                   startIcon={<IconPlus size={18} />} 
-                  onClick={addDetailRow} 
+                  onClick={() => handleOpenDetailDialog(null)} 
                   sx={{ px: 3, fontWeight: 800, borderRadius: '8px' }}
                  >
                    Add Row
@@ -873,6 +1026,233 @@ export default function AddMeetingMinutes() {
         onClose={() => setMaterialDialog({ open: false, rowIdx: null, type: 'RM' })}
         onSelect={handleSelectMaterial}
       />
+
+      {/* Detail Add/Edit Dialog */}
+      <BOSFormDialog
+        open={detailDialog.open}
+        onClose={() => setDetailDialog({ open: false, rowIdx: null, form: {
+          meetNo: '',
+          amendMeetNo: '',
+          discussedPoint: '',
+          type: 'RM',
+          materialList: '',
+          processType: 'INFO',
+          assignedBy: null,
+          assignedTo: null,
+          targetDate: '',
+          reviewDate: '',
+          attachmentRequired: 'NO',
+          status: 'CLOSED',
+          isAmended: false
+        } })}
+        onSave={handleSaveDetailDialog}
+        title={detailDialog.rowIdx === null ? "Add Discussion & Action Point" : "Edit Discussion & Action Point"}
+        maxWidth="md"
+      >
+        {detailDialog.form && (
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            {/* Header Readonly Info */}
+            <Box sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.light' }}>
+              <Grid container spacing={2}>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">Minutes Number</Typography>
+                  <Typography variant="subtitle1" fontWeight={800} color="primary.main">{detailDialog.form.meetNo || 'Auto-generated'}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">Amend Minutes Number</Typography>
+                  <Typography variant="subtitle1" fontWeight={800}>{detailDialog.form.amendMeetNo || 'N/A'}</Typography>
+                </Grid>
+                <Grid item xs={4}>
+                  <Typography variant="caption" color="text.secondary">Status</Typography>
+                  <Typography variant="subtitle1" fontWeight={800} color={detailDialog.form.status === 'OPEN' ? 'error.main' : 'success.main'}>
+                    {detailDialog.form.status}
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Box>
+
+            {/* Discussed Point */}
+            <BOSTextField
+              fullWidth
+              multiline
+              rows={4}
+              label="Discussed Point *"
+              value={detailDialog.form.discussedPoint}
+              onChange={(e) => setDetailDialog(prev => ({
+                ...prev,
+                form: { ...prev.form, discussedPoint: e.target.value.toUpperCase() }
+              }))}
+              placeholder="Type discussed points here..."
+              required
+              helperText={
+                <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+                  <Typography variant="caption" color={
+                    detailDialog.form.discussedPoint.length < (
+                      detailDialog.form.attachmentRequired === 'YES' ? 50 : 150
+                    ) ? 'error.main' : 'success.main'
+                  } sx={{ fontWeight: 'bold' }}>
+                    {detailDialog.form.discussedPoint.length < (
+                      detailDialog.form.attachmentRequired === 'YES' ? 50 : 150
+                    ) 
+                      ? `⚠️ Below minimum characters required (${detailDialog.form.discussedPoint.length} / ${
+                          detailDialog.form.attachmentRequired === 'YES' ? 50 : 150
+                        })` 
+                      : `✅ Valid length (${detailDialog.form.discussedPoint.length} characters)`
+                    }
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Length: {detailDialog.form.discussedPoint.length} characters
+                  </Typography>
+                </Stack>
+              }
+            />
+
+            <Grid container spacing={2}>
+              {/* Type */}
+              <Grid item xs={6}>
+                <BOSTextField
+                  select
+                  fullWidth
+                  label="Type"
+                  value={detailDialog.form.type}
+                  onChange={(e) => setDetailDialog(prev => ({
+                    ...prev,
+                    form: { ...prev.form, type: e.target.value }
+                  }))}
+                >
+                  <MenuItem value="RM">RM</MenuItem>
+                  <MenuItem value="PRODUCT">PRODUCT</MenuItem>
+                </BOSTextField>
+              </Grid>
+
+              {/* Material List */}
+              <Grid item xs={6}>
+                <BOSTextField
+                  fullWidth
+                  label="Material List"
+                  value={detailDialog.form.materialList}
+                  placeholder="Click to select material..."
+                  onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: 'dialog', type: detailDialog.form.type || 'RM' })}
+                  InputProps={{ 
+                    readOnly: true,
+                    sx: { cursor: perms.write ? 'pointer' : 'default' }
+                  }}
+                />
+              </Grid>
+
+              {/* Process */}
+              <Grid item xs={4}>
+                <BOSTextField
+                  select
+                  fullWidth
+                  label="Process"
+                  value={detailDialog.form.processType}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setDetailDialog(prev => ({
+                      ...prev,
+                      form: {
+                        ...prev.form,
+                        processType: val,
+                        status: val === 'INFO' ? 'CLOSED' : 'OPEN'
+                      }
+                    }));
+                  }}
+                >
+                  <MenuItem value="INFO">INFO</MenuItem>
+                  <MenuItem value="ACTION">ACTION</MenuItem>
+                </BOSTextField>
+              </Grid>
+
+              {/* Assigned To */}
+              <Grid item xs={4}>
+                <Autocomplete
+                  options={meetingUsers}
+                  getOptionLabel={(option) => option.employeeName || ''}
+                  isOptionEqualToValue={(opt, val) => opt.id === val?.id}
+                  value={detailDialog.form.assignedTo}
+                  onChange={(e, val) => setDetailDialog(prev => ({
+                    ...prev,
+                    form: { ...prev.form, assignedTo: val }
+                  }))}
+                  disabled={detailDialog.form.processType === 'INFO'}
+                  renderInput={(params) => <BOSTextField {...params} label="Assigned To" placeholder={detailDialog.form.processType === 'INFO' ? "N/A" : "Select Assignee"} />}
+                />
+              </Grid>
+
+              {/* Assigned By */}
+              <Grid item xs={4}>
+                <Autocomplete
+                  options={meetingUsers}
+                  getOptionLabel={(option) => option.employeeName || ''}
+                  isOptionEqualToValue={(opt, val) => opt.id === val?.id}
+                  value={detailDialog.form.assignedBy}
+                  onChange={(e, val) => setDetailDialog(prev => ({
+                    ...prev,
+                    form: { ...prev.form, assignedBy: val }
+                  }))}
+                  disabled={detailDialog.form.processType === 'INFO'}
+                  renderInput={(params) => <BOSTextField {...params} label="Assigned By" placeholder={detailDialog.form.processType === 'INFO' ? "N/A" : "Select Assignor"} />}
+                />
+              </Grid>
+
+              {/* Target Date */}
+              <Grid item xs={4}>
+                <BOSTextField
+                  type="date"
+                  fullWidth
+                  label="Target Date"
+                  value={detailDialog.form.targetDate}
+                  onChange={(e) => setDetailDialog(prev => ({
+                    ...prev,
+                    form: { ...prev.form, targetDate: e.target.value }
+                  }))}
+                  disabled={detailDialog.form.processType === 'INFO'}
+                  inputProps={{ min: TODAY }}
+                  error={isSunday(detailDialog.form.targetDate) || (detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY)}
+                  helperText={isSunday(detailDialog.form.targetDate) ? 'Sunday!' : (detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY ? 'Past Date!' : '')}
+                />
+              </Grid>
+
+              {/* Review Date */}
+              <Grid item xs={4}>
+                <BOSTextField
+                  type="date"
+                  fullWidth
+                  label="Review Date"
+                  value={detailDialog.form.reviewDate}
+                  onChange={(e) => setDetailDialog(prev => ({
+                    ...prev,
+                    form: { ...prev.form, reviewDate: e.target.value }
+                  }))}
+                  disabled={detailDialog.form.processType === 'INFO'}
+                  inputProps={{ min: detailDialog.form.targetDate || TODAY }}
+                  error={(detailDialog.form.reviewDate && detailDialog.form.targetDate && detailDialog.form.reviewDate < detailDialog.form.targetDate) || (detailDialog.form.reviewDate && detailDialog.form.reviewDate < TODAY)}
+                  helperText={detailDialog.form.reviewDate && detailDialog.form.reviewDate < TODAY ? 'Past Date!' : ''}
+                />
+              </Grid>
+
+              {/* Attachment Required */}
+              <Grid item xs={4}>
+                <BOSTextField
+                  select
+                  fullWidth
+                  label="Attachment Req"
+                  value={detailDialog.form.attachmentRequired}
+                  onChange={(e) => setDetailDialog(prev => ({
+                    ...prev,
+                    form: { ...prev.form, attachmentRequired: e.target.value }
+                  }))}
+                  disabled={detailDialog.form.processType === 'INFO'}
+                >
+                  <MenuItem value="YES">YES</MenuItem>
+                  <MenuItem value="NO">NO</MenuItem>
+                </BOSTextField>
+              </Grid>
+            </Grid>
+          </Stack>
+        )}
+      </BOSFormDialog>
     </MainCard>
   );
 }
