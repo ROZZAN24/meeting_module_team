@@ -3,6 +3,7 @@ package com.autonoma.erp.controller.admin;
 import com.autonoma.erp.model.*;
 import com.autonoma.erp.repository.*;
 import com.autonoma.erp.repository.admin.UserRepository;
+import com.autonoma.erp.repository.admin.PrefixCredentialRepository;
 import com.autonoma.erp.model.admin.UserCredential;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,9 @@ public class TicketTraceabilityCenterController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PrefixCredentialRepository prefixCredentialRepository;
 
     @Autowired
     private FileService fileService;
@@ -117,26 +121,37 @@ public class TicketTraceabilityCenterController {
     public ResponseEntity<?> createTicket(@RequestBody TicketTraceabilityCenter ticket) {
         log.info("Creating support ticket: {}", ticket);
         try {
-            // Auto generate ticket ID based on type
-            String prefix = "INT-";
-            if (ticket.getTicketType() != null && ticket.getTicketType().equalsIgnoreCase("External")) {
-                prefix = "EXT-";
+            // Auto generate ticket ID based on AD_PREFIX_CREDENTIALS
+            String prefix = "INT/";
+            String suffix = "/2627";
+            int digit = 4;
+            
+            List<com.autonoma.erp.model.admin.PrefixCredential> prefixes = prefixCredentialRepository.findAll();
+            if (!prefixes.isEmpty()) {
+                com.autonoma.erp.model.admin.PrefixCredential pc = prefixes.get(0);
+                if (pc.getTaskPrefix() != null && !pc.getTaskPrefix().trim().isEmpty()) prefix = pc.getTaskPrefix().trim();
+                if (pc.getTaskSuffix() != null && !pc.getTaskSuffix().trim().isEmpty()) suffix = pc.getTaskSuffix().trim();
+                if (pc.getTaskDigit() != null) digit = pc.getTaskDigit();
             }
-            String dateStr = new java.text.SimpleDateFormat("yyyyMMdd").format(new Date());
-            String pattern = prefix + dateStr + "-%";
 
+            String pattern = prefix + "%" + suffix;
             List<TicketTraceabilityCenter> latestList = ticketRepository.findLatestByTicketIdPattern(pattern);
             int nextNum = 1;
             if (!latestList.isEmpty()) {
                 String latestId = latestList.get(0).getTicketId();
                 try {
-                    String numStr = latestId.substring(latestId.lastIndexOf("-") + 1);
-                    nextNum = Integer.parseInt(numStr) + 1;
+                    int startIndex = latestId.indexOf(prefix) + prefix.length();
+                    int endIndex = latestId.lastIndexOf(suffix);
+                    if (startIndex < endIndex) {
+                        String numStr = latestId.substring(startIndex, endIndex);
+                        nextNum = Integer.parseInt(numStr) + 1;
+                    }
                 } catch (Exception e) {
                     log.warn("Failed to parse sequence from ticket ID: {}", latestId);
                 }
             }
-            String ticketId = String.format("%s%s-%04d", prefix, dateStr, nextNum);
+            String formatStr = "%s%0" + digit + "d%s";
+            String ticketId = String.format(formatStr, prefix, nextNum, suffix);
             ticket.setTicketId(ticketId);
 
             if (ticket.getTicketStatus() == null || ticket.getTicketStatus().trim().isEmpty()) {
@@ -213,7 +228,17 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setMobileNo(ticketDetails.getMobileNo());
             if (ticketDetails.getDepartment() != null)
                 existingTicket.setDepartment(ticketDetails.getDepartment());
-            if (ticketDetails.getAdditionalRequirement() != null) existingTicket.setAdditionalRequirement(ticketDetails.getAdditionalRequirement());
+            if (ticketDetails.getAdditionalRequirement() != null) {
+                String oldReq = existingTicket.getAdditionalRequirement();
+                String newReq = ticketDetails.getAdditionalRequirement();
+                boolean isEmptyReq = newReq.trim().isEmpty() || newReq.trim().equals("<p><br></p>");
+                if (oldReq == null || !oldReq.equals(newReq)) {
+                    existingTicket.setAdditionalRequirement(newReq);
+                    if (!isEmptyReq) {
+                        logStatusHistory(existingTicket.getRowId(), "Additional Requirement Added", newReq, oldStatus, oldStatus, null, null);
+                    }
+                }
+            }
             if (ticketDetails.getDescription() != null)
                 existingTicket.setDescription(ticketDetails.getDescription());
             if (ticketDetails.getPriorityLevel() != null)
