@@ -1719,6 +1719,8 @@ export default function TicketManagement({ viewType }) {
         showSnackbar('Ticket updated successfully!');
         fetchTickets();
         setHasSavedInDetails(true);
+        setDetailsOpen(false);
+        setSelectedTicket(null);
         setFormAttachments([]);
         setFormVoiceFiles([]);
         return;
@@ -1779,6 +1781,8 @@ export default function TicketManagement({ viewType }) {
 
           fetchTickets();
           setHasSavedInDetails(true);
+          setDetailsOpen(false);
+          setSelectedTicket(null);
           setFormAttachments([]);
           setFormVoiceFiles([]);
         } catch (e) { showSnackbar('Failed to update ticket', 'error'); }
