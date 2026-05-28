@@ -252,7 +252,13 @@ public class TicketTraceabilityCenterController {
                 String newAssignee = ticketDetails.getAssignedTo();
                 if (oldAssignee == null || !oldAssignee.equalsIgnoreCase(newAssignee)) {
                     existingTicket.setAssignedTo(newAssignee);
-                    logStatusHistory(existingTicket.getRowId(), "Ticket Reassigned", "Reassigned to " + newAssignee, oldStatus, oldStatus, newAssignee, null);
+                    
+                    String reassignActionDesc = "Reassigned to " + newAssignee;
+                    if (ticketDetails.getReassignComment() != null && !ticketDetails.getReassignComment().trim().isEmpty()) {
+                        reassignActionDesc += " | Comment: " + ticketDetails.getReassignComment();
+                    }
+                    
+                    logStatusHistory(existingTicket.getRowId(), "Ticket Reassigned", reassignActionDesc, oldStatus, oldStatus, newAssignee, null);
                 }
             }
             if (ticketDetails.getAssignedBy() != null)
