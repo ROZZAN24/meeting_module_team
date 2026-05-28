@@ -141,6 +141,15 @@ public class TicketTraceabilityCenter {
     @Transient
     private List<String> tempVoiceRecordings;
 
+    @Transient
+    private List<String> tempAdditionalAttachments;
+
+    @Transient
+    private List<String> tempAdditionalVoiceRecordings;
+
+    @Transient
+    private String reassignComment;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = new Date();

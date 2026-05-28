@@ -66,7 +66,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260525_V37.0__Alter_Checklist_Status_To_Int.sql",
         // T-SQL scripts for column standardization & INT conversions
         "20260526_V40.0__Fix_Missing_Audit_Columns__TIS.sql",
-        "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql"
+        "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql",
+        "20260512_V2.4__Sync_Company_Credentials.sql",
+        "V13.0__Fix_User_Mapping_FK_References.sql",
+        "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
@@ -253,6 +256,8 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
 
         ensureDesignationColumns(targetJdbcTemplate);
+        ensureTicketTraceabilityColumns(targetJdbcTemplate);
+        ensureAtsColumns(targetJdbcTemplate);
 
         System.out.println("======================================");
         System.out.println("SQL MIGRATION COMPLETED FOR DYNAMIC TEMPLATE");
@@ -882,10 +887,40 @@ public class SqlMigrationRunner implements CommandLineRunner {
             return null;
         }
 
+        // Disable H2 referential integrity constraints during migrations to allow drop/alter without FK issues
+        sql = "SET REFERENTIAL_INTEGRITY FALSE;\n" + sql + "\nSET REFERENTIAL_INTEGRITY TRUE;";
+
         // Clean up dbo prefix and brackets at the start for regex ease
         sql = sql.replace("[dbo].", "");
         sql = sql.replace("dbo.", "");
         sql = sql.replace("[", "").replace("]", "");
+
+        // Translate drop table statements to use CASCADE on H2 to safely bypass foreign key constraints
+        sql = sql.replaceAll("(?is)\\bDROP\\s+TABLE\\s+(?:IF\\s+EXISTS\\s+)?([a-zA-Z0-9_]+)\\s*;?", "DROP TABLE IF EXISTS $1 CASCADE;");
+
+        // Translate legacy audit column names to newly standardized Hibernate-generated columns on H2 for QMS/Audit/Checklist tables
+        {
+            java.util.List<String> stdTables = java.util.Arrays.asList(
+                "qms_audit_area", "qms_audit_criteria", "qms_audit_observation", "qms_audit_schedule", "qms_audit_type",
+                "ind_induction_assignment", "ind_induction_master", "ind_induction_training_detail", "qms_checklist_master",
+                "qms_meeting_master", "qms_meeting_schedule", "qms_meeting_user_attendance", "qms_model_name",
+                "qms_mom_detail", "qms_mom_master", "qms_uom"
+            );
+            String lowerSql = sql.toLowerCase();
+            boolean hasStdTable = false;
+            for (String tbl : stdTables) {
+                if (lowerSql.contains(tbl)) {
+                    hasStdTable = true;
+                    break;
+                }
+            }
+            if (hasStdTable) {
+                sql = sql.replaceAll("(?i)\\bcreated_by\\b", "CREATED_USER");
+                sql = sql.replaceAll("(?i)\\bupdated_by\\b", "UPDATED_USER");
+                sql = sql.replaceAll("(?i)\\bcreated_at\\b", "CREATED_DATE");
+                sql = sql.replaceAll("(?i)\\bupdated_at\\b", "UPDATED_DATE");
+            }
+        }
 
         // Remove ANSI_NULLS and QUOTED_IDENTIFIER SET statements
         sql = sql.replaceAll("(?is)SET\\s+ANSI_NULLS\\s+(ON|OFF)\\s*;?", "");
@@ -1336,6 +1371,137 @@ public class SqlMigrationRunner implements CommandLineRunner {
             }
         } catch (Exception e) {
             System.out.println("Error ensuring designation master columns: " + e.getMessage());
+        }
+    }
+
+    private void ensureTicketTraceabilityColumns(JdbcTemplate targetJdbcTemplate) {
+        String tableName = "ticket_Tracability_center";
+        try {
+            boolean isH2 = false;
+            try {
+                String url = targetJdbcTemplate.getDataSource().getConnection().getMetaData().getURL();
+                if (url != null && url.contains(":h2:")) {
+                    isH2 = true;
+                }
+            } catch (Exception e) {
+                // Ignore
+            }
+
+            // Check if table exists
+            Integer tableCount = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                Integer.class,
+                tableName.toUpperCase()
+            );
+            if (tableCount == null || tableCount == 0) {
+                return;
+            }
+
+            // Columns to ensure and their definitions for H2 / SQL Server
+            String[][] cols = {
+                {"page_id", "INT NULL", "INT NULL"},
+                {"rework_time", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"assigned_by", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"developer_name", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"developer_email", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"developer_mobile_no", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"},
+                {"assigned_hours", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"}
+            };
+
+            for (String[] colDef : cols) {
+                String colName = colDef[0];
+                String h2Type = colDef[1];
+                String sqlServerType = colDef[2];
+
+                Integer count = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ? AND UPPER(COLUMN_NAME) = ?",
+                    Integer.class,
+                    tableName.toUpperCase(),
+                    colName.toUpperCase()
+                );
+
+                if (count == null || count == 0) {
+                    String type = isH2 ? h2Type : sqlServerType;
+                    System.out.println("[Self-Healing] Adding missing column " + colName + " to table " + tableName);
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD " + colName + " " + type);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error ensuring ticket traceability columns: " + e.getMessage());
+        }
+    }
+
+    private void ensureAtsColumns(JdbcTemplate targetJdbcTemplate) {
+        String[] tableNames = {"hrm_employee_master", "HR_EMPLOYEE_MASTER"};
+        for (String tableName : tableNames) {
+            try {
+                Integer tableCount = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                    Integer.class,
+                    tableName.toUpperCase()
+                );
+                if (tableCount == null || tableCount == 0) {
+                    continue;
+                }
+                List<String> columns = targetJdbcTemplate.queryForList(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
+                    String.class,
+                    tableName.toUpperCase()
+                );
+
+                if (columns.stream().noneMatch(c -> c.equalsIgnoreCase("age"))) {
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD applicant_date DATE");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD age INT");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD position_look_for VARCHAR(100)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD call_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD interview_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD offer_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD verification_status VARCHAR(20) DEFAULT 'PENDING'");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q1_native NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q2_present_address NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q3_permanent_address NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q4_father_occupation NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q5_mother_occupation NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q6_marital_status VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q7_spouse_occupation NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q8_children NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q9_has_relatives VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q10_relatives_details NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q11_siblings_occupations NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q12_has_two_wheeler VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q13_has_android_phone VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q14_knows_car_driving VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q15_willing_to_travel VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q16_covid_vaccination VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q17_positive_points NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q18_negative_points NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q19_life_goals NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q20_improvement_suggestions NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q21_is_experienced VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q22_total_experience VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q23_core_experience VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q24_prev_net_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q25_prev_gross_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q26_expected_net_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q27_expected_gross_salary VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q28_pf_higher_pension VARCHAR(10)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q29_pf_deduction_amount VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q30_alternative_department VARCHAR(100)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q31_prev_location NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q32_prev_shift VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q33_reason_for_leaving NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q34_notice_period VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q35_prev_dept_position NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q36_prev_dept_count VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q37_prev_reporting_to NVARCHAR(255)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q38_handle_mistake NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q39_handle_opinion_difference NVARCHAR(MAX)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD q40_computer_self_rating VARCHAR(50)");
+                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD payslip_path NVARCHAR(MAX)");
+                }
+            } catch (Exception e) {
+                System.out.println("Error ensuring ATS columns on table " + tableName + ": " + e.getMessage());
+            }
         }
     }
 

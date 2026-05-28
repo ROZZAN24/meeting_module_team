@@ -74,12 +74,13 @@ export default function Login() {
           elevation={0}
           sx={{
             p: { xs: 2.5, sm: 3.5 },
+            pb: isFaceMode ? { xs: 2.5, sm: 2.5 } : { xs: 2.5, sm: 3.5 },
             width: '100%',
-            background: 'rgba(255, 255, 255, 0.85)',
+            background: '#ffffffd9',
             backdropFilter: 'blur(10px)',
             borderRadius: '24px',
-            boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.2)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 0 25px rgba(255, 215, 0, 0.4)',
+            border: '1px solid #FFD700',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -100,11 +101,14 @@ export default function Login() {
             )}
           </Box>
 
-          <Divider sx={{ my: 3, width: '100%' }} />
-
-          <Box sx={{ mt: 3, width: '100%' }}>
-            <AuthFooter />
-          </Box>
+          {!isFaceMode && (
+            <>
+              <Divider sx={{ my: 3, width: '100%' }} />
+              <Box sx={{ mt: 3, width: '100%' }}>
+                <AuthFooter />
+              </Box>
+            </>
+          )}
         </Paper>
       </motion.div>
     </Box>

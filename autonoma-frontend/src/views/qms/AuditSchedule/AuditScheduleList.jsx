@@ -129,7 +129,7 @@ export default function AuditScheduleList() {
   };
 
   const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
+    const filtered = rows.filter((row) => {
       const statusFilter = globalFilters.status || 'OPEN';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       
@@ -153,13 +153,16 @@ export default function AuditScheduleList() {
       
       return matchesStatus && matchesScheduleNo && matchesAuditType && matchesAuditArea && matchesDepartment && matchesAuditor && matchesAuditee && matchesSearch;
     });
+    // Sort descending by id so latest scheduled audits appear at the top
+    return [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
   }, [rows, globalQuery, globalFilters]);
-
-  const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   useKeyboardShortcuts({
     'ctrl+n': handleOpenAdd,
-    'ctrl+e': () => { if (paginatedRows.length > 0) handleOpenEdit(paginatedRows[0]); }
+    'ctrl+e': () => {
+      const activeRows = filteredRows.slice(page * size, page * size + size);
+      if (activeRows.length > 0) handleOpenEdit(activeRows[0]);
+    }
   });
 
   const renderCell = (col, row, idx) => {
@@ -219,7 +222,7 @@ export default function AuditScheduleList() {
     >
       <BOSDataTable
         columns={columns}
-        rows={paginatedRows}
+        rows={filteredRows}
         page={page}
         size={size}
         totalCount={filteredRows.length}

@@ -25,11 +25,10 @@ public class ChecklistService {
     @Autowired
     private ChecklistAssignmentRepository assignRepo;
 
-    @Autowired
-    private ChecklistVerificationRepository verifyRepo;
 
     @Autowired
     private StatusMasterRepository statusRepo;
+
 
     @Autowired
     private ChecklistDepartmentRepository deptRepo;
@@ -39,6 +38,9 @@ public class ChecklistService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ChecklistClosedRepository closedRepo;
 
     // --- Master Checklist ---
 
@@ -104,9 +106,12 @@ public class ChecklistService {
             }
 
             if (department != null && !department.isEmpty()) {
-                Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
-                Join<ChecklistDepartment, Department> dObjJoin = deptJoin.join("department");
-                predicates.add(cb.equal(dObjJoin.get("departmentName"), department));
+                Subquery<Long> deptSub = query.subquery(Long.class);
+                Root<ChecklistDepartment> deptRoot = deptSub.from(ChecklistDepartment.class);
+                Join<ChecklistDepartment, Department> deptObjJoin = deptRoot.join("department");
+                deptSub.select(deptRoot.get("checklist").get("id"));
+                deptSub.where(cb.equal(deptObjJoin.get("departmentName"), department));
+                predicates.add(root.get("id").in(deptSub));
             }
 
             if (seqNo != null && !seqNo.isEmpty()) {
@@ -161,15 +166,18 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(root.get("status").as(String.class)), searchTerm));
                     orPredicates.add(cb.like(cb.lower(root.get("createdBy").as(String.class)), searchTerm));
 
-                    Join<MasterChecklist, ChecklistDepartment> dJoin = root.join("departments", JoinType.LEFT);
-                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName").as(String.class)), searchTerm));
+                    Subquery<Long> dSub = query.subquery(Long.class);
+                    Root<ChecklistDepartment> dRoot = dSub.from(ChecklistDepartment.class);
+                    Join<ChecklistDepartment, Department> dObj = dRoot.join("department");
+                    dSub.select(dRoot.get("checklist").get("id"));
+                    dSub.where(cb.like(cb.lower(dObj.get("departmentName").as(String.class)), searchTerm));
+                    orPredicates.add(root.get("id").in(dSub));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
             }
 
-            query.distinct(true);
+            // distinct(true) removed to avoid dense_rank order by on TEXT/NVARCHAR(MAX) columns in SQL Server
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }
@@ -481,15 +489,18 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(cJoin.get("category")), searchTerm));
                     orPredicates.add(cb.like(cb.lower(cJoin.get("frequency")), searchTerm));
 
-                    Join<MasterChecklist, ChecklistDepartment> dJoin = cJoin.join("departments", JoinType.LEFT);
-                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName")), searchTerm));
+                    Subquery<Long> dSub = query.subquery(Long.class);
+                    Root<ChecklistDepartment> dRoot = dSub.from(ChecklistDepartment.class);
+                    Join<ChecklistDepartment, Department> dObj = dRoot.join("department");
+                    dSub.select(dRoot.get("checklist").get("id"));
+                    dSub.where(cb.like(cb.lower(dObj.get("departmentName")), searchTerm));
+                    orPredicates.add(cJoin.get("id").in(dSub));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
             }
 
-            query.distinct(true);
+            // distinct(true) removed to avoid dense_rank order by on TEXT/NVARCHAR(MAX) columns in SQL Server
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }
@@ -532,7 +543,9 @@ public class ChecklistService {
         assignment.setAssignedDate(new Date());
         assignment.setChecklistDate(checklistDate);
 
-        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        ChecklistClosed saved = saveToFrequencyTable(assignment);
+        assignment.setId(saved.getId());
+        ChecklistAssignment savedAssignment = assignment;
 
         // Also update the MasterChecklist for the UI data table to show ALL assignees
         java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklistId);
@@ -550,11 +563,52 @@ public class ChecklistService {
         return savedAssignment;
     }
 
+    private void copyProperties(ChecklistAssignment src, ChecklistClosed dest) {
+        dest.setChecklist(src.getChecklist());
+        dest.setAssignedTo(src.getAssignedTo());
+        dest.setAssignedBy(src.getAssignedBy());
+        dest.setAssignedDate(src.getAssignedDate());
+        dest.setStatus(src.getStatus());
+        dest.setRemarks(src.getRemarks());
+        dest.setChecklistDate(src.getChecklistDate());
+        dest.setCarryForward(src.getCarryForward());
+        dest.setCarryForwardStatus(src.getCarryForwardStatus());
+        dest.setCarryForwardCount(src.getCarryForwardCount());
+        dest.setAssignType(src.getAssignType());
+        dest.setVerifiedBy(src.getVerifiedBy());
+        dest.setVerifiedDate(src.getVerifiedDate());
+        dest.setComments(src.getComments());
+        dest.setFilePaths(src.getFilePaths());
+        dest.setCreatedUser(src.getCreatedUser());
+        dest.setCreatedAt(src.getCreatedAt());
+        dest.setUpdatedUser(src.getUpdatedUser());
+        dest.setUpdatedAt(src.getUpdatedAt());
+
+        String freq = src.getChecklist().getFrequency();
+        if (freq == null) {
+            freq = "DAILY";
+        }
+        dest.setFrequency(freq.toUpperCase());
+    }
+
+    private ChecklistClosed saveToFrequencyTable(ChecklistAssignment source) {
+        ChecklistClosed closed = closedRepo.findByChecklistIdAndAssignedToAndChecklistDate(
+                source.getChecklist().getId(), source.getAssignedTo(), source.getChecklistDate())
+                .orElse(new ChecklistClosed());
+        copyProperties(source, closed);
+        return closedRepo.save(closed);
+    }
+
+    private void deleteFromFrequencyTable(Long checklistId, String assignedTo, Date checklistDate, String freq) {
+        closedRepo.findByChecklistIdAndAssignedToAndChecklistDate(checklistId, assignedTo, checklistDate)
+                .ifPresent(closedRepo::delete);
+    }
+
     @Transactional
     public void deleteAssignment(Long id) {
         ChecklistAssignment assignment = assignRepo.findById(id).orElseThrow();
         MasterChecklist checklist = assignment.getChecklist();
-        assignRepo.deleteById(id);
+        deleteFromFrequencyTable(checklist.getId(), assignment.getAssignedTo(), assignment.getChecklistDate(), checklist.getFrequency());
 
         // Recalculate assigned users
         java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklist.getId());
@@ -581,13 +635,6 @@ public class ChecklistService {
         MasterChecklist master = assignment.getChecklist();
 
         // ── USER REWORK COMPLETION WORKFLOW ──────────────────────────────────
-        // When the user submits "Completed" on the again-created assignment B
-        // (which is currently Pending/Started) and there is an older Rejected
-        // assignment A for the same checklist/user/date, we:
-        //   1. Promote A from "Rejected" → "Pending for Verified" (or "Completed")
-        //   2. Copy the user's files/remarks onto A
-        //   3. Delete B entirely (it was only a rework helper)
-        //   4. Return so the manager sees one clean record (A) to verify.
         if ("Completed".equalsIgnoreCase(statusName) && assignment.getStatus() != null
                 && ("Pending".equalsIgnoreCase(assignment.getStatus().getName())
                         || "Started".equalsIgnoreCase(assignment.getStatus().getName()))) {
@@ -632,34 +679,26 @@ public class ChecklistService {
                 }
                 oldRejected.setUpdatedBy(verifiedBy);
                 oldRejected.setUpdatedAt(new Date());
-                assignRepo.save(oldRejected);
-
-                // Create a verification record on A so the manager sees the rework
-                ChecklistVerification ver = new ChecklistVerification();
-                ver.setAssignment(oldRejected);
-                ver.setVerifiedBy(verifiedBy);
-                ver.setStatus(aStatus);
-                ver.setRemarks(remarks);
-                ver.setVerifiedDate(new Date());
-                ChecklistVerification savedVer = verifyRepo.save(ver);
+                
+                // Save A to frequency table
+                saveToFrequencyTable(oldRejected);
 
                 // Delete B (the again-created helper assignment) entirely
-                verifyRepo.deleteByAssignment(assignment);
-                assignRepo.delete(assignment);
+                deleteFromFrequencyTable(assignment.getChecklist().getId(), assignment.getAssignedTo(), assignment.getChecklistDate(), assignment.getChecklist().getFrequency());
 
-                return savedVer;
+                // Return a dummy verification object
+                ChecklistVerification dummy = new ChecklistVerification();
+                dummy.setAssignment(oldRejected);
+                dummy.setVerifiedBy(verifiedBy);
+                dummy.setStatus(aStatus);
+                dummy.setRemarks(remarks);
+                dummy.setVerifiedDate(new Date());
+                return dummy;
             }
         }
         // ─────────────────────────────────────────────────────────────────────
 
         // DUAL CHECK & WORKFLOW MAPPING LOGIC:
-        // When a user completes their assigned task (submits with status 'Completed'):
-        // If the submitter is NOT an admin, map it to:
-        // - 'Pending for Verified' if verification/dual check is required
-        // - 'Pending' if no verification is required
-        // If the submitter IS an admin, they are closing/verifying it directly:
-        // - If dual check is enabled, it moves to 'Pending for Verified'
-        // - If dual check is disabled, it moves to 'Completed' (closed)
         String finalStatusName = statusName;
         if ("Completed".equalsIgnoreCase(statusName)) {
             boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
@@ -682,29 +721,33 @@ public class ChecklistService {
 
         // Update assignment details
         assignment.setStatus(status);
-        assignment.setRemarks(remarks); // PERSIST REMARKS TO ASSIGNMENT
+        assignment.setRemarks(remarks);
         if (actualFiles != null) {
             assignment.setActualFiles(actualFiles);
         }
         assignment.setUpdatedBy(verifiedBy);
         assignment.setUpdatedAt(new Date());
-        assignRepo.save(assignment);
 
-        // Create verification record
-        ChecklistVerification verification = new ChecklistVerification();
-        verification.setAssignment(assignment);
-        verification.setVerifiedBy(verifiedBy);
-        verification.setStatus(status);
-        verification.setRemarks(remarks);
-        verification.setVerifiedDate(new Date());
+        // Consolidate manager verification columns if finalized/closed
+        if ("Verified".equalsIgnoreCase(finalStatusName) || "Accepted".equalsIgnoreCase(finalStatusName) || "Completed".equalsIgnoreCase(finalStatusName)) {
+            assignment.setVerifiedBy(verifiedBy);
+            assignment.setVerifiedDate(new Date());
+            assignment.setComments(remarks);
+        }
 
-        ChecklistVerification savedVerify = verifyRepo.save(verification);
+        // Save active/closed details directly in the respective frequency table
+        saveToFrequencyTable(assignment);
+
+        // Create a dummy verification object to return (deprecation safety)
+        ChecklistVerification dummyVerification = new ChecklistVerification();
+        dummyVerification.setAssignment(assignment);
+        dummyVerification.setVerifiedBy(verifiedBy);
+        dummyVerification.setStatus(status);
+        dummyVerification.setRemarks(remarks);
+        dummyVerification.setVerifiedDate(new Date());
 
         // MANAGER REJECTION WORKFLOW:
-        // If the checklist was completed by the user and rejected by the manager,
-        // create a new identical checklist assignment for the user to perform again.
         if ("Rejected".equalsIgnoreCase(finalStatusName)) {
-            // Check if there is already a Pending/Started assignment for the same checklist, user, date
             boolean alreadyExists = false;
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
@@ -729,7 +772,7 @@ public class ChecklistService {
                 next.setCarryForwardStatus("NO");
                 next.setCarryForwardCount(0);
                 statusRepo.findByName("Pending").ifPresent(next::setStatus);
-                assignRepo.save(next);
+                saveToFrequencyTable(next);
             }
         }
 
@@ -738,8 +781,6 @@ public class ChecklistService {
                 ("Completed".equalsIgnoreCase(finalStatusName) && !"YES".equalsIgnoreCase(master.getDualCheck()));
 
         // ERASE ON VERIFY WORKFLOW:
-        // When the newly created checklist is eventually verified or accepted,
-        // erase all old rejected checklist assignments for the same checklist, user, and date.
         if (isFinalized) {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
@@ -757,9 +798,8 @@ public class ChecklistService {
                     .collect(java.util.stream.Collectors.toList());
                 if (!rejectedList.isEmpty()) {
                     for (ChecklistAssignment rej : rejectedList) {
-                        verifyRepo.deleteByAssignment(rej);
+                        deleteFromFrequencyTable(rej.getChecklist().getId(), rej.getAssignedTo(), rej.getChecklistDate(), rej.getChecklist().getFrequency());
                     }
-                    assignRepo.deleteAll(rejectedList);
                 }
 
                 // 2. Delete the again-created checklist (which is Pending/Started)
@@ -769,21 +809,18 @@ public class ChecklistService {
                     .collect(java.util.stream.Collectors.toList());
                 if (!pendingList.isEmpty()) {
                     for (ChecklistAssignment pend : pendingList) {
-                        verifyRepo.deleteByAssignment(pend);
+                        deleteFromFrequencyTable(pend.getChecklist().getId(), pend.getAssignedTo(), pend.getChecklistDate(), pend.getChecklist().getFrequency());
                     }
-                    assignRepo.deleteAll(pendingList);
                 }
             }
         }
 
         // RECURRING LOGIC:
-        // If final status is 'Verified' or 'Accepted' (or 'Completed' if Dual Check is NO),
-        // we should generate the next assignment if it's a recurring task.
         if (isFinalized && master.getFrequency() != null && !"ONE TIME".equalsIgnoreCase(master.getFrequency())) {
             generateNextAssignment(assignment);
         }
 
-        return savedVerify;
+        return dummyVerification;
     }
 
     private void generateNextAssignment(ChecklistAssignment current) {
@@ -832,7 +869,14 @@ public class ChecklistService {
         next.setChecklistDate(nextDate);
         statusRepo.findByName("Pending").ifPresent(next::setStatus);
 
-        assignRepo.save(next);
+        saveToFrequencyTable(next);
+    }
+
+    @Transactional
+    public ChecklistAssignment saveAssignment(ChecklistAssignment assignment) {
+        ChecklistClosed saved = saveToFrequencyTable(assignment);
+        assignment.setId(saved.getId());
+        return assignment;
     }
 
     @Transactional

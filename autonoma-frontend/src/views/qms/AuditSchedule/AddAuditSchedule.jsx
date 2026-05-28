@@ -37,6 +37,7 @@ import {
   BOSTextField,
   BOSDatePicker,
   BOSDataTable,
+  BOSFileUpload,
   btnSave,
   btnClear,
   getStatusChipSx,
@@ -100,6 +101,7 @@ const getAuditCategory = (auditTypeStr) => {
   if (type.includes('PRODUCT')) return 'PRODUCT_AUDIT';
   if (type.includes('RECORD ROOM')) return 'RECORD_ROOM_AUDIT';
   if (type.includes('ERP')) return 'ERP_SCREEN_AUDIT';
+  if (type.includes('PROCESS')) return 'PROCESS_AUDIT';
   return 'DEFAULT';
 };
 
@@ -148,7 +150,9 @@ export default function AddAuditSchedule() {
     fromEmailToCustomer: '',
     subcontractorName: '',
     supplierName: '',
-    coOrdinator: ''
+    coOrdinator: '',
+    processName: '',
+    itemCode: ''
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
@@ -161,12 +165,25 @@ export default function AddAuditSchedule() {
     levels = [],
     designations = [],
     customers = [],
-    contacts = []
-  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS']);
+    contacts = [],
+    auditAreas = [],
+    process: processMaster = []
+  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS', 'AUDIT_AREA', 'PROCESS']);
 
   // Criteria Dialog state
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
   const [selectedCriteriaIds, setSelectedCriteriaIds] = useState([]);
+
+  // Custom Criteria Dialog state
+  const [customCriteriaOpen, setCustomCriteriaOpen] = useState(false);
+  const [customCriteriaForm, setCustomCriteriaForm] = useState({
+    seqNo: '',
+    clause: '',
+    criteriaDetails: '',
+    attachmentReq: 'NO',
+    remarks: ''
+  });
+  const [customAttachments, setCustomAttachments] = useState([]);
 
   useEffect(() => {
     if (isEditing) {
@@ -223,7 +240,10 @@ export default function AddAuditSchedule() {
         fromEmailToCustomer: extras.fromEmailToCustomer || '',
         subcontractorName: extras.subcontractorName || '',
         supplierName: extras.supplierName || '',
-        coOrdinator: extras.coOrdinator || ''
+        processName: extras.processName || '',
+        coOrdinator: extras.coOrdinator || '',
+        auditZone: extras.auditZone || '',
+        auditAreaDetail: extras.auditAreaDetail || ''
       });
       setCriteriaList(data.criteriaList || []);
     } catch (error) {
@@ -292,7 +312,8 @@ export default function AddAuditSchedule() {
     const category = getAuditCategory(formData.auditType);
     const rules = [
       { field: 'auditType', label: 'Audit Type', required: true },
-      { field: 'auditArea', label: 'Audit Area', required: true },
+      { field: 'auditZone', label: 'Zone', required: true },
+      { field: 'auditAreaDetail', label: 'Area', required: true },
       { field: 'auditDate', label: 'Audit Date', required: true },
       { field: 'department', label: 'Department', required: true },
       { field: 'auditee', label: 'Auditee', required: true },
@@ -304,7 +325,7 @@ export default function AddAuditSchedule() {
       rules.push({ field: 'contactName', label: 'Contact Name', required: true });
       rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
       if (formData.emailToCustomer === 'YES') {
-        rules.push({ field: 'fromEmailToCustomer', label: 'From Email', required: true });
+        rules.push({ field: 'fromEmailToCustomer', label: 'From Email to Customer', required: true });
       }
     } else if (category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
       rules.push({ field: 'externalName', label: 'External Name', required: true });
@@ -318,6 +339,9 @@ export default function AddAuditSchedule() {
       rules.push({ field: 'auditor', label: 'Auditor', required: true });
     } else if (category === 'SUPPLIER_AUDIT') {
       rules.push({ field: 'supplierName', label: 'Supplier Name', required: true });
+      rules.push({ field: 'auditor', label: 'Auditor', required: true });
+    } else if (category === 'PROCESS_AUDIT') {
+      rules.push({ field: 'processName', label: 'Process Name', required: true });
       rules.push({ field: 'auditor', label: 'Auditor', required: true });
     } else {
       rules.push({ field: 'auditor', label: 'Auditor', required: true });
@@ -366,7 +390,10 @@ export default function AddAuditSchedule() {
         fromEmailToCustomer: formData.fromEmailToCustomer || '',
         subcontractorName: formData.subcontractorName || '',
         supplierName: formData.supplierName || '',
-        coOrdinator: formData.coOrdinator || ''
+        processName: formData.processName || '',
+        coOrdinator: formData.coOrdinator || '',
+        auditZone: formData.auditZone || '',
+        auditAreaDetail: formData.auditAreaDetail || ''
       };
       
       const payload = { 
@@ -418,7 +445,10 @@ export default function AddAuditSchedule() {
         subcontractorName: '',
         supplierName: '',
         coOrdinator: '',
-        itemCode: ''
+        itemCode: '',
+        processName: '',
+        auditZone: '',
+        auditAreaDetail: ''
       });
       setCriteriaList([]);
       generateScheduleNo();
@@ -428,6 +458,56 @@ export default function AddAuditSchedule() {
 
   const handleRemoveCriteria = (index) => {
     setCriteriaList((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleOpenCustomCriteria = () => {
+    const nextSeq = criteriaList.length > 0 
+      ? Math.max(...criteriaList.map(c => parseInt(c.seqNo, 10) || 0)) + 1 
+      : 1;
+    
+    setCustomCriteriaForm({
+      seqNo: nextSeq,
+      clause: '',
+      criteriaDetails: '',
+      attachmentReq: 'NO',
+      remarks: ''
+    });
+    setCustomAttachments([]);
+    setCustomCriteriaOpen(true);
+  };
+
+  const handleSaveCustomCriteria = () => {
+    if (!customCriteriaForm.seqNo || !customCriteriaForm.clause || !customCriteriaForm.criteriaDetails) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Please fill in all required fields (Seq No, Clause, Criteria Details).',
+        severity: 'warning',
+        variant: 'alert'
+      }));
+      return;
+    }
+
+    if (customCriteriaForm.attachmentReq === 'YES' && customAttachments.length === 0) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Attachment is mandatory when Attachment Req is YES.',
+        severity: 'warning',
+        variant: 'alert'
+      }));
+      return;
+    }
+
+    const newItem = {
+      seqNo: parseInt(customCriteriaForm.seqNo, 10) || criteriaList.length + 1,
+      clause: customCriteriaForm.clause,
+      criteriaDetails: customCriteriaForm.criteriaDetails,
+      attachmentReq: customCriteriaForm.attachmentReq || 'NO',
+      remarks: customCriteriaForm.remarks || '',
+      attachmentInfo: customAttachments.length > 0 ? JSON.stringify(customAttachments) : ''
+    };
+
+    setCriteriaList((prev) => [...prev, newItem]);
+    setCustomCriteriaOpen(false);
   };
 
   const handleAddSelectedCriteria = () => {
@@ -447,7 +527,15 @@ export default function AddAuditSchedule() {
 
   useKeyboardShortcuts({
     'ctrl+s': handleSave,
-    'ctrl+n': () => setCriteriaDialogOpen(true),
+    'ctrl+n': () => {
+      if (perms.write) {
+        if (category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
+          handleOpenCustomCriteria();
+        } else {
+          setCriteriaDialogOpen(true);
+        }
+      }
+    },
     'escape': () => navigate('/qms/audit/schedule')
   });
 
@@ -466,6 +554,14 @@ export default function AddAuditSchedule() {
       return matchesType && matchesDept && !isAlreadyAdded;
     });
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
+
+  const zones = useMemo(() => {
+    return (auditAreas || []).filter(a => a && a.type === 'ZONE' && a.status === 'ACTIVE');
+  }, [auditAreas]);
+
+  const areas = useMemo(() => {
+    return (auditAreas || []).filter(a => a && a.type === 'AREA' && a.status === 'ACTIVE');
+  }, [auditAreas]);
 
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
@@ -544,6 +640,158 @@ export default function AddAuditSchedule() {
                 <MenuItem value="CANCELLED">CANCELLED</MenuItem>
               </BOSTextField>
 
+              <BOSTextField
+                required
+                type="number"
+                label="Criteria Min Count"
+                name="criteriaMinCount"
+                value={formData.criteriaMinCount}
+                onChange={handleChange}
+                error={!!errors.criteriaMinCount}
+                helperText={errors.criteriaMinCount}
+                sx={{ display: 'none' }}
+              />
+            </Box>
+          </BOSFormSection>
+
+          {/* Card 2: Audit Specifics */}
+          <BOSFormSection icon={<IconCalendarEvent size={20} color={theme.palette.secondary.main} />} title="Audit Specifics">
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
+              <Autocomplete
+                options={departments}
+                getOptionLabel={(option) => option.departmentName || ''}
+                value={departments.find((d) => d.departmentName === formData.department) || null}
+                onChange={(event, newValue) => {
+                  setFormData({ ...formData, department: newValue ? newValue.departmentName : '', auditee: '' }); // Reset auditee when dept changes
+                }}
+                disabled={!perms.write}
+                renderInput={(params) => (
+                  <BOSTextField
+                    {...params}
+                    required
+                    label="Department"
+                    error={!!errors.department}
+                    helperText={errors.department}
+                  />
+                )}
+              />
+
+              <Autocomplete
+                options={auditTypes}
+                getOptionLabel={(option) => option.auditType || ''}
+                value={auditTypes.find((t) => t.auditType === formData.auditType) || null}
+                onChange={(event, newValue) => {
+                  const mappedNames = newValue && newValue.auditArea ? newValue.auditArea.split(',').map(s => s.trim()) : [];
+                  const matchedZone = (auditAreas || []).find(a => a && a.type === 'ZONE' && mappedNames.includes(a.description))?.description || '';
+                  const matchedArea = (auditAreas || []).find(a => a && a.type === 'AREA' && mappedNames.includes(a.description))?.description || '';
+                  
+                  setFormData((prev) => ({ 
+                    ...prev, 
+                    auditType: newValue ? newValue.auditType : '',
+                    auditArea: matchedZone && matchedArea ? `${matchedZone} / ${matchedArea}` : (matchedZone || matchedArea || ''),
+                    auditZone: matchedZone,
+                    auditAreaDetail: matchedArea
+                  }));
+                }}
+                disabled={!perms.write}
+                renderInput={(params) => (
+                  <BOSTextField
+                    {...params}
+                    required
+                    label="Audit Type"
+                    error={!!errors.auditType}
+                    helperText={errors.auditType}
+                  />
+                )}
+              />
+
+              {/* Separate Dropdowns for Zone and Area rendered side-by-side */}
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: { xs: 'column', sm: 'row' }, 
+                alignItems: { xs: 'flex-start', sm: 'center' }, 
+                gap: { xs: 0.5, sm: 2 },
+                gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 2' }
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', minWidth: { sm: '120px' } }}>
+                  Audit Zone/Area <span style={{ color: 'red' }}>*</span>
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1.5, flex: 1, width: '100%' }}>
+                  <BOSTextField
+                    select
+                    required
+                    label="Zone"
+                    name="auditZone"
+                    value={formData.auditZone}
+                    onChange={(e) => {
+                      const zoneVal = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        auditZone: zoneVal,
+                        auditArea: zoneVal && prev.auditAreaDetail ? `${zoneVal} / ${prev.auditAreaDetail}` : (zoneVal || prev.auditAreaDetail || '')
+                      }));
+                    }}
+                    error={!!errors.auditZone || !!errors.auditArea}
+                    helperText={errors.auditZone || errors.auditArea}
+                    sx={{ flex: 1 }}
+                  >
+                    <MenuItem value="">-SELECT ZONE-</MenuItem>
+                    {zones.map((z) => (
+                      <MenuItem key={z.id} value={z.description}>{z.description}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                  
+                  <BOSTextField
+                    select
+                    required
+                    label="Area"
+                    name="auditAreaDetail"
+                    value={formData.auditAreaDetail}
+                    onChange={(e) => {
+                      const areaVal = e.target.value;
+                      setFormData((prev) => ({
+                        ...prev,
+                        auditAreaDetail: areaVal,
+                        auditArea: prev.auditZone && areaVal ? `${prev.auditZone} / ${areaVal}` : (prev.auditZone || areaVal || '')
+                      }));
+                    }}
+                    error={!!errors.auditAreaDetail}
+                    helperText={errors.auditAreaDetail}
+                    sx={{ flex: 1 }}
+                  >
+                    <MenuItem value="">-SELECT AREA-</MenuItem>
+                    {areas.map((a) => (
+                      <MenuItem key={a.id} value={a.description}>{a.description}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </Box>
+              </Box>
+
+              {/* Dynamic Field: Process Name for Process Audit */}
+              {category === 'PROCESS_AUDIT' && (
+                <Autocomplete
+                  options={processMaster || []}
+                  getOptionLabel={(option) => option?.processName || ''}
+                  value={(processMaster || []).find((p) => p?.processName === formData.processName) || null}
+                  onChange={(event, newValue) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      processName: newValue ? newValue.processName : ''
+                    }));
+                  }}
+                  disabled={!perms.write}
+                  renderInput={(params) => (
+                    <BOSTextField
+                      {...params}
+                      required
+                      label="Process Name"
+                      error={!!errors.processName}
+                      helperText={errors.processName}
+                    />
+                  )}
+                />
+              )}
+
               {/* Dynamic Field: Item Code for Product Audit */}
               {category === 'PRODUCT_AUDIT' && (
                 <BOSTextField
@@ -583,187 +831,115 @@ export default function AddAuditSchedule() {
                 />
               )}
 
-              {/* Dynamic Field: Customer Name for Customer Audit */}
+              {/* Customer Details: Rendered conditionally inside Audit Specifics section */}
               {category === 'CUSTOMER_AUDIT' && (
-                <Autocomplete
-                  options={customers || []}
-                  getOptionLabel={(option) => option?.customerName || ''}
-                  value={(customers || []).find((c) => c?.customerName === formData.customerName) || null}
-                  onChange={(event, newValue) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      customerName: newValue ? newValue.customerName : '',
-                      contactName: ''
-                    }));
-                  }}
-                  renderInput={(params) => (
+                <>
+                  <Autocomplete
+                    options={customers || []}
+                    getOptionLabel={(option) => option?.customerName || ''}
+                    value={(customers || []).find((c) => c?.customerName === formData.customerName) || null}
+                    onChange={(event, newValue) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        customerName: newValue ? newValue.customerName : '',
+                        contactName: ''
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <BOSTextField
+                        {...params}
+                        required
+                        label="Customer Name"
+                        error={!!errors.customerName}
+                        helperText={errors.customerName}
+                      />
+                    )}
+                  />
+
+                  <Autocomplete
+                    options={(contacts || []).filter(c => c && ((c.groupName === formData.customerName && c.status === 'Active') || c.contactName === formData.contactName))}
+                    getOptionLabel={(option) => option?.contactName || ''}
+                    value={(contacts || []).find(c => c?.contactName === formData.contactName) || null}
+                    onChange={(event, newValue) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        contactName: newValue ? newValue.contactName : ''
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <BOSTextField
+                        {...params}
+                        required
+                        label="Contact Name"
+                        error={!!errors.contactName}
+                        helperText={errors.contactName}
+                      />
+                    )}
+                  />
+
+                  <BOSTextField
+                    select
+                    label="Email To Customer"
+                    name="emailToCustomer"
+                    value={formData.emailToCustomer}
+                    onChange={handleChange}
+                    error={!!errors.emailToCustomer}
+                    helperText={errors.emailToCustomer}
+                  >
+                    <MenuItem value="">-Select-</MenuItem>
+                    <MenuItem value="YES">YES</MenuItem>
+                    <MenuItem value="NO">NO</MenuItem>
+                  </BOSTextField>
+
+                  {formData.emailToCustomer === 'YES' && (
                     <BOSTextField
-                      {...params}
                       required
-                      label="Customer Name"
-                      error={!!errors.customerName}
-                      helperText={errors.customerName}
+                      label="From Email to Customer"
+                      name="fromEmailToCustomer"
+                      value={formData.fromEmailToCustomer}
+                      onChange={handleChange}
+                      error={!!errors.fromEmailToCustomer}
+                      helperText={errors.fromEmailToCustomer}
                     />
                   )}
-                />
+                </>
               )}
 
-              {/* Dynamic Field: External Name for ISO / Supplier Assessment Audit */}
+              {/* Dynamic Fields for ISO / Supplier Assessment Audit */}
               {(category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
-                <BOSTextField
-                  required
-                  label="External Name"
-                  name="externalName"
-                  value={formData.externalName}
-                  onChange={handleChange}
-                  error={!!errors.externalName}
-                  helperText={errors.externalName}
-                />
-              )}
-
-              <BOSTextField
-                required
-                type="number"
-                label="Criteria Min Count"
-                name="criteriaMinCount"
-                value={formData.criteriaMinCount}
-                onChange={handleChange}
-                error={!!errors.criteriaMinCount}
-                helperText={errors.criteriaMinCount}
-                sx={{ display: 'none' }}
-              />
-            </Box>
-          </BOSFormSection>
-
-          {/* Card 2: Audit Specifics */}
-          <BOSFormSection icon={<IconCalendarEvent size={20} color={theme.palette.secondary.main} />} title="Audit Specifics">
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
-              <Autocomplete
-                options={departments}
-                getOptionLabel={(option) => option.departmentName || ''}
-                value={departments.find((d) => d.departmentName === formData.department) || null}
-                onChange={(event, newValue) => {
-                  setFormData({ ...formData, department: newValue ? newValue.departmentName : '', auditee: '' }); // Reset auditee when dept changes
-                }}
-                disabled={!perms.write}
-                renderInput={(params) => (
+                <>
                   <BOSTextField
-                    {...params}
                     required
-                    label="Department"
-                    error={!!errors.department}
-                    helperText={errors.department}
+                    label="External Name"
+                    name="externalName"
+                    value={formData.externalName}
+                    onChange={handleChange}
+                    error={!!errors.externalName}
+                    helperText={errors.externalName}
                   />
-                )}
-              />
-
-              <Autocomplete
-                multiple
-                disableCloseOnSelect
-                options={auditTypes}
-                getOptionLabel={(option) => option.auditType || ''}
-                value={(Array.isArray(auditTypes) ? auditTypes : []).filter((t) => (formData.auditType ? formData.auditType.split(',').includes(t.auditType) : false))}
-                onChange={(event, newValue) => {
-                  const selectedTypeStr = newValue.map((v) => v.auditType).join(',');
-                  const combinedAreas = newValue
-                    .map((v) => v.auditArea)
-                    .filter((a) => a)
-                    .flatMap((a) => a.split(', '))
-                    .map((a) => a.trim());
-                  const uniqueAreas = Array.from(new Set(combinedAreas)).filter((a) => a).join(', ');
-                  
-                  setFormData((prev) => ({ 
-                    ...prev, 
-                    auditType: selectedTypeStr,
-                    auditArea: uniqueAreas
-                  }));
-                }}
-                disabled={!perms.write}
-                renderInput={(params) => (
-                  <BOSTextField
-                    {...params}
-                    required
-                    label="Audit Type"
-                    error={!!errors.auditType}
-                    helperText={errors.auditType}
+                  <Autocomplete
+                    options={(contacts || []).filter(c => c && (c.status === 'Active' || c.contactName === formData.contactName))}
+                    getOptionLabel={(option) => option?.contactName || ''}
+                    value={(contacts || []).find(c => c?.contactName === formData.contactName) || null}
+                    onChange={(event, newValue) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        contactName: newValue ? newValue.contactName : ''
+                      }));
+                    }}
+                    renderInput={(params) => (
+                      <BOSTextField
+                        {...params}
+                        required
+                        label="Contact Name"
+                        error={!!errors.contactName}
+                        helperText={errors.contactName}
+                      />
+                    )}
                   />
-                )}
-              />
-              <BOSTextField
-                required
-                label={category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT' ? 'Audit Zone/Area' : 'Audit Area'}
-                name="auditArea"
-                value={formData.auditArea}
-                onChange={handleChange}
-                error={!!errors.auditArea}
-                helperText={errors.auditArea}
-                disabled={!perms.write}
-              />
-              
-              {/* Dynamic Field: Contact Name */}
-              {category === 'CUSTOMER_AUDIT' && (
-                <Autocomplete
-                  options={(contacts || []).filter(c => c && ((c.groupName === formData.customerName && c.status === 'Active') || c.contactName === formData.contactName))}
-                  getOptionLabel={(option) => option?.contactName || ''}
-                  value={(contacts || []).find(c => c?.contactName === formData.contactName) || null}
-                  onChange={(event, newValue) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      contactName: newValue ? newValue.contactName : ''
-                    }));
-                  }}
-                  renderInput={(params) => (
-                    <BOSTextField
-                      {...params}
-                      required
-                      label="Contact Name"
-                      error={!!errors.contactName}
-                      helperText={errors.contactName}
-                    />
-                  )}
-                />
-              )}
-              {(category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') && (
-                <BOSTextField
-                  required
-                  label="Contact Name"
-                  name="contactName"
-                  value={formData.contactName}
-                  onChange={handleChange}
-                  error={!!errors.contactName}
-                  helperText={errors.contactName}
-                />
+                </>
               )}
 
-              {/* Dynamic Field: Email to Customer */}
-              {category === 'CUSTOMER_AUDIT' && (
-                <BOSTextField
-                  select
-                  label="Email To Customer"
-                  name="emailToCustomer"
-                  value={formData.emailToCustomer}
-                  onChange={handleChange}
-                  error={!!errors.emailToCustomer}
-                  helperText={errors.emailToCustomer}
-                >
-                  <MenuItem value="">-Select-</MenuItem>
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-              )}
-
-              {/* Dynamic Field: From Email to Customer */}
-              {category === 'CUSTOMER_AUDIT' && formData.emailToCustomer === 'YES' && (
-                <BOSTextField
-                  required
-                  label="From Email"
-                  name="fromEmailToCustomer"
-                  value={formData.fromEmailToCustomer}
-                  onChange={handleChange}
-                  error={!!errors.fromEmailToCustomer}
-                  helperText={errors.fromEmailToCustomer}
-                />
-              )}
               <BOSTextField
                 required
                 type="date"
@@ -856,6 +1032,8 @@ export default function AddAuditSchedule() {
               )}
             </Box>
           </BOSFormSection>
+
+
 
           {/* Card 3: Personnel Information */}
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.warning.main} />} title="Personnel Information">
@@ -994,17 +1172,32 @@ export default function AddAuditSchedule() {
             {perms.write && (
               <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box />
-                <Tooltip title={category === 'CUSTOMER_AUDIT' ? 'Criteria are read-only for Customer Audits' : shortcutTooltip('Add Criteria', 'Ctrl + N')}>
-                  <span>
-                    <Button variant="contained" size="small" onClick={() => setCriteriaDialogOpen(true)} disabled={category === 'CUSTOMER_AUDIT'} startIcon={<IconPlus size={16} />} sx={{ borderRadius: '8px' }}>
-                      Add Criteria
-                    </Button>
-                  </span>
-                </Tooltip>
+                <Stack direction="row" spacing={1.5}>
+                  <Tooltip title={shortcutTooltip('Add Criteria', 'Ctrl + N')}>
+                    <span>
+                      <Button
+                        variant="contained"
+                        size="small"
+                        onClick={() => {
+                          if (category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
+                            handleOpenCustomCriteria();
+                          } else {
+                            setCriteriaDialogOpen(true);
+                          }
+                        }}
+                        disabled={!perms.write}
+                        startIcon={<IconPlus size={16} />}
+                        sx={{ borderRadius: '8px' }}
+                      >
+                        Add Criteria
+                      </Button>
+                    </span>
+                  </Tooltip>
+                </Stack>
               </Box>
             )}
             <BOSDataTable
-              columns={(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') ? [
+              columns={(category === 'SUPPLIER_ASSESSMENT') ? [
                 { id: 'clause', label: 'Clause', minWidth: 100 },
                 { id: 'criteriaDetails', label: 'Agenda', minWidth: 300 },
                 { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
@@ -1025,7 +1218,7 @@ export default function AddAuditSchedule() {
               onPageChange={() => {}}
               onSizeChange={() => {}}
               onDeleteRow={perms.write ? (row) => handleRemoveCriteria(criteriaList.indexOf(row)) : undefined}
-              showActions={perms.write && category !== 'CUSTOMER_AUDIT'}
+              showActions={perms.write}
               renderCell={(col, row, idx) => {
                 if (col.id === 'index') return idx + 1;
                 if (col.id === 'attachmentReq') return <Chip label={row.attachmentReq} size="small" sx={getStatusChipSx(row.attachmentReq === 'YES' ? 'ACTIVE' : 'INACTIVE')} />;
@@ -1047,7 +1240,7 @@ export default function AddAuditSchedule() {
       >
         <Paper sx={{ p: 0, height: 500, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <BOSDataTable
-            columns={(category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') ? [
+            columns={(category === 'SUPPLIER_ASSESSMENT') ? [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
               { id: 'criteriaText', label: 'Agenda', minWidth: 400 },
@@ -1083,6 +1276,74 @@ export default function AddAuditSchedule() {
             }}
           />
         </Paper>
+      </BOSFormDialog>
+
+      {/* Custom Criteria Popup Dialog */}
+      <BOSFormDialog
+        open={customCriteriaOpen}
+        onClose={() => setCustomCriteriaOpen(false)}
+        onSave={handleSaveCustomCriteria}
+        onClear={() => {
+          setCustomCriteriaForm({ seqNo: criteriaList.length + 1, clause: '', criteriaDetails: '', attachmentReq: 'NO', remarks: '' });
+          setCustomAttachments([]);
+        }}
+        title="Add Custom Criteria"
+        maxWidth="sm"
+      >
+        <BOSFormSection icon={<IconPlus size={20} color={theme.palette.primary.main} />} title="Criteria Details">
+          <BOSTextField
+            required
+            type="number"
+            name="seqNo"
+            label="Seq No"
+            value={customCriteriaForm.seqNo}
+            onChange={(e) => setCustomCriteriaForm(prev => ({ ...prev, seqNo: e.target.value }))}
+          />
+          <BOSTextField
+            required
+            name="clause"
+            label="Clause"
+            value={customCriteriaForm.clause}
+            onChange={(e) => setCustomCriteriaForm(prev => ({ ...prev, clause: e.target.value }))}
+          />
+          <BOSTextField
+            required
+            multiline
+            rows={3}
+            name="criteriaDetails"
+            label="Criteria Details"
+            value={customCriteriaForm.criteriaDetails}
+            onChange={(e) => setCustomCriteriaForm(prev => ({ ...prev, criteriaDetails: e.target.value }))}
+          />
+          <BOSTextField
+            select
+            name="attachmentReq"
+            label="Attachment Req"
+            value={customCriteriaForm.attachmentReq}
+            onChange={(e) => setCustomCriteriaForm(prev => ({ ...prev, attachmentReq: e.target.value }))}
+          >
+            <MenuItem value="YES">YES</MenuItem>
+            <MenuItem value="NO">NO</MenuItem>
+          </BOSTextField>
+          <BOSTextField
+            name="remarks"
+            label="Remarks"
+            value={customCriteriaForm.remarks}
+            onChange={(e) => setCustomCriteriaForm(prev => ({ ...prev, remarks: e.target.value }))}
+          />
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+              Attachment {customCriteriaForm.attachmentReq === 'YES' && <span style={{ color: 'red' }}>*</span>}
+            </Typography>
+            <BOSFileUpload
+              files={customAttachments}
+              onChange={setCustomAttachments}
+              module="QMS"
+              multiple={false}
+              compact={true}
+            />
+          </Box>
+        </BOSFormSection>
       </BOSFormDialog>
     </>
   );

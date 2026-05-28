@@ -146,7 +146,7 @@ export default function AuditTypeMaster() {
   };
 
   const filteredRows = useMemo(() => {
-    return rows.filter((row) => {
+    const filtered = rows.filter((row) => {
       const statusFilter = globalFilters?.status || 'ACTIVE';
       const rowStatusTrimmed = row.status ? row.status.trim() : '';
       const matchesStatus = statusFilter === 'All' || rowStatusTrimmed === statusFilter;
@@ -185,6 +185,8 @@ export default function AuditTypeMaster() {
 
       return matchesStatus && matchesAuditType && matchesStandard && matchesDescription && matchesAuditArea && matchesCriteriaType && matchesCreatedUser && matchesUpdatedUser && matchesSearch;
     });
+    // Sort descending by id so latest added audit types appear at the top
+    return [...filtered].sort((a, b) => (b.id || 0) - (a.id || 0));
   }, [rows, globalQuery, globalFilters]);
 
   return (
@@ -231,15 +233,15 @@ export default function AuditTypeMaster() {
         onDoubleClickRow={perms.write ? handleOpenEdit : undefined}
         onEditRow={perms.write ? handleOpenEdit : undefined}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
-        renderCell={(col, row) => {
+        renderCell={(col, row, idx) => {
           const val = row[col.id];
-          if (col.id === 'index') return null;
-          if (col.id === 'createdUser') {
-            const userVal = row.createdUser || row.createdBy;
+          if (col.id === 'index') return idx + 1 + page * size;
+          if (col.id === 'createdUser' || col.id === 'createdBy') {
+            const userVal = row.createdUser || row.createdBy || val;
             return (userVal ? userVal.trim() : '') || '-';
           }
-          if (col.id === 'updatedUser') {
-            const userVal = row.updatedUser || row.updatedBy;
+          if (col.id === 'updatedUser' || col.id === 'updatedBy') {
+            const userVal = row.updatedUser || row.updatedBy || val;
             return (userVal ? userVal.trim() : '') || '-';
           }
           if (col.id.toLowerCase().includes('date')) {

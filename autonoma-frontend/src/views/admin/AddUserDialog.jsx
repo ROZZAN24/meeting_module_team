@@ -1,14 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useDispatch } from 'react-redux';
-import { 
-  Box, 
-  Grid, 
-  Typography, 
-  MenuItem, 
-  InputAdornment, 
-  IconButton, 
-  Avatar, 
+import {
+  Box,
+  Grid,
+  Typography,
+  MenuItem,
+  InputAdornment,
+  IconButton,
+  Avatar,
   Tooltip,
   Paper,
   Button,
@@ -21,9 +21,9 @@ import {
   Slider
 } from '@mui/material';
 import {
-  IconPhoto, 
-  IconPencil, 
-  IconShieldLock, 
+  IconPhoto,
+  IconPencil,
+  IconShieldLock,
   IconCrop,
   IconX,
   IconCamera,
@@ -47,7 +47,7 @@ import { getFaceDescriptor } from 'utils/faceApi';
 export default function AddUserDialog({ open, onClose, editingUser, employees, fetchUsers }) {
   const dispatch = useDispatch();
   const { user: currentUser, updateProfile } = useAuth();
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -109,20 +109,20 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
     if (!videoRef.current) return;
     setCapturingPoses(true);
     setPoseCount(0);
-    
+
     const descriptors = [];
     let bestImage = null;
-    
+
     for (let i = 0; i < 3; i++) {
       setPoseCount(i + 1);
       // Wait for user to change pose
       await new Promise(r => setTimeout(r, 1200));
-      
+
       const desc = await getFaceDescriptor(videoRef.current);
       if (desc) {
         descriptors.push(desc);
       }
-      
+
       // Save the first frame as the display image
       if (i === 0) {
         const canvas = document.createElement('canvas');
@@ -133,7 +133,7 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
         bestImage = canvas.toDataURL('image/jpeg');
       }
     }
-    
+
     if (descriptors.length > 0) {
       // Average the descriptors
       const avgDesc = new Array(128).fill(0);
@@ -141,9 +141,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
         for (let j = 0; j < 128; j++) avgDesc[j] += d[j];
       }
       for (let j = 0; j < 128; j++) avgDesc[j] /= descriptors.length;
-      
-      setFormData(prev => ({ 
-        ...prev, 
+
+      setFormData(prev => ({
+        ...prev,
         faceImage: bestImage,
         faceDescriptor: JSON.stringify(avgDesc)
       }));
@@ -151,7 +151,7 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
     } else {
       dispatch(openSnackbar({ open: true, message: 'Could not detect face in any pose. Please try again.', variant: 'alert', severity: 'error' }));
     }
-    
+
     stopCamera();
     setCapturingPoses(false);
     setPoseCount(0);
@@ -199,14 +199,14 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
 
   const handleSave = async () => {
     if (!validateForm()) return;
-    
+
     setIsSubmitting(true);
     try {
       if (editingUser) {
-        await axios.put(`/api/users/update/${editingUser.userId}`, { 
-          empId: Number(formData.empId), 
-          password: formData.password, 
-          status: Number(formData.status), 
+        await axios.put(`/api/users/update/${editingUser.userId}`, {
+          empId: Number(formData.empId),
+          password: formData.password,
+          status: Number(formData.status),
           imgName: formData.imgName,
           faceImage: formData.faceImage,
           faceDescriptor: formData.faceDescriptor,
@@ -214,11 +214,11 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           autoLogoutOnFaceAbsence: Number(formData.autoLogoutOnFaceAbsence)
         });
       } else {
-        await axios.post('/api/users/create', { 
-          userId: formData.userId, 
-          empId: Number(formData.empId), 
-          password: formData.password, 
-          status: Number(formData.status), 
+        await axios.post('/api/users/create', {
+          userId: formData.userId,
+          empId: Number(formData.empId),
+          password: formData.password,
+          status: Number(formData.status),
           imgName: formData.imgName,
           faceImage: formData.faceImage,
           faceDescriptor: formData.faceDescriptor,
@@ -232,14 +232,14 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
       }
 
       console.log(`[AddUserDialog] User ${editingUser ? 'Update' : 'Creation'} Successful:`, formData.userId);
-      dispatch(openSnackbar({ 
-        open: true, 
-        message: `User ${editingUser ? 'updated' : 'created'} successfully`, 
-        variant: 'alert', 
+      dispatch(openSnackbar({
+        open: true,
+        message: `User ${editingUser ? 'updated' : 'created'} successfully`,
+        variant: 'alert',
         severity: 'success',
         alert: { variant: 'filled' }
       }));
-      
+
       console.log('[AddUserDialog] Refreshing users list...');
       await fetchUsers();
       console.log('[AddUserDialog] Closing dialog.');
@@ -256,11 +256,11 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
       } else {
         msg = err.message || 'Save failed';
       }
-      
-      dispatch(openSnackbar({ 
-        open: true, 
-        message: msg, 
-        variant: 'alert', 
+
+      dispatch(openSnackbar({
+        open: true,
+        message: msg,
+        variant: 'alert',
         severity: 'error',
         alert: { variant: 'filled' }
       }));
@@ -315,10 +315,10 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
       >
         <Grid container spacing={3}>
           <Grid item xs={12} md={4}>
-            <Box sx={{ 
-              p: 4, height: '100%', borderRadius: 3, bgcolor: 'background.paper', 
-              border: '2px dashed', borderColor: 'primary.light', 
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 
+            <Box sx={{
+              p: 4, height: '100%', borderRadius: 3, bgcolor: 'background.paper',
+              border: '2px dashed', borderColor: 'primary.light',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4
             }}>
               <Typography variant="subtitle2" fontWeight={800} color="primary.main" sx={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>
                 PROFILE IDENTITY
@@ -332,8 +332,8 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                   ) : null}
                   arrow placement="right"
                 >
-                  <Avatar 
-                    src={formData.imgName ? getUserImageUrl(formData.imgName) : autonomaLogo} 
+                  <Avatar
+                    src={formData.imgName ? getUserImageUrl(formData.imgName) : autonomaLogo}
                     sx={{ width: 130, height: 130, border: '4px solid white', bgcolor: 'primary.light', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', cursor: formData.imgName ? 'pointer' : 'default' }}
                   >
                     <IconPhoto size={50} />
@@ -389,7 +389,7 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                     value={formData.password}
                     onChange={handleChange}
                     error={errors.password}
-                    InputProps={{ 
+                    InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton onClick={() => setShowPassword(!showPassword)}>
@@ -452,8 +452,8 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                       <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </Box>
                   ) : (
-                    <Avatar 
-                      src={formData.faceImage || null} 
+                    <Avatar
+                      src={formData.faceImage || null}
                       sx={{ width: 120, height: 120, border: '3px solid', borderColor: formData.faceImage ? 'success.main' : 'grey.300', bgcolor: 'grey.100' }}
                     >
                       <IconPhoto size={40} />
@@ -463,8 +463,8 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                 <Grid item xs={12} sm={8}>
                   <Stack spacing={1.5}>
                     <Typography variant="body2" color="textSecondary">
-                      {formData.faceImage 
-                        ? 'Face biometric registered. You can use Face ID to sign in.' 
+                      {formData.faceImage
+                        ? 'Face biometric registered. You can use Face ID to sign in.'
                         : 'No face registered yet. Turn on the camera to scan and register.'}
                     </Typography>
                     <Stack direction="row" spacing={1}>
@@ -526,7 +526,7 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           </Box>
           <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
             <Button fullWidth variant="outlined" color="inherit" onClick={() => setIsCropOpen(false)} sx={{ borderRadius: '10px', fontWeight: 700 }}>Cancel</Button>
-            <Button 
+            <Button
               fullWidth variant="contained" color="primary" disabled={isUploading}
               startIcon={isUploading ? <CircularProgress size={18} color="inherit" /> : <IconCrop size={18} />}
               sx={{ borderRadius: '10px', fontWeight: 700 }}
@@ -537,6 +537,31 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
           </Stack>
         </DialogActions>
       </Dialog>
+    </>
+  );
+}
+
+AddUserDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  editingUser: PropTypes.object,
+  employees: PropTypes.array.isRequired,
+  fetchUsers: PropTypes.func.isRequired
+};
+          </Box >
+  <Stack direction="row" spacing={2} sx={{ width: '100%' }}>
+    <Button fullWidth variant="outlined" color="inherit" onClick={() => setIsCropOpen(false)} sx={{ borderRadius: '10px', fontWeight: 700 }}>Cancel</Button>
+    <Button
+      fullWidth variant="contained" color="primary" disabled={isUploading}
+      startIcon={isUploading ? <CircularProgress size={18} color="inherit" /> : <IconCrop size={18} />}
+      sx={{ borderRadius: '10px', fontWeight: 700 }}
+      onClick={handleApplyCrop}
+    >
+      {isUploading ? 'Uploading...' : 'Apply Crop'}
+    </Button>
+  </Stack>
+        </DialogActions >
+      </Dialog >
     </>
   );
 }
