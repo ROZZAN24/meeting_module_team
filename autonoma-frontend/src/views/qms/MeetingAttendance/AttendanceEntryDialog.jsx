@@ -162,8 +162,14 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
 
     try {
       if (isEdit) {
-        onClose();
-        return;
+        // MARK OUT ACTION
+        if (item.outTime) {
+           dispatch(openSnackbar({ open: true, message: 'Out Time already marked', variant: 'alert', severity: 'info' }));
+           onClose();
+           return;
+        }
+        await axios.put(`${API_PATHS.QMS.MEETING_ATTENDANCE}/${item.id}/out`);
+        dispatch(openSnackbar({ open: true, message: 'Out Time marked successfully', variant: 'alert', severity: 'success' }));
       } else {
         if (!attendeeName) {
           dispatch(openSnackbar({ open: true, message: 'Please select an attendee', variant: 'alert', severity: 'warning' }));
@@ -198,7 +204,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
       onClose={onClose}
       onSave={handleSaveAction}
       title={isEdit ? "View/Update Attendance" : "Meeting User Attendance"}
-      saveLabel={isEdit ? "Close" : "Mark In"}
+      saveLabel={isEdit ? (item.outTime ? "Close" : "Mark Out") : "Mark In"}
       maxWidth="sm"
       contentSx={{ overflowY: 'hidden', p: 3 }}
     >

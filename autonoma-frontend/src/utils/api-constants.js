@@ -13,7 +13,7 @@ export const API_PATHS = {
     ACTIVE_DEPARTMENTS: `${API_BASE}/master/hr/departments/active`,
     DESIGNATIONS: `${API_BASE}/master/hr/designations`,
     CATEGORIES: `${API_BASE}/master/hr/categories`,
-    LEVELS: `${API_BASE}/master/hr/levels`,
+    LEVELS: `${API_BASE}/master/hr/designation-levels`,
     DESIGNATION_LEVELS: `${API_BASE}/master/hr/designation-levels`,
     TYPES: `${API_BASE}/master/hr/employee-types`,
     EMPLOYEES: `${API_BASE}/master/hr/employees`,
