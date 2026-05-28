@@ -8,6 +8,7 @@ BEGIN
         task_suffix VARCHAR(20),
         task_digit INT;
 END
+GO
 
 UPDATE AD_PREFIX_CREDENTIALS
 SET task_prefix = 'INT/',
