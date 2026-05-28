@@ -106,9 +106,12 @@ public class ChecklistService {
             }
 
             if (department != null && !department.isEmpty()) {
-                Join<MasterChecklist, ChecklistDepartment> deptJoin = root.join("departments");
-                Join<ChecklistDepartment, Department> dObjJoin = deptJoin.join("department");
-                predicates.add(cb.equal(dObjJoin.get("departmentName"), department));
+                Subquery<Long> deptSub = query.subquery(Long.class);
+                Root<ChecklistDepartment> deptRoot = deptSub.from(ChecklistDepartment.class);
+                Join<ChecklistDepartment, Department> deptObjJoin = deptRoot.join("department");
+                deptSub.select(deptRoot.get("checklist").get("id"));
+                deptSub.where(cb.equal(deptObjJoin.get("departmentName"), department));
+                predicates.add(root.get("id").in(deptSub));
             }
 
             if (seqNo != null && !seqNo.isEmpty()) {
@@ -163,15 +166,18 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(root.get("status").as(String.class)), searchTerm));
                     orPredicates.add(cb.like(cb.lower(root.get("createdBy").as(String.class)), searchTerm));
 
-                    Join<MasterChecklist, ChecklistDepartment> dJoin = root.join("departments", JoinType.LEFT);
-                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName").as(String.class)), searchTerm));
+                    Subquery<Long> dSub = query.subquery(Long.class);
+                    Root<ChecklistDepartment> dRoot = dSub.from(ChecklistDepartment.class);
+                    Join<ChecklistDepartment, Department> dObj = dRoot.join("department");
+                    dSub.select(dRoot.get("checklist").get("id"));
+                    dSub.where(cb.like(cb.lower(dObj.get("departmentName").as(String.class)), searchTerm));
+                    orPredicates.add(root.get("id").in(dSub));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
             }
 
-            query.distinct(true);
+            // distinct(true) removed to avoid dense_rank order by on TEXT/NVARCHAR(MAX) columns in SQL Server
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }
@@ -483,15 +489,18 @@ public class ChecklistService {
                     orPredicates.add(cb.like(cb.lower(cJoin.get("category")), searchTerm));
                     orPredicates.add(cb.like(cb.lower(cJoin.get("frequency")), searchTerm));
 
-                    Join<MasterChecklist, ChecklistDepartment> dJoin = cJoin.join("departments", JoinType.LEFT);
-                    Join<ChecklistDepartment, Department> dObjJoin = dJoin.join("department", JoinType.LEFT);
-                    orPredicates.add(cb.like(cb.lower(dObjJoin.get("departmentName")), searchTerm));
+                    Subquery<Long> dSub = query.subquery(Long.class);
+                    Root<ChecklistDepartment> dRoot = dSub.from(ChecklistDepartment.class);
+                    Join<ChecklistDepartment, Department> dObj = dRoot.join("department");
+                    dSub.select(dRoot.get("checklist").get("id"));
+                    dSub.where(cb.like(cb.lower(dObj.get("departmentName")), searchTerm));
+                    orPredicates.add(cJoin.get("id").in(dSub));
 
                     predicates.add(cb.or(orPredicates.toArray(new Predicate[0])));
                 }
             }
 
-            query.distinct(true);
+            // distinct(true) removed to avoid dense_rank order by on TEXT/NVARCHAR(MAX) columns in SQL Server
             return cb.and(predicates.toArray(new Predicate[0]));
         }, pageable);
     }

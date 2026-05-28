@@ -137,4 +137,15 @@ public class BosConnectController {
     public ResponseEntity<SmartRepliesResponse> getSmartReplies(@PathVariable("id") Long channelId) {
         return ResponseEntity.ok(chatService.getSmartReplies(channelId));
     }
+
+    // --- DELETE CHANNEL ---
+    @DeleteMapping("/channels/{id}")
+    public ResponseEntity<Void> deleteChannel(@PathVariable("id") Long channelId) {
+        String userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return ResponseEntity.status(401).build();
+        }
+        chatService.deleteChannel(channelId, userId);
+        return ResponseEntity.ok().build();
+    }
 }
