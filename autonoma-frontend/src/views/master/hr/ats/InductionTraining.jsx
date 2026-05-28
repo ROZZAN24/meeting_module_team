@@ -210,9 +210,10 @@ export default function InductionTraining() {
     setSelectedAssignment(row);
     setLoading(true);
     try {
-      // Start training for any PENDING or RESCHEDULE assignments of this employee
+      // Start training for any PENDING or RESCHEDULE assignments that this trainer is authorized for
       const startPromises = row.assignments
         .filter(a => a.currentStatus === 'PENDING' || a.currentStatus === 'RESCHEDULE')
+        .filter(a => user?.isBosAdmin === 1 || a.trainerEmpCode === user?.empCode)
         .map(a => axios.post(`/api/hr/induction-training/${a.id}/start`));
       
       if (startPromises.length > 0) {
@@ -334,9 +335,15 @@ export default function InductionTraining() {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
+      // Filter details that this user is authorized to edit
+      const authorizedDetails = trainingDetails.filter(d => {
+        const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
+        return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+      });
+
       // 1. Validation before saving:
       // If any item is marked COMPLETED, check that a skill rating has been selected.
-      const incompleteItems = trainingDetails.filter(d => d.trainerStatus === 'COMPLETED' && (!d.skillRating || d.skillRating < 1));
+      const incompleteItems = authorizedDetails.filter(d => d.trainerStatus === 'COMPLETED' && (!d.skillRating || d.skillRating < 1));
       if (incompleteItems.length > 0) {
         dispatch(openSnackbar({
           open: true,
@@ -381,11 +388,11 @@ export default function InductionTraining() {
       );
       await Promise.all(savePromises);
 
-      // Check and complete assignments if all criteria are filled
+      // Check and complete assignments if all criteria are filled (only for authorized assignments)
       const completePromises = [];
-      const assignmentIdsToCheck = [...new Set(trainingDetails.map(d => d.assignmentId))];
+      const authorizedAssignmentIds = [...new Set(authorizedDetails.map(d => d.assignmentId))];
       
-      assignmentIdsToCheck.forEach(assignmentId => {
+      authorizedAssignmentIds.forEach(assignmentId => {
         const details = trainingDetails.filter(d => d.assignmentId === assignmentId);
         const allCompleted = details.every(d => d.trainerStatus === 'COMPLETED');
         const allRated = details.every(d => d.skillRating !== null && d.skillRating >= 1);
@@ -476,6 +483,10 @@ export default function InductionTraining() {
     const seenMasterIds = new Set();
     const unique = [];
     trainingDetails.forEach(d => {
+      const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
+      const isAuthorized = user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+      if (!isAuthorized) return;
+
       if (d.inductionMasterId) {
         if (!seenMasterIds.has(d.inductionMasterId)) {
           seenMasterIds.add(d.inductionMasterId);
@@ -486,7 +497,7 @@ export default function InductionTraining() {
       }
     });
     return unique;
-  }, [trainingDetails]);
+  }, [trainingDetails, selectedAssignment, user]);
 
   // Filter rows dynamically
   const resolvedRows = useMemo(() => {

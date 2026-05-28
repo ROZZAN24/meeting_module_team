@@ -42,7 +42,6 @@ const columns = [
   },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
   { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
 ];
 

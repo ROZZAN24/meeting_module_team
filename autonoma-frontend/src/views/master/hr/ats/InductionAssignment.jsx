@@ -52,59 +52,7 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
-const columns = [
-  { id: 'index', label: 'Sl.No', minWidth: 60 },
-  { id: 'serialNo', label: 'Assign.ID', bold: true, color: 'primary.main', minWidth: 100 },
-  { id: 'empCode', label: 'Emp.Code', bold: true, minWidth: 100 },
-  { id: 'oldEmpCode', label: 'Old Emp.Code', minWidth: 120 },
-  { id: 'empName', label: 'Employee Name', minWidth: 180 },
-  { id: 'department', label: 'Department', minWidth: 150 },
-  { id: 'designation', label: 'Designation', minWidth: 150 },
-  { id: 'inductionRound', label: 'Round', minWidth: 120 },
-  { id: 'screeningLevel', label: 'Level', minWidth: 100 },
-  { id: 'inductionDate', label: 'Date', minWidth: 120 },
-  { id: 'inductionTime', label: 'Time', minWidth: 100 },
-  { id: 'trainerName', label: 'Trainer/Person', minWidth: 150 },
-  { 
-    id: 'currentStatus', 
-    label: 'Current Status', 
-    minWidth: 130,
-    render: (row) => {
-      const colors = {
-        'PENDING': 'warning',
-        'RESCHEDULE': 'secondary',
-        'TRAINING GIVEN': 'info',
-        'COMPLETED': 'success',
-        'REJECTED': 'error'
-      };
-      return (
-        <Chip 
-          label={row.currentStatus} 
-          size="small" 
-          color={colors[row.currentStatus] || 'default'}
-          sx={{ fontWeight: 700, borderRadius: '6px' }}
-        />
-      );
-    }
-  },
-  { 
-    id: 'inductionStatus', 
-    label: 'Induction Status', 
-    minWidth: 120,
-    render: (row) => (
-      <Chip 
-        label={row.inductionStatus} 
-        variant="outlined"
-        size="small" 
-        color={row.inductionStatus === 'ACTIVE' ? 'success' : 'error'}
-      />
-    )
-  },
-  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
-  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
-  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
-];
+
 
 const INITIAL_STATE = {
   empCode: '',
@@ -120,6 +68,7 @@ const INITIAL_STATE = {
       inductionDate: new Date().toISOString().split('T')[0],
       inductionTime: '09:00',
       trainerName: '',
+      trainerEmpCode: '',
       currentStatus: 'PENDING',
       inductionStatus: 'ACTIVE',
       remarks: ''
@@ -311,6 +260,7 @@ const InductionAssignment = () => {
           inductionDate: row.isVirtual || isCompleted ? new Date().toISOString().split('T')[0] : defaultDate,
           inductionTime: row.isVirtual || isCompleted ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
           trainerName: row.isVirtual || isCompleted ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
+          trainerEmpCode: row.isVirtual || isCompleted ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
           currentStatus: row.isVirtual || isCompleted ? 'PENDING' : (row.currentStatus || 'PENDING'),
           inductionStatus: row.isVirtual || isCompleted ? 'ACTIVE' : (row.inductionStatus || 'ACTIVE'),
           remarks: row.isVirtual || isCompleted ? '' : (row.remarks || '')
@@ -341,6 +291,7 @@ const InductionAssignment = () => {
             inductionDate: row.isVirtual || isCompleted ? new Date().toISOString().split('T')[0] : defaultDate,
             inductionTime: row.isVirtual || isCompleted ? '09:00' : (row.inductionTime && row.inductionTime !== '-' ? normalizeInductionTime(row.inductionTime) : '09:00'),
             trainerName: row.isVirtual || isCompleted ? '' : (row.trainerName && row.trainerName !== '-' ? row.trainerName : ''),
+            trainerEmpCode: row.isVirtual || isCompleted ? '' : (row.trainerEmpCode && row.trainerEmpCode !== '-' ? row.trainerEmpCode : ''),
             currentStatus: row.isVirtual || isCompleted ? 'PENDING' : (row.currentStatus || 'PENDING'),
             inductionStatus: row.isVirtual || isCompleted ? 'ACTIVE' : (row.inductionStatus || 'ACTIVE'),
             remarks: row.isVirtual || isCompleted ? '' : (row.remarks || '')
@@ -549,6 +500,7 @@ const InductionAssignment = () => {
           inductionDate: new Date().toISOString().split('T')[0],
           inductionTime: '09:00',
           trainerName: '',
+          trainerEmpCode: '',
           currentStatus: 'PENDING',
           inductionStatus: 'ACTIVE',
           remarks: ''
@@ -694,7 +646,6 @@ const InductionAssignment = () => {
 
     // Map all dynamic levels to payloads
     const payloads = formData.levels.map(level => {
-      const selectedTrainer = employees.find(e => e.employeeName === level.trainerName);
       const pay = {
         empCode: formData.empCode,
         empName: formData.empName,
@@ -706,7 +657,7 @@ const InductionAssignment = () => {
         inductionDate: level.inductionDate,
         inductionTime: normalizeInductionTime(level.inductionTime),
         trainerName: level.trainerName,
-        trainerEmpCode: selectedTrainer?.empCode || '',
+        trainerEmpCode: level.trainerEmpCode || '',
         currentStatus: level.currentStatus,
         inductionStatus: level.inductionStatus,
         remarks: level.remarks
@@ -822,6 +773,7 @@ const InductionAssignment = () => {
                 inductionDate: new Date().toISOString().split('T')[0],
                 inductionTime: '09:00',
                 trainerName: '',
+                trainerEmpCode: '',
                 currentStatus: 'PENDING',
                 inductionStatus: 'ACTIVE',
                 remarks: ''
@@ -960,10 +912,14 @@ const InductionAssignment = () => {
                 <Box sx={{ flex: 1 }}>
                   <BOSTextField
                     select
-                    name="trainerName"
+                    name="trainerEmpCode"
                     label="INDUCTION PERSON"
-                    value={level.trainerName}
-                    onChange={(e) => handleLevelInputChange(index, 'trainerName', e.target.value)}
+                    value={level.trainerEmpCode || ''}
+                    onChange={(e) => {
+                      const selectedEmp = employees.find(emp => emp.empCode === e.target.value);
+                      handleLevelInputChange(index, 'trainerEmpCode', e.target.value);
+                      handleLevelInputChange(index, 'trainerName', selectedEmp ? selectedEmp.employeeName : '');
+                    }}
                     required
                     disabled={!perms.write}
                     error={!!errors[`level_${index}_trainerName`]}
@@ -989,7 +945,7 @@ const InductionAssignment = () => {
                         return true;
                       })
                       .map(emp => (
-                        <MenuItem key={emp.id} value={emp.employeeName}>
+                        <MenuItem key={emp.id} value={emp.empCode}>
                           {emp.employeeName} ({emp.empCode})
                         </MenuItem>
                       ))}
