@@ -65,7 +65,7 @@ export default function OemMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE',
+        defaultValue: 'All',
         isStarred: true
       }
     ];
@@ -118,7 +118,7 @@ export default function OemMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'ACTIVE';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
 
       // 2. OEM Name Contains (Starred Text Filter)

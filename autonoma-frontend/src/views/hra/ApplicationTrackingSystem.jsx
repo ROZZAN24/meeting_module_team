@@ -87,6 +87,15 @@ const calculateAge = (dob) => {
   return age >= 0 ? age : '';
 };
 
+const formatDocName = (name) => {
+  if (!name) return '';
+  return name.split(' ').map(word => {
+    const upper = word.toUpperCase();
+    if (upper === 'ID' || upper === 'PAN') return upper;
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
+};
+
 // Initial state for the top-level form
 const INITIAL_FORM_STATE = {
   id: null,
@@ -202,21 +211,21 @@ const INITIAL_ASSESSMENT_STATE = {
   q19_lifeGoals: '',
   q20_improvementSuggestions: '',
   q21_isExperienced: 'NO',
-  q22_totalExperience: '0',
-  q23_coreExperience: '0',
-  q24_prevNetSalary: '0.00',
-  q25_prevGrossSalary: '0.00',
-  q26_expectedNetSalary: '0.00',
-  q27_expectedGrossSalary: '0.00',
+  q22_totalExperience: '',
+  q23_coreExperience: '',
+  q24_prevNetSalary: '',
+  q25_prevGrossSalary: '',
+  q26_expectedNetSalary: '',
+  q27_expectedGrossSalary: '',
   q28_pfHigherPension: 'NO',
-  q29_pfDeductionAmount: '0',
+  q29_pfDeductionAmount: '',
   q30_alternativeDepartment: '',
   q31_prevLocation: '',
   q32_prevShift: '',
   q33_reasonForLeaving: '',
-  q34_noticePeriod: '0',
+  q34_noticePeriod: '',
   q35_prevDeptPosition: '',
-  q36_prevDeptCount: '0',
+  q36_prevDeptCount: '',
   q37_prevReportingTo: '',
   q38_handleMistake: '',
   q39_handleOpinionDifference: '',
@@ -461,7 +470,7 @@ export default function ApplicationTrackingSystem() {
         mobileNo: original.contactMobile || original.mobileNo || ''
       });
 
-      setAssessmentData({
+      const assessmentDataCleaned = {
         q1_native: original.q1_native || '',
         q2_presentAddress: original.q2_present_address || '',
         q3_permanentAddress: original.q3_permanent_address || '',
@@ -483,27 +492,39 @@ export default function ApplicationTrackingSystem() {
         q19_lifeGoals: original.q19_life_goals || '',
         q20_improvementSuggestions: original.q20_improvement_suggestions || '',
         q21_isExperienced: original.q21_is_experienced || 'NO',
-        q22_totalExperience: original.q22_total_experience || '0',
-        q23_coreExperience: original.q23_core_experience || '0',
-        q24_prevNetSalary: original.q24_prev_net_salary || '0.00',
-        q25_prevGrossSalary: original.q25_prev_gross_salary || '0.00',
-        q26_expectedNetSalary: original.q26_expected_net_salary || '0.00',
-        q27_expectedGrossSalary: original.q27_expected_gross_salary || '0.00',
+        q22_totalExperience: original.q22_total_experience || '',
+        q23_coreExperience: original.q23_core_experience || '',
+        q24_prevNetSalary: original.q24_prev_net_salary || '',
+        q25_prevGrossSalary: original.q25_prev_gross_salary || '',
+        q26_expectedNetSalary: original.q26_expected_net_salary || '',
+        q27_expectedGrossSalary: original.q27_expected_gross_salary || '',
         q28_pfHigherPension: original.q28_pf_higher_pension || 'NO',
-        q29_pfDeductionAmount: original.q29_pf_deduction_amount || '0',
+        q29_pfDeductionAmount: original.q29_pf_deduction_amount || '',
         q30_alternativeDepartment: original.q30_alternative_department || '',
         q31_prevLocation: original.q31_prev_location || '',
         q32_prevShift: original.q32_prev_shift || '',
         q33_reasonForLeaving: original.q33_reason_for_leaving || '',
-        q34_noticePeriod: original.q34_notice_period || '0',
+        q34_noticePeriod: original.q34_notice_period || '',
         q35_prevDeptPosition: original.q35_prev_dept_position || '',
-        q36_prevDeptCount: original.q36_prev_dept_count || '0',
+        q36_prevDeptCount: original.q36_prev_dept_count || '',
         q37_prevReportingTo: original.q37_prev_reporting_to || '',
         q38_handleMistake: original.q38_handle_mistake || '',
         q39_handleOpinionDifference: original.q39_handle_opinion_difference || '',
         q40_computerSelfRating: original.q40_computer_self_rating || 'AVERAGE',
         payslip: original.payslipPath ? { fileName: original.payslipPath.split('/').pop(), serverFileName: original.payslipPath, isServer: true } : null
+      };
+
+      const textFieldsToClean = [
+        'q8_children', 'q22_totalExperience', 'q23_coreExperience', 'q24_prevNetSalary', 'q25_prevGrossSalary',
+        'q26_expectedNetSalary', 'q27_expectedGrossSalary', 'q29_pfDeductionAmount', 'q34_noticePeriod', 'q36_prevDeptCount'
+      ];
+      textFieldsToClean.forEach(key => {
+        const val = assessmentDataCleaned[key];
+        if (val === 0 || val === 0.0 || val === '0' || val === '0.0' || val === '0.00') {
+          assessmentDataCleaned[key] = '';
+        }
       });
+      setAssessmentData(assessmentDataCleaned);
 
       setExperienceRows((original.experience || []).map(exp => ({
         id: exp.id,
@@ -2130,7 +2151,7 @@ export default function ApplicationTrackingSystem() {
                               <BOSTextField
                                 value={row.docNo}
                                 onChange={(e) => setKycRows(prev => prev.map((item, i) => i === idx ? { ...item, docNo: e.target.value } : item))}
-                                placeholder="Enter document number"
+                                placeholder={`Enter ${formatDocName(row.docName)} Number`}
                                 size="small"
                               />
                             </TableCell>
@@ -2157,16 +2178,16 @@ export default function ApplicationTrackingSystem() {
                     group: 'I. PERSONAL & FAMILY DETAILS',
                     fields: [
                       { name: 'q1_native', label: '1. Native Place' },
-                      { name: 'q2_presentAddress', label: '2. Present Address', multiline: true, rows: 2 },
-                      { name: 'q3_permanentAddress', label: '3. Permanent Address', multiline: true, rows: 2 },
+                      { name: 'q2_presentAddress', label: '2. Present Address' },
+                      { name: 'q3_permanentAddress', label: '3. Permanent Address' },
                       { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
                       { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
                       { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
                       { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
                       { name: 'q8_children', label: '8. Children' },
                       { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
-                      { name: 'q10_relativesDetails', label: '10. Relative or friends details', multiline: true, rows: 2 },
-                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations', multiline: true, rows: 2 }
+                      { name: 'q10_relativesDetails', label: '10. Relative or friends details' },
+                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations' }
                     ]
                   },
                   {
@@ -2182,10 +2203,10 @@ export default function ApplicationTrackingSystem() {
                   {
                     group: 'III. PERSONAL GOALS & REFLECTION',
                     fields: [
-                      { name: 'q17_positivePoints', label: '17. Brief about positive points', multiline: true, rows: 3 },
-                      { name: 'q18_negativePoints', label: '18. Brief about negative points', multiline: true, rows: 3 },
-                      { name: 'q19_lifeGoals', label: "19. What's your life goals?", multiline: true, rows: 3 },
-                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas', multiline: true, rows: 3 }
+                      { name: 'q17_positivePoints', label: '17. Brief about positive points' },
+                      { name: 'q18_negativePoints', label: '18. Brief about negative points' },
+                      { name: 'q19_lifeGoals', label: "19. What's your life goals?" },
+                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas' }
                     ]
                   },
                   {
@@ -2208,9 +2229,9 @@ export default function ApplicationTrackingSystem() {
                     fields: [
                       { name: 'q31_prevLocation', label: '31. Previous/current company location' },
                       { name: 'q32_prevShift', label: '32. Previously worked shift' },
-                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job', multiline: true, rows: 2 },
+                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job' },
                       { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
-                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details', multiline: true, rows: 2 },
+                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details' },
                       { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
                       { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
                     ]
@@ -2218,8 +2239,8 @@ export default function ApplicationTrackingSystem() {
                   {
                     group: 'VI. BEHAVIORAL & WORK RATINGS',
                     fields: [
-                      { name: 'q38_handleMistake', label: '38. How you handle mistakes', multiline: true, rows: 3 },
-                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences', multiline: true, rows: 3 },
+                      { name: 'q38_handleMistake', label: '38. How you handle mistakes' },
+                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences' },
                       { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
                       { name: 'payslip', label: 'PAY SLIP', type: 'file' }
                     ]
@@ -2235,7 +2256,7 @@ export default function ApplicationTrackingSystem() {
                         </Typography>
                         <Grid container spacing={2.5}>
                           {g.fields.map(f => (
-                            <Grid item xs={12} sm={f.multiline || f.type === 'file' ? 12 : 6} md={f.multiline || f.type === 'file' ? 12 : 4} key={f.name}>
+                            <Grid item xs={12} sm={12} md={12} key={f.name}>
                               {f.type === 'file' ? (
                                 <Box>
                                   <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
@@ -2266,8 +2287,6 @@ export default function ApplicationTrackingSystem() {
                                   label={f.label}
                                   value={assessmentData[f.name] || ''}
                                   onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
-                                  multiline={f.multiline}
-                                  rows={f.rows}
                                 />
                               )}
                             </Grid>

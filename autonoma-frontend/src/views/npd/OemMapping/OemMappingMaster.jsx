@@ -72,7 +72,7 @@ export default function OemMappingMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE',
+        defaultValue: 'All',
         isStarred: true
       }
     ];
@@ -126,7 +126,7 @@ export default function OemMappingMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'ACTIVE';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
 
       // 2. Search By Column + Global Query Filter
