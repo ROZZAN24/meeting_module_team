@@ -122,7 +122,7 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         <BOSFormSection icon={<IconClipboardCheck size={20} color={theme.palette.primary.main} />} title="UOM Details">
           <BOSTextField
             name="uomCode"
-            label="UOM Code"
+            label="UOM Name"
             value={formData.uomCode}
             onChange={handleChange}
             disabled={isViewOnly}
@@ -134,7 +134,7 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
 
           <BOSTextField
             name="uomDescription"
-            label="Description"
+            label="UOM Description"
             value={formData.uomDescription}
             onChange={handleChange}
             disabled={isViewOnly}

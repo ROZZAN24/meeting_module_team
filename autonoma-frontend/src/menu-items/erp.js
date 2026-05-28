@@ -482,6 +482,13 @@ export const masters = {
           url: '/master/npd/wind-farm',
           icon: icons.IconRocket,
           pageCode: 'M3210'
+        },
+        {
+          id: 'master-npd-uom',
+          title: 'UOM',
+          type: 'item',
+          url: '/master/npd/uom',
+          icon: icons.IconRuler2
         }
       ]
     },

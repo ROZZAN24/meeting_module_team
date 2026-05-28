@@ -56,6 +56,7 @@ import {
   BOSDataTable,
   BOSFormDialog,
   BOSTextField,
+  BOSDatePicker,
   BOSFileUpload,
   errorStyle
 } from 'ui-component/bos';
@@ -1245,13 +1246,11 @@ export default function ApplicationTrackingSystem() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       label="Applicant Date"
                       name="applicantDate"
                       value={formData.applicantDate}
                       onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -1333,17 +1332,14 @@ export default function ApplicationTrackingSystem() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       required
                       label="Birth Date"
                       name="birthDate"
                       value={formData.birthDate}
                       onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
                       error={!!errors.birthDate}
                       helperText={errors.birthDate}
-                      sx={errorStyle(!!errors.birthDate)}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -1541,14 +1537,12 @@ export default function ApplicationTrackingSystem() {
                     </BOSTextField>
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       label="Birth Date"
                       name="birthDate"
                       value={formData.birthDate}
                       disabled
-                      InputProps={{ readOnly: true }}
-                      InputLabelProps={{ shrink: true }}
+                      onChange={() => {}}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -2016,13 +2010,11 @@ export default function ApplicationTrackingSystem() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       label="Interview Date"
                       name="interviewDate"
                       value={evaluationData.interviewDate}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, interviewDate: e.target.value }))}
-                      InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>

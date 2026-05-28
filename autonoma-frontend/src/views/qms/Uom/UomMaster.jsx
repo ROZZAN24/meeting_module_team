@@ -15,14 +15,14 @@ import { API_PATHS } from 'utils/api-constants';
 // ==============================|| UOM MASTER (BOS SOP COMPLIANT) ||============================== //
 
 const columns = [
-  { id: 'index', label: '#', minWidth: 70 },
-  { id: 'uomCode', label: 'UOM Code', minWidth: 180, bold: true },
-  { id: 'uomDescription', label: 'Description', minWidth: 220 },
-  { id: 'status', label: 'Status', minWidth: 120, status: true },
+  { id: 'index', label: 'NO', minWidth: 70 },
+  { id: 'uomCode', label: 'UOM NAME', minWidth: 180, bold: true },
+  { id: 'uomDescription', label: 'UOM DESCRIPTION', minWidth: 220 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 140 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 160 },
   { id: 'updatedUser', label: 'UPDATED USER', minWidth: 140 },
-  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 160 }
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 160 },
+  { id: 'status', label: 'STATUS', minWidth: 120, status: true }
 ];
 
 export default function UomMaster() {

@@ -210,17 +210,56 @@ export const getInputStyles = (theme, isDark) => ({
   '&.MuiFormControl-root': {
     scrollMarginTop: '32px'
   },
-  '& .MuiOutlinedInput-root': {
+  '& .MuiOutlinedInput-root:not(.MuiInputBase-multiline)': {
     width: '100%',
+    height: '38px !important',
+    borderRadius: '12px !important',
     bgcolor: isDark ? 'background.default' : 'grey.50',
     color: isDark ? '#c9d1d9' : '#121212',
-    '& fieldset': { borderColor: 'divider' },
+    '& fieldset': { borderColor: 'divider', borderRadius: '12px !important' },
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
-    '& input': { py: 1.2, fontSize: '0.9rem', color: isDark ? '#c9d1d9' : '#121212' },
-    '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px', color: isDark ? '#c9d1d9' : '#121212' }
+    '& input': { 
+      height: '38px !important',
+      paddingTop: '0px !important',
+      paddingBottom: '0px !important',
+      boxSizing: 'border-box !important',
+      lineHeight: '38px !important',
+      fontSize: '0.9rem', 
+      color: isDark ? '#c9d1d9' : '#121212' 
+    },
+    '& .MuiSelect-select': { 
+      height: '38px !important',
+      paddingTop: '0px !important',
+      paddingBottom: '0px !important',
+      boxSizing: 'border-box !important',
+      display: 'flex',
+      alignItems: 'center',
+      lineHeight: '38px !important',
+      fontSize: '0.9rem', 
+      width: '100%', 
+      minWidth: '150px', 
+      color: isDark ? '#c9d1d9' : '#121212' 
+    }
   },
-  '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
+  '& .MuiOutlinedInput-root.MuiInputBase-multiline': {
+    width: '100%',
+    borderRadius: '12px !important',
+    bgcolor: isDark ? 'background.default' : 'grey.50',
+    color: isDark ? '#c9d1d9' : '#121212',
+    '& fieldset': { borderColor: 'divider', borderRadius: '12px !important' },
+    '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
+    '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
+    '& textarea': {
+      fontSize: '0.9rem',
+      color: isDark ? '#c9d1d9' : '#121212',
+      padding: '4px 0 !important'
+    }
+  },
+  '& .MuiInputLabel-root': { 
+    color: isDark ? '#8b949e' : theme.palette.text.secondary,
+    lineHeight: '1.4375em'
+  },
   '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
   '& .MuiFormLabel-asterisk': { color: '#ef4444' }
 });
