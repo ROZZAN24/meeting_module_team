@@ -1670,8 +1670,8 @@ export default function ApplicationTrackingSystem() {
                       <TableHead sx={{ bgcolor: 'primary.light' }}>
                         <TableRow>
                           <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Company Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Location</TableCell>
+                          <TableCell sx={{ fontWeight: 600, minWidth: 250 }}>Company Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, minWidth: 200 }}>Location</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>Experience (Years)</TableCell>
@@ -1698,16 +1698,18 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.companyName}
                                   onChange={(e) => handleExperienceRowChange(idx, 'companyName', e.target.value)}
-                                  placeholder="Company Name"
                                   size="small"
+                                  fullWidth
+                                  multiline
+                                  minRows={1}
                                 />
                               </TableCell>
                               <TableCell>
                                 <BOSTextField
                                   value={row.location}
                                   onChange={(e) => handleExperienceRowChange(idx, 'location', e.target.value)}
-                                  placeholder="Location"
                                   size="small"
+                                  fullWidth
                                 />
                               </TableCell>
                               <TableCell>
@@ -1742,7 +1744,9 @@ export default function ApplicationTrackingSystem() {
                                   files={row.file ? [row.file] : []}
                                   onChange={(files) => handleExperienceRowChange(idx, 'file', files[0] || null)}
                                   multiple={false}
-                                  size="small"
+                                  compact={true}
+                                  label="Upload File"
+                                  helperText="Max 25MB"
                                 />
                               </TableCell>
                               <TableCell align="center">
@@ -1795,16 +1799,20 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.education}
                                   onChange={(e) => handleEducationRowChange(idx, 'education', e.target.value)}
-                                  placeholder="Degree/Class"
                                   size="small"
+                                  fullWidth
+                                  multiline
+                                  minRows={1}
                                 />
                               </TableCell>
                               <TableCell>
                                 <BOSTextField
                                   value={row.institutionName}
                                   onChange={(e) => handleEducationRowChange(idx, 'institutionName', e.target.value)}
-                                  placeholder="Institution Name"
                                   size="small"
+                                  fullWidth
+                                  multiline
+                                  minRows={1}
                                 />
                               </TableCell>
                               <TableCell>
@@ -1824,7 +1832,6 @@ export default function ApplicationTrackingSystem() {
                                   type="number"
                                   value={row.yearOfPassing}
                                   onChange={(e) => handleEducationRowChange(idx, 'yearOfPassing', e.target.value)}
-                                  placeholder="YYYY"
                                   size="small"
                                 />
                               </TableCell>
@@ -1832,7 +1839,6 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.grade}
                                   onChange={(e) => handleEducationRowChange(idx, 'grade', e.target.value)}
-                                  placeholder="GPA / %"
                                   size="small"
                                 />
                               </TableCell>
@@ -2305,7 +2311,6 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.activityDetails}
                                   onChange={(e) => handleSkillRowChange(idx, 'activityDetails', e.target.value)}
-                                  placeholder="Activity / Skill Details"
                                   size="small"
                                 />
                               </TableCell>
