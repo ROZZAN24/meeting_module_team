@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "mode_of_despatch")
+@Table(name = "MODE_OF_DESPATCH")
 @Data
 public class ModeOfDespatch {
     @Id

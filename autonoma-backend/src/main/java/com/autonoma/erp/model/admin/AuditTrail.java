@@ -9,7 +9,7 @@ import org.hibernate.annotations.Formula;
 import java.util.Date;
 
 @Entity
-@Table(name = "ad_audit_trail")
+@Table(name = "AD_AUDIT_TRAIL")
 @Data
 @Builder
 @NoArgsConstructor

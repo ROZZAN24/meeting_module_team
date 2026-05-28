@@ -81,7 +81,7 @@ export default function EnquiryDashboard() {
   const fetchWorkItems = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:9090/api/processing-requests');
+      const res = await axios.get('/api/ocr/processing-requests');
       // Sort newest first so new emails appear at the top
       const sorted = (res.data || []).sort((a, b) => (b.id || 0) - (a.id || 0));
       setData(sorted);
@@ -101,7 +101,7 @@ export default function EnquiryDashboard() {
   const handleOpenEdit = async (row) => { 
     // Fetch full detail (includes emailBodyPreview/content) from the detail API
     try {
-      const res = await axios.get(`http://localhost:9090/api/processing-requests/${row.id}`);
+      const res = await axios.get(`/api/ocr/processing-requests/${row.id}`);
       setSelectedRow(res.data);
     } catch (err) {
       console.error('Failed to fetch detail:', err);
@@ -122,7 +122,7 @@ export default function EnquiryDashboard() {
   const handleDeleteConfirm = async () => {
     setDeleteDialogOpen(false);
     try {
-      await axios.delete(`http://localhost:9090/api/processing-requests/${deleteTarget.id}`);
+      await axios.delete(`/api/ocr/processing-requests/${deleteTarget.id}`);
       dispatch(openSnackbar({ open: true, message: 'Enquiry deleted successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
       fetchWorkItems();
     } catch (error) {

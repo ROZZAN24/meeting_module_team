@@ -58,10 +58,18 @@ public class ChecklistAssignment extends BaseAuditEntity {
     @Column(name = "ASSIGN_TYPE")
     private String assignType;
 
-    @ElementCollection
-    @CollectionTable(name = "QMS_CHECKLIST_ASSIGNMENT_FILES", joinColumns = @JoinColumn(name = "ASSIGNMENT_ID"))
-    @Column(name = "FILE_PATH")
-    private List<String> actualFiles;
+    @Column(name = "VERIFIED_BY")
+    private String verifiedBy;
+
+    @Column(name = "VERIFIED_DATE")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date verifiedDate;
+
+    @Column(name = "COMMENTS", columnDefinition = "TEXT")
+    private String comments;
+
+    @Column(name = "FILE_PATHS", columnDefinition = "TEXT")
+    private String filePaths;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -87,6 +95,27 @@ public class ChecklistAssignment extends BaseAuditEntity {
     public void setCarryForwardCount(Integer carryForwardCount) { this.carryForwardCount = carryForwardCount; }
     public String getAssignType() { return assignType; }
     public void setAssignType(String assignType) { this.assignType = assignType; }
-    public List<String> getActualFiles() { return actualFiles; }
-    public void setActualFiles(List<String> actualFiles) { this.actualFiles = actualFiles; }
+    public String getVerifiedBy() { return verifiedBy; }
+    public void setVerifiedBy(String verifiedBy) { this.verifiedBy = verifiedBy; }
+    public Date getVerifiedDate() { return verifiedDate; }
+    public void setVerifiedDate(Date verifiedDate) { this.verifiedDate = verifiedDate; }
+    public String getComments() { return comments; }
+    public void setComments(String comments) { this.comments = comments; }
+    public String getFilePaths() { return filePaths; }
+    public void setFilePaths(String filePaths) { this.filePaths = filePaths; }
+
+    public List<String> getActualFiles() {
+        if (filePaths == null || filePaths.trim().isEmpty()) {
+            return new java.util.ArrayList<>();
+        }
+        return java.util.Arrays.asList(filePaths.split(","));
+    }
+
+    public void setActualFiles(List<String> files) {
+        if (files == null || files.isEmpty()) {
+            this.filePaths = null;
+        } else {
+            this.filePaths = String.join(",", files);
+        }
+    }
 }

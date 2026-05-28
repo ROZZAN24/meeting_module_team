@@ -159,7 +159,11 @@ public class TicketTraceabilityCenterController {
             allFinalPaths.addAll(finalVoices);
 
             if (!allFinalPaths.isEmpty()) {
-                savedTicket.setAttachmentPath(String.join(",", allFinalPaths));
+                String joinedPaths = String.join(",", allFinalPaths);
+                if (joinedPaths.length() > 500) {
+                    joinedPaths = joinedPaths.substring(0, 500);
+                }
+                savedTicket.setAttachmentPath(joinedPaths);
                 savedTicket = ticketRepository.save(savedTicket);
             }
 
@@ -209,6 +213,7 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setMobileNo(ticketDetails.getMobileNo());
             if (ticketDetails.getDepartment() != null)
                 existingTicket.setDepartment(ticketDetails.getDepartment());
+            if (ticketDetails.getAdditionalRequirement() != null) existingTicket.setAdditionalRequirement(ticketDetails.getAdditionalRequirement());
             if (ticketDetails.getDescription() != null)
                 existingTicket.setDescription(ticketDetails.getDescription());
             if (ticketDetails.getPriorityLevel() != null)
@@ -259,6 +264,32 @@ public class TicketTraceabilityCenterController {
             if (ticketDetails.getDueDateReason() != null)
                 existingTicket.setDueDateReason(ticketDetails.getDueDateReason());
 
+            if (ticketDetails.getAssignedHours() != null) {
+                String oldHoursStr = existingTicket.getAssignedHours();
+                String newHoursStr = ticketDetails.getAssignedHours();
+                if (oldHoursStr != null && !oldHoursStr.equals(newHoursStr)) {
+                    int oldMins = parseDurationToMinutes(oldHoursStr);
+                    int newMins = parseDurationToMinutes(newHoursStr);
+                    int diffMins = newMins - oldMins;
+                    if (diffMins != 0) {
+                        String diffStr = "";
+                        int absMins = Math.abs(diffMins);
+                        int h = absMins / 60;
+                        int m = absMins % 60;
+                        if (diffMins > 0) {
+                            diffStr = m == 0 ? String.format("%d hr Estimated Time added", h) : String.format("%d hr %d min Estimated Time added", h, m);
+                        } else {
+                            diffStr = m == 0 ? String.format("%d hr Estimated Time Reduced", h) : String.format("%d hr %d min Estimated Time Reduced", h, m);
+                        }
+                        existingTicket.setAssignedHours(newHoursStr);
+                        logStatusHistory(existingTicket.getRowId(), "Estimated Time Updated", diffStr, oldStatus, oldStatus, null, oldHoursStr + " -> " + newHoursStr);
+                    }
+                } else if (oldHoursStr == null && !newHoursStr.trim().isEmpty()) {
+                    existingTicket.setAssignedHours(newHoursStr);
+                    logStatusHistory(existingTicket.getRowId(), "Estimated Time Set", "Estimated time set to " + newHoursStr, oldStatus, oldStatus, null, "None -> " + newHoursStr);
+                }
+            }
+
             if (ticketDetails.getResolutionSummary() != null)
                 existingTicket.setResolutionSummary(ticketDetails.getResolutionSummary());
             if (ticketDetails.getRootCause() != null)
@@ -273,6 +304,12 @@ public class TicketTraceabilityCenterController {
             if (ticketDetails.getTempVoiceRecordings() != null && !ticketDetails.getTempVoiceRecordings().isEmpty()) {
                 moveTempFiles(ticketDetails.getTempVoiceRecordings(), existingTicket.getTicketId(), existingTicket.getRowId(), "Voice Recording", "Voice Recordings");
             }
+            if (ticketDetails.getTempAdditionalAttachments() != null && !ticketDetails.getTempAdditionalAttachments().isEmpty()) {
+                moveTempFiles(ticketDetails.getTempAdditionalAttachments(), existingTicket.getTicketId(), existingTicket.getRowId(), "Additional Requirement Attachment", "Additional Requirement");
+            }
+            if (ticketDetails.getTempAdditionalVoiceRecordings() != null && !ticketDetails.getTempAdditionalVoiceRecordings().isEmpty()) {
+                moveTempFiles(ticketDetails.getTempAdditionalVoiceRecordings(), existingTicket.getTicketId(), existingTicket.getRowId(), "Additional Requirement Voice", "Additional Requirement");
+            }
 
             // Sync the comma-separated attachment_path column in DB
             List<SupportTicketAttachment> allDbAttachments = attachmentRepository.findByTicketRowIdOrderByUploadedAtAsc(existingTicket.getRowId());
@@ -280,7 +317,11 @@ public class TicketTraceabilityCenterController {
             for (SupportTicketAttachment att : allDbAttachments) {
                 dbPaths.add(att.getFilePath());
             }
-            existingTicket.setAttachmentPath(String.join(",", dbPaths));
+            String joinedPaths = String.join(",", dbPaths);
+            if (joinedPaths.length() > 500) {
+                joinedPaths = joinedPaths.substring(0, 500);
+            }
+            existingTicket.setAttachmentPath(joinedPaths);
 
             // Handle status updates and workflow transitions
             if (ticketDetails.getTicketStatus() != null) {
@@ -495,7 +536,11 @@ public class TicketTraceabilityCenterController {
             for (SupportTicketAttachment att : allDbAttachments) {
                 dbPaths.add(att.getFilePath());
             }
-            ticket.setAttachmentPath(String.join(",", dbPaths));
+            String joinedPaths = String.join(",", dbPaths);
+            if (joinedPaths.length() > 500) {
+                joinedPaths = joinedPaths.substring(0, 500);
+            }
+            ticket.setAttachmentPath(joinedPaths);
             ticketRepository.save(ticket);
 
             return ResponseEntity.ok(saved);
@@ -516,6 +561,18 @@ public class TicketTraceabilityCenterController {
         "2027-01-01", "2027-01-26", "2027-03-22", "2027-04-16", "2027-05-01", 
         "2027-08-15", "2027-10-02", "2027-10-09", "2027-11-08", "2027-12-25"
     ));
+
+    private int parseDurationToMinutes(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) return 0;
+        String[] parts = timeStr.split(":");
+        try {
+            int h = Integer.parseInt(parts[0]);
+            int m = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            return h * 60 + m;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
 
     private boolean isNonWorkingDay(Date date) {
         Calendar cal = Calendar.getInstance();

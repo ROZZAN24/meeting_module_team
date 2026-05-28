@@ -1,4 +1,5 @@
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom';
+import { Alert } from '@mui/material';
 
 // project imports
 import MaintenanceError from 'views/pages/maintenance/Error';
@@ -31,7 +32,15 @@ export default function ErrorBoundary() {
 
   // If there's an actual exception/error object (not undefined), it is a system crash (Error 500)
   if (error) {
-    return <MaintenanceError500 />;
+    return (
+      <Alert severity="error">
+        <div>Under Maintenance</div>
+        <pre style={{ marginTop: '10px', whiteSpace: 'pre-wrap', textAlign: 'left' }}>
+          {error.message || String(error)}
+          {error.stack && `\n\nStack Trace:\n${error.stack}`}
+        </pre>
+      </Alert>
+    );
   }
 
   // Otherwise, it was rendered directly as the wildcard path element (unimplemented route)

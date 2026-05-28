@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface EmployeePersonalDetailRepository extends JpaRepository<EmployeePersonalDetail, Long> {
     Optional<EmployeePersonalDetail> findByEmployeeId(Long employeeId);
     void deleteByEmployeeId(Long employeeId);
+    boolean existsByAadharNumber(String aadharNumber);
+    boolean existsByAadharNumberAndEmployeeIdNot(String aadharNumber, Long employeeId);
 }

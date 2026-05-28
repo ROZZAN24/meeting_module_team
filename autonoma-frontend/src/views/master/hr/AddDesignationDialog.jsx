@@ -30,7 +30,7 @@ export default function AddDesignationDialog({ open, handleClose, initialData, r
 
   const fetchLevels = async () => {
     try {
-      const response = await axios.get('/api/master/hr/designationlevel');
+      const response = await axios.get('/api/master/hr/designation-levels');
       setLevels(response.data || []);
     } catch (e) {
       console.error('Failed to fetch levels:', e);
@@ -59,8 +59,8 @@ export default function AddDesignationDialog({ open, handleClose, initialData, r
   const fetchNextCode = async () => {
     try {
       const [codeRes, slRes] = await Promise.all([
-        axios.get('/api/hrm/designations/next-code'),
-        axios.get('/api/hrm/designations/next-sl-no')
+        axios.get('/api/master/hr/designations/next-code'),
+        axios.get('/api/master/hr/designations/next-sl-no')
       ]);
       setFormData(prev => ({ ...prev, designationCode: codeRes.data, displaySlNo: slRes.data }));
     } catch (e) {
@@ -87,9 +87,9 @@ export default function AddDesignationDialog({ open, handleClose, initialData, r
 
     try {
       if (initialData?.id) {
-        await axios.put(`/api/hrm/designations/${initialData.id}`, formData);
+        await axios.put(`/api/master/hr/designations/${initialData.id}`, formData);
       } else {
-        await axios.post('/api/hrm/designations', formData);
+        await axios.post('/api/master/hr/designations', formData);
       }
       dispatch(openSnackbar({ open: true, message: `Designation ${initialData ? 'updated' : 'saved'} successfully!`, severity: 'success', variant: 'alert' }));
       handleClose(true);

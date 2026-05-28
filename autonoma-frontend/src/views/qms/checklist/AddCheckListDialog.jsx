@@ -595,6 +595,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
         isViewOnly={isViewOnly}
         maxWidth="lg"
         sidebar={sidebarContent}
+        hideCollapse={true}
       >
         {isSaving && (
           <Box sx={{

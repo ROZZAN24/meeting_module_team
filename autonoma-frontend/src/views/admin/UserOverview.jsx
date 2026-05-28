@@ -67,7 +67,10 @@ import {
   IconCircleXFilled,
   IconCrop,
   IconCamera,
-  IconCameraOff
+  IconCameraOff,
+  IconFaceId,
+  IconEye,
+  IconEyeOff
 } from '@tabler/icons-react';
 
 const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
@@ -102,17 +105,35 @@ const UserOverview = () => {
 
   // Camera States
   const [cameraActive, setCameraActive] = useState(false);
+  const [showFaceImage, setShowFaceImage] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const autoCaptureIntervalRef = useRef(null);
 
-  const startCamera = async () => {
+  const startCamera = async (setFieldValue) => {
     try {
       setCameraActive(true);
+      setShowFaceImage(false);
       const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320 } });
       streamRef.current = stream;
       setTimeout(() => {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+
+          if (autoCaptureIntervalRef.current) clearInterval(autoCaptureIntervalRef.current);
+          autoCaptureIntervalRef.current = setInterval(async () => {
+            if (videoRef.current && videoRef.current.readyState === 4) {
+              try {
+                const descriptorArray = await getFaceDescriptor(videoRef.current);
+                if (descriptorArray) {
+                  clearInterval(autoCaptureIntervalRef.current);
+                  captureFace(setFieldValue, descriptorArray);
+                }
+              } catch (e) {
+                // Ignore detection errors during interval
+              }
+            }
+          }, 1000);
         }
       }, 100);
     } catch (err) {
@@ -123,6 +144,7 @@ const UserOverview = () => {
   };
 
   const stopCamera = () => {
+    if (autoCaptureIntervalRef.current) clearInterval(autoCaptureIntervalRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
@@ -130,12 +152,12 @@ const UserOverview = () => {
     setCameraActive(false);
   };
 
-  const captureFace = async (setFieldValue) => {
+  const captureFace = async (setFieldValue, preFetchedDescriptor = null) => {
     if (videoRef.current) {
       try {
-        const descriptorArray = await getFaceDescriptor(videoRef.current);
+        const descriptorArray = preFetchedDescriptor || await getFaceDescriptor(videoRef.current);
         const faceDescriptor = descriptorArray ? JSON.stringify(descriptorArray) : null;
-        
+
         const canvas = document.createElement('canvas');
         canvas.width = 160;
         canvas.height = 160;
@@ -219,7 +241,7 @@ const UserOverview = () => {
   const fetchEmployees = async () => {
     if (employees.length > 0) return;
     try {
-      const response = await axios.get('/api/master/employee');
+      const response = await axios.get('/api/master/hr/employees');
       const data = response.data;
       setEmployees(data);
       const map = {};
@@ -646,177 +668,188 @@ const UserOverview = () => {
               </DialogTitle>
               <DialogContent sx={{ p: 0, bgcolor: '#f8fafc', position: 'relative' }}>
                 <Box sx={{ bgcolor: 'background.paper', mt: -2.5, borderTopLeftRadius: '32px', borderTopRightRadius: '32px', position: 'relative', zIndex: 2, overflowY: 'auto', overflowX: 'hidden', maxHeight: 'calc(100vh - 200px)' }}>
-                <Grid container>
-                  <Grid item xs={12} md={4} sx={{ p: 4, borderRight: '1px solid', borderColor: 'divider' }}>
-                    <Box sx={{ p: 4, height: '100%', borderRadius: 6, bgcolor: 'white', border: '2px dashed', borderColor: 'secondary.light', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                      <Typography variant="subtitle2" fontWeight={800} color="secondary.main" sx={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>PROFILE IDENTITY</Typography>
-                      <Box sx={{ position: 'relative' }}>
-                        <Tooltip
-                          title={values.imgName ? (
-                            <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'white', borderRadius: 2 }}>
-                              <img src={`${API_BASE}/api/users/image/${values.imgName}`} alt="Preview" style={{ maxWidth: 300, maxHeight: 300, borderRadius: 4, display: 'block' }} />
-                            </Paper>
-                          ) : null}
-                          arrow
-                          placement="right"
-                        >
-                          <Avatar
-                            src={values.imgName ? `${API_BASE}/api/users/image/${values.imgName}` : ''}
-                            sx={{ width: 130, height: 130, border: '4px solid white', bgcolor: 'secondary.light', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', cursor: values.imgName ? 'pointer' : 'default' }}
+                  <Grid container>
+                    <Grid item xs={12} md={4} sx={{ p: 4, borderRight: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ p: 4, height: '100%', borderRadius: 6, bgcolor: 'white', border: '2px dashed', borderColor: 'secondary.light', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                        <Typography variant="subtitle2" fontWeight={800} color="secondary.main" sx={{ textTransform: 'uppercase', fontSize: '0.7rem' }}>PROFILE IDENTITY</Typography>
+                        <Box sx={{ position: 'relative' }}>
+                          <Tooltip
+                            title={values.imgName ? (
+                              <Paper elevation={12} sx={{ p: 0.5, bgcolor: 'white', borderRadius: 2 }}>
+                                <img src={`${API_BASE}/api/users/image/${values.imgName}`} alt="Preview" style={{ maxWidth: 300, maxHeight: 300, borderRadius: 4, display: 'block' }} />
+                              </Paper>
+                            ) : null}
+                            arrow
+                            placement="right"
                           >
-                            <IconPhoto size={50} />
-                          </Avatar>
-                        </Tooltip>
-                        <IconButton component="label" sx={{ position: 'absolute', bottom: 5, right: 5, bgcolor: 'secondary.main', color: 'white', '&:hover': { bgcolor: 'secondary.dark' }, width: 36, height: 36, border: '3px solid white' }}>
-                          <IconPencil size={16} />
-                          <input type="file" hidden accept="image/*" onChange={(e) => { handleFileSelect(e); e.target.value = ''; }} />
-                        </IconButton>
-                      </Box>
-                      <Typography variant="h3" fontWeight={800} color="secondary.main">{values.userId || 'User Name'}</Typography>
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} md={8} sx={{ p: 4 }}>
-                    <Stack spacing={4}>
-                      <Box>
-                        <Typography variant="h4" fontWeight={900} sx={{ mb: 1 }}>Account Credentials</Typography>
-                        <Typography variant="body2" color="textSecondary">Provide details to manage user access</Typography>
-                      </Box>
-                      <Stack spacing={3}>
-                        <Autocomplete
-                          options={employees}
-                          getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
-                          value={employees.find((e) => e.id === values.empId) || null}
-                          onChange={(e, v) => {
-                            setFieldValue('empId', v ? v.id : '');
-                            if (v && v.profileUpload) {
-                              setFieldValue('imgName', v.profileUpload);
-                            }
-                          }}
-                          renderInput={(params) => <TextField {...params} label="Employee Selection" error={Boolean(touched.empId && errors.empId)} helperText={touched.empId && errors.empId} />}
-                        />
-                        <TextField fullWidth label="User ID" name="userId" value={values.userId} onChange={handleChange} onBlur={handleBlur} disabled={Boolean(editingUser)} error={Boolean(touched.userId && errors.userId)} helperText={touched.userId && errors.userId} />
-                        <TextField fullWidth label={editingUser ? 'Update Password' : 'Password'} name="password" placeholder={editingUser ? 'Leave blank to keep current password' : ''} type={showPassword ? 'text' : 'password'} value={values.password} onChange={handleChange} onBlur={handleBlur} error={Boolean(touched.password && errors.password)} helperText={(touched.password && errors.password) || (editingUser ? 'Leave blank to keep existing credentials' : '')} InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={handleClickShowPassword}>{showPassword ? <Visibility /> : <VisibilityOff />}</IconButton></InputAdornment> }} />
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} sm={6}>
-                            <TextField select fullWidth label="Account Status" name="status" value={values.status} onChange={handleChange} onBlur={handleBlur}>
-                              <MenuItem value={1}>Active</MenuItem>
-                              <MenuItem value={0}>Suspended</MenuItem>
-                            </TextField>
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <TextField select fullWidth label="BOS Admin Privilege" name="isBosAdmin" value={values.isBosAdmin} onChange={handleChange} onBlur={handleBlur}>
-                              <MenuItem value={1}>YES</MenuItem>
-                              <MenuItem value={0}>NO</MenuItem>
-                            </TextField>
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <TextField select fullWidth label="Preferred Login Method" name="authMethod" value={values.authMethod || 'PASSWORD'} onChange={handleChange} onBlur={handleBlur}>
-                              <MenuItem value="PASSWORD">Password Only</MenuItem>
-                              <MenuItem value="FACE">Face ID Only</MenuItem>
-                              <MenuItem value="BOTH">Password or Face ID</MenuItem>
-                            </TextField>
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <TextField select fullWidth label="Auto-Logout on Face Absence" name="autoLogoutOnFaceAbsence" value={values.autoLogoutOnFaceAbsence ?? 0} onChange={handleChange} onBlur={handleBlur}>
-                              <MenuItem value={1}>ENABLED</MenuItem>
-                              <MenuItem value={0}>DISABLED</MenuItem>
-                            </TextField>
-                          </Grid>
-                        </Grid>
-
-                        <Box sx={{ pt: 2, borderTop: '1px solid #eef2f6' }}>
-                          <Typography variant="subtitle1" fontWeight={800} color="secondary.main" sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                            Face ID Biometric Registration
-                          </Typography>
-                          <Grid container spacing={2} alignItems="center">
-                            <Grid item xs={12} sm={3} display="flex" justifyContent="center">
-                              {cameraActive ? (
-                                <Box sx={{ position: 'relative', width: 100, height: 100, borderRadius: '50%', overflow: 'hidden', border: '3px solid', borderColor: 'secondary.main' }}>
-                                  <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                </Box>
-                              ) : (
-                                <Avatar 
-                                  src={values.faceImage || null} 
-                                  sx={{ width: 100, height: 100, border: '3px solid', borderColor: values.faceImage ? 'success.main' : 'grey.300', bgcolor: 'grey.100' }}
-                                >
-                                  <IconPhoto size={36} />
-                                </Avatar>
-                              )}
-                            </Grid>
-                            <Grid item xs={12} sm={9}>
-                              <Stack spacing={1.5}>
-                                <Typography variant="body2" color="textSecondary">
-                                  {values.faceImage 
-                                    ? 'Face biometric registered. You can use Face ID to sign in.' 
-                                    : 'No face registered yet. Turn on the camera to scan and register.'}
-                                </Typography>
-                                <Stack direction="row" spacing={1}>
-                                  {cameraActive ? (
-                                    <>
-                                      <Button size="small" variant="contained" color="success" type="button" onClick={() => captureFace(setFieldValue)}>
-                                        Capture Face
-                                      </Button>
-                                      <Button size="small" variant="outlined" color="error" type="button" onClick={stopCamera}>
-                                        Cancel
-                                      </Button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Button size="small" variant="contained" color="primary" type="button" onClick={startCamera}>
-                                        {values.faceImage ? 'Re-Register Face' : 'Register Face'}
-                                      </Button>
-                                      {values.faceImage && (
-                                        <Button size="small" variant="text" color="error" type="button" onClick={() => setFieldValue('faceImage', '')}>
-                                          Clear
-                                        </Button>
-                                      )}
-                                    </>
-                                  )}
-                                </Stack>
-                              </Stack>
-                            </Grid>
-                          </Grid>
+                            <Avatar
+                              src={values.imgName ? `${API_BASE}/api/users/image/${values.imgName}` : ''}
+                              sx={{ width: 130, height: 130, border: '4px solid white', bgcolor: 'secondary.light', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', cursor: values.imgName ? 'pointer' : 'default' }}
+                            >
+                              <IconPhoto size={50} />
+                            </Avatar>
+                          </Tooltip>
+                          <IconButton component="label" sx={{ position: 'absolute', bottom: 5, right: 5, bgcolor: 'secondary.main', color: 'white', '&:hover': { bgcolor: 'secondary.dark' }, width: 36, height: 36, border: '3px solid white' }}>
+                            <IconPencil size={16} />
+                            <input type="file" hidden accept="image/*" onChange={(e) => { handleFileSelect(e); e.target.value = ''; }} />
+                          </IconButton>
                         </Box>
-
-                        <Box sx={{ pt: 2, borderTop: '1px solid #eef2f6' }}>
-                          <Typography variant="subtitle1" fontWeight={800} color="secondary.main" sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.75rem' }}>
-                            Organization & Division Authorization
-                          </Typography>
-                          <Stack spacing={3}>
-                            <Autocomplete
-                              multiple
-                              options={divisions}
-                              getOptionLabel={(option) => `${option.divisionName} (ID: ${option.id})`}
-                              value={divisions.filter(d => values.mappedDivisionIds.includes(d.id))}
-                              onChange={(e, newValue) => {
-                                setFieldValue('mappedDivisionIds', newValue.map(item => item.id));
-                              }}
-                              renderInput={(params) => (
-                                <TextField
-                                  {...params}
-                                  label="Authorized Divisions"
-                                  placeholder="Select divisions"
-                                  helperText="User will automatically be granted access to the parent companies of the selected divisions."
-                                />
-                              )}
-                              renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                  <Chip
-                                    variant="outlined"
-                                    label={`${option.divisionName}`}
-                                    {...getTagProps({ index })}
-                                    color="secondary"
-                                    sx={{ borderRadius: '8px', fontWeight: 700 }}
-                                  />
-                                ))
+                        <Typography variant="h3" fontWeight={800} color="secondary.main">{values.userId || 'User Name'}</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={12} md={8} sx={{ p: 4 }}>
+                      <Stack spacing={4}>
+                        <Box>
+                          <Typography variant="h4" fontWeight={900} sx={{ mb: 1 }}>Account Credentials</Typography>
+                          <Typography variant="body2" color="textSecondary">Provide details to manage user access</Typography>
+                        </Box>
+                        <Stack spacing={3}>
+                          <Autocomplete
+                            options={employees}
+                            getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+                            value={employees.find((e) => e.id === values.empId) || null}
+                            onChange={(e, v) => {
+                              setFieldValue('empId', v ? v.id : '');
+                              if (v && v.profileUpload) {
+                                setFieldValue('imgName', v.profileUpload);
                               }
-                            />
-                          </Stack>
-                        </Box>
+                            }}
+                            renderInput={(params) => <TextField {...params} label="Employee Selection" error={Boolean(touched.empId && errors.empId)} helperText={touched.empId && errors.empId} />}
+                          />
+                          <TextField fullWidth label="User ID" name="userId" value={values.userId} onChange={handleChange} onBlur={handleBlur} disabled={Boolean(editingUser)} error={Boolean(touched.userId && errors.userId)} helperText={touched.userId && errors.userId} />
+                          <TextField fullWidth label={editingUser ? 'Update Password' : 'Password'} name="password" placeholder={editingUser ? 'Leave blank to keep current password' : ''} type={showPassword ? 'text' : 'password'} value={values.password} onChange={handleChange} onBlur={handleBlur} error={Boolean(touched.password && errors.password)} helperText={(touched.password && errors.password) || (editingUser ? 'Leave blank to keep existing credentials' : '')} InputProps={{ endAdornment: <InputAdornment position="end"><IconButton onClick={handleClickShowPassword}>{showPassword ? <Visibility /> : <VisibilityOff />}</IconButton></InputAdornment> }} />
+                          <Grid container spacing={2}>
+                            <Grid item xs={12} sm={6}>
+                              <TextField select fullWidth label="Account Status" name="status" value={values.status} onChange={handleChange} onBlur={handleBlur}>
+                                <MenuItem value={1}>Active</MenuItem>
+                                <MenuItem value={0}>Suspended</MenuItem>
+                              </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <TextField select fullWidth label="BOS Admin Privilege" name="isBosAdmin" value={values.isBosAdmin} onChange={handleChange} onBlur={handleBlur}>
+                                <MenuItem value={1}>YES</MenuItem>
+                                <MenuItem value={0}>NO</MenuItem>
+                              </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <TextField select fullWidth label="Preferred Login Method" name="authMethod" value={values.authMethod || 'PASSWORD'} onChange={handleChange} onBlur={handleBlur}>
+                                <MenuItem value="PASSWORD">Password Only</MenuItem>
+                                <MenuItem value="FACE">Face ID Only</MenuItem>
+                                <MenuItem value="BOTH">Password or Face ID</MenuItem>
+                              </TextField>
+                            </Grid>
+                            <Grid item xs={12} sm={6}>
+                              <TextField select fullWidth label="Auto-Logout on Face Absence" name="autoLogoutOnFaceAbsence" value={values.autoLogoutOnFaceAbsence ?? 0} onChange={handleChange} onBlur={handleBlur}>
+                                <MenuItem value={1}>ENABLED</MenuItem>
+                                <MenuItem value={0}>DISABLED</MenuItem>
+                              </TextField>
+                            </Grid>
+                          </Grid>
+
+                          <Box sx={{ pt: 2, borderTop: '1px solid #eef2f6' }}>
+                            <Typography variant="subtitle1" fontWeight={800} color="secondary.main" sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.75rem' }}>
+                              Organization & Division Authorization
+                            </Typography>
+                            <Stack spacing={3}>
+                              <Autocomplete
+                                multiple
+                                options={divisions}
+                                getOptionLabel={(option) => `${option.divisionName} (ID: ${option.id})`}
+                                value={divisions.filter(d => values.mappedDivisionIds.includes(d.id))}
+                                onChange={(e, newValue) => {
+                                  setFieldValue('mappedDivisionIds', newValue.map(item => item.id));
+                                }}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    label="Authorized Divisions"
+                                    placeholder="Select divisions"
+                                    helperText="User will automatically be granted access to the parent companies of the selected divisions."
+                                  />
+                                )}
+                                renderTags={(value, getTagProps) =>
+                                  value.map((option, index) => (
+                                    <Chip
+                                      variant="outlined"
+                                      label={`${option.divisionName}`}
+                                      {...getTagProps({ index })}
+                                      color="secondary"
+                                      sx={{ borderRadius: '8px', fontWeight: 700 }}
+                                    />
+                                  ))
+                                }
+                              />
+                            </Stack>
+                          </Box>
+
+                          <Box sx={{ mt: 3, p: 3, borderRadius: '14px', background: 'linear-gradient(145deg, #0a1128 0%, #030815 100%)', border: '1.5px solid rgba(0, 240, 255, 0.15)', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+                            <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 2, textTransform: 'uppercase', fontSize: '0.85rem', letterSpacing: '1px', color: '#00e676' }}>
+                              FACE DETECTION & VERIFICATION
+                            </Typography>
+                            <Grid container spacing={2} alignItems="center">
+                              <Grid item xs={12} sm={3} display="flex" justifyContent="center">
+                                {cameraActive ? (
+                                  <Box sx={{ position: 'relative', width: 100, height: 100, borderRadius: 2, overflow: 'hidden', border: '2px solid #00f0ff', boxShadow: '0 0 15px rgba(0,240,255,0.4)' }}>
+                                    <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} />
+                                  </Box>
+                                ) : values.faceImage ? (
+                                  <Box sx={{ position: 'relative', width: 100, height: 100, borderRadius: 2, overflow: 'hidden', border: '2px solid #00e676', bgcolor: '#040b17', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 15px rgba(0,230,118,0.4)' }}>
+                                    {showFaceImage ? (
+                                      <img src={values.faceImage} alt="Face" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: '#00e676' }}>
+                                        <IconFaceId size={48} />
+                                        <IconCircleCheckFilled size={24} style={{ position: 'absolute', bottom: 4, right: 4, background: '#040b17', borderRadius: '50%', color: '#00e676' }} />
+                                      </Box>
+                                    )}
+                                    <IconButton
+                                      onClick={() => setShowFaceImage(!showFaceImage)}
+                                      sx={{ position: 'absolute', top: 2, right: 2, bgcolor: 'rgba(0,0,0,0.5)', p: 0.5, color: '#00f0ff', '&:hover': { bgcolor: 'rgba(0,0,0,0.8)' } }}
+                                    >
+                                      {showFaceImage ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+                                    </IconButton>
+                                  </Box>
+                                ) : (
+                                  <Box sx={{ width: 100, height: 100, borderRadius: 2, border: '2px dashed rgba(0, 240, 255, 0.4)', bgcolor: 'rgba(0, 240, 255, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <IconFaceId size={40} color="rgba(0, 240, 255, 0.6)" />
+                                  </Box>
+                                )}
+                              </Grid>
+                              <Grid item xs={12} sm={9}>
+                                <Stack spacing={1.5}>
+                                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                                    {values.faceImage
+                                      ? 'Face biometric registered. You can use Face ID to sign in.'
+                                      : 'No face registered yet. Turn on the camera to scan and register.'}
+                                  </Typography>
+                                  <Stack direction="row" spacing={1}>
+                                    {cameraActive ? (
+                                      <Button size="small" variant="outlined" sx={{ color: '#ff5252', borderColor: '#ff5252', '&:hover': { borderColor: '#ff5252', bgcolor: 'rgba(255,82,82,0.1)' } }} type="button" onClick={stopCamera}>
+                                        Cancel Scanning
+                                      </Button>
+                                    ) : (
+                                      <>
+                                        <Button size="small" variant="contained" sx={{ bgcolor: '#00f0ff', color: '#040b17', fontWeight: 700, '&:hover': { bgcolor: '#00b8cc' } }} type="button" onClick={() => startCamera(setFieldValue)}>
+                                          {values.faceImage ? 'Re-Register Face' : 'Register Face'}
+                                        </Button>
+                                        {values.faceImage && (
+                                          <Button size="small" variant="text" sx={{ color: '#ff5252' }} type="button" onClick={() => { setFieldValue('faceImage', ''); setFieldValue('faceDescriptor', ''); setShowFaceImage(false); }}>
+                                            Clear
+                                          </Button>
+                                        )}
+                                      </>
+                                    )}
+                                  </Stack>
+                                </Stack>
+                              </Grid>
+                            </Grid>
+                          </Box>
+
+
+                        </Stack>
                       </Stack>
-                    </Stack>
+                    </Grid>
                   </Grid>
-                </Grid>
                 </Box>
 
                 {/* ── CROP DIALOG (Nested inside Content but managed via separate Dialog is better) ── */}
@@ -893,12 +926,12 @@ const UserOverview = () => {
                     </Stack>
                   </DialogActions>
                 </Dialog>
-                          </DialogContent>
+              </DialogContent>
             </form>
           )}
         </Formik>
-      </Dialog>
-    </Box>
+      </Dialog >
+    </Box >
   );
 };
 

@@ -25,6 +25,7 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
 
+
 const INITIAL_STATE = {
   id: null,
   inductionDetails: '',
@@ -34,7 +35,7 @@ const INITIAL_STATE = {
   inductionRound: '',
   attachmentRequired: 'NO',
   status: 'ACTIVE',
-  inductionAttachment: '' // For file upload
+  inductionAttachment: []
 };
 
 const FALLBACK_ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
@@ -217,17 +218,25 @@ export default function InductionCriteria() {
   const handleOpenEdit = (row) => {
     // Map codes back to IDs for the dropdown state
     const deptCodes = row.departmentCodes ? row.departmentCodes.split(',').filter(Boolean) : [];
-    const deptIds = deptCodes.map(code => departments.find(d => d.departmentCode === code)?.id?.toString() || code);
+    const deptIds = deptCodes.map(
+      (code) => departments.find((d) => d.departmentNo === code)?.id?.toString() || code
+    );
+    const order = LEVEL_OPTIONS.map(l => l.code);
+    const rawLevels = row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [];
+    const sortedLevels = [...rawLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
     setFormData({
       ...row,
       departmentCodes: deptIds,
-      levelCodes: row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [],
-      inductionAttachment: row.inductionAttachment ? {
-        serverFileName: row.inductionAttachment,
-        fileName: row.inductionAttachment.split('/').pop(),
-        isServer: true
-      } : null
+      levelCodes: sortedLevels,
+      inductionAttachment: row.inductionAttachment
+        ? row.inductionAttachment.split(',').filter(Boolean).map((path) => ({
+            id: path,
+            serverFileName: path,
+            fileName: path.split('/').pop(),
+            isServer: true
+          }))
+        : []
     });
     setErrors({});
     setDialogOpen(true);
@@ -273,8 +282,10 @@ export default function InductionCriteria() {
       } else {
         setFormData(prev => ({ ...prev, levelCodes: levelOptions.map(l => l.code) }));
       }
-    } else {
-      setFormData(prev => ({ ...prev, levelCodes: value }));
+      const rawCodes = typeof value === 'string' ? value.split(',') : value;
+      const order = LEVEL_OPTIONS.map(l => l.code);
+      const sortedCodes = [...rawCodes].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+      setFormData((prev) => ({ ...prev, levelCodes: sortedCodes }));
     }
     if (errors.levelCodes) clearErrors('levelCodes');
   };
@@ -282,7 +293,7 @@ export default function InductionCriteria() {
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
 
-    if (formData.attachmentRequired === 'YES' && !formData.inductionAttachment) {
+    if (formData.attachmentRequired === 'YES' && (!formData.inductionAttachment || formData.inductionAttachment.length === 0)) {
       dispatch(openSnackbar({
         open: true,
         message: 'Attachment is mandatory when Attachment Required is set to YES',
@@ -297,9 +308,13 @@ export default function InductionCriteria() {
     try {
       const payload = {
         ...formData,
-        departmentCodes: formData.departmentCodes.map(id => departments.find(d => d.id.toString() === id)?.departmentCode || id).join(','),
+        departmentCodes: formData.departmentCodes
+          .map((id) => departments.find((d) => d.id.toString() === id)?.departmentNo || id)
+          .join(','),
         levelCodes: formData.levelCodes.join(','),
-        inductionAttachment: formData.inductionAttachment?.serverFileName || formData.inductionAttachment
+        inductionAttachment: Array.isArray(formData.inductionAttachment)
+          ? formData.inductionAttachment.map((f) => f.serverFileName || f).filter(Boolean).join(',')
+          : (formData.inductionAttachment?.serverFileName || formData.inductionAttachment || '')
       };
 
       // Clean up audit fields and helper fields before sending to backend
@@ -390,14 +405,25 @@ export default function InductionCriteria() {
               <IconRefresh size={20} />
             </IconButton>
           </Tooltip>
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Induction_Criteria"
-            columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />}
-          <Button variant="contained" color="primary" onClick={handleOpenAdd} sx={btnNew} startIcon={<IconPlus size={18} />}>
-            + New
-          </Button>
+          {perms.export && (
+            <BOSExportButton
+              data={resolvedRows}
+              filename="Induction_Criteria"
+              columns={columns.filter((c) => c.id !== 'index').map((c) => ({ header: c.label, key: c.id }))}
+            />
+          )}
+
+          {perms.write && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleOpenAdd}
+              sx={btnNew}
+              startIcon={<IconPlus size={18} />}
+            >
+              New
+            </Button>
+          )}
         </Stack>
       }
     >
@@ -570,7 +596,7 @@ export default function InductionCriteria() {
                   {departments.map((d) => (
                     <MenuItem key={d.id} value={d.id.toString()}>
                       <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
-                      <ListItemText primary={d.departmentName} secondary={d.departmentCode} />
+                      <ListItemText primary={d.departmentName} secondary={d.departmentNo} />
                     </MenuItem>
                   ))}
                 </BOSTextField>
@@ -612,13 +638,11 @@ export default function InductionCriteria() {
               <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', width: '100%' }}>
                 <BOSFileUpload
                   label="UPLOAD INDUCTION GUIDELINES / SOP"
-                  files={formData.inductionAttachment ? [formData.inductionAttachment] : []}
-                  onChange={(uploadedFiles) => {
-                    const fileObj = uploadedFiles.length > 0 ? uploadedFiles[0] : null;
-                    setFormData(prev => ({ ...prev, inductionAttachment: fileObj }));
+                  files={formData.inductionAttachment || []}
+                    setFormData((prev) => ({ ...prev, inductionAttachment: uploadedFiles }));
                     if (errors.inductionAttachment) clearErrors('inductionAttachment');
                   }}
-                  multiple={false}
+                  multiple={true}
                   required={formData.attachmentRequired === 'YES'}
                   helperText={errors.inductionAttachment || (formData.attachmentRequired === 'YES' ? "Reference document is MANDATORY" : "Optional reference document (PDF/Images)")}
                   error={!!errors.inductionAttachment}

@@ -197,7 +197,7 @@ export const masters = {
               id: 'master-hr-employee-master',
               title: 'Employee Master',
               type: 'item',
-              url: '/hra/employee/master',
+              url: '/hr/employee/master',
               icon: icons.IconUserPlus,
               pageCode: 'M2210'
             },
@@ -633,7 +633,16 @@ export const hra = {
   caption: 'HR & Admin HA0000',
   type: 'group',
   icon: icons.IconUsers,
-  children: []
+  children: [
+    {
+      id: 'hra-ats',
+      title: 'Application Tracking System',
+      type: 'item',
+      url: '/hra/ats',
+      icon: icons.IconSearch,
+      pageCode: 'HA1110'
+    }
+  ]
 };
 
 

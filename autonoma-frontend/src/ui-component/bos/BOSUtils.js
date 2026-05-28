@@ -58,3 +58,15 @@ export const formatBOSFiles = (fileNames = []) => {
     };
   });
 };
+
+/**
+ * Resolves a nested/dotted key (e.g., 'oem.oemShortName') on a target object.
+ * Returns the resolved value or undefined if not found.
+ */
+export const resolveNestedValue = (keyPath, obj) => {
+  if (!keyPath || !obj) return undefined;
+  if (typeof keyPath !== 'string') return undefined;
+  if (!keyPath.includes('.')) return obj[keyPath];
+  return keyPath.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : undefined, obj);
+};
+

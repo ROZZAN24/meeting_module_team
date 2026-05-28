@@ -12,7 +12,24 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 const API = API_PATHS.HRM.EMPLOYEES;
 const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
 
-const R = ({ children, lg = 3 }) => <Grid item xs={12} sm={6} md={4} lg={lg}>{children}</Grid>;
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object' 
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5 }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn }}>{children}</Box>;
+};
 
 function Section1to1({ title, icon, endpoint, employeeId, fields, validation, onPreview }) {
   const theme = useTheme();
@@ -56,12 +73,12 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
 
   if (!loaded) return null;
   const content = (
-    <Grid container spacing={2.5}>
+    <GridContainer>
       {fields.map((f, i) => {
         const isHidden = f.hideIf && f.hideIf(form);
         if (isHidden) return null;
         if (f.type === 'subheader') return (
-          <Grid item xs={12} key={`sub-${i}`} sx={{ flexBasis: '100% !important', maxWidth: '100% !important' }}>
+          <Box key={`sub-${i}`} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, width: '100%' }}>
             <Box sx={{ mt: i === 0 ? 0 : 4, mb: 1.5, width: '100%' }}>
               <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: 1 }} />
@@ -69,7 +86,7 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
               </Typography>
               <Divider sx={{ mt: 1, borderColor: 'primary.light', borderBottomWidth: 2, opacity: 0.2 }} />
             </Box>
-          </Grid>
+          </Box>
         );
       return (
         <R key={f.name || i} lg={f.lg || 4}>
@@ -117,7 +134,7 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
           </R>
         );
       })}
-    </Grid>
+    </GridContainer>
   );
 
   const footer = employeeId ? (
@@ -225,7 +242,7 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, tra
 
   return (
     <BOSFormSection icon={icon || <IconFileText size={20} color={theme.palette.primary.main} />} title={title}>
-      <Grid container spacing={2.5}>
+      <GridContainer>
         {fields.map((f) => (
           <R key={f.name} lg={f.lg || 4}>
             {f.type === 'file' ? (
@@ -250,7 +267,7 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, tra
             )}
           </R>
         ))}
-      </Grid>
+      </GridContainer>
 
       {!disabled && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 2 }}>
@@ -581,6 +598,60 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
           { id: 'assetValue', label: 'Asset Value', minWidth: 120 }
         ]}
       />
+
+      {/* 16. SELF ASSESSMENT */}
+      <Section1to1 title="Self Assessment" icon={<IconActivity size={20} color={pc} />} endpoint="self-assessment" employeeId={employeeId} fields={[
+        { type: 'subheader', label: '1. Personal Details' },
+        { name: 'q1_native', label: '1. Native Place', max: 255 },
+        { name: 'q2_presentAddress', label: '2. Present Address', multiline: true, rows: 2, lg: 6 },
+        { name: 'q3_permanentAddress', label: '3. Permanent Address', multiline: true, rows: 2, lg: 6 },
+        { name: 'q4_fatherOccupation', label: "4. Father's Occupation", max: 255 },
+        { name: 'q5_motherOccupation', label: "5. Mother's Occupation", max: 255 },
+        { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: ['UNMARRIED', 'MARRIED', 'WIDOW', 'DIVORCED'] },
+        { name: 'q7_spouseOccupation', label: "7. Spouse's Occupation", max: 255 },
+        { name: 'q8_children', label: '8. No. of Children', max: 255 },
+        { name: 'q9_hasRelativesInCompany', label: '9. Relatives in Company', select: true, options: ['YES', 'NO'] },
+        { name: 'q10_relativesDetails', label: '10. Relatives Details', multiline: true, rows: 2, lg: 6 },
+        { name: 'q11_siblingsOccupations', label: '11. Siblings Occupations', multiline: true, rows: 2, lg: 6 },
+
+        { type: 'subheader', label: '2. Preferences & Assets' },
+        { name: 'q12_hasTwoWheeler', label: '12. Have Two Wheeler?', select: true, options: ['YES', 'NO'] },
+        { name: 'q13_hasAndroidPhone', label: '13. Have Android Mobile?', select: true, options: ['YES', 'NO'] },
+        { name: 'q14_knowsCarDriving', label: '14. Know Car Driving?', select: true, options: ['YES', 'NO'] },
+        { name: 'q15_willingToTravel', label: '15. Willing to Travel?', select: true, options: ['YES', 'NO'] },
+        { name: 'q16_covidVaccination', label: '16. Covid Vaccination Details', select: true, options: ['1st DOSE', '2nd DOSE', 'BOOSTER', 'NOT DONE'] },
+
+        { type: 'subheader', label: '3. Goals & Suggestions' },
+        { name: 'q17_positivePoints', label: '17. Positive Points (Strengths)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q18_negativePoints', label: '18. Negative Points (Weaknesses)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q19_lifeGoals', label: '19. Life Goals (1 & 3 Years)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q20_improvementSuggestions', label: '20. Suggestions for Company', multiline: true, rows: 2, lg: 6 },
+
+        { type: 'subheader', label: '4. Experience & Salary Details' },
+        { name: 'q21_isExperienced', label: '21. Are you Experienced?', select: true, options: ['YES', 'NO'] },
+        { name: 'q22_totalExperience', label: '22. Total Experience (Years/Months)', max: 50 },
+        { name: 'q23_coreExperience', label: '23. Core Experience details', max: 50 },
+        { name: 'q24_prevNetSalary', label: '24. Previous Net Salary', max: 50 },
+        { name: 'q25_prevGrossSalary', label: '25. Previous Gross Salary', max: 50 },
+        { name: 'q26_expectedNetSalary', label: '26. Expected Net Salary', max: 50 },
+        { name: 'q27_expectedGrossSalary', label: '27. Expected Gross Salary', max: 50 },
+        { name: 'q28_pfHigherPension', label: '28. PF Higher Pension Contribution?', select: true, options: ['YES', 'NO'] },
+        { name: 'q29_pfDeductionAmount', label: '29. PF Deduction Amount', max: 50 },
+        { name: 'q30_alternativeDepartment', label: '30. Alternative Department Choice', max: 100 },
+
+        { type: 'subheader', label: '5. Work Environment & References' },
+        { name: 'q31_prevLocation', label: '31. Previous Work Location', max: 255 },
+        { name: 'q32_prevShift', label: '32. Previous Shift details', max: 50 },
+        { name: 'q33_reasonForLeaving', label: '33. Reason for Leaving', multiline: true, rows: 2, lg: 6 },
+        { name: 'q34_noticePeriod', label: '34. Notice Period', max: 50 },
+        { name: 'q35_prevDeptPosition', label: '35. Previous Dept & Position', max: 255 },
+        { name: 'q36_prevDeptCount', label: '36. Previous Dept Team Count', max: 50 },
+        { name: 'q37_prevReportingTo', label: '37. Previous Reporting Manager', max: 255 },
+        { name: 'q38_handleMistake', label: '38. How do you handle a mistake?', multiline: true, rows: 2, lg: 6 },
+        { name: 'q39_handleOpinionDifference', label: '39. How do you handle opinion differences?', multiline: true, rows: 2, lg: 6 },
+        { name: 'q40_computerSelfRating', label: '40. Computer Knowledge self-rating', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'BASIC', 'NONE'] },
+        { name: 'payslipPath', label: 'Payslip Upload', type: 'file' }
+      ]} />
 
     </Stack>
   );

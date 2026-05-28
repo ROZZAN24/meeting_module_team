@@ -5,8 +5,8 @@ Row:
   assign_to = null
   category = CHECK LIST
   checking_point = Light Off
-  created_by = Admin
-  CREATED_AT = 2026-05-26 14:12:35.833
+  CREATED_USER = Admin
+  CREATED_DATE = 2026-05-26 14:12:35.833
   description = Conference room
   effective_from = 2026-05-26
   expiry_date = null
@@ -21,8 +21,8 @@ Row:
   reminder_days = null
   seq_no = CK-001
   stock_link = NO
-  updated_by = Karthick
-  UPDATED_AT = null
+  UPDATED_USER = Karthick
+  UPDATED_DATE = null
   verification_required = null
   verified_by = null
   verified_date = null

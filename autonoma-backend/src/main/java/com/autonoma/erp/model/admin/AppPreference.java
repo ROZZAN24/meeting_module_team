@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "ad_app_preference")
+@Table(name = "AD_APP_PREFERENCE")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

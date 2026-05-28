@@ -354,7 +354,7 @@ export default function BOSFileUpload({
 
                 {/* File Info */}
                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Tooltip title={name} arrow placement="top">
+                  <Tooltip title={getDisplayName(name, 1000)} arrow placement="top">
                     <Typography
                       variant="body2"
                       sx={{

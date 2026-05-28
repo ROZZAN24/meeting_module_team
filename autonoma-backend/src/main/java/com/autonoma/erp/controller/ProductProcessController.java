@@ -34,7 +34,7 @@ public class ProductProcessController {
         return processRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-        }
+    }
 
     @PostMapping
     @RequirePagePermission(pageCode = "M3180", action = "write")

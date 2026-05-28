@@ -110,8 +110,6 @@ export const getDialogStyles = (theme, isDark) => ({
     color: isDark ? '#c9d1d9' : theme.palette.text.primary
   },
   paper: {
-    display: 'flex',
-    flexDirection: 'column',
     height: 'auto',
     maxHeight: '95vh',
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
@@ -131,9 +129,8 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 2,
-    px: 3,
-    flexShrink: 0
+    py: 3.5,
+    px: 4
   },
   titleText: {
     fontWeight: 600,
@@ -145,30 +142,20 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   content: {
     p: 4,
-    pt: '24px !important', // Explicit override to prevent touching the DialogTitle header
+    pt: 5,
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
-    overflowY: 'auto',
     overflowX: 'hidden',
-    flexGrow: 1,
-    minHeight: 0,
-    // Ensure poppers and menus are not clipped
-    '& .MuiAutocomplete-popper': {
-      zIndex: '1500 !important'
-    },
-    '& .MuiMenu-root': {
-      zIndex: '1500 !important'
-    }
+    overflowY: 'auto',
+    flexGrow: 1
   },
   footer: {
-    py: 2,
-    px: 3,
+    p: 3,
     borderTop: isDark ? '1px solid #30363d' : `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
-    flexShrink: 0
+    bgcolor: isDark ? '#161b22' : theme.palette.background.paper
   },
   sectionCard: {
     bgcolor: isDark ? 'background.default' : '#ffffff',
@@ -180,7 +167,7 @@ export const getDialogStyles = (theme, isDark) => ({
   },
   sectionHeader: {
     px: 3,
-    py: 1.5,
+    py: 3,
     borderBottom: '1px solid',
     borderColor: 'divider',
     bgcolor: isDark ? '#1c2128' : 'grey.50',
@@ -206,19 +193,15 @@ export const getAutocompleteStyles = (theme) => ({
 
 export const getInputStyles = (theme, isDark) => ({
   width: '100% !important',
-  scrollMarginTop: '32px',
-  '&.MuiFormControl-root': {
-    scrollMarginTop: '32px'
-  },
   '& .MuiOutlinedInput-root': {
     width: '100%',
     bgcolor: isDark ? 'background.default' : 'grey.50',
-    color: isDark ? '#c9d1d9' : '#121212',
+    color: 'text.primary',
     '& fieldset': { borderColor: 'divider' },
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
-    '& input': { py: 1.2, fontSize: '0.9rem', color: isDark ? '#c9d1d9' : '#121212' },
-    '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px', color: isDark ? '#c9d1d9' : '#121212' }
+    '& input': { py: 1.2, fontSize: '0.9rem' },
+    '& .MuiSelect-select': { py: 1.2, fontSize: '0.9rem', width: '100%', minWidth: '150px' }
   },
   '& .MuiInputLabel-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },
   '& .MuiSvgIcon-root': { color: isDark ? '#8b949e' : theme.palette.text.secondary },

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "bos_pages")
+@Table(name = "BOS_PAGES")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class BosPage {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "page_id")
     private Integer pageId;
 
