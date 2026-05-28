@@ -1,0 +1,270 @@
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { Stack, Box, Typography, Grid, MenuItem, Button, Tooltip, Divider } from '@mui/material';
+import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
+import { IconChecklist, IconClock, IconMessageReport } from '@tabler/icons-react';
+import useBOSValidation from 'hooks/useBOSValidation';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
+import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
+import useAuth from 'hooks/useAuth';
+
+const INITIAL_FORM = {
+  actionTaken: '',
+  actionObservation: '',
+  cancelRemarks: '' // For rejection
+};
+
+const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
+  const dispatch = useDispatch();
+  const { errors, validate, clearErrors } = useBOSValidation();
+  const { user } = useAuth();
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [loading, setLoading] = useState(false);
+
+  // Derive delay days based on SOP
+  const getDelayDays = () => {
+    if (!item || !item.targetDate) return 0;
+    const target = new Date(item.targetDate).getTime();
+    // In a real app, if status is PENDING FOR APPROVAL, compare with approval date instead of today.
+    // Assuming today for open actions.
+    const now = new Date().getTime();
+    const diff = now - target;
+    if (diff <= 0) return 0;
+    return Math.floor(diff / (1000 * 3600 * 24));
+  };
+
+  const delayDays = getDelayDays();
+  const isReadonly = item && !['OPEN', 'REJECTED', 'CREATED'].includes(item.status);
+  const isAssignedToMe = user && item && user.name === item.assignedTo;
+
+  useEffect(() => {
+    if (open) {
+      if (item) {
+        setForm({
+          actionTaken: item.actionTaken || '',
+          actionObservation: item.actionObservation || '',
+          cancelRemarks: item.cancelRemarks || ''
+        });
+      } else {
+        setForm(INITIAL_FORM);
+      }
+      clearErrors();
+    }
+  }, [open, item, clearErrors]);
+
+  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value.toUpperCase() });
+
+  const handleAction = async (actionType) => {
+    // Only CLOSE (submit for closure) is allowed from this page
+    if (actionType === 'CLOSE') {
+      if (!form.actionTaken) {
+        dispatch(openSnackbar({ open: true, message: 'Action Taken is mandatory to submit for closure.', variant: 'alert', severity: 'error' }));
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const payload = { ...form };
+      const endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/close`;
+
+      await axios.put(endpoint, payload);
+      dispatch(openSnackbar({ open: true, message: 'Submitted for closure successfully.', variant: 'alert', severity: 'success' }));
+      onSave();
+    } catch (error) {
+      console.error(error);
+      dispatch(openSnackbar({ open: true, message: 'Failed to submit for closure', variant: 'alert', severity: 'error' }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderCustomActions = () => {
+    if (!item) return null;
+    return (
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        {['OPEN', 'REJECTED'].includes(item.status) && (
+          <Tooltip title={!isAssignedToMe ? `This action is assigned to ${item.assignedTo}. Only they can submit for closure.` : ''}>
+            <span>
+              <Button variant="contained" color="secondary" onClick={() => handleAction('CLOSE')} disabled={loading || !isAssignedToMe}>
+                Submit For Closure
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+        {item.status === 'PENDING FOR APPROVAL' && (
+          <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'warning.lighter', color: 'warning.dark', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'warning.main' }}>
+            ⏳ Awaiting Approver Action
+          </Typography>
+        )}
+        {item.status === 'CLOSED' && (
+          <Typography variant="subtitle2" sx={{ px: 2, py: 1, bgcolor: 'success.lighter', color: 'success.dark', fontWeight: 800, borderRadius: 2, border: '1px solid', borderColor: 'success.main' }}>
+            ✅ Approved & Closed
+          </Typography>
+        )}
+      </Stack>
+    );
+  };
+
+  return (
+    <BOSFormDialog
+      open={open}
+      onClose={onClose}
+      title="Action Details"
+      maxWidth="md"
+      secondaryActions={renderCustomActions()}
+    >
+      <Stack spacing={4}>
+        {!isAssignedToMe && item && ['OPEN', 'REJECTED'].includes(item.status) && (
+          <Box sx={{ p: 1.5, bgcolor: 'error.lighter', borderRadius: 2, border: '1px solid', borderColor: 'error.main' }}>
+            <Typography variant="body2" color="error.dark" fontWeight={700}>
+              🚨 Access Restricted: This action is assigned to <b>{item.assignedTo}</b>. Only they can submit for closure.
+            </Typography>
+          </Box>
+        )}
+        {/* HEADER */}
+        <Box 
+          sx={{ 
+            p: 2, 
+            bgcolor: 'background.paper', 
+            borderRadius: 2, 
+            border: '1px solid', 
+            borderColor: 'divider',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+            width: '100%'
+          }}
+        >
+          <Box sx={{ flex: 1.2, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Meeting Action Number
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="primary.main" noWrap sx={{ mt: 0.5 }}>
+              {item?.momNo || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              MOM Date
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 0.5 }}>
+              {item?.momDate || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Assign By
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 0.5 }}>
+              {item?.assignedBy || 'N/A'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Target Date
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="warning.dark" sx={{ mt: 0.5 }}>
+              {item?.targetDate || 'N/A'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Delay Days
+            </Typography>
+            <Typography 
+              variant="subtitle1" 
+              fontWeight={800} 
+              color={delayDays > 0 ? 'error.main' : 'success.main'}
+              sx={{ mt: 0.5 }}
+            >
+              {delayDays} Days
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* DETAILS SECTION */}
+        <BOSFormSection title="1. Action Details" icon={<IconChecklist size={22} />}>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <BOSTextField
+              label="Discussed Point"
+              value={item?.discussedPoint || ''}
+              multiline rows={2}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: 'grey.50' }}
+            />
+            
+            <BOSTextField
+              label="Action Taken *"
+              name="actionTaken"
+              value={form.actionTaken}
+              onChange={handleChange}
+              multiline rows={3}
+              disabled={isReadonly}
+              required
+            />
+
+            <BOSTextField
+              label="Action Observation"
+              name="actionObservation"
+              value={form.actionObservation}
+              onChange={handleChange}
+              multiline rows={2}
+              disabled={isReadonly}
+            />
+
+            <Stack direction="row" spacing={2}>
+              <BOSTextField
+                label="Status"
+                value={item?.status || ''}
+                InputProps={{ readOnly: true }}
+                sx={{ 
+                  bgcolor: item?.status === 'OPEN' ? 'error.lighter' : 'grey.50',
+                  '& .MuiInputBase-input': { fontWeight: 800, color: item?.status === 'OPEN' ? 'error.dark' : 'inherit' }
+                }}
+              />
+            </Stack>
+
+            {item?.status === 'REJECTED' && (
+              <BOSTextField
+                label="Rejection Comments"
+                name="cancelRemarks"
+                value={form.cancelRemarks}
+                InputProps={{ readOnly: true }}
+                multiline rows={2}
+                sx={{ bgcolor: 'warning.lighter', '& .MuiInputBase-input': { fontWeight: 800, color: 'warning.dark' } }}
+              />
+            )}
+            
+            {/* Read-only waiting state when closure has been submitted */}
+            {item?.status === 'PENDING FOR APPROVAL' && (
+              <Box sx={{ p: 2, bgcolor: 'info.lighter', borderRadius: 2, border: '1px solid', borderColor: 'info.main', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <IconClock size={20} />
+                <Typography variant="body2" color="info.dark" fontWeight={700}>
+                  Closure submitted successfully. Waiting for approver to review and take action from the <b>MOM Approval</b> page.
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </BOSFormSection>
+      </Stack>
+    </BOSFormDialog>
+  );
+};
+
+MomActionClosureDialog.propTypes = {
+  open: PropTypes.bool.isRequired,
+  item: PropTypes.object,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired
+};
+
+export default MomActionClosureDialog;

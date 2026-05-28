@@ -1,0 +1,658 @@
+import { useState, useEffect, useCallback } from 'react';
+import { Grid, Button, Stack, MenuItem, Typography, useTheme, Box, Divider, IconButton } from '@mui/material';
+import { IconPlus, IconDeviceFloppy, IconTrash, IconHeart, IconFileText, IconMapPin, IconCertificate, IconCar, IconActivity, IconGavel, IconCamera, IconDeviceLaptop, IconUsers, IconAmbulance, IconAlertTriangle, IconEPassport, IconShieldCheck, IconBuildingBank, IconSchool, IconReceipt2, IconBriefcase, IconDevices } from '@tabler/icons-react';
+import { BOSFormSection, BOSTextField, BOSDatePicker, BOSDataTable, btnSave, btnDelete, BOSFileUpload } from 'ui-component/bos';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
+import axios from 'utils/axios';
+import { API_PATHS } from 'utils/api-constants';
+import { autoUploadFile, getFileDownloadUrl } from 'utils/upload-helper';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+
+const API = API_PATHS.HRM.EMPLOYEES;
+const snack = (dispatch, msg, sev = 'success') => dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: sev, close: false }));
+
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object' 
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5 }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn }}>{children}</Box>;
+};
+
+function Section1to1({ title, icon, endpoint, employeeId, fields, validation, onPreview }) {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const [form, setForm] = useState({});
+  const [loaded, setLoaded] = useState(!employeeId);
+  const h = (e) => setForm((p) => ({ ...p, [e.target.name]: e.target.value }));
+  const disabled = !employeeId;
+
+  useEffect(() => {
+    if (!employeeId) { setLoaded(true); return; }
+    axios.get(`${API}/${employeeId}/${endpoint}`).then(({ data }) => { if (data && data.id) setForm(data); setLoaded(true); }).catch(() => setLoaded(true));
+  }, [employeeId, endpoint]);
+
+  const save = async () => {
+    if (!employeeId) return;
+    
+    // Check if any data was actually entered
+    const hasData = Object.values(form).some(v => v !== null && v !== '' && v !== undefined);
+    if (!hasData) {
+      snack(dispatch, 'Please fill the details in this section before saving.', 'warning');
+      return;
+    }
+
+    if (validation && !validation(form)) return;
+    try { 
+      const { data } = await axios.post(`${API}/${employeeId}/${endpoint}`, form); 
+      setForm(data); 
+      snack(dispatch, `${title} saved successfully!`); 
+    }
+    catch { snack(dispatch, `Failed to save ${title}. Please try again.`, 'error'); }
+  };
+
+  const upload = (field, files) => {
+    if (files && files.length > 0) {
+      setForm(p => ({ ...p, [field]: files[0].serverFileName }));
+    } else {
+      setForm(p => ({ ...p, [field]: '' }));
+    }
+  };
+
+  if (!loaded) return null;
+  const content = (
+    <GridContainer>
+      {fields.map((f, i) => {
+        const isHidden = f.hideIf && f.hideIf(form);
+        if (isHidden) return null;
+        if (f.type === 'subheader') return (
+          <Box key={`sub-${i}`} sx={{ gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 3' }, width: '100%' }}>
+            <Box sx={{ mt: i === 0 ? 0 : 4, mb: 1.5, width: '100%' }}>
+              <Typography variant="subtitle1" sx={{ color: 'primary.main', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ width: 4, height: 20, bgcolor: 'primary.main', borderRadius: 1 }} />
+                {f.label}
+              </Typography>
+              <Divider sx={{ mt: 1, borderColor: 'primary.light', borderBottomWidth: 2, opacity: 0.2 }} />
+            </Box>
+          </Box>
+        );
+      return (
+        <R key={f.name || i} lg={f.lg || 4}>
+            {(() => {
+              const isFldDisabled = disabled || (typeof f.disabled === 'function' ? f.disabled(form) : f.disabled);
+              return f.select ? (
+                <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={isFldDisabled}>
+                  {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                </BOSTextField>
+              ) : f.type === 'file' ? (
+                <BOSFileUpload
+                  files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
+                  onChange={(files) => upload(f.name, files)}
+                  module="HRA_PROFILE"
+                  multiple={false}
+                  maxFiles={1}
+                  compact={true}
+                  label={f.label}
+                  disabled={isFldDisabled}
+                />
+              ) : f.type === 'date' ? (
+                <BOSDatePicker
+                  name={f.name}
+                  label={f.label}
+                  value={form[f.name] || ''}
+                  onChange={h}
+                  disabled={isFldDisabled}
+                  required={f.required}
+                />
+              ) : (
+                <BOSTextField 
+                  name={f.name} 
+                  label={f.label} 
+                  value={form[f.name] || ''} 
+                  onChange={h} 
+                  type={f.type || 'text'} 
+                  maxLength={f.max} 
+                  disabled={isFldDisabled} 
+                  multiline={f.multiline} 
+                  rows={f.rows}
+                  required={f.required}
+                />
+              );
+            })()}
+          </R>
+        );
+      })}
+    </GridContainer>
+  );
+
+  const footer = employeeId ? (
+    <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 2 }}>
+      <Button variant="contained" startIcon={<IconDeviceFloppy size={16} />} onClick={save} sx={{ ...btnSave, ml: 'auto' }}>
+        Save Section
+      </Button>
+    </Box>
+  ) : null;
+
+  if (!title) return (
+    <Box sx={{ p: 0 }}>
+      {content}
+      {footer}
+    </Box>
+  );
+
+  return (
+    <BOSFormSection icon={icon || <IconHeart size={20} color={theme.palette.primary.main} />} title={title}>
+      {content}
+      {footer}
+    </BOSFormSection>
+  );
+}
+
+function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, transformRow, transformPayload, validation, onFormChange }) {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const [rows, setRows] = useState([]);
+  const [form, setForm] = useState({});
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteTargetRow, setDeleteTargetRow] = useState(null);
+
+  const h = (e) => {
+    const { name, value } = e.target;
+    setForm((p) => {
+      let next = { ...p, [name]: value };
+      if (onFormChange) {
+        next = onFormChange(name, value, next);
+      }
+      return next;
+    });
+  };
+
+  const disabled = !employeeId;
+
+  const load = useCallback(() => {
+    if (!employeeId) return;
+    axios.get(`${API}/${employeeId}/${endpoint}`)
+      .then(({ data }) => {
+        const resolved = transformRow && Array.isArray(data) ? data.map(transformRow) : (data || []);
+        setRows(resolved);
+      })
+      .catch(() => {});
+  }, [employeeId, endpoint, transformRow]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const upload = (field, files) => {
+    if (files && files.length > 0) {
+      setForm(p => ({ ...p, [field]: files[0].serverFileName }));
+    } else {
+      setForm(p => ({ ...p, [field]: '' }));
+    }
+  };
+
+  const add = async () => {
+    if (!employeeId) return;
+    
+    // Check if any data was actually entered
+    const hasData = Object.values(form).some(v => v !== null && v !== '' && v !== undefined);
+    if (!hasData) {
+      snack(dispatch, 'Please fill the record details before adding.', 'warning');
+      return;
+    }
+
+    if (validation && !validation(form)) return;
+
+    try { 
+      const payload = transformPayload ? transformPayload(form) : form;
+      await axios.post(`${API}/${employeeId}/${endpoint}`, payload); 
+      setForm({}); 
+      load(); 
+      snack(dispatch, `${title} record added successfully!`); 
+    }
+    catch { snack(dispatch, 'Failed to save record. Please check required fields.', 'error'); }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!employeeId || !deleteTargetRow) return;
+    try { 
+      await axios.delete(`${API}/${endpoint}/${deleteTargetRow.id}`); 
+      load(); 
+      snack(dispatch, 'Deleted!'); 
+      setDeleteOpen(false);
+      setDeleteTargetRow(null);
+    }
+    catch { snack(dispatch, 'Failed to delete', 'error'); }
+  };
+
+  const handleDeleteClick = (row) => {
+    setDeleteTargetRow(row);
+    setDeleteOpen(true);
+  };
+
+  return (
+    <BOSFormSection icon={icon || <IconFileText size={20} color={theme.palette.primary.main} />} title={title}>
+      <GridContainer>
+        {fields.map((f) => (
+          <R key={f.name} lg={f.lg || 4}>
+            {f.type === 'file' ? (
+              <BOSFileUpload
+                files={form[f.name] ? [{ fileName: form[f.name].split('/').pop(), serverFileName: form[f.name], isServer: true }] : []}
+                onChange={(files) => upload(f.name, files)}
+                module="HRA_PROFILE"
+                multiple={false}
+                maxFiles={1}
+                compact={true}
+                label={f.label}
+                disabled={disabled}
+              />
+            ) : f.select ? (
+              <BOSTextField select name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled}>
+                {f.options.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+              </BOSTextField>
+            ) : f.type === 'date' ? (
+              <BOSDatePicker name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} disabled={disabled} required={f.required} />
+            ) : (
+              <BOSTextField name={f.name} label={f.label} value={form[f.name] || ''} onChange={h} type={f.type || 'text'} disabled={disabled} />
+            )}
+          </R>
+        ))}
+      </GridContainer>
+
+      {!disabled && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 2 }}>
+          <Button variant="contained" startIcon={<IconDeviceFloppy size={16} />} onClick={add} sx={{ ...btnSave, ml: 'auto' }}>
+            Save Section
+          </Button>
+        </Box>
+      )}
+
+      {rows.length > 0 && (
+        <BOSDataTable
+          columns={tableCols}
+          rows={rows}
+          onDeleteRow={handleDeleteClick}
+          sx={{ height: 250 }}
+        />
+      )}
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onClose={() => { setDeleteOpen(false); setDeleteTargetRow(null); }}
+        onConfirm={handleDeleteConfirm}
+        title={`Delete ${title}`}
+        message={`Are you sure you want to delete this ${title.toLowerCase()} record?`}
+        itemName={deleteTargetRow ? (deleteTargetRow.name || deleteTargetRow.assetName || deleteTargetRow.companyName || deleteTargetRow.education || 'Record') : ''}
+      />
+    </BOSFormSection>
+  );
+}
+
+export default function EmployeeSubSections({ employeeId, onPreview }) {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+  const pc = theme.palette.primary.main;
+  const sc = theme.palette.secondary.main;
+  const wc = theme.palette.warning.main;
+
+  return (
+    <Stack spacing={3}>
+      {!employeeId && (
+        <Box sx={{ p: 2.5, bgcolor: 'warning.light', borderRadius: 2, border: '1px dashed', borderColor: 'warning.main', mb: 1 }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <IconAlertTriangle color={theme.palette.warning.dark} size={28} />
+            <Box>
+              <Typography variant="h4" color="warning.dark" sx={{ fontWeight: 700 }}>Save Main Employee Details First</Typography>
+              <Typography variant="body2" color="warning.dark">Auxiliary sections (Personal, Address, Bank, etc.) will be enabled after you click the "Save" button at the top.</Typography>
+            </Box>
+          </Stack>
+        </Box>
+      )}
+      {/* 5. PERSONAL DETAILS */}
+      <Section1to1 title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} onPreview={onPreview} fields={[
+        { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
+        { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'] },
+        { name: 'marriageDate', label: 'Married Date', type: 'date', disabled: (f) => f.maritalStatus !== 'MARRIED', required: true }, 
+        { name: 'birthDate', label: 'DOB', type: 'date' },
+        { name: 'dateOfJoining', label: 'DOJ', type: 'date', disabled: true }, 
+        { name: 'nationality', label: 'Nationality', max: 100 },
+        { name: 'personalEmail', label: 'Email', max: 255 }, // Changed to "Email" as per list
+        { name: 'bloodGroup', label: 'Blood group', select: true, options: ['O+ve', 'O-ve', 'A+ve', 'A-ve', 'B+ve', 'B-ve', 'AB+ve', 'AB-ve'] },
+        { name: 'region', label: 'Region', max: 100 },
+        { name: 'shirtSize', label: 'Shirt Size', select: true, options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'] },
+        { name: 'pantSize', label: 'Pant Size', max: 20 },
+        { name: 'shoeSize', label: 'Shoe Size', max: 20 },
+        { name: 'height', label: 'Height', type: 'number', lg: 6 },
+        { name: 'weight', label: 'Weight', type: 'number', lg: 6 }
+      ]} />
+
+      {/* 6. ADDRESS DETAILS */}
+      <BOSFormSection icon={<IconMapPin size={20} color={pc} />} title="Address Details">
+        <Section1to1 endpoint="contact" employeeId={employeeId} fields={[
+          { name: 'address', label: 'Permanent Address (Communication Address)', max: 500, multiline: true, rows: 2, lg: 12 },
+          { name: 'city', label: 'City', max: 100 },
+          { name: 'state', label: 'State', max: 100 },
+          { name: 'country', label: 'Country', max: 100 },
+          { name: 'pincode', label: 'Pincode', max: 20 }
+        ]} />
+      </BOSFormSection>
+
+      {/* 7. ID DETAILS */}
+      <Section1to1 
+        title="ID Details" 
+        icon={<IconEPassport size={20} color={pc} />} 
+        endpoint="personal" 
+        employeeId={employeeId} 
+        validation={(form) => {
+          if (!form.aadharNumber) {
+            snack(dispatch, 'Aadhar No is mandatory.', 'error');
+            return false;
+          }
+          if (!/^\d{12}$/.test(form.aadharNumber)) {
+            snack(dispatch, 'Aadhar No must be exactly 12 digits.', 'error');
+            return false;
+          }
+          return true;
+        }}
+        fields={[
+          { name: 'aadharNumber', label: 'Aadhar No *', max: 12, required: true },
+          { name: 'drivingLicenseNumber', label: 'Driving License No', max: 50 },
+          { name: 'passportNumber', label: 'Passport No', max: 50 },
+          { name: 'passportIssueCity', label: 'Place Of Issue', max: 100 },
+          { name: 'licenseExpiryDate', label: 'Date Of Expiry', type: 'date' },
+          { name: 'loanInstallmentAmount', label: 'Loan Installment Amount', type: 'number' }
+        ]} />
+
+      {/* 8. STATUTORY DETAILS */}
+      <Section1to1 title="Statutory Details" icon={<IconShieldCheck size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
+        { name: 'panNumber', label: 'PAN No', max: 20 },
+        { name: 'pfNumber', label: 'PF No', max: 100 },
+        { name: 'uanNumber', label: 'UAN No', max: 100 }
+      ]} />
+
+      {/* 9. BANK DETAILS */}
+      <Section1to1 title="Bank Details" icon={<IconBuildingBank size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
+        { name: 'salaryAccountNumber', label: 'Account No', max: 50 },
+        { name: 'accountName', label: 'Account Name', max: 100 },
+        { name: 'branchName', label: 'Branch Name', max: 100 },
+        { name: 'bankAccountType', label: 'Bank Account Type', select: true, options: ['SAVINGS', 'CURRENT'] },
+        { name: 'bankName', label: 'Bank Name', max: 100 },
+        { name: 'ifscCode', label: 'IFSC Code', max: 20 }
+      ]} />
+
+      {/* 10. QUALIFICATION DETAILS */}
+      <Section1toN title="Qualification Details" icon={<IconSchool size={20} color={pc} />} endpoint="education" employeeId={employeeId}
+        fields={[
+          { name: 'education', label: 'Qualification', select: true, options: ['10th / SSLC', '12th / HSC', 'DIPLOMA', 'UG', 'PG', 'ITI', 'OTHERS'] }, 
+          { name: 'institutionName', label: 'Institution', max: 255 },
+          { name: 'university', label: 'University', max: 255 },
+          { name: 'yearOfPassing', label: 'Year Of Passing', max: 10 }, 
+          { name: 'percentageGrade', label: 'Percentage/CGPA', max: 20 },
+          { name: 'certificateFile', label: 'Certificate Upload', type: 'file' }
+        ]}
+        tableCols={[
+          { id: 'education', label: 'Qualification', minWidth: 140 }, 
+          { id: 'institutionName', label: 'Institution', minWidth: 150 }, 
+          { id: 'yearOfPassing', label: 'Year', minWidth: 80 }, 
+          { id: 'percentageGrade', label: '% / Grade', minWidth: 100 },
+          {
+            id: 'certificateFile',
+            label: 'Certificate',
+            minWidth: 180,
+            renderCell: (val) => {
+              if (!val) return '-';
+              const fileName = val.split('/').pop();
+              return (
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="text" onClick={() => onPreview && onPreview(val, fileName)}>View</Button>
+                  <Button size="small" variant="text" component="a" href={getFileDownloadUrl(val)} target="_blank" download>Download</Button>
+                </Stack>
+              );
+            }
+          }
+        ]}
+      />
+
+      {/* 11. PAY COMPONENTS */}
+      <Section1to1 title="Pay Component" icon={<IconReceipt2 size={20} color={sc} />} endpoint="job-profile" employeeId={employeeId} onPreview={onPreview} fields={[
+        { name: 'grossSalary', label: 'Gross Salary', type: 'number' },
+        { name: 'netSalary', label: 'Net Salary', type: 'number' },
+        { name: 'basicSalary', label: 'Basic', type: 'number' },
+        { name: 'da', label: 'DA', type: 'number' },
+        { name: 'hra', label: 'HRA', type: 'number' },
+        { name: 'specialAllowance', label: 'Special Allowance', type: 'number' },
+        { name: 'performanceIncentive', label: 'Performance Incentive', type: 'number' },
+        { name: 'canteenDeduction', label: 'Canteen Deduction', type: 'number' },
+        { name: 'pfType', label: 'PF Type', select: true, options: ['FULL', 'RESTRICTED', 'NONE'] },
+        { name: 'pfEmployee', label: 'PF Employee', type: 'number' },
+        { name: 'esiEmployee', label: 'ESI Employee', type: 'number' },
+        { name: 'professionalTax', label: 'Professional tax', type: 'number' },
+        { name: 'pfDocument', label: 'Upload PF Document', type: 'file', lg: 12 }
+      ]} />
+
+      {/* 12. CTC DETAILS */}
+      <Section1to1 title="CTC Details" icon={<IconReceipt2 size={20} color={sc} />} endpoint="job-profile" employeeId={employeeId} fields={[
+        { type: 'subheader', label: 'Monthly Components' },
+        { name: 'monthlyCtc', label: 'Monthly CTC', type: 'number', lg: 4 },
+        { name: 'basicSalaryCtc', label: 'Basic Salary', type: 'number', lg: 4 },
+        { name: 'daCtc', label: 'DA', type: 'number', lg: 4 },
+        { name: 'specialAllowanceCtc', label: 'Special Allowance', type: 'number', lg: 4 },
+        { name: 'canteenAllowance', label: 'Canteen Allowance', type: 'number', lg: 4 },
+        { name: 'performanceIncentiveCtc', label: 'Performance Incentive', type: 'number', lg: 4 },
+        { name: 'esiCtc', label: 'ESI', type: 'number', lg: 4 },
+        { name: 'pfCtc', label: 'PF', type: 'number', lg: 4 },
+        { name: 'grossCtc', label: 'Gross', type: 'number', lg: 4 },
+        { name: 'employerPf', label: 'Employer Contribution PF', type: 'number', lg: 4 },
+        { name: 'employerEsi', label: 'Employer Contribution ESI', type: 'number', lg: 4 },
+        { name: 'uniformAllowance', label: 'Uniform', type: 'number', lg: 4 },
+        { name: 'shoeAllowance', label: 'Shoe', type: 'number', lg: 4 },
+        { name: 'mobileAllowanceCug', label: 'Mobile Allowance CUG', type: 'number', lg: 4 },
+        
+        { type: 'subheader', label: 'Annual Components & Contributions' },
+        { name: 'annualCtc', label: 'Annual CTC', type: 'number', lg: 4 },
+        { name: 'salaryCtc', label: 'Salary', type: 'number', lg: 4 },
+        { name: 'gratuity', label: 'Gratuity', type: 'number', lg: 4 },
+        { name: 'pfEmpContribution', label: 'Employee Contribution PF', type: 'number', lg: 4 },
+        { name: 'esiEmpContribution', label: 'Employee Contribution ESI', type: 'number', lg: 4 },
+        { name: 'pfEmployerContribution', label: 'Employer Contribution PF', type: 'number', lg: 4 },
+        { name: 'esiEmployerContribution', label: 'Employer Contribution ESI', type: 'number', lg: 4 },
+        { name: 'bonus', label: 'Bonus', type: 'number', lg: 4 },
+        { name: 'specialIncentive', label: 'Special Incentive', type: 'number', lg: 4 },
+        { name: 'performanceLinkedIncentive', label: 'Performance Linked Incentive', type: 'number', lg: 4 },
+        { name: 'healthInsurance', label: 'Health Insurance', type: 'number', lg: 4 },
+        { name: 'uniformAnnual', label: 'Uniform (Annual)', type: 'number', lg: 4 },
+        { name: 'shoeAnnual', label: 'Shoe (Annual)', type: 'number', lg: 4 },
+        { name: 'mobileCugAnnual', label: 'Mobile Allowance CUG (Annual)', type: 'number', lg: 4 }
+      ]} />
+
+      {/* 13. WORK EXPERIENCE */}
+      <Section1toN title="Work Experience" icon={<IconBriefcase size={20} color={pc} />} endpoint="experience" employeeId={employeeId}
+        transformRow={(row) => ({ ...row, designation: row.location })}
+        transformPayload={(f) => ({ ...f, location: f.designation })}
+        fields={[
+          { name: 'companyName', label: 'Company Name', max: 255 }, 
+          { name: 'designation', label: 'Designation', max: 100 },
+          { name: 'fromDate', label: 'From Date', type: 'date' }, { name: 'toDate', label: 'To Date', type: 'date' },
+          { name: 'totalExperience', label: 'Experience', max: 100 },
+          { name: 'lastSalary', label: 'Salary', type: 'number' },
+          { name: 'leavingReason', label: 'Reason For Leaving', max: 255 },
+          { name: 'experienceDocument', label: 'Experience Document', type: 'file' }
+        ]}
+        tableCols={[
+          { id: 'companyName', label: 'Company', minWidth: 200 }, 
+          { id: 'designation', label: 'Designation', minWidth: 150 }, 
+          { id: 'fromDate', label: 'From', minWidth: 100 }, 
+          { id: 'toDate', label: 'To', minWidth: 100 },
+          {
+            id: 'experienceDocument',
+            label: 'Document',
+            minWidth: 180,
+            renderCell: (val) => {
+              if (!val) return '-';
+              const fileName = val.split('/').pop();
+              return (
+                <Stack direction="row" spacing={1}>
+                  <Button size="small" variant="text" onClick={() => onPreview && onPreview(val, fileName)}>View</Button>
+                  <Button size="small" variant="text" component="a" href={getFileDownloadUrl(val)} target="_blank" download>Download</Button>
+                </Stack>
+              );
+            }
+          }
+        ]}
+      />
+
+      {/* 14. FAMILY DETAILS */}
+      <Section1toN title="Family Details" icon={<IconUsers size={20} color={pc} />} endpoint="dependent" employeeId={employeeId}
+        transformRow={(row) => {
+          if (row.dob) {
+            const birthDate = new Date(row.dob);
+            if (!isNaN(birthDate.getTime())) {
+              const today = new Date();
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const m = today.getMonth() - birthDate.getMonth();
+              if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              return { ...row, age: age >= 0 ? age : 0 };
+            }
+          }
+          return row;
+        }}
+        onFormChange={(name, value, next) => {
+          if (name === 'dob' && value) {
+            const birthDate = new Date(value);
+            if (!isNaN(birthDate.getTime())) {
+              const today = new Date();
+              let age = today.getFullYear() - birthDate.getFullYear();
+              const m = today.getMonth() - birthDate.getMonth();
+              if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+              }
+              next.age = age >= 0 ? age : 0;
+            }
+          }
+          return next;
+        }}
+        validation={(f) => {
+          if (!f.name) {
+            snack(dispatch, 'Name is mandatory.', 'error');
+            return false;
+          }
+          if (!f.relationship) {
+            snack(dispatch, 'Relationship is mandatory.', 'error');
+            return false;
+          }
+          if (!f.contactNo) {
+            snack(dispatch, 'Contact No is mandatory.', 'error');
+            return false;
+          }
+          const phoneRegex = /^[0-9+\s()-]+$/;
+          if (!phoneRegex.test(f.contactNo)) {
+            snack(dispatch, 'Contact No contains invalid characters.', 'error');
+            return false;
+          }
+          return true;
+        }}
+        fields={[
+          { name: 'name', label: 'Name *', max: 100 },
+          { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
+          { name: 'dob', label: 'DOB', type: 'date' },
+          { name: 'age', label: 'Age', type: 'number', disabled: true },
+          { name: 'relationship', label: 'Relationship *', select: true, options: ['FATHER', 'MOTHER', 'SPOUSE', 'CHILD', 'SIBLING'] },
+          { name: 'occupation', label: 'Occupation', max: 100 },
+          { name: 'bloodGroup', label: 'Blood Group', select: true, options: ['O+ve', 'O-ve', 'A+ve', 'A-ve', 'B+ve', 'B-ve', 'AB+ve', 'AB-ve'] },
+          { name: 'contactNo', label: 'Contact No *', max: 20 }
+        ]}
+        tableCols={[
+          { id: 'name', label: 'Name', minWidth: 150 }, 
+          { id: 'relationship', label: 'Relation', minWidth: 100 }, 
+          { id: 'contactNo', label: 'Contact', minWidth: 120 },
+          { id: 'age', label: 'Age', minWidth: 80 }
+        ]}
+      />
+
+      {/* 15. OFFICE ASSETS */}
+      <Section1toN title="Office Assets" icon={<IconDevices size={20} color={pc} />} endpoint="asset" employeeId={employeeId}
+        fields={[
+          { name: 'assetName', label: 'Asset Name', max: 100 },
+          { name: 'issueDate', label: 'Asset Issue Date', type: 'date' },
+          { name: 'condition', label: 'Condition of Asset', select: true, options: ['NEW', 'GOOD', 'USED', 'DAMAGED'] },
+          { name: 'qty', label: 'QTY', type: 'number' },
+          { name: 'serialNo', label: 'Serial No', max: 100 },
+          { name: 'assetValue', label: 'Asset Value', type: 'number' }
+        ]}
+        tableCols={[
+          { id: 'assetName', label: 'Asset Name', minWidth: 150 }, 
+          { id: 'issueDate', label: 'Asset Issue Date', minWidth: 100 }, 
+          { id: 'serialNo', label: 'Serial No', minWidth: 150 },
+          { id: 'assetValue', label: 'Asset Value', minWidth: 120 }
+        ]}
+      />
+
+      {/* 16. SELF ASSESSMENT */}
+      <Section1to1 title="Self Assessment" icon={<IconActivity size={20} color={pc} />} endpoint="self-assessment" employeeId={employeeId} fields={[
+        { type: 'subheader', label: '1. Personal Details' },
+        { name: 'q1_native', label: '1. Native Place', max: 255 },
+        { name: 'q2_presentAddress', label: '2. Present Address', multiline: true, rows: 2, lg: 6 },
+        { name: 'q3_permanentAddress', label: '3. Permanent Address', multiline: true, rows: 2, lg: 6 },
+        { name: 'q4_fatherOccupation', label: "4. Father's Occupation", max: 255 },
+        { name: 'q5_motherOccupation', label: "5. Mother's Occupation", max: 255 },
+        { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: ['UNMARRIED', 'MARRIED', 'WIDOW', 'DIVORCED'] },
+        { name: 'q7_spouseOccupation', label: "7. Spouse's Occupation", max: 255 },
+        { name: 'q8_children', label: '8. No. of Children', max: 255 },
+        { name: 'q9_hasRelativesInCompany', label: '9. Relatives in Company', select: true, options: ['YES', 'NO'] },
+        { name: 'q10_relativesDetails', label: '10. Relatives Details', multiline: true, rows: 2, lg: 6 },
+        { name: 'q11_siblingsOccupations', label: '11. Siblings Occupations', multiline: true, rows: 2, lg: 6 },
+
+        { type: 'subheader', label: '2. Preferences & Assets' },
+        { name: 'q12_hasTwoWheeler', label: '12. Have Two Wheeler?', select: true, options: ['YES', 'NO'] },
+        { name: 'q13_hasAndroidPhone', label: '13. Have Android Mobile?', select: true, options: ['YES', 'NO'] },
+        { name: 'q14_knowsCarDriving', label: '14. Know Car Driving?', select: true, options: ['YES', 'NO'] },
+        { name: 'q15_willingToTravel', label: '15. Willing to Travel?', select: true, options: ['YES', 'NO'] },
+        { name: 'q16_covidVaccination', label: '16. Covid Vaccination Details', select: true, options: ['1st DOSE', '2nd DOSE', 'BOOSTER', 'NOT DONE'] },
+
+        { type: 'subheader', label: '3. Goals & Suggestions' },
+        { name: 'q17_positivePoints', label: '17. Positive Points (Strengths)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q18_negativePoints', label: '18. Negative Points (Weaknesses)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q19_lifeGoals', label: '19. Life Goals (1 & 3 Years)', multiline: true, rows: 2, lg: 6 },
+        { name: 'q20_improvementSuggestions', label: '20. Suggestions for Company', multiline: true, rows: 2, lg: 6 },
+
+        { type: 'subheader', label: '4. Experience & Salary Details' },
+        { name: 'q21_isExperienced', label: '21. Are you Experienced?', select: true, options: ['YES', 'NO'] },
+        { name: 'q22_totalExperience', label: '22. Total Experience (Years/Months)', max: 50 },
+        { name: 'q23_coreExperience', label: '23. Core Experience details', max: 50 },
+        { name: 'q24_prevNetSalary', label: '24. Previous Net Salary', max: 50 },
+        { name: 'q25_prevGrossSalary', label: '25. Previous Gross Salary', max: 50 },
+        { name: 'q26_expectedNetSalary', label: '26. Expected Net Salary', max: 50 },
+        { name: 'q27_expectedGrossSalary', label: '27. Expected Gross Salary', max: 50 },
+        { name: 'q28_pfHigherPension', label: '28. PF Higher Pension Contribution?', select: true, options: ['YES', 'NO'] },
+        { name: 'q29_pfDeductionAmount', label: '29. PF Deduction Amount', max: 50 },
+        { name: 'q30_alternativeDepartment', label: '30. Alternative Department Choice', max: 100 },
+
+        { type: 'subheader', label: '5. Work Environment & References' },
+        { name: 'q31_prevLocation', label: '31. Previous Work Location', max: 255 },
+        { name: 'q32_prevShift', label: '32. Previous Shift details', max: 50 },
+        { name: 'q33_reasonForLeaving', label: '33. Reason for Leaving', multiline: true, rows: 2, lg: 6 },
+        { name: 'q34_noticePeriod', label: '34. Notice Period', max: 50 },
+        { name: 'q35_prevDeptPosition', label: '35. Previous Dept & Position', max: 255 },
+        { name: 'q36_prevDeptCount', label: '36. Previous Dept Team Count', max: 50 },
+        { name: 'q37_prevReportingTo', label: '37. Previous Reporting Manager', max: 255 },
+        { name: 'q38_handleMistake', label: '38. How do you handle a mistake?', multiline: true, rows: 2, lg: 6 },
+        { name: 'q39_handleOpinionDifference', label: '39. How do you handle opinion differences?', multiline: true, rows: 2, lg: 6 },
+        { name: 'q40_computerSelfRating', label: '40. Computer Knowledge self-rating', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'BASIC', 'NONE'] },
+        { name: 'payslipPath', label: 'Payslip Upload', type: 'file' }
+      ]} />
+
+    </Stack>
+  );
+}

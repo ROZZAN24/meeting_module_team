@@ -1,0 +1,686 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import axios from 'utils/axios';
+import { useTheme } from '@mui/material/styles';
+
+// MUI & Icons
+import {
+  Box,
+  Typography,
+  Stack,
+  Tooltip,
+  IconButton,
+  MenuItem,
+  Button,
+  Chip,
+  Divider,
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Paper
+} from '@mui/material';
+import {
+  IconRefresh,
+  IconPlus,
+  IconCalendarEvent,
+  IconEdit,
+  IconUserPlus,
+  IconCloudUpload,
+  IconTrash
+} from '@tabler/icons-react';
+
+// BOS Components
+import MainCard from 'ui-component/cards/MainCard';
+import {
+  BOSDataTable,
+  BOSFormDialog,
+  BOSFormSection,
+  BOSTextField,
+  BOSExportButton,
+  btnNew,
+  errorStyle
+} from 'ui-component/bos';
+import { openSnackbar } from 'store/slices/snackbar';
+import { useLookups } from 'hooks/useLookups';
+import useBOSValidation from 'hooks/useBOSValidation';
+import { setFilterConfig } from 'store/slices/search';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+
+// ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
+
+const columns = [
+  { id: 'index', label: 'Sl.No', minWidth: 60 },
+  { id: 'serialNo', label: 'Assign.ID', bold: true, color: 'primary.main', minWidth: 100 },
+  { id: 'empCode', label: 'Emp.Code', bold: true, minWidth: 100 },
+  { id: 'oldEmpCode', label: 'Old Emp.Code', minWidth: 120 },
+  { id: 'empName', label: 'Employee Name', minWidth: 180 },
+  { id: 'department', label: 'Department', minWidth: 150 },
+  { id: 'designation', label: 'Designation', minWidth: 150 },
+  { id: 'inductionRound', label: 'Round', minWidth: 120 },
+  { id: 'screeningLevel', label: 'Level', minWidth: 100 },
+  { id: 'inductionDate', label: 'Date', minWidth: 120 },
+  { id: 'inductionTime', label: 'Time', minWidth: 100 },
+  { id: 'trainerName', label: 'Trainer/Person', minWidth: 150 },
+  { 
+    id: 'currentStatus', 
+    label: 'Current Status', 
+    minWidth: 130,
+    render: (row) => {
+      const colors = {
+        'PENDING': 'warning',
+        'RESCHEDULE': 'secondary',
+        'TRAINING GIVEN': 'info',
+        'COMPLETED': 'success',
+        'REJECTED': 'error'
+      };
+      return (
+        <Chip 
+          label={row.currentStatus} 
+          size="small" 
+          color={colors[row.currentStatus] || 'default'}
+          sx={{ fontWeight: 700, borderRadius: '6px' }}
+        />
+      );
+    }
+  },
+  { 
+    id: 'inductionStatus', 
+    label: 'Induction Status', 
+    minWidth: 120,
+    render: (row) => (
+      <Chip 
+        label={row.inductionStatus} 
+        variant="outlined"
+        size="small" 
+        color={row.inductionStatus === 'ACTIVE' ? 'success' : 'error'}
+      />
+    )
+  },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+  { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+  { id: 'updatedDate', label: 'UPDATED DATE', minWidth: 150 }
+];
+
+const INITIAL_STATE = {
+  id: null,
+  empCode: '',
+  oldEmpCode: '',
+  empName: '',
+  department: '',
+  designation: '',
+  inductionRound: '',
+  screeningLevel: 'Level 1', 
+  inductionDate: new Date().toISOString().split('T')[0],
+  inductionTime: '09:00',
+  trainerName: '',
+  currentStatus: 'PENDING',
+  inductionStatus: 'ACTIVE',
+  remarks: ''
+};
+
+const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
+const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
+const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
+
+const TIME_OPTIONS = [
+  { value: '09:00', label: '09:00 AM' },
+  { value: '09:30', label: '09:30 AM' },
+  { value: '10:00', label: '10:00 AM' },
+  { value: '10:30', label: '10:30 AM' },
+  { value: '11:00', label: '11:00 AM' },
+  { value: '11:30', label: '11:30 AM' },
+  { value: '12:00', label: '12:00 PM' },
+  { value: '12:30', label: '12:30 PM' },
+  { value: '13:00', label: '01:00 PM' },
+  { value: '13:30', label: '01:30 PM' },
+  { value: '14:00', label: '02:00 PM' },
+  { value: '14:30', label: '02:30 PM' },
+  { value: '15:00', label: '03:00 PM' },
+  { value: '15:30', label: '03:30 PM' },
+  { value: '16:00', label: '04:00 PM' },
+  { value: '16:30', label: '04:30 PM' },
+  { value: '17:00', label: '05:00 PM' },
+  { value: '17:30', label: '05:30 PM' },
+  { value: '18:00', label: '06:00 PM' },
+  { value: '18:30', label: '06:30 PM' },
+  { value: '19:00', label: '07:00 PM' },
+  { value: '19:30', label: '07:30 PM' },
+  { value: '20:00', label: '08:00 PM' },
+  { value: '20:30', label: '08:30 PM' },
+  { value: '21:00', label: '09:00 PM' }
+];
+
+
+const VALIDATION_RULES = [
+  { field: 'empCode', label: 'Employee', required: true },
+  { field: 'inductionRound', label: 'Induction Round', required: true },
+  { field: 'screeningLevel', label: 'Screening Level', required: true },
+  { field: 'inductionDate', label: 'Induction Date', required: true },
+  { field: 'inductionTime', label: 'Induction Time', required: true },
+  { field: 'trainerName', label: 'Trainer Name', required: true }
+];
+
+const InductionAssignment = () => {
+  const theme = useTheme();
+  const dispatch = useDispatch();
+
+  const { departments = [] } = useLookups(['DEPARTMENTS']);
+  const [rows, setRows] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formData, setFormData] = useState(INITIAL_STATE);
+  const { errors, validate, clearErrors, setErrors } = useBOSValidation();
+
+  const [history, setHistory] = useState([]);
+
+  const globalQuery = useSelector((state) => state.search.query);
+  const globalFilters = useSelector((state) => state.search.filters);
+  const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
+
+  // Dispatch starred filter configuration matching Status and Search By
+  useEffect(() => {
+    const config = [
+      {
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        options: [
+          { value: 'ALL', label: 'ALL' },
+          { value: 'PENDING', label: 'PENDING' },
+          { value: 'COMPLETED', label: 'COMPLETED' }
+        ],
+        defaultValue: 'ALL',
+        isStarred: true
+      },
+      {
+        id: 'searchBy',
+        label: 'Search By',
+        type: 'select',
+        options: [
+          { value: 'empCode', label: 'Employee Code' },
+          { value: 'empName', label: 'Employee Name' },
+          { value: 'department', label: 'Department' },
+          { value: 'currentStatus', label: 'Current Status' },
+          { value: 'inductionRound', label: 'Induction Round' }
+        ],
+        defaultValue: 'empCode',
+        isStarred: true
+      }
+    ];
+    dispatch(setFilterConfig(config));
+    return () => {
+      dispatch(setFilterConfig(null));
+    };
+  }, [dispatch]);
+
+  const handleAssign = useCallback(async (row) => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get(`/api/hr/induction-assignment/employee/${row.empCode}`);
+      setHistory(data || []);
+      
+      const cleanData = { ...INITIAL_STATE };
+      
+      Object.keys(cleanData).forEach(key => {
+        if (row[key] !== undefined && row[key] !== null) {
+          cleanData[key] = row[key];
+        }
+      });
+
+      // Special handling for dates
+      if (row.inductionDate && row.inductionDate !== '-') {
+        cleanData.inductionDate = new Date(row.inductionDate).toISOString().split('T')[0];
+      } else {
+        cleanData.inductionDate = new Date().toISOString().split('T')[0];
+      }
+
+      // Add gradeCode/Level info for summary header
+      cleanData.gradeCode = row.gradeCode || row.grade?.gradeCode || '-';
+      cleanData.empName = row.empName || row.employeeName || '';
+      cleanData.empCode = row.empCode || '';
+      cleanData.oldEmpCode = row.oldEmpCode || '';
+      cleanData.department = typeof row.department === 'object' ? row.department?.departmentName : (row.department || '');
+      cleanData.designation = typeof row.designation === 'object' ? row.designation?.designationName : (row.designation || '');
+      cleanData.inductionStatus = 'ACTIVE'; // Force ACTIVE so it's not overridden by EmployeeMaster's PENDING status
+
+      setFormData(cleanData);
+      setErrors({});
+      setDialogOpen(true);
+    } catch (err) {
+      console.error('History fetch error:', err);
+      // Fallback if history fails
+      setFormData({
+        ...INITIAL_STATE,
+        empCode: row.empCode,
+        empName: row.empName || row.employeeName,
+        department: row.department,
+        designation: row.designation,
+        oldEmpCode: row.oldEmpCode
+      });
+      setDialogOpen(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [setErrors]);
+
+  const columns = useMemo(() => [
+    { id: 'index', label: 'No', minWidth: 50 },
+    { id: 'empCode', label: 'EmpCode', bold: true, minWidth: 100 },
+    { id: 'empName', label: 'Employee Name', minWidth: 180 },
+    { id: 'oldEmpCode', label: 'OldEmpCode', minWidth: 120, render: (row) => row.oldEmpCode || '-' },
+    { id: 'department', label: 'Department', minWidth: 150 },
+    { id: 'designation', label: 'Designation', minWidth: 150 },
+    { 
+      id: 'inductionStatus', 
+      label: 'Induction Status', 
+      minWidth: 130,
+      render: (row) => {
+        const status = row.inductionStatus || 'PENDING';
+        return (
+          <Chip 
+            label={status} 
+            variant="outlined"
+            size="small" 
+            color={status === 'COMPLETED' ? 'success' : 'warning'}
+          />
+        );
+      }
+    },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'center',
+      render: (row) => (
+        <Tooltip title={row.isVirtual ? "Assign Now" : "Edit Assignment"}>
+          <IconButton onClick={() => handleAssign(row)} size="small" color={row.isVirtual ? "primary" : "secondary"}>
+            {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
+          </IconButton>
+        </Tooltip>
+      )
+    }
+  ], [handleAssign]);
+
+  const fetchRows = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [assignRes, empRes] = await Promise.all([
+        axios.get('/api/hr/induction-assignment'),
+        axios.get('/api/master/hr/employees/filter/active')
+      ]);
+
+      const assignments = assignRes.data;
+      const allActiveEmployees = empRes.data;
+      
+      const finalRows = [];
+      assignments.forEach(a => {
+        const emp = allActiveEmployees.find(e => e.empCode === a.empCode);
+        const empDept = emp && typeof emp.department === 'object' ? emp.department?.departmentName : (emp?.department || a.department);
+        const empDesig = emp && typeof emp.designation === 'object' ? emp.designation?.designationName : (emp?.designation || a.designation);
+        finalRows.push({ 
+          ...emp, 
+          ...a, 
+          id: a.id,
+          employeeId: emp?.id,
+          department: empDept,
+          designation: empDesig,
+          isVirtual: false 
+        });
+      });
+
+      allActiveEmployees.forEach(emp => {
+        if (!assignments.some(a => a.empCode === emp.empCode)) {
+          finalRows.push({ 
+            ...emp, 
+            id: null,
+            employeeId: emp.id,
+            empName: emp.employeeName,
+            department: typeof emp.department === 'object' ? emp.department?.departmentName : emp.department,
+            designation: typeof emp.designation === 'object' ? emp.designation?.designationName : emp.designation,
+            isVirtual: true, 
+            currentStatus: 'PENDING', 
+            inductionRound: '-', 
+            screeningLevel: '-' 
+          });
+        }
+      });
+
+      setRows(finalRows);
+      setEmployees(allActiveEmployees);
+    } catch (error) {
+      console.error('Fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchRows(); }, [fetchRows]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) clearErrors(name);
+  };
+
+  const handleSave = async () => {
+    if (!validate(formData, VALIDATION_RULES)) return;
+    
+    // Find trainer emp code
+    const selectedTrainer = employees.find(e => e.employeeName === formData.trainerName);
+    
+    // Clean payload to match backend model exactly
+    const payload = {
+      empCode: formData.empCode,
+      empName: formData.empName,
+      oldEmpCode: formData.oldEmpCode,
+      department: formData.department,
+      designation: formData.designation,
+      inductionRound: formData.inductionRound,
+      screeningLevel: formData.screeningLevel,
+      inductionDate: formData.inductionDate,
+      inductionTime: formData.inductionTime,
+      trainerName: formData.trainerName,
+      trainerEmpCode: selectedTrainer?.empCode || '',
+      currentStatus: formData.currentStatus,
+      inductionStatus: formData.inductionStatus,
+      remarks: formData.remarks
+    };
+
+    if (formData.id) {
+      payload.id = formData.id;
+    }
+
+    // Additional validation for default values
+    if (formData.screeningLevel === '-' || formData.inductionRound === '-') {
+      dispatch(openSnackbar({ open: true, message: 'Please select a valid Level and Round', variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+      return;
+    }
+
+    try {
+      if (payload.id) {
+        await axios.put(`/api/hr/induction-assignment/${payload.id}`, payload);
+      } else {
+        await axios.post('/api/hr/induction-assignment', payload);
+      }
+      dispatch(openSnackbar({ open: true, message: 'Assignment saved!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+      setDialogOpen(false);
+      fetchRows();
+    } catch (error) {
+      console.error('Save error details:', error);
+      const message = typeof error === 'string'
+        ? error
+        : (error.response?.data?.message || error.response?.data || error.message || error.error || 'Failed to save');
+      
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: message, 
+        variant: 'alert', 
+        alert: { variant: 'filled' }, 
+        severity: 'error' 
+      }));
+    }
+  };
+
+  const resolvedRows = useMemo(() => {
+    return rows.filter(row => {
+      const statusVal = globalFilters.status || 'ALL';
+      const matchesStatus = statusVal === 'ALL' || row.inductionStatus === statusVal;
+      
+      const searchByVal = globalFilters.searchBy || 'empCode';
+      const term = globalQuery ? globalQuery.toLowerCase() : '';
+      const matchesSearch = !term || (row[searchByVal] && row[searchByVal].toString().toLowerCase().includes(term));
+      
+      return matchesStatus && matchesSearch;
+    }).map((r, i) => ({
+      ...r,
+      index: i + 1,
+      createdUser: r.createdUser || r.createdBy || '-',
+      updatedUser: r.updatedUser || r.updatedBy || '-',
+      createdDate: r.createdDate || r.createdAt ? new Date(r.createdDate || r.createdAt).toLocaleString('en-GB') : '-',
+      updatedDate: r.updatedDate || r.updatedAt ? new Date(r.updatedDate || r.updatedAt).toLocaleString('en-GB') : '-'
+    }));
+  }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
+
+  return (
+    <MainCard
+      title={
+        <Typography variant="h4" sx={{ fontWeight: 600 }}>
+          Employee Induction Summary
+        </Typography>
+      }
+      secondary={
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Tooltip title="Refresh">
+            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
+              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
+              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
+            }}>
+              <IconRefresh size={20} />
+            </IconButton>
+          </Tooltip>
+
+          {perms.export && <BOSExportButton 
+            data={resolvedRows} 
+            filename="Induction_Summary" 
+            columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
+          />}
+        </Stack>
+      }
+    >
+      <BOSDataTable
+        columns={columns}
+        rows={resolvedRows}
+        loading={loading}
+        onDoubleClickRow={handleAssign}
+        onEditRow={handleAssign}
+      />
+
+      <BOSFormDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        title={formData.id ? 'Update Induction Process' : 'Assign Induction Process'}
+        fullWidth
+        maxWidth="md"
+        onSave={perms.write ? handleSave : null}
+        onClear={perms.write ? () => {
+          setFormData(INITIAL_STATE);
+          setErrors({});
+        } : null}
+        isViewOnly={!perms.write}
+      >
+        {/* Summary Header */}
+        <Box sx={{ bgcolor: 'primary.light', p: 2, borderRadius: 2, mb: 3, display: 'flex', flexWrap: 'wrap', gap: 4, border: '1px solid', borderColor: 'primary.main' }}>
+          <Box><Typography variant="caption" color="textSecondary">DEPARTMENT</Typography><Typography variant="subtitle1" fontWeight={700}>{formData.department || '-'}</Typography></Box>
+          <Box><Typography variant="caption" color="textSecondary">POSITION</Typography><Typography variant="subtitle1" fontWeight={700}>{formData.designation || '-'}</Typography></Box>
+          <Box><Typography variant="caption" color="textSecondary">LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{formData.gradeCode || '-'}</Typography></Box>
+          <Box><Typography variant="caption" color="textSecondary">SCREEN LEVEL</Typography><Typography variant="subtitle1" fontWeight={700}>{history.length + 1}</Typography></Box>
+        </Box>
+
+        <BOSFormSection title="1. Assignment Details">
+          <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <BOSTextField
+                select
+                name="screeningLevel"
+                label="SCREENING LEVEL"
+                value={formData.screeningLevel}
+                onChange={handleInputChange}
+                required
+                disabled={!perms.write}
+                error={!!errors.screeningLevel}
+                sx={errorStyle(!!errors.screeningLevel)}
+              >
+                {LEVEL_OPTIONS.map(l => (
+                  <MenuItem key={l} value={l}>{l}</MenuItem>
+                ))}
+              </BOSTextField>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <BOSTextField
+                select
+                name="inductionRound"
+                label="ROUND"
+                value={formData.inductionRound}
+                onChange={handleInputChange}
+                required
+                disabled={!perms.write}
+                error={!!errors.inductionRound}
+                sx={errorStyle(!!errors.inductionRound)}
+              >
+                <MenuItem value="">-SELECT-</MenuItem>
+                {ROUND_OPTIONS.map(r => (
+                  <MenuItem key={r} value={r}>{r}</MenuItem>
+                ))}
+              </BOSTextField>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <BOSTextField
+                type="date"
+                name="inductionDate"
+                label="INDUCTION DATE"
+                value={formData.inductionDate}
+                onChange={handleInputChange}
+                required
+                disabled={!perms.write}
+                inputProps={{ min: new Date().toISOString().split('T')[0] }}
+                InputLabelProps={{ shrink: true }}
+                onClick={(e) => {
+                  try {
+                    e.target.showPicker();
+                  } catch (err) {
+                    // Fallback
+                  }
+                }}
+                error={!!errors.inductionDate}
+                sx={errorStyle(!!errors.inductionDate)}
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <BOSTextField
+                select
+                name="inductionTime"
+                label="INDUCTION TIME"
+                value={formData.inductionTime}
+                onChange={handleInputChange}
+                required
+                disabled={!perms.write}
+                error={!!errors.inductionTime}
+                sx={errorStyle(!!errors.inductionTime)}
+              >
+                {TIME_OPTIONS.map(t => (
+                  <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>
+                ))}
+              </BOSTextField>
+            </Box>
+          </Box>
+          <Box sx={{ display: 'flex', gap: 2.5, width: '100%', mb: 2 }}>
+            <Box sx={{ flex: 1 }}>
+              <BOSTextField
+                select
+                name="trainerName"
+                label="INDUCTION PERSON"
+                value={formData.trainerName}
+                onChange={handleInputChange}
+                required
+                disabled={!perms.write}
+                error={!!errors.trainerName}
+                sx={errorStyle(!!errors.trainerName)}
+              >
+                <MenuItem value="">-Select-</MenuItem>
+                {employees
+                  .filter(emp => {
+                    if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
+                    if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
+                    const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;
+                    const round = formData.inductionRound;
+                    if (round === 'HR') {
+                      return ['HR', 'HUMAN RESOURCES', 'HRA', 'HR & ADMIN', 'HUMAN RESOURCE'].includes(empDept?.toUpperCase());
+                    }
+                    if (round === 'QMS') {
+                      return ['QMS', 'QUALITY MANAGEMENT', 'QUALITY', 'QMS DEPARTMENT'].includes(empDept?.toUpperCase());
+                    }
+                    if (round === 'DEPARTMENT') {
+                      return empDept?.toLowerCase() === formData.department?.toLowerCase();
+                    }
+                    return true;
+                  })
+                  .map(emp => (
+                    <MenuItem key={emp.id} value={emp.employeeName}>
+                      {emp.employeeName} ({emp.empCode})
+                    </MenuItem>
+                  ))}
+              </BOSTextField>
+            </Box>
+          </Box>
+        </BOSFormSection>
+
+        {/* History Table */}
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="h5" sx={{ mb: 2, color: 'primary.main', fontWeight: 600 }}>Induction History</Typography>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '10px', maxHeight: '300px', overflowY: 'auto' }}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'primary.light' }}>
+                  <TableCell sx={{ fontWeight: 700, width: 50 }}>#</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Screening Level</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Round</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Induction by</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Induction Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Rescheduled</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>CREATED USER</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {history.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} align="center" sx={{ py: 2, fontStyle: 'italic', color: 'text.secondary' }}>
+                      No history found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  history.map((h, i) => (
+                    <TableRow key={h.id || i} sx={{ '&:hover': { bgcolor: 'action.hover' } }}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{h.screeningLevel || '-'}</TableCell>
+                      <TableCell>{h.inductionRound || '-'}</TableCell>
+                      <TableCell>{h.inductionDate ? `${h.inductionDate} ${h.inductionTime || ''}` : '-'}</TableCell>
+                      <TableCell>{h.trainerName || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={h.currentStatus || 'PENDING'} 
+                          size="small" 
+                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')} 
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </TableCell>
+                      <TableCell>NO</TableCell>
+                      <TableCell>{(h.createdUser || h.createdBy) || '-'}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={h.inductionStatus || 'ACTIVE'} 
+                          size="small" 
+                          variant="outlined" 
+                          color={h.inductionStatus === 'ACTIVE' ? 'success' : 'default'} 
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      </BOSFormDialog>
+    </MainCard>
+  );
+};
+
+export default InductionAssignment;

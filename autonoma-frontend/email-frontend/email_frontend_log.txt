@@ -1,0 +1,44 @@
+
+> nutech-email-frontend@0.0.0 dev
+> vite
+
+
+  VITE v7.2.2  ready in 96 ms
+
+  ➜  Local:   http://localhost:5175/
+  ➜  Network: use --host to expose
+(!) Failed to run dependency scan. Skipping dependency pre-bundling. Error:   Failed to scan for dependencies from entries:
+  /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/email-frontend/index.html
+
+  [31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mUnexpected closing "MainCard" tag does not match opening "Box" tag[0m
+
+    src/pages/InboxPage.jsx:202:10:
+[37m      202 │         </[32mMainCard[37m>
+          │           [32m~~~~~~~~[37m
+          ╵           [32mBox[0m
+
+  The opening "Box" tag is here:
+
+    src/pages/InboxPage.jsx:107:7:
+[37m      107 │       <[32mBox[37m sx={{ flexShrink: 0, mb: 2 }}>
+          ╵        [32m~~~[0m
+
+
+[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mExpected ")" but found "{"[0m
+
+    src/pages/InboxPage.jsx:205:6:
+[37m      205 │       [32m{[37m/* Main Content Area: Split View */}
+          │       [32m^[37m
+          ╵       [32m)[0m
+
+
+    at failureErrorWithLog (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:926:25
+    at runOnEndCallbacks (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:1307:45)
+    at buildResponseToResult (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:936:9
+    at new Promise (<anonymous>)
+    at requestCallbacks.on-end (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:935:54)
+    at handleRequest (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:628:17)
+    at handleIncomingPacket (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:653:7)
+    at Socket.readFromStdout (/Users/darshankrishnakumar/Downloads/Autonoma_ERP-main/autonoma-frontend/node_modules/esbuild/lib/main.js:581:7)
