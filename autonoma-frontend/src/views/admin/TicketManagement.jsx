@@ -131,8 +131,8 @@ const HeaderStatCard = ({ title, count, color, icon }) => {
 
   return (
     <Paper elevation={1} sx={{
-      p: 1.5,
-      borderRadius: '12px',
+      p: 1,
+      borderRadius: '8px',
       bgcolor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#fff',
       border: `1px solid ${theme.palette.divider}`,
       display: 'flex',
@@ -140,26 +140,26 @@ const HeaderStatCard = ({ title, count, color, icon }) => {
       justifyContent: 'center',
       position: 'relative',
       overflow: 'hidden',
-      height: 70,
+      height: 56,
       transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
       '&:hover': {
         transform: 'translateY(-2px)',
         boxShadow: `0 4px 12px ${alpha(color, 0.15)}`
       }
     }}>
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ zIndex: 1, position: 'relative' }}>
-        <Avatar sx={{ bgcolor: alpha(color, 0.15), color: color, width: 36, height: 36 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ zIndex: 1, position: 'relative' }}>
+        <Avatar sx={{ bgcolor: alpha(color, 0.15), color: color, width: 28, height: 28, '& svg': { fontSize: '1rem' } }}>
           {icon}
         </Avatar>
         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <Typography variant="h3" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>{count}</Typography>
-          <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', mt: 0.5, letterSpacing: '0.5px' }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>{count}</Typography>
+          <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', mt: 0.2, letterSpacing: '0.5px' }}>
             {title}
           </Typography>
         </Box>
       </Stack>
-      <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 25, opacity: 0.5 }}>
-        <Chart options={chartOptions} series={[{ data: [15, 23, 18, 30, 24, 35, 28] }]} type="area" height={25} />
+      <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 20, opacity: 0.5 }}>
+        <Chart options={chartOptions} series={[{ data: [15, 23, 18, 30, 24, 35, 28] }]} type="area" height={20} />
       </Box>
     </Paper>
   );
@@ -878,7 +878,7 @@ export default function TicketManagement({ viewType }) {
       const m = detailEstimatedMinutes !== '' ? detailEstimatedMinutes : '00';
       const newEstTime = `${h}:${m}`;
       setDetailEstimatedTime(newEstTime);
-      
+
       // If estimated time changes, recalculate target date
       if (selectedTicket && newEstTime !== selectedTicket.assignedHours) {
         const calculateDetailTargetDateFromTime = async () => {
@@ -1768,7 +1768,7 @@ export default function TicketManagement({ viewType }) {
             setDetailResolution('');
           }
           await fetchTicketSubresources(selectedTicket.rowId);
-          
+
           if (detailStatus === 'Reopened') {
             showSnackbar('Ticket reopened — assigned user status set to REWORK');
           } else if (detailStatus === 'Completed') {
@@ -1776,7 +1776,7 @@ export default function TicketManagement({ viewType }) {
           } else {
             showSnackbar('Ticket updated successfully!');
           }
-          
+
           fetchTickets();
           setHasSavedInDetails(true);
           setFormAttachments([]);
@@ -2273,7 +2273,7 @@ export default function TicketManagement({ viewType }) {
           if (parsed && (parsed.activityName === 'Estimated Time Updated' || parsed.activityName === 'Estimated Time Set' || parsed.activityName === 'Additional Requirement Added')) {
             return true;
           }
-        } catch(e) {}
+        } catch (e) { }
         return false;
       })
       : [{
@@ -2410,7 +2410,7 @@ export default function TicketManagement({ viewType }) {
             <Collapse in={panelsOpen.part1} sx={{ flexGrow: 1, overflowY: 'auto' }}>
               <Box sx={{ p: 2 }}>
                 <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #eef2f6', minHeight: 60, mb: 2 }} dangerouslySetInnerHTML={{ __html: selectedTicket.description || '' }} />
-                
+
                 <Grid container spacing={1.5}>
                   {[
                     { label: 'Severity', value: selectedTicket.severityLevel, icon: <SecurityOutlinedIcon sx={{ color: '#f59e0b', fontSize: 16 }} /> },
@@ -2434,120 +2434,120 @@ export default function TicketManagement({ viewType }) {
                     </Grid>
                   ))}
                 </Grid>
-              
-              {/* Additional Requirement */}
-              <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eef2f6' }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, display: 'block' }}>Additional Requirement</Typography>
-                {currentViewType === 'raised-by-me' ? (
-                  <>
-                  <Box sx={{ 
-                    '.ql-container': { minHeight: '80px !important', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }, 
-                    '.ql-toolbar': { borderTopLeftRadius: '12px', borderTopRightRadius: '12px', bgcolor: '#f8fafc' },
-                    mb: 2 
-                  }}>
-                    <ReactQuillDemo value={detailAdditionalRequirement} onChange={setDetailAdditionalRequirement} />
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Button
-                      component="label"
-                      variant="outlined"
-                      startIcon={<CloudUploadIcon />}
-                      sx={{
-                        height: 36,
-                        borderStyle: 'dashed',
-                        borderColor: '#6366f1',
-                        color: '#6366f1',
-                        borderRadius: '8px',
-                        px: 2, fontWeight: 600, fontSize: '0.75rem',
-                        textTransform: 'none',
-                        '&:hover': { borderStyle: 'dashed', borderColor: '#4f46e5', bgcolor: '#e0e7ff' }
-                      }}
-                    >
-                      {uploading ? 'Uploading...' : 'Upload Attachments'}
-                      <input type="file" multiple hidden onChange={(e) => handleFileUpload(e, false)} />
-                    </Button>
-                    <Tooltip title={isRecordingAudio ? "Stop & Save Recording" : "Record Voice Audio Note"}>
-                      <Button
-                        variant={isRecordingAudio ? "contained" : "outlined"}
-                        color={isRecordingAudio ? "error" : "secondary"}
-                        onClick={handleToggleLiveRecording}
-                        sx={{
-                          height: 36,
-                          borderStyle: isRecordingAudio ? 'solid' : 'dashed',
-                          borderColor: isRecordingAudio ? 'error.main' : '#6366f1',
-                          color: isRecordingAudio ? '#fff' : '#6366f1',
-                          borderRadius: '8px',
-                          px: 2, fontWeight: 600, fontSize: '0.75rem',
-                          textTransform: 'none',
-                          animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none',
-                          '&:hover': { borderStyle: isRecordingAudio ? 'solid' : 'dashed', borderColor: isRecordingAudio ? 'error.dark' : '#4f46e5', bgcolor: isRecordingAudio ? 'error.dark' : '#e0e7ff' }
-                        }}
-                        startIcon={isRecordingAudio ? <StopIcon /> : <MicNoneIcon />}
-                      >
-                        {isRecordingAudio ? "Recording..." : "Record Audio"}
-                      </Button>
-                    </Tooltip>
-                  </Box>
-                  {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto', mb: 2 }}>
-                      {formAttachments.map((fileObj, idx) => {
-                        const isUrlStr = typeof fileObj === 'string';
-                        const url = isUrlStr ? fileObj : fileObj.url;
-                        const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
-                        const size = isUrlStr ? null : fileObj.size;
-                        const canPreview = isPreviewable(name);
 
-                        return (
-                          <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
-                            <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
-                              <Tooltip title={name} arrow>
-                                <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                  {name}
+                {/* Additional Requirement */}
+                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eef2f6' }}>
+                  <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, display: 'block' }}>Additional Requirement</Typography>
+                  {currentViewType === 'raised-by-me' ? (
+                    <>
+                      <Box sx={{
+                        '.ql-container': { minHeight: '80px !important', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' },
+                        '.ql-toolbar': { borderTopLeftRadius: '12px', borderTopRightRadius: '12px', bgcolor: '#f8fafc' },
+                        mb: 2
+                      }}>
+                        <ReactQuillDemo value={detailAdditionalRequirement} onChange={setDetailAdditionalRequirement} />
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1.5, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <Button
+                          component="label"
+                          variant="outlined"
+                          startIcon={<CloudUploadIcon />}
+                          sx={{
+                            height: 36,
+                            borderStyle: 'dashed',
+                            borderColor: '#6366f1',
+                            color: '#6366f1',
+                            borderRadius: '8px',
+                            px: 2, fontWeight: 600, fontSize: '0.75rem',
+                            textTransform: 'none',
+                            '&:hover': { borderStyle: 'dashed', borderColor: '#4f46e5', bgcolor: '#e0e7ff' }
+                          }}
+                        >
+                          {uploading ? 'Uploading...' : 'Upload Attachments'}
+                          <input type="file" multiple hidden onChange={(e) => handleFileUpload(e, false)} />
+                        </Button>
+                        <Tooltip title={isRecordingAudio ? "Stop & Save Recording" : "Record Voice Audio Note"}>
+                          <Button
+                            variant={isRecordingAudio ? "contained" : "outlined"}
+                            color={isRecordingAudio ? "error" : "secondary"}
+                            onClick={handleToggleLiveRecording}
+                            sx={{
+                              height: 36,
+                              borderStyle: isRecordingAudio ? 'solid' : 'dashed',
+                              borderColor: isRecordingAudio ? 'error.main' : '#6366f1',
+                              color: isRecordingAudio ? '#fff' : '#6366f1',
+                              borderRadius: '8px',
+                              px: 2, fontWeight: 600, fontSize: '0.75rem',
+                              textTransform: 'none',
+                              animation: isRecordingAudio ? 'pulse-voice 1.5s infinite' : 'none',
+                              '&:hover': { borderStyle: isRecordingAudio ? 'solid' : 'dashed', borderColor: isRecordingAudio ? 'error.dark' : '#4f46e5', bgcolor: isRecordingAudio ? 'error.dark' : '#e0e7ff' }
+                            }}
+                            startIcon={isRecordingAudio ? <StopIcon /> : <MicNoneIcon />}
+                          >
+                            {isRecordingAudio ? "Recording..." : "Record Audio"}
+                          </Button>
+                        </Tooltip>
+                      </Box>
+                      {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto', mb: 2 }}>
+                          {formAttachments.map((fileObj, idx) => {
+                            const isUrlStr = typeof fileObj === 'string';
+                            const url = isUrlStr ? fileObj : fileObj.url;
+                            const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
+                            const size = isUrlStr ? null : fileObj.size;
+                            const canPreview = isPreviewable(name);
+
+                            return (
+                              <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
+                                <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                  <Tooltip title={name} arrow>
+                                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {name}
+                                    </Typography>
+                                  </Tooltip>
+                                </Box>
+                                <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                  {getFileTypeDisplay(name)}
                                 </Typography>
-                              </Tooltip>
+                                <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                  {size ? formatFileSize(size) : 'Unknown'}
+                                </Typography>
+                                <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                                  {canPreview ? (
+                                    <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                      <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
+                                    </Button>
+                                  ) : (
+                                    <Button size="small" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(url)}`, '_blank')} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                      <DownloadIcon sx={{ fontSize: 14, mr: 0.5 }} /> Download
+                                    </Button>
+                                  )}
+                                </Box>
+                                <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ color: 'error.main', p: 0.25 }}>
+                                  <CloseIcon sx={{ fontSize: 14 }} />
+                                </IconButton>
+                              </Box>
+                            );
+                          })}
+                          {formVoiceFiles.map((url, idx) => (
+                            <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
+                              <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
+                                🎤 Audio Note
+                              </Typography>
+                              <audio src={'/api/files/download?path=' + encodeURIComponent(url)} controls style={{ height: '32px', flexGrow: 1, maxWidth: '250px' }} />
+                              <IconButton size="small" onClick={() => setFormVoiceFiles(formVoiceFiles.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                                <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                              </IconButton>
                             </Box>
-                            <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
-                              {getFileTypeDisplay(name)}
-                            </Typography>
-                            <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
-                              {size ? formatFileSize(size) : 'Unknown'}
-                            </Typography>
-                            <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
-                              {canPreview ? (
-                                <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
-                                  <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
-                                </Button>
-                              ) : (
-                                <Button size="small" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(url)}`, '_blank')} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
-                                  <DownloadIcon sx={{ fontSize: 14, mr: 0.5 }} /> Download
-                                </Button>
-                              )}
-                            </Box>
-                            <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ color: 'error.main', p: 0.25 }}>
-                              <CloseIcon sx={{ fontSize: 14 }} />
-                            </IconButton>
-                          </Box>
-                        );
-                      })}
-                      {formVoiceFiles.map((url, idx) => (
-                        <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
-                          <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
-                            🎤 Audio Note
-                          </Typography>
-                          <audio src={'/api/files/download?path=' + encodeURIComponent(url)} controls style={{ height: '32px', flexGrow: 1, maxWidth: '250px' }} />
-                          <IconButton size="small" onClick={() => setFormVoiceFiles(formVoiceFiles.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
-                            <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
-                          </IconButton>
+                          ))}
                         </Box>
-                      ))}
-                    </Box>
+                      )}
+                    </>
+                  ) : (
+                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2 }} dangerouslySetInnerHTML={{ __html: detailAdditionalRequirement || '<span style="color:#94a3b8">No additional requirements</span>' }} />
                   )}
-                  </>
-                ) : (
-                  <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2 }} dangerouslySetInnerHTML={{ __html: detailAdditionalRequirement || '<span style="color:#94a3b8">No additional requirements</span>' }} />
-                )}
-              </Box>
+                </Box>
               </Box>
             </Collapse>
           </Box>
@@ -2575,9 +2575,9 @@ export default function TicketManagement({ viewType }) {
             <Collapse in={panelsOpen.part2} sx={{ flexGrow: 1, overflowY: 'auto' }}>
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
                 <Box sx={{ px: 2, pt: 2, pb: 1 }}>
-                  <Tabs 
-                    value={tabValue} 
-                    onChange={(e, v) => setTabValue(v)} 
+                  <Tabs
+                    value={tabValue}
+                    onChange={(e, v) => setTabValue(v)}
                     aria-label="workflow tabs"
                     TabIndicatorProps={{ style: { display: 'none' } }}
                     sx={{
@@ -3179,35 +3179,35 @@ export default function TicketManagement({ viewType }) {
                             {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').map((file) => {
                               const isVoice = file.fileType === 'Voice Recording' ||
 
-                            /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
-                          return (
-                            <Box key={file.id} sx={{ p: 1.5, border: '1px solid #eee', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                <Box sx={{ flexGrow: 1 }}>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{file.fileName}</Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
-                                  </Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                  {!isVoice && (
-                                    <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
-                                      Preview
-                                    </Button>
+                                /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
+                              return (
+                                <Box key={file.id} sx={{ p: 1.5, border: '1px solid #eee', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{file.fileName}</Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
+                                      </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                      {!isVoice && (
+                                        <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                          Preview
+                                        </Button>
+                                      )}
+                                      <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
+                                        Download
+                                      </Button>
+                                    </Box>
+                                  </Box>
+                                  {isVoice && (
+                                    <Box sx={{ width: '100%', mt: 0.5 }}>
+                                      <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '36px' }} />
+                                    </Box>
                                   )}
-                                  <Button size="small" variant="outlined" onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
-                                    Download
-                                  </Button>
                                 </Box>
-                              </Box>
-                              {isVoice && (
-                                <Box sx={{ width: '100%', mt: 0.5 }}>
-                                  <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '36px' }} />
-                                </Box>
-                              )}
-                            </Box>
-                          );
-                        })}
+                              );
+                            })}
                           </>
                         )}
 
@@ -3353,8 +3353,8 @@ export default function TicketManagement({ viewType }) {
 
                       let titleText = '';
                       let parsedEvent = null;
-                      try { parsedEvent = JSON.parse(event.comment); } catch(e) {}
-                      
+                      try { parsedEvent = JSON.parse(event.comment); } catch (e) { }
+
                       if (event.comment === 'Ticket created' || (parsedEvent && parsedEvent.activityName === 'Ticket Created')) {
                         titleText = 'Ticket Created';
                       } else if (isReassign || (parsedEvent && parsedEvent.activityName === 'Ticket Reassigned')) {
@@ -3491,7 +3491,7 @@ export default function TicketManagement({ viewType }) {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, height: 'calc(110vh - 260px)', overflow: 'hidden' }}>
 
       {/* ── DASHBOARD STAT CARDS & ACTIONS ── */}
       <Box sx={{
@@ -3550,16 +3550,16 @@ export default function TicketManagement({ viewType }) {
         )}
       </Box>
 
-      <MainCard sx={{ p: 0, display: 'flex', flexDirection: 'column', height: 'fit-content' }}>
+      <MainCard content={false} sx={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         {/* ── TICKETS RECORDS TABLE ── */}
-        <TableContainer sx={{ height: 'fit-content', overflow: 'visible', display: 'flex', flexDirection: 'column' }}>
+        <TableContainer sx={{ flexGrow: 1, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
           {loading ? (
             <Box sx={{ p: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', flexGrow: 1 }}>
               <CircularProgress color="secondary" />
             </Box>
           ) : (
-            <Table size="small" sx={{ minWidth: 650, flexGrow: 1, '& .MuiTableCell-root': { py: 1.5, px: 2, height: '65px' } }}>
-              <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50' }}>
+            <Table stickyHeader size="small" sx={{ minWidth: 650, '& .MuiTableCell-root': { py: 1, px: 1.5 } }}>
+              <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50', '& .MuiTableCell-root': { py: 1.5 } }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>Ticket ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Title / Module / Screen</TableCell>
@@ -3581,108 +3581,118 @@ export default function TicketManagement({ viewType }) {
                   </TableRow>
                 ) : (
                   pagedTickets.map((t) => (
-                    <TableRow key={t.rowId} hover>
-                      <TableCell sx={{ fontWeight: 700, color: t.ticketType === 'External' ? 'secondary.main' : 'primary.main' }}>
-                        {t.ticketId}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t.title}</Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {getPageDisplay(t)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell sx={{ minWidth: 220 }}>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.developerName || t.assignedTo || 'Unassigned'}</Typography>
-                        {t.developerEmail && (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Email: {t.developerEmail}
+                    <Tooltip title="Double Tap" placement="top" arrow key={t.rowId}>
+                      <TableRow
+                        hover
+                        onDoubleClick={() => {
+                          setSelectedTicket(t);
+                          setTabValue(0);
+                          setDetailsOpen(true);
+                        }}
+                        sx={{ cursor: 'pointer' }}
+                      >
+                        <TableCell sx={{ fontWeight: 700, color: t.ticketType === 'External' ? 'secondary.main' : 'primary.main' }}>
+                          {t.ticketId}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t.title}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {getPageDisplay(t)}
                           </Typography>
-                        )}
-                        {t.developerMobileNo && (
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                            Mobile: {t.developerMobileNo}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={t.priorityLevel}
-                          size="small"
-                          sx={{
-                            bgcolor: alpha(getPriorityColor(t.priorityLevel), 0.1),
-                            color: getPriorityColor(t.priorityLevel),
-                            fontWeight: 700,
-                            borderRadius: '6px'
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={t.ticketStatus}
-                          size="small"
-                          sx={{
-                            bgcolor: alpha(getStatusColor(t.ticketStatus), 0.1),
-                            color: getStatusColor(t.ticketStatus),
-                            fontWeight: 700,
-                            borderRadius: '6px',
-                            minWidth: 100,
-                            textAlign: 'center'
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {t.targetDate ? (
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 220 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.developerName || t.assignedTo || 'Unassigned'}</Typography>
+                          {t.developerEmail && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Email: {t.developerEmail}
+                            </Typography>
+                          )}
+                          {t.developerMobileNo && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              Mobile: {t.developerMobileNo}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={t.priorityLevel}
+                            size="small"
+                            sx={{
+                              bgcolor: alpha(getPriorityColor(t.priorityLevel), 0.1),
+                              color: getPriorityColor(t.priorityLevel),
+                              fontWeight: 700,
+                              borderRadius: '6px'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={t.ticketStatus}
+                            size="small"
+                            sx={{
+                              bgcolor: alpha(getStatusColor(t.ticketStatus), 0.1),
+                              color: getStatusColor(t.ticketStatus),
+                              fontWeight: 700,
+                              borderRadius: '6px',
+                              minWidth: 100,
+                              textAlign: 'center'
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {t.targetDate ? (
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {format(new Date(t.targetDate), 'dd/MM/yyyy')}
+                            </Typography>
+                          ) : (
+                            <Typography variant="caption" color="text.secondary">-</Typography>
+                          )}
+                          {t.dueDate && (
+                            <Typography variant="caption" color="error.main" sx={{ display: 'block', fontWeight: 600 }}>
+                              Due: {format(new Date(t.dueDate), 'dd/MM/yyyy')}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.assignedHours || '-'}</Typography>
+                        </TableCell>
+                        <TableCell>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {format(new Date(t.targetDate), 'dd/MM/yyyy')}
+                            {(() => {
+                              const actMins = parseDurationToMinutes(t.takenTime || '');
+                              const rwMins = parseDurationToMinutes(t.reworkTime || '');
+                              const totalSpent = actMins + rwMins;
+                              if (totalSpent === 0) return '-';
+                              const h = Math.floor(totalSpent / 60);
+                              const m = totalSpent % 60;
+                              return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+                            })()}
                           </Typography>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">-</Typography>
-                        )}
-                        {t.dueDate && (
-                          <Typography variant="caption" color="error.main" sx={{ display: 'block', fontWeight: 600 }}>
-                            Due: {format(new Date(t.dueDate), 'dd/MM/yyyy')}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.assignedHours || '-'}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {(() => {
-                            const actMins = parseDurationToMinutes(t.takenTime || '');
-                            const rwMins = parseDurationToMinutes(t.reworkTime || '');
-                            const totalSpent = actMins + rwMins;
-                            if (totalSpent === 0) return '-';
-                            const h = Math.floor(totalSpent / 60);
-                            const m = totalSpent % 60;
-                            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                          })()}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<OpenInNewIcon fontSize="small" />}
-                          onClick={() => {
-                            setSelectedTicket(t);
-                            setTabValue(0);
-                            setDetailsOpen(true);
-                          }}
-                          sx={{ borderRadius: '6px', textTransform: 'none' }}
-                        >
-                          Details
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<OpenInNewIcon fontSize="small" />}
+                            onClick={() => {
+                              setSelectedTicket(t);
+                              setTabValue(0);
+                              setDetailsOpen(true);
+                            }}
+                            sx={{ borderRadius: '6px', textTransform: 'none' }}
+                          >
+                            Details
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    </Tooltip>
                   ))
                 )}
               </TableBody>
             </Table>
           )}
         </TableContainer>
-        <Box sx={{ p: '1px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ p: '1px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid', borderColor: 'divider', mt: 'auto' }}>
           <TablePagination
             component="div"
             count={filteredTickets.length}
@@ -3720,12 +3730,12 @@ export default function TicketManagement({ viewType }) {
             </Stack>
             <IconButton onClick={() => setCreateOpen(false)} sx={{ color: 'white' }}><CloseIcon /></IconButton>
           </DialogTitle>
-          <DialogContent sx={{ p: 3, bgcolor: '#f8fafc' }}>
-            <Stack spacing={3} sx={{ mt: 1 }}>
+          <DialogContent sx={{ p: 2, bgcolor: '#f8fafc' }}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
 
               {/* SECTION 1: TICKET INFORMATION */}
-              <Box sx={{ bgcolor: 'white', p: 2.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#673ab7', borderRadius: 1 }} />
                   Ticket Information & Classification
                 </Typography>
@@ -3734,6 +3744,7 @@ export default function TicketManagement({ viewType }) {
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formTitle, 'Ticket Title', 90)}px` }}>
                     <TextField
                       fullWidth
+                      size="small"
                       label="Ticket Title"
                       required
                       placeholder="Summarize the support request..."
@@ -3749,6 +3760,7 @@ export default function TicketManagement({ viewType }) {
                     <TextField
                       fullWidth
                       select
+                      size="small"
                       label="Priority Level"
                       value={formPriority}
                       onChange={(e) => setFormPriority(e.target.value)}
@@ -3764,6 +3776,7 @@ export default function TicketManagement({ viewType }) {
                     <TextField
                       fullWidth
                       select
+                      size="small"
                       label="Source Type"
                       value={formSourceType}
                       onChange={(e) => setFormSourceType(e.target.value)}
@@ -3775,6 +3788,7 @@ export default function TicketManagement({ viewType }) {
                   </Box>
                   <Box sx={{ flex: '2 1 auto', minWidth: `${getFieldMinWidth(formPage?.pageName, 'Screen / Page Name', 90)}px` }}>
                     <Autocomplete
+                      size="small"
                       options={pagesData || []}
                       getOptionLabel={(option) => {
                         if (!option) return '';
@@ -3859,18 +3873,19 @@ export default function TicketManagement({ viewType }) {
               {/* SECTION 3: WORKFLOW ASSIGNMENT */}
               <Box sx={{
                 bgcolor: 'white',
-                p: 2.5,
+                p: 1.5,
                 borderRadius: '12px',
                 border: '1px solid #e2e8f0',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
               }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#673ab7', display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#673ab7', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#673ab7', borderRadius: 1 }} />
                   Task Assignment & Verification
                 </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formDevName, 'Assigned To', 90)}px` }}>
                     <Autocomplete
+                      size="small"
                       options={employeesList.filter(e => e.employeeName !== user?.name && e.employeeName !== user?.username && e.empCode !== user?.empId)}
                       getOptionLabel={(option) => option.employeeName || ''}
                       getOptionDisabled={(option) => {
@@ -3942,6 +3957,7 @@ export default function TicketManagement({ viewType }) {
                   </Box>
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formVerifiedBy, 'Verified By', 90)}px` }}>
                     <Autocomplete
+                      size="small"
                       options={employeesList}
                       getOptionLabel={(option) => option.employeeName || ''}
                       value={employeesList.find(e => e.employeeName === formVerifiedBy) || null}
@@ -3960,25 +3976,25 @@ export default function TicketManagement({ viewType }) {
                       inputProps={{ sx: { display: 'none' }, readOnly: true }} // Hide native input text area
                       sx={{
                         p: 0,
-                        height: '56px', // Standard MUI input height
-                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2', borderWidth: '2px' }
+                        height: '40px', borderRadius: '8px',
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#1976d2', borderWidth: '1.5px' }
                       }}
                       onFocus={() => setIsTimeFocused(true)}
                       onBlur={(e) => {
                         if (!e.relatedTarget) setIsTimeFocused(false);
                       }}
                       startAdornment={
-                        <Box sx={{ display: 'flex', alignItems: 'center', p: '0 12px', gap: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', p: '0 8px', gap: 1 }}>
                           {/* Clock Icon */}
-                          <AccessTimeIcon sx={{ color: '#64748b', fontSize: 22 }} />
+                          <AccessTimeIcon sx={{ color: '#64748b', fontSize: 18 }} />
 
                           {/* Hours Box */}
                           <Box sx={{
                             position: 'relative',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            border: hoursFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
-                            bgcolor: hoursFocused ? '#f0f7ff' : 'white',
-                            borderRadius: '6px', width: '70px', height: '42px',
+                            border: hoursFocused ? '1px solid #1976d2' : '1px solid transparent',
+                            bgcolor: hoursFocused ? '#f0f7ff' : 'transparent',
+                            borderRadius: '6px', width: '45px', height: '36px',
                             cursor: 'pointer', transition: 'all 0.2s',
                             '&:hover': { borderColor: '#1976d2' }
                           }}>
@@ -4002,15 +4018,15 @@ export default function TicketManagement({ viewType }) {
                             >
                               {Array.from({ length: 25 }, (_, i) => {
                                 const val = String(i).padStart(2, '0');
-                                return <MenuItem key={val} value={val}>{val}</MenuItem>;
+                                return <MenuItem key={val} value={val} sx={{ fontSize: '0.875rem' }}>{val}</MenuItem>;
                               })}
                             </Select>
 
                             {/* Visual Content */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
-                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
-                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{hoursPart || '00'}</Typography>
-                                <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Hours</Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                                <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{hoursPart || '00'}</Typography>
+                                <Typography sx={{ fontSize: '0.55rem', fontWeight: 600, color: '#64748b', mt: 0.3 }}>Hours</Typography>
                               </Box>
 
                               {/* Arrows Column */}
@@ -4025,7 +4041,7 @@ export default function TicketManagement({ viewType }) {
                                     if (h === 24) setMinutesPart('00');
                                   }}
                                 >
-                                  <KeyboardArrowUpIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                  <KeyboardArrowUpIcon sx={{ fontSize: 12, color: '#64748b' }} />
                                 </IconButton>
                                 <IconButton
                                   size="small" sx={{ p: 0 }}
@@ -4037,22 +4053,22 @@ export default function TicketManagement({ viewType }) {
                                     if (h === 24) setMinutesPart('00');
                                   }}
                                 >
-                                  <KeyboardArrowDownIcon sx={{ fontSize: 14, color: '#64748b' }} />
+                                  <KeyboardArrowDownIcon sx={{ fontSize: 12, color: '#64748b' }} />
                                 </IconButton>
                               </Box>
                             </Box>
                           </Box>
 
                           {/* Colon */}
-                          <Typography sx={{ fontWeight: 800, fontSize: '1.2rem', color: '#1e293b', pb: 0.5 }}>:</Typography>
+                          <Typography sx={{ fontWeight: 800, fontSize: '1rem', color: '#1e293b', pb: 0.5 }}>:</Typography>
 
                           {/* Minutes Box */}
                           <Box sx={{
                             position: 'relative',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            border: minutesFocused ? '1px solid #1976d2' : '1px solid #e2e8f0',
-                            bgcolor: minutesFocused ? '#f0f7ff' : 'white',
-                            borderRadius: '6px', width: '70px', height: '42px',
+                            border: minutesFocused ? '1px solid #1976d2' : '1px solid transparent',
+                            bgcolor: minutesFocused ? '#f0f7ff' : 'transparent',
+                            borderRadius: '6px', width: '45px', height: '36px',
                             cursor: 'pointer', transition: 'all 0.2s',
                             '&:hover': { borderColor: '#1976d2' }
                           }}>
@@ -4074,15 +4090,15 @@ export default function TicketManagement({ viewType }) {
                             >
                               {Array.from({ length: 60 }, (_, i) => {
                                 const val = String(i).padStart(2, '0');
-                                return <MenuItem key={val} value={val} disabled={hoursPart === '24' && val !== '00'}>{val}</MenuItem>;
+                                return <MenuItem key={val} value={val} disabled={hoursPart === '24' && val !== '00'} sx={{ fontSize: '0.875rem' }}>{val}</MenuItem>;
                               })}
                             </Select>
 
                             {/* Visual Content */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between', px: 0.5 }}>
-                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, ml: 0.5 }}>
-                                <Typography sx={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{minutesPart || '00'}</Typography>
-                                <Typography sx={{ fontSize: '0.6rem', fontWeight: 600, color: '#64748b', mt: 0.2 }}>Minutes</Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'space-between' }}>
+                              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                                <Typography sx={{ fontSize: '0.9rem', fontWeight: 800, color: '#1e293b', lineHeight: 1 }}>{minutesPart || '00'}</Typography>
+                                <Typography sx={{ fontSize: '0.55rem', fontWeight: 600, color: '#64748b', mt: 0.3 }}>Minutes</Typography>
                               </Box>
 
                               {/* Arrows Column */}
@@ -4098,7 +4114,7 @@ export default function TicketManagement({ viewType }) {
                                     setMinutesPart(String(m).padStart(2, '0'));
                                   }}
                                 >
-                                  <KeyboardArrowUpIcon sx={{ fontSize: 14, color: hoursPart === '24' ? '#cbd5e1' : '#64748b' }} />
+                                  <KeyboardArrowUpIcon sx={{ fontSize: 12, color: hoursPart === '24' ? '#cbd5e1' : '#64748b' }} />
                                 </IconButton>
                                 <IconButton
                                   size="small" sx={{ p: 0 }}
@@ -4111,7 +4127,7 @@ export default function TicketManagement({ viewType }) {
                                     setMinutesPart(String(m).padStart(2, '0'));
                                   }}
                                 >
-                                  <KeyboardArrowDownIcon sx={{ fontSize: 14, color: hoursPart === '24' ? '#cbd5e1' : '#64748b' }} />
+                                  <KeyboardArrowDownIcon sx={{ fontSize: 12, color: hoursPart === '24' ? '#cbd5e1' : '#64748b' }} />
                                 </IconButton>
                               </Box>
                             </Box>
@@ -4124,6 +4140,7 @@ export default function TicketManagement({ viewType }) {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 auto', minWidth: '200px' }}>
                     <TextField
                       fullWidth
+                      size="small"
                       type="date"
                       label="Target Date (Auto-calculated)"
                       InputLabelProps={{ shrink: true }}
@@ -4152,12 +4169,12 @@ export default function TicketManagement({ viewType }) {
               </Box>
 
               {/* SECTION 4: DESCRIPTION & PLANNING */}
-              <Box sx={{ bgcolor: 'white', p: 2.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 2, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#f59e0b', borderRadius: 1 }} />
                   Details & Due Dates
                 </Typography>
-                <Box sx={{ mb: 3 }}>
+                <Box sx={{ mb: 2 }}>
                   <Box sx={{ position: 'relative', mt: 1, width: '100%' }}>
                     {/* Floating Label */}
                     <InputLabel
@@ -4211,12 +4228,12 @@ export default function TicketManagement({ viewType }) {
                       overflow: 'hidden',
                       bgcolor: '#fafafa',
                       transition: 'border-color 0.3s ease',
-                      '& .ql-editor': { minHeight: '150px' }
+                      '& .ql-editor': { minHeight: '100px' }
                     }}>
                       <ReactQuillDemo
                         value={formDesc}
                         onChange={setFormDesc}
-                        editorMinHeight={150}
+                        editorMinHeight={100}
                         placeholder="Type or speak your description here..."
                       />
                     </Box>
@@ -4226,7 +4243,7 @@ export default function TicketManagement({ viewType }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 2,
-                  mt: 2,
+                  mt: 1,
                   width: '100%',
                   flexWrap: 'wrap'
                 }}>
@@ -4239,7 +4256,7 @@ export default function TicketManagement({ viewType }) {
                       variant="outlined"
                       startIcon={<CloudUploadIcon />}
                       sx={{
-                        height: 55,
+                        height: 40,
                         borderStyle: 'dashed',
                         borderColor: '#94a3b8',
                         color: '#475569',
@@ -4259,7 +4276,7 @@ export default function TicketManagement({ viewType }) {
                         color={isRecordingAudio ? "error" : "secondary"}
                         onClick={handleToggleLiveRecording}
                         sx={{
-                          height: 55,
+                          height: 40,
                           borderStyle: isRecordingAudio ? 'solid' : 'dashed',
                           borderRadius: '8px',
                           px: 2,
