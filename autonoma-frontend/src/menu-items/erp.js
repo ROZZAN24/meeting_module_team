@@ -936,7 +936,7 @@ export const erpSupport = {
   children: [
     {
       id: 'support-ticket-management',
-      title: 'Ticket Management',
+      title: 'Task Management',
       type: 'collapse',
       icon: icons.IconHelp,
       children: [
