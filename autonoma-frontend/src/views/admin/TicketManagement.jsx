@@ -2257,6 +2257,12 @@ export default function TicketManagement({ viewType }) {
         if (!event.fromStatus) return true;
         if (event.fromStatus !== event.toStatus) return true;
         if (event.comment === 'Ticket created' || (event.comment && event.comment.startsWith('Reassigned to'))) return true;
+        try {
+          const parsed = JSON.parse(event.comment);
+          if (parsed && (parsed.activityName === 'Estimated Time Updated' || parsed.activityName === 'Estimated Time Set' || parsed.activityName === 'Additional Requirement Added')) {
+            return true;
+          }
+        } catch(e) {}
         return false;
       })
       : [{
@@ -3265,10 +3271,17 @@ export default function TicketManagement({ viewType }) {
                       const isReassign = event.comment && event.comment.startsWith('Reassigned to');
 
                       let titleText = '';
-                      if (event.comment === 'Ticket created') {
+                      let parsedEvent = null;
+                      try { parsedEvent = JSON.parse(event.comment); } catch(e) {}
+                      
+                      if (event.comment === 'Ticket created' || (parsedEvent && parsedEvent.activityName === 'Ticket Created')) {
                         titleText = 'Ticket Created';
-                      } else if (isReassign) {
-                        titleText = event.comment;
+                      } else if (isReassign || (parsedEvent && parsedEvent.activityName === 'Ticket Reassigned')) {
+                        titleText = parsedEvent ? parsedEvent.comment : event.comment;
+                      } else if (parsedEvent && (parsedEvent.activityName === 'Estimated Time Updated' || parsedEvent.activityName === 'Estimated Time Set')) {
+                        titleText = 'Estimate Time';
+                      } else if (parsedEvent && parsedEvent.activityName === 'Additional Requirement Added') {
+                        titleText = 'Additional Req Added';
                       } else {
                         titleText = event.fromStatus && event.fromStatus !== event.toStatus
                           ? `Status: ${event.fromStatus} → ${event.toStatus}`

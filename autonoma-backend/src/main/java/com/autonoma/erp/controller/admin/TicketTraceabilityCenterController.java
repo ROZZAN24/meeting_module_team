@@ -213,7 +213,14 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setMobileNo(ticketDetails.getMobileNo());
             if (ticketDetails.getDepartment() != null)
                 existingTicket.setDepartment(ticketDetails.getDepartment());
-            if (ticketDetails.getAdditionalRequirement() != null) existingTicket.setAdditionalRequirement(ticketDetails.getAdditionalRequirement());
+            if (ticketDetails.getAdditionalRequirement() != null) {
+                String oldReq = existingTicket.getAdditionalRequirement();
+                String newReq = ticketDetails.getAdditionalRequirement();
+                if (oldReq == null || !oldReq.equals(newReq)) {
+                    existingTicket.setAdditionalRequirement(newReq);
+                    logStatusHistory(existingTicket.getRowId(), "Additional Requirement Added", newReq, oldStatus, oldStatus, null, null);
+                }
+            }
             if (ticketDetails.getDescription() != null)
                 existingTicket.setDescription(ticketDetails.getDescription());
             if (ticketDetails.getPriorityLevel() != null)
