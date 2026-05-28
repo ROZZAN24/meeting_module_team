@@ -92,7 +92,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import TimerIcon from '@mui/icons-material/Timer';
+import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import FolderOpenOutlinedIcon from '@mui/icons-material/FolderOpenOutlined';
 import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
@@ -227,6 +230,12 @@ export default function TicketManagement({ viewType }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [panelsOpen, setPanelsOpen] = useState({ part1: true, part2: true, part3: true });
+
+  // Reassign Modal States
+  const [reassignOpen, setReassignOpen] = useState(false);
+  const [reassignEmployee, setReassignEmployee] = useState(null);
+  const [reassignComment, setReassignComment] = useState('');
+  const [reassignTicket, setReassignTicket] = useState(null);
 
   const handleTogglePanel = (panelId) => {
     setPanelsOpen((prev) => {
@@ -1630,6 +1639,38 @@ export default function TicketManagement({ viewType }) {
   };
 
   // Status transitions or assignee updates
+  const handleReassignSubmit = async () => {
+    if (!reassignEmployee) {
+      showSnackbar('Please select an employee to reassign to', 'warning');
+      return;
+    }
+    if (!reassignComment.trim()) {
+      showSnackbar('Comments are mandatory for reassignment', 'warning');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const payload = {
+        assignedTo: reassignEmployee.employeeName,
+        developerName: reassignEmployee.employeeName,
+        developerEmail: reassignEmployee.officeMail || '',
+        developerMobileNo: '',
+        reassignComment: reassignComment
+      };
+      await axios.put(`/api/tickets/${reassignTicket.rowId}`, payload);
+      showSnackbar('Ticket reassigned successfully!');
+      setReassignOpen(false);
+      setReassignEmployee(null);
+      setReassignComment('');
+      setReassignTicket(null);
+      fetchTickets();
+    } catch (err) {
+      showSnackbar('Failed to reassign ticket: ' + (err.response?.data?.error || err.message), 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleUpdateTicketDetails = async () => {
     if (!selectedTicket) return;
 
@@ -3573,6 +3614,7 @@ export default function TicketManagement({ viewType }) {
                   <TableCell sx={{ fontWeight: 700 }}>Target Date</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Estimate Time</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Total Spend</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 700 }}>Reassign</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 700 }}>Action</TableCell>
                 </TableRow>
               </TableHead>
@@ -3672,6 +3714,24 @@ export default function TicketManagement({ viewType }) {
                               return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
                             })()}
                           </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title="Reassign Ticket">
+                            <IconButton
+                              size="small"
+                              color="info"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setReassignTicket(t);
+                                setReassignEmployee(null);
+                                setReassignComment('');
+                                setReassignOpen(true);
+                              }}
+                              sx={{ bgcolor: alpha(theme.palette.info.light, 0.1), '&:hover': { bgcolor: alpha(theme.palette.info.light, 0.2) } }}
+                            >
+                              <PersonOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                         <TableCell align="center">
                           <Button
@@ -4445,6 +4505,129 @@ export default function TicketManagement({ viewType }) {
         <DialogActions>
           <Button onClick={() => setReopenOpen(false)}>Cancel</Button>
           <Button variant="contained" color="error" onClick={handleReopenTicket}>Reopen Ticket</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ── DIALOG: REASSIGN TICKET POPUP ── */}
+      <Dialog
+        open={reassignOpen}
+        onClose={() => setReassignOpen(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: '16px', boxShadow: '0px 10px 30px rgba(0,0,0,0.1)' }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            setReassignOpen(false);
+          }
+          if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            handleReassignSubmit();
+          }
+        }}
+      >
+        <DialogTitle sx={{ p: 3, pb: 2, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0284c7' }}>
+              <ManageAccountsIcon sx={{ fontSize: 28 }} />
+            </Box>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 0.5 }}>Reassign Ticket</Typography>
+              <Typography variant="body2" sx={{ color: '#64748b' }}>Select an employee and add comments to reassign this ticket.</Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={() => setReassignOpen(false)} size="small" sx={{ border: '1px solid #e2e8f0', bgcolor: '#fff', '&:hover': { bgcolor: '#f8fafc' } }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </DialogTitle>
+        <Divider sx={{ mx: 3 }} />
+        <DialogContent sx={{ p: 3 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+            Employee Name <span style={{ color: '#ef4444' }}>*</span>
+          </Typography>
+          <Autocomplete
+            options={employeesList.filter(emp => emp.employeeName !== (reassignTicket?.employeeName || reassignTicket?.createdBy))}
+            getOptionLabel={(option) => option.employeeName || ''}
+            value={reassignEmployee}
+            onChange={(e, val) => setReassignEmployee(val)}
+            renderInput={(params) => (
+              <TextField 
+                {...params} 
+                placeholder="Select an employee" 
+                fullWidth 
+                required 
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <PersonOutlineIcon sx={{ color: '#94a3b8', ml: 1, mr: 0.5 }} />
+                      {params.InputProps.startAdornment}
+                    </>
+                  )
+                }}
+                sx={{ 
+                  mb: 3, 
+                  '& .MuiOutlinedInput-root': { borderRadius: '8px' } 
+                }} 
+              />
+            )}
+          />
+
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', mb: 1 }}>
+            Reassign Comments <span style={{ color: '#ef4444' }}>*</span>
+          </Typography>
+          <Box sx={{ position: 'relative' }}>
+            <TextField
+              fullWidth
+              multiline
+              rows={4}
+              required
+              placeholder="Enter reason for reassignment..."
+              value={reassignComment}
+              onChange={(e) => {
+                if (e.target.value.length <= 500) {
+                  setReassignComment(e.target.value);
+                }
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
+                    <ChatBubbleOutlineIcon sx={{ color: '#94a3b8' }} />
+                  </InputAdornment>
+                )
+              }}
+              sx={{ 
+                '& .MuiOutlinedInput-root': { borderRadius: '8px' } 
+              }}
+            />
+            <Typography variant="caption" sx={{ position: 'absolute', bottom: 12, right: 12, color: '#94a3b8', fontWeight: 600 }}>
+              {reassignComment.length} / 500
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0, justifyContent: 'flex-end' }}>
+          <Tooltip title="Ctrl+S to Save">
+            <Button 
+              variant="contained" 
+              startIcon={<SaveIcon />}
+              onClick={handleReassignSubmit} 
+              disabled={isSaving}
+              sx={{ 
+                bgcolor: '#2563eb', 
+                color: '#fff', 
+                borderRadius: '8px',
+                textTransform: 'none',
+                fontWeight: 600,
+                px: 3,
+                py: 1,
+                boxShadow: 'none',
+                '&:hover': { bgcolor: '#1d4ed8', boxShadow: 'none' }
+              }}
+            >
+              {isSaving ? 'Saving...' : 'Save'}
+            </Button>
+          </Tooltip>
         </DialogActions>
       </Dialog>
 
