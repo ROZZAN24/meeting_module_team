@@ -72,11 +72,24 @@ public class ChecklistSchedulerService {
                     }
                     break;
                 case "FORTNIGHTLY":
-                    // Every 14 days from effective date OR on effective day and effective day + 14? 
-                    // Usually FORTNIGHTLY in this context means "bi-monthly" like 1st and 15th or based on start.
-                    // For simplicity and matching user intent: 
-                    // Repeat on effectiveDayOfMonth and (effectiveDayOfMonth + 14) % 30 (approx)
-                    if (dayOfMonth == effectiveDayOfMonth || dayOfMonth == (effectiveDayOfMonth + 14) % 28 + 1) {
+                    // Strictly every 14 days from the anchor Effective From date
+                    Calendar todayCal = Calendar.getInstance();
+                    todayCal.setTime(today);
+                    todayCal.set(Calendar.HOUR_OF_DAY, 0);
+                    todayCal.set(Calendar.MINUTE, 0);
+                    todayCal.set(Calendar.SECOND, 0);
+                    todayCal.set(Calendar.MILLISECOND, 0);
+
+                    Calendar startCal = Calendar.getInstance();
+                    startCal.setTime(checklist.getEffectiveFrom() != null ? checklist.getEffectiveFrom() : (checklist.getCreatedDate() != null ? checklist.getCreatedDate() : today));
+                    startCal.set(Calendar.HOUR_OF_DAY, 0);
+                    startCal.set(Calendar.MINUTE, 0);
+                    startCal.set(Calendar.SECOND, 0);
+                    startCal.set(Calendar.MILLISECOND, 0);
+
+                    long diffMs = todayCal.getTimeInMillis() - startCal.getTimeInMillis();
+                    long diffDays = diffMs / (24 * 60 * 60 * 1000);
+                    if (diffDays >= 0 && diffDays % 14 == 0) {
                         shouldGenerate = true;
                     }
                     break;

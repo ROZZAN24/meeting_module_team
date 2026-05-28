@@ -641,7 +641,16 @@ export const hra = {
   caption: 'HR & Admin HA0000',
   type: 'group',
   icon: icons.IconUsers,
-  children: []
+  children: [
+    {
+      id: 'hra-ats',
+      title: 'Application Tracking System',
+      type: 'item',
+      url: '/hra/ats',
+      icon: icons.IconUserPlus,
+      pageCode: 'HA1110'
+    }
+  ]
 };
 
 
