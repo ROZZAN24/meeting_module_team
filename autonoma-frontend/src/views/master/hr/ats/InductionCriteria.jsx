@@ -639,6 +639,7 @@ export default function InductionCriteria() {
                 <BOSFileUpload
                   label="UPLOAD INDUCTION GUIDELINES / SOP"
                   files={formData.inductionAttachment || []}
+                  onChange={(uploadedFiles) => {
                     setFormData((prev) => ({ ...prev, inductionAttachment: uploadedFiles }));
                     if (errors.inductionAttachment) clearErrors('inductionAttachment');
                   }}

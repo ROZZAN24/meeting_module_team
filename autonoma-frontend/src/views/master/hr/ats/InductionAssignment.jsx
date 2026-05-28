@@ -1005,7 +1005,6 @@ const InductionAssignment = () => {
             </Box>
           )}
         </BOSFormSection>
-        </BOSFormSection>
 
         {/* History Table */}
         <Box sx={{ mt: 4 }}>
