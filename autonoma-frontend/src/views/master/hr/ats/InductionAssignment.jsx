@@ -50,9 +50,31 @@ import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig, resetFilters, setQuery } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
+const getCurrentTimeStr = () => {
+  const now = new Date();
+  const hours = now.getHours().toString().padStart(2, '0');
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
+
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
 
+
+const getCurrentDateString = () => {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getCurrentTimeString = () => {
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+};
 
 const INITIAL_STATE = {
   empCode: '',
@@ -76,11 +98,13 @@ const INITIAL_STATE = {
   ]
 };
 
-const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
-const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
+const FALLBACK_ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
+const LEVEL_OPTIONS = ['L1', 'L2', 'L3', 'L4'];
 const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
 const TIME_OPTIONS = [
+  { value: '08:00', label: '08:00 AM' },
+  { value: '08:30', label: '08:30 AM' },
   { value: '09:00', label: '09:00 AM' },
   { value: '09:30', label: '09:30 AM' },
   { value: '10:00', label: '10:00 AM' },
@@ -103,11 +127,8 @@ const TIME_OPTIONS = [
   { value: '18:30', label: '06:30 PM' },
   { value: '19:00', label: '07:00 PM' },
   { value: '19:30', label: '07:30 PM' },
-  { value: '20:00', label: '08:00 PM' },
-  { value: '20:30', label: '08:30 PM' },
-  { value: '21:00', label: '09:00 PM' }
+  { value: '20:00', label: '08:00 PM' }
 ];
-
 
 const VALIDATION_RULES = [
   { field: 'empCode', label: 'Employee', required: true },
@@ -165,11 +186,14 @@ const InductionAssignment = () => {
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [roundOptions, setRoundOptions] = useState(FALLBACK_ROUND_OPTIONS);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_STATE);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const [history, setHistory] = useState([]);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
@@ -229,9 +253,8 @@ const InductionAssignment = () => {
           return aNum - bNum;
         });
       setHistory(normalizedHistory);
-      
       const cleanData = { ...INITIAL_STATE };
-      
+
       Object.keys(cleanData).forEach(key => {
         if (row[key] !== undefined && row[key] !== null) {
           cleanData[key] = row[key];
@@ -272,7 +295,6 @@ const InductionAssignment = () => {
       setDialogOpen(true);
     } catch (err) {
       console.error('History fetch error:', err);
-      // Fallback if history fails
       const defaultDate = row.inductionDate && row.inductionDate !== '-'
         ? new Date(row.inductionDate).toISOString().split('T')[0]
         : new Date().toISOString().split('T')[0];
@@ -311,25 +333,50 @@ const InductionAssignment = () => {
     { id: 'oldEmpCode', label: 'OldEmpCode', minWidth: 120, render: (row) => row.oldEmpCode || '-' },
     { id: 'department', label: 'Department', minWidth: 150 },
     { id: 'designation', label: 'Designation', minWidth: 150 },
-    { 
-      id: 'inductionStatus', 
-      label: 'Induction Status', 
+    {
+      id: 'inductionStatus',
+      label: 'Induction Status',
       minWidth: 130,
       render: (row) => {
         const status = row.inductionStatus || 'PENDING';
         return (
-          <Chip 
-            label={status} 
+          <Chip
+            label={status}
             variant="outlined"
-            size="small" 
+            size="small"
             color={status === 'COMPLETED' ? 'success' : 'warning'}
           />
         );
       }
     },
     { id: 'updatedUser', label: 'Updated By', minWidth: 120, render: (row) => row.updatedUser || row.updatedBy || '-' },
-    { id: 'updatedDate', label: 'Updated Date', minWidth: 150 }
-  ], []);
+    { id: 'updatedDate', label: 'Updated Date', minWidth: 150 },
+    {
+      id: 'actions',
+      label: 'Actions',
+      align: 'center',
+      render: (row) => (
+        <Stack direction="row" spacing={0.5} justifyContent="center">
+          <Tooltip title={row.isVirtual ? "Assign Now" : "Edit Assignment"}>
+            <IconButton onClick={() => handleAssign(row)} size="small" color={row.isVirtual ? "primary" : "secondary"}>
+              {row.isVirtual ? <IconUserPlus size={18} /> : <IconEdit size={18} />}
+            </IconButton>
+          </Tooltip>
+          {!row.isVirtual && row.currentStatus !== 'COMPLETED' && (
+            <Tooltip title="Delete Assignment">
+              <IconButton
+                onClick={(e) => { e.stopPropagation(); setDeleteTarget(row); setDeleteDialogOpen(true); }}
+                size="small"
+                color="error"
+              >
+                <IconTrash size={18} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      )
+    }
+  ], [handleAssign]);
 
   const currentLevelOptions = useMemo(() => {
     const optionsSet = new Set(LEVEL_OPTIONS);
@@ -366,7 +413,7 @@ const InductionAssignment = () => {
 
       const assignments = assignRes.data;
       const allActiveEmployees = empRes.data;
-      
+
       const finalRows = [];
       allActiveEmployees.forEach(emp => {
         const empAssignments = (assignments || []).filter(a => a.empCode === emp.empCode);
@@ -444,12 +491,36 @@ const InductionAssignment = () => {
 
   useEffect(() => { fetchRows(); }, [fetchRows]);
 
+  // Fetch dynamic round options from master table
+  useEffect(() => {
+    const fetchRounds = async () => {
+      try {
+        const { data } = await axios.get('/api/hr/induction-round/active');
+        if (data && data.length > 0) {
+          setRoundOptions(data.map(r => r.roundName));
+        }
+      } catch (err) {
+        console.error('Failed to fetch induction rounds, using defaults:', err);
+      }
+    };
+    fetchRounds();
+  }, []);
+
   const [deleteHistoryOpen, setDeleteHistoryOpen] = useState(false);
   const [historyItemToDelete, setHistoryItemToDelete] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const nextState = { ...prev, [name]: value };
+      if (name === 'inductionDate') {
+        const today = getCurrentDateString();
+        if (value === today) {
+          nextState.inductionTime = getCurrentTimeString();
+        }
+      }
+      return nextState;
+    });
     if (errors[name]) clearErrors(name);
   };
 
@@ -690,13 +761,13 @@ const InductionAssignment = () => {
       const message = typeof error === 'string'
         ? error
         : (error.response?.data?.message || error.response?.data || error.message || error.error || 'Failed to save');
-      
-      dispatch(openSnackbar({ 
-        open: true, 
-        message: message, 
-        variant: 'alert', 
-        alert: { variant: 'filled' }, 
-        severity: 'error' 
+
+      dispatch(openSnackbar({
+        open: true,
+        message: message,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error'
       }));
     }
   };
@@ -705,11 +776,11 @@ const InductionAssignment = () => {
     return rows.filter(row => {
       const statusVal = globalFilters.status || 'ALL';
       const matchesStatus = statusVal === 'ALL' || row.inductionStatus === statusVal;
-      
+
       const searchByVal = globalFilters.searchBy || 'empCode';
       const term = globalQuery ? globalQuery.toLowerCase() : '';
       const matchesSearch = !term || (row[searchByVal] && row[searchByVal].toString().toLowerCase().includes(term));
-      
+
       return matchesStatus && matchesSearch;
     }).map((r, i) => ({
       ...r,
@@ -723,11 +794,7 @@ const InductionAssignment = () => {
 
   return (
     <MainCard
-      title={
-        <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Employee Induction Summary
-        </Typography>
-      }
+      title="Employee Induction Summary"
       secondary={
         <Stack direction="row" spacing={1.5} alignItems="center">
           <Tooltip title="Refresh">
@@ -739,10 +806,10 @@ const InductionAssignment = () => {
             </IconButton>
           </Tooltip>
 
-          {perms.export && <BOSExportButton 
-            data={resolvedRows} 
-            filename="Induction_Summary" 
-            columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))} 
+          {perms.export && <BOSExportButton
+            data={resolvedRows}
+            filename="Induction_Summary"
+            columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
           />}
         </Stack>
       }
@@ -782,7 +849,6 @@ const InductionAssignment = () => {
           }));
           setErrors({});
         } : null}
-        isViewOnly={!perms.write}
       >
         {/* Summary Header */}
         <Box sx={{ bgcolor: 'primary.light', p: 2, borderRadius: 2, mb: 3, display: 'flex', flexWrap: 'wrap', gap: 4, border: '1px solid', borderColor: 'primary.main' }}>
@@ -858,7 +924,7 @@ const InductionAssignment = () => {
                     sx={errorStyle(!!errors[`level_${index}_inductionRound`])}
                   >
                     <MenuItem value="">-SELECT-</MenuItem>
-                    {ROUND_OPTIONS.map(r => (
+                    {roundOptions.map(r => (
                       <MenuItem key={r} value={r}>{r}</MenuItem>
                     ))}
                   </BOSTextField>
@@ -1002,10 +1068,10 @@ const InductionAssignment = () => {
                       <TableCell>{h.inductionDate ? `${h.inductionDate} ${h.inductionTime || ''}` : '-'}</TableCell>
                       <TableCell>{h.trainerName || '-'}</TableCell>
                       <TableCell>
-                        <Chip 
-                          label={h.currentStatus || 'PENDING'} 
-                          size="small" 
-                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')} 
+                        <Chip
+                          label={h.currentStatus || 'PENDING'}
+                          size="small"
+                          color={h.currentStatus === 'REJECTED' ? 'error' : (h.currentStatus === 'COMPLETED' ? 'success' : 'primary')}
                           sx={{ fontWeight: 600 }}
                         />
                       </TableCell>
@@ -1040,6 +1106,26 @@ const InductionAssignment = () => {
           </TableContainer>
         </Box>
       </BOSFormDialog>
+
+      <ConfirmDeleteDialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={async () => {
+          try {
+            await axios.delete(`/api/hr/induction-assignment/${deleteTarget.id}`);
+            dispatch(openSnackbar({ open: true, message: 'Induction assignment deleted successfully', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+            setDeleteDialogOpen(false);
+            setDeleteTarget(null);
+            fetchRows();
+          } catch (error) {
+            const msg = error.response?.data?.message || error.response?.data || 'Failed to delete assignment';
+            dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error' }));
+          }
+        }}
+        title="Delete Induction Assignment"
+        message={`Are you sure you want to delete the induction assignment for ${deleteTarget?.empName || deleteTarget?.empCode || 'this employee'}? This will mark the record as inactive.`}
+        itemName={deleteTarget?.empName || deleteTarget?.empCode}
+      />
 
       <ConfirmDeleteDialog
         open={deleteHistoryOpen}

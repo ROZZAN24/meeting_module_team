@@ -81,22 +81,16 @@ public class InductionAssignmentController {
 
     @DeleteMapping("/{id}")
     @RequirePagePermission(pageCode = "M2150", action = "delete")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id, Principal principal) {
         try {
-            service.delete(id);
+            if (service.isUsedInTraining(id)) {
+                return ResponseEntity.badRequest().body("Cannot delete this induction assignment because it is already used in training records.");
+            }
+            String currentUser = principal != null ? principal.getName() : "SYSTEM";
+            service.deleteAssignment(id, currentUser);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
-            String msg = e.getMessage() != null ? e.getMessage() : "";
-            // Also check root cause or nested exception messages since spring wraps JPA exceptions
-            Throwable cause = e;
-            while (cause != null) {
-                String causeMsg = cause.getMessage() != null ? cause.getMessage() : "";
-                if (causeMsg.contains("constraint") || causeMsg.contains("conflict") || causeMsg.contains("REFERENCE") || causeMsg.contains("FK_")) {
-                    return ResponseEntity.badRequest().body("Cannot delete this induction assignment because it is already used in training records.");
-                }
-                cause = cause.getCause();
-            }
-            return ResponseEntity.badRequest().body(msg.isEmpty() ? "Failed to delete induction assignment." : msg);
+            return ResponseEntity.badRequest().body(e.getMessage() != null ? e.getMessage() : "Failed to delete induction assignment.");
         }
     }
 

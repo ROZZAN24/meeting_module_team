@@ -137,6 +137,8 @@ export default function InductionTraining() {
   const [trainingDetails, setTrainingDetails] = useState([]);
   const [initialDetails, setInitialDetails] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
   const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
   const [activeDetailId, setActiveDetailId] = useState(null);
   const [attachmentFiles, setAttachmentFiles] = useState([]);
@@ -147,6 +149,9 @@ export default function InductionTraining() {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINING);
+
+  const completedCount = useMemo(() => trainingDetails.filter(d => d.trainerStatus === 'COMPLETED').length, [trainingDetails]);
+  const totalCount = useMemo(() => trainingDetails.length, [trainingDetails]);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
@@ -207,6 +212,8 @@ export default function InductionTraining() {
 
   // Open training dialog
   const handleStartTraining = useCallback(async (row) => {
+    console.log('[InductionTraining] handleStartTraining called with row:', JSON.stringify(row));
+    console.log('[InductionTraining] row.id:', row.id, 'row.currentStatus:', row.currentStatus);
     setSelectedAssignment(row);
     setLoading(true);
     try {
@@ -283,7 +290,7 @@ export default function InductionTraining() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, user]);
 
   // Update a detail item locally, updating all entries that share the same criteria
   const updateDetail = (detailId, field, value) => {
@@ -331,8 +338,8 @@ export default function InductionTraining() {
     </Stack>
   );
 
-  // Save all progress
-  const handleSaveAll = async () => {
+  // Save progress
+  const handleSaveProgress = async () => {
     setSaving(true);
     try {
       // Filter details that this user is authorized to edit
@@ -340,21 +347,6 @@ export default function InductionTraining() {
         const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
         return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
       });
-
-      // 1. Validation before saving:
-      // If any item is marked COMPLETED, check that a skill rating has been selected.
-      const incompleteItems = authorizedDetails.filter(d => d.trainerStatus === 'COMPLETED' && (!d.skillRating || d.skillRating < 1));
-      if (incompleteItems.length > 0) {
-        dispatch(openSnackbar({
-          open: true,
-          message: 'Skill Matrix rating is mandatory for completed criteria items!',
-          variant: 'alert',
-          alert: { variant: 'filled' },
-          severity: 'warning'
-        }));
-        setSaving(false);
-        return;
-      }
 
       // Find modified details by comparing trainingDetails with initialDetails
       const modifiedDetails = trainingDetails.filter(d => {
@@ -387,28 +379,6 @@ export default function InductionTraining() {
         axios.put(`/api/hr/induction-training/${assignmentId}/details`, grouped[assignmentId])
       );
       await Promise.all(savePromises);
-
-      // Check and complete assignments if all criteria are filled (only for authorized assignments)
-      const completePromises = [];
-      const authorizedAssignmentIds = [...new Set(authorizedDetails.map(d => d.assignmentId))];
-      
-      authorizedAssignmentIds.forEach(assignmentId => {
-        const details = trainingDetails.filter(d => d.assignmentId === assignmentId);
-        const allCompleted = details.every(d => d.trainerStatus === 'COMPLETED');
-        const allRated = details.every(d => d.skillRating !== null && d.skillRating >= 1);
-        
-        const assignment = selectedAssignment.assignments.find(a => String(a.id) === String(assignmentId));
-        if (assignment && !['COMPLETED', 'TRAINING GIVEN'].includes(assignment.currentStatus) && allCompleted && allRated) {
-          completePromises.push(axios.post(`/api/hr/induction-training/${assignmentId}/complete`));
-        }
-      });
-
-      if (completePromises.length > 0) {
-        await Promise.all(completePromises);
-        dispatch(openSnackbar({ open: true, message: 'Training completed successfully for finished rounds!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
-      } else {
-        dispatch(openSnackbar({ open: true, message: 'Progress saved successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
-      }
 
       // Re-fetch all details from the backend to rehydrate the UI state and prevent resets
       const detailsPromises = selectedAssignment.assignments.map(a => axios.get(`/api/hr/induction-training/${a.id}/details`));
@@ -468,10 +438,82 @@ export default function InductionTraining() {
         }));
       }
 
+      dispatch(openSnackbar({ open: true, message: 'Progress saved successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       fetchRows();
     } catch (error) {
       console.error('Save error details:', error);
       const msg = error.response?.data || 'Failed to save';
+      dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Complete training
+  const handleCompleteTraining = async () => {
+    setSaving(true);
+    try {
+      // Filter details that this user is authorized to edit
+      const authorizedDetails = trainingDetails.filter(d => {
+        const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
+        return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+      });
+
+      // 1. Validation before saving:
+      // If any item is marked COMPLETED, check that a skill rating has been selected.
+      const incompleteItems = authorizedDetails.filter(d => d.trainerStatus === 'COMPLETED' && (!d.skillRating || d.skillRating < 1));
+      if (incompleteItems.length > 0) {
+        dispatch(openSnackbar({
+          open: true,
+          message: 'Skill Matrix rating is mandatory for completed criteria items!',
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'warning'
+        }));
+        setSaving(false);
+        return;
+      }
+
+      // Group details by assignmentId for proper batch updates
+      const grouped = {};
+      trainingDetails.forEach(d => {
+        if (!grouped[d.assignmentId]) {
+          grouped[d.assignmentId] = [];
+        }
+        grouped[d.assignmentId].push(d);
+      });
+
+      // Save progress for each assignment group
+      const savePromises = Object.keys(grouped).map(assignmentId => 
+        axios.put(`/api/hr/induction-training/${assignmentId}/details`, grouped[assignmentId])
+      );
+      await Promise.all(savePromises);
+
+      // Now complete authorized assignments
+      const completePromises = [];
+      const authorizedAssignmentIds = [...new Set(authorizedDetails.map(d => d.assignmentId))];
+      authorizedAssignmentIds.forEach(assignmentId => {
+        const details = trainingDetails.filter(d => d.assignmentId === assignmentId);
+        const allCompleted = details.every(d => d.trainerStatus === 'COMPLETED');
+        const allRated = details.every(d => d.skillRating !== null && d.skillRating >= 1);
+        
+        const assignment = selectedAssignment.assignments.find(a => String(a.id) === String(assignmentId));
+        if (assignment && !['COMPLETED', 'TRAINING GIVEN'].includes(assignment.currentStatus) && allCompleted && allRated) {
+          completePromises.push(axios.post(`/api/hr/induction-training/${assignmentId}/complete`));
+        }
+      });
+
+      if (completePromises.length > 0) {
+        await Promise.all(completePromises);
+        dispatch(openSnackbar({ open: true, message: 'Training completed successfully for finished rounds!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
+        setDialogOpen(false);
+        fetchRows();
+      } else {
+        dispatch(openSnackbar({ open: true, message: 'Progress saved, but not all criteria are completed and rated to finalize training.', variant: 'alert', severity: 'warning' }));
+      }
+    } catch (error) {
+      console.error('Complete error details:', error);
+      const msg = error.response?.data || 'Failed to complete training';
       dispatch(openSnackbar({ open: true, message: typeof msg === 'string' ? msg : JSON.stringify(msg), variant: 'alert', severity: 'error' }));
     } finally {
       setSaving(false);
@@ -586,6 +628,10 @@ export default function InductionTraining() {
         columns={columns}
         rows={resolvedRows}
         loading={loading}
+        page={page}
+        size={size}
+        onPageChange={(p) => setPage(p)}
+        onSizeChange={(s) => { setSize(s); setPage(0); }}
         onDoubleClickRow={handleStartTraining}
         actionColumn={{
           render: (row) => (
@@ -610,10 +656,22 @@ export default function InductionTraining() {
         title="Induction Process"
         fullWidth
         maxWidth="xl"
-        onSave={perms.write ? handleSaveAll : null}
+        onSave={perms.write ? handleSaveProgress : null}
         isViewOnly={!perms.write}
         saveLabel="Save"
         saveLoading={saving}
+        secondaryActions={
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleCompleteTraining}
+            disabled={saving || completedCount < totalCount}
+            startIcon={<IconCheck size={18} />}
+            sx={{ fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
+          >
+            Complete Training ({completedCount}/{totalCount})
+          </Button>
+        }
       >
         {selectedAssignment && (
           <>
