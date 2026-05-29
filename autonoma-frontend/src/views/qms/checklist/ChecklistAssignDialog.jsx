@@ -297,14 +297,14 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               
               <BOSTextField
                 select
-                label={empLoading ? 'Loading employees…' : `Assign To (${visibleEmployeeOptions.length} available)`}
+                label={lookups.loading ? 'Loading employees…' : `Assign To (${visibleEmployeeOptions.length} available)`}
                 value={formData.assignTo}
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
-                disabled={empLoading}
-                InputProps={empLoading ? { endAdornment: <CircularProgress size={16} sx={{ mr: 1 }} /> } : {}}
+                disabled={lookups.loading}
+                InputProps={lookups.loading ? { endAdornment: <CircularProgress size={16} sx={{ mr: 1 }} /> } : {}}
               >
-                {empLoading ? (
+                {lookups.loading ? (
                   <MenuItem disabled><em>Loading…</em></MenuItem>
                 ) : visibleEmployeeOptions.length === 0 ? (
                   <MenuItem disabled>
