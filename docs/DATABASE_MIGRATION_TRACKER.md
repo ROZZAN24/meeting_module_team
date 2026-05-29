@@ -22,7 +22,7 @@ graph TD
 
 | Module Name | Legacy Prefix | Target Prefix | Schema Status | Target Migration Release | Progress |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Master (Global Common)** | Mixed | `MST_` | Legacy | `V001__Master_Module.sql` | ❌ Pending |
+| **Master (Global Common)** | Mixed | `MST_` | Standardized | `V001__Master_Module.sql` | ✅ Migrated |
 | **User & Auth (Security/Admin)** | `AD_` / `BOS_` | `AD_` | Legacy | `V002__User_Module.sql` | ❌ Pending |
 | **HR & Induction** | `hrm_` / `IND_` | `HR_` | Legacy | `V003__HR_Module.sql` | ❌ Pending |
 | **QMS & Audit** | `QMS_` / `qms_` | `QMS_` | Legacy | `V004__QMS_Module.sql` | ❌ Pending |
