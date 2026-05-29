@@ -56,6 +56,7 @@ import BOSMovableDialog from 'ui-component/bos/BOSMovableDialog';
 import { openSnackbar } from 'store/slices/snackbar';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION TRAINING (TRAINER PAGE) ||============================== //
 
@@ -147,6 +148,14 @@ export default function InductionTraining() {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINING);
+
+  if (perms.loading) {
+    return null;
+  }
+
+  if (!perms.enabled) {
+    return <Navigate to="/" replace />;
+  }
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {

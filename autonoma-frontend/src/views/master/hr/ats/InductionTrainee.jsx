@@ -42,6 +42,7 @@ import {
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION TRAINEE (EMPLOYEE PAGE) ||============================== //
 
@@ -81,6 +82,14 @@ export default function InductionTrainee() {
   const theme = useTheme();
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINEE);
+
+  if (perms.loading) {
+    return null;
+  }
+
+  if (!perms.enabled) {
+    return <Navigate to="/" replace />;
+  }
   const { user } = useAuth();
 
   const [rows, setRows] = useState([]);

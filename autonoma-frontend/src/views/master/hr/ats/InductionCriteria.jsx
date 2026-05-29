@@ -20,6 +20,7 @@ import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
@@ -106,6 +107,14 @@ export default function InductionCriteria() {
   // eslint-disable-next-line no-unused-vars
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
+
+  if (perms.loading) {
+    return null;
+  }
+
+  if (!perms.enabled) {
+    return <Navigate to="/" replace />;
+  }
 
   useEffect(() => {
     const config = [

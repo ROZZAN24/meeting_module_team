@@ -49,6 +49,7 @@ import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig, resetFilters, setQuery } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION ASSIGNMENT MANAGEMENT ||============================== //
 
@@ -174,6 +175,14 @@ const InductionAssignment = () => {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
+
+  if (perms.loading) {
+    return null;
+  }
+
+  if (!perms.enabled) {
+    return <Navigate to="/" replace />;
+  }
 
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
