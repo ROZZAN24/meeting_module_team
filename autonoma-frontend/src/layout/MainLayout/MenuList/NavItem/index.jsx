@@ -197,7 +197,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
         </ListItemButton>
       ) : item.pageCode ? (
         <Tooltip
-          title={`Code: ${item.pageCode}`}
+          title={item.pageCode}
           placement="left"
           disableInteractive
           arrow

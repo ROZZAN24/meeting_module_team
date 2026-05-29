@@ -268,7 +268,7 @@ export default function NavCollapse({ menu, level, parentId }) {
         </ListItemIcon>
       )}
       {(drawerOpen || (!drawerOpen && level !== 1)) && (
-        <Tooltip title={menu.pageCode ? `Code: ${menu.pageCode}` : <FormattedMessage id={menu.title} />} disableHoverListener={menu.pageCode ? false : !hoverStatus}>
+        <Tooltip title={menu.pageCode ? menu.pageCode : <FormattedMessage id={menu.title} />} disableHoverListener={menu.pageCode ? false : !hoverStatus}>
           <ListItemText
             primary={
               <Typography
@@ -378,7 +378,7 @@ export default function NavCollapse({ menu, level, parentId }) {
       )}
       {menu.pageCode ? (
         <Tooltip 
-          title={`Code: ${menu.pageCode}`} 
+          title={menu.pageCode} 
           placement="top" 
           arrow
           slotProps={{

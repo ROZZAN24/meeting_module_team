@@ -74,9 +74,9 @@ const INITIAL_FORM = {
   description: '',
   agenda: '',
   subject: '',
-  startTime: '09:00 AM',
-  endTime: '10:00 AM',
-  intervalTime: '12:00 AM',
+  startTime: '',
+  endTime: '',
+  intervalTime: '',
   frequency: 'NONE',
   departments: [],
   chairedBy: null,
@@ -635,17 +635,20 @@ export default function AddMeetingSchedule() {
               </Grid>
             )}
             <Grid item xs={12} sm={4}>
-              <BOSTextField select label="Start Time" name="startTime" value={form.startTime} onChange={h} required fullWidth>
+              <BOSTextField select label="Start Time" name="startTime" value={form.startTime || ''} onChange={h} required fullWidth>
+                <MenuItem value="">-Select Start Time-</MenuItem>
                 {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <BOSTextField select label="Interval Time" name="intervalTime" value={form.intervalTime} onChange={h} fullWidth>
+              <BOSTextField select label="Interval Time" name="intervalTime" value={form.intervalTime || ''} onChange={h} disabled={!form.startTime} fullWidth>
+                <MenuItem value="">-Select Interval Time-</MenuItem>
                 {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
             <Grid item xs={12} sm={4}>
-              <BOSTextField select label="End Time" name="endTime" value={form.endTime} onChange={h} required fullWidth>
+              <BOSTextField select label="End Time" name="endTime" value={form.endTime || ''} onChange={h} required disabled={!form.startTime} fullWidth>
+                <MenuItem value="">-Select End Time-</MenuItem>
                 {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
