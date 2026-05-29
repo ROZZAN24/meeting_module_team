@@ -5,9 +5,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.Date;
+import com.autonoma.erp.util.SecurityUtils;
 
 @Entity
-@Table(name = "hr_induction_round_master")
+@Table(name = "HR_INDUCTION_ROUND")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,29 +17,74 @@ public class InductionRoundMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "round_name", unique = true, nullable = false, length = 100)
+    @Column(name = "ROUND_NAME", unique = true, nullable = false, length = 100)
     private String roundName;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
-    @Column(name = "status", length = 20)
+    @Column(name = "STATUS", length = 20)
     private String status; // ACTIVE, IN ACTIVE
 
-    @Column(name = "display_order")
+    @Column(name = "DISPLAY_ORDER")
     private Integer displayOrder;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    // Explicit getter/setter for isActive
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+    // Backward-compatible alias methods for audit fields
+    public Date getCreatedAt() {
+        return this.createdDate;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdDate = createdAt;
+    }
+
+    public Date getUpdatedAt() {
+        return this.updatedDate;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedDate = updatedAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdDate == null) {
+            this.createdDate = new Date();
+        }
+        if (this.createdBy == null) {
+            this.createdBy = SecurityUtils.getCurrentUserId();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        this.updatedDate = new Date();
+        this.updatedBy = SecurityUtils.getCurrentUserId();
+    }
 }

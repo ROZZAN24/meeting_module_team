@@ -3,7 +3,6 @@ package com.autonoma.erp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "QMS_NCR_OFI_MASTER")
@@ -13,49 +12,56 @@ public class NcrOfiMaster extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "ncr_ofi_no", unique = true, nullable = false)
+    @Column(name = "NCR_OFI_NO", unique = true, nullable = false)
     private String ncrOfiNo;
 
-    @Column(name = "observation_id", nullable = false)
+    @Column(name = "OBSERVATION_ID", nullable = false)
     private Integer observationId;
 
-    @Column(name = "observation_detail_id", nullable = false)
+    @Column(name = "OBSERVATION_DETAIL_ID", nullable = false)
     private Integer observationDetailId;
 
-    @Column(nullable = false)
+    @Column(name = "TYPE", nullable = false)
     private String type; // NCR or OFI
 
-    @Column(name = "observation_date", nullable = false)
+    @Column(name = "OBSERVATION_DATE", nullable = false)
     private LocalDate observationDate;
 
-    @Column(name = "target_date", nullable = false)
+    @Column(name = "TARGET_DATE", nullable = false)
     private LocalDate targetDate;
 
-    @Column(name = "ncr_approver_id")
+    @Column(name = "NCR_APPROVER_ID")
     private Integer ncrApproverId;
 
-    @Column(name = "auditee_name")
+    @Column(name = "AUDITEE_NAME")
     private String auditeeName;
 
-    @Column(name = "ncr_approver_name")
+    @Column(name = "NCR_APPROVER_NAME")
     private String ncrApproverName;
 
-    @Column(name = "root_cause")
+    @Column(name = "ROOT_CAUSE")
     private String rootCause;
 
-    @Column(name = "corrective_action")
+    @Column(name = "CORRECTIVE_ACTION")
     private String correctiveAction;
 
-    @Column(name = "preventive_action")
+    @Column(name = "PREVENTIVE_ACTION")
     private String preventiveAction;
 
-    @Column
+    @Column(name = "STATUS")
     private String status = "OPEN";
 
-    @Column(name = "approval_status")
+    @Column(name = "APPROVAL_STATUS")
     private String approvalStatus = "PENDING";
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

@@ -12,27 +12,27 @@ public abstract class BaseAuditEntity {
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
     @Column(name = "UPDATED_USER", length = 100)
     private String updatedUser;
 
     @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
 
     // Explicit Getters and Setters
     public String getCreatedUser() { return createdUser; }
     public void setCreatedUser(String createdUser) { this.createdUser = createdUser; }
 
-    public Date getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
+    public Date getCreatedDate() { return createdDate; }
+    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
 
     public String getUpdatedUser() { return updatedUser; }
     public void setUpdatedUser(String updatedUser) { this.updatedUser = updatedUser; }
 
-    public Date getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
+    public Date getUpdatedDate() { return updatedDate; }
+    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
 
     // Backward compatibility aliases
     public String getCreatedBy() { return getCreatedUser(); }
@@ -41,16 +41,31 @@ public abstract class BaseAuditEntity {
     public String getUpdatedBy() { return getUpdatedUser(); }
     public void setUpdatedBy(String updatedBy) { setUpdatedUser(updatedBy); }
 
-    public Date getCreatedDate() { return getCreatedAt(); }
-    public void setCreatedDate(Date createdDate) { setCreatedAt(createdDate); }
+    public Date getCreatedAt() { return getCreatedDate(); }
+    public void setCreatedAt(Date createdAt) { setCreatedDate(createdAt); }
+    public void setCreatedAt(java.time.LocalDateTime createdAt) {
+        if (createdAt != null) {
+            setCreatedDate(java.sql.Timestamp.valueOf(createdAt));
+        } else {
+            setCreatedDate(null);
+        }
+    }
 
-    public Date getUpdatedDate() { return getUpdatedAt(); }
-    public void setUpdatedDate(Date updatedDate) { setUpdatedAt(updatedDate); }
+    public Date getUpdatedAt() { return getUpdatedDate(); }
+    public void setUpdatedAt(Date updatedAt) { setUpdatedDate(updatedAt); }
+    public void setUpdatedAt(java.time.LocalDateTime updatedAt) {
+        if (updatedAt != null) {
+            setUpdatedDate(java.sql.Timestamp.valueOf(updatedAt));
+        } else {
+            setUpdatedDate(null);
+        }
+    }
+
 
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = new Date();
+        if (this.createdDate == null) {
+            this.createdDate = new Date();
         }
         if (this.createdUser == null) {
             this.createdUser = SecurityUtils.getCurrentUserId();
@@ -59,7 +74,7 @@ public abstract class BaseAuditEntity {
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = new Date();
+        this.updatedDate = new Date();
         this.updatedUser = SecurityUtils.getCurrentUserId();
     }
 }

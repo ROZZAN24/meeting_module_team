@@ -68,8 +68,11 @@ public class ChecklistAssignment extends BaseAuditEntity {
     @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "FILE_PATHS", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "FILE_PATHS", length = 1000)
     private String filePaths;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     public Long getId() {
         return id;
@@ -197,6 +200,14 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     public void setFilePaths(String filePaths) {
         this.filePaths = filePaths;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public List<String> getActualFiles() {

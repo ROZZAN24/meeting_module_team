@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_CUSTOMER_MASTER")
+@Table(name = "SLS_CUSTOMER")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,137 +19,141 @@ public class CustomerMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_code", unique = true, nullable = false, length = 50)
+    @Column(name = "CUSTOMER_CODE", unique = true, nullable = false, length = 50)
     private String customerCode;
 
-    @Column(name = "customer_name", nullable = false, length = 200)
+    @Column(name = "CUSTOMER_NAME", nullable = false, length = 200)
     private String customerName;
 
-    @Column(name = "customer_print_name", length = 200)
+    @Column(name = "CUSTOMER_PRINT_NAME", length = 200)
     private String customerPrintName;
 
-    @Column(name = "accounts_ledger", length = 200)
+    @Column(name = "ACCOUNTS_LEDGER", length = 200)
     private String accountsLedger;
 
-    @Column(name = "group_name", length = 200)
+    @Column(name = "GROUP_NAME", length = 200)
     private String groupName;
 
-    @Column(name = "invoice_name", length = 200)
+    @Column(name = "INVOICE_NAME", length = 200)
     private String invoiceName;
 
-    @Column(name = "short_name", length = 50)
+    @Column(name = "SHORT_NAME", length = 50)
     private String shortName;
 
-    @Column(name = "segment", length = 100)
+    @Column(name = "SEGMENT", length = 100)
     private String segment;
 
-    @Column(name = "sub_segment", length = 100)
+    @Column(name = "SUB_SEGMENT", length = 100)
     private String subSegment;
 
-    @Column(name = "domain_name", length = 150)
+    @Column(name = "DOMAIN_NAME", length = 150)
     private String domainName;
 
-    @Column(name = "address", columnDefinition = "TEXT")
+    @Column(name = "ADDRESS", columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "pincode", length = 20)
+    @Column(name = "PINCODE", length = 20)
     private String pincode;
 
-    @Column(name = "city", length = 100)
+    @Column(name = "CITY", length = 100)
     private String city;
 
-    @Column(name = "state", length = 100)
+    @Column(name = "STATE", length = 100)
     private String state;
 
-    @Column(name = "state_code", length = 20)
+    @Column(name = "STATE_CODE", length = 20)
     private String stateCode;
 
-    @Column(name = "country", length = 100)
+    @Column(name = "COUNTRY", length = 100)
     private String country;
 
-    @Column(name = "prime_customer", length = 10)
+    @Column(name = "PRIME_CUSTOMER", length = 10)
     private String primeCustomer;
 
-    @Column(name = "pan_no", length = 50)
+    @Column(name = "PAN_NO", length = 50)
     private String panNo;
 
-    @Column(name = "pan_file_info", length = 1000)
+    @Column(name = "PAN_FILE_INFO", length = 1000)
     private String panFileInfo;
 
-    @Column(name = "website", length = 150)
+    @Column(name = "WEBSITE", length = 150)
     private String website;
 
-    @Column(name = "register_no", length = 100)
+    @Column(name = "REGISTER_NO", length = 100)
     private String registerNo;
 
-    @Column(name = "cin_no", length = 100)
+    @Column(name = "CIN_NO", length = 100)
     private String cinNo;
 
-    @Column(name = "distance")
+    @Column(name = "DISTANCE")
     private String distance;
 
-    @Column(name = "gstin", length = 50)
+    @Column(name = "GSTIN", length = 50)
     private String gstin;
 
-    @Column(name = "vendor_code", length = 50)
+    @Column(name = "VENDOR_CODE", length = 50)
     private String vendorCode;
 
-    @Column(name = "iso_number", length = 50)
+    @Column(name = "ISO_NUMBER", length = 50)
     private String isoNumber;
 
-    @Column(name = "iso_expiry")
+    @Column(name = "ISO_EXPIRY")
     private String isoExpiry;
 
-    @Column(name = "nda_required", length = 10)
+    @Column(name = "NDA_REQUIRED", length = 10)
     private String ndaRequired;
 
-    @Column(name = "dispatch_mode", length = 50)
+    @Column(name = "DISPATCH_MODE", length = 50)
     private String dispatchMode;
 
-    @Column(name = "currency", length = 20)
+    @Column(name = "CURRENCY", length = 20)
     private String currency;
 
-    @Column(name = "payment_terms", length = 100)
+    @Column(name = "PAYMENT_TERMS", length = 100)
     private String paymentTerms;
 
-    @Column(name = "delivery_terms", length = 100)
+    @Column(name = "DELIVERY_TERMS", length = 100)
     private String deliveryTerms;
 
-    @Column(name = "freight", length = 100)
+    @Column(name = "FREIGHT", length = 100)
     private String freight;
 
-    @Column(name = "negotiate_customer", length = 10)
+    @Column(name = "NEGOTIATE_CUSTOMER", length = 10)
     private String negotiateCustomer;
 
-    @Column(name = "daily_dispatch_mail", length = 10)
+    @Column(name = "DAILY_DISPATCH_MAIL", length = 10)
     private String dailyDispatchMail;
 
-    @Column(name = "file_upload", length = 2000)
+    @Column(name = "FILE_UPLOAD", length = 1000)
     private String fileUpload;
 
-    @Column(name = "location", length = 200)
+    @Column(name = "LOCATION", length = 200)
     private String location;
 
-    @Column(name = "ld_applicable", length = 10)
+    @Column(name = "LD_APPLICABLE", length = 10)
     private String ldApplicable;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY")
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    @Builder.Default
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {

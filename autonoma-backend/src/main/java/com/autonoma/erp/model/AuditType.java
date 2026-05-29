@@ -1,8 +1,6 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.util.Date;
 
 @Entity
 @Table(name = "QMS_AUDIT_TYPE")
@@ -11,33 +9,32 @@ public class AuditType extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "audit_type", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_TYPE", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
-    @Column(name = "standard", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "STANDARD", columnDefinition = "NVARCHAR(255)")
     private String standard;
     
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String description;
     
-    @Column(name = "criteria_min_count")
+    @Column(name = "CRITERIA_MIN_COUNT")
     private Integer criteriaMinCount;
 
-    @Column(name = "customer_audit_area", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "CUSTOMER_AUDIT_AREA", columnDefinition = "NVARCHAR(255)")
     private String customerAuditArea;
 
-    @Column(name = "audit_area", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_AREA", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
-    @Column(name = "criteria_type", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "CRITERIA_TYPE", columnDefinition = "NVARCHAR(100)")
     private String criteriaType;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATUS", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-
-    
-
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     // Explicit Getters and Setters
     public Long getId() { return id; }
@@ -58,4 +55,6 @@ public class AuditType extends BaseAuditEntity {
     public void setCriteriaType(String criteriaType) { this.criteriaType = criteriaType; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

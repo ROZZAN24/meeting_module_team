@@ -30,35 +30,46 @@ graph TD
 | Freight Master | `FREIGHT_MASTER` | `MST_FREIGHT` | `V001__Master_Module.sql` | ✅ Migrated |
 | Despatch Mode Master | `MODE_OF_DESPATCH` | `MST_DESPATCH_MODE` | `V001__Master_Module.sql` | ✅ Migrated |
 | **Phase 2: User & Auth Module** | | | | |
-| User Credentials | `ad_user_credential` | `AD_USER_CREDENTIAL` | `V002__User_Module.sql` | ❌ Pending |
-| Company Credentials | `ad_company_credential` | `AD_COMPANY_CREDENTIAL` | `V002__User_Module.sql` | ❌ Pending |
-| Division Master | `ad_division_master` | `AD_DIVISION` | `V002__User_Module.sql` | ❌ Pending |
-| User Mappings | `AD_USER_..._MAPPING` | `AD_USER_..._MAPPING` | `V002__User_Module.sql` | ❌ Pending |
+| User Credentials | `ad_user_credential` | `AD_USER_CREDENTIAL` | `V002__User_Module.sql` | ✅ Migrated |
+| Company Credentials | `ad_company_credential` | `AD_COMPANY_CREDENTIAL` | `V002__User_Module.sql` | ✅ Migrated |
+| Division Master | `ad_division_master` | `AD_DIVISION` | `V002__User_Module.sql` | ✅ Migrated |
+| User Mappings | `AD_USER_..._MAPPING` | `AD_USER_..._MAPPING` | `V002__User_Module.sql` | ✅ Migrated |
 | **Phase 3: Department & Designation** | | | | |
-| Department Master | `hrm_department_master` | `HR_DEPARTMENT` | `V003__HR_Master_Module.sql` | ❌ Pending |
-| Designation Master | `hrm_designation_master` | `HR_DESIGNATION` | `V003__HR_Master_Module.sql` | ❌ Pending |
-| Designation Level | `hrm_designation_level` | `HR_DESIGNATION_LEVEL` | `V003__HR_Master_Module.sql` | ❌ Pending |
-| Level Master | `hrm_level_master` | `HR_LEVEL` | `V003__HR_Master_Module.sql` | ❌ Pending |
+| Department Master | `HR_DEPARTMENT_MASTER` | `HR_DEPARTMENT` | `V003__HR_Master_Module.sql` | ✅ Migrated |
+| Designation Master | `HR_DESIGNATION_MASTER` | `HR_DESIGNATION` | `V003__HR_Master_Module.sql` | ✅ Migrated |
+| Designation Level | `HR_DESIGNATION_LEVEL` | `HR_DESIGNATION_LEVEL` | `V003__HR_Master_Module.sql` | ✅ Migrated |
+| Level Master | `HR_LEVEL_MASTER` | `HR_LEVEL` | `V003__HR_Master_Module.sql` | ✅ Migrated |
+| Employee Type Master | `HR_EMPLOYEE_TYPE_MASTER` | `HR_EMPLOYEE_TYPE` | `V003__HR_Master_Module.sql` | ✅ Migrated |
 | **Phase 4: Employee Master (Core HR)** | | | | |
-| Employee Master | `hrm_employee_master` | `HR_EMPLOYEE` | `V004__Employee_Module.sql` | ❌ Pending |
-| Employee Contacts | `hrm_employee_contact` | `HR_EMPLOYEE_CONTACT` | `V004__Employee_Module.sql` | ❌ Pending |
-| Employee Personal Details | `hrm_employee_personal_detail` | `HR_EMPLOYEE_PERSONAL` | `V004__Employee_Module.sql` | ❌ Pending |
-| Employee KYC | `hrm_employee_kyc` | `HR_EMPLOYEE_KYC` | `V004__Employee_Module.sql` | ❌ Pending |
+| Employee Master | `hrm_employee_master` | `HR_EMPLOYEE` | `V004__Employee_Module.sql` | ✅ Migrated |
+| Employee Contacts | `hrm_employee_contact` | `HR_EMPLOYEE_CONTACT` | `V004__Employee_Module.sql` | ✅ Migrated |
+| Employee Personal Details | `hrm_employee_personal_detail` | `HR_EMPLOYEE_PERSONAL` | `V004__Employee_Module.sql` | ✅ Migrated |
+| Employee KYC | `hrm_employee_kyc` | `HR_EMPLOYEE_KYC` | `V004__Employee_Module.sql` | ✅ Migrated |
 | **Phase 5: Induction & Interview** | | | | |
-| Induction Master | `IND_INDUCTION_MASTER` | `HR_INDUCTION` | `V005__Induction_Module.sql` | ❌ Pending |
-| Induction Assignment | `IND_INDUCTION_ASSIGNMENT` | `HR_INDUCTION_ASSIGNMENT` | `V005__Induction_Module.sql` | ❌ Pending |
-| Induction Training Detail | `IND_INDUCTION_TRAINING_DETAIL`| `HR_INDUCTION_TRAINING` | `V005__Induction_Module.sql` | ❌ Pending |
-| Interview Master | `IND_INTERVIEW_MASTER` | `HR_INTERVIEW` | `V005__Induction_Module.sql` | ❌ Pending |
+| Induction Master | `IND_INDUCTION_MASTER` | `HR_INDUCTION` | `V005__Induction_Module.sql` | ✅ Migrated |
+| Induction Assignment | `IND_INDUCTION_ASSIGNMENT` | `HR_INDUCTION_ASSIGNMENT` | `V005__Induction_Module.sql` | ✅ Migrated |
+| Induction Training Detail | `IND_INDUCTION_TRAINING_DETAIL`| `HR_INDUCTION_TRAINING` | `V005__Induction_Module.sql` | ✅ Migrated |
+| Interview Master | `IND_INTERVIEW_MASTER` | `HR_INTERVIEW` | `V005__Induction_Module.sql` | ✅ Migrated |
 | **Phase 6: Customer, Supplier & CRM** | | | | |
-| Customer Master | `sm_customer_master` | `SLS_CUSTOMER` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
-| Customer Address | `sm_customer_address` | `SLS_CUSTOMER_ADDRESS` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
-| Supplier/Vendor Master | `sm_supplier_master` | `VND_VENDOR` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
-| Vendor Customer Mapping | `sm_vendor_customer_master` | `VND_CUSTOMER_MAPPING` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
+| Customer Master | `sm_customer_master` | `SLS_CUSTOMER` | `V006__Sales_Vendor_Module.sql`| ✅ Migrated |
+| Customer Address | `sm_customer_address` | `SLS_CUSTOMER_ADDRESS` | `V006__Sales_Vendor_Module.sql`| ✅ Migrated |
+| Supplier/Vendor Master | `sm_supplier_master` | `VND_VENDOR` | `V006__Sales_Vendor_Module.sql`| ✅ Migrated |
+| Vendor Customer Mapping | `sm_vendor_customer_master` | `VND_CUSTOMER_MAPPING` | `V006__Sales_Vendor_Module.sql`| ✅ Migrated |
 | **Phase 7: QMS & Audit Module** | | | | |
-| Checklist Master | `qms_checklist_master` | `QMS_CHECKLIST` | `V007__QMS_Module.sql` | ❌ Pending |
-| Checklist Assignment | `qms_checklist_assignment` | `QMS_CHECKLIST_ASSIGNMENT` | `V007__QMS_Module.sql` | ❌ Pending |
-| Meeting Master | `qms_meeting_master` | `QMS_MEETING` | `V007__QMS_Module.sql` | ❌ Pending |
-| Mom Master | `qms_mom_master` | `QMS_MOM` | `V007__QMS_Module.sql` | ❌ Pending |
+| Checklist Master | `qms_checklist_master` | `QMS_CHECKLIST` | `V007__QMS_Module.sql` | ✅ Migrated |
+| Checklist Assignment | `qms_checklist_assignment` | `QMS_CHECKLIST_ASSIGNMENT` | `V007__QMS_Module.sql` | ✅ Migrated |
+| Meeting Master | `qms_meeting_master` | `QMS_MEETING` | `V007__QMS_Module.sql` | ✅ Migrated |
+| Mom Master | `qms_mom_master` | `QMS_MOM` | `V007__QMS_Module.sql` | ✅ Migrated |
+| **Phase 8: Production & Inventory Module** | | | | |
+| Item Group Master | `npd_item_group` | `NPD_ITEM_GROUP` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| Item Type Master | `npd_item_type` | `NPD_ITEM_TYPE` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| Item Subtype Master | `npd_item_subtype` | `NPD_ITEM_SUBTYPE` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| OEM Master | `npd_oem` | `NPD_OEM` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| Model Master | `npd_model` | `NPD_MODEL` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| Capacity Master | `npd_capacity` | `NPD_CAPACITY` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| OEM Part Mapping | `npd_oem_mapping` | `NPD_OEM_MAPPING` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| Process Master | `npd_process` | `NPD_PROCESS` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| Wind Farm Master | `npd_wind_farm` | `NPD_WIND_FARM` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
 
 *Status key: ❌ Pending | 🔄 In Progress | ✅ Migrated*
 
@@ -219,6 +230,30 @@ It is highly recommended that all core tables (such as master, employee, transac
     *   `QMS_MOM`
     *   `QMS_MOM_DETAIL`
     *   `QMS_NCR_OFI`
+
+---
+
+### Module 5: Production & Inventory (NPD Master)
+*   **Legacy Tables:**
+    *   `npd_item_group`
+    *   `npd_item_type`
+    *   `npd_item_subtype`
+    *   `npd_oem`
+    *   `npd_model`
+    *   `npd_capacity`
+    *   `npd_oem_mapping`
+    *   `npd_process`
+    *   `npd_wind_farm`
+*   **Standardized Schema Target:**
+    *   `NPD_ITEM_GROUP`
+    *   `NPD_ITEM_TYPE`
+    *   `NPD_ITEM_SUBTYPE`
+    *   `NPD_OEM`
+    *   `NPD_MODEL`
+    *   `NPD_CAPACITY`
+    *   `NPD_OEM_MAPPING`
+    *   `NPD_PROCESS`
+    *   `NPD_WIND_FARM`
 
 ---
 
