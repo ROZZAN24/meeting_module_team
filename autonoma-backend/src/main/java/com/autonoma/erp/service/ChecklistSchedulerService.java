@@ -130,18 +130,23 @@ public class ChecklistSchedulerService {
             }
             
             if (shouldGenerate && checklist.getAssignTo() != null && !checklist.getAssignTo().isEmpty()) {
-                try {
-                    log.info("Generating {} assignment for Checklist: {}", frequency, checklist.getSeqNo());
-                    checklistService.assignTask(
-                        null, 
-                        checklist.getId(), 
-                        checklist.getAssignTo(), 
-                        "System Scheduler", 
-                        "PRIMARY",
-                        today
-                    );
-                } catch (Exception e) {
-                    log.error("Failed to generate assignment for checklist {}: {}", checklist.getSeqNo(), e.getMessage());
+                String[] assignees = checklist.getAssignTo().split(",");
+                for (String assignee : assignees) {
+                    String cleanAssignee = assignee.trim();
+                    if (cleanAssignee.isEmpty()) continue;
+                    try {
+                        log.info("Generating {} assignment for Checklist: {} for User: {}", frequency, checklist.getSeqNo(), cleanAssignee);
+                        checklistService.assignTask(
+                            null, 
+                            checklist.getId(), 
+                            cleanAssignee, 
+                            "System Scheduler", 
+                            "PRIMARY",
+                            today
+                        );
+                    } catch (Exception e) {
+                        log.error("Failed to generate assignment for checklist {} / assignee {}: {}", checklist.getSeqNo(), cleanAssignee, e.getMessage());
+                    }
                 }
             }
         }

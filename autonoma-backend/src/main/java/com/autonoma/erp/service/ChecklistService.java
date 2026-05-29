@@ -472,16 +472,43 @@ public class ChecklistService {
             if (searchValue != null && !searchValue.isEmpty()) {
                 String searchTerm = "%" + searchValue.toLowerCase() + "%";
                 if (searchBy != null && !searchBy.isEmpty()) {
+                    Expression<String> expression;
                     if (searchBy.contains(".")) {
                         String[] parts = searchBy.split("\\.");
-                        Path<Object> p = root.get(parts[0]);
-                        for (int i = 1; i < parts.length; i++) {
-                            p = p.get(parts[i]);
+                        if ("checklist".equals(parts[0])) {
+                            Join<ChecklistAssignment, MasterChecklist> cJoin = (masterJoin != null) ? masterJoin : root.join("checklist");
+                            expression = cJoin.get(parts[1]);
+                        } else if ("status".equals(parts[0])) {
+                            Join<ChecklistAssignment, StatusMaster> sJoin = root.join("status");
+                            expression = sJoin.get(parts[1]);
+                        } else {
+                            Path<Object> p = root.get(parts[0]);
+                            for (int i = 1; i < parts.length; i++) {
+                                p = p.get(parts[i]);
+                            }
+                            if (String.class.equals(p.getJavaType())) {
+                                expression = (Expression<String>) (Expression<?>) p;
+                            } else {
+                                expression = p.as(String.class);
+                            }
                         }
-                        predicates.add(cb.like(cb.lower(p.as(String.class)), searchTerm));
                     } else {
-                        predicates.add(cb.like(cb.lower(root.get(searchBy).as(String.class)), searchTerm));
+                        if (java.util.Arrays.asList("seqNo", "checkingPoint", "category", "frequency").contains(searchBy)) {
+                            Join<ChecklistAssignment, MasterChecklist> cJoin = (masterJoin != null) ? masterJoin : root.join("checklist");
+                            expression = cJoin.get(searchBy);
+                        } else if ("status".equals(searchBy)) {
+                            Join<ChecklistAssignment, StatusMaster> sJoin = root.join("status");
+                            expression = sJoin.get("name");
+                        } else {
+                            Path<Object> p = root.get(searchBy);
+                            if (String.class.equals(p.getJavaType())) {
+                                expression = (Expression<String>) (Expression<?>) p;
+                            } else {
+                                expression = p.as(String.class);
+                            }
+                        }
                     }
+                    predicates.add(cb.like(cb.lower(expression), searchTerm));
                 } else {
                     List<Predicate> orPredicates = new ArrayList<>();
                     orPredicates.add(cb.like(cb.lower(root.get("assignedTo")), searchTerm));
