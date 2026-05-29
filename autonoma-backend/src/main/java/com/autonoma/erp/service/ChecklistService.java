@@ -351,8 +351,19 @@ public class ChecklistService {
 
             // Automatic Assignment Trigger (Wiring 1)
             if (saved.getAssignTo() != null && !saved.getAssignTo().isEmpty()) {
-                assignTask(null, saved.getId(), saved.getAssignTo(),
-                        saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
+                boolean futureEffective = false;
+                if (saved.getEffectiveFrom() != null) {
+                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+                    String todayStr = sdf.format(new Date());
+                    String effectiveStr = sdf.format(saved.getEffectiveFrom());
+                    if (effectiveStr.compareTo(todayStr) > 0) {
+                        futureEffective = true;
+                    }
+                }
+                if (!futureEffective) {
+                    assignTask(null, saved.getId(), saved.getAssignTo(),
+                            saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
+                }
             }
 
             return saved;

@@ -44,6 +44,15 @@ public class ChecklistSchedulerService {
         int dayOfMonth = cal.get(Calendar.DAY_OF_MONTH);
         
         for (MasterChecklist checklist : activeChecklists) {
+            if (checklist.getEffectiveFrom() != null) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+                String todayStr = sdf.format(today);
+                String effectiveStr = sdf.format(checklist.getEffectiveFrom());
+                if (effectiveStr.compareTo(todayStr) > 0) {
+                    continue; // Skip generating if today is before the effective date
+                }
+            }
+
             String frequency = checklist.getFrequency();
             if (frequency == null) continue;
             
