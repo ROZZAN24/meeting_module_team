@@ -39,7 +39,7 @@ public class DbMigrationRunner implements CommandLineRunner {
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         Resource[] resources = new Resource[0];
         try {
-            resources = resolver.getResources("classpath:db/migration/*.sql");
+            resources = resolver.getResources("classpath:db/migration/**/*.sql");
         } catch (Exception e) {
             System.err.println("Failed to load modular migration scripts: " + e.getMessage());
         }
