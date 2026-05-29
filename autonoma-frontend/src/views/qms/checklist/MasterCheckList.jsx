@@ -344,6 +344,10 @@ export default function MasterCheckList() {
   };
 
   const handleAmendment = (row) => {
+    if (row?.verifyStatus !== 'Verified') {
+      dispatch(openSnackbar({ open: true, message: 'Only verified checklists can be amended!', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     const original = rows.find((r) => r.id === row.id) || row;
     setSelectedRow(original);
     setIsAmendment(true);
@@ -351,8 +355,7 @@ export default function MasterCheckList() {
   };
 
   const handleAssign = (row) => {
-    const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
-    if (!isAdmin && row?.verifyStatus !== 'Verified') {
+    if (row?.verifyStatus !== 'Verified') {
       dispatch(openSnackbar({ open: true, message: 'Only verified checklists can be assigned!', variant: 'alert', severity: 'warning' }));
       return;
     }
@@ -400,38 +403,49 @@ export default function MasterCheckList() {
   // ── Custom action column (Amendment + Assign) ─────────────────────────────────
   const actionColumn = {
     label: 'Actions',
-    render: (row) => (
-      <Stack direction="row" spacing={0.5}>
-        <Tooltip title="Amendment">
-          <IconButton 
-            size="small" 
-            onClick={(e) => { e.stopPropagation(); handleAmendment(row); }} 
-            sx={{
-              color: 'warning.main',
-              bgcolor: '#fff3e0',
-              transition: 'all 0.2s',
-              '&:hover': { bgcolor: 'warning.main', color: '#fff', transform: 'scale(1.05)' }
-            }}
-          >
-            <IconFileDots size={16} />
-          </IconButton>
-        </Tooltip>
-        <Tooltip title="Assign To">
-          <IconButton 
-            size="small" 
-            onClick={(e) => { e.stopPropagation(); handleAssign(row); }} 
-            sx={{
-              color: 'info.main',
-              bgcolor: '#e0f7fa',
-              transition: 'all 0.2s',
-              '&:hover': { bgcolor: 'info.main', color: '#fff', transform: 'scale(1.05)' }
-            }}
-          >
-            <IconUserPlus size={16} />
-          </IconButton>
-        </Tooltip>
-      </Stack>
-    )
+    render: (row) => {
+      const isVerified = row?.verifyStatus === 'Verified';
+      return (
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title={isVerified ? 'Amendment' : 'Checklist must be verified first'}>
+            <span>
+              <IconButton 
+                size="small" 
+                disabled={!isVerified}
+                onClick={(e) => { e.stopPropagation(); handleAmendment(row); }} 
+                sx={{
+                  color: isVerified ? 'warning.main' : 'text.disabled',
+                  bgcolor: isVerified ? '#fff3e0' : 'action.disabledBackground',
+                  transition: 'all 0.2s',
+                  '&:hover': isVerified ? { bgcolor: 'warning.main', color: '#fff', transform: 'scale(1.05)' } : {},
+                  '&.Mui-disabled': { opacity: 0.45 }
+                }}
+              >
+                <IconFileDots size={16} />
+              </IconButton>
+            </span>
+          </Tooltip>
+          <Tooltip title={isVerified ? 'Assign To' : 'Checklist must be verified first'}>
+            <span>
+              <IconButton 
+                size="small" 
+                disabled={!isVerified}
+                onClick={(e) => { e.stopPropagation(); handleAssign(row); }} 
+                sx={{
+                  color: isVerified ? 'info.main' : 'text.disabled',
+                  bgcolor: isVerified ? '#e0f7fa' : 'action.disabledBackground',
+                  transition: 'all 0.2s',
+                  '&:hover': isVerified ? { bgcolor: 'info.main', color: '#fff', transform: 'scale(1.05)' } : {},
+                  '&.Mui-disabled': { opacity: 0.45 }
+                }}
+              >
+                <IconUserPlus size={16} />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Stack>
+      );
+    }
   };
 
   return (
@@ -486,13 +500,19 @@ export default function MasterCheckList() {
             />
           )}
 
-          <Tooltip title={selectedRow ? `Amendment: ${selectedRow.seqNo || selectedRow.id}` : 'Select a row first'}>
+          <Tooltip title={
+            !selectedRow
+              ? 'Select a row first'
+              : selectedRow.verifyStatus !== 'Verified'
+              ? 'Checklist must be verified before amendment'
+              : `Amendment: ${selectedRow.seqNo || selectedRow.id}`
+          }>
             <span>
               <Button
                 variant="outlined"
                 color="warning"
                 size="medium"
-                disabled={!selectedRow}
+                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
                 startIcon={<IconFileDots size={18} />}
                 onClick={() => selectedRow && handleAmendment(selectedRow)}
                 sx={{
@@ -508,13 +528,19 @@ export default function MasterCheckList() {
             </span>
           </Tooltip>
 
-          <Tooltip title={selectedRow ? `Assign: ${selectedRow.seqNo || selectedRow.id}` : 'Select a row first'}>
+          <Tooltip title={
+            !selectedRow
+              ? 'Select a row first'
+              : selectedRow.verifyStatus !== 'Verified'
+              ? 'Checklist must be verified before assigning'
+              : `Assign: ${selectedRow.seqNo || selectedRow.id}`
+          }>
             <span>
               <Button
                 variant="outlined"
                 color="info"
                 size="medium"
-                disabled={!selectedRow}
+                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
                 startIcon={<IconUserPlus size={18} />}
                 onClick={() => selectedRow && handleAssign(selectedRow)}
                 sx={{

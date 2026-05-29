@@ -34,7 +34,7 @@ public class ProductProcessController {
         return processRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-        }
+    }
 
     @PostMapping
     @RequirePagePermission(pageCode = "M3180", action = "write")
@@ -64,25 +64,25 @@ public class ProductProcessController {
     @RequirePagePermission(pageCode = "M3180", action = "write")
     public ResponseEntity<?> updateProcess(@PathVariable Long id, @RequestBody ProductProcess process) {
         try {
-            if (!processRepository.existsById(id)) {
-                return ResponseEntity.notFound().build();
-            }
-            if (process.getProcessName() == null || process.getProcessName().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("Process Name is required.");
-            }
+            return processRepository.findById(id)
+                .map(existing -> {
+                    if (process.getProcessName() == null || process.getProcessName().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("Process Name is required.");
+                    }
 
-            if (processRepository.existsByProcessNameIgnoreCaseAndIdNot(process.getProcessName().trim(), id)) {
-                return ResponseEntity.badRequest().body("Process Name '" + process.getProcessName() + "' already exists.");
-            }
+                    if (processRepository.existsByProcessNameIgnoreCaseAndIdNot(process.getProcessName().trim(), id)) {
+                        return ResponseEntity.badRequest().body("Process Name '" + process.getProcessName() + "' already exists.");
+                    }
 
-            process.setId(id);
-            process.setProcessName(process.getProcessName().trim());
-            if (process.getDescription() != null) {
-                process.setDescription(process.getDescription().trim());
-            }
+                    existing.setProcessName(process.getProcessName().trim());
+                    existing.setDescription(process.getDescription() != null ? process.getDescription().trim() : null);
+                    existing.setStatus(process.getStatus());
+                    existing.setUpdatedBy(process.getUpdatedBy());
 
-            ProductProcess updated = processRepository.save(process);
-            return ResponseEntity.ok(updated);
+                    ProductProcess updated = processRepository.save(existing);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update process: " + e.getMessage());
         }

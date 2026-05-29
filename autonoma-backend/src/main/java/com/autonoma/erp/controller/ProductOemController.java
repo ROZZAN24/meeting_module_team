@@ -73,34 +73,28 @@ public class ProductOemController {
     @RequirePagePermission(pageCode = "M3140", action = "write")
     public ResponseEntity<?> updateOem(@PathVariable Long id, @RequestBody ProductOem oem) {
         try {
-            if (!oemRepository.existsById(id)) {
-                return ResponseEntity.notFound().build();
-            }
-            if (oem.getOemShortName() == null || oem.getOemShortName().trim().isEmpty()) {
-                return ResponseEntity.badRequest().body("OEM Short Name is required.");
-            }
+            return oemRepository.findById(id)
+                .map(existing -> {
+                    if (oem.getOemShortName() == null || oem.getOemShortName().trim().isEmpty()) {
+                        return ResponseEntity.badRequest().body("OEM Short Name is required.");
+                    }
 
-            if (oemRepository.existsByOemShortNameIgnoreCaseAndIdNot(oem.getOemShortName().trim(), id)) {
-                return ResponseEntity.badRequest().body("OEM Short Name '" + oem.getOemShortName() + "' already exists.");
-            }
+                    if (oemRepository.existsByOemShortNameIgnoreCaseAndIdNot(oem.getOemShortName().trim(), id)) {
+                        return ResponseEntity.badRequest().body("OEM Short Name '" + oem.getOemShortName() + "' already exists.");
+                    }
 
-            oem.setId(id);
-            oem.setOemShortName(oem.getOemShortName().trim());
-            if (oem.getOemPrefix() != null) {
-                oem.setOemPrefix(oem.getOemPrefix().trim().toUpperCase());
-            }
-            if (oem.getOemDescription() != null) {
-                oem.setOemDescription(oem.getOemDescription().trim());
-            }
-            if (oem.getOriginCountry() != null) {
-                oem.setOriginCountry(oem.getOriginCountry().trim());
-            }
-            if (oem.getStatusYear() != null) {
-                oem.setStatusYear(oem.getStatusYear().trim());
-            }
+                    existing.setOemShortName(oem.getOemShortName().trim());
+                    existing.setOemPrefix(oem.getOemPrefix() != null ? oem.getOemPrefix().trim().toUpperCase() : null);
+                    existing.setOemDescription(oem.getOemDescription() != null ? oem.getOemDescription().trim() : null);
+                    existing.setOriginCountry(oem.getOriginCountry() != null ? oem.getOriginCountry().trim() : null);
+                    existing.setStatusYear(oem.getStatusYear() != null ? oem.getStatusYear().trim() : null);
+                    existing.setStatus(oem.getStatus());
+                    existing.setUpdatedBy(oem.getUpdatedBy());
 
-            ProductOem updated = oemRepository.save(oem);
-            return ResponseEntity.ok(updated);
+                    ProductOem updated = oemRepository.save(existing);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElse(ResponseEntity.notFound().build());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to update OEM: " + e.getMessage());
         }

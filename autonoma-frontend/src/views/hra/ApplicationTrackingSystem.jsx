@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography,
   Button,
@@ -43,6 +43,7 @@ import {
   IconCurrencyDollar,
   IconAddressBook,
   IconUserCheck,
+  IconUserPlus,
   IconLock,
   IconStar,
   IconTrendingUp
@@ -55,6 +56,7 @@ import {
   BOSDataTable,
   BOSFormDialog,
   BOSTextField,
+  BOSDatePicker,
   BOSFileUpload,
   errorStyle
 } from 'ui-component/bos';
@@ -84,6 +86,15 @@ const calculateAge = (dob) => {
     age--;
   }
   return age >= 0 ? age : '';
+};
+
+const formatDocName = (name) => {
+  if (!name) return '';
+  return name.split(' ').map(word => {
+    const upper = word.toUpperCase();
+    if (upper === 'ID' || upper === 'PAN') return upper;
+    return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+  }).join(' ');
 };
 
 // Initial state for the top-level form
@@ -133,32 +144,32 @@ const INITIAL_PERSONAL_STATE = {
 };
 
 const INITIAL_SALARY_STATE = {
-  basic: 0,
-  da: 0,
-  hra: 0,
-  splAllowance: 0,
-  perfIncentive: 0,
-  statutoryBonus: 0,
-  canteenAllowance: 0,
-  attendanceAllow1: 0,
-  attendanceAllow2: 0,
-  uniform: 0,
-  shoes: 0,
-  mobileCug: 0,
-  otAmount: 0,
-  petrolAllow: 0,
-  appraisalPer: 0,
-  otherAllow: 0,
-  pfEmployee: 0,
-  pfEmployer: 0,
-  esiEmployee: 0,
-  esiEmployer: 0,
-  canteenDeduct: 0,
-  profTax: 0,
-  labourWelFundEmp: 0,
-  labourWelFundEmployer: 0,
-  otherDeduct: 0,
-  suspenseDeduct: 0
+  basic: '',
+  da: '',
+  hra: '',
+  splAllowance: '',
+  perfIncentive: '',
+  statutoryBonus: '',
+  canteenAllowance: '',
+  attendanceAllow1: '',
+  attendanceAllow2: '',
+  uniform: '',
+  shoes: '',
+  mobileCug: '',
+  otAmount: '',
+  petrolAllow: '',
+  appraisalPer: '',
+  otherAllow: '',
+  pfEmployee: '',
+  pfEmployer: '',
+  esiEmployee: '',
+  esiEmployer: '',
+  canteenDeduct: '',
+  profTax: '',
+  labourWelFundEmp: '',
+  labourWelFundEmployer: '',
+  otherDeduct: '',
+  suspenseDeduct: ''
 };
 
 const INITIAL_EVALUATION_STATE = {
@@ -201,21 +212,21 @@ const INITIAL_ASSESSMENT_STATE = {
   q19_lifeGoals: '',
   q20_improvementSuggestions: '',
   q21_isExperienced: 'NO',
-  q22_totalExperience: '0',
-  q23_coreExperience: '0',
-  q24_prevNetSalary: '0.00',
-  q25_prevGrossSalary: '0.00',
-  q26_expectedNetSalary: '0.00',
-  q27_expectedGrossSalary: '0.00',
+  q22_totalExperience: '',
+  q23_coreExperience: '',
+  q24_prevNetSalary: '',
+  q25_prevGrossSalary: '',
+  q26_expectedNetSalary: '',
+  q27_expectedGrossSalary: '',
   q28_pfHigherPension: 'NO',
-  q29_pfDeductionAmount: '0',
+  q29_pfDeductionAmount: '',
   q30_alternativeDepartment: '',
   q31_prevLocation: '',
   q32_prevShift: '',
   q33_reasonForLeaving: '',
-  q34_noticePeriod: '0',
+  q34_noticePeriod: '',
   q35_prevDeptPosition: '',
-  q36_prevDeptCount: '0',
+  q36_prevDeptCount: '',
   q37_prevReportingTo: '',
   q38_handleMistake: '',
   q39_handleOpinionDifference: '',
@@ -231,7 +242,7 @@ const RELIGIONS = ['HINDU', 'MUSLIM', 'CHRISTIAN', 'SIKHISM', 'BUDDHISM'];
 const EVALUATION_STATUSES = ['SELECTED', 'HOLD', 'REJECTED'];
 
 const VALIDATION_RULES = [
-  { field: 'enRolledNo', label: 'En Rolled No', required: true },
+  { field: 'enRolledNo', label: 'Enrolled NO', required: true },
   { field: 'firstName', label: 'First Name', required: true },
   { field: 'lastName', label: 'Last Name', required: true },
   { field: 'department', label: 'Department', required: true },
@@ -255,7 +266,7 @@ export default function ApplicationTrackingSystem() {
   const [size, setSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
-  
+
   // Dialog State
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -414,32 +425,32 @@ export default function ApplicationTrackingSystem() {
       });
 
       setSalaryData({
-        basic: original.basic || 0,
-        da: original.da || 0,
-        hra: original.hra || 0,
-        splAllowance: original.splAllowance || 0,
-        perfIncentive: original.perfIncentive || 0,
-        statutoryBonus: original.statutoryBonus || 0,
-        canteenAllowance: original.canteenAllowance || 0,
-        attendanceAllow1: original.attendanceAllow1 || 0,
-        attendanceAllow2: original.attendanceAllow2 || 0,
-        uniform: original.uniform || 0,
-        shoes: original.shoes || 0,
-        mobileCug: original.mobileCug || 0,
-        otAmount: original.otAmount || 0,
-        petrolAllow: original.petrolAllow || 0,
-        appraisalPer: original.appraisalPer || 0,
-        otherAllow: original.otherAllow || 0,
-        pfEmployee: original.pfEmployee || 0,
-        pfEmployer: original.pfEmployer || 0,
-        esiEmployee: original.esiEmployee || 0,
-        esiEmployer: original.esiEmployer || 0,
-        canteenDeduct: original.canteenDeduct || 0,
-        profTax: original.profTax || 0,
-        labourWelFundEmp: original.labourWelFundEmp || 0,
-        labourWelFundEmployer: original.labourWelFundEmployer || 0,
-        otherDeduct: original.otherDeduct || 0,
-        suspenseDeduct: original.suspenseDeduct || 0
+        basic: original.basic || '',
+        da: original.da || '',
+        hra: original.hra || '',
+        splAllowance: original.splAllowance || '',
+        perfIncentive: original.perfIncentive || '',
+        statutoryBonus: original.statutoryBonus || '',
+        canteenAllowance: original.canteenAllowance || '',
+        attendanceAllow1: original.attendanceAllow1 || '',
+        attendanceAllow2: original.attendanceAllow2 || '',
+        uniform: original.uniform || '',
+        shoes: original.shoes || '',
+        mobileCug: original.mobileCug || '',
+        otAmount: original.otAmount || '',
+        petrolAllow: original.petrolAllow || '',
+        appraisalPer: original.appraisalPer || '',
+        otherAllow: original.otherAllow || '',
+        pfEmployee: original.pfEmployee || '',
+        pfEmployer: original.pfEmployer || '',
+        esiEmployee: original.esiEmployee || '',
+        esiEmployer: original.esiEmployer || '',
+        canteenDeduct: original.canteenDeduct || '',
+        profTax: original.profTax || '',
+        labourWelFundEmp: original.labourWelFundEmp || '',
+        labourWelFundEmployer: original.labourWelFundEmployer || '',
+        otherDeduct: original.otherDeduct || '',
+        suspenseDeduct: original.suspenseDeduct || ''
       });
 
       setEvaluationData({
@@ -460,7 +471,7 @@ export default function ApplicationTrackingSystem() {
         mobileNo: original.contactMobile || original.mobileNo || ''
       });
 
-      setAssessmentData({
+      const assessmentDataCleaned = {
         q1_native: original.q1_native || '',
         q2_presentAddress: original.q2_present_address || '',
         q3_permanentAddress: original.q3_permanent_address || '',
@@ -482,27 +493,39 @@ export default function ApplicationTrackingSystem() {
         q19_lifeGoals: original.q19_life_goals || '',
         q20_improvementSuggestions: original.q20_improvement_suggestions || '',
         q21_isExperienced: original.q21_is_experienced || 'NO',
-        q22_totalExperience: original.q22_total_experience || '0',
-        q23_coreExperience: original.q23_core_experience || '0',
-        q24_prevNetSalary: original.q24_prev_net_salary || '0.00',
-        q25_prevGrossSalary: original.q25_prev_gross_salary || '0.00',
-        q26_expectedNetSalary: original.q26_expected_net_salary || '0.00',
-        q27_expectedGrossSalary: original.q27_expected_gross_salary || '0.00',
+        q22_totalExperience: original.q22_total_experience || '',
+        q23_coreExperience: original.q23_core_experience || '',
+        q24_prevNetSalary: original.q24_prev_net_salary || '',
+        q25_prevGrossSalary: original.q25_prev_gross_salary || '',
+        q26_expectedNetSalary: original.q26_expected_net_salary || '',
+        q27_expectedGrossSalary: original.q27_expected_gross_salary || '',
         q28_pfHigherPension: original.q28_pf_higher_pension || 'NO',
-        q29_pfDeductionAmount: original.q29_pf_deduction_amount || '0',
+        q29_pfDeductionAmount: original.q29_pf_deduction_amount || '',
         q30_alternativeDepartment: original.q30_alternative_department || '',
         q31_prevLocation: original.q31_prev_location || '',
         q32_prevShift: original.q32_prev_shift || '',
         q33_reasonForLeaving: original.q33_reason_for_leaving || '',
-        q34_noticePeriod: original.q34_notice_period || '0',
+        q34_noticePeriod: original.q34_notice_period || '',
         q35_prevDeptPosition: original.q35_prev_dept_position || '',
-        q36_prevDeptCount: original.q36_prev_dept_count || '0',
+        q36_prevDeptCount: original.q36_prev_dept_count || '',
         q37_prevReportingTo: original.q37_prev_reporting_to || '',
         q38_handleMistake: original.q38_handle_mistake || '',
         q39_handleOpinionDifference: original.q39_handle_opinion_difference || '',
         q40_computerSelfRating: original.q40_computer_self_rating || 'AVERAGE',
         payslip: original.payslipPath ? { fileName: original.payslipPath.split('/').pop(), serverFileName: original.payslipPath, isServer: true } : null
+      };
+
+      const textFieldsToClean = [
+        'q8_children', 'q22_totalExperience', 'q23_coreExperience', 'q24_prevNetSalary', 'q25_prevGrossSalary',
+        'q26_expectedNetSalary', 'q27_expectedGrossSalary', 'q29_pfDeductionAmount', 'q34_noticePeriod', 'q36_prevDeptCount'
+      ];
+      textFieldsToClean.forEach(key => {
+        const val = assessmentDataCleaned[key];
+        if (val === 0 || val === 0.0 || val === '0' || val === '0.0' || val === '0.00') {
+          assessmentDataCleaned[key] = '';
+        }
       });
+      setAssessmentData(assessmentDataCleaned);
 
       setExperienceRows((original.experience || []).map(exp => ({
         id: exp.id,
@@ -621,7 +644,7 @@ export default function ApplicationTrackingSystem() {
   const handleInputChange = (e) => {
     const { name, value, checked, type } = e.target;
     const finalVal = type === 'checkbox' ? checked : value;
-    
+
     setFormData(prev => {
       const updated = { ...prev, [name]: finalVal };
       if (name === 'birthDate') {
@@ -632,7 +655,7 @@ export default function ApplicationTrackingSystem() {
       }
       return updated;
     });
-    
+
     if (errors[name]) clearErrors(name);
     if (name === 'refMode') clearErrors('refComments');
   };
@@ -657,7 +680,7 @@ export default function ApplicationTrackingSystem() {
 
   // Salary Calculations
   const computedGross = useMemo(() => {
-    const sum = 
+    const sum =
       Number(salaryData.basic || 0) +
       Number(salaryData.da || 0) +
       Number(salaryData.hra || 0) +
@@ -677,7 +700,7 @@ export default function ApplicationTrackingSystem() {
   }, [salaryData]);
 
   const computedNet = useMemo(() => {
-    const deduct = 
+    const deduct =
       Number(salaryData.pfEmployee || 0) +
       Number(salaryData.esiEmployee || 0) +
       Number(salaryData.canteenDeduct || 0) +
@@ -689,7 +712,7 @@ export default function ApplicationTrackingSystem() {
   }, [computedGross, salaryData]);
 
   const computedCTC = useMemo(() => {
-    const employerCost = 
+    const employerCost =
       Number(salaryData.pfEmployer || 0) +
       Number(salaryData.esiEmployer || 0) +
       Number(salaryData.labourWelFundEmployer || 0);
@@ -698,7 +721,7 @@ export default function ApplicationTrackingSystem() {
 
   const handleSalaryChange = (e) => {
     const { name, value } = e.target;
-    setSalaryData(prev => ({ ...prev, [name]: Number(value) }));
+    setSalaryData(prev => ({ ...prev, [name]: value }));
   };
 
   // Save the master applicant form
@@ -794,11 +817,11 @@ export default function ApplicationTrackingSystem() {
         hrInterviewedBy: evaluationData.hrInterviewedBy,
 
         // Tab 6 Contact Details
-        contactAddress1: contactData.address1,
-        contactAddress2: contactData.address2,
-        contactCity: contactData.city,
-        contactPhone: contactData.phoneNo,
-        contactMobile: contactData.mobileNo || formData.mobileNo,
+        contactAddress1: personalData.permAdd1,
+        contactAddress2: personalData.permAdd2,
+        contactCity: personalData.city,
+        contactPhone: personalData.phoneNo,
+        contactMobile: formData.mobileNo,
 
         // Tab 8 Self Assessment
         q1_native: assessmentData.q1_native,
@@ -908,7 +931,34 @@ export default function ApplicationTrackingSystem() {
   };
 
   const handleExperienceRowChange = (index, field, value) => {
-    setExperienceRows(prev => prev.map((row, i) => i === index ? { ...row, [field]: value } : row));
+    setExperienceRows(prev =>
+      prev.map((row, i) => {
+        if (i === index) {
+          const updatedRow = { ...row, [field]: value };
+          if (field === 'fromDate' || field === 'toDate') {
+            const fromDateVal = field === 'fromDate' ? value : row.fromDate;
+            const toDateVal = field === 'toDate' ? value : row.toDate;
+            if (fromDateVal && toDateVal) {
+              const from = new Date(fromDateVal);
+              const to = new Date(toDateVal);
+              if (!isNaN(from.getTime()) && !isNaN(to.getTime())) {
+                const diffTime = to - from;
+                if (diffTime > 0) {
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  updatedRow.expYears = Math.round(diffDays / 365.25);
+                } else {
+                  updatedRow.expYears = 0;
+                }
+              }
+            } else {
+              updatedRow.expYears = '';
+            }
+          }
+          return updatedRow;
+        }
+        return row;
+      })
+    );
   };
 
   const handleAddEducationRow = () => {
@@ -969,7 +1019,7 @@ export default function ApplicationTrackingSystem() {
       )
     },
     { id: 'index', label: 'Sl.no', minWidth: 60 },
-    { id: 'enRolledNo', label: 'En.Rolled.No', minWidth: 120, bold: true, color: 'primary.main' },
+    { id: 'enRolledNo', label: 'Enrolled No', minWidth: 120, bold: true, color: 'primary.main' },
     { id: 'firstName', label: 'First Name', minWidth: 120 },
     { id: 'lastName', label: 'Last Name', minWidth: 120 },
     {
@@ -1062,7 +1112,7 @@ export default function ApplicationTrackingSystem() {
     <MainCard
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
-          <IconTrendingUp size={24} />
+          <IconUserPlus size={24} />
           <Typography variant="h3">Application Tracking System</Typography>
         </Stack>
       }
@@ -1085,7 +1135,7 @@ export default function ApplicationTrackingSystem() {
               startIcon={<IconPlus size={18} />}
               sx={{ borderRadius: '8px', textTransform: 'none', px: 2 }}
             >
-              + New
+              New
             </Button>
           </Tooltip>
         </Stack>
@@ -1185,7 +1235,7 @@ export default function ApplicationTrackingSystem() {
                   <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
-                      label="En Rolled No"
+                      label="Enrolled NO"
                       name="enRolledNo"
                       value={formData.enRolledNo}
                       onChange={handleInputChange}
@@ -1196,13 +1246,11 @@ export default function ApplicationTrackingSystem() {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       label="Applicant Date"
                       name="applicantDate"
                       value={formData.applicantDate}
                       onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -1240,16 +1288,13 @@ export default function ApplicationTrackingSystem() {
                     >
                       <MenuItem value="">-SELECT-</MenuItem>
                       {departments.map(d => (
-                        <MenuItem key={d.id} value={d.departmentName || d.id.toString()}>{d.departmentName}</MenuItem>
+                        <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
                       ))}
-                      <MenuItem value="Development">Development</MenuItem>
-                      <MenuItem value="Human Resources">Human Resources</MenuItem>
-                      <MenuItem value="Finance">Finance</MenuItem>
                     </BOSTextField>
                   </Grid>
 
                   {/* Row 2: Candidate basic info */}
-                  <Grid item xs={12} sm={6} md={1.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       select
                       label="Title"
@@ -1262,7 +1307,7 @@ export default function ApplicationTrackingSystem() {
                       ))}
                     </BOSTextField>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="First Name"
@@ -1274,7 +1319,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.firstName)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="Last Name"
@@ -1286,21 +1331,18 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.lastName)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={2}>
-                    <BOSTextField
-                      type="date"
+                  <Grid item xs={12} sm={6} md={3}>
+                    <BOSDatePicker
                       required
                       label="Birth Date"
                       name="birthDate"
                       value={formData.birthDate}
                       onChange={handleInputChange}
-                      InputLabelProps={{ shrink: true }}
                       error={!!errors.birthDate}
                       helperText={errors.birthDate}
-                      sx={errorStyle(!!errors.birthDate)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={1.5}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Age"
                       name="age"
@@ -1311,7 +1353,7 @@ export default function ApplicationTrackingSystem() {
                   </Grid>
 
                   {/* Row 3: Contact & ID info */}
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="Mobile No"
@@ -1324,7 +1366,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.mobileNo)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       required
                       label="Email ID"
@@ -1337,7 +1379,7 @@ export default function ApplicationTrackingSystem() {
                       sx={errorStyle(!!errors.emailId)}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <Stack spacing={1}>
                       <BOSTextField
                         required
@@ -1452,17 +1494,17 @@ export default function ApplicationTrackingSystem() {
 
             {/* TAB CONTENTS */}
             <Box sx={{ minHeight: '300px', p: 1 }}>
-              
+
               {/* 1. PERSONAL DETAILS */}
               {activeTab === 0 && (
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
-                      label="En Roll.No"
+                      label="Enrolled NO"
                       name="enRollNo"
-                      value={personalData.enRollNo}
-                      onChange={handlePersonalChange}
-                      required
+                      value={formData.enRolledNo}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -1495,13 +1537,12 @@ export default function ApplicationTrackingSystem() {
                     </BOSTextField>
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       label="Birth Date"
                       name="birthDate"
-                      value={personalData.birthDate}
-                      onChange={handlePersonalChange}
-                      InputLabelProps={{ shrink: true }}
+                      value={formData.birthDate}
+                      disabled
+                      onChange={() => {}}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -1542,7 +1583,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
@@ -1550,7 +1591,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
@@ -1558,7 +1599,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6} md={4}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="Email Id"
                       name="emailId"
@@ -1586,7 +1627,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="City"
                       name="city"
@@ -1594,7 +1635,7 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6} md={3}>
                     <BOSTextField
                       label="State"
                       name="state"
@@ -1644,8 +1685,8 @@ export default function ApplicationTrackingSystem() {
                       <TableHead sx={{ bgcolor: 'primary.light' }}>
                         <TableRow>
                           <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Company Name</TableCell>
-                          <TableCell sx={{ fontWeight: 600 }}>Location</TableCell>
+                          <TableCell sx={{ fontWeight: 600, minWidth: 250 }}>Company Name</TableCell>
+                          <TableCell sx={{ fontWeight: 600, minWidth: 200 }}>Location</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>Experience (Years)</TableCell>
@@ -1672,16 +1713,18 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.companyName}
                                   onChange={(e) => handleExperienceRowChange(idx, 'companyName', e.target.value)}
-                                  placeholder="Company Name"
                                   size="small"
+                                  fullWidth
+                                  multiline
+                                  minRows={1}
                                 />
                               </TableCell>
                               <TableCell>
                                 <BOSTextField
                                   value={row.location}
                                   onChange={(e) => handleExperienceRowChange(idx, 'location', e.target.value)}
-                                  placeholder="Location"
                                   size="small"
+                                  fullWidth
                                 />
                               </TableCell>
                               <TableCell>
@@ -1716,7 +1759,9 @@ export default function ApplicationTrackingSystem() {
                                   files={row.file ? [row.file] : []}
                                   onChange={(files) => handleExperienceRowChange(idx, 'file', files[0] || null)}
                                   multiple={false}
-                                  size="small"
+                                  compact={true}
+                                  label="Upload File"
+                                  helperText="Max 25MB"
                                 />
                               </TableCell>
                               <TableCell align="center">
@@ -1769,16 +1814,20 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.education}
                                   onChange={(e) => handleEducationRowChange(idx, 'education', e.target.value)}
-                                  placeholder="Degree/Class"
                                   size="small"
+                                  fullWidth
+                                  multiline
+                                  minRows={1}
                                 />
                               </TableCell>
                               <TableCell>
                                 <BOSTextField
                                   value={row.institutionName}
                                   onChange={(e) => handleEducationRowChange(idx, 'institutionName', e.target.value)}
-                                  placeholder="Institution Name"
                                   size="small"
+                                  fullWidth
+                                  multiline
+                                  minRows={1}
                                 />
                               </TableCell>
                               <TableCell>
@@ -1798,7 +1847,6 @@ export default function ApplicationTrackingSystem() {
                                   type="number"
                                   value={row.yearOfPassing}
                                   onChange={(e) => handleEducationRowChange(idx, 'yearOfPassing', e.target.value)}
-                                  placeholder="YYYY"
                                   size="small"
                                 />
                               </TableCell>
@@ -1806,7 +1854,6 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.grade}
                                   onChange={(e) => handleEducationRowChange(idx, 'grade', e.target.value)}
-                                  placeholder="GPA / %"
                                   size="small"
                                 />
                               </TableCell>
@@ -1862,8 +1909,9 @@ export default function ApplicationTrackingSystem() {
                               type="number"
                               label={f.label}
                               name={f.name}
-                              value={salaryData[f.name]}
+                              value={salaryData[f.name] === 0 || salaryData[f.name] === '0' ? '' : salaryData[f.name]}
                               onChange={handleSalaryChange}
+                              placeholder="0"
                               InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                             />
                           </Grid>
@@ -1892,8 +1940,9 @@ export default function ApplicationTrackingSystem() {
                                 type="number"
                                 label={f.label}
                                 name={f.name}
-                                value={salaryData[f.name]}
+                                value={salaryData[f.name] === 0 || salaryData[f.name] === '0' ? '' : salaryData[f.name]}
                                 onChange={handleSalaryChange}
+                                placeholder="0"
                                 InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                               />
                             </Grid>
@@ -1914,8 +1963,9 @@ export default function ApplicationTrackingSystem() {
                                 type="number"
                                 label={f.label}
                                 name={f.name}
-                                value={salaryData[f.name]}
+                                value={salaryData[f.name] === 0 || salaryData[f.name] === '0' ? '' : salaryData[f.name]}
                                 onChange={handleSalaryChange}
+                                placeholder="0"
                                 InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }}
                               />
                             </Grid>
@@ -1952,21 +2002,19 @@ export default function ApplicationTrackingSystem() {
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
-                      label="En Rolled No"
+                      label="Enrolled No"
                       name="enRolledNo"
-                      value={evaluationData.enRolledNo || formData.enRolledNo}
+                      value={formData.enRolledNo}
                       disabled
                       InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <BOSTextField
-                      type="date"
+                    <BOSDatePicker
                       label="Interview Date"
                       name="interviewDate"
                       value={evaluationData.interviewDate}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, interviewDate: e.target.value }))}
-                      InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -2016,9 +2064,9 @@ export default function ApplicationTrackingSystem() {
                 <Grid container spacing={2.5}>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
-                      label="En Rolled No"
+                      label="Enrolled No"
                       name="enRolledNo"
-                      value={contactData.enRolledNo || formData.enRolledNo}
+                      value={formData.enRolledNo}
                       disabled
                       InputProps={{ readOnly: true }}
                     />
@@ -2027,40 +2075,45 @@ export default function ApplicationTrackingSystem() {
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
-                      value={contactData.phoneNo}
-                      onChange={(e) => setContactData(prev => ({ ...prev, phoneNo: e.target.value }))}
+                      value={personalData.phoneNo}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
-                      value={contactData.mobileNo || formData.mobileNo}
-                      onChange={(e) => setContactData(prev => ({ ...prev, mobileNo: e.target.value }))}
+                      value={formData.mobileNo}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="City"
                       name="city"
-                      value={contactData.city}
-                      onChange={(e) => setContactData(prev => ({ ...prev, city: e.target.value }))}
+                      value={personalData.city}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="Address line 1"
                       name="address1"
-                      value={contactData.address1}
-                      onChange={(e) => setContactData(prev => ({ ...prev, address1: e.target.value }))}
+                      value={personalData.permAdd1}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
                     <BOSTextField
                       label="Address line 2"
                       name="address2"
-                      value={contactData.address2}
-                      onChange={(e) => setContactData(prev => ({ ...prev, address2: e.target.value }))}
+                      value={personalData.permAdd2}
+                      disabled
+                      InputProps={{ readOnly: true }}
                     />
                   </Grid>
                 </Grid>
@@ -2090,7 +2143,7 @@ export default function ApplicationTrackingSystem() {
                               <BOSTextField
                                 value={row.docNo}
                                 onChange={(e) => setKycRows(prev => prev.map((item, i) => i === idx ? { ...item, docNo: e.target.value } : item))}
-                                placeholder="Enter document number"
+                                placeholder={`Enter ${formatDocName(row.docName)} Number`}
                                 size="small"
                               />
                             </TableCell>
@@ -2111,216 +2164,131 @@ export default function ApplicationTrackingSystem() {
               )}
 
               {/* 8. SELF ASSESSMENT */}
-              {activeTab === 7 && (
-                <Grid container spacing={2.5}>
-                  {/* Group 1: Personal & Family Details */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 1, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      I. PERSONAL & FAMILY DETAILS
-                    </Typography>
-                  </Grid>
+              {activeTab === 7 && (() => {
+                const selfAssessmentQuestions = [
+                  {
+                    group: 'I. PERSONAL & FAMILY DETAILS',
+                    fields: [
+                      { name: 'q1_native', label: '1. Native Place' },
+                      { name: 'q2_presentAddress', label: '2. Present Address' },
+                      { name: 'q3_permanentAddress', label: '3. Permanent Address' },
+                      { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
+                      { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
+                      { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
+                      { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
+                      { name: 'q8_children', label: '8. Children' },
+                      { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q10_relativesDetails', label: '10. Relative or friends details' },
+                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations' }
+                    ]
+                  },
+                  {
+                    group: 'II. GENERAL HABITS, VEHICLE & HEALTH',
+                    fields: [
+                      { name: 'q12_hasTwoWheeler', label: '12. Do you have two wheeler?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q13_hasAndroidPhone', label: '13. Do you have Android phone?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q14_knowsCarDriving', label: '14. Do you know car driving?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q15_willingToTravel', label: '15. Willing to travel?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q16_covidVaccination', label: '16. COVID vaccination with booster?', select: true, options: ['NO', 'YES'] }
+                    ]
+                  },
+                  {
+                    group: 'III. PERSONAL GOALS & REFLECTION',
+                    fields: [
+                      { name: 'q17_positivePoints', label: '17. Brief about positive points' },
+                      { name: 'q18_negativePoints', label: '18. Brief about negative points' },
+                      { name: 'q19_lifeGoals', label: "19. What's your life goals?" },
+                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas' }
+                    ]
+                  },
+                  {
+                    group: 'IV. CAREER, SALARY & BENEFITS',
+                    fields: [
+                      { name: 'q21_isExperienced', label: '21. Experienced?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q22_totalExperience', label: '22. Total years of experience' },
+                      { name: 'q23_coreExperience', label: '23. Core department experience years' },
+                      { name: 'q24_prevNetSalary', label: '24. Previous Net Salary' },
+                      { name: 'q25_prevGrossSalary', label: '25. Previous Gross Salary' },
+                      { name: 'q26_expectedNetSalary', label: '26. Expected Net Salary' },
+                      { name: 'q27_expectedGrossSalary', label: '27. Expected Gross Salary' },
+                      { name: 'q28_pfHigherPension', label: '28. PF higher pension required?', select: true, options: ['NO', 'YES'] },
+                      { name: 'q29_pfDeductionAmount', label: '29. PF deduction amount' },
+                      { name: 'q30_alternativeDepartment', label: '30. Alternate department interest' }
+                    ]
+                  },
+                  {
+                    group: 'V. PREVIOUS EMPLOYMENT DETAILS',
+                    fields: [
+                      { name: 'q31_prevLocation', label: '31. Previous/current company location' },
+                      { name: 'q32_prevShift', label: '32. Previously worked shift' },
+                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job' },
+                      { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
+                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details' },
+                      { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
+                      { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
+                    ]
+                  },
+                  {
+                    group: 'VI. BEHAVIORAL & WORK RATINGS',
+                    fields: [
+                      { name: 'q38_handleMistake', label: '38. How you handle mistakes' },
+                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences' },
+                      { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
+                      { name: 'payslip', label: 'PAY SLIP', type: 'file' }
+                    ]
+                  }
+                ];
 
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="1. Native" value={assessmentData.q1_native} onChange={(e) => setAssessmentData(p => ({ ...p, q1_native: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="2. Present Address" value={assessmentData.q2_presentAddress} onChange={(e) => setAssessmentData(p => ({ ...p, q2_presentAddress: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="3. Permanent Address" value={assessmentData.q3_permanentAddress} onChange={(e) => setAssessmentData(p => ({ ...p, q3_permanentAddress: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="4. Father's Occupation" value={assessmentData.q4_fatherOccupation} onChange={(e) => setAssessmentData(p => ({ ...p, q4_fatherOccupation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="5. Mother's Occupation" value={assessmentData.q5_motherOccupation} onChange={(e) => setAssessmentData(p => ({ ...p, q5_motherOccupation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="6. Marital Status" value={assessmentData.q6_maritalStatus} onChange={(e) => setAssessmentData(p => ({ ...p, q6_maritalStatus: e.target.value }))}>
-                      {MARITAL_STATUSES.map(opt => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="7. Occupation of Spouse" value={assessmentData.q7_spouseOccupation} onChange={(e) => setAssessmentData(p => ({ ...p, q7_spouseOccupation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="8. Children" value={assessmentData.q8_children} onChange={(e) => setAssessmentData(p => ({ ...p, q8_children: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="9. Any relative or friends working here?" value={assessmentData.q9_hasRelativesInCompany} onChange={(e) => setAssessmentData(p => ({ ...p, q9_hasRelativesInCompany: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="10. Relative or friends details" value={assessmentData.q10_relativesDetails} onChange={(e) => setAssessmentData(p => ({ ...p, q10_relativesDetails: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="11. Siblings and their occupations" value={assessmentData.q11_siblingsOccupations} onChange={(e) => setAssessmentData(p => ({ ...p, q11_siblingsOccupations: e.target.value }))} multiline rows={2} />
-                  </Grid>
-
-                  {/* Group 2: General Habits, Vehicle & Health */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      II. GENERAL HABITS, VEHICLE & HEALTH
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="12. Do you have two wheeler?" value={assessmentData.q12_hasTwoWheeler} onChange={(e) => setAssessmentData(p => ({ ...p, q12_hasTwoWheeler: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="13. Do you have Android phone?" value={assessmentData.q13_hasAndroidPhone} onChange={(e) => setAssessmentData(p => ({ ...p, q13_hasAndroidPhone: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="14. Do you know car driving?" value={assessmentData.q14_knowsCarDriving} onChange={(e) => setAssessmentData(p => ({ ...p, q14_knowsCarDriving: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="15. Willing to travel?" value={assessmentData.q15_willingToTravel} onChange={(e) => setAssessmentData(p => ({ ...p, q15_willingToTravel: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="16. COVID vaccination with booster?" value={assessmentData.q16_covidVaccination} onChange={(e) => setAssessmentData(p => ({ ...p, q16_covidVaccination: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-
-                  {/* Group 3: Personal Goals & Reflection */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      III. PERSONAL GOALS & REFLECTION
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <BOSTextField label="17. Brief about positive points" value={assessmentData.q17_positivePoints} onChange={(e) => setAssessmentData(p => ({ ...p, q17_positivePoints: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="18. Brief about negative points" value={assessmentData.q18_negativePoints} onChange={(e) => setAssessmentData(p => ({ ...p, q18_negativePoints: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="19. What's your life goals?" value={assessmentData.q19_lifeGoals} onChange={(e) => setAssessmentData(p => ({ ...p, q19_lifeGoals: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="20. Productivity suggestion ideas" value={assessmentData.q20_improvementSuggestions} onChange={(e) => setAssessmentData(p => ({ ...p, q20_improvementSuggestions: e.target.value }))} multiline rows={3} />
-                  </Grid>
-
-                  {/* Group 4: Career, Salary & Benefits */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      IV. CAREER, SALARY & BENEFITS
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="21. Experienced?" value={assessmentData.q21_isExperienced} onChange={(e) => setAssessmentData(p => ({ ...p, q21_isExperienced: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="22. Total years of experience" value={assessmentData.q22_totalExperience} onChange={(e) => setAssessmentData(p => ({ ...p, q22_totalExperience: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="23. Core department experience years" value={assessmentData.q23_coreExperience} onChange={(e) => setAssessmentData(p => ({ ...p, q23_coreExperience: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="24. Previous Net Salary" value={assessmentData.q24_prevNetSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q24_prevNetSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="25. Previous Gross Salary" value={assessmentData.q25_prevGrossSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q25_prevGrossSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="26. Expected Net Salary" value={assessmentData.q26_expectedNetSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q26_expectedNetSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="27. Expected Gross Salary" value={assessmentData.q27_expectedGrossSalary} onChange={(e) => setAssessmentData(p => ({ ...p, q27_expectedGrossSalary: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="28. PF higher pension required?" value={assessmentData.q28_pfHigherPension} onChange={(e) => setAssessmentData(p => ({ ...p, q28_pfHigherPension: e.target.value }))}>
-                      <MenuItem value="NO">NO</MenuItem>
-                      <MenuItem value="YES">YES</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="29. PF deduction amount" value={assessmentData.q29_pfDeductionAmount} onChange={(e) => setAssessmentData(p => ({ ...p, q29_pfDeductionAmount: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="30. Alternate department interest" value={assessmentData.q30_alternativeDepartment} onChange={(e) => setAssessmentData(p => ({ ...p, q30_alternativeDepartment: e.target.value }))} />
-                  </Grid>
-
-                  {/* Group 5: Previous Employment Details */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      V. PREVIOUS EMPLOYMENT DETAILS
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="31. Previous/current company location" value={assessmentData.q31_prevLocation} onChange={(e) => setAssessmentData(p => ({ ...p, q31_prevLocation: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="32. Previously worked shift" value={assessmentData.q32_prevShift} onChange={(e) => setAssessmentData(p => ({ ...p, q32_prevShift: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="33. Reason for leaving previous job" value={assessmentData.q33_reasonForLeaving} onChange={(e) => setAssessmentData(p => ({ ...p, q33_reasonForLeaving: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="34. Notice period (days)" value={assessmentData.q34_noticePeriod} onChange={(e) => setAssessmentData(p => ({ ...p, q34_noticePeriod: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="35. Prev dept and position details" value={assessmentData.q35_prevDeptPosition} onChange={(e) => setAssessmentData(p => ({ ...p, q35_prevDeptPosition: e.target.value }))} multiline rows={2} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="36. Prev dept employee count" value={assessmentData.q36_prevDeptCount} onChange={(e) => setAssessmentData(p => ({ ...p, q36_prevDeptCount: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField label="37. Prev manager/reporting to" value={assessmentData.q37_prevReportingTo} onChange={(e) => setAssessmentData(p => ({ ...p, q37_prevReportingTo: e.target.value }))} />
-                  </Grid>
-
-                  {/* Group 6: Behavioral & Work Ratings */}
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main', mt: 2, borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>
-                      VI. BEHAVIORAL & WORK RATINGS
-                    </Typography>
-                  </Grid>
-
-                  <Grid item xs={12}>
-                    <BOSTextField label="38. How you handle mistakes" value={assessmentData.q38_handleMistake} onChange={(e) => setAssessmentData(p => ({ ...p, q38_handleMistake: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <BOSTextField label="39. Handle team opinion differences" value={assessmentData.q39_handleOpinionDifference} onChange={(e) => setAssessmentData(p => ({ ...p, q39_handleOpinionDifference: e.target.value }))} multiline rows={3} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSTextField select label="40. Self rating (MS-Office, Outlook)" value={assessmentData.q40_computerSelfRating} onChange={(e) => setAssessmentData(p => ({ ...p, q40_computerSelfRating: e.target.value }))}>
-                      <MenuItem value="EXCELLENT">EXCELLENT</MenuItem>
-                      <MenuItem value="GOOD">GOOD</MenuItem>
-                      <MenuItem value="AVERAGE">AVERAGE</MenuItem>
-                      <MenuItem value="POOR">POOR</MenuItem>
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <BOSFileUpload
-                      label="PAY SLIP"
-                      files={assessmentData.payslip ? [assessmentData.payslip] : []}
-                      onChange={(files) => setAssessmentData(p => ({ ...p, payslip: files[0] || null }))}
-                      multiple={false}
-                    />
-                  </Grid>
-                </Grid>
-              )}
+                return (
+                  <Stack spacing={3}>
+                    {selfAssessmentQuestions.map((g, gIdx) => (
+                      <Card key={gIdx} variant="outlined" sx={{ p: 2.5, borderRadius: '12px', border: '1px solid', borderColor: 'divider' }}>
+                        <Typography variant="h5" color="primary" sx={{ mb: 2.5, fontWeight: 700, borderBottom: '1.5px solid', borderColor: 'primary.light', pb: 1 }}>
+                          {g.group}
+                        </Typography>
+                        <Grid container spacing={2.5}>
+                          {g.fields.map(f => (
+                            <Grid item xs={12} sm={12} md={12} key={f.name}>
+                              {f.type === 'file' ? (
+                                <Box>
+                                  <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
+                                    {f.label}
+                                  </Typography>
+                                  <BOSFileUpload
+                                    label="Upload Payslip"
+                                    files={assessmentData.payslip ? [assessmentData.payslip] : []}
+                                    onChange={(files) => setAssessmentData(p => ({ ...p, payslip: files[0] || null }))}
+                                    multiple={false}
+                                  />
+                                </Box>
+                              ) : f.select ? (
+                                <BOSTextField
+                                  select
+                                  fullWidth
+                                  label={f.label}
+                                  value={assessmentData[f.name] || ''}
+                                  onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
+                                >
+                                  {(f.options || []).map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                  ))}
+                                </BOSTextField>
+                              ) : (
+                                <BOSTextField
+                                  fullWidth
+                                  label={f.label}
+                                  value={assessmentData[f.name] || ''}
+                                  onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
+                                />
+                              )}
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Card>
+                    ))}
+                  </Stack>
+                );
+              })()}
 
               {/* 9. SKILLS */}
               {activeTab === 8 && (
@@ -2354,7 +2322,6 @@ export default function ApplicationTrackingSystem() {
                                 <BOSTextField
                                   value={row.activityDetails}
                                   onChange={(e) => handleSkillRowChange(idx, 'activityDetails', e.target.value)}
-                                  placeholder="Activity / Skill Details"
                                   size="small"
                                 />
                               </TableCell>

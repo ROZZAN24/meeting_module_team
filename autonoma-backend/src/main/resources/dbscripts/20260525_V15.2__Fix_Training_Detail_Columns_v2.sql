@@ -1,0 +1,81 @@
+-- 20260525_V15.2__Fix_Training_Detail_Columns_v2.sql
+
+IF OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'induction_master_id')
+    BEGIN
+        ALTER TABLE IND_INDUCTION_TRAINING_DETAIL ADD induction_master_id BIGINT;
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'criteria_id')
+    BEGIN
+        EXEC('UPDATE IND_INDUCTION_TRAINING_DETAIL SET induction_master_id = criteria_id WHERE criteria_id IS NOT NULL AND induction_master_id IS NULL');
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'trainer_status')
+    BEGIN
+        ALTER TABLE IND_INDUCTION_TRAINING_DETAIL ADD trainer_status NVARCHAR(50) DEFAULT 'PENDING';
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'current_status')
+    BEGIN
+        EXEC('UPDATE IND_INDUCTION_TRAINING_DETAIL SET trainer_status = current_status WHERE current_status IS NOT NULL AND trainer_status IS NULL');
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'trainee_status')
+    BEGIN
+        ALTER TABLE IND_INDUCTION_TRAINING_DETAIL ADD trainee_status NVARCHAR(50);
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'trainee_response')
+    BEGIN
+        EXEC('UPDATE IND_INDUCTION_TRAINING_DETAIL SET trainee_status = trainee_response WHERE trainee_response IS NOT NULL AND trainee_status IS NULL');
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'trainer_comments')
+    BEGIN
+        ALTER TABLE IND_INDUCTION_TRAINING_DETAIL ADD trainer_comments NVARCHAR(1000);
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL') AND name = 'trainee_comments')
+    BEGIN
+        ALTER TABLE IND_INDUCTION_TRAINING_DETAIL ADD trainee_comments NVARCHAR(1000);
+    END
+END
+ELSE IF OBJECT_ID('hr_induction_training_detail', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'induction_master_id')
+    BEGIN
+        ALTER TABLE hr_induction_training_detail ADD induction_master_id BIGINT;
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'criteria_id')
+    BEGIN
+        EXEC('UPDATE hr_induction_training_detail SET induction_master_id = criteria_id WHERE criteria_id IS NOT NULL AND induction_master_id IS NULL');
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'trainer_status')
+    BEGIN
+        ALTER TABLE hr_induction_training_detail ADD trainer_status NVARCHAR(50) DEFAULT 'PENDING';
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'current_status')
+    BEGIN
+        EXEC('UPDATE hr_induction_training_detail SET trainer_status = current_status WHERE current_status IS NOT NULL AND trainer_status IS NULL');
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'trainee_status')
+    BEGIN
+        ALTER TABLE hr_induction_training_detail ADD trainee_status NVARCHAR(50);
+    END
+    IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'trainee_response')
+    BEGIN
+        EXEC('UPDATE hr_induction_training_detail SET trainee_status = trainee_response WHERE trainee_response IS NOT NULL AND trainee_status IS NULL');
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'trainer_comments')
+    BEGIN
+        ALTER TABLE hr_induction_training_detail ADD trainer_comments NVARCHAR(1000);
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hr_induction_training_detail') AND name = 'trainee_comments')
+    BEGIN
+        ALTER TABLE hr_induction_training_detail ADD trainee_comments NVARCHAR(1000);
+    END
+END
+GO

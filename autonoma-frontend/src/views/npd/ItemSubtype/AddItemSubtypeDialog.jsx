@@ -24,7 +24,7 @@ const INITIAL_STATE = {
   subType: '',
   subItemPrefix: '',
   isAutoGenerateCode: 'YES',
-  prefixBased: 'SUB ITEM',
+  prefixBased: '',
   status: 'ACTIVE'
 };
 
@@ -56,13 +56,21 @@ const AddItemSubtypeDialog = ({ open, handleClose, initialData, readOnly = false
   useEffect(() => {
     clearErrors();
     if (initialData) {
+      let resolvedPrefix = initialData.prefixBased || '';
+      if (initialData.type) {
+        if (initialData.type.prefixBased === 'GROUP') {
+          resolvedPrefix = initialData.type.groupPrefix || '';
+        } else if (initialData.type.prefixBased === 'TYPE') {
+          resolvedPrefix = initialData.type.itemPrefix || '';
+        }
+      }
       setFormData({
         id: initialData.id,
         typeId: initialData.type?.id || '',
         subType: initialData.subType || '',
         subItemPrefix: initialData.subItemPrefix || '',
         isAutoGenerateCode: initialData.isAutoGenerateCode || 'YES',
-        prefixBased: initialData.prefixBased || 'SUB ITEM',
+        prefixBased: resolvedPrefix,
         status: initialData.status || 'ACTIVE',
         createdBy: initialData.createdBy
       });
@@ -94,7 +102,7 @@ const AddItemSubtypeDialog = ({ open, handleClose, initialData, readOnly = false
         subType: formData.subType,
         subItemPrefix: formData.subItemPrefix,
         isAutoGenerateCode: formData.isAutoGenerateCode,
-        prefixBased: 'SUB ITEM', // Prefix Based is hardcoded as 'SUB ITEM'
+        prefixBased: formData.prefixBased,
         status: formData.status,
         createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
         updatedBy: user?.name || 'Admin'
@@ -147,10 +155,22 @@ const AddItemSubtypeDialog = ({ open, handleClose, initialData, readOnly = false
           <Autocomplete
             value={types.find(t => t.id === formData.typeId) || null}
             onChange={(event, newValue) => {
-              setFormData((prev) => ({
-                ...prev,
-                typeId: newValue ? newValue.id : ''
-              }));
+              setFormData((prev) => {
+                const newTypeId = newValue ? newValue.id : '';
+                let resolvedPrefix = '';
+                if (newValue) {
+                  if (newValue.prefixBased === 'GROUP') {
+                    resolvedPrefix = newValue.groupPrefix || '';
+                  } else if (newValue.prefixBased === 'TYPE') {
+                    resolvedPrefix = newValue.itemPrefix || '';
+                  }
+                }
+                return {
+                  ...prev,
+                  typeId: newTypeId,
+                  prefixBased: resolvedPrefix
+                };
+              });
             }}
             disabled={isViewOnly}
             options={types}
@@ -213,10 +233,10 @@ const AddItemSubtypeDialog = ({ open, handleClose, initialData, readOnly = false
           <BOSTextField
             name="prefixBased"
             label="Prefix Based"
-            value="SUB ITEM"
+            value={formData.prefixBased || ''}
             disabled
             required
-            helperText="Prefix Based is not editable"
+            helperText="Prefix Based is resolved from Item Type"
           />
 
           <BOSTextField

@@ -181,10 +181,26 @@ export function JWTProvider({ children }) {
     } catch (err) {
       console.error('Logout audit failed:', err);
     }
+
+    // Clear session token and axios header
     setSession(null);
-    dispatch({ type: LOGOUT });
-    store.dispatch(clearPermissions());
-    setLogoutCountdown(null);
+
+    // Clear user-specific localStorage keys so the next user gets clean defaults
+    try {
+      localStorage.removeItem('theme-mode');
+      localStorage.removeItem('berry-config-vite-js');
+      localStorage.removeItem('lastActiveTime');
+    } catch (_) {}
+
+    // Clear all sessionStorage (tenantId, divisionId, companyName, divisionName, serviceToken)
+    try {
+      sessionStorage.clear();
+    } catch (_) {}
+
+    // Force a hard redirect to /login — this completely wipes all in-memory
+    // React/Redux state (permissions, search filters, cached routes, etc.)
+    // so the next user (e.g., admin) starts with a completely clean slate.
+    window.location.replace('/login');
   };
 
   useEffect(() => {

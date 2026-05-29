@@ -241,6 +241,12 @@ export default function EmployeeList() {
   const resolvedRows = useMemo(() => {
     if (!Array.isArray(rows)) return [];
 
+    // Filter out candidates/applicants whose code starts with "ATS-" or whose status is not "Active"
+    const activeEmployees = rows.filter(r => {
+      const code = r.oldEmpCode || r.empCode || '';
+      return !code.startsWith('ATS-') && (r.status === 'Active' || !r.status);
+    });
+
     // Helper: get the best display name from a raw employee row
     const getEmpDisplayName = (r) => {
       if (!r) return '-';
@@ -252,7 +258,7 @@ export default function EmployeeList() {
     const getFirstName = (r) => r.firstName || (r.employeeName ? r.employeeName.split(' ')[0] : '-') || '-';
     const getLastName = (r) => r.lastName || (r.employeeName ? r.employeeName.split(' ').slice(1).join(' ') : '-') || '-';
 
-    return rows.map((row) => {
+    return activeEmployees.map((row) => {
       const map = mappings.find(m => String(m.empId) === String(row.id));
       const homeManager = map && map.homeManagerId ? rows.find(r => String(r.id) === String(map.homeManagerId)) : null;
       const businessManager = map && map.businessManagerId ? rows.find(r => String(r.id) === String(map.businessManagerId)) : null;
