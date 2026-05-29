@@ -180,10 +180,6 @@ const InductionAssignment = () => {
     return null;
   }
 
-  if (!perms.enabled) {
-    return <Navigate to="/" replace />;
-  }
-
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
     const config = [
@@ -366,6 +362,11 @@ const InductionAssignment = () => {
   }, [formData, history]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      setEmployees([]);
+      return;
+    }
     setLoading(true);
     try {
       const [assignRes, empRes] = await Promise.all([
@@ -449,9 +450,13 @@ const InductionAssignment = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   const [deleteHistoryOpen, setDeleteHistoryOpen] = useState(false);
   const [historyItemToDelete, setHistoryItemToDelete] = useState(null);

@@ -112,10 +112,6 @@ export default function InductionCriteria() {
     return null;
   }
 
-  if (!perms.enabled) {
-    return <Navigate to="/" replace />;
-  }
-
   useEffect(() => {
     const config = [
       {
@@ -136,6 +132,10 @@ export default function InductionCriteria() {
   }, [dispatch]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
     try {
       const response = await axios.get('/api/hr/induction-master');
@@ -146,9 +146,13 @@ export default function InductionCriteria() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   const handleOpenAdd = async () => {
     setFormData(INITIAL_STATE);

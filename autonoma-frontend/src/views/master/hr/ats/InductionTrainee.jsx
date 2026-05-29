@@ -86,10 +86,6 @@ export default function InductionTrainee() {
   if (perms.loading) {
     return null;
   }
-
-  if (!perms.enabled) {
-    return <Navigate to="/" replace />;
-  }
   const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
@@ -102,6 +98,10 @@ export default function InductionTrainee() {
   const globalQuery = useSelector((state) => state.search.query);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await axios.get('/api/hr/induction-trainee');
@@ -112,9 +112,13 @@ export default function InductionTrainee() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Open trainee review dialog
   const handleUpdateTraining = useCallback(async (row) => {

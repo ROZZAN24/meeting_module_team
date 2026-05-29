@@ -153,10 +153,6 @@ export default function InductionTraining() {
     return null;
   }
 
-  if (!perms.enabled) {
-    return <Navigate to="/" replace />;
-  }
-
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
     const config = [
@@ -180,6 +176,10 @@ export default function InductionTraining() {
   }, [dispatch]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await axios.get('/api/hr/induction-training');
@@ -210,9 +210,13 @@ export default function InductionTraining() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Open training dialog
   const handleStartTraining = useCallback(async (row) => {
