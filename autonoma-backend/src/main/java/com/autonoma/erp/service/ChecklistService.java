@@ -543,9 +543,8 @@ public class ChecklistService {
         assignment.setAssignedDate(new Date());
         assignment.setChecklistDate(checklistDate);
 
-        ChecklistClosed saved = saveToFrequencyTable(assignment);
-        assignment.setId(saved.getId());
-        ChecklistAssignment savedAssignment = assignment;
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        saveToFrequencyTable(savedAssignment);
 
         // Also update the MasterChecklist for the UI data table to show ALL assignees
         java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklistId);
@@ -609,6 +608,8 @@ public class ChecklistService {
         ChecklistAssignment assignment = assignRepo.findById(id).orElseThrow();
         MasterChecklist checklist = assignment.getChecklist();
         deleteFromFrequencyTable(checklist.getId(), assignment.getAssignedTo(), assignment.getChecklistDate(), checklist.getFrequency());
+
+        assignRepo.delete(assignment);
 
         // Recalculate assigned users
         java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklist.getId());
@@ -680,11 +681,13 @@ public class ChecklistService {
                 oldRejected.setUpdatedBy(verifiedBy);
                 oldRejected.setUpdatedAt(new Date());
                 
-                // Save A to frequency table
-                saveToFrequencyTable(oldRejected);
+                // Save A to assignRepo and frequency table
+                ChecklistAssignment savedOldRejected = assignRepo.save(oldRejected);
+                saveToFrequencyTable(savedOldRejected);
 
                 // Delete B (the again-created helper assignment) entirely
                 deleteFromFrequencyTable(assignment.getChecklist().getId(), assignment.getAssignedTo(), assignment.getChecklistDate(), assignment.getChecklist().getFrequency());
+                assignRepo.delete(assignment);
 
                 // Return a dummy verification object
                 ChecklistVerification dummy = new ChecklistVerification();
@@ -736,7 +739,8 @@ public class ChecklistService {
         }
 
         // Save active/closed details directly in the respective frequency table
-        saveToFrequencyTable(assignment);
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        saveToFrequencyTable(savedAssignment);
 
         // Create a dummy verification object to return (deprecation safety)
         ChecklistVerification dummyVerification = new ChecklistVerification();
@@ -772,7 +776,8 @@ public class ChecklistService {
                 next.setCarryForwardStatus("NO");
                 next.setCarryForwardCount(0);
                 statusRepo.findByName("Pending").ifPresent(next::setStatus);
-                saveToFrequencyTable(next);
+                ChecklistAssignment savedNext = assignRepo.save(next);
+                saveToFrequencyTable(savedNext);
             }
         }
 
@@ -800,6 +805,7 @@ public class ChecklistService {
                     for (ChecklistAssignment rej : rejectedList) {
                         deleteFromFrequencyTable(rej.getChecklist().getId(), rej.getAssignedTo(), rej.getChecklistDate(), rej.getChecklist().getFrequency());
                     }
+                    assignRepo.deleteAll(rejectedList);
                 }
 
                 // 2. Delete the again-created checklist (which is Pending/Started)
@@ -811,6 +817,7 @@ public class ChecklistService {
                     for (ChecklistAssignment pend : pendingList) {
                         deleteFromFrequencyTable(pend.getChecklist().getId(), pend.getAssignedTo(), pend.getChecklistDate(), pend.getChecklist().getFrequency());
                     }
+                    assignRepo.deleteAll(pendingList);
                 }
             }
         }
@@ -869,14 +876,15 @@ public class ChecklistService {
         next.setChecklistDate(nextDate);
         statusRepo.findByName("Pending").ifPresent(next::setStatus);
 
-        saveToFrequencyTable(next);
+        ChecklistAssignment savedNext = assignRepo.save(next);
+        saveToFrequencyTable(savedNext);
     }
 
     @Transactional
     public ChecklistAssignment saveAssignment(ChecklistAssignment assignment) {
-        ChecklistClosed saved = saveToFrequencyTable(assignment);
-        assignment.setId(saved.getId());
-        return assignment;
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        saveToFrequencyTable(savedAssignment);
+        return savedAssignment;
     }
 
     @Transactional
