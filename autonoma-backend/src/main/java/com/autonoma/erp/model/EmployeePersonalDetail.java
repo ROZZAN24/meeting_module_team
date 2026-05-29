@@ -38,7 +38,7 @@ public class EmployeePersonalDetail {
     @Column(name = "NUMBER_OF_CHILDREN")
     private Integer numberOfChildren;
 
-    @Column(name = "EMAIL_ID", length = 255)
+    @Column(name = "PERSONAL_EMAIL", length = 255)
     private String personalEmail;
 
     @Column(name = "PASSPORT_NUMBER", length = 50)
