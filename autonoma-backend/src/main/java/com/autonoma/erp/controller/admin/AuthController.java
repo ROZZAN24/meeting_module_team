@@ -354,6 +354,7 @@ public class AuthController {
                         userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
                         userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                         userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
+                        userMap.put("employeeCode", emp.getEmpCode());
                     }
                 }
                 userMap.put("name", empName);
@@ -405,6 +406,7 @@ public class AuthController {
                                 userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
                                 userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                                 userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
+                                userMap.put("employeeCode", emp.getEmpCode());
                             }
                         }
                         userMap.put("name", empName);
@@ -841,9 +843,15 @@ public class AuthController {
 
             String empName = "Employee " + user.getEmpId();
             if (user.getEmpId() != null) {
-                empName = employeeMasterRepository.findById(user.getEmpId())
-                        .map(e -> e.getEmployeeName())
-                        .orElse(empName);
+                java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                if (empOpt.isPresent()) {
+                    com.autonoma.erp.model.EmployeeMaster emp = empOpt.get();
+                    empName = emp.getEmployeeName();
+                    userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
+                    userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
+                    userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
+                    userMap.put("employeeCode", emp.getEmpCode());
+                }
             }
             userMap.put("name", empName);
             userMap.put("role", "ADMIN");

@@ -257,11 +257,11 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
           serverFileName: att.serverFileName,
           docDetails: att.docDetails || ''
         }))),
-        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
+        createdUser: (formData.id !== undefined && formData.id !== null) ? formData.createdUser : (user?.empId || '1001'),
         updatedUser: user?.empId || '1001'
       };
 
-      if (formData.id) {
+      if (formData.id !== undefined && formData.id !== null) {
         await axios.put(`${API_PATHS.QMS.AUDIT_CRITERIA}/${formData.id}`, submissionData);
       } else {
         await axios.post(API_PATHS.QMS.AUDIT_CRITERIA, submissionData);
@@ -289,7 +289,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       onEditClick={() => setIsEditing(true)}
       title={initialData ? 'Edit Audit Criteria' : 'Audit Criteria'}
       isViewOnly={isViewOnly}
-      hasId={!!formData.id}
+      hasId={formData.id !== undefined && formData.id !== null}
       maxWidth="lg"
     >
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 4, width: '100%', alignItems: 'start' }}>

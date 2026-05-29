@@ -152,7 +152,9 @@ export default function AddAuditSchedule() {
     supplierName: '',
     coOrdinator: '',
     processName: '',
-    itemCode: ''
+    itemCode: '',
+    auditZone: '',
+    auditAreaDetail: ''
   });
 
   const [criteriaList, setCriteriaList] = useState([]);
@@ -312,8 +314,8 @@ export default function AddAuditSchedule() {
     const category = getAuditCategory(formData.auditType);
     const rules = [
       { field: 'auditType', label: 'Audit Type', required: true },
-      { field: 'auditZone', label: 'Zone', required: true },
-      { field: 'auditAreaDetail', label: 'Area', required: true },
+      { field: 'auditZone', label: 'Audit Zone', required: true },
+      { field: 'auditAreaDetail', label: 'Audit Area', required: true },
       { field: 'auditDate', label: 'Audit Date', required: true },
       { field: 'department', label: 'Department', required: true },
       { field: 'auditee', label: 'Auditee', required: true },
@@ -540,17 +542,17 @@ export default function AddAuditSchedule() {
   });
 
   const availableCriteria = useMemo(() => {
-    const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
-    const selectedDept = formData.department;
+    const selectedTypes = (formData.auditType || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const selectedDept = (formData.department || '').trim().toLowerCase();
     return (masterCriteria || []).filter(c => c).filter((c) => {
-      const criteriaTypes = c.auditType ? c.auditType.split(', ') : [];
-      const criteriaDepts = c.department ? c.department.split(', ') : [];
+      const criteriaTypes = c.auditType ? c.auditType.split(',').map(s => s.trim().toLowerCase()) : [];
+      const criteriaDepts = c.department ? c.department.split(',').map(s => s.trim().toLowerCase()) : [];
       
       const matchesType = selectedTypes.length === 0 || selectedTypes.some((st) => criteriaTypes.includes(st));
       // SOP: Load criteria based on Audit Type AND Department
       const matchesDept = !selectedDept || criteriaDepts.includes(selectedDept);
       
-      const isAlreadyAdded = (Array.isArray(criteriaList) ? criteriaList : []).some((cl) => cl.criteriaDetails === c.criteriaText);
+      const isAlreadyAdded = (Array.isArray(criteriaList) ? criteriaList : []).some((cl) => (cl.criteriaDetails || '').trim().toLowerCase() === (c.criteriaText || '').trim().toLowerCase());
       return matchesType && matchesDept && !isAlreadyAdded;
     });
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
@@ -705,67 +707,53 @@ export default function AddAuditSchedule() {
                 )}
               />
 
-              {/* Separate Dropdowns for Zone and Area rendered side-by-side */}
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' }, 
-                alignItems: { xs: 'flex-start', sm: 'center' }, 
-                gap: { xs: 0.5, sm: 2 },
-                gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 2' }
-              }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', minWidth: { sm: '120px' } }}>
-                  Audit Zone/Area <span style={{ color: 'red' }}>*</span>
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1.5, flex: 1, width: '100%' }}>
-                  <BOSTextField
-                    select
-                    required
-                    label="Zone"
-                    name="auditZone"
-                    value={formData.auditZone}
-                    onChange={(e) => {
-                      const zoneVal = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        auditZone: zoneVal,
-                        auditArea: zoneVal && prev.auditAreaDetail ? `${zoneVal} / ${prev.auditAreaDetail}` : (zoneVal || prev.auditAreaDetail || '')
-                      }));
-                    }}
-                    error={!!errors.auditZone || !!errors.auditArea}
-                    helperText={errors.auditZone || errors.auditArea}
-                    sx={{ flex: 1 }}
-                  >
-                    <MenuItem value="">-SELECT ZONE-</MenuItem>
-                    {zones.map((z) => (
-                      <MenuItem key={z.id} value={z.description}>{z.description}</MenuItem>
-                    ))}
-                  </BOSTextField>
-                  
-                  <BOSTextField
-                    select
-                    required
-                    label="Area"
-                    name="auditAreaDetail"
-                    value={formData.auditAreaDetail}
-                    onChange={(e) => {
-                      const areaVal = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        auditAreaDetail: areaVal,
-                        auditArea: prev.auditZone && areaVal ? `${prev.auditZone} / ${areaVal}` : (prev.auditZone || areaVal || '')
-                      }));
-                    }}
-                    error={!!errors.auditAreaDetail}
-                    helperText={errors.auditAreaDetail}
-                    sx={{ flex: 1 }}
-                  >
-                    <MenuItem value="">-SELECT AREA-</MenuItem>
-                    {areas.map((a) => (
-                      <MenuItem key={a.id} value={a.description}>{a.description}</MenuItem>
-                    ))}
-                  </BOSTextField>
-                </Box>
-              </Box>
+              <BOSTextField
+                select
+                required
+                label="Audit Zone"
+                name="auditZone"
+                value={formData.auditZone}
+                onChange={(e) => {
+                  const zoneVal = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    auditZone: zoneVal,
+                    auditArea: zoneVal && prev.auditAreaDetail ? `${zoneVal} / ${prev.auditAreaDetail}` : (zoneVal || prev.auditAreaDetail || '')
+                  }));
+                }}
+                error={!!errors.auditZone || !!errors.auditArea}
+                helperText={errors.auditZone || errors.auditArea}
+                disabled={!perms.write}
+              >
+                <MenuItem value="">-SELECT AUDIT ZONE-</MenuItem>
+                {zones.map((z) => (
+                  <MenuItem key={z.id} value={z.description}>{z.description}</MenuItem>
+                ))}
+              </BOSTextField>
+              
+              <BOSTextField
+                select
+                required
+                label="Audit Area"
+                name="auditAreaDetail"
+                value={formData.auditAreaDetail}
+                onChange={(e) => {
+                  const areaVal = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    auditAreaDetail: areaVal,
+                    auditArea: prev.auditZone && areaVal ? `${prev.auditZone} / ${areaVal}` : (prev.auditZone || areaVal || '')
+                  }));
+                }}
+                error={!!errors.auditAreaDetail}
+                helperText={errors.auditAreaDetail}
+                disabled={!perms.write}
+              >
+                <MenuItem value="">-SELECT AUDIT AREA-</MenuItem>
+                {areas.map((a) => (
+                  <MenuItem key={a.id} value={a.description}>{a.description}</MenuItem>
+                ))}
+              </BOSTextField>
 
               {/* Dynamic Field: Process Name for Process Audit */}
               {category === 'PROCESS_AUDIT' && (

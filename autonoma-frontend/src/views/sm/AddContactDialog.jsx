@@ -27,7 +27,7 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
 
   const [formData, setFormData] = useState({
     groupName: initialGroupName || '',
-    title: 'Mr.',
+    title: '',
     contactName: '',
     designation: '',
     department: '',
@@ -36,7 +36,9 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
     mobileNo: '',
     whatsAppNo: '',
     fileUpload: '',
-    status: 'Active'
+    status: 'Active',
+    type: '',
+    contactType: ''
   });
 
   const [customers, setCustomers] = useState([]);
@@ -59,12 +61,14 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
     if (initialData) {
       setFormData({
         ...formData,
-        ...initialData
+        ...initialData,
+        type: initialData.type || '',
+        contactType: initialData.contactType || ''
       });
     } else {
       setFormData({ 
         groupName: initialGroupName || '',
-        title: 'Mr.',
+        title: '',
         contactName: '',
         designation: '',
         department: '',
@@ -73,7 +77,9 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
         mobileNo: '',
         whatsAppNo: '',
         fileUpload: '',
-        status: 'Active'
+        status: 'Active',
+        type: '',
+        contactType: ''
       });
     }
 
@@ -183,10 +189,44 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
     >
       <BOSFormSection icon={<IconUser size={20} color={theme.palette.primary.main} />} title="Basic Information">
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
+          {/* Row 1: Type | Sur Name | Group Name */}
+          <Grid item xs={12} sm={4}>
+            <BOSTextField 
+              name="type" 
+              label="Type" 
+              value={formData.type} 
+              onChange={handleChange} 
+              disabled={readOnly} 
+              select
+            >
+              <MenuItem value="">-SELECT-</MenuItem>
+              <MenuItem value="Customer">Customer</MenuItem>
+              <MenuItem value="Vendor">Vendor</MenuItem>
+              <MenuItem value="Prospect">Prospect</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </BOSTextField>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <BOSTextField 
+              name="title" 
+              label="Sur Name" 
+              value={formData.title} 
+              onChange={handleChange} 
+              disabled={readOnly} 
+              select
+            >
+              <MenuItem value="">-Select-</MenuItem>
+              <MenuItem value="Mr.">Mr.</MenuItem>
+              <MenuItem value="Ms.">Ms.</MenuItem>
+              <MenuItem value="Mrs.">Mrs.</MenuItem>
+              <MenuItem value="Dr.">Dr.</MenuItem>
+              <MenuItem value="Prof.">Prof.</MenuItem>
+            </BOSTextField>
+          </Grid>
+          <Grid item xs={12} sm={4}>
             <BOSTextField 
               name="groupName" 
-              label="Group Name (Customer)" 
+              label="Group Name" 
               value={formData.groupName} 
               onChange={handleChange} 
               disabled={readOnly} 
@@ -200,51 +240,58 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
               ))}
             </BOSTextField>
           </Grid>
-          <Grid item xs={12} sm={2}>
-            <BOSTextField name="title" label="Title" value={formData.title} onChange={handleChange} disabled={readOnly} select>
-              <MenuItem value="Mr.">Mr.</MenuItem>
-              <MenuItem value="Ms.">Ms.</MenuItem>
-              <MenuItem value="Mrs.">Mrs.</MenuItem>
-              <MenuItem value="Dr.">Dr.</MenuItem>
-              <MenuItem value="Prof.">Prof.</MenuItem>
-            </BOSTextField>
-          </Grid>
-          <Grid item xs={12} sm={4}>
+
+          {/* Row 2: Contact Name | Contact Type */}
+          <Grid item xs={12} sm={6}>
             <BOSTextField name="contactName" label="Contact Name" value={formData.contactName} onChange={handleChange} disabled={readOnly} required error={!!errors.contactName} helperText={errors.contactName} />
           </Grid>
-        </Grid>
-      </BOSFormSection>
-
-      <BOSFormSection icon={<IconBriefcase size={20} color={theme.palette.primary.main} />} title="Professional Details">
-        <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
-            <BOSTextField name="designation" label="Designation" value={formData.designation} onChange={handleChange} disabled={readOnly} />
+            <BOSTextField 
+              name="contactType" 
+              label="Contact Type" 
+              value={formData.contactType} 
+              onChange={handleChange} 
+              disabled={readOnly} 
+              select
+            >
+              <MenuItem value="">-SELECT-</MenuItem>
+              <MenuItem value="Primary">Primary</MenuItem>
+              <MenuItem value="Secondary">Secondary</MenuItem>
+              <MenuItem value="Technical">Technical</MenuItem>
+              <MenuItem value="Commercial">Commercial</MenuItem>
+              <MenuItem value="Accounts">Accounts</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+            </BOSTextField>
           </Grid>
-          <Grid item xs={12} sm={6}>
+
+          {/* Row 3: Mobile No | WhatsApp No | Landline No */}
+          <Grid item xs={12} sm={4}>
+            <BOSTextField name="mobileNo" label="Mobile No" value={formData.mobileNo} onChange={handleChange} disabled={readOnly} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <BOSTextField name="whatsAppNo" label="WhatsApp No" value={formData.whatsAppNo} onChange={handleChange} disabled={readOnly} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <BOSTextField name="landlineNo" label="Landline No" value={formData.landlineNo} onChange={handleChange} disabled={readOnly} />
+          </Grid>
+
+          {/* Row 4: Department | Designation | Email ID */}
+          <Grid item xs={12} sm={4}>
             <BOSTextField name="department" label="Department" value={formData.department} onChange={handleChange} disabled={readOnly} />
           </Grid>
-          <Grid item xs={12} sm={12}>
+          <Grid item xs={12} sm={4}>
+            <BOSTextField name="designation" label="Designation" value={formData.designation} onChange={handleChange} disabled={readOnly} />
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <BOSTextField name="emailId" label="Email ID" value={formData.emailId} onChange={handleChange} disabled={readOnly} error={!!errors.emailId} helperText={errors.emailId} />
+          </Grid>
+
+          {/* Row 5: Status */}
+          <Grid item xs={12}>
             <BOSTextField name="status" label="Status" value={formData.status} onChange={handleChange} disabled={readOnly} select>
               <MenuItem value="Active">Active</MenuItem>
               <MenuItem value="Inactive">Inactive</MenuItem>
             </BOSTextField>
-          </Grid>
-        </Grid>
-      </BOSFormSection>
-
-      <BOSFormSection icon={<IconPhone size={20} color={theme.palette.primary.main} />} title="Communication">
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6}>
-            <BOSTextField name="emailId" label="Email ID" value={formData.emailId} onChange={handleChange} disabled={readOnly} error={!!errors.emailId} helperText={errors.emailId} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <BOSTextField name="landlineNo" label="Landline No" value={formData.landlineNo} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <BOSTextField name="mobileNo" label="Mobile No" value={formData.mobileNo} onChange={handleChange} disabled={readOnly} />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <BOSTextField name="whatsAppNo" label="WhatsApp No" value={formData.whatsAppNo} onChange={handleChange} disabled={readOnly} />
           </Grid>
         </Grid>
       </BOSFormSection>

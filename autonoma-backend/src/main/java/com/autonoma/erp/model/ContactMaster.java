@@ -46,6 +46,12 @@ public class ContactMaster {
     @Column(name = "whatsapp_no", length = 50)
     private String whatsAppNo;
 
+    @Column(name = "type", length = 100)
+    private String type;
+
+    @Column(name = "contact_type", length = 100)
+    private String contactType;
+
     @Column(name = "file_upload", length = 500)
     private String fileUpload;
 
