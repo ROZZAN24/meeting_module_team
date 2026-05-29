@@ -48,11 +48,6 @@ const FileItem = ({ file, onPreview, onRemove }) => (
 );
 FileItem.propTypes = { file: PropTypes.object, onPreview: PropTypes.func, onRemove: PropTypes.func };
 
-const DEPARTMENTS = [
-  'ACCOUNTS','ADMIN','ASSEMBLY','BUSINESS DEVELOPMENT','DESIGN & DEVELOPMENT',
-  'FINANCE','HRA','IT','LOGISTICS','MAINTENANCE','MARKETING','PRODUCTION','PURCHASE','QUALITY','STORES'
-];
-
 const WEEK_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -166,7 +161,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [repeatEveryUnit, setRepeatEveryUnit] = useState('');
   const [description, setDescription] = useState('');
   const [department, setDepartment] = useState([]);
-  const [departmentsList, setDepartmentsList] = useState(DEPARTMENTS);
+  const [departmentsList, setDepartmentsList] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [scannedFiles, setScannedFiles] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -288,14 +283,12 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   useEffect(() => {
     if (open) {
-      axios.get('/api/master/hr/departments')
+      axios.get('/api/hrm/departments')
         .then(res => {
           const list = (res.data || [])
             .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
             .map(d => d.departmentName);
-          if (list.length > 0) {
-            setDepartmentsList(list);
-          }
+          setDepartmentsList(list);
         })
         .catch(err => {
           console.error("Failed to load departments from master", err);
@@ -476,7 +469,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const sidebarContent = (
     <Stack spacing={3}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Uploaded Files</Typography>
           {!isViewOnly && (
             <Button
@@ -497,16 +490,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           )}
         </Box>
         <Box sx={{ 
-          height: 200, 
+          minHeight: 120,
+          maxHeight: 220,
           bgcolor: 'background.paper', 
           border: '1px dashed', 
           borderColor: 'divider',
           borderRadius: '10px', 
-          p: 3,
+          p: uploadedFiles.length === 0 ? 3 : 1,
           display: 'flex', 
           flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
+          alignItems: uploadedFiles.length === 0 ? 'center' : 'stretch',
+          justifyContent: uploadedFiles.length === 0 ? 'center' : 'flex-start',
           gap: 1.5,
           overflowY: 'auto'
         }}>
@@ -517,7 +511,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
             </Box>
           ) : (
-            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {uploadedFiles.map((f, i) => (
                 <FileItem
                   key={i} file={f}
@@ -531,7 +525,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
       </Box>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5, flexWrap: 'wrap', gap: 1 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.primary' }}>Scanned Files</Typography>
           {!isViewOnly && (
             <Button
@@ -552,16 +546,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
           )}
         </Box>
         <Box sx={{ 
-          height: 200, 
+          minHeight: 120,
+          maxHeight: 220,
           bgcolor: 'background.paper', 
           border: '1px dashed', 
           borderColor: 'divider',
           borderRadius: '10px', 
-          p: 3,
+          p: scannedFiles.length === 0 ? 3 : 1,
           display: 'flex', 
           flexDirection: 'column', 
-          alignItems: 'center', 
-          justifyContent: 'center',
+          alignItems: scannedFiles.length === 0 ? 'center' : 'stretch',
+          justifyContent: scannedFiles.length === 0 ? 'center' : 'flex-start',
           gap: 1.5,
           overflowY: 'auto'
         }}>
@@ -572,7 +567,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>Upload files using the button above</Typography>
             </Box>
           ) : (
-            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
               {scannedFiles.map((f, i) => (
                 <FileItem key={i} file={f} onPreview={handlePreviewOpen} onRemove={isViewOnly ? undefined : handleRemoveScannedFile} />
               ))}

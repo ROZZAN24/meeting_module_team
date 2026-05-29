@@ -3,27 +3,33 @@
 -- but the FK on qms_checklist_department still referenced the old name.
 
 -- Drop the old FK constraint
-IF EXISTS (
-    SELECT * FROM sys.foreign_keys 
-    WHERE name = 'FK_Dept_Checklist' 
-    AND parent_object_id = OBJECT_ID('qms_checklist_department')
-)
+IF OBJECT_ID('qms_checklist_department', 'U') IS NOT NULL
 BEGIN
-    ALTER TABLE [dbo].[qms_checklist_department] DROP CONSTRAINT [FK_Dept_Checklist];
+    IF EXISTS (
+        SELECT * FROM sys.foreign_keys 
+        WHERE name = 'FK_Dept_Checklist' 
+        AND parent_object_id = OBJECT_ID('qms_checklist_department')
+    )
+    BEGIN
+        EXEC('ALTER TABLE [dbo].[qms_checklist_department] DROP CONSTRAINT [FK_Dept_Checklist]');
+    END
 END
 
 -- Re-add FK pointing to the correct (current) table name
-IF NOT EXISTS (
-    SELECT * FROM sys.foreign_keys 
-    WHERE name = 'FK_Dept_Checklist_Master' 
-    AND parent_object_id = OBJECT_ID('qms_checklist_department')
-)
+IF OBJECT_ID('qms_checklist_department', 'U') IS NOT NULL
 BEGIN
-    ALTER TABLE [dbo].[qms_checklist_department]
-        ADD CONSTRAINT [FK_Dept_Checklist_Master] 
-        FOREIGN KEY ([CHECKLIST_ID]) 
-        REFERENCES [dbo].[qms_checklist_master]([id])
-        ON DELETE CASCADE;
+    IF NOT EXISTS (
+        SELECT * FROM sys.foreign_keys 
+        WHERE name = 'FK_Dept_Checklist_Master' 
+        AND parent_object_id = OBJECT_ID('qms_checklist_department')
+    )
+    BEGIN
+        EXEC('ALTER TABLE [dbo].[qms_checklist_department]
+            ADD CONSTRAINT [FK_Dept_Checklist_Master] 
+            FOREIGN KEY ([CHECKLIST_ID]) 
+            REFERENCES [dbo].[qms_checklist_master]([id])
+            ON DELETE CASCADE');
+    END
 END
 
 -- Fix Assignment table FK too if it still points to old table

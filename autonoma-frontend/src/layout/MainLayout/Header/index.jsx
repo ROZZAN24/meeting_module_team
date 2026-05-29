@@ -15,14 +15,14 @@ import LocalizationSection from './LocalizationSection';
 import MegaMenuSection from './MegaMenuSection';
 import FullScreenSection from './FullScreenSection';
 import NotificationSection from './NotificationSection';
+import QuickAccessSection from './QuickAccessSection';
 
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation } from 'config';
 import useConfig from 'hooks/useConfig';
 
 // assets
-import { IconMenu2, IconCalculator, IconLogout } from '@tabler/icons-react';
-import WeightCalculator from 'ui-component/WeightCalculator';
+import { IconMenu2, IconLogout } from '@tabler/icons-react';
 import SessionInfoBadge from 'ui-component/SessionInfoBadge';
 import useAuth from 'hooks/useAuth';
 import Tooltip from '@mui/material/Tooltip';
@@ -37,7 +37,6 @@ export default function Header() {
     state: { menuOrientation }
   } = useConfig();
   const { menuMaster } = useGetMenuMaster();
-  const [calcOpen, setCalcOpen] = useState(false);
   const { logout } = useAuth();
   const handleLogout = async () => {
     try {
@@ -114,27 +113,8 @@ export default function Header() {
       {/* profile */}
       <ProfileSection />
 
-      {/* Weight Calculator */}
-      <Box sx={{ ml: 2, display: { xs: 'none', md: 'block' } }}>
-        <Avatar
-          variant="rounded"
-          sx={{
-            ...theme.typography.commonAvatar,
-            ...theme.typography.mediumAvatar,
-            transition: 'all .2s ease-in-out',
-            color: theme.palette.primary.dark,
-            background: theme.palette.primary.light,
-            '&:hover': {
-              color: theme.palette.primary.light,
-              background: theme.palette.primary.dark
-            }
-          }}
-          onClick={() => setCalcOpen(true)}
-        >
-          <IconCalculator stroke={1.5} size="20px" />
-        </Avatar>
-      </Box>
-      <WeightCalculator open={calcOpen} handleClose={() => setCalcOpen(false)} />
+      {/* Quick Access */}
+      <QuickAccessSection />
 
       {/* Logout Button */}
       <Box sx={{ ml: 1, display: { xs: 'none', md: 'block' } }}>

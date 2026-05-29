@@ -23,20 +23,20 @@ public class InductionTrainingDetail extends BaseAuditEntity {
     private Long inductionMasterId;
 
     // === Trainer fills these ===
-    @Column(name = "trainer_status", length = 50)
+    @Column(name = "trainer_status", length = 20)
     private String trainerStatus = "PENDING"; // PENDING, COMPLETED
 
-    @Column(name = "trainer_comments", length = 1000)
+    @Column(name = "trainer_comments", columnDefinition = "NVARCHAR(MAX)")
     private String trainerComments;
 
     @Column(name = "skill_rating")
     private Integer skillRating; // 1-5
 
     // === Trainee fills these ===
-    @Column(name = "trainee_status", length = 50)
+    @Column(name = "trainee_status", length = 20)
     private String traineeStatus; // UNDERSTOOD, NEED MORE TRAINING
 
-    @Column(name = "trainee_comments", length = 1000)
+    @Column(name = "trainee_comments", columnDefinition = "NVARCHAR(MAX)")
     private String traineeComments;
 
     // === Attachment ===

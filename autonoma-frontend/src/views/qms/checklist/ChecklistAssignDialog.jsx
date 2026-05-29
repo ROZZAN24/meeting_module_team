@@ -10,7 +10,8 @@ import {
   Typography,
   MenuItem,
   Box,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconUserPlus, IconUsersGroup } from '@tabler/icons-react';
@@ -18,23 +19,38 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import { API_PATHS } from 'utils/api-constants';
-import useLookups from 'hooks/useLookups';
 import useAuth from 'hooks/useAuth';
 import { BOSDataTable, BOSTextField, btnCancel, getStatusChipSx } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
+import useLookups from 'hooks/useLookups';
 
 const isDepartmentMatch = (allowedDepts, empDeptName) => {
   if (!allowedDepts || !allowedDepts.length) return true;
   if (!empDeptName) return false;
   
-  const cleanEmpDept = String(empDeptName).toUpperCase().trim();
+  const cleanEmpDept = empDeptName.toUpperCase().trim();
   
+  // Custom mapping rules for QMS checklist codes vs HRM department names
+  const mappings = {
+    'HRA': ['HUMAN RESOURCES', 'HR', 'HR/ADMIN'],
+    'HR/ADMIN': ['HUMAN RESOURCES', 'HR', 'HRA'],
+    'HUMAN RESOURCES': ['HRA', 'HR', 'HR/ADMIN'],
+    'QUALITY': ['QUALITY MANAGEMENT', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
+    'QUALITY MANAGEMENT': ['QUALITY', 'QUALITY CONTROL', 'QUALITY ASSURANCE', 'QMS'],
+    'IT': ['INFORMATION TECHNOLOGY'],
+    'INFORMATION TECHNOLOGY': ['IT'],
+    'FINANCE': ['FINANCE & ACCOUNTS', 'FINANCE AND ACCOUNTS', 'ACCOUNTS'],
+    'FINANCE & ACCOUNTS': ['FINANCE', 'ACCOUNTS'],
+    'MARKETING': ['SALES & MARKETING', 'SALES AND MARKETING', 'SALES'],
+    'SALES & MARKETING': ['MARKETING', 'SALES']
+  };
+
   return allowedDepts.some(allowedDept => {
-    if (!allowedDept) return false;
-    const cleanAllowed = String(allowedDept).toUpperCase().trim();
-    return cleanAllowed === cleanEmpDept || 
-           cleanAllowed.includes(cleanEmpDept) || 
-           cleanEmpDept.includes(cleanAllowed);
+    const cleanAllowed = allowedDept.toUpperCase().trim();
+    if (cleanAllowed === cleanEmpDept) return true;
+    if (mappings[cleanAllowed] && mappings[cleanAllowed].includes(cleanEmpDept)) return true;
+    if (mappings[cleanEmpDept] && mappings[cleanEmpDept].includes(cleanAllowed)) return true;
+    return cleanAllowed.includes(cleanEmpDept) || cleanEmpDept.includes(cleanAllowed);
   });
 };
 
@@ -45,9 +61,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   const lookups = useLookups(['EMPLOYEES', 'DEPARTMENTS', 'USERS']);
   
   // Get allowed department names for this checklist
-  const allowedDeptNames = (initialData?.departments || [])
-    .map(d => d.departmentName || d.department?.departmentName)
-    .filter(Boolean);
+  const allowedDeptNames = (initialData?.departments || []).map(d => d.departmentName);
   const userEmpIds = (lookups.users || []).map(u => Number(u.empId));
   
   // Filter employees whose department matches one of the checklist's departments,
@@ -71,18 +85,12 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     return true;
   });
 
-  // Fallback 1: If no employees match after applying department filters, relax the department filter but keep credentialed check
+  // Fallback: If no employees match the checklist's department, show all employees who are active and credentialed.
   if (filteredEmployees.length === 0) {
     filteredEmployees = (lookups.employees || []).filter(emp => {
       return emp.status === 'Active' && 
              userEmpIds.includes(Number(emp.id));
     });
-  }
-
-  // Fallback 2: If there are STILL no employees (e.g. no users have credentials created yet or credentials API is empty/loading),
-  // show all active employees so they are never blocked from assigning!
-  if (filteredEmployees.length === 0) {
-    filteredEmployees = (lookups.employees || []).filter(emp => emp.status === 'Active');
   }
 
   const employeeOptions = filteredEmployees.map(e => ({
@@ -210,8 +218,8 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     { id: 'assignTo', label: 'Assign To', minWidth: 120 },
     { id: 'assignType', label: 'Assign Type', minWidth: 100 },
     { id: 'assignDate', label: 'Assign Date', minWidth: 100 },
-    { id: 'assignedBy', label: 'CREATED USER', minWidth: 100 },
-    { id: 'modifiedBy', label: 'UPDATED USER', minWidth: 100 },
+    { id: 'assignedBy', label: 'Created By', minWidth: 100 },
+    { id: 'modifiedBy', label: 'Modified By', minWidth: 100 },
     { id: 'status', label: 'Status', minWidth: 100 }
   ];
 
@@ -289,14 +297,24 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               
               <BOSTextField
                 select
-                label="Assign To"
+                label={lookups.loading ? 'Loading employees…' : `Assign To (${visibleEmployeeOptions.length} available)`}
                 value={formData.assignTo}
                 onChange={(e) => setFormData(p => ({ ...p, assignTo: e.target.value }))}
                 required
+                disabled={lookups.loading}
+                InputProps={lookups.loading ? { endAdornment: <CircularProgress size={16} sx={{ mr: 1 }} /> } : {}}
               >
-                {visibleEmployeeOptions.map(opt => (
-                  <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                ))}
+                {lookups.loading ? (
+                  <MenuItem disabled><em>Loading…</em></MenuItem>
+                ) : visibleEmployeeOptions.length === 0 ? (
+                  <MenuItem disabled>
+                    <em>No active employees found for the assigned department(s)</em>
+                  </MenuItem>
+                ) : (
+                  visibleEmployeeOptions.map(opt => (
+                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                  ))
+                )}
               </BOSTextField>
 
               <BOSTextField

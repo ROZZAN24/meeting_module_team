@@ -6,14 +6,14 @@ const icons = {
 
 const tickets = {
   id: 'tickets',
-  title: 'Ticket Management',
+  title: 'Task Management',
   caption: 'System & Support Tickets',
   type: 'group',
   icon: icons.IconTicket,
   children: [
     {
       id: 'ticket-management',
-      title: 'Ticket Center',
+      title: 'Task Center',
       type: 'item',
       url: '/ticket/management',
       icon: icons.IconTicket,

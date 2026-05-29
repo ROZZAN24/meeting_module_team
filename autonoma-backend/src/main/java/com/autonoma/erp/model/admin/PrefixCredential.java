@@ -65,6 +65,15 @@ public class PrefixCredential {
     @Column(name = "invoice_digit")
     private Integer invoiceDigit;
 
+    @Column(name = "task_prefix", columnDefinition = "VARCHAR(20)")
+    private String taskPrefix;
+
+    @Column(name = "task_suffix", columnDefinition = "VARCHAR(20)")
+    private String taskSuffix;
+
+    @Column(name = "task_digit")
+    private Integer taskDigit;
+
     @Column(name = "created_by", columnDefinition = "NVARCHAR(100)")
     private String createdBy;
 
@@ -246,5 +255,29 @@ public class PrefixCredential {
 
     public void setUpdatedDate(Date updatedDate) {
         this.updatedDate = updatedDate;
+    }
+
+    public String getTaskPrefix() {
+        return taskPrefix;
+    }
+
+    public void setTaskPrefix(String taskPrefix) {
+        this.taskPrefix = taskPrefix;
+    }
+
+    public String getTaskSuffix() {
+        return taskSuffix;
+    }
+
+    public void setTaskSuffix(String taskSuffix) {
+        this.taskSuffix = taskSuffix;
+    }
+
+    public Integer getTaskDigit() {
+        return taskDigit;
+    }
+
+    public void setTaskDigit(Integer taskDigit) {
+        this.taskDigit = taskDigit;
     }
 }

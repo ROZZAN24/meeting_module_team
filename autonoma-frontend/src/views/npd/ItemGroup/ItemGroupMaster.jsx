@@ -53,7 +53,7 @@ export default function ItemGroupMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE',
+        defaultValue: 'All',
         isStarred: true
       }
     ];
@@ -105,7 +105,7 @@ export default function ItemGroupMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'ACTIVE';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const matchesSearch = !globalQuery ||
         (row.groupName && row.groupName.toLowerCase().includes(globalQuery.toLowerCase())) ||

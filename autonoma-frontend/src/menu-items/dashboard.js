@@ -27,6 +27,14 @@ const dashboard = {
       breadcrumbs: false
     },
     {
+      id: 'task-dashboard',
+      title: 'Task Dashboard',
+      type: 'item',
+      url: '/dashboard/task-dashboard',
+      icon: icons.IconDashboard,
+      breadcrumbs: false
+    },
+    {
       id: 'default',
       title: 'Default',
       type: 'item',

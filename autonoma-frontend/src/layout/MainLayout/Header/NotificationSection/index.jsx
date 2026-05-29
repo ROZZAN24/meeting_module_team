@@ -16,6 +16,11 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
+
+import axiosServices from 'utils/axios';
+
+import { useSnackbar } from 'notistack';
 
 // project imports
 import MainCard from 'ui-component/cards/MainCard';
@@ -45,11 +50,34 @@ const status = [
   }
 ];
 
+const playNotificationSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // D5
+    oscillator.frequency.exponentialRampToValueAtTime(880.00, audioCtx.currentTime + 0.1); // A5
+
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.3);
+  } catch (error) {}
+};
+
 // ==============================|| NOTIFICATION ||============================== //
 
 export default function NotificationSection() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
+  const { enqueueSnackbar } = useSnackbar();
 
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
@@ -82,6 +110,35 @@ export default function NotificationSection() {
     event?.target.value && setValue(event?.target.value);
   };
 
+  const [channels, setChannels] = useState([]);
+  const channelsRef = useRef([]);
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const res = await axiosServices.get('/api/chat/channels');
+        const currentChannels = channelsRef.current;
+        if (currentChannels.length > 0) {
+          res.data.forEach(newChan => {
+            const oldChan = currentChannels.find(c => c.id === newChan.id);
+            if (oldChan && (newChan.unreadCount || 0) > (oldChan.unreadCount || 0)) {
+               enqueueSnackbar(`New message in ${newChan.channelName}`, { variant: 'info', anchorOrigin: { vertical: 'top', horizontal: 'right' } });
+               playNotificationSound();
+            }
+          });
+        }
+        setChannels(res.data);
+        channelsRef.current = res.data;
+      } catch(e) {}
+    };
+    fetchChannels();
+    const interval = setInterval(fetchChannels, 10000);
+    return () => clearInterval(interval);
+  }, [enqueueSnackbar]);
+
+  const unreadChannels = channels.filter(c => c.unreadCount > 0).sort((a,b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+  const totalUnread = unreadChannels.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+
   return (
     <>
       <Box sx={{ ml: 2 }}>
@@ -111,7 +168,9 @@ export default function NotificationSection() {
           aria-haspopup="true"
           onClick={handleToggle}
         >
-          <IconBell stroke={1.5} size="20px" />
+          <Badge color="error" badgeContent={totalUnread} max={99}>
+            <IconBell stroke={1.5} size="20px" />
+          </Badge>
         </Avatar>
       </Box>
       <Popper
@@ -132,9 +191,11 @@ export default function NotificationSection() {
                     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', pt: 2, px: 2 }}>
                       <Stack direction="row" sx={{ gap: 2 }}>
                         <Typography variant="subtitle1">All Notification</Typography>
-                        <Chip size="small" label="01" variant="filled" sx={{ color: 'background.default', bgcolor: 'warning.dark' }} />
+                        {totalUnread > 0 && (
+                          <Chip size="small" label={totalUnread} variant="filled" sx={{ color: 'background.default', bgcolor: 'warning.dark' }} />
+                        )}
                       </Stack>
-                      <Typography component={Link} to="#" variant="subtitle2" sx={{ color: 'primary.main' }}>
+                      <Typography component={Link} to="/chat" variant="subtitle2" sx={{ color: 'primary.main' }}>
                         Mark as all read
                       </Typography>
                     </Stack>
@@ -156,7 +217,7 @@ export default function NotificationSection() {
                         </TextField>
                       </Box>
                       <Divider sx={{ mt: 2 }} />
-                      <NotificationList />
+                      <NotificationList notifications={unreadChannels} />
                     </Box>
                   </Stack>
                   <CardActions sx={{ p: 1.25, justifyContent: 'center' }}>

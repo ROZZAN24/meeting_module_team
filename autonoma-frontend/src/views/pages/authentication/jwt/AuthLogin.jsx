@@ -50,7 +50,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
 
   // Step management: 'credentials' | 'selection'
   const [step, setStep] = useState('credentials');
-  const [loginMethod, setLoginMethod] = useState('face'); // 'password' | 'face'
+  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'face'
   const [showPassword, setShowPassword] = useState(false);
   const [checkError, setCheckError] = useState(null);
   const [loginError, setLoginError] = useState(null);
@@ -114,9 +114,13 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
     setFaceScanSuccess(false);
   };
 
-  // Auto start camera on mount
+  // Auto start/stop camera based on loginMethod and step
   useEffect(() => {
-    startWebcam();
+    if (loginMethod === 'face' && step === 'credentials') {
+      startWebcam();
+    } else {
+      stopWebcam();
+    }
     return () => {
       if (webcamStreamRef.current) {
         webcamStreamRef.current.getTracks().forEach((track) => track.stop());
@@ -124,7 +128,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loginMethod, step]);
 
   // Auto face scan
   useEffect(() => {
@@ -424,9 +428,8 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                   <Box
                     sx={{
                       display: 'flex',
-                      bgcolor: loginMethod === 'face' ? 'transparent' : alpha(theme.palette.primary.main, 0.08),
-                      p: loginMethod === 'face' ? 0 : 0.5,
-                      gap: loginMethod === 'face' ? 1 : 0,
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                      p: 0.5,
                       borderRadius: '12px',
                       mb: 3
                     }}
@@ -439,17 +442,17 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                         stopWebcam();
                         setCheckError(null);
                       }}
-                      variant={loginMethod === 'password' ? 'contained' : (loginMethod === 'face' ? 'contained' : 'text')}
+                      variant={loginMethod === 'password' ? 'contained' : 'text'}
                       sx={{
                         borderRadius: '10px',
                         py: 1,
                         fontSize: '0.875rem',
                         fontWeight: 700,
                         textTransform: 'none',
-                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : (loginMethod === 'face' ? theme.palette.primary.main : 'transparent'),
-                        color: loginMethod === 'password' ? '#fff' : (loginMethod === 'face' ? '#fff' : theme.palette.text.secondary),
+                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : 'transparent',
+                        color: loginMethod === 'password' ? '#fff' : theme.palette.text.secondary,
                         '&:hover': {
-                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : (loginMethod === 'face' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15))
+                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
                         }
                       }}
                     >
@@ -469,7 +472,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                         py: 1,
                         fontSize: '0.875rem',
                         fontWeight: 700,
-                        textTransform: loginMethod === 'face' ? 'uppercase' : 'none',
+                        textTransform: 'none',
                         bgcolor: loginMethod === 'face' ? '#7f9eb5' : 'transparent',
                         color: loginMethod === 'face' ? '#fff' : theme.palette.text.secondary,
                         border: loginMethod === 'face' ? '1px solid #FFD700' : 'none',
@@ -631,7 +634,12 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.8, mb: 1.5 }}>
                 <IconButton
                   size="small"
-                  onClick={() => { setStep('credentials'); setLoginError(null); }}
+                  onClick={() => {
+                    setStep('credentials');
+                    setLoginError(null);
+                    setPendingCredentials({ username: '', password: '', faceImage: '', faceDescriptor: null });
+                    setFaceScanSuccess(false);
+                  }}
                   sx={{
                     width: 36,
                     height: 36,

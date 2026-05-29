@@ -47,7 +47,7 @@ import {
   IconMoodSmile,
   IconSearch,
   IconCategory,
-  IconSitemap
+  IconRotate2
 } from '@tabler/icons-react';
 
 const icons = {
@@ -99,7 +99,7 @@ const icons = {
   IconTractor,
   IconMoodSmile,
   IconSearch,
-  IconSitemap
+  IconRotate2
 };
 
 export const masters = {
@@ -107,7 +107,6 @@ export const masters = {
   title: 'Master',
   caption: 'Master Q0001',
   type: 'group',
-  pageCode: 'M0000',
   icon: icons.IconServerCog,
   children: [
     {
@@ -120,7 +119,6 @@ export const masters = {
           id: 'master-hr-ats',
           title: 'ATS',
           type: 'collapse',
-          pageCode: 'M2100',
           icon: icons.IconSearch,
           children: [
             {
@@ -156,6 +154,14 @@ export const masters = {
               pageCode: 'M2140'
             },
             {
+              id: 'master-hr-ats-induction-round',
+              title: 'Induction Round Master',
+              type: 'item',
+              url: '/master/hr/ats/induction-round-master',
+              icon: icons.IconRotate2,
+              pageCode: 'M2145'
+            },
+            {
               id: 'master-hr-ats-induction-assignment',
               title: 'Induction Pending',
               type: 'item',
@@ -185,7 +191,6 @@ export const masters = {
           id: 'master-hr-employee',
           title: 'Employee',
           type: 'collapse',
-          pageCode: 'M2200',
           icon: icons.IconUsers,
           children: [
             {
@@ -250,7 +255,6 @@ export const masters = {
           id: 'master-hr-payroll',
           title: 'Payroll',
           type: 'collapse',
-          pageCode: 'M2300',
           icon: icons.IconCoins,
           children: [
             {
@@ -325,14 +329,12 @@ export const masters = {
       id: 'master-qms',
       title: 'QMS',
       type: 'collapse',
-      pageCode: 'M1000',
       icon: icons.IconListCheck,
       children: [
         {
           id: 'master-qms-checklist-parent',
           title: 'Check List',
           type: 'collapse',
-          pageCode: 'M1200',
           icon: icons.IconClipboardCheck,
           children: [
             {
@@ -349,17 +351,8 @@ export const masters = {
           id: 'master-qms-audit',
           title: 'Audit',
           type: 'collapse',
-          pageCode: 'M1100',
           icon: icons.IconFileCheck,
           children: [
-            {
-              id: 'master-qms-audit-area',
-              title: 'Audit Area / Zone',
-              type: 'item',
-              url: '/master/qms/audit/area',
-              icon: icons.IconMapPin,
-              pageCode: 'M1120'
-            },
             {
               id: 'master-qms-audit-type',
               title: 'Audit Type',
@@ -367,6 +360,14 @@ export const masters = {
               url: '/master/qms/audit/type',
               icon: icons.IconNotes,
               pageCode: 'M1110'
+            },
+            {
+              id: 'master-qms-audit-area',
+              title: 'Audit Area / Zone',
+              type: 'item',
+              url: '/master/qms/audit/area',
+              icon: icons.IconMapPin,
+              pageCode: 'M1120'
             },
             {
               id: 'master-qms-audit-criteria',
@@ -382,7 +383,6 @@ export const masters = {
           id: 'master-qms-meeting',
           title: 'Meeting',
           type: 'collapse',
-          pageCode: 'M1300',
           icon: icons.IconMessage2,
           children: [
             {
@@ -464,14 +464,6 @@ export const masters = {
               url: '/master/npd/product-capacity',
               icon: icons.IconAward,
               pageCode: 'M3170'
-            },
-            {
-              id: 'master-npd-product-process',
-              title: 'Process Master',
-              type: 'item',
-              url: '/master/npd/product-process',
-              icon: icons.IconSitemap,
-              pageCode: 'M3180'
             }
           ]
         },
@@ -482,6 +474,13 @@ export const masters = {
           url: '/master/npd/wind-farm',
           icon: icons.IconRocket,
           pageCode: 'M3210'
+        },
+        {
+          id: 'master-npd-uom',
+          title: 'UOM',
+          type: 'item',
+          url: '/master/npd/uom',
+          icon: icons.IconRuler2
         }
       ]
     },
@@ -647,7 +646,7 @@ export const hra = {
       title: 'Application Tracking System',
       type: 'item',
       url: '/hra/ats',
-      icon: icons.IconSearch,
+      icon: icons.IconUserPlus,
       pageCode: 'HA1110'
     }
   ]
@@ -766,14 +765,12 @@ export const qms = {
   title: 'Quality Management Systems',
   caption: 'Quality Management Systems QM0000',
   type: 'group',
-  pageCode: 'QM0000',
   icon: icons.IconListCheck,
   children: [
     {
       id: 'qms-checklist',
       title: 'Checklist',
       type: 'collapse',
-      pageCode: 'QM1100',
       icon: icons.IconClipboardCheck,
       children: [
         {
@@ -814,7 +811,6 @@ export const qms = {
       id: 'qms-audit',
       title: 'Audit',
       type: 'collapse',
-      pageCode: 'QM1200',
       icon: icons.IconFileCheck,
       children: [
         {
@@ -936,7 +932,7 @@ export const erpSupport = {
   children: [
     {
       id: 'support-ticket-management',
-      title: 'Ticket Management',
+      title: 'Task Management',
       type: 'collapse',
       icon: icons.IconHelp,
       children: [

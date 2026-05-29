@@ -12,14 +12,19 @@ END
 GO
 
 -- Seed hrm_grade_detail if empty
-IF NOT EXISTS (SELECT * FROM hrm_grade_detail)
+IF OBJECT_ID('hrm_grade_detail', 'U') IS NOT NULL
 BEGIN
-    INSERT INTO hrm_grade_detail (grade_code, seq_no, grade_name, status, created_by, created_at)
-    VALUES
-    ('G1', '1', 'Grade A', 'Active', 'SYSTEM', GETDATE()),
-    ('G2', '2', 'Grade B', 'Active', 'SYSTEM', GETDATE()),
-    ('G3', '3', 'Grade C', 'Active', 'SYSTEM', GETDATE()),
-    ('G4', '4', 'Grade D', 'Active', 'SYSTEM', GETDATE());
+    EXEC('
+    IF NOT EXISTS (SELECT * FROM hrm_grade_detail)
+    BEGIN
+        INSERT INTO hrm_grade_detail (grade_code, seq_no, grade_name, status, created_by, created_at)
+        VALUES
+        (''G1'', ''1'', ''Grade A'', ''Active'', ''SYSTEM'', GETDATE()),
+        (''G2'', ''2'', ''Grade B'', ''Active'', ''SYSTEM'', GETDATE()),
+        (''G3'', ''3'', ''Grade C'', ''Active'', ''SYSTEM'', GETDATE()),
+        (''G4'', ''4'', ''Grade D'', ''Active'', ''SYSTEM'', GETDATE());
+    END
+    ');
 END
 GO
 

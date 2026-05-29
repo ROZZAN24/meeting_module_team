@@ -22,7 +22,7 @@ const VALIDATION_RULES = [
 const INITIAL_STATE = {
   oemId: '',
   modelNo: '',
-  rotorDiameter: 0.0,
+  rotorDiameter: '',
   status: 'ACTIVE'
 };
 
@@ -59,7 +59,7 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
         id: initialData.id,
         oemId: initialData.oem?.id || '',
         modelNo: initialData.modelNo || '',
-        rotorDiameter: initialData.rotorDiameter !== undefined ? initialData.rotorDiameter : 0.0,
+        rotorDiameter: initialData.rotorDiameter !== undefined ? initialData.rotorDiameter : '',
         status: initialData.status || 'ACTIVE',
         createdBy: initialData.createdBy,
         createdAt: initialData.createdAt
@@ -184,6 +184,7 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
             name="rotorDiameter"
             label="Rotor Diameter (in Meter)"
             type="number"
+            placeholder="0"
             value={formData.rotorDiameter}
             onChange={handleChange}
             disabled={isViewOnly}

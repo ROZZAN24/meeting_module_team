@@ -20,6 +20,7 @@ const columns = [
   { id: 'index', label: '#', minWidth: 70 },
   { id: 'itemType', label: 'Item Type', minWidth: 180, bold: true },
   { id: 'subType', label: 'Sub Type', minWidth: 200, bold: true },
+  { id: 'prefixBased', label: 'Prefix Based', minWidth: 130 },
   { id: 'createdBy', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedBy', label: 'UPDATED USER', minWidth: 120 },
@@ -78,7 +79,7 @@ export default function ItemSubtypeMaster() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE',
+        defaultValue: 'All',
         isStarred: true
       }
     ];
@@ -131,7 +132,7 @@ export default function ItemSubtypeMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'ACTIVE';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
 
       // 2. Item Type Filter

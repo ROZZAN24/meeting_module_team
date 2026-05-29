@@ -29,6 +29,34 @@ public class SqlMigrationRunner implements CommandLineRunner {
      * and schema normalization that only matters on existing SQL Server databases.
      */
     private static final Set<String> H2_SKIP_SCRIPTS = new HashSet<>(Arrays.asList(
+        // Company credential sync
+        "20260512_V2.4__Sync_Company_Credentials.sql",
+        // Legacy Sidebar navigation init scripts
+        "20260514_V9.4__Initialize_Sidebar_Navigation_Final.sql",
+        "20260514_V9.5__Grant_Sidebar_Access_To_All.sql",
+        "20260514_V9.6__Hierarchical_Sidebar_Structure.sql",
+        "20260514_V9.7__Hierarchical_Sidebar_Structure.sql",
+        "20260514_V9.8__Restore_Other_Modules.sql",
+        // QMS Model Name and UOM creation (column mismatch with Hibernate)
+        "20260518_V14.6__Create_QMS_Model_Name_And_Uom.sql",
+        // Legacy Sidebar and page registration scripts
+        "20260519_V20.0__Register_Product_Item_Group_Page.sql",
+        "20260519_V21.0__Register_All_Missing_Pages.sql",
+        "20260519_V22.0__Update_Hierarchical_Page_Codes.sql",
+        "20260520_V33.0__Register_Hra_Ats_Page.sql",
+        "20260526_V44.0__Create_Product_Process_Table_And_Page.sql",
+        // Table prefix standardization (SQL Server T-SQL specific)
+        "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
+        // Alter bos_pages table to make page_id an IDENTITY column (SQL Server T-SQL specific)
+        "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
+        // QMS Checklist Closed unified tables & view migrations (type conflicts with Hibernate)
+        "20260527_V50.0__Create_Qms_Closed_Frequency_Tables.sql",
+        "20260527_V51.0__Create_Qms_Closed_View.sql",
+        "20260527_V52.0__Fix_Qms_Closed_Tables_And_View.sql",
+        "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
+        "20260527_V54.0__Consolidate_Qms_Closed_Tables.sql",
+        // User mapping FK constraints (violates integrity checks due to orphan records in H2 seed)
+        "V13.0__Fix_User_Mapping_FK_References.sql",
         // Column renaming (camelCase → snake_case) scripts
         "20260512_V3.5__Standardize_Audit_Schedule_Column_Names.sql",
         "20260512_V3.5.1__Standardize_Audit_Schedule_Column_Names.sql",
@@ -1092,6 +1120,9 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
         // Convert DROP TABLE to DROP TABLE IF EXISTS
         sql = sql.replaceAll("(?is)\\bDROP\\s+TABLE\\s+(?!IF\\s+EXISTS\\b)", "DROP TABLE IF EXISTS ");
+
+        // Convert DROP VIEW to DROP VIEW IF EXISTS
+        sql = sql.replaceAll("(?is)\\bDROP\\s+VIEW\\s+(?!IF\\s+EXISTS\\b)", "DROP VIEW IF EXISTS ");
 
         // Convert DROP CONSTRAINT to DROP CONSTRAINT IF EXISTS
         sql = sql.replaceAll("(?is)\\bDROP\\s+CONSTRAINT\\s+(?!IF\\s+EXISTS\\b)", "DROP CONSTRAINT IF EXISTS ");

@@ -42,11 +42,120 @@ public class InductionTrainingService {
     }
 
     /**
+     * Helper method to get matching criteria from InductionMaster based on assignment details.
+     */
+    private List<InductionMaster> getMatchingCriteria(InductionAssignment assignment) {
+        String round = assignment.getInductionRound();
+        List<InductionMaster> criteria = masterRepo.findByRoundAndActive(round);
+
+        String empDept = assignment.getDepartment();
+        String empDeptId = null;
+        String empDeptCode = null;
+        if (empDept != null && !empDept.trim().isEmpty()) {
+            Optional<Department> deptOpt = departmentRepo.findAll().stream()
+                    .filter(d -> d.getDepartmentName() != null && 
+                                (d.getDepartmentName().equalsIgnoreCase(empDept) || 
+                                 (d.getDepartmentNo() != null && d.getDepartmentNo().equalsIgnoreCase(empDept))))
+                    .findFirst();
+            if (deptOpt.isPresent()) {
+                empDeptId = String.valueOf(deptOpt.get().getId());
+                empDeptCode = deptOpt.get().getDepartmentNo();
+            }
+        }
+
+        String screeningLevel = assignment.getScreeningLevel();
+        String empLevelCode = null;
+        if (screeningLevel != null) {
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\\d+").matcher(screeningLevel);
+            if (matcher.find()) {
+                empLevelCode = "L" + matcher.group();
+            }
+        }
+
+        final String finalDeptId = empDeptId;
+        final String finalDeptCode = empDeptCode;
+        final String finalLevelCode = empLevelCode;
+
+        return criteria.stream()
+                .filter(c -> {
+                    // Department match
+                    if (c.getDepartmentCodes() != null && !c.getDepartmentCodes().trim().isEmpty() && empDept != null && !empDept.isEmpty()) {
+                        List<String> codes = Arrays.stream(c.getDepartmentCodes().split(","))
+                                .map(String::trim)
+                                .map(String::toUpperCase)
+                                .collect(Collectors.toList());
+                        boolean deptMatch = codes.contains("ALL") || 
+                                            (finalDeptId != null && codes.contains(finalDeptId)) ||
+                                            (finalDeptCode != null && codes.contains(finalDeptCode.toUpperCase())) ||
+                                            codes.contains(empDept.trim().toUpperCase());
+                        if (!deptMatch) {
+                            return false;
+                        }
+                    }
+                    // Level match
+                    if (c.getLevelCodes() != null && !c.getLevelCodes().trim().isEmpty()) {
+                        List<String> codes = Arrays.stream(c.getLevelCodes().split(","))
+                                .map(String::trim)
+                                .map(String::toUpperCase)
+                                .collect(Collectors.toList());
+                        boolean levelMatch = codes.contains("ALL") || 
+                                             (finalLevelCode != null && codes.contains(finalLevelCode.toUpperCase())) ||
+                                             (screeningLevel != null && codes.contains(screeningLevel.trim().toUpperCase()));
+                        if (!levelMatch) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Get training detail items for a specific assignment.
      * Enriches each detail row with the criteria text from InductionMaster.
+     * Automatically synchronizes with the source of truth (InductionMaster criteria).
      */
+    @Transactional
     public List<InductionTrainingDetail> getDetails(Long assignmentId) {
+        InductionAssignment assignment = assignmentRepo.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+
         List<InductionTrainingDetail> details = detailRepo.findByAssignmentId(assignmentId);
+
+        // Synchronize with InductionMaster if training is started or completed
+        if ("TRAINING STARTED".equalsIgnoreCase(assignment.getCurrentStatus()) || "TRAINING GIVEN".equalsIgnoreCase(assignment.getCurrentStatus())) {
+            List<InductionMaster> activeCriteria = getMatchingCriteria(assignment);
+            Set<Long> activeCriteriaIds = activeCriteria.stream().map(InductionMaster::getId).collect(Collectors.toSet());
+            Set<Long> existingMasterIds = details.stream().map(InductionTrainingDetail::getInductionMasterId).collect(Collectors.toSet());
+
+            boolean changed = false;
+
+            // 1. Add new criteria that were added to the master
+            for (InductionMaster master : activeCriteria) {
+                if (!existingMasterIds.contains(master.getId())) {
+                    InductionTrainingDetail detail = new InductionTrainingDetail();
+                    detail.setAssignmentId(assignmentId);
+                    detail.setInductionMasterId(master.getId());
+                    detail.setTrainerStatus("PENDING");
+                    detail.setCreatedBy("SYSTEM");
+                    detail.setCreatedAt(new Date());
+                    detailRepo.save(detail);
+                    changed = true;
+                }
+            }
+
+            // 2. Remove criteria that are no longer active/matching in the master
+            for (InductionTrainingDetail detail : details) {
+                if (!activeCriteriaIds.contains(detail.getInductionMasterId())) {
+                    detailRepo.delete(detail);
+                    changed = true;
+                }
+            }
+
+            if (changed) {
+                details = detailRepo.findByAssignmentId(assignmentId);
+            }
+        }
 
         // Enrich with InductionMaster data (transient fields)
         for (InductionTrainingDetail detail : details) {
@@ -55,6 +164,7 @@ public class InductionTrainingService {
                 detail.setAnswer(master.getAnswer());
                 detail.setInductionRound(master.getInductionRound());
                 detail.setAttachmentRequired(master.getAttachmentRequired());
+                detail.setAttachmentPath(master.getInductionAttachment());
             });
         }
         return details;
@@ -77,83 +187,18 @@ public class InductionTrainingService {
             throw new RuntimeException("Training can only be started from PENDING or RESCHEDULE status. Current: " + assignment.getCurrentStatus());
         }
 
-        // Check if detail rows already exist (re-start/reschedule case)
+        // Clear any existing training detail rows (re-start/reschedule case) to ensure fresh criteria are loaded
         List<InductionTrainingDetail> existing = detailRepo.findByAssignmentId(assignmentId);
         if (!existing.isEmpty()) {
-            // Reset all responses for the new attempt
-            for (InductionTrainingDetail detail : existing) {
-                detail.setTrainerStatus("PENDING");
-                detail.setSkillRating(null);
-                detail.setTrainerComments(null);
-                detail.setTraineeStatus(null);
-                detail.setTraineeComments(null);
-                detail.setUpdatedAt(new Date());
-                detail.setUpdatedBy(currentUser);
-                detailRepo.save(detail);
-            }
-            assignment.setCurrentStatus("TRAINING STARTED");
-            assignment.setTrainingStartedAt(new Date());
-            assignment.setUpdatedBy(currentUser);
-            assignment.setUpdatedAt(new Date());
-            return assignmentRepo.save(assignment);
+            detailRepo.deleteAll(existing);
         }
 
         // Load matching criteria from InductionMaster
-        String round = assignment.getInductionRound();
-        List<InductionMaster> criteria = masterRepo.findByRoundAndActive(round);
-
-        // Filter by department and level if the employee has those set
-        String empDept = assignment.getDepartment();
-        String deptIdStr = null;
-        if (empDept != null && !empDept.trim().isEmpty()) {
-            Optional<Department> deptOpt = departmentRepo.findAll().stream()
-                    .filter(d -> d.getDepartmentName() != null && (d.getDepartmentName().equalsIgnoreCase(empDept) || d.getDepartmentNo().equalsIgnoreCase(empDept)))
-                    .findFirst();
-            if (deptOpt.isPresent()) {
-                deptIdStr = String.valueOf(deptOpt.get().getId());
-            }
-        }
-
-        final String finalDeptIdStr = deptIdStr;
-        criteria = criteria.stream()
-                .filter(c -> {
-                    // Department match: criteria departmentCodes contains the employee's department
-                    if (c.getDepartmentCodes() != null && empDept != null && !empDept.isEmpty()) {
-                        // departmentCodes is comma-separated
-                        List<String> codes = Arrays.stream(c.getDepartmentCodes().split(","))
-                                .map(String::trim)
-                                .collect(Collectors.toList());
-                        return codes.contains(empDept) || 
-                               (finalDeptIdStr != null && codes.contains(finalDeptIdStr)) || 
-                               c.getDepartmentCodes().equalsIgnoreCase("ALL");
-                    }
-                    return true; // If no department filter, include all
-                })
-                .collect(Collectors.toList());
+        List<InductionMaster> criteria = getMatchingCriteria(assignment);
 
         if (criteria.isEmpty()) {
-            List<InductionMaster> defaults = new ArrayList<>();
-            if ("HR".equalsIgnoreCase(round)) {
-                defaults.add(createDefaultMaster("Company Profile & Orientation", "Understand company culture, policy, and business vision.", round, currentUser));
-                defaults.add(createDefaultMaster("HR Policies & Code of Conduct", "Familiarity with leaves, working hours, safety, and code of conduct.", round, currentUser));
-                defaults.add(createDefaultMaster("Salary & Benefits Orientation", "Understanding payroll, insurance, benefits, and incentives.", round, currentUser));
-            } else if ("QMS".equalsIgnoreCase(round)) {
-                defaults.add(createDefaultMaster("Quality Management System Overview", "Understanding basic QMS ISO standards and process compliance.", round, currentUser));
-                defaults.add(createDefaultMaster("Standard Operating Procedures (SOP)", "Understanding operational SOPs and documentation procedures.", round, currentUser));
-                defaults.add(createDefaultMaster("Audits & Compliance Reporting", "Understanding internal audit workflows and NCR handling.", round, currentUser));
-            } else if ("DEPARTMENT".equalsIgnoreCase(round)) {
-                defaults.add(createDefaultMaster("Role & Responsibility Mapping", "Clarity on daily job duties and ownership.", round, currentUser));
-                defaults.add(createDefaultMaster("Workstation & Tools Setup", "Setting up logins, credentials, and physical tooling/software.", round, currentUser));
-                defaults.add(createDefaultMaster("Departmental Processes & Interfaces", "Understanding workflow inputs, outputs, and team interfaces.", round, currentUser));
-            } else {
-                defaults.add(createDefaultMaster("Management Structure & Reporting", "Understanding vertical reporting lines and leadership strategy.", round, currentUser));
-                defaults.add(createDefaultMaster("Strategic Goals & KPIs", "Alignment with annual key performance indicators and goals.", round, currentUser));
-            }
-            
-            for (InductionMaster m : defaults) {
-                masterRepo.save(m);
-                criteria.add(m);
-            }
+            throw new RuntimeException("No active induction criteria configured in the master for round: " + assignment.getInductionRound() +
+                    ", department: " + assignment.getDepartment() + ", level: " + assignment.getScreeningLevel() + ". Please define criteria first.");
         }
 
         // Create detail rows
@@ -162,6 +207,7 @@ public class InductionTrainingService {
             detail.setAssignmentId(assignmentId);
             detail.setInductionMasterId(master.getId());
             detail.setTrainerStatus("PENDING");
+            detail.setAttachmentPath(master.getInductionAttachment());
             detail.setCreatedBy(currentUser);
             detail.setCreatedAt(new Date());
             detailRepo.save(detail);
@@ -191,7 +237,9 @@ public class InductionTrainingService {
             existing.setTrainerStatus(update.getTrainerStatus());
             existing.setTrainerComments(update.getTrainerComments());
             existing.setSkillRating(update.getSkillRating());
-            existing.setAttachmentPath(update.getAttachmentPath());
+            masterRepo.findById(existing.getInductionMasterId()).ifPresent(master -> {
+                existing.setAttachmentPath(master.getInductionAttachment());
+            });
             existing.setUpdatedBy(currentUser);
             existing.setUpdatedAt(new Date());
             detailRepo.save(existing);

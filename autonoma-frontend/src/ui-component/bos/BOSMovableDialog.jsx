@@ -209,7 +209,7 @@ export default function BOSMovableDialog({
         sx: {
           width: size.width ? `${size.width}px` : undefined,
           height: isCollapsed ? 'auto' : (size.height ? `${size.height}px` : undefined),
-          maxHeight: isCollapsed ? 'auto' : 'none',
+          maxHeight: isCollapsed ? 'auto' : '90vh',
           maxWidth: 'none',
           display: 'flex',
           flexDirection: 'column',
@@ -303,10 +303,9 @@ export default function BOSMovableDialog({
           sx={{
             p: 2.5,
             flexGrow: 1,
+            minHeight: 0,
             overflowY: 'auto',
             overflowX: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
             bgcolor: 'background.paper',
           }}
         >

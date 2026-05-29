@@ -51,10 +51,10 @@ public class InductionAssignment extends BaseAuditEntity {
     @Column(name = "current_status")
     private String currentStatus; // PENDING, RESCHEDULE, TRAINING GIVEN, COMPLETED
 
-    @Column(name = "induction_status")
+    @Column(name = "induction_status", length = 20)
     private String inductionStatus; // ACTIVE, IN ACTIVE
 
-    @Column(name = "remarks", length = 1000)
+    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "trainer_emp_code", length = 50)

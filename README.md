@@ -46,4 +46,3 @@ For comprehensive system documentation, architecture guidelines, coding conventi
 ## 📂 System Core Modules
 *   `autonoma-backend/`: REST API controllers, repositories, JPA models, security configs, and background services.
 *   `autonoma-frontend/`: User interface views, REDUX stores, routing paths, and reusable BOS ecosystem components.
-

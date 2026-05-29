@@ -40,6 +40,9 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeMasterRepository employeeMasterRepository;
+
     @Override
     public void run(String... args) throws Exception {
         try {
@@ -133,7 +136,6 @@ public class DataInitializer implements CommandLineRunner {
         if (existingAdmin.isEmpty()) {
             admin = new UserCredential();
             admin.setUserId("Admin");
-            admin.setEmpId(1L);
             admin.setCreatedBy("SYSTEM");
             admin.setCreatedDate(new Date());
             System.out.println("Creating new admin user...");
@@ -141,6 +143,26 @@ public class DataInitializer implements CommandLineRunner {
             admin = existingAdmin.get();
             System.out.println("Updating existing admin user...");
         }
+
+        // Set or update a dedicated Administrator employee record to completely separate it from other users
+        com.autonoma.erp.model.EmployeeMaster adminEmp = null;
+        java.util.List<com.autonoma.erp.model.EmployeeMaster> emps = employeeMasterRepository.findAll();
+        for (com.autonoma.erp.model.EmployeeMaster e : emps) {
+            if ("ADMIN_EMP".equals(e.getEmpCode())) {
+                adminEmp = e;
+                break;
+            }
+        }
+        if (adminEmp == null) {
+            adminEmp = new com.autonoma.erp.model.EmployeeMaster();
+            adminEmp.setEmpCode("ADMIN_EMP");
+            adminEmp.setEmployeeName("Administrator");
+            adminEmp.setFirstName("Admin");
+            adminEmp.setLastName("istrator");
+            adminEmp.setStatus("Active");
+            adminEmp = employeeMasterRepository.save(adminEmp);
+        }
+        admin.setEmpId(adminEmp.getId());
 
         // Use the new reversible encoder
         admin.setPassword(passwordEncoder.encode("admin123"));
