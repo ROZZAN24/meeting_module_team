@@ -45,6 +45,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260519_V22.0__Update_Hierarchical_Page_Codes.sql",
         "20260520_V33.0__Register_Hra_Ats_Page.sql",
         "20260526_V44.0__Create_Product_Process_Table_And_Page.sql",
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        "20260526_V38.0__Create_NPD_Process.sql",
+        "20260525_V15.1__Fix_Induction_Training_Detail_Columns.sql",
+        "20260525_V15.2__Fix_Training_Detail_Columns_v2.sql",
         // Table prefix standardization (SQL Server T-SQL specific)
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         // Alter bos_pages table to make page_id an IDENTITY column (SQL Server T-SQL specific)
