@@ -176,9 +176,7 @@ const InductionAssignment = () => {
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
 
-  if (perms.loading) {
-    return null;
-  }
+
 
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
@@ -734,6 +732,10 @@ const InductionAssignment = () => {
       updatedDate: r.updatedDate || r.updatedAt ? new Date(r.updatedDate || r.updatedAt).toLocaleString('en-GB') : '-'
     }));
   }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard

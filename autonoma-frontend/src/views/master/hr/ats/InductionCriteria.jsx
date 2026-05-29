@@ -108,9 +108,7 @@ export default function InductionCriteria() {
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
 
-  if (perms.loading) {
-    return null;
-  }
+
 
   useEffect(() => {
     const config = [
@@ -364,6 +362,10 @@ export default function InductionCriteria() {
       </Button>
     </Stack>
   );
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard

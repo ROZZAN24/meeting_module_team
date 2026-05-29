@@ -83,9 +83,6 @@ export default function InductionTrainee() {
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINEE);
 
-  if (perms.loading) {
-    return null;
-  }
   const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
@@ -206,6 +203,10 @@ export default function InductionTrainee() {
       inductionDate: r.inductionDate ? new Date(r.inductionDate).toLocaleDateString('en-GB') : '-'
     }));
   }, [rows, globalQuery]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard

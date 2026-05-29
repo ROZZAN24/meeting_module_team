@@ -149,9 +149,7 @@ export default function InductionTraining() {
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINING);
 
-  if (perms.loading) {
-    return null;
-  }
+
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
@@ -568,6 +566,10 @@ export default function InductionTraining() {
       };
     });
   }, [rows, globalFilters.status, globalQuery]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard
