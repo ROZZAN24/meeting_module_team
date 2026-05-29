@@ -123,7 +123,7 @@ public class MeetingSchedulerService {
      *    - Status is OPEN
      *    - Meeting date is before today (or today but past end time)
      */
-    private void autoCloseExpiredSchedules() {
+    public void autoCloseExpiredSchedules() {
         List<QmsMeetingSchedule> allSchedules = scheduleRepository.findAll();
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();

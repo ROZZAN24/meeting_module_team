@@ -20,6 +20,46 @@ const INITIAL_FORM = {
   attachmentUrl: ''
 };
 
+const compactInputSx = {
+  '& .MuiInputBase-root': {
+    height: 36,
+    fontSize: '0.8125rem',
+    borderRadius: '8px'
+  },
+  '& .MuiInputLabel-root': {
+    fontSize: '0.8125rem',
+    top: -2
+  }
+};
+
+const compactMultilineSx = {
+  '& .MuiInputBase-root': {
+    fontSize: '0.8125rem',
+    borderRadius: '8px',
+    py: '6px'
+  },
+  '& .MuiInputLabel-root': {
+    fontSize: '0.8125rem'
+  }
+};
+
+const compactAutocompleteSx = {
+  '& .MuiInputBase-root': {
+    minHeight: 36,
+    py: '1px !important',
+    fontSize: '0.8125rem',
+    borderRadius: '8px'
+  },
+  '& .MuiInputLabel-root': {
+    fontSize: '0.8125rem',
+    top: -2
+  },
+  '& .MuiAutocomplete-tag': {
+    margin: '1px',
+    height: 20
+  }
+};
+
 const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = [] }) => {
   const { employees = [], users = [] } = useLookups(['EMPLOYEES', 'USERS']);
   const { errors, validate, clearErrors, handleInputChange, setErrors } = useBOSValidation();
@@ -139,6 +179,24 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
       onSave={handleSave}
       title="Meeting Master"
       maxWidth="md"
+      contentSx={{ 
+        px: 2.5, 
+        py: '8px !important', 
+        pt: '8px !important',
+        pb: '8px !important',
+        overflowY: 'hidden',
+        '& > div': { gap: '12px !important' }
+      }}
+      sx={{
+        '& .MuiPaper-root': {
+          '& > div[class*="MuiBox-root"]': {
+            '&:last-of-type': {
+              py: '8px !important',
+              px: '20px !important'
+            }
+          }
+        }
+      }}
     >
       <BOSTextField
         name="meetingName"
@@ -148,8 +206,9 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         onBlur={handleBlur}
         error={!!errors.meetingName}
         helperText={errors.meetingName}
-        sx={{ '& input': { textTransform: 'uppercase' } }}
+        sx={{ ...compactInputSx, '& input': { textTransform: 'uppercase' } }}
         required
+        className="h-9"
       />
       <BOSTextField
         name="meetingDescription"
@@ -159,9 +218,9 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         onBlur={handleBlur}
         error={!!errors.meetingDescription}
         helperText={errors.meetingDescription}
-        sx={{ '& textarea': { textTransform: 'uppercase' } }}
+        sx={{ ...compactMultilineSx, '& textarea': { textTransform: 'uppercase' } }}
         multiline
-        rows={3}
+        rows={2}
         required
       />
       <BOSTextField
@@ -172,8 +231,9 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         onBlur={handleBlur}
         error={!!errors.meetingPrefix}
         helperText={errors.meetingPrefix}
-        sx={{ '& input': { textTransform: 'uppercase' } }}
+        sx={{ ...compactInputSx, '& input': { textTransform: 'uppercase' } }}
         required
+        className="h-9"
       />
       <BOSTextField
         name="meetingAgenda"
@@ -183,18 +243,20 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         onBlur={handleBlur}
         error={!!errors.meetingAgenda}
         helperText={errors.meetingAgenda}
-        sx={{ '& textarea': { textTransform: 'uppercase' } }}
+        sx={{ ...compactMultilineSx, '& textarea': { textTransform: 'uppercase' } }}
         multiline
-        rows={4}
+        rows={2}
         required
       />
       
       <Autocomplete
         multiple
         disableCloseOnSelect
+        limitTags={3}
         options={employeeOptions}
         getOptionLabel={(option) => option.empCode === 'ALL' ? option.employeeName : `${option.employeeName} (${option.empCode})`}
         value={filteredEmployees.filter(emp => form.employeeName?.some(val => val.split(' - ')[0] === emp.empCode))}
+        sx={compactAutocompleteSx}
         onChange={(e, newValue, reason, details) => {
           if (details?.option?.empCode === 'ALL') {
             if (isAllSelected) {
@@ -212,15 +274,15 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
           if (option.empCode === 'ALL') {
             return (
               <MenuItem {...props}>
-                <Checkbox checked={isAllSelected} />
-                <Typography fontWeight="bold">Select All</Typography>
+                <Checkbox checked={isAllSelected} size="small" />
+                <Typography fontWeight="bold" variant="body2">Select All</Typography>
               </MenuItem>
             );
           }
           return (
             <MenuItem {...props}>
-              <Checkbox checked={selected} />
-              {`${option.employeeName} (${option.empCode})`}
+              <Checkbox checked={selected} size="small" />
+              <Typography variant="body2">{`${option.employeeName} (${option.empCode})`}</Typography>
             </MenuItem>
           );
         }}
@@ -234,6 +296,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
                 color="primary"
                 variant="filled"
                 size="small"
+                sx={{ height: 20, fontSize: '0.75rem' }}
                 {...tagProps}
               />
             );
@@ -256,52 +319,70 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         label="Status"
         value={form.status || 'ACTIVE'}
         onChange={h}
+        disabled={!item}
+        sx={compactInputSx}
+        className="h-9"
       >
         <MenuItem value="ACTIVE">ACTIVE</MenuItem>
         <MenuItem value="INACTIVE">INACTIVE</MenuItem>
       </BOSTextField>
 
-      <Box sx={{ mt: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={2} justifyContent="space-between">
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <IconPaperclip size={24} color="#888" />
-            <Box>
-              <Typography variant="subtitle2">Attachment</Typography>
-              <Typography variant="caption" color="textSecondary">Max 5MB (PDF, DOC, DOCX, XLS, XLSX, JPG, PNG)</Typography>
-            </Box>
-          </Stack>
-          {!form.attachmentName ? (
-            <Button variant="outlined" component="label" startIcon={<IconUpload size={18} />}>
-              Attach File
-              <input type="file" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onChange={handleFileChange} />
-            </Button>
-          ) : (
-            <Chip 
-              label={form.attachmentName} 
-              onDelete={removeFile} 
-              color="primary" 
-              variant="outlined" 
-            />
-          )}
+      <Box 
+        className="flex items-center justify-between p-2 border border-dashed border-divider rounded bg-action-hover h-11"
+        sx={{ 
+          p: 1.25, 
+          border: '1px dashed', 
+          borderColor: 'divider', 
+          borderRadius: 1,
+          bgcolor: 'action.hover',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          height: 44,
+          boxSizing: 'border-box'
+        }}
+      >
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <IconPaperclip size={18} color="#666" />
+          <Typography variant="caption" fontWeight="medium" color="text.secondary" className="text-xs">
+            Attachment <span style={{ opacity: 0.7 }}>(Max 5MB PDF, DOC, XLS, IMG)</span>
+          </Typography>
         </Stack>
+        
+        {!form.attachmentName ? (
+          <Button 
+            variant="outlined" 
+            component="label" 
+            size="small" 
+            startIcon={<IconUpload size={14} />}
+            sx={{ 
+              py: 0.25, 
+              px: 1.5, 
+              fontSize: '0.75rem',
+              height: 28,
+              textTransform: 'none'
+            }}
+            className="h-7 text-xs py-1 px-3"
+          >
+            Upload File
+            <input type="file" hidden accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" onChange={handleFileChange} />
+          </Button>
+        ) : (
+          <Chip 
+            label={form.attachmentName} 
+            onDelete={removeFile} 
+            color="primary" 
+            variant="outlined" 
+            size="small"
+            sx={{ 
+              height: 24, 
+              fontSize: '0.75rem',
+              maxWidth: 220 
+            }}
+            className="h-6 text-xs"
+          />
+        )}
       </Box>
-
-      {item && (
-        <>
-          <BOSTextField
-            name="createdUser"
-            label="Created User"
-            value={form.createdUser || form.createdBy || '-'}
-            disabled
-          />
-          <BOSTextField
-            name="updatedUser"
-            label="Updated User"
-            value={form.updatedUser || form.updatedBy || '-'}
-            disabled
-          />
-        </>
-      )}
     </BOSFormDialog>
   );
 };
@@ -310,7 +391,8 @@ AddMeetingMasterDialog.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
-  item: PropTypes.object
+  item: PropTypes.object,
+  existingData: PropTypes.array
 };
 
 export default AddMeetingMasterDialog;

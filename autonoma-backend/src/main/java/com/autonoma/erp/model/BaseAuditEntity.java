@@ -53,13 +53,13 @@ public abstract class BaseAuditEntity {
             this.createdAt = new Date();
         }
         if (this.createdUser == null) {
-            this.createdUser = SecurityUtils.getCurrentUserId();
+            this.createdUser = SecurityUtils.getCurrentUserDisplayName();
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new Date();
-        this.updatedUser = SecurityUtils.getCurrentUserId();
+        this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
     }
 }

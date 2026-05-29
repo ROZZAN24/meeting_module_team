@@ -214,7 +214,7 @@ function RibbonChildItem({ item, onClose, isGroup, colors: customColors, onClick
     <Box onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave} sx={{ height: '100%' }}>
       {item.pageCode ? (
         <Tooltip 
-          title={`Code: ${item.pageCode}`} 
+          title={item.pageCode} 
           placement="top" 
           disableInteractive
           arrow

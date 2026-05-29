@@ -1412,8 +1412,15 @@ export default function AddMeetingMinutes() {
                   form: { ...prev.form, discussedPoint: e.target.value.toUpperCase() }
                 }))
               }
-              placeholder="Type discussed points here..."
+              placeholder="Minutes of Meeting (MOM) should be clear, concise, and context-rich so that anyone (even someone new or reviewing it after a long time) can understand the key decisions, discussions, and next steps without needing extra explanation."
               required
+              sx={{
+                '& .MuiInputBase-input::placeholder': {
+                  color: 'text.secondary',
+                  opacity: 0.7,
+                  whiteSpace: 'normal'
+                }
+              }}
               helperText={
                 <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
                   <Typography
@@ -1426,7 +1433,7 @@ export default function AddMeetingMinutes() {
                     sx={{ fontWeight: 'bold' }}
                   >
                     {detailDialog.form.discussedPoint.length < (detailDialog.form.attachmentRequired === 'YES' ? 50 : 150)
-                      ? `⚠️ Below minimum characters required (${detailDialog.form.discussedPoint.length} / ${
+                      ? `⚠️ Minimum characters required (${detailDialog.form.discussedPoint.length} / ${
                           detailDialog.form.attachmentRequired === 'YES' ? 50 : 150
                         })`
                       : `✅ Valid length (${detailDialog.form.discussedPoint.length} characters)`}
@@ -1438,172 +1445,164 @@ export default function AddMeetingMinutes() {
               }
             />
 
-            <Grid container spacing={2.5}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(4, minmax(0, 1fr))' },
+                gap: 2.5,
+                alignItems: 'start',
+                width: '100%'
+              }}
+            >
               {/* Type */}
-              <Grid item xs={12} sm={3}>
-                <BOSTextField
-                  select
-                  fullWidth
-                  label="Type"
-                  value={detailDialog.form.type}
-                  onChange={(e) =>
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: { ...prev.form, type: e.target.value }
-                    }))
-                  }
-                >
-                  <MenuItem value="RM">RM</MenuItem>
-                  <MenuItem value="PRODUCT">PRODUCT</MenuItem>
-                </BOSTextField>
-              </Grid>
+              <BOSTextField
+                select
+                fullWidth
+                label="Type"
+                value={detailDialog.form.type}
+                onChange={(e) =>
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: { ...prev.form, type: e.target.value }
+                  }))
+                }
+              >
+                <MenuItem value="RM">RM</MenuItem>
+                <MenuItem value="PRODUCT">PRODUCT</MenuItem>
+              </BOSTextField>
 
               {/* Material List */}
-              <Grid item xs={12} sm={3}>
-                <BOSTextField
-                  fullWidth
-                  label="Material List"
-                  value={detailDialog.form.materialList}
-                  placeholder="Click to select material..."
-                  onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: 'dialog', type: detailDialog.form.type || 'RM' })}
-                  InputProps={{
-                    readOnly: true,
-                    sx: { cursor: perms.write ? 'pointer' : 'default' }
-                  }}
-                />
-              </Grid>
+              <BOSTextField
+                fullWidth
+                label="Material List"
+                value={detailDialog.form.materialList}
+                placeholder="Click to select material..."
+                onClick={() => perms.write && setMaterialDialog({ open: true, rowIdx: 'dialog', type: detailDialog.form.type || 'RM' })}
+                InputProps={{
+                  readOnly: true,
+                  sx: { cursor: perms.write ? 'pointer' : 'default' }
+                }}
+              />
 
               {/* Process */}
-              <Grid item xs={12} sm={3}>
-                <BOSTextField
-                  select
-                  fullWidth
-                  label="Process"
-                  value={detailDialog.form.processType}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: {
-                        ...prev.form,
-                        processType: val,
-                        status: val === 'INFO' ? 'CLOSED' : 'OPEN'
-                      }
-                    }));
-                  }}
-                >
-                  <MenuItem value="INFO">INFO</MenuItem>
-                  <MenuItem value="ACTION">ACTION</MenuItem>
-                </BOSTextField>
-              </Grid>
+              <BOSTextField
+                select
+                fullWidth
+                label="Process"
+                value={detailDialog.form.processType}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: {
+                      ...prev.form,
+                      processType: val,
+                      status: val === 'INFO' ? 'CLOSED' : 'OPEN'
+                    }
+                  }));
+                }}
+              >
+                <MenuItem value="INFO">INFO</MenuItem>
+                <MenuItem value="ACTION">ACTION</MenuItem>
+              </BOSTextField>
 
               {/* Attachment Required */}
-              <Grid item xs={12} sm={3}>
-                <BOSTextField
-                  select
-                  fullWidth
-                  label="Attachment Req"
-                  value={detailDialog.form.attachmentRequired}
-                  onChange={(e) =>
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: { ...prev.form, attachmentRequired: e.target.value }
-                    }))
-                  }
-                  disabled={detailDialog.form.processType === 'INFO'}
-                >
-                  <MenuItem value="YES">YES</MenuItem>
-                  <MenuItem value="NO">NO</MenuItem>
-                </BOSTextField>
-              </Grid>
+              <BOSTextField
+                select
+                fullWidth
+                label="Attachment Req"
+                value={detailDialog.form.attachmentRequired}
+                onChange={(e) =>
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: { ...prev.form, attachmentRequired: e.target.value }
+                  }))
+                }
+                disabled={detailDialog.form.processType === 'INFO'}
+              >
+                <MenuItem value="YES">YES</MenuItem>
+                <MenuItem value="NO">NO</MenuItem>
+              </BOSTextField>
 
               {/* Assigned To */}
-              <Grid item xs={12} sm={3}>
-                <BOSAutocomplete
-                  options={meetingUsers}
-                  getOptionLabel={(option) => option.employeeName || ''}
-                  value={detailDialog.form.assignedTo}
-                  onChange={(val) =>
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: { ...prev.form, assignedTo: val }
-                    }))
-                  }
-                  disabled={detailDialog.form.processType === 'INFO'}
-                  label="Assigned To"
-                  placeholder={detailDialog.form.processType === 'INFO' ? 'N/A' : 'Select Assignee'}
-                />
-              </Grid>
+              <BOSAutocomplete
+                options={meetingUsers}
+                getOptionLabel={(option) => option.employeeName || ''}
+                value={detailDialog.form.assignedTo}
+                onChange={(val) =>
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: { ...prev.form, assignedTo: val }
+                  }))
+                }
+                disabled={detailDialog.form.processType === 'INFO'}
+                label="Assigned To"
+                placeholder={detailDialog.form.processType === 'INFO' ? 'N/A' : 'Select Assignee'}
+              />
 
               {/* Assigned By */}
-              <Grid item xs={12} sm={3}>
-                <BOSAutocomplete
-                  options={meetingUsers}
-                  getOptionLabel={(option) => option.employeeName || ''}
-                  value={detailDialog.form.assignedBy}
-                  onChange={(val) =>
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: { ...prev.form, assignedBy: val }
-                    }))
-                  }
-                  disabled={detailDialog.form.processType === 'INFO'}
-                  label="Assigned By"
-                  placeholder={detailDialog.form.processType === 'INFO' ? 'N/A' : 'Select Assignor'}
-                />
-              </Grid>
+              <BOSAutocomplete
+                options={meetingUsers}
+                getOptionLabel={(option) => option.employeeName || ''}
+                value={detailDialog.form.assignedBy}
+                onChange={(val) =>
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: { ...prev.form, assignedBy: val }
+                  }))
+                }
+                disabled={detailDialog.form.processType === 'INFO'}
+                label="Assigned By"
+                placeholder={detailDialog.form.processType === 'INFO' ? 'N/A' : 'Select Assignor'}
+              />
 
               {/* Target Date */}
-              <Grid item xs={12} sm={3}>
-                <BOSTextField
-                  type="date"
-                  fullWidth
-                  label="Target Date"
-                  value={detailDialog.form.targetDate}
-                  onChange={(e) =>
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: { ...prev.form, targetDate: e.target.value }
-                    }))
-                  }
-                  disabled={detailDialog.form.processType === 'INFO'}
-                  inputProps={{ min: TODAY }}
-                  error={isSunday(detailDialog.form.targetDate) || (detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY)}
-                  helperText={
-                    isSunday(detailDialog.form.targetDate)
-                      ? 'Sunday!'
-                      : detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY
-                        ? 'Past Date!'
-                        : ''
-                  }
-                />
-              </Grid>
+              <BOSTextField
+                type="date"
+                fullWidth
+                label="Target Date"
+                value={detailDialog.form.targetDate}
+                onChange={(e) =>
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: { ...prev.form, targetDate: e.target.value }
+                  }))
+                }
+                disabled={detailDialog.form.processType === 'INFO'}
+                inputProps={{ min: TODAY }}
+                error={isSunday(detailDialog.form.targetDate) || (detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY)}
+                helperText={
+                  isSunday(detailDialog.form.targetDate)
+                    ? 'Sunday!'
+                    : detailDialog.form.targetDate && detailDialog.form.targetDate < TODAY
+                      ? 'Past Date!'
+                      : ''
+                }
+              />
 
               {/* Review Date */}
-              <Grid item xs={12} sm={3}>
-                <BOSTextField
-                  type="date"
-                  fullWidth
-                  label="Review Date"
-                  value={detailDialog.form.reviewDate}
-                  onChange={(e) =>
-                    setDetailDialog((prev) => ({
-                      ...prev,
-                      form: { ...prev.form, reviewDate: e.target.value }
-                    }))
-                  }
-                  disabled={detailDialog.form.processType === 'INFO'}
-                  inputProps={{ min: detailDialog.form.targetDate || TODAY }}
-                  error={
-                    (detailDialog.form.reviewDate &&
-                      detailDialog.form.targetDate &&
-                      detailDialog.form.reviewDate < detailDialog.form.targetDate) ||
-                    (detailDialog.form.reviewDate && detailDialog.form.reviewDate < TODAY)
-                  }
-                  helperText={detailDialog.form.reviewDate && detailDialog.form.reviewDate < TODAY ? 'Past Date!' : ''}
-                />
-              </Grid>
-            </Grid>
+              <BOSTextField
+                type="date"
+                fullWidth
+                label="Review Date"
+                value={detailDialog.form.reviewDate}
+                onChange={(e) =>
+                  setDetailDialog((prev) => ({
+                    ...prev,
+                    form: { ...prev.form, reviewDate: e.target.value }
+                  }))
+                }
+                disabled={detailDialog.form.processType === 'INFO'}
+                inputProps={{ min: detailDialog.form.targetDate || TODAY }}
+                error={
+                  (detailDialog.form.reviewDate &&
+                    detailDialog.form.targetDate &&
+                    detailDialog.form.reviewDate < detailDialog.form.targetDate) ||
+                  (detailDialog.form.reviewDate && detailDialog.form.reviewDate < TODAY)
+                }
+                helperText={detailDialog.form.reviewDate && detailDialog.form.reviewDate < TODAY ? 'Past Date!' : ''}
+              />
+            </Box>
           </Stack>
         )}
       </BOSFormDialog>
