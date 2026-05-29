@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -9,17 +8,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
-import Drawer from '@mui/material/Drawer';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
-import Divider from '@mui/material/Divider';
 import Chip from '@mui/material/Chip';
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControl from '@mui/material/FormControl';
-import Collapse from '@mui/material/Collapse';
 import TablePagination from '@mui/material/TablePagination';
 import axios from 'utils/axios';
 
@@ -30,7 +19,7 @@ import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import { BOSExportButton } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 
-import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconBan, IconFileDownload, IconX } from '@tabler/icons-react';
+import { IconCheck, IconBan } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const columns = [
@@ -38,17 +27,6 @@ const columns = [
   'Effective From', 'Days', 'Expire Date', 'Stock Link',
   'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE',
   'Verify Status', 'Verified By', 'Verified Date'
-];
-
-
-
-const DEFAULT_FILTERS = { status: 'Pending for Verify', category: 'All', departments: [], searchBy: 'All', searchByValue: '' };
-
-const SEARCH_BY_OPTIONS = [
-  { key: 'All', label: 'Global Search' },
-  { key: 'checkingPoint', label: 'Checking Point' },
-  { key: 'description', label: 'Descriptions' },
-  { key: 'seqNo', label: 'Seq.No' }
 ];
 
 const tableCols = [
@@ -142,8 +120,6 @@ const getFilterConfig = (departments) => [
       { value: 'seqNo', label: 'Seq.No' }
     ]
   },
-
-  // Remaining table fields can be added by the user using the "Add Filter" option
   { id: 'seqNo', label: 'Sequence No', type: 'text', isStarred: false },
   {
     id: 'frequency', label: 'Frequency', type: 'select', isStarred: false, defaultValue: 'All', options: [
@@ -165,18 +141,6 @@ const getFilterConfig = (departments) => [
     ]
   }
 ];
-
-function FilterSection({ title, open, onToggle, children }) {
-  return (
-    <Box sx={{ mb: 0.5 }}>
-      <Box onClick={onToggle} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', py: 1, px: 2, '&:hover': { bgcolor: 'action.hover' }, borderRadius: 1 }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{title}</Typography>
-        {open ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-      </Box>
-      <Collapse in={open}><Box sx={{ px: 2, pb: 1 }}>{children}</Box></Collapse>
-    </Box>
-  );
-}
 
 function StatusChip({ status }) {
   const map = {
@@ -214,10 +178,6 @@ export default function CheckListVerify() {
   const searchQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters) || {};
   const perms = usePagePermissions(PAGE_CODES.QMS_CHECKLIST_VERIFY);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
-  const [openSections, setOpenSections] = useState({ status:true, category:true, department:false, searchBy:false });
-  const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
 
   const [departmentsList, setDepartmentsList] = useState([]);
 
@@ -244,41 +204,22 @@ export default function CheckListVerify() {
     };
   }, [dispatch, departmentsList]);
 
-  // Sync global search filters with local filters
-  useEffect(() => {
-    if (Object.keys(globalFilters).length > 0) {
-      setFilters((prev) => {
-        const newFilters = { ...prev };
-        let hasChanges = false;
-
-        const filterKeys = [
-          'status', 'category', 'departments', 'searchBy',
-          'seqNo', 'frequency', 'stockLink'
-        ];
-
-        filterKeys.forEach((key) => {
-          if (globalFilters[key] !== undefined && globalFilters[key] !== prev[key]) {
-            newFilters[key] = globalFilters[key];
-            hasChanges = true;
-          }
-        });
-
-        return hasChanges ? newFilters : prev;
-      });
-    }
-  }, [globalFilters]);
-
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
     try {
+      const status = globalFilters.status || 'Pending for Verify';
+      const category = globalFilters.category || 'All';
+      const depts = globalFilters.departments || [];
+      const searchBy = globalFilters.searchBy || 'All';
+
       const params = {
         page,
         size,
-        verifyStatus: filters.status !== 'All' ? filters.status : undefined,
-        category: filters.category !== 'All' ? filters.category : undefined,
-        department: filters.departments.length > 0 ? filters.departments[0] : undefined,
+        verifyStatus: status !== 'All' ? status : undefined,
+        category: category !== 'All' ? category : undefined,
+        department: depts.length > 0 ? depts[0] : undefined,
         searchValue: searchQuery || undefined,
-        searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined
+        searchBy: searchBy !== 'All' ? searchBy : undefined
       };
       const response = await axios.get('/api/qms/checklist', { params });
       setRows(response.data.content);
@@ -288,29 +229,11 @@ export default function CheckListVerify() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery]);
+  }, [page, size, globalFilters, searchQuery]);
 
   useEffect(() => {
     fetchChecklists();
   }, [fetchChecklists]);
-
-  const setFilter = (key, val) => {
-    setFilters((p) => ({ ...p, [key]: val }));
-    setPage(0);
-  };
-
-  const toggleDept = (dept) => {
-    setFilters((p) => {
-      const arr = p.departments;
-      return { ...p, departments: arr.includes(dept) ? arr.filter((d) => d !== dept) : [...arr, dept] };
-    });
-    setPage(0);
-  };
-
-  const resetFilters = () => {
-    setFilters({ ...DEFAULT_FILTERS });
-    setPage(0);
-  };
 
   const handleVerify = async (status, remarks = '') => {
     if (selectedRowId === null || selectedRowId === undefined) return;
@@ -328,8 +251,6 @@ export default function CheckListVerify() {
     }
   };
 
-  const activeCount = (filters.status !== 'All' ? 1 : 0) + (filters.category !== 'All' ? 1 : 0) + filters.departments.length + (filters.searchBy && filters.searchByValue ? 1 : 0);
-
   return (
     <MainCard
       contentSX={{ p: 0 }}
@@ -345,17 +266,6 @@ export default function CheckListVerify() {
         </Box>
       }
     >
-      {activeCount > 0 && (
-        <Box sx={{ display: 'flex', gap: 0.5, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600, mr: 0.5 }}>Filters:</Typography>
-          {filters.status !== 'All' && <Chip label={`Status: ${filters.status}`} size="small" color="primary" onDelete={() => setFilter('status', 'All')} />}
-          {filters.category !== 'All' && <Chip label={`Category: ${filters.category}`} size="small" color="secondary" onDelete={() => setFilter('category', 'All')} />}
-          {filters.departments.map((d) => <Chip key={d} label={d} size="small" color="info" onDelete={() => toggleDept(d)} />)}
-          {filters.searchBy && filters.searchByValue && <Chip label={`${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}: ${filters.searchByValue}`} size="small" color="warning" onDelete={() => { setFilter('searchBy', ''); setFilter('searchByValue', ''); }} />}
-          <Button size="small" color="error" onClick={resetFilters} sx={{ ml: 1 }}>Clear All</Button>
-        </Box>
-      )}
-
       {/* ── Cursor-following 'Double tap' label ── */}
       {showDoubleTap && (
         <Box
@@ -400,7 +310,7 @@ export default function CheckListVerify() {
                   <TableCell colSpan={columns.length} sx={{ p: 0, border: 'none' }}>
                     <Box sx={{ position: 'sticky', left: 0, width: '100%', maxWidth: 'calc(100vw - 280px)', display: 'flex', justifyContent: 'center', py: 6 }}>
                       <Typography variant="body1" color="textSecondary">
-                        {searchQuery || activeCount > 0 ? 'No matching records found' : 'No data available in table'}
+                        {searchQuery || Object.keys(globalFilters).length > 0 ? 'No matching records found' : 'No data available in table'}
                       </Typography>
                     </Box>
                   </TableCell>
@@ -487,48 +397,6 @@ export default function CheckListVerify() {
         />
       </Box>
 
-
-      {/* FILTER DRAWER */}
-      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)} PaperProps={{ sx: { width: 320 } }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>Filters</Typography>
-          <IconButton size="small" onClick={() => setDrawerOpen(false)}><IconX size={20} /></IconButton>
-        </Box>
-        <Box sx={{ overflowY: 'auto', flex: 1 }}>
-          <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
-            <FormControl><RadioGroup value={filters.status} onChange={(e) => setFilter('status', e.target.value)}>
-              {['All', 'Pending for Verify', 'Verified', 'Rejected'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Category" open={openSections.category} onToggle={() => toggleSection('category')}>
-            <FormControl><RadioGroup value={filters.category} onChange={(e) => setFilter('category', e.target.value)}>
-              {['All', 'RENEWAL', 'CHECK LIST'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v === 'All' ? 'All' : v === 'RENEWAL' ? 'Renewal' : 'Check List'}</Typography>} />)}
-            </RadioGroup></FormControl>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
-            <Box sx={{ maxHeight: 250, overflowY: 'auto' }}>
-              {departmentsList.map((d) => <FormControlLabel key={d} sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p: 0.5 }} />} label={<Typography variant="body2">{d}</Typography>} />)}
-            </Box>
-          </FilterSection>
-          <Divider />
-          <FilterSection title="Search By" open={openSections.searchBy} onToggle={() => toggleSection('searchBy')}>
-            <FormControl fullWidth>
-              <RadioGroup value={filters.searchBy} onChange={(e) => setFilter('searchBy', e.target.value)}>
-                {SEARCH_BY_OPTIONS.map((opt) => <FormControlLabel key={opt.key} value={opt.key} control={<Radio size="small" />} label={<Typography variant="body2">{opt.label}</Typography>} />)}
-              </RadioGroup>
-            </FormControl>
-            {filters.searchBy && (
-              <TextField size="small" fullWidth placeholder={`Search by ${SEARCH_BY_OPTIONS.find((o) => o.key === filters.searchBy)?.label}...`} value={filters.searchByValue} onChange={(e) => setFilter('searchByValue', e.target.value)} sx={{ mt: 1 }} />
-            )}
-          </FilterSection>
-        </Box>
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', display: 'flex', gap: 1 }}>
-          <Button fullWidth variant="outlined" color="error" onClick={() => { resetFilters(); setDrawerOpen(false); }}>Reset All</Button>
-          <Button fullWidth variant="contained" onClick={() => setDrawerOpen(false)}>Apply</Button>
-        </Box>
-      </Drawer>
       <ExecutionVerifyDialog
         open={dialogOpen}
         handleClose={() => setDialogOpen(false)}
