@@ -142,7 +142,7 @@ const AddOemDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="OEM Details">
+        <BOSFormSection>
           <BOSTextField
             name="oemShortName"
             label="OEM Short Name"
@@ -222,7 +222,7 @@ const AddOemDialog = ({ open, handleClose, initialData, readOnly = false }) => {
             label="Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
           >
             <MenuItem value="ACTIVE">ACTIVE</MenuItem>
             <MenuItem value="INACTIVE">INACTIVE</MenuItem>

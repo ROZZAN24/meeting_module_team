@@ -351,7 +351,7 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       {!isCollapsed && (
-        <DialogContent sx={{ ...ds.content, ...contentSx }}>
+        <DialogContent sx={{ ...ds.content, pt: '20px !important', overflowY: 'hidden !important', ...contentSx }}>
           {sidebar ? (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 320px' }, gap: 4, width: '100%', alignItems: 'start' }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%' }}>

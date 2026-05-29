@@ -151,7 +151,7 @@ const AddItemSubtypeDialog = ({ open, handleClose, initialData, readOnly = false
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Item Sub Type Details">
+        <BOSFormSection>
           <Autocomplete
             value={types.find(t => t.id === formData.typeId) || null}
             onChange={(event, newValue) => {
@@ -245,7 +245,7 @@ const AddItemSubtypeDialog = ({ open, handleClose, initialData, readOnly = false
             label="Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
           >
             <MenuItem value="ACTIVE">ACTIVE</MenuItem>
             <MenuItem value="INACTIVE">INACTIVE</MenuItem>

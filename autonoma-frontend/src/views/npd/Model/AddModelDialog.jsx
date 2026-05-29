@@ -139,7 +139,7 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Model Details">
+        <BOSFormSection>
           <Autocomplete
             value={oems.find(o => o.id === formData.oemId) || null}
             onChange={(event, newValue) => {
@@ -200,7 +200,7 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
             label="Model Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
             required
           >
             <MenuItem value="ACTIVE">ACTIVE</MenuItem>

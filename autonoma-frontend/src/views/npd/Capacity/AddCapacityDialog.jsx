@@ -136,7 +136,7 @@ const AddCapacityDialog = ({ open, handleClose, initialData, readOnly = false })
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Capacity Details">
+        <BOSFormSection>
           <Autocomplete
             value={formData.uom || null}
             onChange={(event, newValue) => {

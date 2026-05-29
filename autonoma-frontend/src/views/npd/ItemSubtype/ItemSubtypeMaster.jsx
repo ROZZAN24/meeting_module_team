@@ -6,7 +6,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddItemSubtypeDialog from './AddItemSubtypeDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -21,6 +21,7 @@ const columns = [
   { id: 'itemType', label: 'Item Type', minWidth: 180, bold: true },
   { id: 'subType', label: 'Sub Type', minWidth: 200, bold: true },
   { id: 'prefixBased', label: 'Prefix Based', minWidth: 130 },
+  { id: 'status', label: 'Status', minWidth: 100, status: true },
   { id: 'createdBy', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedBy', label: 'UPDATED USER', minWidth: 120 },
@@ -58,32 +59,42 @@ export default function ItemSubtypeMaster() {
     fetchTypes();
   }, []);
 
-  // Dispatch standard starred filter configs
+  // Dispatch standard starred filter configs including Status, CREATED DATE, Sub Type, and Item Type
   useEffect(() => {
     const typeOptions = [
       { value: 'All', label: 'ALL' },
       ...types.map(t => ({ value: t.id.toString(), label: t.itemType }))
     ];
 
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
       {
-        id: 'typeId', label: 'Item Type', type: 'select',
-        options: typeOptions,
-        defaultValue: 'All',
-        isStarred: true
-      },
-      {
-        id: 'status', label: 'Status', type: 'select',
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All',
-        isStarred: true
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'subType', label: 'Sub Type', type: 'text', placeholder: 'Search sub type...', isStarred: true },
+      {
+        id: 'typeId', label: 'Item Type', type: 'select',
+        options: typeOptions,
+        defaultValue: 'All'
       }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today,
+      typeId: 'All'
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch, types]);
 
@@ -132,20 +143,32 @@ export default function ItemSubtypeMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const statusFilter = globalFilters.status || 'ACTIVE';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
-      // 2. Item Type Filter
+      // 2. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
+
+      // 3. Primary Field (Sub Type)
+      const subTypeFilter = globalFilters.subType || '';
+      if (subTypeFilter && !(row.subType || '').toLowerCase().includes(subTypeFilter.toLowerCase())) return false;
+
+      // 4. Item Type Filter
       const typeFilter = globalFilters.typeId || 'All';
       const matchesType = typeFilter === 'All' || (row.type?.id && row.type.id.toString() === typeFilter);
+      if (!matchesType) return false;
 
-      // 3. Search query
+      // 5. Wildcard Search query
       const matchesSearch = !globalQuery ||
         (row.subType && row.subType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.type?.itemType && row.type.itemType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.subItemPrefix && row.subItemPrefix.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesStatus && matchesType && matchesSearch;
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

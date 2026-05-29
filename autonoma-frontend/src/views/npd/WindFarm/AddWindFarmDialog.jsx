@@ -173,7 +173,7 @@ const AddWindFarmDialog = ({ open, handleClose, initialData, readOnly = false })
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconClipboardCheck size={20} color={theme.palette.primary.main} />} title="Wind Farm Details">
+        <BOSFormSection>
           <BOSTextField
             name="windFarmName"
             label="Wind Farm Name"

@@ -129,8 +129,8 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 3.5,
-    px: 4
+    py: 1.25,
+    px: 3
   },
   titleText: {
     fontWeight: 600,
@@ -146,7 +146,7 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
     overflowX: 'hidden',
-    overflowY: 'auto',
+    overflowY: 'hidden',
     flexGrow: 1
   },
   footer: {
@@ -234,13 +234,14 @@ export const getInputStyles = (theme, isDark) => ({
     borderRadius: '12px !important',
     bgcolor: isDark ? 'background.default' : 'grey.50',
     color: isDark ? '#c9d1d9' : '#121212',
+    padding: '8px 14px !important',
     '& fieldset': { borderColor: 'divider', borderRadius: '12px !important' },
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
     '& textarea': {
       fontSize: '0.9rem',
       color: isDark ? '#c9d1d9' : '#121212',
-      padding: '4px 0 !important'
+      padding: '0 !important'
     }
   },
   '& .MuiInputLabel-root': { 
