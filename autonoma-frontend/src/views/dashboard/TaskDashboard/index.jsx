@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Paper, useTheme, Avatar, Chip,
-  Select, MenuItem, FormControl, Button, Stack
+  Select, MenuItem, FormControl, Button, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress
 } from '@mui/material';
-import { styled, alpha } from '@mui/material/styles';
+import { styled, alpha, keyframes } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
@@ -21,8 +21,34 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import BusinessRoundedIcon from '@mui/icons-material/BusinessRounded';
 import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import AutorenewRoundedIcon from '@mui/icons-material/AutorenewRounded';
+import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
+import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import RadioButtonUncheckedRoundedIcon from '@mui/icons-material/RadioButtonUncheckedRounded';
+import ReopenDashboard from './ReopenDashboard';
+import ToBeTestedDashboard from './ToBeTestedDashboard';
+import DueTodayDashboard from './DueTodayDashboard';
+import OverdueDashboard from './OverdueDashboard';
+import CompletedDashboard from './CompletedDashboard';
+import InProgressDashboard from './InProgressDashboard';
+import OpenDashboard from './OpenDashboard';
 
-// --- Styled Components ---
+const pulseRed = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+`;
+
+const pulseBlue = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+`;
+
+const pulseGreen = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+`;
 
 const PageContainer = styled(Box)(({ theme }) => ({
   minHeight: '100vh',
@@ -60,9 +86,123 @@ const IconBox = styled(Box)(({ color, bg, size = 48 }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  justifyContent: 'center',
   color: color,
   background: bg,
 }));
+
+// --- Workload View Component ---
+const WorkloadView = ({ realWorkload, isDark }) => {
+  const criticalCount = realWorkload.filter(w => w.status === 'Critical').length;
+  const normalCount = realWorkload.filter(w => w.status === 'Normal').length;
+  const healthyCount = realWorkload.filter(w => w.status === 'Healthy').length;
+
+  return (
+    <Box>
+      <Grid container spacing={3} mb={3}>
+        <Grid item xs={12} md={4}>
+          <StyledCard sx={{ p: 2, display: 'flex', alignItems: 'center', bgcolor: alpha('#EF4444', 0.05), border: `1px solid ${alpha('#EF4444', 0.2)}` }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: '#EF4444', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+              <ErrorOutlineRoundedIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="body2" color="#EF4444" fontWeight={700}>Critical</Typography>
+              <Typography variant="h5" fontWeight={800}>{criticalCount}</Typography>
+            </Box>
+          </StyledCard>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StyledCard sx={{ p: 2, display: 'flex', alignItems: 'center', bgcolor: alpha('#3B82F6', 0.05), border: `1px solid ${alpha('#3B82F6', 0.2)}` }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: alpha('#3B82F6', 0.1), color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2, border: `2px solid #3B82F6` }}>
+              <RadioButtonUncheckedRoundedIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="body2" color="#3B82F6" fontWeight={700}>Normal</Typography>
+              <Typography variant="h5" fontWeight={800}>{normalCount}</Typography>
+            </Box>
+          </StyledCard>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <StyledCard sx={{ p: 2, display: 'flex', alignItems: 'center', bgcolor: alpha('#10B981', 0.05), border: `1px solid ${alpha('#10B981', 0.2)}` }}>
+            <Box sx={{ width: 36, height: 36, borderRadius: '50%', bgcolor: '#10B981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', mr: 2 }}>
+              <CheckCircleOutlineRoundedIcon fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="body2" color="#10B981" fontWeight={700}>Healthy</Typography>
+              <Typography variant="h5" fontWeight={800}>{healthyCount}</Typography>
+            </Box>
+          </StyledCard>
+        </Grid>
+      </Grid>
+
+      <StyledCard>
+        <TableContainer>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Employee</TableCell>
+                <TableCell sx={{ fontWeight: 700, py: 1.5, width: '30%' }}>Workload</TableCell>
+                <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Active task</TableCell>
+                <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Total Days</TableCell>
+                <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Status</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {realWorkload.map((row, idx) => (
+                <TableRow key={idx} hover>
+                  <TableCell sx={{ py: 1 }}>
+                    <Stack direction="row" alignItems="center" gap={1.5}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: row.color, fontSize: '13px', fontWeight: 700 }}>
+                        {row.user.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Typography variant="body2" fontWeight={600}>{row.user}</Typography>
+                    </Stack>
+                  </TableCell>
+                  <TableCell sx={{ py: 1 }}>
+                    <Stack direction="row" alignItems="center" gap={2}>
+                      <Typography variant="body2" fontWeight={700} sx={{ minWidth: 40 }}>{row.percent}%</Typography>
+                      <LinearProgress 
+                        variant="determinate" 
+                        value={row.percent} 
+                        sx={{ 
+                          flex: 1, 
+                          height: 8, 
+                          borderRadius: 4,
+                          bgcolor: alpha(row.color, 0.2),
+                          '& .MuiLinearProgress-bar': { bgcolor: row.color, borderRadius: 4 }
+                        }} 
+                      />
+                    </Stack>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                    <Typography variant="body2" fontWeight={600} color={isDark ? '#94A3B8' : '#64748B'}>{row.tasks}</Typography>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                    <Typography variant="body2" fontWeight={600} color={isDark ? '#94A3B8' : '#64748B'}>{row.days} Days</Typography>
+                  </TableCell>
+                  <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                    <Chip 
+                      label={row.status} 
+                      size="small" 
+                      icon={row.status === 'Critical' ? <ErrorOutlineRoundedIcon /> : row.status === 'Normal' ? <RadioButtonUncheckedRoundedIcon /> : <CheckCircleOutlineRoundedIcon />}
+                      sx={{ 
+                        bgcolor: alpha(row.color, 0.1), 
+                        color: row.color, 
+                        fontWeight: 700,
+                        px: 1,
+                        '& .MuiChip-icon': { color: row.color, fontSize: 16 }
+                      }} 
+                    />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </StyledCard>
+    </Box>
+  );
+};
 
 // --- Main Component ---
 export default function TaskDashboard() {
@@ -74,6 +214,7 @@ export default function TaskDashboard() {
   const { user } = useAuth();
   const activeUserId = user?.id || user?.userId || user?.email || user?.empCode || '';
 
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' or 'workload'
   const [loading, setLoading] = useState(true);
   const [realData, setRealData] = useState({
     total: 0, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0
@@ -81,6 +222,7 @@ export default function TaskDashboard() {
   const [realOverdueTasks, setRealOverdueTasks] = useState([]);
   const [realRecentActivity, setRealRecentActivity] = useState([]);
   const [realWorkload, setRealWorkload] = useState([]);
+  const [realTasks, setRealTasks] = useState([]);
 
   useEffect(() => {
     if (!activeUserId) return;
@@ -110,9 +252,15 @@ export default function TaskDashboard() {
             if (emp.email) empLookupByCode[emp.email] = fullName;
             
             if (fullName !== 'Unknown') {
-                workloadMap[fullName] = { user: fullName, hours: 0, tasks: 0 };
                 empLookupByCode[fullName] = fullName;
             }
+        });
+
+        // Initialize Workload map with all active employees
+        Object.values(empLookupByCode).forEach(name => {
+           if (!workloadMap[name]) {
+              workloadMap[name] = { user: name, hours: 0, tasks: 0 };
+           }
         });
 
         const getFullName = (u) => {
@@ -129,22 +277,22 @@ export default function TaskDashboard() {
 
         cl.forEach(a => {
           let name = getFullName(a.assignedToObj || a.employee || a.assignedTo);
-          tasksList.push({ _status: a.status?.name || a.status?.statusName || 'Pending', _dueDate: a.checklistDate || a.assignedDate, _title: a.checklist?.checkingPoint || a.checklist?.description || `Checklist #${a.id}`, _id: `CL-${a.id}`, _user: name, _rawDate: a.assignedDate || a.checklistDate });
+          tasksList.push({ _status: a.status?.name || a.status?.statusName || 'Pending', _dueDate: a.checklistDate || a.assignedDate, _title: a.checklist?.checkingPoint || a.checklist?.description || `Checklist #${a.id}`, _id: `CL-${a.id}`, _user: name, _rawDate: a.assignedDate || a.checklistDate, _ticketId: `CL-${a.id}`, _createdBy: a.createdUser || a.createdBy || a.checklist?.createdUser || a.checklist?.createdBy || 'System', _createdDate: a.createdDate || a.createdAt || a.checklist?.createdDate || a.checklistDate || a.assignedDate });
         });
 
         mom.forEach(a => {
           let name = getFullName(a.assignedTo);
-          tasksList.push({ _status: a.status || 'Open', _dueDate: a.targetDate, _title: a.discussedPoint || `MOM Action #${a.id}`, _id: `MOM-${a.id}`, _user: name, _rawDate: a.targetDate });
+          tasksList.push({ _status: a.status || 'Open', _dueDate: a.targetDate, _title: a.discussedPoint || `MOM Action #${a.id}`, _id: `MOM-${a.id}`, _user: name, _rawDate: a.targetDate, _ticketId: `MOM-${a.id}`, _createdBy: a.createdUser || a.createdBy || 'System', _createdDate: a.createdDate || a.createdAt || a.targetDate });
         });
 
         tk.forEach(t => {
           let name = getFullName(t.assignedTo);
-          tasksList.push({ _status: t.ticketStatus || 'Open', _dueDate: t.dueDate || t.targetDate, _title: t.title || t.ticketId || `Ticket ${t.rowId}`, _id: `TK-${t.rowId}`, _user: name, _rawDate: t.createdDate || t.targetDate });
+          tasksList.push({ _status: t.ticketStatus || 'Open', _dueDate: t.dueDate || t.targetDate, _title: t.title || t.ticketId || `Ticket ${t.rowId}`, _id: `TK-${t.rowId}`, _user: name, _rawDate: t.createdDate || t.targetDate, _ticketId: t.ticketId || `TK-${t.rowId}`, _createdBy: t.createdUser || t.createdBy || 'System', _createdDate: t.createdDate || t.createdAt || t.targetDate });
         });
 
         audit.forEach(a => {
            let name = getFullName(a.auditee || a.auditor);
-           tasksList.push({ _status: a.status || 'Pending', _dueDate: a.auditDate || a.scheduleDate, _title: `Audit Schedule ${a.scheduleNo || ''}`, _id: `AUDIT-${a.id}`, _user: name, _rawDate: a.auditDate || a.scheduleDate });
+           tasksList.push({ _status: a.status || 'Pending', _dueDate: a.auditDate || a.scheduleDate, _title: `Audit Schedule ${a.scheduleNo || ''}`, _id: `AUDIT-${a.id}`, _user: name, _rawDate: a.auditDate || a.scheduleDate, _ticketId: a.scheduleNo || `AUDIT-${a.id}`, _createdBy: a.createdUser || a.createdBy || 'System', _createdDate: a.createdDate || a.createdAt || a.scheduleDate || a.auditDate });
         });
 
         let stats = { total: tasksList.length, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0 };
@@ -168,7 +316,7 @@ export default function TaskDashboard() {
            
            if (['open', 'new', 'pending'].includes(st)) {
              stats.open++;
-           } else if (['in progress', 'wip', 'assigned'].includes(st)) {
+           } else if (['in progress', 'wip', 'assigned', 'rework'].includes(st)) {
              stats.inProgress++;
            } else if (['to be tested', 'testing', 'ready for testing'].includes(st)) {
              stats.toBeTested++;
@@ -198,34 +346,62 @@ export default function TaskDashboard() {
 
         let workloadArr = Object.values(workloadMap).map(w => {
            const days = Math.round((w.hours / 8) * 10) / 10;
-           let color = '#10B981'; // Green (more than 5)
+           let percent = Math.min(100, Math.round((w.tasks / 8) * 100)); 
+           if (w.tasks === 0) { percent = 0; }
+           else if (percent === 0) { percent = 10; }
+
+           let color = '#10B981'; 
            let status = 'Healthy';
-           if (days < 5) { color = '#EF4444'; status = 'Critical'; } // Red (less than 5)
-           else if (days === 5) { color = '#EAB308'; status = 'Warning'; } // Yellow (exactly 5)
-           return { ...w, days, color, status };
-        }).sort((a, b) => a.days - b.days);
+           if (w.tasks === 0) { color = '#EF4444'; status = 'Critical'; } 
+           else if (w.tasks >= 3 && w.tasks <= 5) { color = '#3B82F6'; status = 'Normal'; } 
+
+           return { ...w, days, percent, color, status };
+        }).sort((a, b) => {
+           const order = { 'Critical': 0, 'Normal': 1, 'Healthy': 2 };
+           return order[a.status] - order[b.status];
+        });
 
         setRealData(stats);
         setRealOverdueTasks(overdueList.slice(0, 5));
         setRealRecentActivity(recentArr);
         setRealWorkload(workloadArr);
+        setRealTasks(tasksList);
         setLoading(false);
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error(err);
         setLoading(false);
       }
     };
     fetchData();
   }, [activeUserId]);
 
+  const hasCritical = realWorkload.some(w => w.status === 'Critical');
+  const hasNormal = realWorkload.some(w => w.status === 'Normal');
+
+  let workloadAnim = pulseGreen;
+  let workloadColor = '#10B981';
+  let workloadBg = '#F0FDF4';
+
+  if (hasCritical) {
+    workloadAnim = pulseRed;
+    workloadColor = '#EF4444';
+    workloadBg = '#FEF2F2';
+  } else if (hasNormal) {
+    workloadAnim = pulseBlue;
+    workloadColor = '#3B82F6';
+    workloadBg = '#EFF6FF';
+  }
+
   const topStats = [
-    { title: 'Total Task', value: realData.total, change: '+40%', isPositive: true, icon: <AssignmentRoundedIcon fontSize="small" />, color: '#3B82F6', bg: '#EFF6FF' },
-    { title: 'Open', value: realData.open, change: '0%', isPositive: true, icon: <PendingActionsRoundedIcon fontSize="small" />, color: '#64748B', bg: '#F1F5F9' },
-    { title: 'In Progress', value: realData.inProgress, change: '+100%', isPositive: true, icon: <HistoryRoundedIcon fontSize="small" />, color: '#F59E0B', bg: '#FFFBEB' },
-    { title: 'To Be Tested', value: realData.toBeTested, change: '0%', isPositive: true, icon: <ScienceRoundedIcon fontSize="small" />, color: '#8B5CF6', bg: '#F5F3FF' },
-    { title: 'OverDue', value: realData.overdue, change: '0%', isPositive: true, icon: <ReportProblemRoundedIcon fontSize="small" />, color: '#EF4444', bg: '#FEF2F2' },
-    { title: 'Due today', value: realData.dueToday, change: '+25%', isPositive: true, icon: <TodayRoundedIcon fontSize="small" />, color: '#0EA5E9', bg: '#F0F9FF' },
-    { title: 'Reopen', value: realData.reopened, change: '0%', isPositive: false, icon: <AutorenewRoundedIcon fontSize="small" />, color: '#EAB308', bg: '#FEF9C3' },
+    { id: 'dashboard', title: 'Total Task', value: realData.total, change: '+40%', isPositive: true, icon: <AssignmentRoundedIcon fontSize="small" />, color: '#3B82F6', bg: '#EFF6FF' },
+    { id: 'completed', title: 'Completed', value: realData.completed, change: '+10%', isPositive: true, icon: <CheckCircleOutlineRoundedIcon fontSize="small" />, color: '#10B981', bg: '#F0FDF4' },
+    { id: 'open', title: 'Open', value: realData.open, change: '0%', isPositive: true, icon: <PendingActionsRoundedIcon fontSize="small" />, color: '#64748B', bg: '#F1F5F9' },
+    { id: 'inProgress', title: 'In Progress', value: realData.inProgress, change: '+100%', isPositive: true, icon: <HistoryRoundedIcon fontSize="small" />, color: '#F59E0B', bg: '#FFFBEB' },
+    { id: 'toBeTested', title: 'To Be Tested', value: realData.toBeTested, change: '0%', isPositive: true, icon: <ScienceRoundedIcon fontSize="small" />, color: '#8B5CF6', bg: '#F5F3FF' },
+    { id: 'overdue', title: 'OverDue', value: realData.overdue, change: '0%', isPositive: true, icon: <ReportProblemRoundedIcon fontSize="small" />, color: '#EF4444', bg: '#FEF2F2' },
+    { id: 'dueToday', title: 'Due today', value: realData.dueToday, change: '+25%', isPositive: true, icon: <TodayRoundedIcon fontSize="small" />, color: '#0EA5E9', bg: '#F0F9FF' },
+    { id: 'reopen', title: 'Reopen', value: realData.reopened, change: '0%', isPositive: false, icon: <AutorenewRoundedIcon fontSize="small" />, color: '#EAB308', bg: '#FEF9C3' },
+    { id: 'workload', title: 'WorkLoad', value: realData.total, change: '', isPositive: true, icon: <BusinessRoundedIcon fontSize="small" />, color: workloadColor, bg: workloadBg, customAnim: workloadAnim },
   ];
 
   // --- Charts Config ---
@@ -287,295 +463,268 @@ export default function TaskDashboard() {
     legend: { show: false }
   };
 
+  const renderActiveDashboard = () => {
+    switch (activeTab) {
+      case 'workload': return <WorkloadView realWorkload={realWorkload} isDark={isDark} />;
+      case 'dueToday': return <DueTodayDashboard realTasks={realTasks} isDark={isDark} />;
+      case 'reopen': return <ReopenDashboard realData={realData} realTasks={realTasks} isDark={isDark} />;
+      case 'toBeTested': return <ToBeTestedDashboard realTasks={realTasks} isDark={isDark} />;
+      case 'completed': return <CompletedDashboard isDark={isDark} realTasks={realTasks} />;
+      case 'inProgress': return <InProgressDashboard isDark={isDark} realTasks={realTasks} />;
+      case 'overdue': return <OverdueDashboard realTasks={realTasks} isDark={isDark} />;
+      case 'open': return <OpenDashboard realTasks={realTasks} isDark={isDark} />;
+      case 'dashboard':
+      default:
+        return (
+          <>
+            {/* ROW 2: OVERVIEWS & DISTRIBUTION */}
+            <Grid container spacing={2} mb={3}>
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={4}>Today's Overview</Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mt={2}>
+                    {[
+                      { v: realData.dueToday, l: 'Due Today', icon: <TodayRoundedIcon/>, c: '#3B82F6', bg: '#EFF6FF' },
+                      { v: realData.inProgress, l: 'In Progress', icon: <HistoryRoundedIcon/>, c: '#F59E0B', bg: '#FFFBEB' },
+                      { v: realData.toBeTested, l: 'To Be Tested', icon: <ScienceRoundedIcon/>, c: '#8B5CF6', bg: '#F5F3FF' },
+                      { v: realData.overdue, l: 'Overdue', icon: <ReportProblemRoundedIcon/>, c: '#EF4444', bg: '#FEF2F2' },
+                    ].map((item, idx) => (
+                      <Stack key={idx} alignItems="center" gap={1.5}>
+                        <Typography variant="h5" fontWeight={800}>{item.v}</Typography>
+                        <IconBox color={item.c} bg={isDark ? alpha(item.c, 0.2) : item.bg} size={40}>
+                          {item.icon}
+                        </IconBox>
+                        <Typography variant="caption" color="text.secondary" fontWeight={500}>{item.l}</Typography>
+                      </Stack>
+                    ))}
+                  </Stack>
+                </StyledCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={2}>Task Status Distribution</Typography>
+                  <Stack direction="row" alignItems="center" justifyContent="center">
+                    <Box width={180}>
+                      <ReactApexChart options={statusDistributionOptions} series={statusSeries} type="donut" height={200} />
+                    </Box>
+                    <Stack gap={1.5} ml={3} flex={1}>
+                      {[
+                        { l: 'Completed', v: realData.completed, p: percent(realData.completed), c: '#10B981' },
+                        { l: 'In Progress', v: realData.inProgress, p: percent(realData.inProgress), c: '#F59E0B' },
+                        { l: 'To Be Tested', v: realData.toBeTested, p: percent(realData.toBeTested), c: '#8B5CF6' },
+                        { l: 'Overdue', v: realData.overdue, p: percent(realData.overdue), c: '#EF4444' },
+                        { l: 'Due Today', v: realData.dueToday, p: percent(realData.dueToday), c: '#0EA5E9' },
+                      ].map((item, i) => (
+                        <Box display="flex" alignItems="center" justifyContent="space-between" key={i}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.c }} />
+                            <Typography variant="body2" color="text.secondary" fontSize="13px">{item.l}</Typography>
+                          </Box>
+                          <Box textAlign="right" ml={2}>
+                            <Typography variant="body2" fontWeight={600} display="inline" fontSize="13px">{item.v}</Typography>
+                            <Typography variant="caption" color="text.secondary" ml={0.5}>({item.p})</Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </StyledCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={1}>Priority Wise Task Count</Typography>
+                  <Box mt={0}>
+                    <ReactApexChart options={priorityBarOptions} series={[{ data: [320, 540, 260, 136] }]} type="bar" height={250} />
+                  </Box>
+                </StyledCard>
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2} mb={3}>
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={1}>Weekly Productivity Trend</Typography>
+                  <ReactApexChart options={weeklyTrendOptions} series={[{ name: 'Estimated Time (Hrs)', data: [65, 85, 60, 75, 80, 50, 45] }, { name: 'Actual Time (Hrs)', data: [45, 55, 45, 65, 50, 40, 35] }]} type="area" height={240} />
+                </StyledCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={2}>Time Performance Overview</Typography>
+                  <Stack direction="row" alignItems="center" justifyContent="center" height={200}>
+                    <Box width={200}>
+                      <ReactApexChart options={performanceRadialOptions} series={[78]} type="radialBar" height={240} />
+                    </Box>
+                    <Stack gap={2}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Total Estimated Time</Typography>
+                        <Typography variant="body2" fontWeight={700}>320.0 Hrs</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Actual Completed Time</Typography>
+                        <Typography variant="body2" fontWeight={700}>286.5 Hrs</Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary">Remaining Time</Typography>
+                        <Typography variant="body2" fontWeight={700}>33.5 Hrs</Typography>
+                      </Box>
+                    </Stack>
+                  </Stack>
+                  <Box textAlign="center" mt={2}>
+                    <Chip size="small" icon={<ArrowUpwardRoundedIcon />} label="33.5 Hrs Ahead of Schedule" sx={{ bgcolor: alpha('#10B981', 0.1), color: '#10B981', fontWeight: 600, '& .MuiChip-icon': { color: '#10B981' }, py: 1 }} />
+                  </Box>
+                </StyledCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="subtitle1" fontWeight={700}>Recent Activity</Typography>
+                    <Button size="small">View All</Button>
+                  </Box>
+                  <Stack spacing={3} flex={1} mt={1}>
+                    {realRecentActivity.slice(0,4).map((act, idx) => (
+                      <Stack direction="row" gap={2} alignItems="flex-start" key={idx}>
+                        <IconBox color={act.color} bg={isDark ? alpha(act.color, 0.2) : alpha(act.color, 0.1)} size={36}>
+                          <AssignmentRoundedIcon fontSize="small"/>
+                        </IconBox>
+                        <Box flex={1}>
+                          <Typography variant="body2" fontWeight={600} color="text.primary">
+                            {act.id} {act.action}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">by {act.by}</Typography>
+                        </Box>
+                        <Typography variant="caption" color="text.secondary" whiteSpace="nowrap">{act.time}</Typography>
+                      </Stack>
+                    ))}
+                    {realRecentActivity.length === 0 && (
+                      <Typography variant="body2" color="text.secondary" py={2} textAlign="center">No recent activity.</Typography>
+                    )}
+                  </Stack>
+                </StyledCard>
+              </Grid>
+            </Grid>
+            
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <StyledCard sx={{ p: 3 }}>
+                  <Typography variant="subtitle1" fontWeight={700} mb={2}>Reopened Task Analytics</Typography>
+                  <Stack direction="row" alignItems="center" justifyContent="center">
+                    <Box width={160}>
+                      <ReactApexChart options={reopenedOptions} series={[20, 15, 7, 3]} type="donut" height={180} />
+                    </Box>
+                    <Stack gap={1.5} ml={2} flex={1}>
+                      {[
+                        { l: 'Fixed & Verified', v: '20', p: '44%', c: '#10B981' },
+                        { l: 'Reopened', v: '15', p: '33%', c: '#F59E0B' },
+                        { l: 'In Progress', v: '7', p: '16%', c: '#8B5CF6' },
+                        { l: 'Pending', v: '3', p: '7%', c: '#EF4444' },
+                      ].map((item, i) => (
+                        <Box display="flex" alignItems="center" justifyContent="space-between" key={i}>
+                          <Box display="flex" alignItems="center" gap={1}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.c }} />
+                            <Typography variant="caption" color="text.secondary" fontWeight={500}>{item.l}</Typography>
+                          </Box>
+                          <Box textAlign="right" ml={1}>
+                            <Typography variant="caption" fontWeight={600}>{item.v}</Typography>
+                            <Typography variant="caption" color="text.secondary" ml={0.5}>({item.p})</Typography>
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </StyledCard>
+              </Grid>
+              <Grid item xs={12} md={8}>
+                <StyledCard sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                    <Typography variant="subtitle1" fontWeight={700}>Overdue Tasks</Typography>
+                    <Button size="small">View All</Button>
+                  </Box>
+                  {realOverdueTasks.length > 0 ? (
+                    <Stack spacing={2}>
+                      {realOverdueTasks.map((t, i) => (
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" key={i}>
+                          <Stack direction="row" gap={1.5} alignItems="center">
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', minWidth: 6, bgcolor: '#EF4444' }} />
+                            <Box>
+                              <Typography variant="body2" color="primary" fontWeight={600} sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>{t.id}</Typography>
+                              <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200, display: 'block' }}>{t.title}</Typography>
+                            </Box>
+                          </Stack>
+                          <Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 100 }}>{t.user}</Typography>
+                          <Chip size="small" label={t.days} sx={{ bgcolor: alpha('#EF4444', 0.1), color: '#EF4444', fontWeight: 600, fontSize: '0.7rem' }} />
+                        </Stack>
+                      ))}
+                    </Stack>
+                  ) : (
+                    <Box flex={1} display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={4}>
+                      <Box sx={{ position: 'relative', mb: 2 }}>
+                        <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: isDark ? alpha('#3B82F6', 0.1) : '#F0F9FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <AssignmentRoundedIcon sx={{ fontSize: 40, color: '#3B82F6' }} />
+                        </Box>
+                        <Box sx={{ position: 'absolute', bottom: -5, right: -5, bgcolor: 'background.paper', borderRadius: '50%', p: 0.5 }}>
+                          <CheckCircleRoundedIcon sx={{ color: '#10B981', fontSize: 20 }} />
+                        </Box>
+                      </Box>
+                      <Typography variant="subtitle1" fontWeight={700}>Great! No overdue tasks.</Typography>
+                      <Typography variant="body2" color="text.secondary">You're all caught up!</Typography>
+                    </Box>
+                  )}
+                </StyledCard>
+              </Grid>
+            </Grid>
+          </>
+        );
+    }
+  };
+
   return (
     <PageContainer>
 
       {/* ROW 1: TOP STATS */}
       <Box sx={{
         display: 'grid',
-        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(3, 1fr)', lg: 'repeat(7, 1fr)' },
+        gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)', lg: 'repeat(9, 1fr)' },
         gap: 2,
         mb: 3
       }}>
         {topStats.map((stat, idx) => {
           const waveColor = encodeURIComponent(stat.color);
           const waveSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320" opacity="0.1"><path fill="${waveColor}" d="M0,256L48,261.3C96,267,192,277,288,266.7C384,256,480,224,576,218.7C672,213,768,235,864,245.3C960,256,1056,256,1152,240C1248,224,1344,192,1392,176L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>`;
+          const isActive = activeTab === stat.id;
 
           return (
-          <TopStatCard key={idx} sx={{ 
+          <TopStatCard 
+            key={idx} 
+            onClick={() => setActiveTab(stat.id)}
+            sx={{ 
+              cursor: 'pointer',
               backgroundImage: `url('${waveSvg}')`, 
               backgroundPosition: 'bottom', 
               backgroundSize: 'cover', 
-              backgroundRepeat: 'no-repeat' 
+              backgroundRepeat: 'no-repeat',
+              border: isActive ? `1px solid ${stat.color}` : undefined,
+              animation: stat.customAnim ? `${stat.customAnim} 2s infinite` : 'none',
+              transform: isActive ? 'translateY(-4px)' : 'none',
+              boxShadow: isActive ? `0 10px 15px -3px rgba(0,0,0,0.05)` : undefined
           }}>
-            <Box p={2} pb={2.5}>
-              <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
-                <IconBox color={stat.color} bg={isDark ? alpha(stat.color, 0.2) : stat.bg} size={32}>
+            <Box p={1.5} pb={1.5}>
+              <Stack direction="row" alignItems="center" gap={1} mb={1}>
+                <IconBox color={stat.color} bg={isDark ? alpha(stat.color, 0.2) : stat.bg} size={28}>
                   {stat.icon}
                 </IconBox>
-                <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap sx={{ fontSize: '0.8rem' }}>{stat.title}</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={600} noWrap sx={{ fontSize: '0.75rem' }}>{stat.title}</Typography>
               </Stack>
-              <Typography variant="h4" fontWeight={900} color="text.primary">{stat.value}</Typography>
+              <Typography variant="h5" fontWeight={900} color="text.primary">{stat.value}</Typography>
             </Box>
           </TopStatCard>
         )})}
       </Box>
 
-      {/* ROW 2: OVERVIEWS & DISTRIBUTION */}
-      <Grid container spacing={2} mb={3}>
-        {/* Today's Overview */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={4}>Today's Overview</Typography>
-            <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mt={2}>
-              {[
-                { v: realData.dueToday, l: 'Due Today', icon: <TodayRoundedIcon/>, c: '#3B82F6', bg: '#EFF6FF' },
-                { v: realData.inProgress, l: 'In Progress', icon: <HistoryRoundedIcon/>, c: '#F59E0B', bg: '#FFFBEB' },
-                { v: realData.toBeTested, l: 'To Be Tested', icon: <ScienceRoundedIcon/>, c: '#8B5CF6', bg: '#F5F3FF' },
-                { v: realData.overdue, l: 'Overdue', icon: <ReportProblemRoundedIcon/>, c: '#EF4444', bg: '#FEF2F2' },
-              ].map((item, idx) => (
-                <Stack key={idx} alignItems="center" gap={1.5}>
-                  <Typography variant="h5" fontWeight={800}>{item.v}</Typography>
-                  <IconBox color={item.c} bg={isDark ? alpha(item.c, 0.2) : item.bg} size={40}>
-                    {item.icon}
-                  </IconBox>
-                  <Typography variant="caption" color="text.secondary" fontWeight={500}>{item.l}</Typography>
-                </Stack>
-              ))}
-            </Stack>
-          </StyledCard>
-        </Grid>
-
-        {/* Status Distribution */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={2}>Task Status Distribution</Typography>
-            <Stack direction="row" alignItems="center" justifyContent="center">
-              <Box width={180}>
-                <ReactApexChart options={statusDistributionOptions} series={statusSeries} type="donut" height={200} />
-              </Box>
-              <Stack gap={1.5} ml={3} flex={1}>
-                {[
-                  { l: 'Completed', v: realData.completed, p: percent(realData.completed), c: '#10B981' },
-                  { l: 'In Progress', v: realData.inProgress, p: percent(realData.inProgress), c: '#F59E0B' },
-                  { l: 'To Be Tested', v: realData.toBeTested, p: percent(realData.toBeTested), c: '#8B5CF6' },
-                  { l: 'Overdue', v: realData.overdue, p: percent(realData.overdue), c: '#EF4444' },
-                  { l: 'Due Today', v: realData.dueToday, p: percent(realData.dueToday), c: '#0EA5E9' },
-                ].map((item, i) => (
-                  <Box display="flex" alignItems="center" justifyContent="space-between" key={i}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.c }} />
-                      <Typography variant="body2" color="text.secondary" fontSize="13px">{item.l}</Typography>
-                    </Box>
-                    <Box textAlign="right" ml={2}>
-                      <Typography variant="body2" fontWeight={600} display="inline" fontSize="13px">{item.v}</Typography>
-                      <Typography variant="caption" color="text.secondary" ml={0.5}>({item.p})</Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </Stack>
-            </Stack>
-          </StyledCard>
-        </Grid>
-
-        {/* Priority Counts */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={1}>Priority Wise Task Count</Typography>
-            <Box mt={0}>
-              <ReactApexChart options={priorityBarOptions} series={[{ data: [320, 540, 260, 136] }]} type="bar" height={250} />
-            </Box>
-          </StyledCard>
-        </Grid>
-      </Grid>
-
-      {/* ROW 3: TRENDS, PERFORMANCE, ACTIVITY */}
-      <Grid container spacing={2} mb={3}>
-        {/* Weekly Trend */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3 }}>
-             <Typography variant="subtitle1" fontWeight={700} mb={1}>Weekly Productivity Trend</Typography>
-             <ReactApexChart options={weeklyTrendOptions} series={[{ name: 'Estimated Time (Hrs)', data: [65, 85, 60, 75, 80, 50, 45] }, { name: 'Actual Time (Hrs)', data: [45, 55, 45, 65, 50, 40, 35] }]} type="area" height={240} />
-          </StyledCard>
-        </Grid>
-
-        {/* Time Performance */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={2}>Time Performance Overview</Typography>
-            <Stack direction="row" alignItems="center" justifyContent="center" height={200}>
-              <Box width={200}>
-                <ReactApexChart options={performanceRadialOptions} series={[78]} type="radialBar" height={240} />
-              </Box>
-              <Stack gap={2}>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Total Estimated Time</Typography>
-                  <Typography variant="body2" fontWeight={700}>320.0 Hrs</Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Actual Completed Time</Typography>
-                  <Typography variant="body2" fontWeight={700}>286.5 Hrs</Typography>
-                </Box>
-                <Box>
-                  <Typography variant="caption" color="text.secondary">Remaining Time</Typography>
-                  <Typography variant="body2" fontWeight={700}>33.5 Hrs</Typography>
-                </Box>
-              </Stack>
-            </Stack>
-            <Box textAlign="center" mt={2}>
-              <Chip size="small" icon={<ArrowUpwardRoundedIcon />} label="33.5 Hrs Ahead of Schedule" sx={{ bgcolor: alpha('#10B981', 0.1), color: '#10B981', fontWeight: 600, '& .MuiChip-icon': { color: '#10B981' }, py: 1 }} />
-            </Box>
-          </StyledCard>
-        </Grid>
-
-        {/* Recent Activity */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-               <Typography variant="subtitle1" fontWeight={700}>Recent Activity</Typography>
-               <Button size="small">View All</Button>
-            </Box>
-            <Stack spacing={3} flex={1} mt={1}>
-               {realRecentActivity.slice(0,4).map((act, idx) => (
-                 <Stack direction="row" gap={2} alignItems="flex-start" key={idx}>
-                    <IconBox color={act.color} bg={isDark ? alpha(act.color, 0.2) : alpha(act.color, 0.1)} size={36}>
-                      <AssignmentRoundedIcon fontSize="small"/>
-                    </IconBox>
-                    <Box flex={1}>
-                      <Typography variant="body2" fontWeight={600} color="text.primary">
-                        {act.id} {act.action}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">by {act.by}</Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary" whiteSpace="nowrap">{act.time}</Typography>
-                 </Stack>
-               ))}
-               {realRecentActivity.length === 0 && (
-                 <Typography variant="body2" color="text.secondary" py={2} textAlign="center">No recent activity.</Typography>
-               )}
-            </Stack>
-          </StyledCard>
-        </Grid>
-      </Grid>
-
-      {/* ROW 4: REOPENED, OVERDUE */}
-      <Grid container spacing={2}>
-        {/* Reopened Analytics */}
-        <Grid item xs={12} md={4}>
-          <StyledCard sx={{ p: 3 }}>
-            <Typography variant="subtitle1" fontWeight={700} mb={2}>Reopened Task Analytics</Typography>
-             <Stack direction="row" alignItems="center" justifyContent="center">
-              <Box width={160}>
-                <ReactApexChart options={reopenedOptions} series={[20, 15, 7, 3]} type="donut" height={180} />
-              </Box>
-              <Stack gap={1.5} ml={2} flex={1}>
-                {[
-                  { l: 'Fixed & Verified', v: '20', p: '44%', c: '#10B981' },
-                  { l: 'Reopened', v: '15', p: '33%', c: '#F59E0B' },
-                  { l: 'In Progress', v: '7', p: '16%', c: '#8B5CF6' },
-                  { l: 'Pending', v: '3', p: '7%', c: '#EF4444' },
-                ].map((item, i) => (
-                  <Box display="flex" alignItems="center" justifyContent="space-between" key={i}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: item.c }} />
-                      <Typography variant="caption" color="text.secondary" fontWeight={500}>{item.l}</Typography>
-                    </Box>
-                    <Box textAlign="right" ml={1}>
-                      <Typography variant="caption" fontWeight={600}>{item.v}</Typography>
-                      <Typography variant="caption" color="text.secondary" ml={0.5}>({item.p})</Typography>
-                    </Box>
-                  </Box>
-                ))}
-              </Stack>
-            </Stack>
-          </StyledCard>
-        </Grid>
-
-        {/* Overdue Tasks */}
-        <Grid item xs={12} md={8}>
-          <StyledCard sx={{ p: 3, display: 'flex', flexDirection: 'column' }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="subtitle1" fontWeight={700}>Overdue Tasks</Typography>
-              <Button size="small">View All</Button>
-            </Box>
-            
-            {realOverdueTasks.length > 0 ? (
-               <Stack spacing={2}>
-                {realOverdueTasks.map((t, i) => (
-                  <Stack direction="row" alignItems="center" justifyContent="space-between" key={i}>
-                    <Stack direction="row" gap={1.5} alignItems="center">
-                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', minWidth: 6, bgcolor: '#EF4444' }} />
-                      <Box>
-                        <Typography variant="body2" color="primary" fontWeight={600} sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}>{t.id}</Typography>
-                        <Typography variant="caption" color="text.secondary" noWrap sx={{ maxWidth: 200, display: 'block' }}>{t.title}</Typography>
-                      </Box>
-                    </Stack>
-                    <Typography variant="body2" fontWeight={500} noWrap sx={{ maxWidth: 100 }}>{t.user}</Typography>
-                    <Chip size="small" label={t.days} sx={{ bgcolor: alpha('#EF4444', 0.1), color: '#EF4444', fontWeight: 600, fontSize: '0.7rem' }} />
-                  </Stack>
-                ))}
-              </Stack>
-            ) : (
-               <Box flex={1} display="flex" flexDirection="column" alignItems="center" justifyContent="center" py={4}>
-                 <Box sx={{ position: 'relative', mb: 2 }}>
-                   <Box sx={{ width: 80, height: 80, borderRadius: '50%', bgcolor: isDark ? alpha('#3B82F6', 0.1) : '#F0F9FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                     <AssignmentRoundedIcon sx={{ fontSize: 40, color: '#3B82F6' }} />
-                   </Box>
-                   <Box sx={{ position: 'absolute', bottom: -5, right: -5, bgcolor: 'background.paper', borderRadius: '50%', p: 0.5 }}>
-                      <CheckCircleRoundedIcon sx={{ color: '#10B981', fontSize: 20 }} />
-                   </Box>
-                 </Box>
-                 <Typography variant="subtitle1" fontWeight={700}>Great! No overdue tasks.</Typography>
-                 <Typography variant="body2" color="text.secondary">You're all caught up!</Typography>
-               </Box>
-            )}
-          </StyledCard>
-        </Grid>
-      </Grid>
-
-      {/* ROW 5: EMPLOYEE WORKLOAD (NEW) */}
-      <Grid container spacing={2} mt={1} mb={3}>
-        <Grid item xs={12}>
-          <StyledCard sx={{ p: 3 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Box>
-                <Typography variant="subtitle1" fontWeight={700}>Employee Workload Capacity</Typography>
-                <Typography variant="caption" color="text.secondary">Based on assigned active tasks (Assumes 8 hours = 1 day)</Typography>
-              </Box>
-            </Box>
-            
-            {realWorkload.length > 0 ? (
-               <Grid container spacing={2}>
-                {realWorkload.map((w, i) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={i}>
-                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: isDark ? alpha(w.color, 0.1) : alpha(w.color, 0.05), border: `1px solid ${alpha(w.color, 0.2)}` }}>
-                      <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: w.color, fontSize: '0.8rem', fontWeight: 800 }}>{w.user.charAt(0).toUpperCase()}</Avatar>
-                        <Box flex={1} overflow="hidden">
-                          <Typography variant="body2" fontWeight={700} noWrap>{w.user}</Typography>
-                          <Typography variant="caption" sx={{ color: w.color, fontWeight: 600 }}>{w.status}</Typography>
-                        </Box>
-                      </Stack>
-                      <Stack direction="row" justifyContent="space-between" alignItems="flex-end">
-                         <Box>
-                           <Typography variant="caption" color="text.secondary" display="block">Active Tasks</Typography>
-                           <Typography variant="body2" fontWeight={700}>{w.tasks}</Typography>
-                         </Box>
-                         <Box textAlign="right">
-                           <Typography variant="caption" color="text.secondary" display="block">Total Work</Typography>
-                           <Typography variant="h5" fontWeight={900} color={w.color}>{w.days} <Typography component="span" variant="caption" fontWeight={700}>Days</Typography></Typography>
-                         </Box>
-                      </Stack>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            ) : (
-               <Typography variant="body2" color="text.secondary" textAlign="center" py={4}>No active tasks assigned to employees.</Typography>
-            )}
-          </StyledCard>
-        </Grid>
-      </Grid>
+      {renderActiveDashboard()}
 
     </PageContainer>
   );
