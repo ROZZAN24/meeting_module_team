@@ -12,5 +12,6 @@ public interface ProductProcessRepository extends JpaRepository<ProductProcess, 
     List<ProductProcess> findByStatus(String status);
 
     boolean existsByProcessNameIgnoreCase(String processName);
+
     boolean existsByProcessNameIgnoreCaseAndIdNot(String processName, Long id);
 }

@@ -288,7 +288,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   useEffect(() => {
     if (open) {
-      axios.get('/api/master/hr/departments')
+      axios.get('/api/hrm/departments')
         .then(res => {
           const list = (res.data || [])
             .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)

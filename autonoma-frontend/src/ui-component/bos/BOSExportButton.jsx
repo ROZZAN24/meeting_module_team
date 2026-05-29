@@ -79,15 +79,18 @@ export default function BOSExportButton({
 
       // Auto-append Audit Columns if they exist in the row data (SOP Standard)
       const auditFields = [
-        { key: 'createdBy', label: 'Created By' },
-        { key: 'createdAt', label: 'Created Date' },
-        { key: 'updatedBy', label: 'Updated By' },
-        { key: 'updatedAt', label: 'Updated Date' }
+        { key: 'createdUser', fallback: 'createdBy', label: 'Created User' },
+        { key: 'createdDate', fallback: 'createdAt', label: 'Created Date' },
+        { key: 'updatedUser', fallback: 'updatedBy', label: 'Updated User' },
+        { key: 'updatedDate', fallback: 'updatedAt', label: 'Updated Date' }
       ];
 
       const hasUpdate = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['updated_date'];
       auditFields.forEach(field => {
-        let val = row[field.key] || row[field.key.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)];
+        let val = row[field.key] || 
+                  (field.fallback ? row[field.fallback] : undefined) || 
+                  row[field.key.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)] || 
+                  (field.fallback ? row[field.fallback.replace(/[A-Z]/g, l => `_${l.toLowerCase()}`)] : undefined);
         if (field.key.startsWith('updated') && !hasUpdate) {
           val = null;
         }

@@ -42,7 +42,6 @@ const columns = [
   },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
   { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
 ];
 
@@ -55,7 +54,7 @@ const INITIAL_STATE = {
   inductionRound: '',
   attachmentRequired: 'NO',
   status: 'ACTIVE',
-  inductionAttachment: ''
+  inductionAttachment: []
 };
 
 const ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
@@ -157,19 +156,24 @@ export default function InductionCriteria() {
   const handleOpenEdit = (row) => {
     const deptCodes = row.departmentCodes ? row.departmentCodes.split(',').filter(Boolean) : [];
     const deptIds = deptCodes.map(
-      (code) => departments.find((d) => d.departmentCode === code)?.id?.toString() || code
+      (code) => departments.find((d) => d.departmentNo === code)?.id?.toString() || code
     );
+    const order = LEVEL_OPTIONS.map(l => l.code);
+    const rawLevels = row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [];
+    const sortedLevels = [...rawLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
     setFormData({
       ...row,
       departmentCodes: deptIds,
-      levelCodes: row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [],
+      levelCodes: sortedLevels,
       inductionAttachment: row.inductionAttachment
-        ? {
-            serverFileName: row.inductionAttachment,
-            fileName: row.inductionAttachment.split('/').pop(),
+        ? row.inductionAttachment.split(',').filter(Boolean).map((path) => ({
+            id: path,
+            serverFileName: path,
+            fileName: path.split('/').pop(),
             isServer: true
-          }
-        : null
+          }))
+        : []
     });
     setErrors({});
     setDialogOpen(true);
@@ -204,7 +208,10 @@ export default function InductionCriteria() {
         setFormData((prev) => ({ ...prev, levelCodes: LEVEL_OPTIONS.map((l) => l.code) }));
       }
     } else {
-      setFormData((prev) => ({ ...prev, levelCodes: typeof value === 'string' ? value.split(',') : value }));
+      const rawCodes = typeof value === 'string' ? value.split(',') : value;
+      const order = LEVEL_OPTIONS.map(l => l.code);
+      const sortedCodes = [...rawCodes].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+      setFormData((prev) => ({ ...prev, levelCodes: sortedCodes }));
     }
     if (errors.levelCodes) clearErrors('levelCodes');
   };
@@ -212,7 +219,7 @@ export default function InductionCriteria() {
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
 
-    if (formData.attachmentRequired === 'YES' && !formData.inductionAttachment) {
+    if (formData.attachmentRequired === 'YES' && (!formData.inductionAttachment || formData.inductionAttachment.length === 0)) {
       dispatch(openSnackbar({
         open: true,
         message: 'Attachment is mandatory when Attachment Required is set to YES',
@@ -229,11 +236,12 @@ export default function InductionCriteria() {
       const payload = {
         ...formData,
         departmentCodes: formData.departmentCodes
-          .map((id) => departments.find((d) => d.id.toString() === id)?.departmentCode || id)
+          .map((id) => departments.find((d) => d.id.toString() === id)?.departmentNo || id)
           .join(','),
         levelCodes: formData.levelCodes.join(','),
-        inductionAttachment:
-          formData.inductionAttachment?.serverFileName || formData.inductionAttachment
+        inductionAttachment: Array.isArray(formData.inductionAttachment)
+          ? formData.inductionAttachment.map((f) => f.serverFileName || f).filter(Boolean).join(',')
+          : (formData.inductionAttachment?.serverFileName || formData.inductionAttachment || '')
       };
       delete payload.createdAt;
       delete payload.updatedAt;
@@ -388,7 +396,7 @@ export default function InductionCriteria() {
               sx={btnNew}
               startIcon={<IconPlus size={18} />}
             >
-              + New
+              New
             </Button>
           )}
         </Stack>
@@ -565,7 +573,7 @@ export default function InductionCriteria() {
                     {departments.map((d) => (
                       <MenuItem key={d.id} value={d.id.toString()}>
                         <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
-                        <ListItemText primary={d.departmentName} secondary={d.departmentCode} />
+                        <ListItemText primary={d.departmentName} secondary={d.departmentNo} />
                       </MenuItem>
                     ))}
                   </BOSTextField>
@@ -611,13 +619,12 @@ export default function InductionCriteria() {
               <Box sx={{ flex: '1 1 220px', minWidth: 200 }}>
                 <BOSFileUpload
                   label="UPLOAD INDUCTION GUIDELINES / SOP"
-                  files={formData.inductionAttachment ? [formData.inductionAttachment] : []}
+                  files={formData.inductionAttachment || []}
                   onChange={(uploadedFiles) => {
-                    const fileObj = uploadedFiles.length > 0 ? uploadedFiles[0] : null;
-                    setFormData((prev) => ({ ...prev, inductionAttachment: fileObj }));
+                    setFormData((prev) => ({ ...prev, inductionAttachment: uploadedFiles }));
                     if (errors.inductionAttachment) clearErrors('inductionAttachment');
                   }}
-                  multiple={false}
+                  multiple={true}
                   required={formData.attachmentRequired === 'YES'}
                   helperText={
                     errors.inductionAttachment ||
