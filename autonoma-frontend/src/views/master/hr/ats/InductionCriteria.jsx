@@ -6,17 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSExportButton,
-  btnNew,
-  BOSFormDialog,
-  BOSTextField,
-  BOSFormSection,
-  BOSFileUpload,
-  BOSFilePreview,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnNew, BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload, BOSFilePreview, errorStyle, BOSStatusField } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -493,8 +483,8 @@ export default function InductionCriteria() {
               </BOSTextField>
             </Box>
             <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
+              <BOSStatusField
+                isCreate={!formData.id}
                 name="status"
                 label="STATUS"
                 value={formData.status}
@@ -506,7 +496,7 @@ export default function InductionCriteria() {
               >
                 <MenuItem value="ACTIVE">Active</MenuItem>
                 <MenuItem value="IN ACTIVE">Inactive</MenuItem>
-              </BOSTextField>
+              </BOSStatusField>
             </Box>
             <Box sx={{ flex: 1 }}>
               <BOSTextField
@@ -653,6 +643,7 @@ export default function InductionCriteria() {
             </Box>
           </Box>
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

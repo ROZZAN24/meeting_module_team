@@ -65,10 +65,10 @@ public class CompanyCredential {
     @Column(name = "dir_path", columnDefinition = "NVARCHAR(200)")
     private String directoryPath;
 
-    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

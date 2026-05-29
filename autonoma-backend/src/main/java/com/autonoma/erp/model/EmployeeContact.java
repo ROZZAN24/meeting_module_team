@@ -58,10 +58,10 @@ public class EmployeeContact {
     @Column(name = "comm_pin_code", length = 20)
     private String commPincode;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

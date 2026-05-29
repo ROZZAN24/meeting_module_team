@@ -42,10 +42,10 @@ public class EmployeeDependent {
     @Column(name = "contact_number1", length = 20)
     private String contactNo;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

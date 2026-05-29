@@ -35,6 +35,7 @@ export default function PaymentTerms() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState('');
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     termCode: '',
     termName: '',
@@ -57,6 +58,7 @@ export default function PaymentTerms() {
   }, []);
 
   const handleOpen = (row = null) => {
+    setErrors({});
     if (row) {
       setEditId(row.id);
       setFormData({
@@ -79,9 +81,17 @@ export default function PaymentTerms() {
     setOpen(true);
   };
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setErrors({});
+  };
 
   const handleSubmit = async () => {
+    setErrors({});
+    if (!formData.termName?.trim()) {
+      setErrors({ termName: 'Payment Term name should not be empty.' });
+      return;
+    }
     try {
       if (editId) {
         await axios.put(`/api/payment-terms/${editId}`, formData);
@@ -93,7 +103,11 @@ export default function PaymentTerms() {
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
-      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
+      if (typeof errorMsg === 'string' && (errorMsg.toLowerCase().includes('duplicate') || errorMsg.toLowerCase().includes('already exists'))) {
+        setErrors({ termName: 'Duplicate value! Please check.' });
+      } else {
+        dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      }
     }
   };
 
@@ -181,7 +195,12 @@ export default function PaymentTerms() {
               label="Payment Term"
               fullWidth
               value={formData.termName}
-              onChange={(e) => setFormData({ ...formData, termName: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, termName: e.target.value });
+                if (errors.termName) setErrors((prev) => ({ ...prev, termName: '' }));
+              }}
+              error={!!errors.termName}
+              helperText={errors.termName}
             />
             <BOSTextField
               disabled={!perms.write}

@@ -3,7 +3,8 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid } from '@mui/materi
 import { IconChartBar, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel, BOSStatusField } from 'ui-component/bos';
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
@@ -30,6 +31,9 @@ export default function SegmentMaster() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(INITIAL);
   const [selectedId, setSelectedId] = useState(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -63,11 +67,19 @@ export default function SegmentMaster() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this segment?')) return;
+  const handleDeleteClick = (row) => {
+    setDeleteId(row.id);
+    setDeleteName(row.segmentName);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`/api/sm/segments/${id}`);
+      await axios.delete(`/api/sm/segments/${deleteId}`);
       dispatch(openSnackbar({ open: true, message: 'Segment deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      setDeleteOpen(false);
+      setDeleteId(null);
+      setDeleteName('');
       fetchData();
     } catch (e) { console.error(e); }
   };
@@ -118,7 +130,7 @@ return (
         columns={columns}
         rows={rows}
         onEditRow={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
-        onDeleteRow={(row) => handleDelete(row.id)}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <BOSFormDialog
@@ -139,13 +151,27 @@ return (
             <BOSTextField name="segmentDescription" label="Segment Description" value={form.segmentDescription} onChange={h} multiline rows={3} fullWidth />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <BOSTextField name="status" label="Status" value={form.status} onChange={h} select fullWidth>
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">Inactive</MenuItem>
-            </BOSTextField>
+            <BOSStatusField
+              isCreate={!selectedId}
+              name="status"
+              label="Status"
+              value={form.status}
+              onChange={h}
+              fullWidth
+            />
           </Grid>
         </Grid>
+        
       </BOSFormDialog>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Segment"
+        message="Are you sure you want to delete this segment?"
+        itemName={deleteName}
+      />
     </MainCard>
   );
 }

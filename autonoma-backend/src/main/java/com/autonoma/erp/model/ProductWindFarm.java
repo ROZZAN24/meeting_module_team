@@ -27,10 +27,10 @@ public class ProductWindFarm {
     @Column(nullable = false, length = 100)
     private String country;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_by", length = 100)

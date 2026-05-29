@@ -62,10 +62,10 @@ public class CustomerAddress {
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_date", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

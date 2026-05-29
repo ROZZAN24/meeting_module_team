@@ -28,10 +28,10 @@ public class InductionRoundMaster {
     @Column(name = "display_order")
     private Integer displayOrder;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 

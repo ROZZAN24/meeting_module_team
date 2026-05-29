@@ -25,10 +25,10 @@ public class ProductCapacity {
     @Column(name = "capacity_val", nullable = false)
     private Double capacityVal;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_by", length = 100)

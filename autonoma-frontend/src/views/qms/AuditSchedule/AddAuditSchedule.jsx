@@ -624,18 +624,16 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconFileDescription size={20} color={theme.palette.primary.main} />} title="General Information">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
               <BOSTextField label="Schedule No" value={formData.scheduleNo} inputProps={{ readOnly: true }} />
-              <BOSTextField
+              <BOSDatePicker
                 required
-                type="date"
                 label="Schedule Date"
                 name="scheduleDate"
                 value={formData.scheduleDate}
-                inputProps={{ readOnly: true }}
-                InputLabelProps={{ shrink: true }}
                 error={!!errors.scheduleDate}
                 helperText={errors.scheduleDate}
-                disabled={!perms.write}
+                disabled={true}
               />
+
               <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} disabled={!perms.write}>
                 <MenuItem value="OPEN">OPEN</MenuItem>
                 <MenuItem value="CLOSED">CLOSED</MenuItem>
@@ -928,15 +926,13 @@ export default function AddAuditSchedule() {
                 </>
               )}
 
-              <BOSTextField
+              <BOSDatePicker
                 required
-                type="date"
                 label="Audit Date"
                 name="auditDate"
                 value={formData.auditDate}
                 onChange={handleChange}
-                inputProps={{ min: getLocalDateString() }}
-                InputLabelProps={{ shrink: true }}
+                minDate={new Date()}
                 error={!!errors.auditDate}
                 helperText={errors.auditDate}
                 disabled={!perms.write}

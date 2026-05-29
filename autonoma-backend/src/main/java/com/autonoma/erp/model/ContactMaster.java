@@ -59,10 +59,10 @@ public class ContactMaster {
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private java.time.LocalDateTime createdAt;
 
     @Column(name = "updated_by")

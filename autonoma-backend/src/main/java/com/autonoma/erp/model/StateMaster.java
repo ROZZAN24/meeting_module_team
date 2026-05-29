@@ -23,10 +23,10 @@ public class StateMaster {
     @Column(name = "STATUS", length = 20)
     private String status;
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private java.time.LocalDateTime createdDate;
 
     @Column(name = "updated_by")

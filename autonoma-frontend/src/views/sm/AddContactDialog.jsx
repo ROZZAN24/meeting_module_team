@@ -5,7 +5,7 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery, BOSStatusField } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import { autoUploadFile } from 'utils/upload-helper';
 
@@ -288,10 +288,7 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
 
           {/* Row 5: Status */}
           <Grid item xs={12}>
-            <BOSTextField name="status" label="Status" value={formData.status} onChange={handleChange} disabled={readOnly} select>
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">Inactive</MenuItem>
-            </BOSTextField>
+            <BOSStatusField name="status" label="Status" value={formData.status} onChange={handleChange} disabled={readOnly} isCreate={!isEdit} />
           </Grid>
         </Grid>
       </BOSFormSection>
@@ -350,6 +347,7 @@ export default function AddContactDialog({ open, handleClose, initialData, initi
           </Grid>
         </Grid>
       </BOSFormSection>
+      
     </BOSFormDialog>
   );
 }

@@ -5,7 +5,7 @@ import { IconSettings } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { API_PATHS } from 'utils/api-constants';
@@ -194,19 +194,18 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
             helperText={errors.rotorDiameter}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!initialData}
+            type="string-upper"
             name="status"
             label="Model Status"
             value={formData.status}
             onChange={handleChange}
             disabled={isViewOnly}
             required
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

@@ -66,10 +66,10 @@ public class SmEnquiry {
     @Column(name = "remarks", columnDefinition = "TEXT")
     private String remarks;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

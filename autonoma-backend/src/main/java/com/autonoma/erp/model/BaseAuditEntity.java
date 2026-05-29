@@ -7,10 +7,10 @@ import com.autonoma.erp.util.SecurityUtils;
 @MappedSuperclass
 public abstract class BaseAuditEntity {
 
-    @Column(name = "CREATED_USER", length = 100)
+    @Column(name = "CREATED_USER", length = 100, updatable = false)
     private String createdUser;
 
-    @Column(name = "CREATED_DATE")
+    @Column(name = "CREATED_DATE", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
@@ -53,13 +53,13 @@ public abstract class BaseAuditEntity {
             this.createdAt = new Date();
         }
         if (this.createdUser == null) {
-            this.createdUser = SecurityUtils.getCurrentUserId();
+            this.createdUser = SecurityUtils.getCurrentUserEmployeeName();
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new Date();
-        this.updatedUser = SecurityUtils.getCurrentUserId();
+        this.updatedUser = SecurityUtils.getCurrentUserEmployeeName();
     }
 }

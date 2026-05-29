@@ -24,10 +24,10 @@ public class ProductProcess {
     @Column(nullable = false, length = 20)
     private String status = "ACTIVE";
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_by", length = 100)

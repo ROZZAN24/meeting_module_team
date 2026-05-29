@@ -42,10 +42,10 @@ public class DesignationLevel {
 	@Column(name = "screening_level")
 	private int screeningLevel;
 
-	@Column(name = "created_by", nullable = false, columnDefinition = "NVARCHAR(100)")
+	@Column(name = "created_by", nullable = false, columnDefinition = "NVARCHAR(100)", updatable = false)
 	private String createdBy;
 
-	@Column(name = "created_at")
+	@Column(name = "created_at", updatable = false)
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date createdDate;
 

@@ -34,7 +34,7 @@ public class SupportTicketComment {
     @Column(name = "attachment_path", length = 500)
     private String attachmentPath;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 

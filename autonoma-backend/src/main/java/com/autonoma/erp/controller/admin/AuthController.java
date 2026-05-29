@@ -333,6 +333,9 @@ public class AuthController {
 
                 String token = jwtService.generateToken(user.getUserId());
 
+                // Pre-resolve and cache employee name immediately on successful authentication
+                com.autonoma.erp.util.SecurityUtils.resolveAndCacheEmployeeName(user.getUserId());
+
                 // Record Login Session
                 userSessionService.recordLogin(user.getUserId(), request, request.getHeader("User-Agent"));
 
@@ -831,6 +834,10 @@ public class AuthController {
             }
 
             String token = jwtService.generateToken(user.getUserId());
+
+            // Pre-resolve and cache employee name immediately on successful authentication
+            com.autonoma.erp.util.SecurityUtils.resolveAndCacheEmployeeName(user.getUserId());
+
             userSessionService.recordLogin(user.getUserId(), request, request.getHeader("User-Agent"));
 
             Map<String, Object> response = new HashMap<>();

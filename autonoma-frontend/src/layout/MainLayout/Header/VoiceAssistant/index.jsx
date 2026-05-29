@@ -7,6 +7,7 @@ import { Avatar, Box, IconButton, Tooltip, Typography, keyframes } from '@mui/ma
 // project imports
 import { useDispatch } from 'react-redux';
 import { setQuery } from 'store/slices/search';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // assets
 import { IconMicrophone } from '@tabler/icons-react';
@@ -75,7 +76,7 @@ const VoiceAssistant = () => {
       if (recognition) {
         recognition.start();
       } else {
-        alert('Speech recognition is not supported in this browser.');
+        dispatch(openSnackbar({ open: true, message: 'Speech recognition is not supported in this browser.', variant: 'alert', alert: { color: 'warning' } }));
       }
     }
   };

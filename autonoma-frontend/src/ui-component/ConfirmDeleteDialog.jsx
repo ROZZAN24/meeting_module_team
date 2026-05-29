@@ -97,7 +97,7 @@ export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title = 
           startIcon={<IconX size={18} />}
           sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
         >
-          Cancel
+          No
         </Button>
         <Button
           variant="contained"
@@ -106,7 +106,7 @@ export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title = 
           startIcon={<IconTrash size={18} />}
           sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
         >
-          Delete
+          Yes
         </Button>
       </DialogActions>
     </Dialog>

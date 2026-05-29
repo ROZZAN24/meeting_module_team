@@ -5,7 +5,7 @@ import { IconClipboardCheck } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { API_PATHS } from 'utils/api-constants';
@@ -42,7 +42,6 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         uomCode: initialData.uomCode || '',
         uomDescription: initialData.uomDescription || '',
         status: initialData.status || 'ACTIVE',
-        createdUser: initialData.createdUser,
         createdAt: initialData.createdAt
       });
       setIsEditing(false);
@@ -71,8 +70,6 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         uomCode: formData.uomCode,
         uomDescription: formData.uomDescription,
         status: formData.status,
-        createdUser: formData.id ? formData.createdUser : (user?.name || 'Admin'),
-        updatedUser: user?.name || 'Admin',
         createdAt: formData.createdAt
       };
 
@@ -141,19 +138,18 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
             maxLength={255}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!initialData}
+            type="string-upper"
             name="status"
             label="Status"
             value={formData.status}
             onChange={handleChange}
             disabled={isViewOnly}
             required
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

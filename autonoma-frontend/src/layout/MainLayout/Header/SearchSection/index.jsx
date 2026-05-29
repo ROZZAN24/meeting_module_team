@@ -657,28 +657,45 @@ export default function SearchSection() {
                                       ))}
                                     </Select>
                                   ) : field.type === 'dateRange' ? (
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                      <TextField
-                                        type="date"
-                                        label="From"
-                                        fullWidth size="small"
-                                        variant="outlined"
-                                        value={filters[`${field.id}Start`] || ''}
-                                        onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
-                                        slotProps={{ inputLabel: { shrink: true } }}
-                                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
-                                      />
-                                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
-                                      <TextField
-                                        type="date"
-                                        label="To"
-                                        fullWidth size="small"
-                                        variant="outlined"
-                                        value={filters[`${field.id}End`] || ''}
-                                        onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
-                                        slotProps={{ inputLabel: { shrink: true } }}
-                                        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
-                                      />
+                                    <Stack spacing={1.2}>
+                                      <Stack direction="row" spacing={1} alignItems="center">
+                                        <TextField
+                                          type="date"
+                                          label="From"
+                                          fullWidth size="small"
+                                          variant="outlined"
+                                          value={filters[`${field.id}Start`] || ''}
+                                          onChange={(e) => handleFilterChange(`${field.id}Start`, e.target.value)}
+                                          slotProps={{ inputLabel: { shrink: true } }}
+                                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                        />
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>to</Typography>
+                                        <TextField
+                                          type="date"
+                                          label="To"
+                                          fullWidth size="small"
+                                          variant="outlined"
+                                          value={filters[`${field.id}End`] || ''}
+                                          onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
+                                          slotProps={{ inputLabel: { shrink: true } }}
+                                          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                        />
+                                      </Stack>
+                                      <Stack direction="row" spacing={1.5} alignItems="center">
+                                        <Typography variant="caption" color="text.primary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.5px', opacity: 0.85, minWidth: 100 }}>
+                                          Consider Date?
+                                        </Typography>
+                                        <Select
+                                          fullWidth size="small"
+                                          variant="outlined"
+                                          value={filters[`${field.id}Consider`] || 'Yes'}
+                                          onChange={(e) => handleFilterChange(`${field.id}Consider`, e.target.value)}
+                                          sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
+                                        >
+                                          <MenuItem value="Yes" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>Yes</MenuItem>
+                                          <MenuItem value="No" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>No</MenuItem>
+                                        </Select>
+                                      </Stack>
                                     </Stack>
                                   ) : field.type === 'date' ? (
                                     <TextField

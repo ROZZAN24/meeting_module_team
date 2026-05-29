@@ -121,10 +121,10 @@ public class EmployeePersonalDetail {
     @Column(name = "loan_installment_month", length = 50)
     private String loanInstallmentMonth;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "created_by", length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

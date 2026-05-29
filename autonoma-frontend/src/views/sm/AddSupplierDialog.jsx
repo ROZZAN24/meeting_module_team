@@ -5,7 +5,7 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery, BOSFileUpload } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery, BOSFileUpload, BOSStatusField } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 
 const fieldConfigs = [
@@ -175,7 +175,16 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
           <R><BOSTextField name="segment" label="Segment" value={formData.segment} onChange={handleChange} disabled={readOnly} /></R>
           <R><BOSTextField name="subSegment" label="Sub Segment" value={formData.subSegment} onChange={handleChange} disabled={readOnly} /></R>
           <R><BOSTextField name="domainName" label="Domain Name" value={formData.domainName} onChange={handleChange} disabled={readOnly} /></R>
-          <R><BOSTextField name="status" label="Status" value={formData.status} onChange={handleChange} disabled={readOnly} select><MenuItem value="Active">Active</MenuItem><MenuItem value="Inactive">Inactive</MenuItem></BOSTextField></R>
+          <R>
+            <BOSStatusField
+              isCreate={!isEdit}
+              name="status"
+              label="Status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={readOnly}
+            />
+          </R>
         </Grid>
       </BOSFormSection>
 
@@ -247,13 +256,24 @@ export default function AddSupplierDialog({ open, handleClose, initialData, read
           
           <R lg={4} md={6}><Autocomplete fullWidth value={formData.paymentTerms || null} onChange={handleAC('paymentTerms')} options={paymentTermsList.map(p => p.termName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Payment Terms" sx={acSx} required error={!!errors.paymentTerms} helperText={errors.paymentTerms} />} /></R>
           <R lg={4} md={6}><Autocomplete fullWidth value={formData.deliveryTerms || null} onChange={handleAC('deliveryTerms')} options={deliveryTermsList.map(d => d.termName)} disabled={readOnly} renderInput={(params) => <BOSTextField {...params} label="Delivery Terms" sx={acSx} required error={!!errors.deliveryTerms} helperText={errors.deliveryTerms} />} /></R>
-          <R lg={4} md={6}><BOSTextField fullWidth name="status" label="Status" value={formData.status} onChange={handleChange} disabled={readOnly} select><MenuItem value="Active">Active</MenuItem><MenuItem value="Inactive">Inactive</MenuItem></BOSTextField></R>
+          <R lg={4} md={6}>
+            <BOSStatusField
+              isCreate={!isEdit}
+              name="status"
+              label="Status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={readOnly}
+              fullWidth
+            />
+          </R>
         </Grid>
       </BOSFormSection>
 
       <BOSFormSection icon={<IconFileTypography size={20} color={theme.palette.primary.main} />} title="Documents" action={<Button startIcon={<IconPlus size={18} />} size="small" variant="contained" onClick={() => fileInputRef.current?.click()} disabled={readOnly} sx={{ borderRadius: '8px', textTransform: 'none' }}>Add</Button>}>
         <Grid container spacing={2}><Grid item xs={12}><input type="file" ref={fileInputRef} style={{ display: 'none' }} multiple onChange={handleFileChange} accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" /><BOSFileGallery files={attachments} onRemove={(idx) => setAttachments(attachments.filter((_, i) => i !== idx))} isEditing={!readOnly} /></Grid></Grid>
       </BOSFormSection>
+      
     </BOSFormDialog>
   );
 }

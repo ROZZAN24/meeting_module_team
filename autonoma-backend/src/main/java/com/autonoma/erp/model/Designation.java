@@ -51,10 +51,10 @@ public class Designation {
     private Integer budgetedPositions;
 
     @Nationalized
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_date")
+    @Column(name = "created_date", updatable = false)
     private java.util.Date createdDate;
 
     @Column(name = "updated_by")

@@ -525,7 +525,7 @@ export default function TicketManagement({ viewType }) {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (!['mp3', 'wav', 'm4a', 'aac'].includes(ext)) {
       setTranscriptionStatus('Transcription Failed');
-      alert('Invalid audio format. Supported formats: MP3, WAV, M4A, AAC');
+      showSnackbar('Invalid audio format. Supported formats: MP3, WAV, M4A, AAC', 'warning');
       return;
     }
 

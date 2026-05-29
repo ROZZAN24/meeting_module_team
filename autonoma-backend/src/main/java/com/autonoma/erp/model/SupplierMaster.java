@@ -135,10 +135,10 @@ public class SupplierMaster {
     @Column(name = "UPLOAD_FILES", length = 2000)
     private String uploadFiles;
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdDate;
 
     @Column(name = "updated_by")

@@ -75,10 +75,10 @@ public class Division {
     @Column(name = "status", nullable = false)
     private Boolean status = true; // true = 1 = Active, false = 0 = Inactive
 
-    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

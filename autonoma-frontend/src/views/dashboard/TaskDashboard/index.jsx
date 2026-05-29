@@ -86,7 +86,6 @@ const IconBox = styled(Box)(({ color, bg, size = 48 }) => ({
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  justifyContent: 'center',
   color: color,
   background: bg,
 }));

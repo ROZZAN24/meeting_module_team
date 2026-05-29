@@ -24,10 +24,10 @@ public class UserCredential {
     @Column(name = "password", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
-    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 

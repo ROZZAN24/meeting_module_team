@@ -315,7 +315,8 @@ export default function MasterCheckList() {
       const body = Object.fromEntries(
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v)
       );
-      body.updatedUser = user?.name || user?.id || 'Admin';
+      delete body.createdUser;
+      delete body.updatedUser;
       const qs = new URLSearchParams();
       departments.forEach((d) => qs.append('departments', d));
       await axios.post(`/api/qms/checklist?${qs.toString()}`, body);

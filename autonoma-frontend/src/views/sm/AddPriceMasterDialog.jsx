@@ -6,7 +6,7 @@ import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 
@@ -198,11 +198,18 @@ const AddPriceMasterDialog = ({ open, handleClose, initialData, initialGroupName
           <BOSTextField name="validFrom" label="Valid From" type="date" value={formData.validFrom} onChange={handleChange} disabled={isViewOnly} />
           <BOSTextField name="validTo" label="Valid To" type="date" value={formData.validTo} onChange={handleChange} disabled={isViewOnly} />
           <BOSTextField name="termsAndConditions" label="Terms & Conditions" value={formData.termsAndConditions} onChange={handleChange} disabled={isViewOnly} multiline rows={3} />
-          <BOSTextField select name="status" label="Status" value={formData.status} onChange={handleChange} disabled={isViewOnly}>
+          <BOSStatusField
+            isCreate={!initialData}
+            name="status"
+            label="Status"
+            value={formData.status}
+            onChange={handleChange}
+            disabled={isViewOnly}
+          >
             <MenuItem value="Active">Active</MenuItem>
             <MenuItem value="Expired">Expired</MenuItem>
             <MenuItem value="Cancelled">Cancelled</MenuItem>
-          </BOSTextField>
+          </BOSStatusField>
           <BOSTextField name="remarks" label="Remarks" value={formData.remarks} onChange={handleChange} disabled={isViewOnly} multiline rows={2} />
         </BOSFormSection>
 
@@ -211,6 +218,7 @@ const AddPriceMasterDialog = ({ open, handleClose, initialData, initialGroupName
           <BOSTextField name="ocrExtractedText" label="OCR Extracted Text" value={formData.ocrExtractedText} onChange={handleChange} disabled={isViewOnly} multiline rows={3} />
           <BOSTextField name="ocrConfidence" label="OCR Confidence (%)" value={formData.ocrConfidence} onChange={handleChange} disabled={isViewOnly} />
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog open={deleteOpen} onClose={() => setDeleteOpen(false)} onConfirm={handleDeleteConfirm} title="Delete Price Master" message="Are you sure you want to delete this price master?" itemName={formData.masterNo || formData.customerName} />
