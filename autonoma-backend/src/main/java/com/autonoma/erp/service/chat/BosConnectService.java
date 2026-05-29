@@ -326,11 +326,8 @@ public class BosConnectService {
             }
         }
 
-        // Trigger simulated voice-to-text transcript if voice note is uploaded
-        if ("VOICE".equals(req.getMessageType())) {
-            triggerSystemAssistantReply(req.getChannelId(), 
-                    "🎤 **BOS AI Voice Transcript**:\n*\"Hi team, just reviewing the inventory count for today. Please check division access settings so we can complete it.\"*");
-        }
+        // (Simulated voice-to-text transcript removed per user request)
+
 
         return msg;
     }
@@ -573,7 +570,7 @@ public class BosConnectService {
         }
 
         UserCredential user = userOpt.get();
-        String empName = userId; // Keep BOS User ID
+        String empName = userId;
         String deptName = "General Admin";
         String desName = "BOS Staff";
         String imgName = user.getImgName() != null ? user.getImgName() : "default_avatar.png";
@@ -582,15 +579,14 @@ public class BosConnectService {
             Optional<EmployeeMaster> empOpt = employeeRepository.findById(user.getEmpId());
             if (empOpt.isPresent()) {
                 EmployeeMaster emp = empOpt.get();
-                // Do not collapse userId to employeeName
+                if (emp.getEmployeeName() != null && !emp.getEmployeeName().trim().isEmpty()) {
+                    empName = emp.getEmployeeName();
+                }
                 if (emp.getDepartment() != null) {
                     deptName = emp.getDepartment().getDepartmentName();
                 }
                 if (emp.getDesignation() != null) {
                     desName = emp.getDesignation().getDesignationName();
-                }
-                if (emp.getEmployeePhotoUpload() != null && !emp.getEmployeePhotoUpload().trim().isEmpty()) {
-                    imgName = emp.getEmployeePhotoUpload();
                 }
             }
         }
@@ -615,5 +611,26 @@ public class BosConnectService {
 
     private String getEmployeeName(String userId) {
         return userId; // Return BOS User ID directly to prevent collapsing
+    }
+
+    // --- DELETE CHANNEL ---
+    @Transactional
+    public void deleteChannel(Long channelId, String userId) {
+        // Verify membership
+        Optional<CommChannelMember> mem = memberRepository.findByChannelIdAndUserId(channelId, userId);
+        if (mem.isPresent()) {
+            // Delete channel entirely
+            memberRepository.delete(mem.get());
+            
+            // If no members left or if it's a DIRECT channel, we might delete it completely
+            List<CommChannelMember> remaining = memberRepository.findByChannelId(channelId);
+            if (remaining.isEmpty() || channelRepository.findById(channelId).map(c -> "DIRECT".equals(c.getChannelType())).orElse(false)) {
+                // For direct chats or empty groups, delete everything
+                memberRepository.deleteAll(remaining);
+                List<CommMessage> msgs = messageRepository.findByChannelIdOrderByIdAsc(channelId);
+                messageRepository.deleteAll(msgs);
+                channelRepository.deleteById(channelId);
+            }
+        }
     }
 }

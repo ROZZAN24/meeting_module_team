@@ -16,16 +16,16 @@ public class InductionMaster extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "induction_details", length = 1000, nullable = false)
+    @Column(name = "induction_details", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String inductionDetails;
 
-    @Column(name = "answer", length = 2000, nullable = false)
+    @Column(name = "answer", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String answer;
 
-    @Column(name = "department_codes", length = 500)
+    @Column(name = "department_codes", length = 100)
     private String departmentCodes; // Comma separated list of department codes
 
-    @Column(name = "level_codes", length = 500)
+    @Column(name = "level_codes", length = 100)
     private String levelCodes; // Comma separated list of levels (L1, L2, etc.)
 
     @Column(name = "induction_round")
@@ -37,7 +37,7 @@ public class InductionMaster extends BaseAuditEntity {
     @Column(name = "induction_attachment", columnDefinition = "NVARCHAR(MAX)")
     private String inductionAttachment;
 
-    @Column(name = "status")
+    @Column(name = "status", length = 20)
     private String status; // ACTIVE, IN ACTIVE
 
 
