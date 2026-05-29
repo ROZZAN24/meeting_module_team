@@ -101,8 +101,12 @@ public class QmsMeetingScheduleService {
 
     private String generateScheduleNo(QmsMeetingSchedule schedule) {
         String prefix = schedule.getMeetingType() != null ? schedule.getMeetingType().getMeetingPrefix() : "MEET";
-        int year = LocalDate.now().getYear();
-        String yearRange = year + "-" + (year + 1);
+        LocalDate meetingDate = schedule.getMeetingDate() != null ? schedule.getMeetingDate() : LocalDate.now();
+        int year = meetingDate.getYear();
+        int month = meetingDate.getMonthValue();
+        int startYear = (month >= 4) ? year : (year - 1);
+        int endYear = startYear + 1;
+        String yearRange = startYear + "-" + endYear;
         String prefixPath = prefix + "/" + yearRange + "/";
         
         List<QmsMeetingSchedule> existing = repository.findByScheduleNoStartingWith(prefixPath);

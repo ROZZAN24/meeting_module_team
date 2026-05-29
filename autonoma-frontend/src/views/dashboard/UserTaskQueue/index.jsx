@@ -620,7 +620,9 @@ export default function UserTaskQueue() {
   const [allEmployees, setAllEmployees] = useState([]);
   const [pageAuths, setPageAuths] = useState([]);
 
-  const { departments = [], designations = [], levels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS']);
+  const { departments = [], designations = [], levels = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'DESIGNATION_LEVELS']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   const timerRef = useRef(null);
 
@@ -871,7 +873,10 @@ export default function UserTaskQueue() {
                 // Resolve using lookups or fallback to populated names
                 const getDesigName = (id, fallback) => String(designations.find(d => String(d.id) === String(id))?.designationName || fallback || '');
                 const getDeptName = (id, fallback) => String(departments.find(d => String(d.id) === String(id))?.departmentName || fallback || '');
-                const getLevelName = (id, fallback) => String(levels.find(l => String(l.rowId) === String(id))?.level || fallback || '');
+                const getLevelName = (id, fallback) => {
+                  const match = (finalLevels || []).find(l => String(l.rowId || l.id) === String(id));
+                  return String(match?.level || match?.levelName || fallback || '');
+                };
 
                 const desig = empRecord.designationId ? getDesigName(empRecord.designationId, empRecord.designationName || empRecord.designation) : (activeObj?.designation?.name || activeObj?.designation || empRecord.designationName || empRecord.designation || 'USER DESIGNATION');
                 const dept = empRecord.departmentId ? getDeptName(empRecord.departmentId, empRecord.departmentName || empRecord.department) : (activeObj?.department?.name || activeObj?.department || empRecord.departmentName || empRecord.department || 'DEPARTMENT');

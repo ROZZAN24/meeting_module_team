@@ -438,7 +438,7 @@ export default function AddMeetingSchedule() {
                       color: isDark ? 'secondary.light' : 'secondary.main',
                     }}
                   >
-                    {form.meetingDate || new Date().toISOString().split('T')[0]}
+                    {(() => { const rawDate = form.meetingDate || new Date().toISOString().split('T')[0]; if (!rawDate) return '-'; const parts = rawDate.split('T')[0].split('-'); if (parts.length !== 3) return rawDate; return `${parts[2]}-${parts[1]}-${parts[0].slice(-2)}`; })()}
                   </Typography>
                 </Box>
               </Stack>

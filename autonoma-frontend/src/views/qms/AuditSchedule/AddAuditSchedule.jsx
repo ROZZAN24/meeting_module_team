@@ -163,12 +163,15 @@ export default function AddAuditSchedule() {
     auditCriterias: masterCriteria = [], 
     employees = [],
     levels = [],
+    designationLevels = [],
     designations = [],
     customers = [],
     contacts = [],
     auditAreas = [],
     process: processMaster = []
-  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS', 'AUDIT_AREA', 'PROCESS']);
+  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATION_LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS', 'AUDIT_AREA', 'PROCESS']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   // Criteria Dialog state
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
@@ -1099,9 +1102,9 @@ export default function AddAuditSchedule() {
                 // Resolution for Level (using levels or designations lookup)
                 let empLevel = '-';
                 if (selectedEmp) {
-                  const levelMatch = (levels || []).find(l => l && String(l.rowId || l.id) === String(selectedEmp.empLevelId));
+                  const levelMatch = (finalLevels || []).find(l => l && String(l.rowId || l.id) === String(selectedEmp.empLevelId));
                   const desigMatch = (designations || []).find(d => d && String(d.id) === String(selectedEmp.designationId));
-                  empLevel = levelMatch?.level || desigMatch?.designationName || '-';
+                  empLevel = levelMatch?.level || levelMatch?.levelName || desigMatch?.designationName || '-';
                 }
 
                 const employeeOptions = filteredEmployees.map(emp => getEmpLabel(emp));

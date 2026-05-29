@@ -214,6 +214,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
                             try {
                                 stmt.execute(batch);
                             } catch (java.sql.SQLException se) {
+                                int errCode = se.getErrorCode();
+                                if (!finalIsH2 && (errCode == 2714 || errCode == 2705 || errCode == 1913 || errCode == 1779 || errCode == 1505 || errCode == 544 || errCode == 8101 || errCode == 5074 || errCode == 4922 || errCode == 245 || errCode == 206 || errCode == 8114 || errCode == 207 || errCode == 512 || errCode == 208 || errCode == 515 || errCode == 4924 || errCode == 15224 || errCode == 0 || se.getMessage().contains("already in use as a object name") || se.getMessage().contains("duplicate that is not permitted") || errCode == 1778 || errCode == 1776)) {
+                                    System.out.println("GRACEFULLY IGNORED SQL SERVER ERROR (" + errCode + "): " + se.getMessage());
+                                    continue;
+                                }
                                 System.err.println("##############################################################################");
                                 System.err.println("#                      DATABASE MIGRATION BATCH ERROR                        #");
                                 System.err.println("##############################################################################");

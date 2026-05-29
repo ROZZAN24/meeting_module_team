@@ -15,12 +15,12 @@ import AttendanceEntryDialog from './AttendanceEntryDialog';
 import { isMobile } from 'react-device-detect';
 
 const columns = [
-  { id: 'index', label: 'Sl No', minWidth: 60 },
-  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 200, bold: true },
-  { id: 'participantName', label: 'Meeting Participant', minWidth: 180 },
-  { id: 'inTime', label: 'In Time', minWidth: 100 },
-  { id: 'outTime', label: 'Out Time', minWidth: 100 },
-  { id: 'status', label: 'Status', minWidth: 120 }
+  { id: 'index', label: 'Sl No', minWidth: 60, align: 'center' },
+  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 200, bold: true, align: 'center' },
+  { id: 'participantName', label: 'Meeting Participant', minWidth: 180, align: 'center' },
+  { id: 'inTime', label: 'In Time', minWidth: 100, align: 'center' },
+  { id: 'outTime', label: 'Out Time', minWidth: 100, align: 'center' },
+  { id: 'status', label: 'Status', minWidth: 120, align: 'center' }
 ];
 
 export default function AttendanceList() {
@@ -147,7 +147,7 @@ export default function AttendanceList() {
     const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
     return (
       <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
-        <div style={{ width: '100%' }}>
+        <div style={{ width: '100%', display: 'flex', justifyContent: col.align === 'center' ? 'center' : 'flex-start' }}>
           {val}
         </div>
       </Tooltip>

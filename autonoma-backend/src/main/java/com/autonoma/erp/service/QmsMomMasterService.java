@@ -16,6 +16,7 @@ public class QmsMomMasterService {
     private final QmsMomMasterRepository repository;
     private final EmployeeMasterRepository employeeRepository;
     private final com.autonoma.erp.repository.QmsMomDetailRepository detailRepository;
+    private final com.autonoma.erp.repository.QmsMeetingUserAttendanceRepository meetingUserAttendanceRepository;
 
     public List<QmsMomMaster> getAllMoms() {
         return repository.findAll();
@@ -54,6 +55,7 @@ public class QmsMomMasterService {
             dto.setActionTaken(d.getActionTaken());
             dto.setActionObservation(d.getActionObservation());
             dto.setCancelRemarks(d.getCancelRemarks());
+            dto.setAttachmentInfo(d.getAttachmentInfo());
             dto.setCreatedAt(d.getCreatedAt() != null ? d.getCreatedAt().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDateTime() : null);
             dto.setCreatedBy(d.getCreatedBy());
             return dto;
@@ -81,7 +83,9 @@ public class QmsMomMasterService {
             if (mom.getAttendanceList() != null) {
                 mom.getAttendanceList().forEach(att -> att.setMom(mom));
             }
-            return repository.save(mom);
+            QmsMomMaster saved = repository.save(mom);
+            syncToMeetingUserAttendance(saved);
+            return saved;
         } else {
             QmsMomMaster existing = repository.findById(mom.getId())
                     .orElseThrow(() -> new RuntimeException("MOM not found"));
@@ -122,7 +126,9 @@ public class QmsMomMasterService {
                 }
             }
             
-            return repository.save(existing);
+            QmsMomMaster saved = repository.save(existing);
+            syncToMeetingUserAttendance(saved);
+            return saved;
         }
     }
 
@@ -159,7 +165,35 @@ public class QmsMomMasterService {
                 }
             }
         }
-        repository.save(mom);
+        QmsMomMaster saved = repository.save(mom);
+        syncToMeetingUserAttendance(saved);
+    }
+
+    private void syncToMeetingUserAttendance(QmsMomMaster mom) {
+        if (mom == null || mom.getSchedule() == null || mom.getAttendanceList() == null) return;
+        
+        Long scheduleId = mom.getSchedule().getId();
+        for (QmsMomAttendance momAtt : mom.getAttendanceList()) {
+            if (momAtt.getEmployee() != null) {
+                Long empId = momAtt.getEmployee().getId();
+                java.util.Optional<QmsMeetingUserAttendance> userAttOpt = 
+                    meetingUserAttendanceRepository.findByScheduleIdAndEmployeeId(scheduleId, empId);
+                
+                if (userAttOpt.isPresent()) {
+                    QmsMeetingUserAttendance userAtt = userAttOpt.get();
+                    userAtt.setOutTime(momAtt.getOutTime());
+                    meetingUserAttendanceRepository.save(userAtt);
+                } else if (momAtt.getInTime() != null) {
+                    QmsMeetingUserAttendance userAtt = new QmsMeetingUserAttendance();
+                    userAtt.setSchedule(mom.getSchedule());
+                    userAtt.setEmployee(momAtt.getEmployee());
+                    userAtt.setInTime(momAtt.getInTime());
+                    userAtt.setOutTime(momAtt.getOutTime());
+                    userAtt.setStatus(momAtt.getAttendanceStatus() != null ? momAtt.getAttendanceStatus() : "PRESENT");
+                    meetingUserAttendanceRepository.save(userAtt);
+                }
+            }
+        }
     }
 
     @Transactional
@@ -220,6 +254,9 @@ public class QmsMomMasterService {
         }
         if (data.containsKey("actionObservation") && data.get("actionObservation") != null) {
             detail.setActionObservation(String.valueOf(data.get("actionObservation")));
+        }
+        if (data.containsKey("attachmentInfo") && data.get("attachmentInfo") != null) {
+            detail.setAttachmentInfo(String.valueOf(data.get("attachmentInfo")));
         }
         repository.save(mom);
     }

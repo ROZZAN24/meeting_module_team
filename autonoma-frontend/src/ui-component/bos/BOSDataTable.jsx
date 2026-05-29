@@ -284,6 +284,7 @@ export default function BOSDataTable({
               {columns.map((col, ci) => (
                 <TableCell
                   key={col.id}
+                  align={col.align || 'left'}
                   sx={{
                     ...tableHeadCellSx,
                     ...(ci === 0 ? { borderTopLeftRadius: '16px' } : {}),
@@ -357,6 +358,7 @@ export default function BOSDataTable({
                   {columns.map((col) => (
                     <TableCell
                       key={col.id}
+                      align={col.align || 'left'}
                       sx={{
                         cursor: (onDoubleClickRow || onClickRow || onEditRow) ? 'pointer' : 'default',
                         ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),

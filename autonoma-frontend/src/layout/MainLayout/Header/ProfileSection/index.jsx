@@ -61,7 +61,8 @@ export default function ProfileSection() {
   const [notification, setNotification] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const { logout, user } = useAuth();
-  const { departments = [], designations = [], levels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS']);
+  const { departments = [], designations = [], levels = [], designationLevels = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'DESIGNATION_LEVELS']);
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
   const [open, setOpen] = useState(false);
 
   const [empInfo, setEmpInfo] = useState('Loading...');
@@ -78,7 +79,10 @@ export default function ProfileSection() {
           if (empRecord) {
             const getDesigName = (id, fallback) => String(designations.find(d => String(d.id) === String(id))?.designationName || fallback || '');
             const getDeptName = (id, fallback) => String(departments.find(d => String(d.id) === String(id))?.departmentName || fallback || '');
-            const getLevelName = (id, fallback) => String(levels.find(l => String(l.rowId) === String(id))?.level || fallback || '');
+            const getLevelName = (id, fallback) => {
+              const match = (finalLevels || []).find(l => String(l.rowId || l.id) === String(id));
+              return String(match?.level || match?.levelName || fallback || '');
+            };
 
             const desig = empRecord.designationId ? getDesigName(empRecord.designationId, empRecord.designationName || empRecord.designation) : (user.designation?.name || user.designation || empRecord.designationName || empRecord.designation || '');
             const dept = empRecord.departmentId ? getDeptName(empRecord.departmentId, empRecord.departmentName || empRecord.department) : (user.department?.name || user.department || empRecord.departmentName || empRecord.department || '');

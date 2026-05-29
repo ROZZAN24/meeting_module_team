@@ -208,6 +208,7 @@ export default function EmployeeMaster() {
     departments = [], 
     designations = [], 
     levels = [],
+    designationLevels = [],
     auditTypes = [],
     meetings = [],
     employees = [],
@@ -215,7 +216,9 @@ export default function EmployeeMaster() {
     divisions = [],
     segments = [],
     subSegments = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS', 'SEGMENTS', 'SUB_SEGMENTS']);
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'DESIGNATION_LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS', 'SEGMENTS', 'SUB_SEGMENTS']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
@@ -482,7 +485,7 @@ export default function EmployeeMaster() {
             </R>
             <R>
               <BOSTextField select name="empLevelId" label="Level *" value={form.empLevelId} onChange={h} error={!!errors.empLevelId} helperText={errors.empLevelId}>
-                {levels.map((l) => <MenuItem key={l.rowId} value={l.rowId}>{l.level}</MenuItem>)}
+                {finalLevels.map((l) => <MenuItem key={l.rowId || l.id} value={l.rowId || l.id}>{l.level || l.levelName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>

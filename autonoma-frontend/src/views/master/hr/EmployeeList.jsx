@@ -75,13 +75,19 @@ export default function EmployeeList() {
     departments = [], 
     designations = [], 
     levels = [],
+    designationLevels = [],
     users = [],
     grades = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS', 'GRADES']);
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'DESIGNATION_LEVELS', 'USERS', 'GRADES']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   const getDeptName = (id) => String(departments.find(d => String(d.id) === String(id))?.departmentName || id || '-');
   const getDesigName = (id) => String(designations.find(d => String(d.id) === String(id))?.designationName || id || '-');
-  const getLevelName = (id) => String(levels.find(l => String(l.rowId) === String(id))?.level || id || '-');
+  const getLevelName = (id) => {
+    const found = finalLevels.find(l => String(l.rowId || l.id) === String(id));
+    return String(found?.level || found?.levelName || id || '-');
+  };
   const getUnitName = (id) => String([{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-');
 
   // Helper: format manager dropdown label as "Name - EmpCode / Designation / Level"

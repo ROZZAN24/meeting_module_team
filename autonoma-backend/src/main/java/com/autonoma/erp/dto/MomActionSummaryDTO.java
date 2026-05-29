@@ -30,6 +30,7 @@ public class MomActionSummaryDTO {
     private String actionTaken;
     private String actionObservation;
     private String cancelRemarks;
+    private String attachmentInfo;
     private LocalDateTime createdAt;
     private String createdBy;
 }

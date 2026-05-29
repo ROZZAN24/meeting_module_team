@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Stack, Box, Typography, Grid, MenuItem, Button, Tooltip, Divider } from '@mui/material';
-import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
-import { IconChecklist, IconClock, IconMessageReport } from '@tabler/icons-react';
+import { Stack, Box, Typography, Button, Tooltip, Divider } from '@mui/material';
+import { BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload } from 'ui-component/bos';
+import { IconChecklist, IconClock, IconPaperclip } from '@tabler/icons-react';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -18,10 +18,12 @@ const INITIAL_FORM = {
 
 const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
   const dispatch = useDispatch();
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { clearErrors } = useBOSValidation();
   const { user } = useAuth();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
+  const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   // Derive delay days based on SOP
   const getDelayDays = () => {
@@ -47,8 +49,20 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
           actionObservation: item.actionObservation || '',
           cancelRemarks: item.cancelRemarks || ''
         });
+        setIsAttachmentRequired(item.attachmentRequired === 'YES');
+        if (item.attachmentInfo) {
+          try {
+            setAttachments(JSON.parse(item.attachmentInfo));
+          } catch {
+            setAttachments([]);
+          }
+        } else {
+          setAttachments([]);
+        }
       } else {
         setForm(INITIAL_FORM);
+        setIsAttachmentRequired(false);
+        setAttachments([]);
       }
       clearErrors();
     }
@@ -67,7 +81,16 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
 
     setLoading(true);
     try {
-      const payload = { ...form };
+      const payload = {
+        ...form,
+        attachmentInfo: JSON.stringify(attachments.map(att => ({
+          id: att.id,
+          fileName: att.fileName,
+          fileType: att.fileType || 'FILE',
+          serverFileName: att.serverFileName,
+          docDetails: att.docDetails || ''
+        })))
+      };
       const endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/close`;
 
       await axios.put(endpoint, payload);
@@ -255,6 +278,20 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
             )}
           </Stack>
         </BOSFormSection>
+
+        {isAttachmentRequired && (
+          <BOSFormSection title="Attachments" icon={<IconPaperclip size={22} />}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <BOSFileUpload
+                files={attachments}
+                onChange={setAttachments}
+                module="QMS"
+                multiple={true}
+                disabled={isReadonly}
+              />
+            </Stack>
+          </BOSFormSection>
+        )}
       </Stack>
     </BOSFormDialog>
   );

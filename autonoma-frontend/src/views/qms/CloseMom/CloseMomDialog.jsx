@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Stack, Typography, Box, Grid, Divider } from '@mui/material';
-import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
+import { Stack, Typography, Box, Divider } from '@mui/material';
+import { BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload } from 'ui-component/bos';
 import { IconCircleCheck, IconPaperclip } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -15,14 +15,27 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
   const [actionTaken, setActionTaken] = useState('');
   const [actionObservation, setActionObservation] = useState('');
   const [isEditable, setIsEditable] = useState(true);
+  const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   useEffect(() => {
     if (open && item) {
-      setActionTaken('');
-      setActionObservation('');
+      setActionTaken(item.actionTaken || '');
+      setActionObservation(item.actionObservation || '');
       // Editable only for OPEN, REJECTED, CREATED statuses
       const editableStatuses = ['OPEN', 'REJECTED', 'CREATED', 'UNRESOLVED'];
       setIsEditable(editableStatuses.includes(item.status));
+      setIsAttachmentRequired(item.attachmentRequired === 'YES');
+
+      if (item.attachmentInfo) {
+        try {
+          setAttachments(JSON.parse(item.attachmentInfo));
+        } catch {
+          setAttachments([]);
+        }
+      } else {
+        setAttachments([]);
+      }
     }
   }, [open, item]);
 
@@ -44,7 +57,14 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
       await axios.put(`${API_PATHS.QMS.MOMS}/${item._momId}/details/${item.id}/close`, {
         actionTaken: actionTaken.toUpperCase(),
         actionObservation: actionObservation.toUpperCase(),
-        status: 'PENDING FOR APPROVAL'
+        status: 'PENDING FOR APPROVAL',
+        attachmentInfo: JSON.stringify(attachments.map(att => ({
+          id: att.id,
+          fileName: att.fileName,
+          fileType: att.fileType || 'FILE',
+          serverFileName: att.serverFileName,
+          docDetails: att.docDetails || ''
+        })))
       });
       dispatch(openSnackbar({ open: true, message: 'Action submitted for approval', variant: 'alert', severity: 'success' }));
       onSave();
@@ -206,15 +226,19 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
         </Stack>
       </BOSFormSection>
 
-      <BOSFormSection title="Attachments" icon={<IconPaperclip size={22} />}>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <Box sx={{ p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="text.secondary">
-              Samples &amp; Documents section — Upload corrective action files here
-            </Typography>
-          </Box>
-        </Stack>
-      </BOSFormSection>
+      {isAttachmentRequired && (
+        <BOSFormSection title="Attachments" icon={<IconPaperclip size={22} />}>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <BOSFileUpload
+              files={attachments}
+              onChange={setAttachments}
+              module="QMS"
+              multiple={true}
+              disabled={!isEditable}
+            />
+          </Stack>
+        </BOSFormSection>
+      )}
     </BOSFormDialog>
   );
 };

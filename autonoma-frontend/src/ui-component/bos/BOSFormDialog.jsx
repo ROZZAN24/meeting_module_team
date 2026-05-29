@@ -112,7 +112,8 @@ export default function BOSFormDialog({
   sidebar,
   children,
   contentSx = {},
-  hideCollapse = false
+  hideCollapse = false,
+  sx = {}
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -292,6 +293,7 @@ export default function BOSFormDialog({
           overflow: 'visible',
         }
       }}
+      sx={{ ...sx }}
     >
       {/* ── TITLE BAR ── */}
       <DialogTitle
@@ -525,5 +527,6 @@ BOSFormDialog.propTypes = {
   secondaryActions: PropTypes.node,
   children: PropTypes.node,
   contentSx: PropTypes.object,
-  hideCollapse: PropTypes.bool
+  hideCollapse: PropTypes.bool,
+  sx: PropTypes.object
 };

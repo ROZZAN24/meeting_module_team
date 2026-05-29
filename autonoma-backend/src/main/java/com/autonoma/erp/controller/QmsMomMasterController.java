@@ -158,6 +158,10 @@ public class QmsMomMasterController {
     @RequirePagePermission(pageCode = "QM1350", action = "approval")
     public ResponseEntity<?> approveDetail(@PathVariable Long momId, @PathVariable Long detailId,
                                             @RequestBody Map<String, Object> data) {
+        if (!isAuthorizedToApproveOrReject(momId, detailId)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Only the user who assigned this action or an Admin is authorized to verify it."));
+        }
         try {
             service.approveDetail(momId, detailId);
             return ResponseEntity.ok(Map.of("message", "Approved successfully"));
@@ -171,6 +175,10 @@ public class QmsMomMasterController {
     @RequirePagePermission(pageCode = "QM1350", action = "approval")
     public ResponseEntity<?> rejectDetail(@PathVariable Long momId, @PathVariable Long detailId,
                                            @RequestBody Map<String, Object> data) {
+        if (!isAuthorizedToApproveOrReject(momId, detailId)) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Only the user who assigned this action or an Admin is authorized to reject it."));
+        }
         try {
             String comments = data.get("comments") != null ? data.get("comments").toString() : "";
             service.rejectDetail(momId, detailId, comments);
@@ -178,5 +186,35 @@ public class QmsMomMasterController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
+    }
+
+    private boolean isAuthorizedToApproveOrReject(Long momId, Long detailId) {
+        String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            return false;
+        }
+        java.util.Optional<UserCredential> userOpt = userRepo.findByUserId(userId);
+        if (!userOpt.isPresent()) {
+            return false;
+        }
+        UserCredential user = userOpt.get();
+        if (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1) {
+            return true;
+        }
+        QmsMomMaster mom = service.getMomById(momId);
+        if (mom == null || mom.getDetails() == null) {
+            return false;
+        }
+        java.util.Optional<com.autonoma.erp.model.QmsMomDetail> detailOpt = mom.getDetails().stream()
+                .filter(d -> d.getId() != null && d.getId().longValue() == detailId.longValue())
+                .findFirst();
+        if (!detailOpt.isPresent()) {
+            return false;
+        }
+        com.autonoma.erp.model.QmsMomDetail detail = detailOpt.get();
+        if (detail.getAssignedBy() == null) {
+            return true;
+        }
+        return user.getEmpId() != null && user.getEmpId().equals(detail.getAssignedBy().getId());
     }
 }

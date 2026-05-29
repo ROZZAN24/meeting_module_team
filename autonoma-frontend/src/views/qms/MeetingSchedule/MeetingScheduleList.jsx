@@ -26,20 +26,20 @@ const formatTime12h = (time24) => {
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50, align: 'center' },
-  { id: 'scheduleNo', label: 'Schedule No', minWidth: 150, bold: true },
-  { id: 'revSourceScheduleNo', label: 'Amendment Schedule No', minWidth: 160 },
-  { id: 'scheduleDate', label: 'Schedule Date', minWidth: 110 },
-  { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 140 },
-  { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 160 },
-  { id: 'departmentNames', label: 'Department', minWidth: 160 },
-  { id: 'chairedByName', label: 'Chaired By', minWidth: 130 },
-  { id: 'hostByName', label: 'Host By', minWidth: 130 },
-  { id: 'participantsBy', label: 'Participants By', minWidth: 200 },
+  { id: 'scheduleNo', label: 'Schedule No', minWidth: 150, bold: true, align: 'center' },
+  { id: 'revSourceScheduleNo', label: 'Amendment Schedule No', minWidth: 160, align: 'center' },
+  { id: 'scheduleDate', label: 'Schedule Date', minWidth: 110, align: 'center' },
+  { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 140, align: 'center' },
+  { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 160, align: 'center' },
+  { id: 'departmentNames', label: 'Department', minWidth: 160, align: 'center' },
+  { id: 'chairedByName', label: 'Chaired By', minWidth: 130, align: 'center' },
+  { id: 'hostByName', label: 'Host By', minWidth: 130, align: 'center' },
+  { id: 'participantsBy', label: 'Participants By', minWidth: 200, align: 'center' },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 110, align: 'center' },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140, align: 'center' },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 110, align: 'center' },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140, align: 'center' },
   { id: 'review', label: 'Review', minWidth: 80, align: 'center' },
-  { id: 'createdUser', label: 'CREATED USER', minWidth: 110 },
-  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 110 },
-  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140 },
   { id: 'status', label: 'Status', minWidth: 100, align: 'center' }
 ];
 
@@ -83,6 +83,8 @@ export default function MeetingScheduleList() {
         }).filter(Boolean).join(', '),
         createdUser: row.createdUser || row.createdBy || '-',
         updatedUser: row.updatedUser || row.updatedBy || '-',
+        createdAtRaw: row.createdAt || row.createdDate || null,
+        updatedAtRaw: row.updatedAt || row.updatedDate || null,
         createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB') : (row.createdDate ? new Date(row.createdDate).toLocaleString('en-GB') : '-'),
         updatedAt: row.updatedAt ? new Date(row.updatedAt).toLocaleString('en-GB') : (row.updatedDate ? new Date(row.updatedDate).toLocaleString('en-GB') : '-'),
         status: row.status || 'OPEN'
@@ -230,18 +232,35 @@ export default function MeetingScheduleList() {
           }} 
         />
       );
-    } else if (col.id === 'createdAt') {
-      if (!row.createdAt) val = '-';
-      else {
-        const dt = new Date(row.createdAt);
-        const d = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const t = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        val = (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>{d}</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t}</Typography>
-          </Box>
-        );
+    } else if (col.id === 'createdAt' || col.id === 'updatedAt') {
+      const rawDateVal = col.id === 'createdAt' ? row.createdAtRaw : row.updatedAtRaw;
+      if (!rawDateVal) {
+        val = <Typography variant="body2" color="text.secondary">-</Typography>;
+      } else {
+        const dt = new Date(rawDateVal);
+        if (isNaN(dt.getTime())) {
+          val = <Typography variant="body2" color="text.secondary">-</Typography>;
+        } else {
+          // Format date as DD/MM/YYYY
+          const day = String(dt.getDate()).padStart(2, '0');
+          const month = String(dt.getMonth() + 1).padStart(2, '0');
+          const year = dt.getFullYear();
+          const d = `${day}/${month}/${year}`;
+          
+          // Format time as 12-hour style (e.g., 10:53 PM)
+          const t = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+          
+          val = (
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {d}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.1 }}>
+                {t}
+              </Typography>
+            </Box>
+          );
+        }
       }
     } else if (col.id === 'index') {
       val = (
