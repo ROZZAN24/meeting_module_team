@@ -8,26 +8,57 @@ This document serves as the official registry and tracking board for standardizi
 
 ```mermaid
 graph TD
-    A[Phase 1: Freeze Legacy scripts] --> B[Phase 2: Master Module Migration]
-    B --> C[Phase 3: User & Auth AD Module Migration]
-    C --> D[Phase 4: HR & Induction Module Migration]
-    D --> E[Phase 5: QMS & Audit Module Migration]
-    E --> F[Phase 6: Sales & Vendor SM Module Migration]
-    F --> G[Phase 7: Final Cleanup & Flyway Evaluation]
+    A[Phase 1: Freeze Legacy scripts] --> B[Phase 2: Master Common Migrated]
+    B --> C[Phase 3: User & Auth Tables]
+    C --> D[Phase 4: Department & Designation Masters]
+    D --> E[Phase 5: Employee Master & Personal Details]
+    E --> F[Phase 6: Induction & Interview Modules]
+    F --> G[Phase 7: Customer & Vendor Masters]
+    G --> H[Phase 8: QMS & Audit Modules]
 ```
 
 ---
 
-## 2. Module Registry & Progress
+## 2. Table-by-Table Registry & Progress
 
-| Module Name | Legacy Prefix | Target Prefix | Schema Status | Target Migration Release | Progress |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Master (Global Common)** | Mixed | `MST_` | Standardized | `V001__Master_Module.sql` | ✅ Migrated |
-| **User & Auth (Security/Admin)** | `AD_` / `BOS_` | `AD_` | Legacy | `V002__User_Module.sql` | ❌ Pending |
-| **HR & Induction** | `hrm_` / `IND_` | `HR_` | Legacy | `V003__HR_Module.sql` | ❌ Pending |
-| **QMS & Audit** | `QMS_` / `qms_` | `QMS_` | Legacy | `V004__QMS_Module.sql` | ❌ Pending |
-| **Sales, Vendor & CRM (SM)** | `sm_` | `SLS_` / `VND_` | Legacy | `V005__Sales_Vendor_Module.sql` | ❌ Pending |
-| **Support Ticket** | `ticket_` | `TCK_` | Legacy | `V006__Ticket_Module.sql` | ❌ Pending |
+| Table Group / Table Name | Legacy Name | Standardized Name | Target Script | Progress |
+| :--- | :--- | :--- | :--- | :--- |
+| **Phase 1: Global Common Masters** | | | | |
+| Country Master | `MASTER_COUNTRY` | `MST_COUNTRY` | `V001__Master_Module.sql` | ✅ Migrated |
+| State Master | `MASTER_STATE` | `MST_STATE` | `V001__Master_Module.sql` | ✅ Migrated |
+| Product Master | `product_master` | `MST_PRODUCT` | `V001__Master_Module.sql` | ✅ Migrated |
+| Freight Master | `FREIGHT_MASTER` | `MST_FREIGHT` | `V001__Master_Module.sql` | ✅ Migrated |
+| Despatch Mode Master | `MODE_OF_DESPATCH` | `MST_DESPATCH_MODE` | `V001__Master_Module.sql` | ✅ Migrated |
+| **Phase 2: User & Auth Module** | | | | |
+| User Credentials | `ad_user_credential` | `AD_USER_CREDENTIAL` | `V002__User_Module.sql` | ❌ Pending |
+| Company Credentials | `ad_company_credential` | `AD_COMPANY_CREDENTIAL` | `V002__User_Module.sql` | ❌ Pending |
+| Division Master | `ad_division_master` | `AD_DIVISION` | `V002__User_Module.sql` | ❌ Pending |
+| User Mappings | `AD_USER_..._MAPPING` | `AD_USER_..._MAPPING` | `V002__User_Module.sql` | ❌ Pending |
+| **Phase 3: Department & Designation** | | | | |
+| Department Master | `hrm_department_master` | `HR_DEPARTMENT` | `V003__HR_Master_Module.sql` | ❌ Pending |
+| Designation Master | `hrm_designation_master` | `HR_DESIGNATION` | `V003__HR_Master_Module.sql` | ❌ Pending |
+| Designation Level | `hrm_designation_level` | `HR_DESIGNATION_LEVEL` | `V003__HR_Master_Module.sql` | ❌ Pending |
+| Level Master | `hrm_level_master` | `HR_LEVEL` | `V003__HR_Master_Module.sql` | ❌ Pending |
+| **Phase 4: Employee Master (Core HR)** | | | | |
+| Employee Master | `hrm_employee_master` | `HR_EMPLOYEE` | `V004__Employee_Module.sql` | ❌ Pending |
+| Employee Contacts | `hrm_employee_contact` | `HR_EMPLOYEE_CONTACT` | `V004__Employee_Module.sql` | ❌ Pending |
+| Employee Personal Details | `hrm_employee_personal_detail` | `HR_EMPLOYEE_PERSONAL` | `V004__Employee_Module.sql` | ❌ Pending |
+| Employee KYC | `hrm_employee_kyc` | `HR_EMPLOYEE_KYC` | `V004__Employee_Module.sql` | ❌ Pending |
+| **Phase 5: Induction & Interview** | | | | |
+| Induction Master | `IND_INDUCTION_MASTER` | `HR_INDUCTION` | `V005__Induction_Module.sql` | ❌ Pending |
+| Induction Assignment | `IND_INDUCTION_ASSIGNMENT` | `HR_INDUCTION_ASSIGNMENT` | `V005__Induction_Module.sql` | ❌ Pending |
+| Induction Training Detail | `IND_INDUCTION_TRAINING_DETAIL`| `HR_INDUCTION_TRAINING` | `V005__Induction_Module.sql` | ❌ Pending |
+| Interview Master | `IND_INTERVIEW_MASTER` | `HR_INTERVIEW` | `V005__Induction_Module.sql` | ❌ Pending |
+| **Phase 6: Customer, Supplier & CRM** | | | | |
+| Customer Master | `sm_customer_master` | `SLS_CUSTOMER` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
+| Customer Address | `sm_customer_address` | `SLS_CUSTOMER_ADDRESS` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
+| Supplier/Vendor Master | `sm_supplier_master` | `VND_VENDOR` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
+| Vendor Customer Mapping | `sm_vendor_customer_master` | `VND_CUSTOMER_MAPPING` | `V006__Sales_Vendor_Module.sql`| ❌ Pending |
+| **Phase 7: QMS & Audit Module** | | | | |
+| Checklist Master | `qms_checklist_master` | `QMS_CHECKLIST` | `V007__QMS_Module.sql` | ❌ Pending |
+| Checklist Assignment | `qms_checklist_assignment` | `QMS_CHECKLIST_ASSIGNMENT` | `V007__QMS_Module.sql` | ❌ Pending |
+| Meeting Master | `qms_meeting_master` | `QMS_MEETING` | `V007__QMS_Module.sql` | ❌ Pending |
+| Mom Master | `qms_mom_master` | `QMS_MOM` | `V007__QMS_Module.sql` | ❌ Pending |
 
 *Status key: ❌ Pending | 🔄 In Progress | ✅ Migrated*
 
@@ -76,67 +107,90 @@ It is highly recommended that all core tables (such as master, employee, transac
     *   `MST_FREIGHT` (PK: `PK_MST_FREIGHT`)
     *   `MST_DESPATCH_MODE` (PK: `PK_MST_DESPATCH_MODE`)
 
----
-
-### Module 2: User & Auth (Security/Admin)
-*   **Legacy Tables:**
-    *   `AD_USER_CREDENTIALS` / `ad_user_credential`
-    *   `AD_COMPANY_CREDENTIAL`
-    *   `ad_division_master`
-    *   `AD_USER_COMPANY_MAPPING`
-    *   `AD_USER_DIVISION_MAPPING`
-    *   `AD_USER_SESSION_ACTIVITY`
-    *   `AD_USER_SESSION_AUDIT`
-    *   `ad_user_theme_setting`
-    *   `bos_modules`
-    *   `bos_sub_modules`
-    *   `bos_pages`
-    *   `bos_user_page_auth`
-*   **Standardized Schema Target:**
-    *   `AD_USER_CREDENTIAL`
-    *   `AD_COMPANY_CREDENTIAL`
-    *   `AD_DIVISION`
-    *   `AD_USER_COMPANY_MAPPING`
-    *   `AD_USER_DIVISION_MAPPING`
-    *   `AD_USER_SESSION_ACTIVITY`
-    *   `AD_USER_SESSION_AUDIT`
-    *   `AD_USER_THEME_SETTING`
-    *   `AD_MODULE`
-    *   `AD_SUB_MODULE`
-    *   `AD_PAGE`
-    *   `AD_PAGE_AUTH`
+### Phase 2: User & Auth Module (Security/Admin)
+*   **Step 2.1: User Credentials**
+    *   Legacy: `ad_user_credential` $\rightarrow$ Target: `AD_USER_CREDENTIAL`
+    *   Sizing: Optimize password length, role, and auth method limits.
+*   **Step 2.2: Company Credentials**
+    *   Legacy: `AD_COMPANY_CREDENTIAL` $\rightarrow$ Target: `AD_COMPANY_CREDENTIAL`
+    *   Sizing: Relative paths for directory paths (`NVARCHAR(1000)`).
+*   **Step 2.3: Division Master**
+    *   Legacy: `AD_DIVISION_MASTER` $\rightarrow$ Target: `AD_DIVISION` (PK: `PK_AD_DIVISION`)
+*   **Step 2.4: Mappings**
+    *   Legacy: `AD_USER_COMPANY_MAPPING`, `AD_USER_DIVISION_MAPPING` $\rightarrow$ Targets unchanged.
+*   **Step 2.5: Session Activity**
+    *   Legacy: `AD_USER_SESSION_ACTIVITY`, `AD_USER_SESSION_AUDIT` $\rightarrow$ Targets unchanged.
 
 ---
 
-### Module 3: HR & Induction
-*   **Legacy Tables:**
-    *   `hrm_employee_master`
-    *   `hrm_department_master`
-    *   `hrm_designation_master`
-    *   `hrm_designation_level`
-    *   `hrm_employee_contact`
-    *   `hrm_employee_personal_detail`
-    *   `hrm_employee_kyc`
-    *   `hrm_employee_education`
-    *   `hrm_employee_experience`
-    *   `IND_INDUCTION_MASTER`
-    *   `IND_INDUCTION_ASSIGNMENT`
-    *   `IND_INDUCTION_TRAINING_DETAIL`
-    *   `IND_INTERVIEW_MASTER`
-*   **Standardized Schema Target:**
-    *   `HR_EMPLOYEE`
-    *   `HR_DEPARTMENT`
-    *   `HR_DESIGNATION`
-    *   `HR_DESIGNATION_LEVEL`
-    *   `HR_EMPLOYEE_CONTACT`
-    *   `HR_EMPLOYEE_PERSONAL`
-    *   `HR_EMPLOYEE_KYC` (URL column stores relative paths, type `NVARCHAR(1000)`)
-    *   `HR_EMPLOYEE_EDUCATION`
-    *   `HR_EMPLOYEE_EXPERIENCE`
-    *   `HR_INDUCTION`
-    *   `HR_INDUCTION_ASSIGNMENT`
-    *   `HR_INDUCTION_TRAINING`
-    *   `HR_INTERVIEW`
+### Phase 3: Department & Designation Masters
+*   **Step 3.1: Department Master**
+    *   Legacy: `HR_DEPARTMENT_MASTER` $\rightarrow$ Target: `HR_DEPARTMENT` (PK: `PK_HR_DEPARTMENT`)
+    *   Sizing: `dept_name` to `NVARCHAR(100)`, `dept_no` to `NVARCHAR(20)`.
+*   **Step 3.2: Designation Master**
+    *   Legacy: `HR_DESIGNATION_MASTER` $\rightarrow$ Target: `HR_DESIGNATION` (PK: `PK_HR_DESIGNATION`)
+*   **Step 3.3: Designation Level**
+    *   Legacy: `HR_DESIGNATION_LEVEL` $\rightarrow$ Target: `HR_DESIGNATION_LEVEL`
+*   **Step 3.4: Level Master**
+    *   Legacy: `HR_LEVEL_MASTER` $\rightarrow$ Target: `HR_LEVEL` (PK: `PK_HR_LEVEL`)
+*   **Step 3.5: Employee Type Master**
+    *   Legacy: `HR_EMPLOYEE_TYPE_MASTER` $\rightarrow$ Target: `HR_EMPLOYEE_TYPE` (PK: `PK_HR_EMPLOYEE_TYPE`)
+
+---
+
+### Phase 4: Employee Master & Personal Details (Core HR)
+*   **Step 4.1: Employee Master**
+    *   Legacy: `HR_EMPLOYEE_MASTER` $\rightarrow$ Target: `HR_EMPLOYEE` (PK: `PK_HR_EMPLOYEE`)
+    *   Sizing: Employee name fields (`NVARCHAR(100)`), file upload columns (photo, signature, fitness certificate) resized to `NVARCHAR(1000)` and standardized to relative URL paths.
+*   **Step 4.2: Employee Contacts**
+    *   Legacy: `HR_EMPLOYEE_CONTACT` $\rightarrow$ Target: `HR_EMPLOYEE_CONTACT` (FK: `FK_HR_EMPLOYEE_CONTACT_EMPLOYEE`)
+*   **Step 4.3: Employee Personal Details**
+    *   Legacy: `HR_EMPLOYEE_PERSONAL_DETAIL` $\rightarrow$ Target: `HR_EMPLOYEE_PERSONAL` (FK: `FK_HR_EMPLOYEE_PERSONAL_EMPLOYEE`)
+*   **Step 4.4: Employee KYC & Uploads**
+    *   Legacy: `HR_EMPLOYEE_KYC`, `HR_EMPLOYEE_KYC_DOCUMENT` $\rightarrow$ Target: `HR_EMPLOYEE_KYC`, `HR_EMPLOYEE_KYC_DOCUMENT`
+    *   Sizing: Relative document upload paths using `NVARCHAR(1000)` instead of local paths.
+*   **Step 4.5: Education & Experience**
+    *   Legacy: `HR_EMPLOYEE_EDUCATION`, `HR_EMPLOYEE_EXPERIENCE` $\rightarrow$ Targets unchanged.
+
+---
+
+### Phase 5: Induction & Interview Modules
+*   **Step 5.1: Induction Master**
+    *   Legacy: `IND_INDUCTION_MASTER` $\rightarrow$ Target: `HR_INDUCTION` (PK: `PK_HR_INDUCTION`)
+*   **Step 5.2: Induction Assignment**
+    *   Legacy: `IND_INDUCTION_ASSIGNMENT` $\rightarrow$ Target: `HR_INDUCTION_ASSIGNMENT` (PK: `PK_HR_INDUCTION_ASSIGN`)
+*   **Step 5.3: Induction Training Detail**
+    *   Legacy: `IND_INDUCTION_TRAINING_DETAIL` $\rightarrow$ Target: `HR_INDUCTION_TRAINING` (PK: `PK_HR_INDUCTION_TRAINING`)
+*   **Step 5.4: Interview Master**
+    *   Legacy: `IND_INTERVIEW_MASTER` $\rightarrow$ Target: `HR_INTERVIEW` (PK: `PK_HR_INTERVIEW`)
+
+---
+
+### Phase 6: Customer, Supplier & CRM
+*   **Step 6.1: Customer Master**
+    *   Legacy: `SM_CUSTOMER_MASTER` $\rightarrow$ Target: `SLS_CUSTOMER` (PK: `PK_SLS_CUSTOMER`)
+*   **Step 6.2: Customer Address**
+    *   Legacy: `SM_CUSTOMER_ADDRESS` $\rightarrow$ Target: `SLS_CUSTOMER_ADDRESS` (PK: `PK_SLS_CUSTOMER_ADDR`, FK: `FK_SLS_CUSTOMER_ADDR_CUSTOMER`)
+*   **Step 6.3: Customer Potential**
+    *   Legacy: `SM_CUSTOMER_POTENTIAL` $\rightarrow$ Target: `SLS_CUSTOMER_POTENTIAL`
+*   **Step 6.4: Supplier/Vendor Master**
+    *   Legacy: `SM_SUPPLIER_MASTER` $\rightarrow$ Target: `VND_VENDOR` (PK: `PK_VND_VENDOR`)
+*   **Step 6.5: Vendor Customer Mapping**
+    *   Legacy: `SM_VENDOR_CUSTOMER_MASTER` $\rightarrow$ Target: `VND_CUSTOMER_MAPPING`
+
+---
+
+### Phase 7: QMS & Audit Module
+*   **Step 7.1: Checklist Master**
+    *   Legacy: `QMS_CHECKLIST_MASTER` $\rightarrow$ Target: `QMS_CHECKLIST` (PK: `PK_QMS_CHECKLIST`)
+*   **Step 7.2: Checklist Assignment**
+    *   Legacy: `QMS_CHECKLIST_ASSIGNMENT`, `QMS_CHECKLIST_VERIFICATION` $\rightarrow$ Target: `QMS_CHECKLIST_ASSIGNMENT`, `QMS_CHECKLIST_VERIFICATION`
+*   **Step 7.3: Audit Schedule & Criteria**
+    *   Legacy: `QMS_AUDIT_SCHEDULE`, `QMS_AUDIT_CRITERIA` $\rightarrow$ Target: `QMS_AUDIT_SCHEDULE`, `QMS_AUDIT_CRITERIA`
+*   **Step 7.4: Audit Observation & Attendance**
+    *   Legacy: `QMS_AUDIT_OBSERVATION`, `QMS_AUDIT_ATTENDANCE` $\rightarrow$ Target: `QMS_AUDIT_OBSERVATION`, `QMS_AUDIT_ATTENDANCE`
+*   **Step 7.5: Meeting Master & Mom Details**
+    *   Legacy: `QMS_MEETING_MASTER`, `QMS_MOM_MASTER`, `QMS_MOM_DETAIL` $\rightarrow$ Target: `QMS_MEETING`, `QMS_MOM`, `QMS_MOM_DETAIL`
 
 ---
 
