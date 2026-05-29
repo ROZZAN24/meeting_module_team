@@ -40,14 +40,9 @@ const columns = [
   'Verify Status', 'Verified By', 'Verified Date'
 ];
 
-const DEPARTMENTS = [
-  'ACCOUNTS', 'ADMIN', 'ASSEMBLY', 'BUSINESS DEVELOPMENT', 'DESIGN & DEVELOPMENT',
-  'HRA', 'LOGISTICS', 'MAINTENANCE', 'MANAGEMENT', 'MANAGEMENT REPRESENTATIVE',
-  'OPERATIONS', 'PLANNING', 'PRODUCT DEVELOPMENT', 'PRODUCTION', 'PURCHASE',
-  'QMS', 'QUALITY', 'SALES & MARKETING', 'STORES', 'STRATEGIC PROCUREMENT', 'TOP MANAGEMENT'
-];
 
-const DEFAULT_FILTERS = { status: 'All', category: 'All', departments: [], searchBy: 'All', searchByValue: '' };
+
+const DEFAULT_FILTERS = { status: 'Pending for Verify', category: 'All', departments: [], searchBy: 'All', searchByValue: '' };
 
 const SEARCH_BY_OPTIONS = [
   { key: 'All', label: 'Global Search' },
@@ -122,9 +117,9 @@ const exportColumns = [
   { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) }
 ];
 
-const filterConfig = [
+const getFilterConfig = (departments) => [
   {
-    id: 'status', label: 'Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
+    id: 'status', label: 'Status', type: 'select', isStarred: true, defaultValue: 'Pending for Verify', options: [
       { value: 'All', label: 'All' },
       { value: 'Pending for Verify', label: 'Pending for Verify' },
       { value: 'Verified', label: 'Verified' },
@@ -138,7 +133,7 @@ const filterConfig = [
       { value: 'CHECK LIST', label: 'CHECK LIST' }
     ]
   },
-  { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: DEPARTMENTS.map(d => ({ value: d, label: d })) },
+  { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: departments.map(d => ({ value: d, label: d })) },
   {
     id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'Global Search' },
@@ -224,15 +219,30 @@ export default function CheckListVerify() {
   const [openSections, setOpenSections] = useState({ status:true, category:true, department:false, searchBy:false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]:!p[key] }));
 
+  const [departmentsList, setDepartmentsList] = useState([]);
+
+  useEffect(() => {
+    axios.get('/api/master/hr/departments')
+      .then(res => {
+        const list = (res.data || [])
+          .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
+          .map(d => d.departmentName);
+        setDepartmentsList(list);
+      })
+      .catch(err => {
+        console.error("Failed to load departments from master", err);
+      });
+  }, []);
+
   // Configure global search bar filters on mount
   useEffect(() => {
-    dispatch(setFilterConfig(filterConfig));
+    dispatch(setFilterConfig(getFilterConfig(departmentsList)));
     dispatch(setTableConfig(tableCols));
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(setTableConfig(null));
     };
-  }, [dispatch]);
+  }, [dispatch, departmentsList]);
 
   // Sync global search filters with local filters
   useEffect(() => {
@@ -264,7 +274,7 @@ export default function CheckListVerify() {
       const params = {
         page,
         size,
-        status: filters.status !== 'All' ? filters.status : undefined,
+        verifyStatus: filters.status !== 'All' ? filters.status : undefined,
         category: filters.category !== 'All' ? filters.category : undefined,
         department: filters.departments.length > 0 ? filters.departments[0] : undefined,
         searchValue: searchQuery || undefined,
@@ -499,7 +509,7 @@ export default function CheckListVerify() {
           <Divider />
           <FilterSection title="Department" open={openSections.department} onToggle={() => toggleSection('department')}>
             <Box sx={{ maxHeight: 250, overflowY: 'auto' }}>
-              {DEPARTMENTS.map((d) => <FormControlLabel key={d} sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p: 0.5 }} />} label={<Typography variant="body2">{d}</Typography>} />)}
+              {departmentsList.map((d) => <FormControlLabel key={d} sx={{ display: 'flex', ml: 0, mr: 0, py: 0.2 }} control={<Checkbox size="small" checked={filters.departments.includes(d)} onChange={() => toggleDept(d)} sx={{ p: 0.5 }} />} label={<Typography variant="body2">{d}</Typography>} />)}
             </Box>
           </FilterSection>
           <Divider />
