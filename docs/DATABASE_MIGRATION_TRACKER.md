@@ -8,13 +8,14 @@ This document serves as the official registry and tracking board for standardizi
 
 ```mermaid
 graph TD
-    A[Phase 1: Freeze Legacy scripts] --> B[Phase 2: Master Common Migrated]
-    B --> C[Phase 3: User & Auth Tables]
-    C --> D[Phase 4: Department & Designation Masters]
-    D --> E[Phase 5: Employee Master & Personal Details]
-    E --> F[Phase 6: Induction & Interview Modules]
-    F --> G[Phase 7: Customer & Vendor Masters]
-    G --> H[Phase 8: QMS & Audit Modules]
+    A[Phase 1: Global Common Masters] --> B[Phase 2: User & Auth Module]
+    B --> C[Phase 3: Department & Designation]
+    C --> D[Phase 4: Employee Master (Core HR)]
+    D --> E[Phase 5: Induction & Interview]
+    E --> F[Phase 6: Customer, Supplier & CRM]
+    F --> G[Phase 7: QMS & Audit Module]
+    G --> H[Phase 8: Production & Inventory Module]
+    H --> I[Phase 9: Sales & Marketing Transactions Module]
 ```
 
 ---
@@ -70,6 +71,10 @@ graph TD
 | OEM Part Mapping | `npd_oem_mapping` | `NPD_OEM_MAPPING` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
 | Process Master | `npd_process` | `NPD_PROCESS` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
 | Wind Farm Master | `npd_wind_farm` | `NPD_WIND_FARM` | `V008__Production_Inventory_Module.sql` | ✅ Migrated |
+| **Phase 9: Sales & Marketing Transactions** | | | | |
+| Enquiry Master | `SM_ENQUIRY` | `SLS_ENQUIRY` | `V009__Sales_Transactions_Module.sql` | ✅ Migrated |
+| Price Master | `SM_PRICE_MASTER` | `SLS_PRICE_MASTER` | `V009__Sales_Transactions_Module.sql` | ✅ Migrated |
+| Quotation Master | `SM_QUOTATION` | `SLS_QUOTATION` | `V009__Sales_Transactions_Module.sql` | ✅ Migrated |
 
 *Status key: ❌ Pending | 🔄 In Progress | ✅ Migrated*
 
@@ -254,6 +259,18 @@ It is highly recommended that all core tables (such as master, employee, transac
     *   `NPD_OEM_MAPPING`
     *   `NPD_PROCESS`
     *   `NPD_WIND_FARM`
+
+---
+
+### Phase 9: Sales & Marketing Transactions Module
+*   **Legacy Tables:**
+    *   `SM_ENQUIRY`
+    *   `SM_PRICE_MASTER`
+    *   `SM_QUOTATION`
+*   **Standardized Schema Target:**
+    *   `SLS_ENQUIRY` (PK: `PK_SLS_ENQUIRY`, FK: `FK_SLS_ENQUIRY_CUSTOMER`)
+    *   `SLS_PRICE_MASTER` (PK: `PK_SLS_PRICE_MASTER`, FK: `FK_SLS_PRICE_MASTER_CUSTOMER`)
+    *   `SLS_QUOTATION` (PK: `PK_SLS_QUOTATION`, FK: `FK_SLS_QUOTATION_CUSTOMER`)
 
 ---
 
