@@ -37,7 +37,7 @@ public class ChecklistSchedulerService {
         
         List<MasterChecklist> activeChecklists = masterRepo.findByStatusAndVerifyStatus("Active", "Verified");
         Date today = new Date();
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
         cal.setTime(today);
         
         int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK); // 1 = Sunday, 2 = Monday...
@@ -46,6 +46,7 @@ public class ChecklistSchedulerService {
         for (MasterChecklist checklist : activeChecklists) {
             if (checklist.getEffectiveFrom() != null) {
                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+                sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
                 String todayStr = sdf.format(today);
                 String effectiveStr = sdf.format(checklist.getEffectiveFrom());
                 if (effectiveStr.compareTo(todayStr) > 0) {
@@ -59,7 +60,7 @@ public class ChecklistSchedulerService {
             boolean shouldGenerate = false;
             
             // Anchoring logic: Recurrence is based on the components of the 'Effective From' date
-            Calendar effectiveCal = Calendar.getInstance();
+            Calendar effectiveCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             if (checklist.getEffectiveFrom() != null) {
                 effectiveCal.setTime(checklist.getEffectiveFrom());
             } else {
@@ -82,14 +83,14 @@ public class ChecklistSchedulerService {
                     break;
                 case "FORTNIGHTLY":
                     // Strictly every 14 days from the anchor Effective From date
-                    Calendar todayCal = Calendar.getInstance();
+                    Calendar todayCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
                     todayCal.setTime(today);
                     todayCal.set(Calendar.HOUR_OF_DAY, 0);
                     todayCal.set(Calendar.MINUTE, 0);
                     todayCal.set(Calendar.SECOND, 0);
                     todayCal.set(Calendar.MILLISECOND, 0);
 
-                    Calendar startCal = Calendar.getInstance();
+                    Calendar startCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
                     startCal.setTime(checklist.getEffectiveFrom() != null ? checklist.getEffectiveFrom() : (checklist.getCreatedDate() != null ? checklist.getCreatedDate() : today));
                     startCal.set(Calendar.HOUR_OF_DAY, 0);
                     startCal.set(Calendar.MINUTE, 0);
@@ -181,7 +182,7 @@ public class ChecklistSchedulerService {
                 assignment.setCarryForwardStatus("YES");
                 
                 // Carry forward the date to tomorrow (next day) so it shows up in tomorrow's active workload
-                Calendar tomorrow = Calendar.getInstance();
+                Calendar tomorrow = Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
                 tomorrow.setTime(assignment.getChecklistDate() != null ? assignment.getChecklistDate() : today);
                 tomorrow.add(Calendar.DAY_OF_YEAR, 1);
                 assignment.setChecklistDate(tomorrow.getTime());

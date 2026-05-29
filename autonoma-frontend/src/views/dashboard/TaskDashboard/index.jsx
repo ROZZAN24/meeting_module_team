@@ -86,8 +86,13 @@ export default function TaskDashboard() {
     if (!activeUserId) return;
     const fetchData = async () => {
       try {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
         const [r1, r2, r3, r4, r5] = await Promise.allSettled([
-          axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0 } }),
+          axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),

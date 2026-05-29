@@ -47,12 +47,12 @@ public class MasterChecklist extends BaseAuditEntity {
 
     @Column(name = "EFFECTIVE_FROM")
     @Temporal(TemporalType.DATE)
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Kolkata")
     private Date effectiveFrom;
 
     @Column(name = "EXPIRY_DATE")
     @Temporal(TemporalType.DATE)
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Kolkata")
     private Date expiryDate;
 
     @Column(name = "REMINDER_DAYS")
@@ -60,7 +60,7 @@ public class MasterChecklist extends BaseAuditEntity {
 
     @Column(name = "REMINDER_DATE")
     @Temporal(TemporalType.DATE)
-    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Kolkata")
     private Date reminderDate;
 
     @Column(name = "STOCK_LINK")

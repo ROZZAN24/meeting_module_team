@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
 @Table(name = "QMS_CHECKLIST_ASSIGNMENT")
@@ -33,6 +34,7 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     @Column(name = "ASSIGNED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(timezone = "Asia/Kolkata")
     private Date assignedDate;
 
     @ManyToOne
@@ -44,6 +46,7 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     @Column(name = "CHECKLIST_DATE")
     @Temporal(TemporalType.DATE)
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Kolkata")
     private Date checklistDate;
 
     @Column(name = "CARRY_FORWARD")
@@ -63,6 +66,7 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     @Column(name = "VERIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(timezone = "Asia/Kolkata")
     private Date verifiedDate;
 
     @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")

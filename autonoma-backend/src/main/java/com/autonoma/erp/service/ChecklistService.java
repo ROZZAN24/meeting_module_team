@@ -351,19 +351,8 @@ public class ChecklistService {
 
             // Automatic Assignment Trigger (Wiring 1)
             if (saved.getAssignTo() != null && !saved.getAssignTo().isEmpty()) {
-                boolean futureEffective = false;
-                if (saved.getEffectiveFrom() != null) {
-                    java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
-                    String todayStr = sdf.format(new Date());
-                    String effectiveStr = sdf.format(saved.getEffectiveFrom());
-                    if (effectiveStr.compareTo(todayStr) > 0) {
-                        futureEffective = true;
-                    }
-                }
-                if (!futureEffective) {
-                    assignTask(null, saved.getId(), saved.getAssignTo(),
-                            saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
-                }
+                assignTask(null, saved.getId(), saved.getAssignTo(),
+                        saved.getCreatedBy() != null ? saved.getCreatedBy() : "System", "PRIMARY");
             }
 
             return saved;
@@ -462,9 +451,16 @@ public class ChecklistService {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("checklistDate"), fromDate));
             }
 
-            if (toDate != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("checklistDate"), toDate));
+            Date effectiveToDate = toDate;
+            if (effectiveToDate == null) {
+                java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 23);
+                cal.set(java.util.Calendar.MINUTE, 59);
+                cal.set(java.util.Calendar.SECOND, 59);
+                cal.set(java.util.Calendar.MILLISECOND, 999);
+                effectiveToDate = cal.getTime();
             }
+            predicates.add(cb.lessThanOrEqualTo(root.get("checklistDate"), effectiveToDate));
 
             if (category != null && !category.equals("All")) {
                 if (masterJoin == null) {
@@ -519,7 +515,18 @@ public class ChecklistService {
     @Transactional
     public ChecklistAssignment assignTask(Long id, Long checklistId, String assignedTo, String assignedBy,
             String assignType) {
-        return assignTask(id, checklistId, assignedTo, assignedBy, assignType, new Date());
+        MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
+        Date targetDate = new Date();
+        if (checklist.getEffectiveFrom() != null) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+            String todayStr = sdf.format(targetDate);
+            String effectiveStr = sdf.format(checklist.getEffectiveFrom());
+            if (effectiveStr.compareTo(todayStr) > 0) {
+                targetDate = checklist.getEffectiveFrom();
+            }
+        }
+        return assignTask(id, checklistId, assignedTo, assignedBy, assignType, targetDate);
     }
 
     @Transactional
@@ -652,6 +659,7 @@ public class ChecklistService {
                         || "Started".equalsIgnoreCase(assignment.getStatus().getName()))) {
 
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
 
             java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
@@ -765,6 +773,7 @@ public class ChecklistService {
         if ("Rejected".equalsIgnoreCase(finalStatusName)) {
             boolean alreadyExists = false;
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
 
             java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
@@ -799,6 +808,7 @@ public class ChecklistService {
         // ERASE ON VERIFY WORKFLOW:
         if (isFinalized) {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
 
             java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
@@ -846,7 +856,7 @@ public class ChecklistService {
         String freq = master.getFrequency().toUpperCase();
         Date currentDate = current.getChecklistDate() != null ? current.getChecklistDate() : new Date();
 
-        java.util.Calendar cal = java.util.Calendar.getInstance();
+        java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
         cal.setTime(currentDate);
 
         switch (freq) {
