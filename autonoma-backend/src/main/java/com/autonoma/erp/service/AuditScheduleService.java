@@ -30,6 +30,8 @@ public class AuditScheduleService {
         logger.debug("Creating Audit Schedule with {} criteria items", 
             auditSchedule.getCriteriaList() != null ? auditSchedule.getCriteriaList().size() : 0);
             
+        validateEmployeeAvailability(auditSchedule, null);
+
         if (auditSchedule.getCriteriaList() != null) {
             for (AuditScheduleCriteria criteria : auditSchedule.getCriteriaList()) {
                 criteria.setAuditSchedule(auditSchedule);
@@ -39,6 +41,7 @@ public class AuditScheduleService {
     }
 
     public AuditSchedule updateAuditSchedule(Long id, AuditSchedule updatedAuditSchedule) {
+        validateEmployeeAvailability(updatedAuditSchedule, id);
         return repository.findById(id).map(existing -> {
             existing.setScheduleDate(updatedAuditSchedule.getScheduleDate());
             existing.setStatus(updatedAuditSchedule.getStatus());
@@ -65,6 +68,54 @@ public class AuditScheduleService {
             }
             return repository.save(existing);
         }).orElseThrow(() -> new RuntimeException("Audit Schedule not found with id " + id));
+    }
+
+    private String extractEmployeeCode(String employeeField) {
+        if (employeeField == null || employeeField.trim().isEmpty()) {
+            return null;
+        }
+        int index = employeeField.lastIndexOf(" - ");
+        if (index != -1) {
+            return employeeField.substring(index + 3).trim();
+        }
+        return employeeField.trim();
+    }
+
+    private void validateEmployeeAvailability(AuditSchedule schedule, Long excludeId) {
+        if (schedule.getStatus() != null && !"OPEN".equalsIgnoreCase(schedule.getStatus())) {
+            return;
+        }
+
+        String auditeeCode = extractEmployeeCode(schedule.getAuditee());
+        String auditorCode = extractEmployeeCode(schedule.getAuditor());
+
+        List<AuditSchedule> activeSchedules = repository.findAll().stream()
+            .filter(a -> !a.isDeleted() && "OPEN".equalsIgnoreCase(a.getStatus()))
+            .filter(a -> excludeId == null || !a.getId().equals(excludeId))
+            .toList();
+
+        for (AuditSchedule active : activeSchedules) {
+            String activeAuditeeCode = extractEmployeeCode(active.getAuditee());
+            String activeAuditorCode = extractEmployeeCode(active.getAuditor());
+
+            if (auditeeCode != null) {
+                if (auditeeCode.equalsIgnoreCase(activeAuditeeCode)) {
+                    throw new RuntimeException("Validation Error: Auditee " + schedule.getAuditee() + " is already assigned to open Audit " + active.getScheduleNo());
+                }
+                if (auditeeCode.equalsIgnoreCase(activeAuditorCode)) {
+                    throw new RuntimeException("Validation Error: Auditee " + schedule.getAuditee() + " is already assigned as Auditor to open Audit " + active.getScheduleNo());
+                }
+            }
+
+            if (auditorCode != null) {
+                if (auditorCode.equalsIgnoreCase(activeAuditeeCode)) {
+                    throw new RuntimeException("Validation Error: Auditor " + schedule.getAuditor() + " is already assigned as Auditee to open Audit " + active.getScheduleNo());
+                }
+                if (auditorCode.equalsIgnoreCase(activeAuditorCode)) {
+                    throw new RuntimeException("Validation Error: Auditor " + schedule.getAuditor() + " is already assigned to open Audit " + active.getScheduleNo());
+                }
+            }
+        }
     }
 
     public void deleteAuditSchedule(Long id) {

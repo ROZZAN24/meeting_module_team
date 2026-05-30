@@ -413,7 +413,8 @@ export default function AddAuditSchedule() {
       }
       navigate('/qms/audit/schedule');
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Error saving Audit Schedule.', severity: 'error', variant: 'alert' }));
+      const errorMsg = error.response?.data?.message || error.response?.data?.details || error.message || 'Error saving Audit Schedule.';
+      dispatch(openSnackbar({ open: true, message: errorMsg, severity: 'error', variant: 'alert' }));
     }
   };
 

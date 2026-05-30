@@ -20,6 +20,15 @@ public class AuditAreaController {
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(AuditAreaController.class);
 
     @Autowired
+    private com.autonoma.erp.repository.AuditTypeRepository auditTypeRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.AuditScheduleRepository auditScheduleRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.AuditCriteriaRepository auditCriteriaRepository;
+
+    @Autowired
     private AuditAreaRepository auditAreaRepository;
 
     @GetMapping
@@ -68,7 +77,51 @@ public class AuditAreaController {
     @DeleteMapping("/{id}")
     @RequirePagePermission(pageCode = "M1120", action = "delete")
     @Operation(summary = "Delete Audit Area", description = "Deletes an audit area by its ID")
-    public ResponseEntity<Void> deleteAuditArea(@PathVariable Long id) {
+    public ResponseEntity<?> deleteAuditArea(@PathVariable Long id) {
+        AuditArea existing = auditAreaRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        String areaName = existing.getDescription();
+        if (areaName == null || areaName.trim().isEmpty()) {
+            auditAreaRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        
+        areaName = areaName.trim();
+        final String searchName = areaName.toLowerCase();
+
+        // 1. Check if referenced in Audit Type
+        List<com.autonoma.erp.model.AuditType> matchingTypes = auditTypeRepository.findAll().stream()
+            .filter(t -> t.getAuditArea() != null && t.getAuditArea().toLowerCase().contains(searchName))
+            .toList();
+
+        // 2. Check if referenced in Audit Schedule
+        boolean inSchedule = auditScheduleRepository.findAll().stream()
+            .filter(s -> !s.isDeleted())
+            .anyMatch(s -> {
+                if (s.getAuditArea() != null && s.getAuditArea().toLowerCase().contains(searchName)) {
+                    return true;
+                }
+                if (s.getAuditeeDetails() != null && s.getAuditeeDetails().toLowerCase().contains(searchName)) {
+                    return true;
+                }
+                return false;
+            });
+
+        // 3. Check if any matching Audit Type is referenced in Audit Criteria
+        boolean inCriteria = false;
+        if (!matchingTypes.isEmpty()) {
+            List<String> typeNames = matchingTypes.stream().map(t -> t.getAuditType().toLowerCase()).toList();
+            inCriteria = auditCriteriaRepository.findAll().stream()
+                .anyMatch(c -> c.getAuditType() != null && typeNames.contains(c.getAuditType().toLowerCase()));
+        }
+
+        if (!matchingTypes.isEmpty() || inSchedule || inCriteria) {
+            return ResponseEntity.badRequest().body("Deletion not allowed. Audit Area is in use. Delete related Audit Schedule, Audit Criteria, and Audit Type records first.");
+        }
+
         auditAreaRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
