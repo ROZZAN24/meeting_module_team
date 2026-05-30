@@ -141,6 +141,7 @@ public class ChecklistController {
     }
 
     @PostMapping("/trigger-scheduler")
+
     @Operation(summary = "Manual Scheduler Trigger", description = "Manually triggers the recurring checklist generation (for testing/maintenance)")
     public ResponseEntity<String> triggerScheduler() {
         schedulerService.generateRecurringAssignments();
@@ -151,5 +152,12 @@ public class ChecklistController {
     public ResponseEntity<String> bootstrap() {
         checklistService.seedStatuses();
         return ResponseEntity.ok("QMS Statuses seeded successfully");
+    }
+
+    @GetMapping("/repair-assigned-to")
+    @Operation(summary = "Repair legacy name-based ASSIGNED_TO fields",
+               description = "One-time migration: converts assignedTo values that are employee names to their empCode")
+    public ResponseEntity<String> repairAssignedTo() {
+        return ResponseEntity.ok(checklistService.repairAssignedToFields());
     }
 }

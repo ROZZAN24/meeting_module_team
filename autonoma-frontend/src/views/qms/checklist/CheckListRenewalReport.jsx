@@ -115,7 +115,7 @@ const exportColumns = [
   { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
   { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) },
+  { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) },
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
@@ -184,16 +184,59 @@ function FilterSection({ title, open, onToggle, children }) {
   );
 }
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    return `${date} ${hours}:${mins}`;
+  } catch {
+    return '-';
+  }
+};
+
 function StatusChip({ status }) {
-  const colorMap = { 'Open': 'info', 'Pending for Verified': 'warning', 'Verified': 'success' };
-  const label = typeof status === 'object' ? status?.name : status;
+  let label = typeof status === 'object' ? status?.name : status;
+  label = label || 'Open';
+  
+  const greenStates = ['Verified', 'Completed', 'Accepted', 'Attended'];
+  const redStates   = ['Pending for Verified', 'Pending for Accepted', 'Rejected', 'Not Accepted', 'Missed', 'Pending'];
+  const blueStates  = ['Open', 'Started'];
+  
+  let bg = '#EEEEEE';
+  let text = '#616161';
+  
+  if (greenStates.includes(label)) {
+    bg = '#E8F5E9';
+    text = '#2E7D32';
+  } else if (redStates.includes(label)) {
+    bg = '#FFEBEE';
+    text = '#C62828';
+  } else if (blueStates.includes(label)) {
+    bg = '#E3F2FD';
+    text = '#1565C0';
+  }
+  
   return (
     <Chip
-      label={label || 'Open'}
+      label={label}
       size="small"
-      color={colorMap[label] || 'default'}
-      variant="outlined"
-      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+      sx={{ 
+        minWidth: 160, 
+        maxWidth: 160, 
+        height: 26, 
+        fontSize: '0.75rem', 
+        fontWeight: 700, 
+        justifyContent: 'center', 
+        bgcolor: bg,
+        color: text,
+        border: 'none',
+        borderRadius: '4px',
+        '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+      }}
     />
   );
 }
@@ -436,7 +479,7 @@ export default function CheckListRenewalReport() {
                   <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
                   <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
-                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
+                  <TableCell>{formatDateTime(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
                 </TableRow>
               ))}

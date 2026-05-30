@@ -35,6 +35,21 @@ const formatDate = (dateVal) => {
   }
 };
 
+// ── DateTime formatter (Date + Time) ────────────────────────────────────────────
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    return `${date} ${hours}:${mins}`;
+  } catch {
+    return '-';
+  }
+};
+
 // ── Column definitions ──────────────────────────────────────────────────────────
 const columns = [
   { id: 'index',        label: 'No',             minWidth: 55  },
@@ -45,7 +60,33 @@ const columns = [
   { id: 'department',   label: 'Department',      minWidth: 160 },
   { id: 'effectiveFrom',label: 'Effective From',  minWidth: 120 },
   { id: 'frequency',    label: 'Frequency',       minWidth: 120 },
-  { id: 'expiryDate',   label: 'Expiry Date',     minWidth: 120 },
+  {
+    id: 'expiryDate',
+    label: 'Expiry Date',
+    minWidth: 120,
+    render: (row) => {
+      const val = row.expiryDate;
+      if (!val || val === '-') return <span>-</span>;
+      const isExpired = row._expiryExpired;
+      return (
+        <Box
+          component="span"
+          sx={{
+            fontWeight: isExpired ? 700 : 400,
+            color: isExpired ? '#C62828' : 'text.primary',
+            bgcolor: isExpired ? '#FFEBEE' : 'transparent',
+            px: isExpired ? 1 : 0,
+            py: isExpired ? 0.4 : 0,
+            borderRadius: isExpired ? '4px' : 0,
+            display: 'inline-block',
+            fontSize: '0.82rem',
+          }}
+        >
+          {val}
+        </Box>
+      );
+    }
+  },
   { id: 'reminderDays', label: 'Reminder Days',   minWidth: 110 },
   { id: 'reminderDate', label: 'Reminder Date',   minWidth: 120 },
   { id: 'stockLink',    label: 'Stock Link',      minWidth: 100 },
@@ -57,18 +98,35 @@ const columns = [
   { id: 'assignTo',     label: 'Assign To',       minWidth: 130 },
   { 
     id: 'status',       
-    label: 'Record Status',   
+    label: 'Status',   
     minWidth: 120,
     render: (row) => {
       const statusText = row.status || 'Active';
-      const isActive = statusText === 'Active';
+      const map = {
+        'Active':      { bg: '#E8F5E9', text: '#2E7D32' },
+        'In Active':   { bg: '#EEEEEE', text: '#616161' },
+        'Pending':     { bg: '#FFEBEE', text: '#C62828' },
+        'Not Assigned':{ bg: '#FFEBEE', text: '#C62828' },
+        'Rejected':    { bg: '#FFEBEE', text: '#C62828' }
+      };
+      const cfg = map[statusText] || { bg: '#FFEBEE', text: '#C62828' };
       return (
         <Chip 
           label={statusText} 
           size="small" 
-          color={isActive ? 'success' : 'error'} 
-          variant="outlined" 
-          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ 
+            minWidth: 140, 
+            maxWidth: 140, 
+            height: 26, 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            justifyContent: 'center', 
+            bgcolor: cfg.bg,
+            color: cfg.text,
+            border: 'none',
+            borderRadius: '4px',
+            '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+          }}
         />
       );
     }
@@ -78,21 +136,34 @@ const columns = [
     label: 'Task Status',     
     minWidth: 120,
     render: (row) => {
-      const statusText = row.taskStatus || 'Pending';
+      const statusText = row._displayTaskStatus || 'UN ASSIGNED';
       const map = {
-        'Completed': { color: 'success' },
-        'Pending': { color: 'warning' },
-        'In Progress': { color: 'info' },
-        'Missed': { color: 'error' }
+        'ASSIGNED':    { bg: '#E8F5E9', text: '#2E7D32' },
+        'UN ASSIGNED':  { bg: '#FFEBEE', text: '#C62828' },
+        'Completed':   { bg: '#E8F5E9', text: '#2E7D32' },
+        'Pending':     { bg: '#FFEBEE', text: '#C62828' },
+        'In Progress': { bg: '#E3F2FD', text: '#1565C0' },
+        'Missed':      { bg: '#FFEBEE', text: '#C62828' }
       };
-      const cfg = map[statusText] || { color: 'default' };
+      const cfg = map[statusText] || { bg: '#F5F5F5', text: '#424242' };
       return (
         <Chip 
           label={statusText} 
           size="small" 
-          color={cfg.color} 
-          variant="outlined" 
-          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ 
+            minWidth: 140, 
+            maxWidth: 140, 
+            height: 26, 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            justifyContent: 'center', 
+            bgcolor: cfg.bg,
+            color: cfg.text,
+            border: 'none',
+            borderRadius: '4px',
+            textTransform: 'uppercase',
+            '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+          }}
         />
       );
     }
@@ -104,19 +175,29 @@ const columns = [
     render: (row) => {
       const statusText = row.verifyStatus || 'Pending for Verify';
       const map = {
-        'Verified': { color: 'success', icon: <IconCheck size={14} /> },
-        'Rejected': { color: 'error', icon: <IconBan size={14} /> },
-        'Pending for Verify': { color: 'warning', icon: null }
+        'Verified': { bg: '#E8F5E9', text: '#2E7D32', icon: <IconCheck size={14} style={{ color: '#2E7D32' }} /> },
+        'Rejected': { bg: '#FFEBEE', text: '#C62828', icon: <IconBan size={14} style={{ color: '#C62828' }} /> },
+        'Pending for Verify': { bg: '#FFF3E0', text: '#E65100', icon: null }
       };
-      const cfg = map[statusText] || { color: 'default', icon: null };
+      const cfg = map[statusText] || { bg: '#F5F5F5', text: '#424242', icon: null };
       return (
         <Chip 
           label={statusText} 
           size="small" 
-          color={cfg.color} 
           icon={cfg.icon} 
-          variant="outlined" 
-          sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ 
+            minWidth: 160, 
+            maxWidth: 160, 
+            height: 26, 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            justifyContent: 'center', 
+            bgcolor: cfg.bg,
+            color: cfg.text,
+            border: 'none',
+            borderRadius: '4px',
+            '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+          }}
         />
       );
     }
@@ -126,7 +207,7 @@ const columns = [
   { id: 'createdUser',  label: 'CREATED USER',    minWidth: 120 },
   { id: 'createdDate',  label: 'CREATED DATE',    minWidth: 140 },
   { id: 'updatedUser',  label: 'UPDATED USER',    minWidth: 120 },
-  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 140 },
+  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 160 },
 ];
 
 // ── Export columns ──────────────────────────────────────────────────────────────
@@ -148,7 +229,7 @@ const exportColumns = [
   { header: 'Carry Forward',      key: 'carryForward' },
   { header: 'Level',              key: 'levelIds' },
   { header: 'Assign To',          key: 'assignTo' },
-  { header: 'Record Status',      key: 'status' },
+  { header: 'Status',             key: 'status' },
   { header: 'Task Status',        key: 'taskStatus' },
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
@@ -156,7 +237,7 @@ const exportColumns = [
   { header: 'CREATED USER',       key: 'createdUser' },
   { header: 'CREATED DATE',       key: (r) => formatDate(r.createdAt) },
   { header: 'UPDATED USER',       key: 'updatedUser' },
-  { header: 'UPDATED DATE',       key: (r) => formatDate(r.updatedAt) },
+  { header: 'UPDATED DATE',       key: (r) => formatDateTime(r.updatedAt) },
 ];
 
 // ── Filter config for the global search bar ─────────────────────────────────────
@@ -293,19 +374,37 @@ export default function MasterCheckList() {
   useEffect(() => { fetchChecklists(); }, [fetchChecklists]);
 
   // ── Resolved rows — flatten computed display fields ───────────────────────────
-  const resolvedRows = useMemo(() => rows.map((row) => ({
-    ...row,
-    department:   (row.departments || []).map(d => d.departmentName).join(', '),
-    effectiveFrom: formatDate(row.effectiveFrom),
-    expiryDate:    formatDate(row.expiryDate),
-    reminderDate:  formatDate(row.reminderDate),
-    verifiedDate:  formatDate(row.verifiedDate),
-    createdUser:   row.createdUser || row.createdBy || '-',
-    createdDate:   formatDate(row.createdAt),
-    updatedUser:   row.updatedUser || row.updatedBy || '-',
-    updatedDate:   formatDate(row.updatedAt),
-    status:        row.status || 'Active',
-  })), [rows]);
+  const resolvedRows = useMemo(() => rows.map((row) => {
+    // Check expiry
+    let expiryExpired = false;
+    if (row.expiryDate) {
+      const exp = new Date(row.expiryDate);
+      if (!isNaN(exp.getTime())) {
+        exp.setHours(23, 59, 59, 999);
+        expiryExpired = exp < new Date();
+      }
+    }
+    
+    // Determine ASSIGNED / UN ASSIGNED based on assignTo field
+    const isAssigned = row.assignTo && row.assignTo !== '-' && row.assignTo.trim() !== '';
+    const displayTaskStatus = isAssigned ? 'ASSIGNED' : 'UN ASSIGNED';
+
+    return {
+      ...row,
+      department:    (row.departments || []).map(d => d.departmentName).join(', '),
+      effectiveFrom: formatDate(row.effectiveFrom),
+      expiryDate:    formatDate(row.expiryDate),
+      _expiryExpired: expiryExpired,
+      _displayTaskStatus: displayTaskStatus,
+      reminderDate:  formatDate(row.reminderDate),
+      verifiedDate:  formatDate(row.verifiedDate),
+      createdUser:   row.createdUser || row.createdBy || '-',
+      createdDate:   formatDate(row.createdAt),
+      updatedUser:   row.updatedUser || row.updatedBy || '-',
+      updatedDate:   formatDateTime(row.updatedAt),
+      status:        row.status || 'Active',
+    };
+  }), [rows]);
 
   // ── Save / Edit ───────────────────────────────────────────────────────────────
   const handleSave = async (data) => {
