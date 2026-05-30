@@ -187,7 +187,7 @@ export default function AuditCriteriaMaster() {
     }
     if (col.id === 'status') return <Chip label={val} size="small" sx={getStatusChipSx(val)} />;
     if (col.id === 'createdUser') return row.createdUser || row.createdBy || 'Admin';
-    if (col.id === 'updatedUser') return row.updatedUser || row.updatedBy || 'Admin';
+    if (col.id === 'updatedUser') return row.updatedUser || row.updatedBy || '-';
     if (col.id.toLowerCase().includes('date')) {
       if (!val) return '-';
       try { return format(new Date(val), 'dd/MM/yyyy HH:mm'); } catch { return '-'; }
