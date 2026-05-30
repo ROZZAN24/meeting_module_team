@@ -98,7 +98,7 @@ export default function OemMappingMaster() {
     if (refresh === true) {
       dispatch(setQuery(''));
       dispatch(setFilters({
-        status: 'ALL',
+        status: 'ACTIVE',
         createdAtStart: '',
         createdAtEnd: ''
       }));
