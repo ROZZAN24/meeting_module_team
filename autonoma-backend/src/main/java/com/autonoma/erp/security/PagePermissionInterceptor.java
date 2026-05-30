@@ -34,6 +34,15 @@ public class PagePermissionInterceptor {
     @Autowired
     private BosUserPageAuthService authService;
 
+    @Autowired
+    private com.autonoma.erp.repository.admin.UserRepository userRepo;
+
+    @Autowired
+    private com.autonoma.erp.repository.QmsMeetingScheduleRepository scheduleRepo;
+
+    @Autowired
+    private com.autonoma.erp.repository.QmsMomMasterRepository momRepo;
+
     @Around("@annotation(permission)")
     public Object checkPermission(ProceedingJoinPoint joinPoint, RequirePagePermission permission) throws Throwable {
         String userId = SecurityUtils.getCurrentUserId();
@@ -43,6 +52,34 @@ public class PagePermissionInterceptor {
         }
 
         boolean allowed = authService.hasPermission(userId, permission.pageCode(), permission.action());
+
+        if (!allowed && ("QM1320".equals(permission.pageCode()) || "QM1330".equals(permission.pageCode())) && "write".equalsIgnoreCase(permission.action())) {
+            for (Object arg : joinPoint.getArgs()) {
+                if (arg instanceof com.autonoma.erp.model.QmsMomMaster) {
+                    com.autonoma.erp.model.QmsMomMaster mom = (com.autonoma.erp.model.QmsMomMaster) arg;
+                    Long scheduleId = null;
+                    if (mom.getSchedule() != null && mom.getSchedule().getId() != null) {
+                        scheduleId = mom.getSchedule().getId();
+                    } else if (mom.getId() != null) {
+                        java.util.Optional<com.autonoma.erp.model.QmsMomMaster> existingMomOpt = momRepo.findById(mom.getId());
+                        if (existingMomOpt.isPresent() && existingMomOpt.get().getSchedule() != null) {
+                            scheduleId = existingMomOpt.get().getSchedule().getId();
+                        }
+                    }
+                    if (scheduleId != null) {
+                        java.util.Optional<com.autonoma.erp.model.QmsMeetingSchedule> scheduleOpt = scheduleRepo.findById(scheduleId);
+                        if (scheduleOpt.isPresent() && scheduleOpt.get().getHostBy() != null) {
+                            Long hostEmpId = scheduleOpt.get().getHostBy().getId();
+                            java.util.Optional<com.autonoma.erp.model.admin.UserCredential> userOpt = userRepo.findByUserId(userId);
+                            if (userOpt.isPresent() && userOpt.get().getEmpId() != null && userOpt.get().getEmpId().equals(hostEmpId)) {
+                                allowed = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         if (!allowed) {
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.FORBIDDEN, 

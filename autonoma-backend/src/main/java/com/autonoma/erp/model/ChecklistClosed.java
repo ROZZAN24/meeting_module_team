@@ -66,7 +66,7 @@ public class ChecklistClosed extends BaseAuditEntity {
     @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "FILE_PATHS", length = 1000)
+    @Column(name = "FILE_PATHS", columnDefinition = "NVARCHAR(MAX)")
     private String filePaths;
 
     @Column(name = "FREQUENCY", nullable = false)

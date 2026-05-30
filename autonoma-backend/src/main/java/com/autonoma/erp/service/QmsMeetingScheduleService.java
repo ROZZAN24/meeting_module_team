@@ -16,12 +16,25 @@ import java.util.stream.Collectors;
 public class QmsMeetingScheduleService {
     private final QmsMeetingScheduleRepository repository;
     private final NotificationService notificationService;
+    private final MeetingSchedulerService meetingSchedulerService;
 
+    @Transactional
     public List<QmsMeetingSchedule> getAllSchedules() {
+        try {
+            meetingSchedulerService.autoCloseExpiredSchedules();
+        } catch (Exception e) {
+            log.error("Failed to auto-close expired schedules dynamically: {}", e.getMessage(), e);
+        }
         return repository.findAll();
     }
 
+    @Transactional
     public QmsMeetingSchedule getScheduleById(Long id) {
+        try {
+            meetingSchedulerService.autoCloseExpiredSchedules();
+        } catch (Exception e) {
+            log.error("Failed to auto-close expired schedules dynamically: {}", e.getMessage(), e);
+        }
         return repository.findById(id).orElseThrow(() -> new RuntimeException("Schedule not found"));
     }
 
@@ -101,8 +114,12 @@ public class QmsMeetingScheduleService {
 
     private String generateScheduleNo(QmsMeetingSchedule schedule) {
         String prefix = schedule.getMeetingType() != null ? schedule.getMeetingType().getMeetingPrefix() : "MEET";
-        int year = LocalDate.now().getYear();
-        String yearRange = year + "-" + (year + 1);
+        LocalDate meetingDate = schedule.getMeetingDate() != null ? schedule.getMeetingDate() : LocalDate.now();
+        int year = meetingDate.getYear();
+        int month = meetingDate.getMonthValue();
+        int startYear = (month >= 4) ? year : (year - 1);
+        int endYear = startYear + 1;
+        String yearRange = startYear + "-" + endYear;
         String prefixPath = prefix + "/" + yearRange + "/";
         
         List<QmsMeetingSchedule> existing = repository.findByScheduleNoStartingWith(prefixPath);

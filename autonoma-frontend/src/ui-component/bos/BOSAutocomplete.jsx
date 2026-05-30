@@ -216,7 +216,14 @@ export default function BOSAutocomplete({
           error={error}
           helperText={helperText}
           placeholder={placeholder || (multiple ? 'Select options...' : 'Select option...')}
-          sx={sx}
+          InputLabelProps={{
+            ...params.InputLabelProps,
+            shrink: true
+          }}
+          sx={{
+            width: '100% !important',
+            ...sx
+          }}
         />
       )}
       slotProps={{
@@ -245,6 +252,10 @@ export default function BOSAutocomplete({
             }
           }
         }
+      }}
+      sx={{
+        width: '100% !important',
+        ...sx
       }}
       {...rest}
     />

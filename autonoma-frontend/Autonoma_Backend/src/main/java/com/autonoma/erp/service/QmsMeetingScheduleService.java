@@ -9,17 +9,31 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@lombok.extern.slf4j.Slf4j
 @Service
 @RequiredArgsConstructor
 public class QmsMeetingScheduleService {
     private final QmsMeetingScheduleRepository repository;
     private final NotificationService notificationService;
+    private final MeetingSchedulerService meetingSchedulerService;
 
+    @Transactional
     public List<QmsMeetingSchedule> getAllSchedules() {
+        try {
+            meetingSchedulerService.autoCloseExpiredSchedules();
+        } catch (Exception e) {
+            log.error("Failed to auto-close expired schedules dynamically: {}", e.getMessage(), e);
+        }
         return repository.findAll();
     }
 
+    @Transactional
     public QmsMeetingSchedule getScheduleById(Long id) {
+        try {
+            meetingSchedulerService.autoCloseExpiredSchedules();
+        } catch (Exception e) {
+            log.error("Failed to auto-close expired schedules dynamically: {}", e.getMessage(), e);
+        }
         return repository.findById(id).orElseThrow(() -> new RuntimeException("Schedule not found"));
     }
 
