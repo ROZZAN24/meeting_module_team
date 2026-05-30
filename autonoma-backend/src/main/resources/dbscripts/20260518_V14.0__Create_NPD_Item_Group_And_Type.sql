@@ -14,12 +14,32 @@ BEGIN
         updated_by NVARCHAR(100) NULL,
         updated_at DATETIME NULL
     );
-    
-    -- Seed standard group names
-    INSERT INTO npd_item_group (group_name, description, status, created_by, created_at) VALUES 
-    ('Billing Item', 'Billing Item Group', 'ACTIVE', 'System', GETDATE()),
-    ('Purchase item', 'Purchase Item Group', 'ACTIVE', 'System', GETDATE()),
-    ('Manufacturing Item', 'Manufacturing Item Group', 'ACTIVE', 'System', GETDATE());
+END;
+GO
+
+-- Seed standard group names (idempotent, outside table creation block)
+IF NOT EXISTS (SELECT 1 FROM npd_item_group WHERE group_name = 'Billing Item')
+BEGIN
+    IF COL_LENGTH('npd_item_group', 'created_by') IS NOT NULL
+        EXEC sp_executesql N'INSERT INTO npd_item_group (group_name, description, status, created_by, created_at) VALUES (''Billing Item'', ''Billing Item Group'', ''ACTIVE'', ''System'', GETDATE())';
+    ELSE
+        EXEC sp_executesql N'INSERT INTO npd_item_group (group_name, description, status, CREATED_USER, created_at) VALUES (''Billing Item'', ''Billing Item Group'', ''ACTIVE'', ''System'', GETDATE())';
+END;
+
+IF NOT EXISTS (SELECT 1 FROM npd_item_group WHERE group_name = 'Purchase item')
+BEGIN
+    IF COL_LENGTH('npd_item_group', 'created_by') IS NOT NULL
+        EXEC sp_executesql N'INSERT INTO npd_item_group (group_name, description, status, created_by, created_at) VALUES (''Purchase item'', ''Purchase Item Group'', ''ACTIVE'', ''System'', GETDATE())';
+    ELSE
+        EXEC sp_executesql N'INSERT INTO npd_item_group (group_name, description, status, CREATED_USER, created_at) VALUES (''Purchase item'', ''Purchase Item Group'', ''ACTIVE'', ''System'', GETDATE())';
+END;
+
+IF NOT EXISTS (SELECT 1 FROM npd_item_group WHERE group_name = 'Manufacturing Item')
+BEGIN
+    IF COL_LENGTH('npd_item_group', 'created_by') IS NOT NULL
+        EXEC sp_executesql N'INSERT INTO npd_item_group (group_name, description, status, created_by, created_at) VALUES (''Manufacturing Item'', ''Manufacturing Item Group'', ''ACTIVE'', ''System'', GETDATE())';
+    ELSE
+        EXEC sp_executesql N'INSERT INTO npd_item_group (group_name, description, status, CREATED_USER, created_at) VALUES (''Manufacturing Item'', ''Manufacturing Item Group'', ''ACTIVE'', ''System'', GETDATE())';
 END;
 GO
 

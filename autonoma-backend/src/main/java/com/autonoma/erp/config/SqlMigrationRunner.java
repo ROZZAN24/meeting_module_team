@@ -105,9 +105,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
         "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
         // NPD Process page registration skip on H2
-        "20260526_V38.0__Create_NPD_Process.sql",
-        // Support ticket page rename skip on H2
-        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql"
+        "20260526_V38.0__Create_NPD_Process.sql"
+    ));
+
+    private static final Set<String> SQL_SERVER_SKIP_SCRIPTS = new HashSet<>(Arrays.asList(
+        "20260512_V4.4__Global_Column_Lowercasing_Standardization.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
@@ -174,6 +176,12 @@ public class SqlMigrationRunner implements CommandLineRunner {
         for (Resource resource : sortedResources) {
 
             String fileName = resource.getFilename();
+
+            if (SQL_SERVER_SKIP_SCRIPTS.contains(fileName)) {
+                markAsExecuted(targetJdbcTemplate, fileName);
+                System.out.println("COMPLETED (SQL SERVER SKIP) : " + fileName);
+                continue;
+            }
 
             try {
 

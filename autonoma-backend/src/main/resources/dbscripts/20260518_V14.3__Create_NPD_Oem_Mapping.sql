@@ -14,11 +14,28 @@ BEGIN
         updated_by NVARCHAR(100) NULL,
         updated_at DATETIME NULL
     );
-
-    -- Seed exact records requested by user
-    INSERT INTO npd_oem_mapping (part_no, oem_part_no, oem_description, status, created_by, created_at, updated_by, updated_at)
-    VALUES 
-    ('NT/V54121', '115491', '', 'ACTIVE', 'MANGAL', '2025-08-12 16:47:15', 'MANGAL', '2025-08-12 16:47:15'),
-    ('NT/GW101', 'GP018631/GP028818', '', 'ACTIVE', 'MANGAL', '2025-08-12 16:47:19', 'MANGAL', '2025-08-12 16:47:19');
 END;
 GO
+
+-- Seed exact records requested by user (idempotent, outside table creation block)
+IF NOT EXISTS (SELECT 1 FROM npd_oem_mapping WHERE part_no = 'NT/V54121')
+BEGIN
+    IF COL_LENGTH('npd_oem_mapping', 'created_by') IS NOT NULL
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_oem_mapping (part_no, oem_part_no, oem_description, status, created_by, created_at, updated_by, updated_at)
+        VALUES 
+        (''NT/V54121'', ''115491'', '''', ''ACTIVE'', ''MANGAL'', ''2025-08-12 16:47:15'', ''MANGAL'', ''2025-08-12 16:47:15''),
+        (''NT/GW101'', ''GP018631/GP028818'', '''', ''ACTIVE'', ''MANGAL'', ''2025-08-12 16:47:19'', ''MANGAL'', ''2025-08-12 16:47:19'');';
+    END
+    ELSE
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_oem_mapping (part_no, oem_part_no, oem_description, status, CREATED_USER, created_at, UPDATED_USER, updated_at)
+        VALUES 
+        (''NT/V54121'', ''115491'', '''', ''ACTIVE'', ''MANGAL'', ''2025-08-12 16:47:15'', ''MANGAL'', ''2025-08-12 16:47:15''),
+        (''NT/GW101'', ''GP018631/GP028818'', '''', ''ACTIVE'', ''MANGAL'', ''2025-08-12 16:47:19'', ''MANGAL'', ''2025-08-12 16:47:19'');';
+    END
+END;
+GO
+

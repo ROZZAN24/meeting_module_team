@@ -52,6 +52,44 @@ const getSystemTime12h = () => {
   return `${strHours}:${strMinutes} ${ampm}`;
 };
 
+const parseScheduleDateTime = (s) => {
+  if (!s || !s.auditDate || !s.startTime) return null;
+  const dStr = s.auditDate.split('T')[0];
+  const match = s.startTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return null;
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const modifier = match[3] ? match[3].toUpperCase() : null;
+  
+  if (modifier) {
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+  }
+  
+  return new Date(`${dStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+};
+
+const getNearestScheduleNo = (availableSchedules) => {
+  if (!availableSchedules || availableSchedules.length === 0) return '';
+  const now = new Date();
+  let nearestSch = null;
+  let minDiff = Infinity;
+  
+  availableSchedules.forEach(s => {
+    const schTime = parseScheduleDateTime(s);
+    if (schTime) {
+      const diff = Math.abs(schTime.getTime() - now.getTime());
+      if (diff < minDiff) {
+        minDiff = diff;
+        nearestSch = s;
+      }
+    }
+  });
+  
+  return nearestSch ? nearestSch.scheduleNo : '';
+};
+
 export default function AuditAttendance() {
   const dispatch = useDispatch();
   const { user } = useAuth();
@@ -175,9 +213,10 @@ export default function AuditAttendance() {
   const handleOpenAdd = () => {
     const defaultName = currentUserEmp?.employeeName || user?.name || '';
     const defaultCode = currentUserEmp?.empCode || user?.employeeCode || '';
+    const nearestScheduleNo = getNearestScheduleNo(filteredSchedules);
     setFormData({
       id: null,
-      auditScheduleNo: '',
+      auditScheduleNo: nearestScheduleNo,
       name: defaultName,
       employeeCode: defaultCode,
       inTime: getSystemTime12h(),
@@ -334,7 +373,7 @@ export default function AuditAttendance() {
         renderCell={renderCell}
       />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'} isViewOnly={!perms.write}>
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'View Attendance' : 'Add Attendance'} isViewOnly={!!formData.id || !perms.write}>
         <BOSFormSection title="Details" icon={<IconPlus size={20} />}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2.5 }}>
             <BOSTextField
@@ -345,6 +384,7 @@ export default function AuditAttendance() {
               onChange={(e) => setFormData({ ...formData, auditScheduleNo: e.target.value })}
               error={!!errors.auditScheduleNo}
               helperText={errors.auditScheduleNo}
+              disabled={!!formData.id}
             >
               {filteredSchedules.length > 0 ? (
                 filteredSchedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo} ({s.startTime})</MenuItem>)
@@ -375,6 +415,7 @@ export default function AuditAttendance() {
                 }}
                 error={!!errors.name}
                 helperText={errors.name}
+                disabled={!!formData.id}
               >
                 {participants.length > 0 ? (
                   participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{p.name} ({p.code})</MenuItem>)
@@ -391,32 +432,21 @@ export default function AuditAttendance() {
             <BOSTextField
               label="In Time"
               value={formData.inTime}
-              disabled={formData.attendanceStatus === 'ABSENT'}
+              disabled={formData.attendanceStatus === 'ABSENT' || !!formData.id}
               InputProps={{ readOnly: true }}
               error={!!errors.inTime}
               helperText={errors.inTime}
             />
 
             <BOSTextField
-              select
               required
+              disabled
               label="Attendance Status"
               value={formData.attendanceStatus}
-              onChange={(e) => {
-                const s = e.target.value;
-                setFormData(prev => ({
-                  ...prev,
-                  attendanceStatus: s,
-                  inTime: s === 'ABSENT' ? '' : (prev.inTime || getSystemTime12h()),
-                  outTime: s === 'ABSENT' ? '' : prev.outTime
-                }));
-              }}
+              InputProps={{ readOnly: true }}
               error={!!errors.attendanceStatus}
               helperText={errors.attendanceStatus}
-            >
-              <MenuItem value="PRESENT">PRESENT</MenuItem>
-              <MenuItem value="ABSENT">ABSENT</MenuItem>
-            </BOSTextField>
+            />
           </Box>
         </BOSFormSection>
       </BOSFormDialog>
