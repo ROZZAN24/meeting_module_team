@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "HR_DEPARTMENT_MASTER")
+@Table(name = "HR_DEPARTMENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,38 +16,41 @@ public class Department {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "dept_no", nullable = false, length = 50)
+    @Column(name = "DEPARTMENT_NO", nullable = false, length = 20)
     private String departmentNo = "";
 
-    @Column(name = "dept_name", nullable = false, length = 100)
+    @Column(name = "DEPARTMENT_NAME", nullable = false, length = 100)
     private String departmentName;
 
-    @Column(name = "nda_certificate", length = 10)
+    @Column(name = "NDA_CERTIFICATE", length = 10)
     private String ndaCertificate = "No";
 
-    @Column(name = "seq_no")
+    @Column(name = "SEQUENCE_NO")
     private Integer sequenceNo = 0;
 
-    @Column(name = "status")
+    @Column(name = "STATUS", length = 20)
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        createdDate = new Date();
         if (createdBy == null) {
             createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         }
@@ -55,7 +58,23 @@ public class Department {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = new Date();
+        updatedDate = new Date();
         updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
+
+    // Backward-compatible aliases for legacy service code
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public Date getCreatedAt() { return createdDate; }
+    public void setCreatedAt(Date d) { this.createdDate = d; }
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
+    public Date getUpdatedAt() { return updatedDate; }
+    public void setUpdatedAt(Date d) { this.updatedDate = d; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() { return this.createdBy; }
+    public void setCreatedUser(String createdUser) { this.createdBy = createdUser; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() { return this.updatedBy; }
+    public void setUpdatedUser(String updatedUser) { this.updatedBy = updatedUser; }
 }

@@ -7,94 +7,77 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_QUOTATION")
+@Table(name = "SLS_QUOTATION")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SmQuotation {
+public class SmQuotation extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "quotation_no", nullable = false, length = 50)
+    @Column(name = "QUOTATION_NO", nullable = false, length = 50)
     private String quotationNo;
 
-    @Column(name = "quotation_date")
+    @Column(name = "QUOTATION_DATE")
     @Temporal(TemporalType.DATE)
     private Date quotationDate;
 
-    @Column(name = "enquiry_ref", length = 50)
+    @Column(name = "ENQUIRY_REF", length = 50)
     private String enquiryRef;
 
-    @Column(name = "customer_name", length = 200)
+    @Column(name = "CUSTOMER_NAME", length = 200)
     private String customerName;
 
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_ID")
     private CustomerMaster customer;
 
-    @Column(name = "contact_person", length = 200)
+    @Column(name = "CONTACT_PERSON", length = 200)
     private String contactPerson;
 
-    @Column(name = "product_name", length = 200)
+    @Column(name = "PRODUCT_NAME", length = 200)
     private String productName;
 
-    @Column(name = "description", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    @Column(name = "quantity", length = 50)
+    @Column(name = "QUANTITY", length = 50)
     private String quantity;
 
-    @Column(name = "unit_price", length = 50)
+    @Column(name = "UNIT_PRICE", length = 50)
     private String unitPrice;
 
-    @Column(name = "total_amount", length = 50)
+    @Column(name = "TOTAL_AMOUNT", length = 50)
     private String totalAmount;
 
-    @Column(name = "currency", length = 10)
+    @Column(name = "CURRENCY", length = 10)
     private String currency = "INR";
 
-    @Column(name = "validity_period", length = 50)
+    @Column(name = "VALIDITY_PERIOD", length = 50)
     private String validityPeriod;
 
-    @Column(name = "delivery_terms", length = 500)
+    @Column(name = "DELIVERY_TERMS", length = 500)
     private String deliveryTerms;
 
-    @Column(name = "payment_terms", length = 500)
+    @Column(name = "PAYMENT_TERMS", length = 500)
     private String paymentTerms;
 
-    @Column(name = "ocr_document_path", length = 500)
+    @Column(name = "OCR_DOCUMENT_PATH", length = 1000)
     private String ocrDocumentPath;
 
-    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
+    @Column(name = "OCR_EXTRACTED_TEXT", columnDefinition = "NVARCHAR(MAX)")
     private String ocrExtractedText;
 
-    @Column(name = "ocr_confidence", length = 10)
+    @Column(name = "OCR_CONFIDENCE", length = 10)
     private String ocrConfidence;
 
-    @Column(name = "status", length = 50)
+    @Column(name = "STATUS", length = 50)
     private String status = "Draft";
 
-    @Column(name = "remarks", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
-
-    @Column(name = "created_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
-
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
-
-    @PrePersist
-    protected void onCreate() { createdDate = new Date(); }
-
-    @PreUpdate
-    protected void onUpdate() { updatedDate = new Date(); }
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 }
