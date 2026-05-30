@@ -95,10 +95,10 @@ public class MasterChecklist extends BaseAuditEntity {
     @Column(name = "LEVEL_IDS")
     private String levelIds;
 
-    @Column(name = "UPLOADED_FILES", length = 1000)
+    @Column(name = "UPLOADED_FILES", columnDefinition = "NVARCHAR(MAX)")
     private String uploadedFiles;
 
-    @Column(name = "SCANNED_FILES", length = 1000)
+    @Column(name = "SCANNED_FILES", columnDefinition = "NVARCHAR(MAX)")
     private String scannedFiles;
 
     @Column(name = "STATUS")

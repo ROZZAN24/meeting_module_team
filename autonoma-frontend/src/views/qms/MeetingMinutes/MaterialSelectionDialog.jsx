@@ -70,6 +70,7 @@ export default function MaterialSelectionDialog({ open, onClose, onSelect, type 
       onClear={handleClear}
       title={`Select ${type === 'RM' ? 'Raw Material' : 'Product'}`}
       maxWidth="md"
+      sx={{ zIndex: 1600 }}
     >
       <Box sx={{ width: '100%' }}>
         <Stack direction="row" spacing={2} sx={{ mb: 2, alignItems: 'center' }}>

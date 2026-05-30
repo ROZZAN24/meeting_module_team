@@ -34,9 +34,14 @@ GO
 -- ==========================================
 -- 1. HR_INDUCTION (from IND_INDUCTION_MASTER)
 -- ==========================================
-IF OBJECT_ID('IND_INDUCTION_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'IND_INDUCTION_MASTER', 'HR_INDUCTION';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'IND_INDUCTION_MASTER', 'HR_INDUCTION';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('IND_INDUCTION_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_INDUCTION', 'U') IS NULL
+        EXEC sp_rename 'IND_INDUCTION_MASTER', 'HR_INDUCTION';
 END
 GO
 
@@ -78,12 +83,12 @@ IF OBJECT_ID('HR_INDUCTION', 'U') IS NOT NULL
 BEGIN
     DECLARE @ind_pk NVARCHAR(256);
     SELECT TOP 1 @ind_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION') AND type = 'PK';
-    IF @ind_pk IS NOT NULL AND @ind_pk <> 'PK_HR_INDUCTION'
+    IF @ind_pk IS NOT NULL AND @ind_pk <> 'PK_HR_INDUCTION' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_INDUCTION'))
     BEGIN
         DECLARE @drop_ind_pk NVARCHAR(MAX) = 'ALTER TABLE HR_INDUCTION DROP CONSTRAINT ' + @ind_pk;
         EXEC(@drop_ind_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION') AND name = 'PK_HR_INDUCTION')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_INDUCTION ADD CONSTRAINT PK_HR_INDUCTION PRIMARY KEY (id);
     END
@@ -94,9 +99,14 @@ GO
 -- ==========================================
 -- 2. HR_INDUCTION_ASSIGNMENT (from IND_INDUCTION_ASSIGNMENT)
 -- ==========================================
-IF OBJECT_ID('IND_INDUCTION_ASSIGNMENT', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'IND_INDUCTION_ASSIGNMENT', 'HR_INDUCTION_ASSIGNMENT';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'IND_INDUCTION_ASSIGNMENT', 'HR_INDUCTION_ASSIGNMENT';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('IND_INDUCTION_ASSIGNMENT', 'U') IS NOT NULL AND OBJECT_ID('HR_INDUCTION_ASSIGNMENT', 'U') IS NULL
+        EXEC sp_rename 'IND_INDUCTION_ASSIGNMENT', 'HR_INDUCTION_ASSIGNMENT';
 END
 GO
 
@@ -146,12 +156,12 @@ IF OBJECT_ID('HR_INDUCTION_ASSIGNMENT', 'U') IS NOT NULL
 BEGIN
     DECLARE @asg_pk NVARCHAR(256);
     SELECT TOP 1 @asg_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ASSIGNMENT') AND type = 'PK';
-    IF @asg_pk IS NOT NULL AND @asg_pk <> 'PK_HR_INDUCTION_ASSIGNMENT'
+    IF @asg_pk IS NOT NULL AND @asg_pk <> 'PK_HR_INDUCTION_ASSIGNMENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_INDUCTION_ASSIGNMENT'))
     BEGIN
         DECLARE @drop_asg_pk NVARCHAR(MAX) = 'ALTER TABLE HR_INDUCTION_ASSIGNMENT DROP CONSTRAINT ' + @asg_pk;
         EXEC(@drop_asg_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ASSIGNMENT') AND name = 'PK_HR_INDUCTION_ASSIGNMENT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ASSIGNMENT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_INDUCTION_ASSIGNMENT ADD CONSTRAINT PK_HR_INDUCTION_ASSIGNMENT PRIMARY KEY (id);
     END
@@ -162,9 +172,14 @@ GO
 -- ==========================================
 -- 3. HR_INDUCTION_TRAINING (from IND_INDUCTION_TRAINING_DETAIL)
 -- ==========================================
-IF OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'IND_INDUCTION_TRAINING_DETAIL', 'HR_INDUCTION_TRAINING';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'IND_INDUCTION_TRAINING_DETAIL', 'HR_INDUCTION_TRAINING';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('IND_INDUCTION_TRAINING_DETAIL', 'U') IS NOT NULL AND OBJECT_ID('HR_INDUCTION_TRAINING', 'U') IS NULL
+        EXEC sp_rename 'IND_INDUCTION_TRAINING_DETAIL', 'HR_INDUCTION_TRAINING';
 END
 GO
 
@@ -205,12 +220,12 @@ IF OBJECT_ID('HR_INDUCTION_TRAINING', 'U') IS NOT NULL
 BEGIN
     DECLARE @trn_pk NVARCHAR(256);
     SELECT TOP 1 @trn_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_TRAINING') AND type = 'PK';
-    IF @trn_pk IS NOT NULL AND @trn_pk <> 'PK_HR_INDUCTION_TRAINING'
+    IF @trn_pk IS NOT NULL AND @trn_pk <> 'PK_HR_INDUCTION_TRAINING' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_INDUCTION_TRAINING'))
     BEGIN
         DECLARE @drop_trn_pk NVARCHAR(MAX) = 'ALTER TABLE HR_INDUCTION_TRAINING DROP CONSTRAINT ' + @trn_pk;
         EXEC(@drop_trn_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_TRAINING') AND name = 'PK_HR_INDUCTION_TRAINING')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_TRAINING') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_INDUCTION_TRAINING ADD CONSTRAINT PK_HR_INDUCTION_TRAINING PRIMARY KEY (id);
     END
@@ -221,9 +236,14 @@ GO
 -- ==========================================
 -- 4. HR_INTERVIEW (from IND_INTERVIEW_MASTER)
 -- ==========================================
-IF OBJECT_ID('IND_INTERVIEW_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'IND_INTERVIEW_MASTER', 'HR_INTERVIEW';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'IND_INTERVIEW_MASTER', 'HR_INTERVIEW';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('IND_INTERVIEW_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_INTERVIEW', 'U') IS NULL
+        EXEC sp_rename 'IND_INTERVIEW_MASTER', 'HR_INTERVIEW';
 END
 GO
 
@@ -266,12 +286,12 @@ IF OBJECT_ID('HR_INTERVIEW', 'U') IS NOT NULL
 BEGIN
     DECLARE @int_pk NVARCHAR(256);
     SELECT TOP 1 @int_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INTERVIEW') AND type = 'PK';
-    IF @int_pk IS NOT NULL AND @int_pk <> 'PK_HR_INTERVIEW'
+    IF @int_pk IS NOT NULL AND @int_pk <> 'PK_HR_INTERVIEW' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_INTERVIEW'))
     BEGIN
         DECLARE @drop_int_pk NVARCHAR(MAX) = 'ALTER TABLE HR_INTERVIEW DROP CONSTRAINT ' + @int_pk;
         EXEC(@drop_int_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INTERVIEW') AND name = 'PK_HR_INTERVIEW')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INTERVIEW') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_INTERVIEW ADD CONSTRAINT PK_HR_INTERVIEW PRIMARY KEY (id);
     END
@@ -282,9 +302,14 @@ GO
 -- ==========================================
 -- 5. HR_INDUCTION_ROUND (from hr_induction_round_master)
 -- ==========================================
-IF OBJECT_ID('hr_induction_round_master', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'hr_induction_round_master', 'HR_INDUCTION_ROUND';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hr_induction_round_master', 'HR_INDUCTION_ROUND';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('hr_induction_round_master', 'U') IS NOT NULL AND OBJECT_ID('HR_INDUCTION_ROUND', 'U') IS NULL
+        EXEC sp_rename 'hr_induction_round_master', 'HR_INDUCTION_ROUND';
 END
 GO
 
@@ -303,7 +328,31 @@ GO
 
 IF OBJECT_ID('HR_INDUCTION_ROUND', 'U') IS NOT NULL
 BEGIN
+    DECLARE @index_name NVARCHAR(256);
+    SELECT @index_name = i.name
+    FROM sys.indexes i
+    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE i.object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND c.name = 'ROUND_NAME';
+    
+    IF @index_name IS NOT NULL
+    BEGIN
+        DECLARE @drop_sql NVARCHAR(MAX) = '';
+        IF EXISTS (SELECT 1 FROM sys.objects WHERE name = @index_name AND parent_object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND type = 'UQ')
+            SET @drop_sql = 'ALTER TABLE HR_INDUCTION_ROUND DROP CONSTRAINT ' + QUOTENAME(@index_name);
+        ELSE
+            SET @drop_sql = 'DROP INDEX ' + QUOTENAME(@index_name) + ' ON HR_INDUCTION_ROUND';
+        EXEC(@drop_sql);
+    END
+
     ALTER TABLE HR_INDUCTION_ROUND ALTER COLUMN ROUND_NAME NVARCHAR(100) NOT NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND name = 'UQ_HR_INDUCTION_ROUND_ROUND_NAME')
+       AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND name = 'UQ_HR_INDUCTION_ROUND_ROUND_NAME')
+    BEGIN
+        ALTER TABLE HR_INDUCTION_ROUND ADD CONSTRAINT UQ_HR_INDUCTION_ROUND_ROUND_NAME UNIQUE (ROUND_NAME);
+    END
+
     ALTER TABLE HR_INDUCTION_ROUND ALTER COLUMN DESCRIPTION NVARCHAR(500);
     ALTER TABLE HR_INDUCTION_ROUND ALTER COLUMN STATUS NVARCHAR(20);
     ALTER TABLE HR_INDUCTION_ROUND ALTER COLUMN CREATED_BY NVARCHAR(100);
@@ -321,12 +370,12 @@ IF OBJECT_ID('HR_INDUCTION_ROUND', 'U') IS NOT NULL
 BEGIN
     DECLARE @rnd_pk NVARCHAR(256);
     SELECT TOP 1 @rnd_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND type = 'PK';
-    IF @rnd_pk IS NOT NULL AND @rnd_pk <> 'PK_HR_INDUCTION_ROUND'
+    IF @rnd_pk IS NOT NULL AND @rnd_pk <> 'PK_HR_INDUCTION_ROUND' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_INDUCTION_ROUND'))
     BEGIN
         DECLARE @drop_rnd_pk NVARCHAR(MAX) = 'ALTER TABLE HR_INDUCTION_ROUND DROP CONSTRAINT ' + @rnd_pk;
         EXEC(@drop_rnd_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND name = 'PK_HR_INDUCTION_ROUND')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_INDUCTION_ROUND') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_INDUCTION_ROUND ADD CONSTRAINT PK_HR_INDUCTION_ROUND PRIMARY KEY (id);
     END
@@ -337,9 +386,14 @@ GO
 -- ==========================================
 -- 6. HR_VERIFICATION_CRITERIA (from IND_VERIFICATION_CRITERIA)
 -- ==========================================
-IF OBJECT_ID('IND_VERIFICATION_CRITERIA', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'IND_VERIFICATION_CRITERIA', 'HR_VERIFICATION_CRITERIA';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'IND_VERIFICATION_CRITERIA', 'HR_VERIFICATION_CRITERIA';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('IND_VERIFICATION_CRITERIA', 'U') IS NOT NULL AND OBJECT_ID('HR_VERIFICATION_CRITERIA', 'U') IS NULL
+        EXEC sp_rename 'IND_VERIFICATION_CRITERIA', 'HR_VERIFICATION_CRITERIA';
 END
 GO
 
@@ -375,12 +429,12 @@ IF OBJECT_ID('HR_VERIFICATION_CRITERIA', 'U') IS NOT NULL
 BEGIN
     DECLARE @ver_pk NVARCHAR(256);
     SELECT TOP 1 @ver_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_VERIFICATION_CRITERIA') AND type = 'PK';
-    IF @ver_pk IS NOT NULL AND @ver_pk <> 'PK_HR_VERIFICATION_CRITERIA'
+    IF @ver_pk IS NOT NULL AND @ver_pk <> 'PK_HR_VERIFICATION_CRITERIA' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_VERIFICATION_CRITERIA'))
     BEGIN
         DECLARE @drop_ver_pk NVARCHAR(MAX) = 'ALTER TABLE HR_VERIFICATION_CRITERIA DROP CONSTRAINT ' + @ver_pk;
         EXEC(@drop_ver_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_VERIFICATION_CRITERIA') AND name = 'PK_HR_VERIFICATION_CRITERIA')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_VERIFICATION_CRITERIA') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_VERIFICATION_CRITERIA ADD CONSTRAINT PK_HR_VERIFICATION_CRITERIA PRIMARY KEY (id);
     END
@@ -391,9 +445,14 @@ GO
 -- ==========================================
 -- 7. HR_EMAIL_CONTENT (from IND_EMAIL_CONTENT)
 -- ==========================================
-IF OBJECT_ID('IND_EMAIL_CONTENT', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'IND_EMAIL_CONTENT', 'HR_EMAIL_CONTENT';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'IND_EMAIL_CONTENT', 'HR_EMAIL_CONTENT';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('IND_EMAIL_CONTENT', 'U') IS NOT NULL AND OBJECT_ID('HR_EMAIL_CONTENT', 'U') IS NULL
+        EXEC sp_rename 'IND_EMAIL_CONTENT', 'HR_EMAIL_CONTENT';
 END
 GO
 
@@ -432,12 +491,12 @@ IF OBJECT_ID('HR_EMAIL_CONTENT', 'U') IS NOT NULL
 BEGIN
     DECLARE @eml_pk NVARCHAR(256);
     SELECT TOP 1 @eml_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMAIL_CONTENT') AND type = 'PK';
-    IF @eml_pk IS NOT NULL AND @eml_pk <> 'PK_HR_EMAIL_CONTENT'
+    IF @eml_pk IS NOT NULL AND @eml_pk <> 'PK_HR_EMAIL_CONTENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMAIL_CONTENT'))
     BEGIN
         DECLARE @drop_eml_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMAIL_CONTENT DROP CONSTRAINT ' + @eml_pk;
         EXEC(@drop_eml_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMAIL_CONTENT') AND name = 'PK_HR_EMAIL_CONTENT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMAIL_CONTENT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMAIL_CONTENT ADD CONSTRAINT PK_HR_EMAIL_CONTENT PRIMARY KEY (id);
     END

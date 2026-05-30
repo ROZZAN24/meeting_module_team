@@ -1,6 +1,7 @@
 package com.autonoma.erp.config;
 
 import com.autonoma.erp.util.AuditContextHolder;
+import com.autonoma.erp.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.core.Authentication;
@@ -20,7 +21,7 @@ public class AuditContextInterceptor implements HandlerInterceptor {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated()) {
-            AuditContextHolder.setUserId(auth.getName());
+            AuditContextHolder.setUserId(SecurityUtils.getCurrentUserDisplayName());
         }
 
         return true;

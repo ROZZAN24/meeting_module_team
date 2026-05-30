@@ -43,14 +43,17 @@ GO
 -- ==========================================
 -- 1. HR_EMPLOYEE (from HR_EMPLOYEE_MASTER / hrm_employee_master)
 -- ==========================================
-IF OBJECT_ID('HR_EMPLOYEE_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'HR_EMPLOYEE_MASTER', 'HR_EMPLOYEE';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_EMPLOYEE_MASTER', 'HR_EMPLOYEE';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hrm_employee_master', 'HR_EMPLOYEE';
 END
-GO
-IF OBJECT_ID('hrm_employee_master', 'U') IS NOT NULL
+ELSE
 BEGIN
-    EXEC sp_rename 'hrm_employee_master', 'HR_EMPLOYEE';
+    IF OBJECT_ID('HR_EMPLOYEE_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NULL
+        EXEC sp_rename 'HR_EMPLOYEE_MASTER', 'HR_EMPLOYEE';
+    IF OBJECT_ID('hrm_employee_master', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NULL
+        EXEC sp_rename 'hrm_employee_master', 'HR_EMPLOYEE';
 END
 GO
 
@@ -248,12 +251,12 @@ IF OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
 BEGIN
     DECLARE @emp_pk NVARCHAR(256);
     SELECT TOP 1 @emp_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE') AND type = 'PK';
-    IF @emp_pk IS NOT NULL AND @emp_pk <> 'PK_HR_EMPLOYEE'
+    IF @emp_pk IS NOT NULL AND @emp_pk <> 'PK_HR_EMPLOYEE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE'))
     BEGIN
         DECLARE @drop_emp_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE DROP CONSTRAINT ' + @emp_pk;
         EXEC(@drop_emp_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE') AND name = 'PK_HR_EMPLOYEE')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE ADD CONSTRAINT PK_HR_EMPLOYEE PRIMARY KEY (id);
     END
@@ -270,14 +273,17 @@ GO
 -- ==========================================
 -- 2. HR_EMPLOYEE_PERSONAL (from HR_EMPLOYEE_PERSONAL_DETAIL / hrm_employee_personal_detail)
 -- ==========================================
-IF OBJECT_ID('HR_EMPLOYEE_PERSONAL_DETAIL', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'HR_EMPLOYEE_PERSONAL_DETAIL', 'HR_EMPLOYEE_PERSONAL';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_EMPLOYEE_PERSONAL_DETAIL', 'HR_EMPLOYEE_PERSONAL';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hrm_employee_personal_detail', 'HR_EMPLOYEE_PERSONAL';
 END
-GO
-IF OBJECT_ID('hrm_employee_personal_detail', 'U') IS NOT NULL
+ELSE
 BEGIN
-    EXEC sp_rename 'hrm_employee_personal_detail', 'HR_EMPLOYEE_PERSONAL';
+    IF OBJECT_ID('HR_EMPLOYEE_PERSONAL_DETAIL', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NULL
+        EXEC sp_rename 'HR_EMPLOYEE_PERSONAL_DETAIL', 'HR_EMPLOYEE_PERSONAL';
+    IF OBJECT_ID('hrm_employee_personal_detail', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NULL
+        EXEC sp_rename 'hrm_employee_personal_detail', 'HR_EMPLOYEE_PERSONAL';
 END
 GO
 
@@ -343,12 +349,12 @@ IF OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NOT NULL
 BEGIN
     DECLARE @pers_pk NVARCHAR(256);
     SELECT TOP 1 @pers_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL') AND type = 'PK';
-    IF @pers_pk IS NOT NULL AND @pers_pk <> 'PK_HR_EMPLOYEE_PERSONAL'
+    IF @pers_pk IS NOT NULL AND @pers_pk <> 'PK_HR_EMPLOYEE_PERSONAL' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL'))
     BEGIN
         DECLARE @drop_pers_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_PERSONAL DROP CONSTRAINT ' + @pers_pk;
         EXEC(@drop_pers_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL') AND name = 'PK_HR_EMPLOYEE_PERSONAL')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_PERSONAL ADD CONSTRAINT PK_HR_EMPLOYEE_PERSONAL PRIMARY KEY (id);
     END
@@ -359,9 +365,14 @@ GO
 -- ==========================================
 -- 3. HR_EMPLOYEE_CONTACT (from HR_EMPLOYEE_CONTACT / hrm_employee_contact)
 -- ==========================================
-IF OBJECT_ID('hrm_employee_contact', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'hrm_employee_contact', 'HR_EMPLOYEE_CONTACT';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hrm_employee_contact', 'HR_EMPLOYEE_CONTACT';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('hrm_employee_contact', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NULL
+        EXEC sp_rename 'hrm_employee_contact', 'HR_EMPLOYEE_CONTACT';
 END
 GO
 
@@ -408,12 +419,12 @@ IF OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NOT NULL
 BEGIN
     DECLARE @cont_pk NVARCHAR(256);
     SELECT TOP 1 @cont_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT') AND type = 'PK';
-    IF @cont_pk IS NOT NULL AND @cont_pk <> 'PK_HR_EMPLOYEE_CONTACT'
+    IF @cont_pk IS NOT NULL AND @cont_pk <> 'PK_HR_EMPLOYEE_CONTACT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT'))
     BEGIN
         DECLARE @drop_cont_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_CONTACT DROP CONSTRAINT ' + @cont_pk;
         EXEC(@drop_cont_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT') AND name = 'PK_HR_EMPLOYEE_CONTACT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_CONTACT ADD CONSTRAINT PK_HR_EMPLOYEE_CONTACT PRIMARY KEY (id);
     END
@@ -498,12 +509,12 @@ IF OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE', 'U') IS NOT NULL
 BEGIN
     DECLARE @job_pk NVARCHAR(256);
     SELECT TOP 1 @job_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE') AND type = 'PK';
-    IF @job_pk IS NOT NULL AND @job_pk <> 'PK_HR_EMPLOYEE_JOB_PROFILE'
+    IF @job_pk IS NOT NULL AND @job_pk <> 'PK_HR_EMPLOYEE_JOB_PROFILE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE'))
     BEGIN
         DECLARE @drop_job_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_JOB_PROFILE DROP CONSTRAINT ' + @job_pk;
         EXEC(@drop_job_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE') AND name = 'PK_HR_EMPLOYEE_JOB_PROFILE')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ADD CONSTRAINT PK_HR_EMPLOYEE_JOB_PROFILE PRIMARY KEY (id);
     END
@@ -550,12 +561,12 @@ IF OBJECT_ID('HR_EMPLOYEE_EDUCATION', 'U') IS NOT NULL
 BEGIN
     DECLARE @edu_pk NVARCHAR(256);
     SELECT TOP 1 @edu_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION') AND type = 'PK';
-    IF @edu_pk IS NOT NULL AND @edu_pk <> 'PK_HR_EMPLOYEE_EDUCATION'
+    IF @edu_pk IS NOT NULL AND @edu_pk <> 'PK_HR_EMPLOYEE_EDUCATION' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION'))
     BEGIN
         DECLARE @drop_edu_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_EDUCATION DROP CONSTRAINT ' + @edu_pk;
         EXEC(@drop_edu_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION') AND name = 'PK_HR_EMPLOYEE_EDUCATION')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_EDUCATION ADD CONSTRAINT PK_HR_EMPLOYEE_EDUCATION PRIMARY KEY (id);
     END
@@ -601,12 +612,12 @@ IF OBJECT_ID('HR_EMPLOYEE_EXPERIENCE', 'U') IS NOT NULL
 BEGIN
     DECLARE @exp_pk NVARCHAR(256);
     SELECT TOP 1 @exp_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE') AND type = 'PK';
-    IF @exp_pk IS NOT NULL AND @exp_pk <> 'PK_HR_EMPLOYEE_EXPERIENCE'
+    IF @exp_pk IS NOT NULL AND @exp_pk <> 'PK_HR_EMPLOYEE_EXPERIENCE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE'))
     BEGIN
         DECLARE @drop_exp_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_EXPERIENCE DROP CONSTRAINT ' + @exp_pk;
         EXEC(@drop_exp_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE') AND name = 'PK_HR_EMPLOYEE_EXPERIENCE')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_EXPERIENCE ADD CONSTRAINT PK_HR_EMPLOYEE_EXPERIENCE PRIMARY KEY (id);
     END
@@ -653,12 +664,12 @@ IF OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT', 'U') IS NOT NULL
 BEGIN
     DECLARE @emg_pk NVARCHAR(256);
     SELECT TOP 1 @emg_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT') AND type = 'PK';
-    IF @emg_pk IS NOT NULL AND @emg_pk <> 'PK_HR_EMPLOYEE_EMERGENCY_CONTACT'
+    IF @emg_pk IS NOT NULL AND @emg_pk <> 'PK_HR_EMPLOYEE_EMERGENCY_CONTACT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT'))
     BEGIN
         DECLARE @drop_emg_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT DROP CONSTRAINT ' + @emg_pk;
         EXEC(@drop_emg_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT') AND name = 'PK_HR_EMPLOYEE_EMERGENCY_CONTACT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ADD CONSTRAINT PK_HR_EMPLOYEE_EMERGENCY_CONTACT PRIMARY KEY (id);
     END
@@ -704,12 +715,12 @@ IF OBJECT_ID('HR_EMPLOYEE_PASSPORT', 'U') IS NOT NULL
 BEGIN
     DECLARE @pass_pk NVARCHAR(256);
     SELECT TOP 1 @pass_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT') AND type = 'PK';
-    IF @pass_pk IS NOT NULL AND @pass_pk <> 'PK_HR_EMPLOYEE_PASSPORT'
+    IF @pass_pk IS NOT NULL AND @pass_pk <> 'PK_HR_EMPLOYEE_PASSPORT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT'))
     BEGIN
         DECLARE @drop_pass_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_PASSPORT DROP CONSTRAINT ' + @pass_pk;
         EXEC(@drop_pass_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT') AND name = 'PK_HR_EMPLOYEE_PASSPORT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_PASSPORT ADD CONSTRAINT PK_HR_EMPLOYEE_PASSPORT PRIMARY KEY (id);
     END
@@ -758,12 +769,12 @@ IF OBJECT_ID('HR_EMPLOYEE_DEPENDENT', 'U') IS NOT NULL
 BEGIN
     DECLARE @dep_pk NVARCHAR(256);
     SELECT TOP 1 @dep_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT') AND type = 'PK';
-    IF @dep_pk IS NOT NULL AND @dep_pk <> 'PK_HR_EMPLOYEE_DEPENDENT'
+    IF @dep_pk IS NOT NULL AND @dep_pk <> 'PK_HR_EMPLOYEE_DEPENDENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT'))
     BEGIN
         DECLARE @drop_dep_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_DEPENDENT DROP CONSTRAINT ' + @dep_pk;
         EXEC(@drop_dep_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT') AND name = 'PK_HR_EMPLOYEE_DEPENDENT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_DEPENDENT ADD CONSTRAINT PK_HR_EMPLOYEE_DEPENDENT PRIMARY KEY (id);
     END
@@ -815,12 +826,12 @@ IF OBJECT_ID('HR_EMPLOYEE_ASSET', 'U') IS NOT NULL
 BEGIN
     DECLARE @ast_pk NVARCHAR(256);
     SELECT TOP 1 @ast_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET') AND type = 'PK';
-    IF @ast_pk IS NOT NULL AND @ast_pk <> 'PK_HR_EMPLOYEE_ASSET'
+    IF @ast_pk IS NOT NULL AND @ast_pk <> 'PK_HR_EMPLOYEE_ASSET' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET'))
     BEGIN
         DECLARE @drop_ast_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_ASSET DROP CONSTRAINT ' + @ast_pk;
         EXEC(@drop_ast_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET') AND name = 'PK_HR_EMPLOYEE_ASSET')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_ASSET ADD CONSTRAINT PK_HR_EMPLOYEE_ASSET PRIMARY KEY (id);
     END
@@ -888,12 +899,12 @@ IF OBJECT_ID('HR_EMPLOYEE_KYC', 'U') IS NOT NULL
 BEGIN
     DECLARE @kyc_pk NVARCHAR(256);
     SELECT TOP 1 @kyc_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC') AND type = 'PK';
-    IF @kyc_pk IS NOT NULL AND @kyc_pk <> 'PK_HR_EMPLOYEE_KYC'
+    IF @kyc_pk IS NOT NULL AND @kyc_pk <> 'PK_HR_EMPLOYEE_KYC' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_KYC'))
     BEGIN
         DECLARE @drop_kyc_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_KYC DROP CONSTRAINT ' + @kyc_pk;
         EXEC(@drop_kyc_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC') AND name = 'PK_HR_EMPLOYEE_KYC')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_KYC ADD CONSTRAINT PK_HR_EMPLOYEE_KYC PRIMARY KEY (id);
     END
@@ -940,12 +951,12 @@ IF OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT', 'U') IS NOT NULL
 BEGIN
     DECLARE @kycd_pk NVARCHAR(256);
     SELECT TOP 1 @kycd_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT') AND type = 'PK';
-    IF @kycd_pk IS NOT NULL AND @kycd_pk <> 'PK_HR_EMPLOYEE_KYC_DOCUMENT'
+    IF @kycd_pk IS NOT NULL AND @kycd_pk <> 'PK_HR_EMPLOYEE_KYC_DOCUMENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT'))
     BEGIN
         DECLARE @drop_kycd_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT DROP CONSTRAINT ' + @kycd_pk;
         EXEC(@drop_kycd_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT') AND name = 'PK_HR_EMPLOYEE_KYC_DOCUMENT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ADD CONSTRAINT PK_HR_EMPLOYEE_KYC_DOCUMENT PRIMARY KEY (id);
     END
@@ -985,12 +996,12 @@ IF OBJECT_ID('HR_EMPLOYEE_ACTIVITY', 'U') IS NOT NULL
 BEGIN
     DECLARE @act_pk NVARCHAR(256);
     SELECT TOP 1 @act_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY') AND type = 'PK';
-    IF @act_pk IS NOT NULL AND @act_pk <> 'PK_HR_EMPLOYEE_ACTIVITY'
+    IF @act_pk IS NOT NULL AND @act_pk <> 'PK_HR_EMPLOYEE_ACTIVITY' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY'))
     BEGIN
         DECLARE @drop_act_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_ACTIVITY DROP CONSTRAINT ' + @act_pk;
         EXEC(@drop_act_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY') AND name = 'PK_HR_EMPLOYEE_ACTIVITY')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_ACTIVITY ADD CONSTRAINT PK_HR_EMPLOYEE_ACTIVITY PRIMARY KEY (id);
     END
@@ -1001,9 +1012,14 @@ GO
 -- ==========================================
 -- 14. HR_EMPLOYEE_MANAGER_MAPPING (from EMPLOYEE_MANAGER_MAPPING)
 -- ==========================================
-IF OBJECT_ID('EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'EMPLOYEE_MANAGER_MAPPING', 'HR_EMPLOYEE_MANAGER_MAPPING';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'EMPLOYEE_MANAGER_MAPPING', 'HR_EMPLOYEE_MANAGER_MAPPING';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NULL
+        EXEC sp_rename 'EMPLOYEE_MANAGER_MAPPING', 'HR_EMPLOYEE_MANAGER_MAPPING';
 END
 GO
 
@@ -1040,12 +1056,12 @@ IF OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL
 BEGIN
     DECLARE @map_pk NVARCHAR(256);
     SELECT TOP 1 @map_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING') AND type = 'PK';
-    IF @map_pk IS NOT NULL AND @map_pk <> 'PK_HR_EMPLOYEE_MANAGER_MAPPING'
+    IF @map_pk IS NOT NULL AND @map_pk <> 'PK_HR_EMPLOYEE_MANAGER_MAPPING' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING'))
     BEGIN
         DECLARE @drop_map_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING DROP CONSTRAINT ' + @map_pk;
         EXEC(@drop_map_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING') AND name = 'PK_HR_EMPLOYEE_MANAGER_MAPPING')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ADD CONSTRAINT PK_HR_EMPLOYEE_MANAGER_MAPPING PRIMARY KEY (id);
     END

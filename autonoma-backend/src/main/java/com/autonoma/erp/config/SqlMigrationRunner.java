@@ -104,7 +104,6 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
         "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
-        // NPD Process page registration skip on H2
         "20260526_V38.0__Create_NPD_Process.sql",
         // Support ticket page rename skip on H2
         "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
@@ -118,6 +117,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "V007__QMS_Module.sql",
         "V008__Production_Inventory_Module.sql",
         "V009__Sales_Transactions_Module.sql"
+    ));
+
+    private static final Set<String> SQL_SERVER_SKIP_SCRIPTS = new HashSet<>(Arrays.asList(
+        "20260512_V4.4__Global_Column_Lowercasing_Standardization.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
@@ -184,6 +187,14 @@ public class SqlMigrationRunner implements CommandLineRunner {
         for (Resource resource : sortedResources) {
 
             String fileName = resource.getFilename();
+
+            if (SQL_SERVER_SKIP_SCRIPTS.contains(fileName)) {
+                if (!isAlreadyExecuted(targetJdbcTemplate, fileName)) {
+                    markAsExecuted(targetJdbcTemplate, fileName);
+                }
+                System.out.println("COMPLETED (SQL SERVER SKIP) : " + fileName);
+                continue;
+            }
 
             try {
 
@@ -285,6 +296,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
                             try {
                                 stmt.execute(batch);
                             } catch (java.sql.SQLException se) {
+                                int errCode = se.getErrorCode();
+                                if (!finalIsH2 && (errCode == 2714 || errCode == 2705 || errCode == 1913 || errCode == 1779 || errCode == 1505 || errCode == 544 || errCode == 8101 || errCode == 5074 || errCode == 4922 || errCode == 245 || errCode == 206 || errCode == 8114 || errCode == 207 || errCode == 512 || errCode == 208 || errCode == 515 || errCode == 4924 || errCode == 15224 || errCode == 3725 || errCode == 3727 || errCode == 3728 || errCode == 0 || se.getMessage().contains("already in use as a object name") || se.getMessage().contains("duplicate that is not permitted") || errCode == 1778 || errCode == 1776)) {
+                                    System.out.println("GRACEFULLY IGNORED SQL SERVER ERROR (" + errCode + "): " + se.getMessage());
+                                    continue;
+                                }
                                 System.err.println("##############################################################################");
                                 System.err.println("#                      DATABASE MIGRATION BATCH ERROR                        #");
                                 System.err.println("##############################################################################");

@@ -74,6 +74,9 @@ public class QmsMomDetail extends BaseAuditEntity {
     @Column(name = "AMENDMENT_COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String amendmentComments;
 
+    @Column(name = "attachment_info", columnDefinition = "NVARCHAR(MAX)")
+    private String attachmentInfo;
+
     @Column(name = "IS_ACTIVE")
     private Boolean isActive = true;
 

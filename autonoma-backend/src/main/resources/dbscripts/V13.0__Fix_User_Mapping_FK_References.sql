@@ -14,6 +14,10 @@ IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_UserDiv_User')
 IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_UserComp_User')
     ALTER TABLE [dbo].[AD_USER_COMPANY_MAPPING] DROP CONSTRAINT [FK_UserComp_User];
 
+-- Alter columns to match the type of ad_user_credential(user_id) which is NVARCHAR(50)
+ALTER TABLE [dbo].[AD_USER_DIVISION_MAPPING] ALTER COLUMN [user_id] NVARCHAR(50) NOT NULL;
+ALTER TABLE [dbo].[AD_USER_COMPANY_MAPPING] ALTER COLUMN [user_id] NVARCHAR(50) NOT NULL;
+
 -- 2. Re-create the FK constraints pointing to the correct active table 'ad_user_credential'
 ALTER TABLE [dbo].[AD_USER_DIVISION_MAPPING]
     ADD CONSTRAINT [FK_UserDiv_User]

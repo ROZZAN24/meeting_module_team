@@ -105,7 +105,17 @@ export default function AuditAreaMaster() {
       fetchAuditAreas();
     } catch (error) {
       console.error('Failed to delete audit area:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete audit area.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'Failed to delete audit area.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 

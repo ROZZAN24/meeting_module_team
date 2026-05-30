@@ -1,10 +1,21 @@
 -- V9.3__Initialize_Sidebar_Navigation_Final.sql
 
--- 0. Drop existing tables to ensure clean state with correct column names
+-- 0. Dynamically drop any foreign key constraints referencing our target tables to prevent drop failures
+DECLARE @Sql NVARCHAR(MAX) = '';
+SELECT @Sql = @Sql + 'ALTER TABLE [' + OBJECT_SCHEMA_NAME(parent_object_id) + '].[' + OBJECT_NAME(parent_object_id) + '] DROP CONSTRAINT [' + name + '];' + CHAR(13)
+FROM sys.foreign_keys
+WHERE referenced_object_id IN (OBJECT_ID('BOS_PAGES'), OBJECT_ID('BOS_SUB_MODULES'), OBJECT_ID('BOS_MODULES'));
+
+IF @Sql <> ''
+    EXEC sp_executesql @Sql;
+GO
+
+-- 0.1 Drop existing tables to ensure clean state with correct column names
 IF OBJECT_ID(N'[dbo].[bos_user_page_auth]', N'U') IS NOT NULL DROP TABLE [dbo].[bos_user_page_auth];
 IF OBJECT_ID(N'[dbo].[bos_pages]', N'U') IS NOT NULL DROP TABLE [dbo].[bos_pages];
 IF OBJECT_ID(N'[dbo].[bos_sub_modules]', N'U') IS NOT NULL DROP TABLE [dbo].[bos_sub_modules];
 IF OBJECT_ID(N'[dbo].[bos_modules]', N'U') IS NOT NULL DROP TABLE [dbo].[bos_modules];
+GO
 
 -- 1. Create Tables with larger code columns to prevent truncation
 CREATE TABLE [dbo].[bos_modules](
@@ -52,6 +63,7 @@ CREATE TABLE [dbo].[bos_user_page_auth](
     [additional2] [int] DEFAULT 0,
     PRIMARY KEY CLUSTERED ([user_id] ASC, [page_id] ASC)
 );
+GO
 
 -- 2. Seed Modules
 SET IDENTITY_INSERT bos_modules ON;
@@ -65,6 +77,7 @@ INSERT INTO bos_modules (module_id, mod_code, mod_name, icon) VALUES
 (7, 'OPERATIONS', 'Operations', 'IconSettings'),
 (8, 'IT', 'IT Support', 'IconDeviceDesktop');
 SET IDENTITY_INSERT bos_modules OFF;
+GO
 
 -- 3. Seed Sub-Modules
 SET IDENTITY_INSERT bos_sub_modules ON;
@@ -84,6 +97,7 @@ INSERT INTO bos_sub_modules (sub_mod_id, mod_id, sub_mod_code, sub_mod_name, ico
 (13, 4, 'LOGISTICS', 'Terms & Logistics', 'IconTruck'),
 (14, 1, 'DASH_MASTER', 'Dashboards', 'IconLayoutDashboard');
 SET IDENTITY_INSERT bos_sub_modules OFF;
+GO
 
 -- 4. Seed Pages (Hierarchical)
 INSERT INTO bos_pages (mod_id, sub_mod_id, page_code, page_name, enabled, page_url, icon) VALUES
@@ -101,6 +115,7 @@ INSERT INTO bos_pages (mod_id, sub_mod_id, page_code, page_name, enabled, page_u
 -- Sales -> CRM
 (4, 12, 'S_CRM_01', 'Customer Master', 1, '/sales/crm/customer-master', 'IconUsers'),
 (4, 12, 'S_CRM_02', 'Contact Master', 1, '/sales/crm/contact-master', 'IconPhone');
+GO
 
 -- 5. Grant Access to Admin (user_id 'Admin')
 INSERT INTO bos_user_page_auth (user_id, page_id, sub_mod_id, mod_id, enable, read_acs, [write], delete_acs, export, approval, manager, additional1, additional2)
@@ -111,3 +126,4 @@ SELECT
     p.mod_id, 
     1, 1, 1, 1, 1, 1, 1, 1, 1
 FROM bos_pages p;
+GO

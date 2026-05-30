@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Stack, Box, Typography, Grid, MenuItem, Button, Tooltip } from '@mui/material';
-import { BOSFormDialog, BOSTextField, BOSFormSection } from 'ui-component/bos';
-import { IconChecklist, IconClock, IconMessageReport } from '@tabler/icons-react';
+import { Stack, Box, Typography, Button, Tooltip, Divider } from '@mui/material';
+import { BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload } from 'ui-component/bos';
+import { IconChecklist, IconClock, IconPaperclip } from '@tabler/icons-react';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -18,10 +18,12 @@ const INITIAL_FORM = {
 
 const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
   const dispatch = useDispatch();
-  const { errors, validate, clearErrors } = useBOSValidation();
+  const { clearErrors } = useBOSValidation();
   const { user } = useAuth();
   const [form, setForm] = useState(INITIAL_FORM);
   const [loading, setLoading] = useState(false);
+  const [isAttachmentRequired, setIsAttachmentRequired] = useState(false);
+  const [attachments, setAttachments] = useState([]);
 
   // Derive delay days based on SOP
   const getDelayDays = () => {
@@ -47,8 +49,20 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
           actionObservation: item.actionObservation || '',
           cancelRemarks: item.cancelRemarks || ''
         });
+        setIsAttachmentRequired(item.attachmentRequired === 'YES');
+        if (item.attachmentInfo) {
+          try {
+            setAttachments(JSON.parse(item.attachmentInfo));
+          } catch {
+            setAttachments([]);
+          }
+        } else {
+          setAttachments([]);
+        }
       } else {
         setForm(INITIAL_FORM);
+        setIsAttachmentRequired(false);
+        setAttachments([]);
       }
       clearErrors();
     }
@@ -67,7 +81,16 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
 
     setLoading(true);
     try {
-      const payload = { ...form };
+      const payload = {
+        ...form,
+        attachmentInfo: JSON.stringify(attachments.map(att => ({
+          id: att.id,
+          fileName: att.fileName,
+          fileType: att.fileType || 'FILE',
+          serverFileName: att.serverFileName,
+          docDetails: att.docDetails || ''
+        })))
+      };
       const endpoint = `${API_PATHS.QMS.MOMS}/${item.momId}/details/${item.id}/close`;
 
       await axios.put(endpoint, payload);
@@ -125,30 +148,71 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
           </Box>
         )}
         {/* HEADER */}
-        <Grid container spacing={2} sx={{ p: 2, bgcolor: 'primary.lighter', borderRadius: 2, border: '1px solid', borderColor: 'primary.light' }}>
-          <Grid item xs={3}>
-            <Typography variant="caption" color="text.secondary">Meeting Action Number</Typography>
-            <Typography variant="subtitle1" fontWeight={800} color="primary.main">{item?.momNo}</Typography>
-          </Grid>
-          <Grid item xs={3}>
-            <Typography variant="caption" color="text.secondary">MOM Date</Typography>
-            <Typography variant="subtitle1" fontWeight={800}>{item?.momDate}</Typography>
-          </Grid>
-          <Grid item xs={2}>
-            <Typography variant="caption" color="text.secondary">Assign By</Typography>
-            <Typography variant="subtitle1" fontWeight={800}>{item?.assignedBy || 'N/A'}</Typography>
-          </Grid>
-          <Grid item xs={2}>
-            <Typography variant="caption" color="text.secondary">Target Date</Typography>
-            <Typography variant="subtitle1" fontWeight={800}>{item?.targetDate || 'N/A'}</Typography>
-          </Grid>
-          <Grid item xs={2}>
-            <Typography variant="caption" color="text.secondary">Delay Days</Typography>
-            <Typography variant="subtitle1" fontWeight={800} color={delayDays > 0 ? 'error.main' : 'success.main'}>
+        <Box 
+          sx={{ 
+            p: 2, 
+            bgcolor: 'background.paper', 
+            borderRadius: 2, 
+            border: '1px solid', 
+            borderColor: 'divider',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1.5,
+            width: '100%'
+          }}
+        >
+          <Box sx={{ flex: 1.2, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Meeting Action Number
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="primary.main" noWrap sx={{ mt: 0.5 }}>
+              {item?.momNo || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              MOM Date
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 0.5 }}>
+              {item?.momDate || '-'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Assign By
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ mt: 0.5 }}>
+              {item?.assignedBy || 'N/A'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Target Date
+            </Typography>
+            <Typography variant="subtitle1" fontWeight={800} color="warning.dark" sx={{ mt: 0.5 }}>
+              {item?.targetDate || 'N/A'}
+            </Typography>
+          </Box>
+          <Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed', alignSelf: 'stretch', my: 0.5 }} />
+          <Box sx={{ flex: 1, minWidth: 0, px: 1 }}>
+            <Typography variant="caption" display="block" color="text.secondary" sx={{ fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Delay Days
+            </Typography>
+            <Typography 
+              variant="subtitle1" 
+              fontWeight={800} 
+              color={delayDays > 0 ? 'error.main' : 'success.main'}
+              sx={{ mt: 0.5 }}
+            >
               {delayDays} Days
             </Typography>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
         {/* DETAILS SECTION */}
         <BOSFormSection title="1. Action Details" icon={<IconChecklist size={22} />}>
@@ -214,6 +278,20 @@ const MomActionClosureDialog = ({ open, item, onClose, onSave }) => {
             )}
           </Stack>
         </BOSFormSection>
+
+        {isAttachmentRequired && (
+          <BOSFormSection title="Attachments" icon={<IconPaperclip size={22} />}>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <BOSFileUpload
+                files={attachments}
+                onChange={setAttachments}
+                module="QMS"
+                multiple={true}
+                disabled={isReadonly}
+              />
+            </Stack>
+          </BOSFormSection>
+        )}
       </Stack>
     </BOSFormDialog>
   );

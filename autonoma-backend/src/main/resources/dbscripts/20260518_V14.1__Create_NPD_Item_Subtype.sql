@@ -8,8 +8,20 @@ BEGIN
     SELECT TOP 1 @group_mfg = id FROM npd_item_group WHERE group_name = 'Manufacturing Item';
     IF @group_mfg IS NULL SELECT TOP 1 @group_mfg = id FROM npd_item_group;
     
-    INSERT INTO npd_item_type (group_id, item_type, group_prefix, item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
-    VALUES (@group_mfg, 'COUPLINGS', 'MFG', 'CPL', 'YES', 'TYPE', 'ACTIVE', 'System', GETDATE());
+    IF COL_LENGTH('npd_item_type', 'created_by') IS NOT NULL
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_type (group_id, item_type, group_prefix, item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
+        VALUES (@group_mfg, ''COUPLINGS'', ''MFG'', ''CPL'', ''YES'', ''TYPE'', ''ACTIVE'', ''System'', GETDATE());',
+        N'@group_mfg BIGINT', @group_mfg;
+    END
+    ELSE
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_type (group_id, item_type, group_prefix, item_prefix, is_auto_generate_code, prefix_based, status, CREATED_USER, created_at)
+        VALUES (@group_mfg, ''COUPLINGS'', ''MFG'', ''CPL'', ''YES'', ''TYPE'', ''ACTIVE'', ''System'', GETDATE());',
+        N'@group_mfg BIGINT', @group_mfg;
+    END
 END;
 
 IF NOT EXISTS (SELECT 1 FROM npd_item_type WHERE item_type = 'RM')
@@ -18,8 +30,20 @@ BEGIN
     SELECT TOP 1 @group_pur = id FROM npd_item_group WHERE group_name = 'Purchase item';
     IF @group_pur IS NULL SELECT TOP 1 @group_pur = id FROM npd_item_group;
 
-    INSERT INTO npd_item_type (group_id, item_type, group_prefix, item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
-    VALUES (@group_pur, 'RM', 'PUR', 'RM', 'YES', 'TYPE', 'ACTIVE', 'System', GETDATE());
+    IF COL_LENGTH('npd_item_type', 'created_by') IS NOT NULL
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_type (group_id, item_type, group_prefix, item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
+        VALUES (@group_pur, ''RM'', ''PUR'', ''RM'', ''YES'', ''TYPE'', ''ACTIVE'', ''System'', GETDATE());',
+        N'@group_pur BIGINT', @group_pur;
+    END
+    ELSE
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_type (group_id, item_type, group_prefix, item_prefix, is_auto_generate_code, prefix_based, status, CREATED_USER, created_at)
+        VALUES (@group_pur, ''RM'', ''PUR'', ''RM'', ''YES'', ''TYPE'', ''ACTIVE'', ''System'', GETDATE());',
+        N'@group_pur BIGINT', @group_pur;
+    END
 END;
 GO
 
@@ -49,8 +73,20 @@ BEGIN
     DECLARE @type_couplings BIGINT;
     SELECT TOP 1 @type_couplings = id FROM npd_item_type WHERE item_type = 'COUPLINGS';
     
-    INSERT INTO npd_item_subtype (type_id, sub_type, sub_item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
-    VALUES (@type_couplings, 'SHIM COUPLING', 'SHM', 'YES', 'SUB ITEM', 'ACTIVE', 'SIVARAMAN', '2023-11-27 10:00:00');
+    IF COL_LENGTH('npd_item_subtype', 'created_by') IS NOT NULL
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_subtype (type_id, sub_type, sub_item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
+        VALUES (@type_couplings, ''SHIM COUPLING'', ''SHM'', ''YES'', ''SUB ITEM'', ''ACTIVE'', ''SIVARAMAN'', ''2023-11-27 10:00:00'');',
+        N'@type_couplings BIGINT', @type_couplings;
+    END
+    ELSE
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_subtype (type_id, sub_type, sub_item_prefix, is_auto_generate_code, prefix_based, status, CREATED_USER, created_at)
+        VALUES (@type_couplings, ''SHIM COUPLING'', ''SHM'', ''YES'', ''SUB ITEM'', ''ACTIVE'', ''SIVARAMAN'', ''2023-11-27 10:00:00'');',
+        N'@type_couplings BIGINT', @type_couplings;
+    END
 END;
 
 IF NOT EXISTS (SELECT 1 FROM npd_item_subtype WHERE sub_type = 'PLATES')
@@ -58,7 +94,19 @@ BEGIN
     DECLARE @type_rm BIGINT;
     SELECT TOP 1 @type_rm = id FROM npd_item_type WHERE item_type = 'RM';
 
-    INSERT INTO npd_item_subtype (type_id, sub_type, sub_item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
-    VALUES (@type_rm, 'PLATES', 'PLT', 'YES', 'SUB ITEM', 'ACTIVE', 'SIVARAMAN', '2023-12-10 10:00:00');
+    IF COL_LENGTH('npd_item_subtype', 'created_by') IS NOT NULL
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_subtype (type_id, sub_type, sub_item_prefix, is_auto_generate_code, prefix_based, status, created_by, created_at)
+        VALUES (@type_rm, ''PLATES'', ''PLT'', ''YES'', ''SUB ITEM'', ''ACTIVE'', ''SIVARAMAN'', ''2023-12-10 10:00:00'');',
+        N'@type_rm BIGINT', @type_rm;
+    END
+    ELSE
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_item_subtype (type_id, sub_type, sub_item_prefix, is_auto_generate_code, prefix_based, status, CREATED_USER, created_at)
+        VALUES (@type_rm, ''PLATES'', ''PLT'', ''YES'', ''SUB ITEM'', ''ACTIVE'', ''SIVARAMAN'', ''2023-12-10 10:00:00'');',
+        N'@type_rm BIGINT', @type_rm;
+    END
 END;
 GO
