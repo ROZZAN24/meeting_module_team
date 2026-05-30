@@ -43,6 +43,7 @@ public abstract class BaseAuditEntity {
 
     public Date getCreatedAt() { return getCreatedDate(); }
     public void setCreatedAt(Date createdAt) { setCreatedDate(createdAt); }
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public void setCreatedAt(java.time.LocalDateTime createdAt) {
         if (createdAt != null) {
             setCreatedDate(java.sql.Timestamp.valueOf(createdAt));
@@ -53,6 +54,7 @@ public abstract class BaseAuditEntity {
 
     public Date getUpdatedAt() { return getUpdatedDate(); }
     public void setUpdatedAt(Date updatedAt) { setUpdatedDate(updatedAt); }
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public void setUpdatedAt(java.time.LocalDateTime updatedAt) {
         if (updatedAt != null) {
             setUpdatedDate(java.sql.Timestamp.valueOf(updatedAt));
