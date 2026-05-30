@@ -138,7 +138,14 @@ export default function BulkUploadDialog({ open, handleClose }) {
 
       if (duplicateFields.length > 0) {
         const msg = `Duplicate data found in ${duplicateFields.join(', ')}`;
-        alert(msg);
+        dispatch(openSnackbar({
+          open: true,
+          message: msg,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        }));
         setErrorMsg(msg);
         setParsedData([]);
       } else if (rowsToSave.length === 0) {
