@@ -124,14 +124,6 @@ export const masters = {
           icon: icons.IconSearch,
           children: [
             {
-              id: 'master-hr-ats-verification',
-              title: 'Applicant Verification Criteria',
-              type: 'item',
-              url: '/master/hr/ats/verification',
-              icon: icons.IconShieldCheck,
-              pageCode: 'M2130'
-            },
-            {
               id: 'master-hr-ats-induction',
               title: 'Induction Criteria',
               type: 'item',
@@ -655,6 +647,14 @@ export const hra = {
           url: '/master/hr/ats/email-content',
           icon: icons.IconMessage2,
           pageCode: 'M2120'
+        },
+        {
+          id: 'hra-ats-verification',
+          title: 'Applicant Verification Criteria',
+          type: 'item',
+          url: '/master/hr/ats/verification',
+          icon: icons.IconShieldCheck,
+          pageCode: 'M2130'
         }
       ]
     }
