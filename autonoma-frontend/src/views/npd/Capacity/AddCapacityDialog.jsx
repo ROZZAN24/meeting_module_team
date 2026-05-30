@@ -88,8 +88,8 @@ const AddCapacityDialog = ({ open, handleClose, initialData, readOnly = false })
         model: { id: formData.modelId },
         uom: formData.uom,
         capacityVal: parseFloat(formData.capacityVal),
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin',
         createdAt: formData.createdAt
       };
 

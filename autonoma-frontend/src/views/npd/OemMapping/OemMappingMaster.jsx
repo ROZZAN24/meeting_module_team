@@ -7,7 +7,7 @@ import AddOemMappingDialog from './AddOemMappingDialog';
 import BulkUploadDialog from './BulkUploadDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig, setFilters } from 'store/slices/search';
+import { setFilterConfig, setFilters, setQuery } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -93,7 +93,19 @@ export default function OemMappingMaster() {
   const handleOpenAdd = () => { setSelectedRow(null); setIsReadOnly(false); setDialogOpen(true); };
   const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };
   const handleCloseDialog = (refresh) => { setDialogOpen(false); if (refresh === true) fetchMappings(); };
-  const handleCloseBulkDialog = (refresh) => { setBulkDialogOpen(false); if (refresh === true) fetchMappings(); };
+  const handleCloseBulkDialog = (refresh) => {
+    setBulkDialogOpen(false);
+    if (refresh === true) {
+      dispatch(setQuery(''));
+      dispatch(setFilters({
+        status: 'ALL',
+        createdAtStart: '',
+        createdAtEnd: ''
+      }));
+      setPage(0);
+      fetchMappings();
+    }
+  };
 
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.id);
@@ -125,11 +137,13 @@ export default function OemMappingMaster() {
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
       // 2. Created Date Range Filter
-      const today = format(new Date(), 'yyyy-MM-dd');
-      const startDate = globalFilters.createdAtStart || today;
-      const endDate = globalFilters.createdAtEnd || today;
+      const startDate = globalFilters.createdAtStart;
+      const endDate = globalFilters.createdAtEnd;
       const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
-      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
+      if (rowDate) {
+        if (startDate && rowDate < startDate) return false;
+        if (endDate && rowDate > endDate) return false;
+      }
 
       // 3. Primary Field (Part No)
       const partNoFilter = globalFilters.partNo || '';

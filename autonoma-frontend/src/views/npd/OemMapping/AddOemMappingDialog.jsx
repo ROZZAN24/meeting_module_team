@@ -74,8 +74,8 @@ const AddOemMappingDialog = ({ open, handleClose, initialData, readOnly = false 
         oemPartNo: formData.oemPartNo,
         oemDescription: formData.oemDescription,
         status: formData.status,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin',
         createdAt: formData.createdAt
       };
 

@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Stack } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box, Stack, Tooltip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconTrash, IconX, IconAlertTriangle } from '@tabler/icons-react';
 
@@ -19,6 +20,23 @@ import { IconTrash, IconX, IconAlertTriangle } from '@tabler/icons-react';
 export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title = 'Confirm Deletion', message, itemName }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e) => {
+      // Check if Ctrl + Y is pressed
+      if (e.ctrlKey && (e.key === 'y' || e.key === 'Y')) {
+        e.preventDefault();
+        onConfirm();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, onConfirm]);
 
   return (
     <Dialog
@@ -90,24 +108,32 @@ export default function ConfirmDeleteDialog({ open, onClose, onConfirm, title = 
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider', gap: 1 }}>
-        <Button
-          variant="outlined"
-          color="secondary"
-          onClick={onClose}
-          startIcon={<IconX size={18} />}
-          sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={onConfirm}
-          startIcon={<IconTrash size={18} />}
-          sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
-        >
-          Delete
-        </Button>
+        <Tooltip title="Esc" arrow placement="top">
+          <span>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={onClose}
+              startIcon={<IconX size={18} />}
+              sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
+            >
+              No
+            </Button>
+          </span>
+        </Tooltip>
+        <Tooltip title="Ctrl+Y" arrow placement="top">
+          <span>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={onConfirm}
+              startIcon={<IconTrash size={18} />}
+              sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600 }}
+            >
+              Yes
+            </Button>
+          </span>
+        </Tooltip>
       </DialogActions>
     </Dialog>
   );

@@ -125,8 +125,8 @@ const AddWindFarmDialog = ({ open, handleClose, initialData, readOnly = false })
         city: formData.city,
         state: formData.state,
         country: formData.country,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin',
         createdAt: formData.createdAt
       };
 

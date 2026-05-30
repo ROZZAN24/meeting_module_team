@@ -101,8 +101,8 @@ const AddItemTypeDialog = ({ open, handleClose, initialData, readOnly = false })
         isAutoGenerateCode: formData.isAutoGenerateCode,
         prefixBased: formData.prefixBased,
         status: formData.status,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin'
       };
 
       if (formData.id) {

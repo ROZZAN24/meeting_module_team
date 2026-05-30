@@ -95,8 +95,8 @@ const AddOemDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         originCountry: formData.originCountry,
         statusYear: formData.statusYear,
         status: formData.status,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin'
       };
 
       if (formData.id) {
