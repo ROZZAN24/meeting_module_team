@@ -38,6 +38,7 @@ import {
   BOSTextField, BOSAutocomplete,
   BOSDataTable,
   BOSFileUpload,
+  BOSDatePicker,
   btnSave,
   btnClear,
   getStatusChipSx
@@ -238,11 +239,19 @@ export default function AddAuditObservation() {
       }
     >
       <Stack spacing={3}>
-        {/* Section 1: Header Information */}
         <BOSFormSection icon={<IconCalendarEvent size={20} color={theme.palette.primary.main} />} title="Observation Summary">
           <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2.5 }}>
             <BOSTextField label="Observation No" value={formData.observationNo || ''} inputProps={{ readOnly: true }} />
-            <BOSTextField required type="date" label="Observation Date" name="observationDate" value={formData.observationDate || ''} onChange={(e) => setFormData({ ...formData, observationDate: e.target.value })} InputLabelProps={{ shrink: true }} disabled={!perms.write} />
+            <BOSDatePicker
+              required
+              label="Observation Date"
+              name="observationDate"
+              value={formData.observationDate || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, observationDate: e.target.value }))}
+              error={!!errors.observationDate}
+              helperText={errors.observationDate}
+              disabled={!perms.write}
+            />
             <BOSTextField select required label="Schedule No" name="auditScheduleNo" value={formData.auditScheduleNo || ''} onChange={handleScheduleChange} disabled={!perms.write}>
               {schedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo}</MenuItem>)}
             </BOSTextField>

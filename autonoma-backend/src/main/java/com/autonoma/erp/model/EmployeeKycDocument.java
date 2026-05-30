@@ -17,35 +17,38 @@ public class EmployeeKycDocument {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "seq_no")
+    @Column(name = "SEQ_NO")
     private Integer seqNo;
 
-    @Column(name = "document_name", length = 255)
+    @Column(name = "DOCUMENT_NAME", length = 255)
     private String documentName;
 
-    @Column(name = "document_number", length = 100)
+    @Column(name = "DOCUMENT_NUMBER", length = 100)
     private String documentNumber;
 
-    @Column(length = 500)
+    @Column(name = "ATTACHMENT", length = 500)
     private String attachment;
 
-    @Column(name = "file_name", length = 255)
+    @Column(name = "FILE_NAME", length = 255)
     private String fileName;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

@@ -5,7 +5,7 @@ import { IconSettings, IconInfoCircle, IconAlertCircle } from '@tabler/icons-rea
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, errorStyle } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, errorStyle, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSForm from 'hooks/useBOSForm';
 
@@ -171,19 +171,18 @@ const AddGradeDialog = ({ open, handleClose, initialData, readOnly = false }) =>
               onChange={handleFormChange}
               disabled={isViewOnly}
             />
-            <BOSTextField
-              select
+            <BOSStatusField
+              isCreate={!initialData}
+              type="string-in-active"
               name="status"
               label="Operational Status"
               value={formData.status}
               onChange={handleFormChange}
               disabled={isViewOnly}
-            >
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="In Active">In Active</MenuItem>
-            </BOSTextField>
+            />
           </Box>
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

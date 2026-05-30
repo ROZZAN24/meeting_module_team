@@ -6,7 +6,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddCapacityDialog from './AddCapacityDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -44,18 +44,18 @@ export default function CapacityMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Dispatch starred filter configuration matching Capacity
+  // Dispatch starred filter configuration matching CREATED DATE and UOM
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
-      {
-        id: 'capacityValueContains',
-        label: 'Capacity Contains',
-        type: 'text',
-        defaultValue: '',
-        isStarred: true
-      }
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'uom', label: 'UOM', type: 'text', placeholder: 'Search UOM...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -103,19 +103,24 @@ export default function CapacityMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      // 1. Capacity Contains Text Filter
-      const capacityValueContains = globalFilters.capacityValueContains || '';
-      const matchesCapacityValueContains = !capacityValueContains ||
-        (row.capacityVal && String(row.capacityVal).includes(capacityValueContains)) ||
-        (row.uom && row.uom.toLowerCase().includes(capacityValueContains.toLowerCase()));
+      // 1. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
 
-      // 2. Search query
+      // 2. Primary Field Filter (UOM)
+      const uomFilter = globalFilters.uom || '';
+      if (uomFilter && !(row.uom || '').toLowerCase().includes(uomFilter.toLowerCase())) return false;
+
+      // 3. Search query
       const matchesSearch = !globalQuery ||
         (row.capacityVal && String(row.capacityVal).includes(globalQuery)) ||
         (row.uom && row.uom.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.model && row.model.modelNo && row.model.modelNo.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesCapacityValueContains && matchesSearch;
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

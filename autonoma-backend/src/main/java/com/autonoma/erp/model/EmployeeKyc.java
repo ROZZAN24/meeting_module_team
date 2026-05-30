@@ -17,70 +17,73 @@ public class EmployeeKyc {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "pf_number", length = 100)
+    @Column(name = "PF_NUMBER", length = 100)
     private String pfNumber;
 
-    @Column(name = "uan_number", length = 100)
+    @Column(name = "UAN_NUMBER", length = 100)
     private String uanNumber;
 
-    @Column(name = "pan_number", length = 20)
+    @Column(name = "PAN_NUMBER", length = 20)
     private String panNumber;
 
-    @Column(name = "aadhar_number", length = 20)
+    @Column(name = "AADHAR_NUMBER", length = 20)
     private String aadharNumber;
 
-    @Column(name = "driving_license_number", length = 50)
+    @Column(name = "DRIVING_LICENSE_NUMBER", length = 50)
     private String drivingLicenseNumber;
 
-    @Column(name = "license_expiry_date")
+    @Column(name = "LICENSE_EXPIRY_DATE")
     @Temporal(TemporalType.DATE)
     private Date licenseExpiryDate;
 
-    @Column(name = "election_card_number", length = 50)
+    @Column(name = "ELECTION_CARD_NUMBER", length = 50)
     private String electionCardNumber;
 
-    @Column(name = "ration_card_number", length = 50)
+    @Column(name = "RATION_CARD_NUMBER", length = 50)
     private String rationCardNumber;
 
-    @Column(name = "personal_account_number", length = 50)
+    @Column(name = "PERSONAL_ACCOUNT_NUMBER", length = 50)
     private String personalAccountNumber;
 
-    @Column(name = "bank_name", length = 100)
+    @Column(name = "BANK_NAME", length = 100)
     private String bankName;
 
-    @Column(name = "ifsc_code", length = 20)
+    @Column(name = "IFSC_CODE", length = 20)
     private String ifscCode;
 
-    @Column(name = "physically_challenged", length = 10)
+    @Column(name = "PHYSICALLY_CHALLENGED", length = 10)
     private String physicallyChallenged;
 
-    @Column(name = "physically_challenged_category", length = 50)
+    @Column(name = "PHYSICALLY_CHALLENGED_CATEGORY", length = 50)
     private String physicallyChallengedCategory;
 
-    @Column(name = "international_worker", length = 10)
+    @Column(name = "INTERNATIONAL_WORKER", length = 10)
     private String internationalWorker;
 
-    @Column(name = "passport_number", length = 50)
+    @Column(name = "PASSPORT_NUMBER", length = 50)
     private String passportNumber;
 
-    @Column(name = "passport_expiry_date")
+    @Column(name = "PASSPORT_EXPIRY_DATE")
     @Temporal(TemporalType.DATE)
     private Date passportExpiryDate;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

@@ -47,7 +47,7 @@ public class AuditTrail {
     @Column(name = "comments", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
     private Date createdAt;

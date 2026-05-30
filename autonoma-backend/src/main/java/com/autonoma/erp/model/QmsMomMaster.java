@@ -5,15 +5,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.LocalDateTime;
 import java.util.List;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "QMS_MOM_MASTER")
+@Table(name = "QMS_MOM")
 @Data
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -22,38 +19,37 @@ public class QmsMomMaster extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "mom_no", nullable = false, unique = true)
+    @Column(name = "MOM_NO", nullable = false, unique = true)
     private String momNo;
 
-    @Column(name = "mom_date", nullable = false)
+    @Column(name = "MOM_DATE", nullable = false)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate momDate = LocalDate.now();
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "schedule_id", nullable = false)
+    @JoinColumn(name = "SCHEDULE_ID", nullable = false)
     private QmsMeetingSchedule schedule;
 
-    @Column(name = "agenda", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "AGENDA", columnDefinition = "NVARCHAR(MAX)")
     private String agenda;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "chaired_by_id")
+    @JoinColumn(name = "CHAIRED_BY_ID")
     private EmployeeMaster chairedBy;
 
-    @Column(name = "start_time")
+    @Column(name = "START_TIME")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime startTime;
 
-    @Column(name = "end_time")
+    @Column(name = "END_TIME")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime endTime;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     private String status = "OPEN";
 
-
-
-
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "mom", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties("mom")
@@ -66,4 +62,12 @@ public class QmsMomMaster extends BaseAuditEntity {
     @lombok.ToString.Exclude
     @lombok.EqualsAndHashCode.Exclude
     private List<QmsMomDetail> details;
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

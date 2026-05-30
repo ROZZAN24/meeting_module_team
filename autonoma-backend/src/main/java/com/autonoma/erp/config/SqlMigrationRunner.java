@@ -45,6 +45,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260519_V22.0__Update_Hierarchical_Page_Codes.sql",
         "20260520_V33.0__Register_Hra_Ats_Page.sql",
         "20260526_V44.0__Create_Product_Process_Table_And_Page.sql",
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        "20260526_V38.0__Create_NPD_Process.sql",
+        "20260525_V15.1__Fix_Induction_Training_Detail_Columns.sql",
+        "20260525_V15.2__Fix_Training_Detail_Columns_v2.sql",
         // Table prefix standardization (SQL Server T-SQL specific)
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         // Alter bos_pages table to make page_id an IDENTITY column (SQL Server T-SQL specific)
@@ -97,7 +101,13 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260526_V41.0__Alter_Qms_Checklist_Master_Status_To_Int__TIS.sql",
         "20260512_V2.4__Sync_Company_Credentials.sql",
         "V13.0__Fix_User_Mapping_FK_References.sql",
-        "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql"
+        "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
+        "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
+        "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
+        // NPD Process page registration skip on H2
+        "20260526_V38.0__Create_NPD_Process.sql",
+        // Support ticket page rename skip on H2
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
@@ -129,20 +139,37 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
-        Resource[] resources = resolver.getResources("classpath:dbscripts/*.sql");
-
-        List<Resource> sortedResources = Arrays.stream(resources)
+        // Phase 1: Retrieve and sort legacy scripts from dbscripts/*.sql
+        Resource[] legacyResources = resolver.getResources("classpath:dbscripts/*.sql");
+        List<Resource> sortedLegacy = Arrays.stream(legacyResources)
                 .sorted((r1, r2) -> {
                     String f1 = r1.getFilename();
                     String f2 = r2.getFilename();
-
-                    if (f1 == null || f2 == null) {
-                        return 0;
-                    }
-
+                    if (f1 == null || f2 == null) return 0;
                     return f1.compareToIgnoreCase(f2);
                 })
                 .collect(Collectors.toList());
+
+        // Phase 2: Retrieve and sort new standardization scripts from dbscripts/v_next/*.sql
+        Resource[] newResources = new Resource[0];
+        try {
+            newResources = resolver.getResources("classpath:dbscripts/v_next/*.sql");
+        } catch (Exception e) {
+            // v_next folder might not exist in target classpath if completely empty
+        }
+        List<Resource> sortedNew = Arrays.stream(newResources)
+                .sorted((r1, r2) -> {
+                    String f1 = r1.getFilename();
+                    String f2 = r2.getFilename();
+                    if (f1 == null || f2 == null) return 0;
+                    return f1.compareToIgnoreCase(f2);
+                })
+                .collect(Collectors.toList());
+
+        // Combine both lists (Legacy runs first, followed by v_next)
+        List<Resource> sortedResources = new java.util.ArrayList<>();
+        sortedResources.addAll(sortedLegacy);
+        sortedResources.addAll(sortedNew);
 
         for (Resource resource : sortedResources) {
 
@@ -190,7 +217,9 @@ public class SqlMigrationRunner implements CommandLineRunner {
                     } else if (fileName.equals("V13.1__Seed_Default_Company_And_Division.sql")) {
                         emulateV13_1(targetJdbcTemplate);
                         emulated = true;
-                    } else if (fileName.equals("20260525_V36.0__Fix_Induction_Training_Detail_Columns.sql")) {
+                    } else if (fileName.equals("20260525_V36.0__Fix_Induction_Training_Detail_Columns.sql")
+                            || fileName.equals("20260525_V15.1__Fix_Induction_Training_Detail_Columns.sql")
+                            || fileName.equals("20260525_V15.2__Fix_Training_Detail_Columns_v2.sql")) {
                         emulateV36_0(targetJdbcTemplate);
                         emulated = true;
                     } else if (fileName.equals("20260526_V38.0__Team_Database_Standardization__TIS.sql")) {
@@ -210,7 +239,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
                     // T-SQL standardization scripts that are pure no-ops on fresh H2
                     // (rename camelCase→snake_case, drop duplicates, fix column types, etc.)
-                    if (H2_SKIP_SCRIPTS.contains(fileName)) {
+                    String checkName = fileName;
+                    if (fileName != null && fileName.matches("^\\d{8}_.*")) {
+                        checkName = fileName.substring(9);
+                    }
+                    if (H2_SKIP_SCRIPTS.contains(fileName) || H2_SKIP_SCRIPTS.contains(checkName)) {
                         markAsExecuted(targetJdbcTemplate, fileName);
                         System.out.println("COMPLETED (H2 SKIP - T-SQL ONLY) : " + fileName);
                         continue;
@@ -641,6 +674,22 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 }
             }
 
+            // DROP VIEW CHECK: Skip if target view does not exist in H2
+            if (upperSql.contains("DROP VIEW")) {
+                String viewName = extractViewNameFromDrop(sql);
+                if (viewName != null) {
+                    Integer count = targetJdbcTemplate.queryForObject("""
+                                SELECT COUNT(*)
+                                FROM INFORMATION_SCHEMA.VIEWS
+                                WHERE TABLE_NAME = ?
+                            """, Integer.class, viewName.toUpperCase());
+                    if (count == null || count == 0) {
+                        System.out.println("VIEW DOES NOT EXIST (DROP VIEW SKIPPED): " + viewName);
+                        return true;
+                    }
+                }
+            }
+
         } catch (Exception e) {
 
             System.out.println(
@@ -648,6 +697,29 @@ public class SqlMigrationRunner implements CommandLineRunner {
         }
 
         return false;
+    }
+
+    private String extractViewNameFromDrop(String sql) {
+        try {
+            String upperSql = sql.toUpperCase();
+            int dropIndex = upperSql.indexOf("DROP VIEW ");
+            if (dropIndex == -1) {
+                return null;
+            }
+            String afterDrop = sql.substring(dropIndex + 10).trim();
+            if (afterDrop.toUpperCase().startsWith("IF EXISTS ")) {
+                afterDrop = afterDrop.substring(10).trim();
+            }
+            String firstToken = afterDrop.split("\\s+")[0];
+            return firstToken
+                    .replace("[", "")
+                    .replace("]", "")
+                    .replace("dbo.", "")
+                    .replace(";", "")
+                    .trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private boolean isTableExists(JdbcTemplate targetJdbcTemplate, String tableName) {
@@ -1108,6 +1180,9 @@ public class SqlMigrationRunner implements CommandLineRunner {
             "(?is)ALTER\\s+TABLE\\s+([a-zA-Z0-9_]+)\\s+ADD\\s+DEFAULT\\s*\\(*([a-zA-Z0-9_']+(?:\\(\\))?)\\)*\\s+FOR\\s+([a-zA-Z0-9_]+)",
             "ALTER TABLE $1 ALTER COLUMN $3 SET DEFAULT $2"
         );
+
+        // Translate CREATE OR ALTER VIEW to CREATE OR REPLACE VIEW for H2
+        sql = sql.replaceAll("(?is)\\bCREATE\\s+OR\\s+ALTER\\s+VIEW\\b", "CREATE OR REPLACE VIEW");
 
         // Normalize spaces
         sql = sql.replaceAll("\\s+", " ").trim();
@@ -1769,7 +1844,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
     }
 
     private void emulateV36_0(JdbcTemplate targetJdbcTemplate) {
-        String tableName = "hr_induction_training_detail";
+        emulateInductionColumns(targetJdbcTemplate, "hr_induction_training_detail");
+        emulateInductionColumns(targetJdbcTemplate, "ind_induction_training_detail");
+    }
+
+    private void emulateInductionColumns(JdbcTemplate targetJdbcTemplate, String tableName) {
         try {
             Integer tableCount = targetJdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'PUBLIC' AND TABLE_NAME = ?",
@@ -1832,7 +1911,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 targetJdbcTemplate.execute("UPDATE " + tableName + " SET trainee_status = trainee_response WHERE trainee_status IS NULL");
             }
         } catch (Exception e) {
-            System.out.println("Error in emulateV36_0: " + e.getMessage());
+            System.out.println("Error in emulateInductionColumns for " + tableName + ": " + e.getMessage());
         }
     }
 

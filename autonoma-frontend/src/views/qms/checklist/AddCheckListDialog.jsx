@@ -173,7 +173,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [levelIds, setLevelIds] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
-  const isViewOnly = initialData?.verifyStatus === 'Verified' && !isAmendment;
+  const isViewOnly = false;
   const speechRef = useRef(null);
   const isSpeechSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -385,6 +385,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     }
     if (isAmendment && !amendmentReason) {
       dispatch(openSnackbar({ open: true, message: 'Please provide an Amendment Reason!', variant: 'alert', alert: { color: 'warning' }, severity: 'warning' }));
+      return;
+    }
+
+    if (description && description.length < 500) {
+      dispatch(openSnackbar({
+        open: true,
+        message: `Descriptions/SOP must be at least 500 characters. Currently it is ${description.length} characters.`,
+        variant: 'alert',
+        alert: { color: 'warning' },
+        severity: 'warning'
+      }));
       return;
     }
 
@@ -705,6 +716,38 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               <IconMicrophone size={12} /> Listening… speak now
             </Typography>
           )}
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: description.length < 500 ? 'error.main' : 'success.main',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5
+              }}
+            >
+              {!isViewOnly ? (
+                description.length < 500 ? (
+                  <>
+                    <IconAlertCircle size={14} /> Min. 500 characters required (Currently {description.length}/500)
+                  </>
+                ) : (
+                  <>
+                    <IconInfoCircle size={14} style={{ color: theme.palette.success.main }} /> Met minimum length requirements ({description.length} characters)
+                  </>
+                )
+              ) : (
+                <>
+                  <IconInfoCircle size={14} style={{ color: theme.palette.info.main }} /> Description length: {description.length} characters
+                </>
+              )}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+              {(isListening && interimText ? description + ' ' + interimText : description).trim().split(/\s+/).filter(Boolean).length} words | {(isListening && interimText ? description + ' ' + interimText : description).length} characters
+            </Typography>
+          </Box>
         </BOSFormSection>
 
         <BOSFormSection
@@ -863,15 +906,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               />
             )}
 
-            <BOSAutocomplete
-              label="Status"
-              value={status}
-              options={['Active', 'Inactive']}
-              onChange={val => setStatus(val)}
-              required
-              disabled={isViewOnly}
-              autoHighlight
-            />
+            {initialData && (
+              <BOSAutocomplete
+                label="Status"
+                value={status}
+                options={['Active', 'Inactive', 'Pending', 'Not Assigned', 'Rejected']}
+                onChange={val => setStatus(val)}
+                required
+                disabled={isViewOnly}
+                autoHighlight
+              />
+            )}
           </Box>
 
           {isAmendment && (

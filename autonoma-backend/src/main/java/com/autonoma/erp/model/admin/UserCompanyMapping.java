@@ -16,21 +16,22 @@ public class UserCompanyMapping {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "USER_ID", nullable = false)
     private String userId;
 
-    @Column(name = "company_id", nullable = false)
+    @Column(name = "COMPANY_ID", nullable = false)
     private Long companyId;
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY")
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
     @PrePersist
     protected void onCreate() {
         createdAt = new Date();
+        if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
     }
 }

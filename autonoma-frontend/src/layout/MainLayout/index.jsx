@@ -130,7 +130,7 @@ function MainLayoutInner() {
       }
       if (e.ctrlKey && (e.key === 'p' || e.key === 'P') && !isSuperUser) {
         e.preventDefault();
-        alert('Printing and PDF exports are disabled for security reasons.');
+        console.warn('Printing and PDF exports are disabled for security reasons.');
       }
       if ((e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'C' || e.key === 'c'))) && !isSuperUser) {
         e.preventDefault();

@@ -29,4 +29,5 @@ public class NcrOfiDto {
     private String ncrStatus;
     private String approvalStatus;
     private String remarks;
+    private String attachmentPath;
 }

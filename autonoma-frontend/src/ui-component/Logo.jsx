@@ -18,7 +18,7 @@ export default function Logo({ height = 45 }) {
   useEffect(() => {
     const fetchLogo = () => {
       const token = sessionStorage.getItem('serviceToken') || '';
-      const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://localhost:8081').replace(/\/+$/, '');
+      const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://127.0.0.1:8081').replace(/\/+$/, '');
       console.log('[Logo] Fetching logo configuration...');
       fetch(`${API_BASE}/api/company-profile/all`, {
         headers: { 'Authorization': `Bearer ${token}` }

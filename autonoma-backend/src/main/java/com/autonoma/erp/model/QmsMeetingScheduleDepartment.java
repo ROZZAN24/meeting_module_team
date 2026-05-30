@@ -14,12 +14,12 @@ public class QmsMeetingScheduleDepartment {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "schedule_id", nullable = false)
+    @JoinColumn(name = "SCHEDULE_ID", nullable = false)
     @lombok.ToString.Exclude
     @lombok.EqualsAndHashCode.Exclude
     private QmsMeetingSchedule schedule;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "department_id", nullable = false)
+    @JoinColumn(name = "DEPARTMENT_ID", nullable = false)
     private Department department;
 }

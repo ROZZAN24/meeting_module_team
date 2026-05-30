@@ -14,52 +14,51 @@ public class AuditObservation extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "observation_no", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "OBSERVATION_NO", columnDefinition = "NVARCHAR(50)")
     private String observationNo;
 
-    @Column(name = "observation_date")
+    @Column(name = "OBSERVATION_DATE")
     @Temporal(TemporalType.DATE)
     private Date observationDate;
 
-    @Column(name = "audit_schedule_no", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "AUDIT_SCHEDULE_NO", columnDefinition = "NVARCHAR(50)")
     private String auditScheduleNo;
 
-    @Column(name = "audit_type", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "AUDIT_TYPE", columnDefinition = "NVARCHAR(100)")
     private String auditType;
 
-    @Column(name = "audit_area", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_AREA", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
-    @Column(name = "department_name", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "DEPARTMENT_NAME", columnDefinition = "NVARCHAR(255)")
     private String departmentName;
 
-    @Column(name = "auditee", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDITEE", columnDefinition = "NVARCHAR(255)")
     private String auditee;
 
-    @Column(name = "auditor", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDITOR", columnDefinition = "NVARCHAR(255)")
     private String auditor;
 
-    @Column(name = "ncr_approved_by", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "NCR_APPROVED_BY", columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedBy;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATUS", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(name = "audit_score")
+    @Column(name = "AUDIT_SCORE")
     private Integer auditScore = 0;
     
-    @Column(name = "ofi_count")
+    @Column(name = "OFI_COUNT")
     private Integer ofiCount = 0;
     
-    @Column(name = "compliance_count")
+    @Column(name = "COMPLIANCE_COUNT")
     private Integer complianceCount = 0;
     
-    @Column(name = "ncr_count")
+    @Column(name = "NCR_COUNT")
     private Integer ncrCount = 0;
 
-    
-
-    
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "auditObservation", cascade = CascadeType.ALL, orphanRemoval = true)
     @lombok.ToString.Exclude
@@ -79,5 +78,13 @@ public class AuditObservation extends BaseAuditEntity {
     @com.fasterxml.jackson.annotation.JsonProperty("departmentName")
     public String getDepartmentName() {
         return departmentName;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }
