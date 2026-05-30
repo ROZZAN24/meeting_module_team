@@ -127,7 +127,8 @@ public class DataInitializer implements CommandLineRunner {
             // ── Step 4: Drop stale FK constraints referencing removed tables ──
             String[] tablesWithStaleConstraints = {
                 "QMS_CHECKLIST_ASSIGNMENT", "qms_checklist_assignment",
-                "QMS_CHECKLIST_DEPARTMENT", "qms_checklist_department"
+                "QMS_CHECKLIST_DEPARTMENT", "qms_checklist_department",
+                "QMS_CHECKLIST_CLOSED", "qms_checklist_closed"
             };
             String[] staleConstraints = {
                 "FK9GLT0I2UPGH0V6C3W3SHK90EF",
@@ -138,7 +139,11 @@ public class DataInitializer implements CommandLineRunner {
                 "FKMKOR0WTRYERIKOC8PFCEYDGAB",
                 "FK_Verification_Assignment",
                 "FK_VERIFICATION_ASSIGNMENT",
-                "FK_Verification_Assignment_Master"
+                "FK_Verification_Assignment_Master",
+                "FK_QMS_CHECKLIST_ASSIGNMENT_MASTER",
+                "FK_Closed_Checklist",
+                "FK_QMS_CHECKLIST_ASSIGNMENT_QMS_CHECKLIST_MASTER",
+                "FK_QMS_CHECKLIST_DEPARTMENT_QMS_CHECKLIST_MASTER"
             };
             for (String tbl : tablesWithStaleConstraints) {
                 for (String constraint : staleConstraints) {
@@ -153,16 +158,22 @@ public class DataInitializer implements CommandLineRunner {
 
             // ── Step 5: Ensure correct FK constraints on final active tables ──
             try {
-                jdbcTemplate.execute("ALTER TABLE qms_checklist_assignment ADD CONSTRAINT FK_Assignment_Checklist_Master FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist_master(id) ON DELETE CASCADE");
-                System.out.println("[QMS DB Fix] Added FK_Assignment_Checklist_Master -> qms_checklist_master");
+                jdbcTemplate.execute("ALTER TABLE qms_checklist_assignment ADD CONSTRAINT FK_Assignment_Checklist_Master FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist(id) ON DELETE CASCADE");
+                System.out.println("[QMS DB Fix] Added FK_Assignment_Checklist_Master -> qms_checklist");
             } catch (Exception ex) {
                 System.out.println("[QMS DB Fix] FK_Assignment_Checklist_Master skipped/already exists: " + ex.getMessage());
             }
             try {
-                jdbcTemplate.execute("ALTER TABLE qms_checklist_department ADD CONSTRAINT FK_Dept_Checklist_Master FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist_master(id) ON DELETE CASCADE");
-                System.out.println("[QMS DB Fix] Added FK_Dept_Checklist_Master -> qms_checklist_master");
+                jdbcTemplate.execute("ALTER TABLE qms_checklist_department ADD CONSTRAINT FK_Dept_Checklist_Master FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist(id) ON DELETE CASCADE");
+                System.out.println("[QMS DB Fix] Added FK_Dept_Checklist_Master -> qms_checklist");
             } catch (Exception ex) {
                 System.out.println("[QMS DB Fix] FK_Dept_Checklist_Master skipped/already exists: " + ex.getMessage());
+            }
+            try {
+                jdbcTemplate.execute("ALTER TABLE qms_checklist_closed ADD CONSTRAINT FK_Closed_Checklist FOREIGN KEY (CHECKLIST_ID) REFERENCES qms_checklist(id) ON DELETE CASCADE");
+                System.out.println("[QMS DB Fix] Added FK_Closed_Checklist -> qms_checklist");
+            } catch (Exception ex) {
+                System.out.println("[QMS DB Fix] FK_Closed_Checklist skipped/already exists: " + ex.getMessage());
             }
 
             // ── Step 6: Self-healing H2 data sync from QMS_CHECKLIST_MASTER to QMS_CHECKLIST ──
