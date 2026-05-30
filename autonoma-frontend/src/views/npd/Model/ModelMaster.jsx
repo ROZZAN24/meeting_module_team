@@ -6,7 +6,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddModelDialog from './AddModelDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -45,30 +45,31 @@ export default function ModelMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Dispatch starred filter configuration matching Model No and Status
+  // Dispatch starred filter configuration matching Status, Date range, and Model No
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
-      {
-        id: 'modelNoContains',
-        label: 'Model No Contains',
-        type: 'text',
-        defaultValue: '',
-        isStarred: true
-      },
       {
         id: 'status',
         label: 'Status',
         type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All',
-        isStarred: true
-      }
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'modelNo', label: 'Model No', type: 'text', placeholder: 'Search model no...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -117,20 +118,26 @@ export default function ModelMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const statusFilter = globalFilters.status || 'ACTIVE';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
-      // 2. Model No Contains Text Filter
-      const modelNoContains = globalFilters.modelNoContains || '';
-      const matchesModelNoContains = !modelNoContains ||
-        (row.modelNo && row.modelNo.toLowerCase().includes(modelNoContains.toLowerCase()));
+      // 2. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
 
-      // 3. Search query
+      // 3. Primary Field (Model No)
+      const modelNoFilter = globalFilters.modelNo || '';
+      if (modelNoFilter && !(row.modelNo || '').toLowerCase().includes(modelNoFilter.toLowerCase())) return false;
+
+      // 4. Wildcard search query
       const matchesSearch = !globalQuery ||
         (row.modelNo && row.modelNo.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.oem && row.oem.oemShortName && row.oem.oemShortName.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesStatus && matchesModelNoContains && matchesSearch;
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

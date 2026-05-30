@@ -6,13 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  BOSFileUpload,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFileUpload, errorStyle, BOSStatusField } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -453,8 +447,9 @@ export default function InterviewCriteria() {
             sx={errorStyle(!!errors.interviewAttachment)}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!formData.id}
+            type="string-upper"
             name="status"
             label="STATUS"
             value={formData.status}
@@ -462,11 +457,9 @@ export default function InterviewCriteria() {
             error={!!errors.status}
             helperText={errors.status}
             sx={errorStyle(!!errors.status)}
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </Stack>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

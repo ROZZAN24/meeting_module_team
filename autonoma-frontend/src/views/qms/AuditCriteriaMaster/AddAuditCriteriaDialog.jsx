@@ -23,7 +23,7 @@ import {
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileUpload } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSFileUpload, BOSStatusField } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import useLookups from 'hooks/useLookups';
 import useAuth from 'hooks/useAuth';
@@ -35,6 +35,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   const dispatch = useDispatch();
   
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     seqNo: '',
     auditType: [],
@@ -149,6 +150,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   };
 
   useEffect(() => {
+    setErrors({});
     if (initialData) {
       setFormData({
         id: initialData.id,
@@ -158,8 +160,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
         criteriaText: initialData.criteriaText || '',
         department: initialData.department ? initialData.department.split(', ') : [],
         attachmentRequired: initialData.attachmentRequired || 'NO',
-        status: initialData.status || 'ACTIVE',
-        createdUser: initialData.createdUser
+        status: initialData.status || 'ACTIVE'
       });
 
       if (initialData.attachmentInfo) {
@@ -200,6 +201,9 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleClear = () => {
@@ -213,6 +217,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       status: 'ACTIVE'
     });
     setAttachments([]);
+    setErrors({});
   };
 
   const handleDelete = async () => {
@@ -225,21 +230,22 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
   };
 
   const handleSave = async () => {
+    setErrors({});
     // SOP: Validation Rules & Messages
     if (!formData.seqNo) {
-      alert('Sequence No should be mandatory (Auto generated).');
+      setErrors((prev) => ({ ...prev, seqNo: 'Sequence No should be mandatory (Auto generated).' }));
       return;
     }
     if (!formData.auditType || formData.auditType.length === 0) {
-      alert('At least one Audit Type should be selected.');
+      setErrors((prev) => ({ ...prev, auditType: 'At least one Audit Type should be selected.' }));
       return;
     }
     if (!formData.criteriaText?.trim()) {
-      alert('Audit Criteria field should not be empty.');
+      setErrors((prev) => ({ ...prev, criteriaText: 'Audit Criteria field should not be empty.' }));
       return;
     }
     if (!formData.department || formData.department.length === 0) {
-      alert('At least one Department should be selected.');
+      setErrors((prev) => ({ ...prev, department: 'At least one Department should be selected.' }));
       return;
     }
 
@@ -256,12 +262,12 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
           fileType: att.fileType || 'FILE',
           serverFileName: att.serverFileName,
           docDetails: att.docDetails || ''
-        }))),
-        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
-        updatedUser: user?.empId || '1001'
+        })))
       };
+      delete submissionData.createdUser;
+      delete submissionData.updatedUser;
 
-      if (formData.id) {
+      if (formData.id !== undefined && formData.id !== null) {
         await axios.put(`${API_PATHS.QMS.AUDIT_CRITERIA}/${formData.id}`, submissionData);
       } else {
         await axios.post(API_PATHS.QMS.AUDIT_CRITERIA, submissionData);
@@ -269,10 +275,17 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit criteria:', error);
-      if (error.response?.data && typeof error.response.data === 'string') {
-        alert(error.response.data);
+      const errorMsg = error.response?.data?.message || error.response?.data || 'An error occurred while saving.';
+      if (typeof errorMsg === 'string') {
+        if (errorMsg.toLowerCase().includes('seq no')) {
+          setErrors({ seqNo: errorMsg });
+        } else if (errorMsg.toLowerCase().includes('clause') || errorMsg.toLowerCase().includes('same')) {
+          setErrors({ clause: errorMsg });
+        } else {
+          dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+        }
       } else {
-        alert('Error saving data. Please try again.');
+        dispatch(openSnackbar({ open: true, message: 'Duplicate value or error occurred.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
       }
     }
   };
@@ -289,7 +302,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       onEditClick={() => setIsEditing(true)}
       title={initialData ? 'Edit Audit Criteria' : 'Audit Criteria'}
       isViewOnly={isViewOnly}
-      hasId={!!formData.id}
+      hasId={formData.id !== undefined && formData.id !== null}
       maxWidth="lg"
     >
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' }, gap: 4, width: '100%', alignItems: 'start' }}>
@@ -300,6 +313,8 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               label="Seq No"
               value={formData.seqNo} 
               inputProps={{ readOnly: true }} 
+              error={!!errors.seqNo}
+              helperText={errors.seqNo}
               // SOP: Sequence No should be displayed in highlighted format.
               sx={{ 
                 '& .MuiOutlinedInput-root': { 
@@ -321,7 +336,13 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               }}
               disabled={isViewOnly}
               renderInput={(params) => (
-                <BOSTextField {...params} label="Audit Type" required />
+                <BOSTextField 
+                  {...params} 
+                  label="Audit Type" 
+                  required 
+                  error={!!errors.auditType}
+                  helperText={errors.auditType}
+                />
               )}
               renderOption={(props, option, { selected }) => {
                 const { key, ...optionProps } = props;
@@ -341,6 +362,8 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               value={formData.clause}
               onChange={handleChange}
               disabled={isViewOnly}
+              error={!!errors.clause}
+              helperText={errors.clause}
             />
 
             <BOSTextField
@@ -352,6 +375,8 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               onChange={handleChange}
               disabled={isViewOnly}
               required
+              error={!!errors.criteriaText}
+              helperText={errors.criteriaText}
               InputProps={{
                 endAdornment: !isViewOnly && (
                   <InputAdornment position="end" sx={{ alignSelf: 'flex-start', mt: 1 }}>
@@ -393,11 +418,21 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               getOptionLabel={(option) => option.departmentName || ''}
               value={deptLookups.filter((d) => (formData.department || []).includes(d.departmentName))}
               onChange={(event, newValue) => {
-                setFormData({ ...formData, department: newValue.map((v) => v.departmentName) });
+                const deptNames = newValue.map((v) => v.departmentName);
+                setFormData((prev) => ({ ...prev, department: deptNames }));
+                if (errors.department) {
+                  setErrors((prev) => ({ ...prev, department: '' }));
+                }
               }}
               disabled={isViewOnly}
               renderInput={(params) => (
-                <BOSTextField {...params} label="Department" required />
+                <BOSTextField 
+                  {...params} 
+                  label="Department" 
+                  required 
+                  error={!!errors.department}
+                  helperText={errors.department}
+                />
               )}
               renderOption={(props, option, { selected }) => {
                 const { key, ...optionProps } = props;
@@ -416,10 +451,15 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               <MenuItem value="NO">NO</MenuItem>
             </BOSTextField>
 
-            <BOSTextField select name="status" label="Status" value={formData.status} onChange={handleChange} disabled={isViewOnly}>
-              <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-              <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-            </BOSTextField>
+            <BOSStatusField
+              isCreate={formData.id === undefined || formData.id === null}
+              type="string-upper"
+              name="status"
+              label="Status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={isViewOnly}
+            />
           </BOSFormSection>
         </Box>
 
@@ -435,6 +475,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
           </BOSFormSection>
         </Box>
       </Box>
+      
     </BOSFormDialog>
   );
 };

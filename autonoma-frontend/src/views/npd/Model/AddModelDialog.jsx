@@ -5,7 +5,7 @@ import { IconSettings } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { API_PATHS } from 'utils/api-constants';
@@ -91,8 +91,8 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
         modelNo: formData.modelNo,
         rotorDiameter: parseFloat(formData.rotorDiameter),
         status: formData.status,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin',
         createdAt: formData.createdAt
       };
 
@@ -139,7 +139,7 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Model Details">
+        <BOSFormSection>
           <Autocomplete
             value={oems.find(o => o.id === formData.oemId) || null}
             onChange={(event, newValue) => {
@@ -194,19 +194,18 @@ const AddModelDialog = ({ open, handleClose, initialData, readOnly = false }) =>
             helperText={errors.rotorDiameter}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!initialData}
+            type="string-upper"
             name="status"
             label="Model Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
             required
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

@@ -14,27 +14,29 @@ export default function BOSFormSection({ icon, title, children, defaultOpen = tr
 
   return (
     <Box sx={{ ...ds.sectionCard, ...sx }}>
-      <Box 
-        sx={{ 
-          ...ds.sectionHeader, 
-          cursor: 'pointer',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          pr: 1
-        }}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          {icon}
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
-            {title}
-          </Typography>
-        </Stack>
-        <IconButton size="small" sx={{ color: 'text.secondary' }}>
-          {isOpen ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
-        </IconButton>
-      </Box>
+      {title && (
+        <Box 
+          sx={{ 
+            ...ds.sectionHeader, 
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            pr: 1
+          }}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            {icon}
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+              {title}
+            </Typography>
+          </Stack>
+          <IconButton size="small" sx={{ color: 'text.secondary' }}>
+            {isOpen ? <IconChevronUp size={18} /> : <IconChevronDown size={18} />}
+          </IconButton>
+        </Box>
+      )}
       <Collapse in={isOpen} sx={{ '& .MuiCollapse-wrapper': { overflow: 'visible' }, '& .MuiCollapse-wrapperInner': { overflow: 'visible' } }}>
         <Box sx={{ p: 2.5, ...contentSx }}>
           <Stack spacing={2.5} sx={{ width: '100%' }}>
@@ -48,7 +50,7 @@ export default function BOSFormSection({ icon, title, children, defaultOpen = tr
 
 BOSFormSection.propTypes = {
   icon: PropTypes.node,
-  title: PropTypes.string.isRequired,
+  title: PropTypes.string,
   children: PropTypes.node.isRequired,
   defaultOpen: PropTypes.bool,
   sx: PropTypes.object,

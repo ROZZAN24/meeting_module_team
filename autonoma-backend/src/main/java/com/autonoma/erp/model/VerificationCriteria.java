@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "IND_VERIFICATION_CRITERIA")
+@Table(name = "HR_VERIFICATION_CRITERIA")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,12 +16,24 @@ public class VerificationCriteria extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "type", length = 100, nullable = false)
+    @Column(name = "TYPE", length = 100, nullable = false)
     private String type;
 
-    @Column(name = "description", length = 2000, nullable = false)
+    @Column(name = "DESCRIPTION", length = 2000, nullable = false)
     private String description;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     private String status; // ACTIVE, INACTIVE
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    // Explicit getter/setter for isActive
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

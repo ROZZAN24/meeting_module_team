@@ -102,7 +102,7 @@ const CompactCard = ({ title, name, empCode, department, photo, color }) => (
 // ═══════════════════════════════════════════
 //  FEATURED VARIANT — for Host, Chair, Auditor, etc.
 // ═══════════════════════════════════════════
-const FeaturedCard = ({ title, name, empCode, department, photo, color, bgcolor }) => {
+const FeaturedCard = ({ title, name, empCode, department, photo, color, bgcolor, level }) => {
   const RoleIcon = getRoleIcon(title);
 
   return (
@@ -204,6 +204,16 @@ const FeaturedCard = ({ title, name, empCode, department, photo, color, bgcolor 
               {department || '-'}
             </Typography>
           </Stack>
+          {level && (
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                Level:
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.primary', fontWeight: 700 }}>
+                {level}
+              </Typography>
+            </Stack>
+          )}
         </Stack>
       </Stack>
     </Stack>
@@ -235,7 +245,8 @@ const BOSPersonnelCard = ({
   photo,
   color = 'primary.main',
   bgcolor = 'grey.50',
-  variant
+  variant,
+  level
 }) => {
   // Auto-detect variant from title if not explicitly set
   const resolvedVariant = variant || (
@@ -246,7 +257,7 @@ const BOSPersonnelCard = ({
     return <CompactCard title={title} name={name} empCode={empCode} department={department} photo={photo} color={color} />;
   }
 
-  return <FeaturedCard title={title} name={name} empCode={empCode} department={department} photo={photo} color={color} bgcolor={bgcolor} />;
+  return <FeaturedCard title={title} name={name} empCode={empCode} department={department} photo={photo} color={color} bgcolor={bgcolor} level={level} />;
 };
 
 BOSPersonnelCard.propTypes = {

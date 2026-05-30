@@ -37,7 +37,7 @@ public class ChecklistClosed extends BaseAuditEntity {
     @JoinColumn(name = "STATUS_ID")
     private StatusMaster status;
 
-    @Column(name = "REMARKS", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
     @Column(name = "CHECKLIST_DATE")
@@ -63,14 +63,17 @@ public class ChecklistClosed extends BaseAuditEntity {
     @Temporal(TemporalType.TIMESTAMP)
     private Date verifiedDate;
 
-    @Column(name = "COMMENTS", columnDefinition = "TEXT")
+    @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "FILE_PATHS", columnDefinition = "TEXT")
+    @Column(name = "FILE_PATHS", length = 1000)
     private String filePaths;
 
     @Column(name = "FREQUENCY", nullable = false)
     private String frequency;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -106,6 +109,8 @@ public class ChecklistClosed extends BaseAuditEntity {
     public void setFilePaths(String filePaths) { this.filePaths = filePaths; }
     public String getFrequency() { return frequency; }
     public void setFrequency(String frequency) { this.frequency = frequency; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
     public List<String> getActualFiles() {
         if (filePaths == null || filePaths.trim().isEmpty()) {

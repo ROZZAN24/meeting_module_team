@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
 import {
   MenuItem,
   Stack,
@@ -40,6 +42,7 @@ import {
  */
 const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, onNotAccept, onSave, isExecution = false }) => {
   const theme = useTheme();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     status: '',
     remarks: '',
@@ -164,7 +167,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
       onClose={handleClose}
       onSave={isExecution ? () => {
         if (formData.status === 'Completed' && master.photoRequired === 'YES' && formData.actualFiles.length === 0) {
-          alert('Photo is mandatory for this checklist item before completion.');
+          dispatch(openSnackbar({ open: true, message: 'Photo is mandatory for this checklist item before completion.', variant: 'alert', alert: { variant: 'filled' }, severity: 'warning', close: false }));
           return;
         }
         onSave({ ...formData });

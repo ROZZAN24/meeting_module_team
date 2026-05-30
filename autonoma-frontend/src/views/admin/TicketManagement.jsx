@@ -525,7 +525,7 @@ export default function TicketManagement({ viewType }) {
     const ext = file.name.split('.').pop()?.toLowerCase();
     if (!['mp3', 'wav', 'm4a', 'aac'].includes(ext)) {
       setTranscriptionStatus('Transcription Failed');
-      alert('Invalid audio format. Supported formats: MP3, WAV, M4A, AAC');
+      showSnackbar('Invalid audio format. Supported formats: MP3, WAV, M4A, AAC', 'warning');
       return;
     }
 
@@ -962,10 +962,13 @@ export default function TicketManagement({ viewType }) {
   };
 
   // ── Auto Target Date Calculation ─────────────────────────────────────────────
-  //   Daily capacity: 8 h = 480 min per working day (Mon–Sat, Sundays and Govt Holidays are off).
+  //   Working hours: 9 AM – 6 PM = 9 h = 540 min per working day (Mon–Sat, Sundays and Govt Holidays are off).
+  //   On the first day (task-raise day), only the remaining time from NOW to 6 PM is counted.
   //   Fetches the assignee's existing workload from the backend, then distributes
   //   the new ticket's assigned minutes across available slots day-by-day.
-  const DAILY_CAPACITY_MINS = 8 * 60; // 480
+  const DAILY_CAPACITY_MINS = 9 * 60; // 540 (9 AM to 6 PM)
+  const WORK_START_HOUR = 9;  // 9 AM
+  const WORK_END_HOUR = 18;   // 6 PM
 
   const GOVERNMENT_HOLIDAYS = [
     // 2025
@@ -1044,6 +1047,7 @@ export default function TicketManagement({ viewType }) {
     }
 
     let remaining = mins;
+    const now = new Date(); // actual current time (for first-day partial capacity)
     let cursor = new Date(); // start from today
     cursor.setHours(0, 0, 0, 0);
     const trail = [];
@@ -1052,6 +1056,7 @@ export default function TicketManagement({ viewType }) {
     for (let i = 0; i < MAX_DAYS; i++) {
       const key = dateKey(cursor);
       const formattedDate = format(cursor, 'dd-MM-yyyy');
+      const isFirstDay = (i === 0);
 
       // 1. Sunday check (Silently skip Sundays without showing in Info tooltip)
       if (cursor.getDay() === 0) {
@@ -1070,7 +1075,27 @@ export default function TicketManagement({ viewType }) {
         continue;
       }
 
-      // 3. Working Day
+      // 3. Working Day — determine day capacity
+      //    First day: only minutes from NOW until 6 PM are available
+      //    Other days: full 9h (9 AM – 6 PM = 540 mins)
+      let dayCapacity = DAILY_CAPACITY_MINS;
+      if (isFirstDay) {
+        const nowHour = now.getHours();
+        const nowMin = now.getMinutes();
+        if (nowHour >= WORK_END_HOUR) {
+          // After 6 PM — no capacity today, move to next working day
+          cursor = addDays(cursor, 1);
+          continue;
+        } else if (nowHour < WORK_START_HOUR) {
+          // Before 9 AM — full day available
+          dayCapacity = DAILY_CAPACITY_MINS;
+        } else {
+          // Between 9 AM and 6 PM — remaining minutes until 6 PM
+          const minsUntilEnd = (WORK_END_HOUR * 60) - (nowHour * 60 + nowMin);
+          dayCapacity = Math.max(0, minsUntilEnd);
+        }
+      }
+
       const dayData = workload[key] || { totalMinutes: 0 };
       let existingTickets = [];
       let alreadyAllocated = 0;
@@ -1082,7 +1107,7 @@ export default function TicketManagement({ viewType }) {
         alreadyAllocated = dayData.totalMinutes || 0;
       }
 
-      const available = Math.max(0, DAILY_CAPACITY_MINS - alreadyAllocated);
+      const available = Math.max(0, dayCapacity - alreadyAllocated);
       let allocatedForThis = 0;
 
       if (remaining > 0 && available > 0) {
@@ -1228,7 +1253,7 @@ export default function TicketManagement({ viewType }) {
                         fontSize: '0.7rem'
                       }}
                     >
-                      * Workload full (8h limit reached) - Skipped
+                       * Workload full (9 AM–6 PM capacity reached) - Skipped
                     </Typography>
                   )}
 
@@ -1958,13 +1983,19 @@ export default function TicketManagement({ viewType }) {
       const myName = (user?.name || '').toLowerCase();
       const myEmail = (user?.email || '').toLowerCase();
       const myUsername = (user?.username || '').toLowerCase();
+      
+      let myEmpName = '';
+      if (user?.empId && employeesList) {
+        const emp = employeesList.find(e => e.id === user.empId || e.empCode === user.empId || e.employeeCode === user.empId);
+        if (emp && emp.employeeName) myEmpName = emp.employeeName.toLowerCase();
+      }
 
       if (currentViewType === 'raised-for-me') {
         if (accessLevel === 'Mine') {
           const assignedTo = (t.assignedTo || '').toLowerCase();
           const devName = (t.developerName || '').toLowerCase();
           const devEmail = (t.developerEmail || '').toLowerCase();
-          return assignedTo === myName || assignedTo === myUsername || devName === myName || devEmail === myEmail;
+          return assignedTo === myName || assignedTo === myUsername || assignedTo === myEmpName || devName === myName || devName === myEmpName || devEmail === myEmail;
         } else if (accessLevel === 'My Team') {
           const tDept = (t.department || '').toLowerCase();
           const userDept = (formDeptName || '').toLowerCase();
@@ -1977,7 +2008,8 @@ export default function TicketManagement({ viewType }) {
         const createdBy = (t.createdBy || '').toLowerCase();
         const email = (t.email || '').toLowerCase();
         const empName = (t.employeeName || '').toLowerCase();
-        const matchesRaisedByMe = createdBy === myUsername || createdBy === myEmail || email === myEmail || empName === myName;
+        const verifiedBy = (t.verifiedBy || t.verifierName || '').toLowerCase();
+        const matchesRaisedByMe = createdBy === myUsername || createdBy === myEmail || createdBy === myEmpName || email === myEmail || empName === myName || empName === myEmpName || verifiedBy === myUsername || verifiedBy === myEmail || verifiedBy === myName || (myEmpName && verifiedBy === myEmpName);
         if (!matchesRaisedByMe) return false;
 
         if (raisedToFilter) {
@@ -1988,7 +2020,7 @@ export default function TicketManagement({ viewType }) {
         return true;
       }
     });
-  }, [tickets, currentViewType, accessLevel, user, formDeptName, raisedToFilter]);
+  }, [tickets, currentViewType, accessLevel, user, formDeptName, raisedToFilter, employeesList]);
 
   // Statistics KPIs
   const stats = useMemo(() => {
@@ -2270,10 +2302,10 @@ export default function TicketManagement({ viewType }) {
     if (t.pageId && pagesData.length > 0) {
       const p = pagesData.find(page => page.pageId === t.pageId);
       if (p) {
-        return `${p.module?.modName || 'System'} > ${p.pageName}`;
+        return p.pageName || 'Unknown Page';
       }
     }
-    return `${t.moduleName || 'System'} ${t.pageName ? `> ${t.pageName}` : ''}`;
+    return t.pageName || 'Unknown Page';
   };
 
   const activeTicketsForSelectedPage = useMemo(() => {
@@ -2402,7 +2434,7 @@ export default function TicketManagement({ viewType }) {
               {/* Right Side: Save Button */}
               {selectedTicket.ticketStatus !== 'Closed' && (
                 <Box sx={{ ml: 'auto', flexShrink: 0 }}>
-                  <Tooltip title="Save Changes (Ctrl + S)" arrow placement="bottom">
+                  <Tooltip title="Ctrl + S" arrow placement="bottom">
                     <span>
                       <Button
                         id="ticket-update-button"
@@ -2460,9 +2492,9 @@ export default function TicketManagement({ viewType }) {
                   {[
                     { label: 'Severity', value: selectedTicket.severityLevel, icon: <SecurityOutlinedIcon sx={{ color: '#f59e0b', fontSize: 16 }} /> },
                     { label: 'Source', value: selectedTicket.sourceType, icon: <LanguageOutlinedIcon sx={{ color: '#3b82f6', fontSize: 16 }} /> },
-                    { label: 'Module', value: selectedTicket.moduleName, icon: <ViewModuleOutlinedIcon sx={{ color: '#8b5cf6', fontSize: 16 }} /> },
-                    { label: 'Screen Name', value: selectedTicket.pageName, icon: <DesktopWindowsOutlinedIcon sx={{ color: '#0ea5e9', fontSize: 16 }} /> },
-                    { label: 'Created By', value: selectedTicket.employeeName || selectedTicket.createdBy, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} />, xs: 12 },
+                    { label: 'Page Name', value: getPageDisplay(selectedTicket), icon: <DesktopWindowsOutlinedIcon sx={{ color: '#0ea5e9', fontSize: 16 }} />, xs: 12 },
+                    { label: 'Created By', value: selectedTicket.employeeName || selectedTicket.createdBy, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> },
+                    { label: 'Verified By', value: selectedTicket.verifiedBy || selectedTicket.verifierName, icon: <CheckCircleIcon sx={{ color: '#10b981', fontSize: 16 }} /> },
                     ...(selectedTicket.verifierName ? [{ label: 'Verifier Name', value: selectedTicket.verifierName, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> }] : []),
                     ...(selectedTicket.verifierPhone ? [{ label: 'Verifier Phone', value: selectedTicket.verifierPhone, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> }] : [])
                   ].map((item, idx) => (
@@ -2930,16 +2962,16 @@ export default function TicketManagement({ viewType }) {
                           </Grid>
 
                           <Grid item xs={6} sm={4}>
-                            <Typography variant="caption" color="text.secondary">Module</Typography>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.moduleName || 'None'}</Typography>
-                          </Grid>
-                          <Grid item xs={6} sm={4}>
-                            <Typography variant="caption" color="text.secondary">Screen Name</Typography>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.pageName || 'None'}</Typography>
+                            <Typography variant="caption" color="text.secondary">Page Name</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{getPageDisplay(selectedTicket) || 'None'}</Typography>
                           </Grid>
                           <Grid item xs={6} sm={4}>
                             <Typography variant="caption" color="text.secondary">Created By</Typography>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.employeeName || selectedTicket.createdBy}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sm={4}>
+                            <Typography variant="caption" color="text.secondary">Verified By</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.verifiedBy || selectedTicket.verifierName || 'None'}</Typography>
                           </Grid>
 
                           {selectedTicket.takenTime && (
@@ -3607,7 +3639,7 @@ export default function TicketManagement({ viewType }) {
               <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50', '& .MuiTableCell-root': { py: 1.5 } }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>Ticket ID</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Title / Module / Screen</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Title / Page Name</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 220 }}>Assigned To</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Status</TableCell>
@@ -4022,7 +4054,7 @@ export default function TicketManagement({ viewType }) {
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formVerifiedBy, 'Verified By', 90)}px` }}>
                     <Autocomplete
                       size="small"
-                      options={employeesList}
+                      options={employeesList.filter(e => e.isTaskVerifier === 'YES')}
                       getOptionLabel={(option) => option.employeeName || ''}
                       value={employeesList.find(e => e.employeeName === formVerifiedBy) || null}
                       onChange={(event, selectedEmp) => {
@@ -4216,7 +4248,7 @@ export default function TicketManagement({ viewType }) {
                       title={
                         <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
-                            Developer Workload Details (Max 8h/day)
+                            Developer Workload Details (9 AM To 6 PM)
                           </Typography>
                           {renderWorkloadTrail(devWorkloadTrail)}
                         </Box>

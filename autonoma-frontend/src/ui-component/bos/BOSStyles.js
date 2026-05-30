@@ -129,8 +129,8 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? 'background.default' : 'primary.light',
     borderBottom: '1px solid',
     borderColor: 'divider',
-    py: 3.5,
-    px: 4
+    py: 1.25,
+    px: 3
   },
   titleText: {
     fontWeight: 600,
@@ -210,20 +210,26 @@ export const getInputStyles = (theme, isDark) => ({
       height: '38px !important',
       paddingTop: '0px !important',
       paddingBottom: '0px !important',
+      paddingLeft: '14px !important',
+      paddingRight: '14px !important',
       boxSizing: 'border-box !important',
       lineHeight: '38px !important',
       fontSize: '0.9rem', 
+      letterSpacing: '0.03em !important',
       color: isDark ? '#c9d1d9' : '#121212' 
     },
     '& .MuiSelect-select': { 
       height: '38px !important',
       paddingTop: '0px !important',
       paddingBottom: '0px !important',
+      paddingLeft: '14px !important',
+      paddingRight: '14px !important',
       boxSizing: 'border-box !important',
       display: 'flex',
       alignItems: 'center',
       lineHeight: '38px !important',
       fontSize: '0.9rem', 
+      letterSpacing: '0.03em !important',
       width: '100%', 
       minWidth: '150px', 
       color: isDark ? '#c9d1d9' : '#121212' 
@@ -234,13 +240,15 @@ export const getInputStyles = (theme, isDark) => ({
     borderRadius: '12px !important',
     bgcolor: isDark ? 'background.default' : 'grey.50',
     color: isDark ? '#c9d1d9' : '#121212',
+    padding: '8px 14px !important',
     '& fieldset': { borderColor: 'divider', borderRadius: '12px !important' },
     '&:hover fieldset': { borderColor: isDark ? '#8b949e' : theme.palette.primary.main },
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
     '& textarea': {
       fontSize: '0.9rem',
+      letterSpacing: '0.03em !important',
       color: isDark ? '#c9d1d9' : '#121212',
-      padding: '4px 0 !important'
+      padding: '0 !important'
     }
   },
   '& .MuiInputLabel-root': { 

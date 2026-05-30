@@ -116,18 +116,13 @@ export default function MeetingMasterList() {
 
   const handleSave = async (form) => {
     try {
+      const payload = { ...form };
+      delete payload.createdUser;
+      delete payload.updatedUser;
       if (selectedItem) {
-        const payload = {
-          ...form,
-          updatedUser: user?.name || ''
-        };
         await axios.put(`${API_PATHS.QMS.MEETINGS}/${selectedItem.id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
-        const payload = {
-          ...form,
-          createdUser: user?.name || ''
-        };
         await axios.post(API_PATHS.QMS.MEETINGS, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }

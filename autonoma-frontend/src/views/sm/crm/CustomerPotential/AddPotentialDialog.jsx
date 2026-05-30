@@ -5,7 +5,7 @@ import { IconSettings, IconCoins, IconFileDownload, IconUpload, IconX, IconPlus 
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { API_PATHS } from 'utils/api-constants';
@@ -721,17 +721,14 @@ const AddPotentialDialog = ({ open, handleClose, initialData, readOnly = false }
             />
 
             {/* Status Dropdown */}
-            <BOSTextField
-              select
+            <BOSStatusField
+              isCreate={!initialData}
               name="status"
               label="Status"
               value={formData.status}
               onChange={handleChange}
               disabled={isViewOnly}
-            >
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">Inactive</MenuItem>
-            </BOSTextField>
+            />
           </BOSFormSection>
         ) : (
           <Box sx={{ p: 4 }}>
@@ -799,6 +796,7 @@ const AddPotentialDialog = ({ open, handleClose, initialData, readOnly = false }
             </Box>
           </Box>
         )}
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

@@ -42,6 +42,7 @@ import {
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION TRAINEE (EMPLOYEE PAGE) ||============================== //
 
@@ -81,6 +82,7 @@ export default function InductionTrainee() {
   const theme = useTheme();
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_TRAINEE);
+
   const { user } = useAuth();
 
   const [rows, setRows] = useState([]);
@@ -95,6 +97,10 @@ export default function InductionTrainee() {
   const globalQuery = useSelector((state) => state.search.query);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await axios.get('/api/hr/induction-trainee');
@@ -105,9 +111,13 @@ export default function InductionTrainee() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Open trainee review dialog
   const handleUpdateTraining = useCallback(async (row) => {
@@ -195,6 +205,10 @@ export default function InductionTrainee() {
       inductionDate: r.inductionDate ? new Date(r.inductionDate).toLocaleDateString('en-GB') : '-'
     }));
   }, [rows, globalQuery]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard
@@ -300,32 +314,55 @@ export default function InductionTrainee() {
                       <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Induction Details</TableCell>
                       <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Round</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 120 }}>Trainer Status</TableCell>
+                      <TableCell sx={{ fontWeight: 700, minWidth: 130 }}>Trainer Rating</TableCell>
+                      <TableCell sx={{ fontWeight: 700, minWidth: 180 }}>Trainer Feedback</TableCell>
                       <TableCell sx={{ fontWeight: 700, width: 170 }}>Trainee Status *</TableCell>
                       <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Trainee Comments *</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {trainingDetails.map((detail, idx) => (
-                      <TableRow key={detail.id} sx={{
-                        bgcolor: detail.traineeStatus === 'UNDERSTOOD' ? 'success.lighter' :
-                                 detail.traineeStatus === 'NEED MORE TRAINING' ? 'error.lighter' : 'inherit',
-                        '&:hover': { bgcolor: 'action.hover' }
-                      }}>
-                        <TableCell>{idx + 1}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            {detail.inductionDetails || '-'}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>{detail.inductionRound || '-'}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={detail.trainerStatus}
-                            size="small"
-                            color={detail.trainerStatus === 'COMPLETED' ? 'success' : 'warning'}
-                            sx={{ fontWeight: 600 }}
-                          />
-                        </TableCell>
+                    {trainingDetails.map((detail, idx) => {
+                      const getRatingLabel = (rating) => {
+                        if (rating === 4 || rating === 3) return 'ADVANCE LEVEL';
+                        if (rating === 2 || rating === 1) return 'BASIC LEVEL';
+                        if (rating === 5) return 'EXPERT';
+                        return '-';
+                      };
+                      return (
+                        <TableRow key={detail.id} sx={{
+                          bgcolor: detail.traineeStatus === 'UNDERSTOOD' ? 'success.lighter' :
+                                   detail.traineeStatus === 'NEED MORE TRAINING' ? 'error.lighter' : 'inherit',
+                          '&:hover': { bgcolor: 'action.hover' }
+                        }}>
+                          <TableCell>{idx + 1}</TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {detail.inductionDetails || '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>{detail.inductionRound || '-'}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={detail.trainerStatus}
+                              size="small"
+                              color={detail.trainerStatus === 'COMPLETED' ? 'success' : 'warning'}
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Chip
+                              label={getRatingLabel(detail.skillRating)}
+                              size="small"
+                              variant="outlined"
+                              color={detail.skillRating ? 'primary' : 'default'}
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                              {detail.trainerComments || '-'}
+                            </Typography>
+                          </TableCell>
                         <TableCell>
                           <TextField
                             select
@@ -356,10 +393,11 @@ export default function InductionTrainee() {
                           />
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                  })}
                     {trainingDetails.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                        <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                           <Typography color="text.secondary">No training details found.</Typography>
                         </TableCell>
                       </TableRow>

@@ -6,7 +6,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddItemGroupDialog from './AddItemGroupDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -45,19 +45,29 @@ export default function ItemGroupMaster() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
       {
-        id: 'status', label: 'Status', type: 'select',
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All',
-        isStarred: true
-      }
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'groupName', label: 'Product Item Group', type: 'text', placeholder: 'Search product item group...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -105,12 +115,27 @@ export default function ItemGroupMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      // 1. Status Filter
+      const statusFilter = globalFilters.status || 'ACTIVE';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
+
+      // 2. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
+
+      // 3. Primary Field (Product Item Group)
+      const groupNameFilter = globalFilters.groupName || '';
+      if (groupNameFilter && !(row.groupName || '').toLowerCase().includes(groupNameFilter.toLowerCase())) return false;
+
+      // 4. Wildcard Query Search
       const matchesSearch = !globalQuery ||
         (row.groupName && row.groupName.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.description && row.description.toLowerCase().includes(globalQuery.toLowerCase()));
-      return matchesStatus && matchesSearch;
+
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

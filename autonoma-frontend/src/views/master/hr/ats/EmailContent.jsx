@@ -6,12 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -337,8 +332,9 @@ export default function EmailContent() {
             sx={errorStyle(!!errors.yoursWindfully)}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!formData.id}
+            type="string-upper"
             name="status"
             label="STATUS"
             value={formData.status}
@@ -346,11 +342,9 @@ export default function EmailContent() {
             error={!!errors.status}
             helperText={errors.status}
             sx={errorStyle(!!errors.status)}
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </Stack>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

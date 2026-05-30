@@ -18,9 +18,11 @@ import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/b
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
+  { id: 'type', label: 'Type', minWidth: 120 },
+  { id: 'title', label: 'Sur Name', minWidth: 100 },
   { id: 'groupName', label: 'Group Name', minWidth: 150 },
-  { id: 'title', label: 'Title', minWidth: 80 },
   { id: 'contactName', label: 'Contact Name', minWidth: 200, bold: true },
+  { id: 'contactType', label: 'Contact Type', minWidth: 150 },
   { id: 'designation', label: 'Designation', minWidth: 150 },
   { id: 'department', label: 'Department', minWidth: 150 },
   { id: 'emailId', label: 'Email ID', minWidth: 200 },
@@ -106,17 +108,19 @@ export default function ContactMasterList() {
   const handleExport = () => {
     const exportData = filteredRows.map((r, i) => ({
       '#': i + 1,
-      'Group Name': r.groupName,
-      'Title': r.title,
-      'Contact Name': r.contactName,
-      'Designation': r.designation,
-      'Department': r.department,
-      'Email ID': r.emailId,
-      'Landline No': r.landlineNo,
-      'Mobile No': r.mobileNo,
-      'WhatsApp No': r.whatsAppNo,
-      'File Upload': r.fileUpload,
-      'Status': r.status
+      'Type': r.type || '',
+      'Sur Name': r.title || '',
+      'Group Name': r.groupName || '',
+      'Contact Name': r.contactName || '',
+      'Contact Type': r.contactType || '',
+      'Designation': r.designation || '',
+      'Department': r.department || '',
+      'Email ID': r.emailId || '',
+      'Landline No': r.landlineNo || '',
+      'Mobile No': r.mobileNo || '',
+      'WhatsApp No': r.whatsAppNo || '',
+      'File Upload': r.fileUpload || '',
+      'Status': r.status || ''
     }));
     exportToExcel(exportData, 'Contact_Master');
   };
@@ -166,9 +170,11 @@ export default function ContactMasterList() {
             data={filteredRows}
             filename="Contact_Master"
             columns={[
-              { header: 'Contact Name', key: 'contactName' },
-              { header: 'Email ID', key: 'emailId' },
+              { header: 'Type', key: 'type' },
+              { header: 'Sur Name', key: 'title' },
               { header: 'Group Name', key: 'groupName' },
+              { header: 'Contact Name', key: 'contactName' },
+              { header: 'Contact Type', key: 'contactType' },
               { header: 'Status', key: 'status' }
             ]}
           />}
