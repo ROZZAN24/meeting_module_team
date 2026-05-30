@@ -302,7 +302,7 @@ public class ChecklistService {
             existing.setUpdatedDate(new Date());
             existing.setUpdatedBy(checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty() 
                     ? checklist.getUpdatedBy() 
-                    : com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                    : existing.getCreatedBy());
 
             // Re-sync departments safely via the managed list of the existing entity to avoid Hibernate state desync
             if (existing.getDepartments() != null) {
