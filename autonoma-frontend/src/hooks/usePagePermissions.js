@@ -68,12 +68,12 @@ export default function usePagePermissions(pageCode) {
       ? auths.find((a) => a?.page?.pageCode === pageCode)
       : null;
 
-    // If no record found (page not registered or not assigned), default to read-only
+    // If no record found (page not registered or not assigned), default to disabled
     if (!pageAuth) {
       return {
         loading: false,
-        enabled: true,
-        read: true,
+        enabled: false,
+        read: false,
         write: false,
         delete: false,
         export: false,

@@ -38,42 +38,81 @@ public class SecurityUtils {
         return null;
     }
 
-    public static String getCurrentUserDisplayName() {
+    private static final java.util.concurrent.ConcurrentHashMap<String, String> employeeNameCache = 
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    public static void resolveAndCacheEmployeeName(String principalId) {
+        if (principalId == null || principalId.isEmpty()) {
+            return;
+        }
+
+        if (employeeNameCache.containsKey(principalId)) {
+            return;
+        }
+
         try {
-            String userId = getCurrentUserId();
-            if (userId == null) {
-                return null;
-            }
-            if (userRepository != null && employeeRepository != null) {
+            com.autonoma.erp.repository.admin.UserRepository userRepo = SpringContext.getBean(com.autonoma.erp.repository.admin.UserRepository.class);
+            com.autonoma.erp.repository.EmployeeMasterRepository empRepo = SpringContext.getBean(com.autonoma.erp.repository.EmployeeMasterRepository.class);
+
+            if (userRepo != null && empRepo != null) {
                 String originalTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+                java.util.Optional<com.autonoma.erp.model.admin.UserCredential> userOpt = java.util.Optional.empty();
                 try {
                     com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
-                    Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
+                    userOpt = userRepo.findByUserId(principalId);
                     if (!userOpt.isPresent()) {
-                        userOpt = userRepository.findAll().stream()
-                                .filter(u -> u.getUserId().equalsIgnoreCase(userId))
+                        userOpt = userRepo.findAll().stream()
+                                .filter(u -> u.getUserId().equalsIgnoreCase(principalId))
                                 .findFirst();
-                    }
-                    
-                    if (userOpt.isPresent()) {
-                        UserCredential user = userOpt.get();
-                        Long empId = user.getEmpId();
-                        
-                        com.autonoma.erp.config.TenantContextHolder.setTenantId(originalTenant);
-                        if (empId != null) {
-                            return employeeRepository.findById(empId)
-                                    .map(e -> e.getEmployeeName())
-                                    .orElse(userId);
-                        }
                     }
                 } finally {
                     com.autonoma.erp.config.TenantContextHolder.setTenantId(originalTenant);
                 }
+
+                if (userOpt.isPresent()) {
+                    Long empId = userOpt.get().getEmpId();
+                    if (empId != null) {
+                        java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = empRepo.findById(empId);
+                        if (empOpt.isPresent()) {
+                            employeeNameCache.put(principalId, empOpt.get().getEmployeeName());
+                            return;
+                        }
+                    }
+                }
+
+                java.util.Optional<com.autonoma.erp.model.EmployeeMaster> empOpt = empRepo.findByEmpCode(principalId);
+                if (empOpt.isPresent()) {
+                    employeeNameCache.put(principalId, empOpt.get().getEmployeeName());
+                    return;
+                }
+
+                try {
+                    Long empId = Long.parseLong(principalId);
+                    empOpt = empRepo.findById(empId);
+                    if (empOpt.isPresent()) {
+                        employeeNameCache.put(principalId, empOpt.get().getEmployeeName());
+                        return;
+                    }
+                } catch (NumberFormatException nfe) {
+                    // Ignore
+                }
             }
-            return userId;
         } catch (Exception e) {
-            // Log or ignore
+            // Ignore resolution errors
         }
-        return null;
+
+        employeeNameCache.put(principalId, principalId);
+    }
+
+    public static String getCurrentUserEmployeeName() {
+        String principalId = getCurrentUserId();
+        if (principalId == null) {
+            return null;
+        }
+        return employeeNameCache.getOrDefault(principalId, principalId);
+    }
+
+    public static String getCurrentUserDisplayName() {
+        return getCurrentUserEmployeeName();
     }
 }

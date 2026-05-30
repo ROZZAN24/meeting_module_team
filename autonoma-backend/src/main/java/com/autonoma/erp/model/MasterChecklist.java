@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "QMS_CHECKLIST_MASTER")
+@Table(name = "QMS_CHECKLIST")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -80,10 +80,6 @@ public class MasterChecklist extends BaseAuditEntity {
     @Temporal(TemporalType.DATE)
     private Date nextDueDate;
 
-
-
-
-
     @Column(name = "DUAL_CHECK")
     private String dualCheck;
 
@@ -141,6 +137,9 @@ public class MasterChecklist extends BaseAuditEntity {
 
     @Column(name = "QTY")
     private String qty;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({ "checklist", "hibernateLazyInitializer" })
@@ -277,18 +276,6 @@ public class MasterChecklist extends BaseAuditEntity {
         this.nextDueDate = nextDueDate;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     public String getDualCheck() {
         return dualCheck;
     }
@@ -423,5 +410,13 @@ public class MasterChecklist extends BaseAuditEntity {
 
     public void setCarryForwardStatus(String carryForwardStatus) {
         this.carryForwardStatus = carryForwardStatus;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

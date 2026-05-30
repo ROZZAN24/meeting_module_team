@@ -151,7 +151,7 @@ const exportColumns = [
   { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
   { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
+  { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
 const filterConfig = [
@@ -224,16 +224,59 @@ function FilterSection({ title, open, onToggle, children }) {
   );
 }
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    return `${date} ${hours}:${mins}`;
+  } catch {
+    return '-';
+  }
+};
+
 function StatusChip({ status }) {
-  const colorMap = { Pending: 'warning', Started: 'info', Completed: 'success', Verified: 'success', Accepted: 'success', Attended: 'success', Missed: 'error', Unresolved: 'error', 'Not Completed': 'error', '25%': 'warning', '50%': 'warning', '75%': 'info', 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', 'NA': 'default' };
   let label = typeof status === 'object' ? status?.name : status;
+  label = label || 'Pending';
+  
+  const greenStates = ['Completed', 'Verified', 'Accepted', 'Attended'];
+  const redStates   = ['Pending', 'Missed', 'Unresolved', 'Not Completed', 'Pending for Verified', 'Pending for Accepted', 'Rejected'];
+  const blueStates  = ['Started', '75%', '50%', '25%'];
+  
+  let bg = '#EEEEEE';
+  let text = '#616161';
+  
+  if (greenStates.includes(label)) {
+    bg = '#E8F5E9';
+    text = '#2E7D32';
+  } else if (redStates.includes(label)) {
+    bg = '#FFEBEE';
+    text = '#C62828';
+  } else if (blueStates.includes(label)) {
+    bg = '#E3F2FD';
+    text = '#1565C0';
+  }
+  
   return (
     <Chip
-      label={label || 'Pending'}
+      label={label}
       size="small"
-      color={colorMap[label] || 'default'}
-      variant="outlined"
-      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+      sx={{ 
+        minWidth: 160, 
+        maxWidth: 160, 
+        height: 26, 
+        fontSize: '0.75rem', 
+        fontWeight: 700, 
+        justifyContent: 'center', 
+        bgcolor: bg,
+        color: text,
+        border: 'none',
+        borderRadius: '4px',
+        '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+      }}
     />
   );
 }
@@ -310,7 +353,7 @@ export default function CloseCheckListRenewal() {
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
-        currentUser: user?.name || user?.id || undefined,
+        currentUser: user?.id || user?.name || undefined,
         excludeCompleted: true,
         excludePending: false,
 
@@ -418,6 +461,11 @@ export default function CloseCheckListRenewal() {
 
   const activeCount = (filters.taskType !== 'Mine' ? 1 : 0) + (filters.fromDate ? 1 : 0) + (filters.toDate ? 1 : 0) + (filters.considerDate !== 'No' ? 1 : 0) + (filters.statuses?.length || 0);
 
+  const canEditSelected = perms.write || (activeRow && activeRow.assignedTo && (
+    activeRow.assignedTo.toLowerCase() === user?.id?.toLowerCase() ||
+    activeRow.assignedTo.toLowerCase() === user?.name?.toLowerCase()
+  ));
+
   return (
     <MainCard
       contentSX={{ p: 0 }}
@@ -429,7 +477,7 @@ export default function CloseCheckListRenewal() {
       title="Close Check List / Renewal"
       secondary={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.write && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => setDialogOpen(true)} disabled={!selectedRowId}>Complete Task</Button>}
+          {canEditSelected && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => setDialogOpen(true)} disabled={!selectedRowId}>Complete Task</Button>}
           {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
         </Box>
       }
@@ -495,45 +543,81 @@ export default function CloseCheckListRenewal() {
                     </Box>
                   </TableCell>
                 </TableRow>
-              ) : rows.map((row, idx) => (
-                <TableRow
-                  key={row.id}
-                  hover
-                  onClick={() => setSelectedRowId(row.id)}
-                  onDoubleClick={() => { if (perms.write) { setSelectedRowId(row.id); setDialogOpen(true); } }}
-                  onMouseEnter={() => { if (perms.write) setShowDoubleTap(true); }}
-                  onMouseLeave={() => setShowDoubleTap(false)}
-                  onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
-                  sx={{ cursor: perms.write ? 'pointer' : 'default', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
-                >
-                  <TableCell>{page * size + idx + 1}</TableCell>
-                  <TableCell>{row.checklist?.seqNo}</TableCell>
-                  <TableCell>
-                    {row.checklist?.checkingPoint ? (
-                      <Box
-                        component="span"
-                        onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
-                      >
-                        {row.checklist.checkingPoint}
-                      </Box>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>{row.checklist?.frequency}</TableCell>
-                  <TableCell>{row.checklist?.category}</TableCell>
-                  <TableCell>{row.assignType || 'Mine'}</TableCell>
-                  <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
-                  <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
-                  <TableCell>{formatDate(row.assignedDate)}</TableCell>
-                  <TableCell>{row.checklist?.nextDueDate || formatDate(row.checklist?.expiryDate)}</TableCell>
-                  <TableCell>{row.assignedTo || '-'}</TableCell>
-                  <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
-                  <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                  <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
-                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
-                </TableRow>
-              ))}
+              ) : rows.map((row, idx) => {
+                const isRowEditable = perms.write || (row.assignedTo && (
+                  row.assignedTo.toLowerCase() === user?.id?.toLowerCase() ||
+                  row.assignedTo.toLowerCase() === user?.name?.toLowerCase()
+                ));
+                return (
+                  <TableRow
+                    key={row.id}
+                    hover
+                    onClick={() => setSelectedRowId(row.id)}
+                    onDoubleClick={() => { if (isRowEditable) { setSelectedRowId(row.id); setDialogOpen(true); } }}
+                    onMouseEnter={() => { if (isRowEditable) setShowDoubleTap(true); }}
+                    onMouseLeave={() => setShowDoubleTap(false)}
+                    onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+                    sx={{ cursor: isRowEditable ? 'pointer' : 'default', bgcolor: selectedRowId === row.id ? 'primary.light' : 'inherit' }}
+                  >
+                    <TableCell>{page * size + idx + 1}</TableCell>
+                    <TableCell>{row.checklist?.seqNo}</TableCell>
+                    <TableCell>
+                      {row.checklist?.checkingPoint ? (
+                        <Box
+                          component="span"
+                          onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
+                          sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                        >
+                          {row.checklist.checkingPoint}
+                        </Box>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>{row.checklist?.frequency}</TableCell>
+                    <TableCell>{row.checklist?.category}</TableCell>
+                    <TableCell>{row.assignType || 'Mine'}</TableCell>
+                    <TableCell>{row.checklist?.photoRequired || '-'}</TableCell>
+                    <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
+                    <TableCell>{formatDate(row.assignedDate)}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const rawDate = row.checklist?.nextDueDate || row.checklist?.expiryDate;
+                        if (!rawDate) return '-';
+                        const val = formatDate(rawDate);
+                        if (val === '-') return '-';
+                        const exp = new Date(rawDate);
+                        let isExpired = false;
+                        if (!isNaN(exp.getTime())) {
+                          exp.setHours(23, 59, 59, 999);
+                          isExpired = exp < new Date();
+                        }
+                        return (
+                          <Box
+                            component="span"
+                            sx={{
+                              fontWeight: isExpired ? 700 : 400,
+                              color: isExpired ? '#C62828' : 'text.primary',
+                              bgcolor: isExpired ? '#FFEBEE' : 'transparent',
+                              px: isExpired ? 1 : 0,
+                              py: isExpired ? 0.4 : 0,
+                              borderRadius: isExpired ? '4px' : 0,
+                              display: 'inline-block',
+                              fontSize: '0.82rem',
+                            }}
+                          >
+                            {val}
+                          </Box>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell>{row.assignedTo || '-'}</TableCell>
+                    <TableCell><StatusChip status={row.status} /></TableCell>
+                    <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
+                    <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
+                    <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
+                    <TableCell>{formatDateTime(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </TableContainer>

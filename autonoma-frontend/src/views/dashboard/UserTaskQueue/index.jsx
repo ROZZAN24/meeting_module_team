@@ -215,7 +215,7 @@ const StatBubble = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ 
 });
 
 /* ── Glass Card ── */
-const GlassCard = styled(Box)(({ theme, palettekey = 'indigo', selected }) => {
+const GlassCard = styled(Box, { shouldForwardProp: (p) => p !== 'isDark' })(({ theme, isDark, palettekey = 'indigo', selected }) => {
   const pal = PALETTE[palettekey] || PALETTE.indigo;
   return {
     borderRadius: RADIUS.xl,
@@ -1186,6 +1186,7 @@ export default function UserTaskQueue() {
             return (
               <TaskCard
                 key={task.id}
+                isDark={isDark}
                 isoverdue={String(overdue)}
                 taskpalette={cfg.palette}
                 onClick={() => navigate(task.link)}

@@ -46,6 +46,12 @@ public class ContactMaster {
     @Column(name = "whatsapp_no", length = 50)
     private String whatsAppNo;
 
+    @Column(name = "type", length = 100)
+    private String type;
+
+    @Column(name = "contact_type", length = 100)
+    private String contactType;
+
     @Column(name = "file_upload", length = 500)
     private String fileUpload;
 
@@ -53,10 +59,10 @@ public class ContactMaster {
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private java.time.LocalDateTime createdAt;
 
     @Column(name = "updated_by")

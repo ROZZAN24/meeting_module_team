@@ -6,4 +6,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AuditTypeRepository extends JpaRepository<AuditType, Long> {
+    boolean existsByAuditTypeIgnoreCase(String auditType);
+    boolean existsByAuditTypeIgnoreCaseAndIdNot(String auditType, Long id);
+    boolean existsByDescriptionIgnoreCase(String description);
+    boolean existsByDescriptionIgnoreCaseAndIdNot(String description, Long id);
 }

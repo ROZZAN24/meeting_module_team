@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import {
@@ -23,6 +23,7 @@ import {
   BOSTextField,
   BOSFormSection,
   BOSPersonnelCard,
+  BOSDatePicker,
   getPhotoUrl,
   btnSave,
   btnCancel,
@@ -46,6 +47,13 @@ const ALL_TIME_OPTIONS = Array.from({ length: 96 }).map((_, i) => {
   const hour12 = (hour24 % 12 || 12).toString().padStart(2, '0');
   return { label: `${hour12}:${m} ${ampm}`, hour24, minutes: parseInt(m, 10) };
 });
+
+const HALF_HOUR_TIME_OPTIONS = ALL_TIME_OPTIONS.filter((t) => {
+  const isAfterOrEqual9AM = t.hour24 >= 9;
+  const isBeforeOrEqual830PM = t.hour24 < 20 || (t.hour24 === 20 && t.minutes === 30);
+  const isHalfHour = t.minutes === 0 || t.minutes === 30;
+  return isAfterOrEqual9AM && isBeforeOrEqual830PM && isHalfHour;
+}).map((t) => t.label);
 
 const to24h = (time12h) => {
   if (!time12h) return null;
@@ -117,20 +125,43 @@ export default function AddMeetingSchedule() {
 
 
 
-  const filteredTimeOptions = useMemo(() => {
-    // TEMPORARY OVERRIDE for testing: allow permission for whole day
-    // (If you want to reset, use command "reset tempo")
-    return ALL_TIME_OPTIONS.map((t) => t.label);
+  const getFilteredTimeOptions = useCallback(() => {
+    if (!form.startTime) return HALF_HOUR_TIME_OPTIONS;
+    const startIndex = HALF_HOUR_TIME_OPTIONS.indexOf(form.startTime);
+    if (startIndex === -1) return HALF_HOUR_TIME_OPTIONS;
+    return HALF_HOUR_TIME_OPTIONS.slice(startIndex + 1);
+  }, [form.startTime]);
 
-    /*
-    const limit = id ? 21 : 23;
-    return ALL_TIME_OPTIONS.filter((t) => {
-      const isAfter9AM = t.hour24 >= 9;
-      const isBeforeLimit = t.hour24 < limit || (t.hour24 === limit && t.minutes === 0);
-      return isAfter9AM && isBeforeLimit;
-    }).map((t) => t.label);
-    */
-  }, [id]);
+  // Auto-clear end time and interval time if they are less than or equal to start time
+  useEffect(() => {
+    if (form.startTime) {
+      const startIndex = HALF_HOUR_TIME_OPTIONS.indexOf(form.startTime);
+      if (startIndex !== -1) {
+        setForm(prev => {
+          let updated = false;
+          const nextForm = { ...prev };
+          
+          if (nextForm.endTime) {
+            const endIndex = HALF_HOUR_TIME_OPTIONS.indexOf(nextForm.endTime);
+            if (endIndex <= startIndex) {
+              nextForm.endTime = '';
+              updated = true;
+            }
+          }
+          
+          if (nextForm.intervalTime) {
+            const intervalIndex = HALF_HOUR_TIME_OPTIONS.indexOf(nextForm.intervalTime);
+            if (intervalIndex <= startIndex) {
+              nextForm.intervalTime = '';
+              updated = true;
+            }
+          }
+          
+          return updated ? nextForm : prev;
+        });
+      }
+    }
+  }, [form.startTime]);
 
   const fetchSchedule = useCallback(async () => {
     if (!id) return;
@@ -253,9 +284,10 @@ export default function AddMeetingSchedule() {
           endTime: to24h(form.endTime),
           intervalTime: to24h(form.intervalTime),
           departments: form.departments.map(d => ({ department: d })),
-          participants: form.participants.map(e => ({ employee: e })),
-          createdUser: form.createdUser || user?.employeeName || user?.userName || user?.name || 'System'
+          participants: form.participants.map(e => ({ employee: e }))
         };
+        delete payload.createdUser;
+        delete payload.updatedUser;
 
         if (id) {
           await axios.put(`${API_PATHS.QMS.MEETING_SCHEDULES}/${id}`, payload);
@@ -603,16 +635,15 @@ export default function AddMeetingSchedule() {
         <BOSFormSection title="Date & Time" icon={<IconCalendarEvent size={22} />}>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={6}>
-              <BOSTextField 
-                type="date" 
-                label="Meeting Date" 
-                name="meetingDate" 
-                value={form.meetingDate} 
-                onChange={h} 
-                required 
-                error={!!errors.meetingDate} 
-                fullWidth 
-                inputProps={{ min: new Date().toISOString().split('T')[0] }}
+              <BOSDatePicker
+                required
+                label="Meeting Date"
+                name="meetingDate"
+                value={form.meetingDate}
+                onChange={h}
+                minDate={new Date()}
+                error={!!errors.meetingDate}
+                helperText={errors.meetingDate}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -637,19 +668,19 @@ export default function AddMeetingSchedule() {
             <Grid item xs={12} sm={4}>
               <BOSTextField select label="Start Time" name="startTime" value={form.startTime || ''} onChange={h} required fullWidth>
                 <MenuItem value="">-Select Start Time-</MenuItem>
-                {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {HALF_HOUR_TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
             <Grid item xs={12} sm={4}>
               <BOSTextField select label="Interval Time" name="intervalTime" value={form.intervalTime || ''} onChange={h} disabled={!form.startTime} fullWidth>
                 <MenuItem value="">-Select Interval Time-</MenuItem>
-                {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {getFilteredTimeOptions().map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
             <Grid item xs={12} sm={4}>
               <BOSTextField select label="End Time" name="endTime" value={form.endTime || ''} onChange={h} required disabled={!form.startTime} fullWidth>
                 <MenuItem value="">-Select End Time-</MenuItem>
-                {filteredTimeOptions.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
+                {getFilteredTimeOptions().map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
               </BOSTextField>
             </Grid>
           </Grid>

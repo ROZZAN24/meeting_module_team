@@ -12,21 +12,32 @@ public class NcrOfiAttachment extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "ncr_ofi_id", nullable = false)
+    @Column(name = "NCR_OFI_ID", nullable = false)
     private Integer ncrOfiId;
 
-    @Column(name = "file_name")
+    @Column(name = "FILE_NAME")
     private String fileName;
 
-    @Column(name = "file_path")
+    @Column(name = "FILE_PATH", length = 1000)
     private String filePath;
 
-    @Column(name = "file_type")
+    @Column(name = "FILE_TYPE")
     private String fileType;
 
-    @Column(name = "uploaded_by")
+    @Column(name = "UPLOADED_BY")
     private String uploadedBy;
 
-    @Column(name = "uploaded_date")
+    @Column(name = "UPLOADED_DATE")
     private LocalDateTime uploadedDate = LocalDateTime.now();
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

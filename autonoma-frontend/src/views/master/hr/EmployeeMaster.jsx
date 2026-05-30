@@ -85,6 +85,7 @@ const INITIAL = {
   isAuditor: 'NO', auditorType: '', auditorFileInfo: '',
   isAuditee: 'NO', auditeeType: '', auditeeFileInfo: '',
   isNcrApprover: 'NO', ncrApproverType: '', ncrApproverFileInfo: '',
+  isTaskVerifier: 'NO', taskVerifierType: '', taskVerifierFileInfo: '',
   isChaired: 'NO', chairedType: '', chairedFileInfo: '',
   isHost: 'NO', hostType: '', hostFileInfo: '',
   isParticipants: 'YES', participantsType: '', participantsFileInfo: '',
@@ -155,7 +156,7 @@ const INITIAL = {
 const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
 const REF_MODES = ['-SELECT-', 'EMPLOYEE', 'LINKED IN', 'NEWS PAPER', 'POSTER', 'WEBSITE', 'WHATS APP', 'OTHERS'];
 const CATEGORIES = [{id: 1, categoryName: 'EMPLOYEE'}, {id: 2, categoryName: 'CONTRACTOR'}, {id: 3, categoryName: 'CONSULTANT'}];
-const TYPES = [{id: 1, typeName: 'PERMANENT'}, {id: 2, typeName: 'TEMPORARY'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'PROBATION'}];
+
 const YES_NO = ['YES', 'NO'];
 
 const RULES = [
@@ -203,6 +204,7 @@ export default function EmployeeMaster() {
   const { errors, validate, clearErrors } = useBOSValidation();
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
+  const [employeeTypes, setEmployeeTypes] = useState([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { 
     departments = [], 
@@ -238,6 +240,12 @@ export default function EmployeeMaster() {
   }, [employeeId]);
 
   useEffect(() => { fetchEmployee(); }, [fetchEmployee]);
+
+  useEffect(() => {
+    axios.get(API_PATHS.HRM.TYPES)
+      .then(({ data }) => setEmployeeTypes(data || []))
+      .catch(() => setEmployeeTypes([]));
+  }, []);
 
   const h = (e) => {
     const { name, value } = e.target;
@@ -490,7 +498,7 @@ export default function EmployeeMaster() {
             </R>
             <R>
               <BOSTextField select name="employeeTypeId" label="Employee Type *" value={form.employeeTypeId} onChange={h} error={!!errors.employeeTypeId} helperText={errors.employeeTypeId}>
-                {TYPES.map((t) => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}
+                {employeeTypes.map((t) => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
@@ -735,7 +743,8 @@ export default function EmployeeMaster() {
             {renderAbilityTable('Audit & Compliance', <IconShieldCheck size={20} />, [
               { label: 'Auditor', toggleName: 'isAuditor', typeName: 'auditorType', fileName: 'auditorFileInfo' },
               { label: 'Auditee', toggleName: 'isAuditee', typeName: 'auditeeType', fileName: 'auditeeFileInfo' },
-              { label: 'NCR approved by', toggleName: 'isNcrApprover', typeName: 'ncrApproverType', fileName: 'ncrApproverFileInfo' }
+              { label: 'NCR approved by', toggleName: 'isNcrApprover', typeName: 'ncrApproverType', fileName: 'ncrApproverFileInfo' },
+              { label: 'Task Verified By', toggleName: 'isTaskVerifier', typeName: 'taskVerifierType', fileName: 'taskVerifierFileInfo', hasType: false, hasFile: false }
             ])}
 
             <Divider />

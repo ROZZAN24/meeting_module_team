@@ -72,6 +72,9 @@ public class ChecklistClosed extends BaseAuditEntity {
     @Column(name = "FREQUENCY", nullable = false)
     private String frequency;
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public MasterChecklist getChecklist() { return checklist; }
@@ -106,6 +109,8 @@ public class ChecklistClosed extends BaseAuditEntity {
     public void setFilePaths(String filePaths) { this.filePaths = filePaths; }
     public String getFrequency() { return frequency; }
     public void setFrequency(String frequency) { this.frequency = frequency; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 
     public List<String> getActualFiles() {
         if (filePaths == null || filePaths.trim().isEmpty()) {

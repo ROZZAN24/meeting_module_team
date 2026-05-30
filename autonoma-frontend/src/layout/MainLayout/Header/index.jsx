@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // material-ui
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Chip from '@mui/material/Chip';
+import { alpha } from '@mui/material/styles';
 
 // project imports
 import LogoSection from '../LogoSection';
@@ -20,9 +23,11 @@ import QuickAccessSection from './QuickAccessSection';
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import { MenuOrientation } from 'config';
 import useConfig from 'hooks/useConfig';
+import useLookups from 'hooks/useLookups';
+import axios from 'utils/axios';
 
 // assets
-import { IconMenu2, IconLogout } from '@tabler/icons-react';
+import { IconMenu2, IconLogout, IconUser } from '@tabler/icons-react';
 import SessionInfoBadge from 'ui-component/SessionInfoBadge';
 import useAuth from 'hooks/useAuth';
 import Tooltip from '@mui/material/Tooltip';
@@ -37,7 +42,7 @@ export default function Header() {
     state: { menuOrientation }
   } = useConfig();
   const { menuMaster } = useGetMenuMaster();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const handleLogout = async () => {
     try {
       await logout();
@@ -48,11 +53,46 @@ export default function Header() {
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downMD;
 
+  const [empDesig, setEmpDesig] = useState('');
+  const [empDept, setEmpDept] = useState('');
+  const { departments = [], designations = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS']);
+
+  useEffect(() => {
+    if (user) {
+      axios.get('/api/master/hr/employees')
+        .then(res => {
+          const allEmps = res.data || [];
+          const empRecord = allEmps.find(e =>
+            (e.id && user.empId && String(e.id) === String(user.empId)) ||
+            (e.empCode && user.empCode && String(e.empCode) === String(user.empCode))
+          );
+          if (empRecord) {
+            const getDesigName = (id, fallback) => String(designations.find(d => String(d.id) === String(id))?.designationName || fallback || '');
+            const getDeptName = (id, fallback) => String(departments.find(d => String(d.id) === String(id))?.departmentName || fallback || '');
+
+            const desig = empRecord.designationId ? getDesigName(empRecord.designationId, empRecord.designationName || empRecord.designation) : (user.designation?.name || user.designation || empRecord.designationName || empRecord.designation || '');
+            const dept = empRecord.departmentId ? getDeptName(empRecord.departmentId, empRecord.departmentName || empRecord.department) : (user.department?.name || user.department || empRecord.departmentName || empRecord.department || '');
+
+            setEmpDesig(desig);
+            setEmpDept(dept);
+          } else {
+            setEmpDesig(user.designation?.name || user.designation || '');
+            setEmpDept(user.department?.name || user.department || '');
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          setEmpDesig(user.designation?.name || user.designation || '');
+          setEmpDept(user.department?.name || user.department || '');
+        });
+    }
+  }, [user, departments, designations]);
+
   return (
     <>
       {/* logo & toggler button */}
-      <Box sx={{ width: downMD ? 'auto' : 228, display: 'flex' }}>
-        <Box component="span" sx={{ display: { xs: 'none', md: 'block' }, flexGrow: 1 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mr: 2 }}>
+        <Box component="span" sx={{ display: { xs: 'none', md: 'block' } }}>
           <LogoSection />
         </Box>
         {!isHorizontal && (
@@ -83,13 +123,43 @@ export default function Header() {
               <IconMenu2 stroke={1.5} size="20px" />
             </Avatar>
         )}
+        <SessionInfoBadge />
+        
+        {/* User Info near Company Info */}
+        {user && (
+          <Box
+            sx={{
+              display: { xs: 'none', lg: 'flex' },
+              flexDirection: 'column',
+              justifyContent: 'center',
+              px: 1.5,
+              py: 0.5,
+              ml: 1,
+              borderRadius: '12px',
+              bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.05) : alpha(theme.palette.secondary.main, 0.08),
+              border: '1px solid',
+              borderColor: theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.1) : alpha(theme.palette.secondary.main, 0.15),
+              minWidth: 0,
+              maxWidth: { xs: 160, sm: 300, md: 450 }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.2 }}>
+              <IconUser size={15} stroke={2} style={{ color: theme.palette.secondary.main, flexShrink: 0 }} />
+              <Typography variant="caption" sx={{ fontWeight: 800, color: 'secondary.main', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem' }}>
+                {user?.name || 'User'}
+              </Typography>
+            </Box>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.65rem' }}>
+              {[empDesig, empDept].filter(Boolean).join(' / ')}
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* Global Header Search + Session Context */}
       <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2, gap: 1.5 }}>
-        <SearchSection />
         <Box sx={{ flexGrow: 1 }} />
-        <SessionInfoBadge />
+        <SearchSection />
       </Box>
 
       {/* mega-menu */}

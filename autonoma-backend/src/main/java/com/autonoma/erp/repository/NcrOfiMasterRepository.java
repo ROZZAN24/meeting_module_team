@@ -14,4 +14,5 @@ public interface NcrOfiMasterRepository extends JpaRepository<NcrOfiMaster, Inte
     String findMaxNoByTypeAndPrefix(String type, String prefix);
     
     Optional<NcrOfiMaster> findByObservationDetailId(Integer observationDetailId);
+    Optional<NcrOfiMaster> findFirstByObservationDetailIdOrderByIdDesc(Integer observationDetailId);
 }

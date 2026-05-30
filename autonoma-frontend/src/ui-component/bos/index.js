@@ -4,8 +4,10 @@
  */
 export { default as BOSFormDialog } from './BOSFormDialog';
 export { default as BOSFormSection } from './BOSFormSection';
+export { default as BOSAuditSection } from './BOSAuditSection';
 export { default as BOSDataTable } from './BOSDataTable';
 export { default as BOSTextField } from './BOSTextField';
+export { default as BOSStatusField } from './BOSStatusField';
 export { default as BOSAutocomplete } from './BOSAutocomplete';
 export { default as BOSDatePicker } from './BOSDatePicker';
 export * from './BOSFileGallery';

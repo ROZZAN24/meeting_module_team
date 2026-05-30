@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { MenuItem, Autocomplete, Chip, Button, Typography, Stack, IconButton, Box, Checkbox } from '@mui/material';
 import { IconUpload, IconX, IconPaperclip } from '@tabler/icons-react';
-import { BOSFormDialog, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -313,19 +313,16 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         )}
       />
 
-      <BOSTextField
-        select
+      <BOSStatusField
+        isCreate={!item}
+        type="string-upper"
         name="status"
         label="Status"
-        value={form.status || 'ACTIVE'}
+        value={form.status}
         onChange={h}
-        disabled={!item}
         sx={compactInputSx}
         className="h-9"
-      >
-        <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-        <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-      </BOSTextField>
+      />
 
       <Box 
         className="flex items-center justify-between p-2 border border-dashed border-divider rounded bg-action-hover h-11"
