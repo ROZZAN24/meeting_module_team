@@ -107,7 +107,17 @@ public class SqlMigrationRunner implements CommandLineRunner {
         // NPD Process page registration skip on H2
         "20260526_V38.0__Create_NPD_Process.sql",
         // Support ticket page rename skip on H2
-        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql"
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        // New v_next consolidation scripts
+        "V001__Master_Module.sql",
+        "V002__User_Module.sql",
+        "V003__HR_Master_Module.sql",
+        "V004__Employee_Module.sql",
+        "V005__Induction_Module.sql",
+        "V006__Sales_Vendor_Module.sql",
+        "V007__QMS_Module.sql",
+        "V008__Production_Inventory_Module.sql",
+        "V009__Sales_Transactions_Module.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
