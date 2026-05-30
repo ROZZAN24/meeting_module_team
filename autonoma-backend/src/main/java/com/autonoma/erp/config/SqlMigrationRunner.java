@@ -104,8 +104,19 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
         "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
-        // NPD Process page registration skip on H2
-        "20260526_V38.0__Create_NPD_Process.sql"
+        "20260526_V38.0__Create_NPD_Process.sql",
+        // Support ticket page rename skip on H2
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        // New v_next consolidation scripts
+        "V001__Master_Module.sql",
+        "V002__User_Module.sql",
+        "V003__HR_Master_Module.sql",
+        "V004__Employee_Module.sql",
+        "V005__Induction_Module.sql",
+        "V006__Sales_Vendor_Module.sql",
+        "V007__QMS_Module.sql",
+        "V008__Production_Inventory_Module.sql",
+        "V009__Sales_Transactions_Module.sql"
     ));
 
     private static final Set<String> SQL_SERVER_SKIP_SCRIPTS = new HashSet<>(Arrays.asList(
@@ -2040,8 +2051,8 @@ public class SqlMigrationRunner implements CommandLineRunner {
         addForeignKeySafe(targetJdbcTemplate, "QMS_NCR_OFI_ACTION", "FK_QMS_NCR_OFI_ACTION_QMS_NCR_OFI_MASTER", "NCR_OFI_ID", "QMS_NCR_OFI_MASTER", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_NCR_OFI_APPROVAL", "FK_QMS_NCR_OFI_APPROVAL_QMS_NCR_OFI_MASTER", "NCR_OFI_ID", "QMS_NCR_OFI_MASTER", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_NCR_OFI_ATTACHMENT", "FK_QMS_NCR_OFI_ATTACHMENT_QMS_NCR_OFI_MASTER", "NCR_OFI_ID", "QMS_NCR_OFI_MASTER", "ID", "ON DELETE CASCADE");
-        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_DEPARTMENT", "FK_QMS_CHECKLIST_DEPARTMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST_MASTER", "ID", "ON DELETE CASCADE");
-        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_ASSIGNMENT", "FK_QMS_CHECKLIST_ASSIGNMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST_MASTER", "ID", "ON DELETE CASCADE");
+        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_DEPARTMENT", "FK_QMS_CHECKLIST_DEPARTMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST", "ID", "ON DELETE CASCADE");
+        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_ASSIGNMENT", "FK_QMS_CHECKLIST_ASSIGNMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_VERIFICATION", "FK_QMS_CHECKLIST_VERIFICATION_QMS_CHECKLIST_ASSIGNMENT", "ASSIGNMENT_ID", "QMS_CHECKLIST_ASSIGNMENT", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_MEETING_SCHEDULE", "FK_QMS_MEETING_SCHEDULE_QMS_MEETING_MASTER", "MEETING_TYPE_ID", "QMS_MEETING_MASTER", "ID", "");
         addForeignKeySafe(targetJdbcTemplate, "QMS_MEETING_SCHEDULE_DEPARTMENT", "FK_QMS_MEETING_SCHEDULE_DEPARTMENT_QMS_MEETING_SCHEDULE", "SCHEDULE_ID", "QMS_MEETING_SCHEDULE", "ID", "ON DELETE CASCADE");

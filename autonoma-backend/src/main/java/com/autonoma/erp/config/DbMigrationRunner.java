@@ -26,6 +26,19 @@ public class DbMigrationRunner implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        boolean isH2 = false;
+        try {
+            String url = jdbcTemplate.getDataSource().getConnection().getMetaData().getURL();
+            if (url != null && url.contains(":h2:")) {
+                isH2 = true;
+            }
+        } catch (Exception e) {
+            // Default to false
+        }
+        if (isH2) {
+            System.out.println("H2 DATABASE DETECTED: SKIPPING NEW DUAL MIGRATION RUNNER");
+            return;
+        }
         runMigrations(this.jdbcTemplate);
     }
 

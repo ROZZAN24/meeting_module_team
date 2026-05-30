@@ -560,6 +560,7 @@ public class ChecklistService {
         checklist.setAssignTo(allAssignedTo);
         checklist.setAssignDate(new Date());
         checklist.setTaskStatus("Pending");
+        checklist.setSkipAuditUpdate(true);
         masterRepo.save(checklist);
 
         return savedAssignment;
@@ -625,6 +626,7 @@ public class ChecklistService {
             checklist.setAssignDate(null);
             checklist.setTaskStatus(null);
         }
+        checklist.setSkipAuditUpdate(true);
         masterRepo.save(checklist);
     }
 

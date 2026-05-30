@@ -1,6 +1,8 @@
-# Autonoma ERP — Local Setup Guide
+# 🚀 Developer Guide: Local Database & Docker Reset Setup
 
 > Last updated: May 2026 · Team: TIS (QMS / Audit / Checklist / Induction)
+
+We have standardized the database schema (capitalizing column names, removing legacy/duplicate tables, and organizing migrations). To ensure your local setup runs correctly without legacy table pollution, follow these instructions to pull the latest changes and reset your local database.
 
 ---
 
@@ -24,35 +26,43 @@ Install the following before you begin:
 
 ---
 
-## Step 1 — Clone the Repository
+## Step 1 — Pull the Latest Code
+
+Make sure you are on the latest `main` branch:
 
 ```bash
-git clone https://github.com/Nutechwindparts/Autonoma_ERP.git
-cd "Autonoma_ERP"
+# From the project root
+git checkout main
+git pull origin main
 ```
 
 ---
 
-## Step 2 — Start SQL Server in Docker
+## Step 2 — Reset your Local Docker SQL Server (Recommended)
 
-We use **SQL Server 2022** running in Docker. Run this once:
+Since we dropped duplicate legacy tables (like `EmployeeMaster`, etc.) and moved to a modular migration runner, it is **highly recommended** to start with a fresh database to avoid any constraint issues:
+
+### 2a. Destroy the old container and its volume:
 
 ```bash
-docker run -d \
-  --name autonoma-sqlserver \
-  -e "ACCEPT_EULA=Y" \
-  -e "SA_PASSWORD=Admin@1234" \
-  -e "MSSQL_SA_PASSWORD=Admin@1234" \
-  -p 1433:1433 \
-  mcr.microsoft.com/mssql/server:2022-latest
+docker stop autonoma-sqlserver
+docker rm autonoma-sqlserver
 ```
 
-Then create the database and user:
+### 2b. Start the clean container using the pre-configured `docker-compose.yml` in the project root:
 
 ```bash
-# Wait ~15 seconds for SQL Server to start, then run:
+# From the project root
+docker compose up -d
+```
+
+### 2c. Initialize the database and credentials
+
+Wait ~15 seconds for SQL Server to boot first, then run:
+
+```bash
 docker exec -it autonoma-sqlserver /opt/mssql-tools18/bin/sqlcmd \
-  -S localhost -U SA -P "Admin@1234" -C -N -Q "
+  -S localhost -U SA -P "nutech@2026" -C -N -Q "
 CREATE DATABASE AUTONOMA;
 GO
 CREATE LOGIN nutech WITH PASSWORD = 'nutech@2026';
@@ -63,11 +73,11 @@ CREATE USER nutech FOR LOGIN nutech;
 GO
 ALTER ROLE db_owner ADD MEMBER nutech;
 GO
-PRINT 'Done';
+PRINT 'Database AUTONOMA and user nutech initialized!';
 "
 ```
 
-> **Already set up?** Just start the container:
+> **Already set up?** Just start the existing container:
 > ```bash
 > docker start autonoma-sqlserver
 > ```
@@ -99,14 +109,21 @@ And these H2 lines are **commented out**:
 
 ---
 
-## Step 4 — Run the Backend
+## Step 4 — Compile and Run the Backend
+
+Run the backend application. Spring Boot will connect to your fresh SQL Server container and automatically execute all migration scripts (`V001` through `V012`) to seed clean, standardized tables:
 
 ```bash
 cd autonoma-backend
-mvn spring-boot:run
+mvn clean spring-boot:run
 ```
 
-The backend starts on **http://localhost:8081**
+**Verification Check:**
+
+Look for these lines in your console output:
+- `SQL MIGRATION COMPLETED FOR DYNAMIC TEMPLATE`
+- `NEW DUAL MIGRATION RUNNER: COMPLETED`
+- `Started AutonomaBackendApplication in X seconds`
 
 **What happens on first startup:**
 - Spring Boot connects to SQL Server
@@ -114,33 +131,19 @@ The backend starts on **http://localhost:8081**
 - All QMS / Audit / Checklist / Induction tables are created and standardized
 - No manual SQL execution needed
 
-> ✅ Look for this in the logs:
-> ```
-> SQL MIGRATION COMPLETED FOR DYNAMIC TEMPLATE
-> Started AutonomaBackendApplication in X seconds
-> ```
-
 ---
 
 ## Step 5 — Run the Frontend
 
-Open a **new terminal tab**:
+In a **new terminal window**, start your local development UI:
 
 ```bash
 cd autonoma-frontend
-npm install        # only needed first time
+npm install       # only needed first time
 npm start
 ```
 
-The frontend starts on **http://localhost:3001**
-
----
-
-## Step 6 — Log In
-
-Open your browser at: **http://localhost:3001**
-
-Use any existing credentials from the DB, or the default admin account seeded by the migrations.
+Open **http://localhost:3001** and log in.
 
 ---
 
@@ -148,12 +151,14 @@ Use any existing credentials from the DB, or the default admin account seeded by
 
 ```bash
 # Terminal 1 — Backend
-cd autonoma-backend && mvn spring-boot:run
+cd autonoma-backend
+mvn spring-boot:run
 
 # Terminal 2 — Frontend
-cd autonoma-frontend && npm start
+cd autonoma-frontend
+npm start
 
-# Start/stop Docker (keep data between restarts)
+# Start/stop Docker (keeps your data between restarts)
 docker start autonoma-sqlserver
 docker stop autonoma-sqlserver
 ```
@@ -185,9 +190,9 @@ The app uses a custom `SqlMigrationRunner` that runs automatically at startup:
 ## Database Naming Conventions (Our Team)
 
 | What | Convention | Example |
-|------|-----------|---------|
+|------|-----------|-|
 | Table names | UPPERCASE with module prefix | `QMS_AUDIT_SCHEDULE` |
-| Column names | lowercase snake_case | `observation_id`, `created_date` |
+| Column names | UPPERCASE | `OBSERVATION_ID`, `CREATED_DATE` |
 | Audit date columns | `CREATED_DATE`, `UPDATED_DATE` | — |
 | Audit user columns | `CREATED_USER`, `UPDATED_USER` | — |
 | FK constraint names | `FK_[CHILD]_[PARENT]` | `FK_QMS_MOM_DETAIL_MASTER` |
@@ -197,14 +202,17 @@ The app uses a custom `SqlMigrationRunner` that runs automatically at startup:
 
 ## Troubleshooting
 
-### ❌ "Login failed for user 'nutech'"
-The DB user doesn't exist yet. Re-run Step 2's SQL commands.
-
-### ❌ "Connection refused" on port 1433
-Docker isn't running or the container is stopped:
+### 💡 Connection Refused on Port 1433
+Make sure Docker Desktop is open and `docker ps` shows `autonoma-sqlserver` as running:
 ```bash
 docker start autonoma-sqlserver
 ```
+
+### 💡 Database Cleanups
+The application now automatically handles dropping old unused duplicate tables (`EmployeeMaster`, `STATUS_MASTER`, etc.) and maps audit fields using dual serialization (`createdAt`/`createdDate`, etc.), so **you do not need to run SQL cleanups manually**.
+
+### ❌ "Login failed for user 'nutech'"
+The DB user doesn't exist yet. Re-run Step 2c's SQL commands.
 
 ### ❌ Backend crashes with a migration error
 1. Check the `ERP_FAILED_SCRIPTS` table to see which script failed:
@@ -221,12 +229,20 @@ docker start autonoma-sqlserver
 ### ❌ Port 8081 already in use
 Kill the existing process:
 ```bash
+# macOS/Linux
 lsof -ti:8081 | xargs kill -9
+
+# Windows (PowerShell)
+Get-Process -Id (Get-NetTCPConnection -LocalPort 8081).OwningProcess | Stop-Process -Force
 ```
 
 ### ❌ Port 3001 already in use
 ```bash
+# macOS/Linux
 lsof -ti:3001 | xargs kill -9
+
+# Windows (PowerShell)
+Get-Process -Id (Get-NetTCPConnection -LocalPort 3001).OwningProcess | Stop-Process -Force
 ```
 
 ### ❌ npm install fails

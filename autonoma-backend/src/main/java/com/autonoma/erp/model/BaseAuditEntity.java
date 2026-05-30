@@ -68,6 +68,12 @@ public abstract class BaseAuditEntity {
     }
 
 
+    @Transient
+    private boolean skipAuditUpdate = false;
+
+    public boolean isSkipAuditUpdate() { return skipAuditUpdate; }
+    public void setSkipAuditUpdate(boolean skipAuditUpdate) { this.skipAuditUpdate = skipAuditUpdate; }
+
     @PrePersist
     protected void onCreate() {
         if (this.createdDate == null) {
@@ -80,6 +86,9 @@ public abstract class BaseAuditEntity {
 
     @PreUpdate
     protected void onUpdate() {
+        if (this.skipAuditUpdate) {
+            return;
+        }
         this.updatedDate = new Date();
         this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
     }
