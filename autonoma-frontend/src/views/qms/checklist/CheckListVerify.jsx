@@ -89,7 +89,7 @@ const exportColumns = [
   { header: 'CREATED USER', key: (r) => r.createdUser || r.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
   { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.updatedDate) },
+  { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.updatedDate) },
   { header: 'Verify Status', key: 'status' },
   { header: 'Verified By', key: 'verifiedBy' },
   { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) }
@@ -142,21 +142,45 @@ const getFilterConfig = (departments) => [
   }
 ];
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    return `${date} ${hours}:${mins}`;
+  } catch {
+    return '-';
+  }
+};
+
 function StatusChip({ status }) {
   const map = {
-    'Verified': { color: 'success', icon: <IconCheck size={14} /> },
-    'Rejected': { color: 'error', icon: <IconBan size={14} /> },
-    'Pending for Verify': { color: 'warning', icon: null }
+    'Verified': { bg: '#E8F5E9', text: '#2E7D32', icon: <IconCheck size={14} style={{ color: '#2E7D32' }} /> },
+    'Rejected': { bg: '#FFEBEE', text: '#C62828', icon: <IconBan size={14} style={{ color: '#C62828' }} /> },
+    'Pending for Verify': { bg: '#FFF3E0', text: '#E65100', icon: null }
   };
-  const cfg = map[status] || { color: 'default', icon: null };
+  const cfg = map[status] || { bg: '#F5F5F5', text: '#424242', icon: null };
   return (
     <Chip
       label={status}
       size="small"
-      color={cfg.color}
       icon={cfg.icon}
-      variant="outlined"
-      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+      sx={{ 
+        minWidth: 160, 
+        maxWidth: 160, 
+        height: 26, 
+        fontSize: '0.75rem', 
+        fontWeight: 700, 
+        justifyContent: 'center', 
+        bgcolor: cfg.bg,
+        color: cfg.text,
+        border: 'none',
+        borderRadius: '4px',
+        '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+      }}
     />
   );
 }
@@ -344,12 +368,40 @@ export default function CheckListVerify() {
                   <TableCell>{(row.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
                   <TableCell>{formatDate(row.effectiveFrom)}</TableCell>
                   <TableCell>{row.reminderDays}</TableCell>
-                  <TableCell>{formatDate(row.expiryDate)}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const val = formatDate(row.expiryDate);
+                      if (!row.expiryDate || val === '-') return '-';
+                      const exp = new Date(row.expiryDate);
+                      let isExpired = false;
+                      if (!isNaN(exp.getTime())) {
+                        exp.setHours(23, 59, 59, 999);
+                        isExpired = exp < new Date();
+                      }
+                      return (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontWeight: isExpired ? 700 : 400,
+                            color: isExpired ? '#C62828' : 'text.primary',
+                            bgcolor: isExpired ? '#FFEBEE' : 'transparent',
+                            px: isExpired ? 1 : 0,
+                            py: isExpired ? 0.4 : 0,
+                            borderRadius: isExpired ? '4px' : 0,
+                            display: 'inline-block',
+                            fontSize: '0.82rem',
+                          }}
+                        >
+                          {val}
+                        </Box>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell>{row.stockLink}</TableCell>
                   <TableCell>{row.createdUser || row.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.createdAt || row.createdDate)}</TableCell>
                   <TableCell>{row.updatedUser || row.updatedBy || '-'}</TableCell>
-                  <TableCell>{formatDate(row.updatedAt || row.updatedDate)}</TableCell>
+                  <TableCell>{formatDateTime(row.updatedAt || row.updatedDate)}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
                   <TableCell>{row.verifiedBy}</TableCell>
                   <TableCell>{formatDate(row.verifiedDate)}</TableCell>

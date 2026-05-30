@@ -2,6 +2,7 @@ Columns and values in QMS_CHECKLIST_MASTER:
 Row:
   id = 0
   seq_no = CK-001
+<<<<<<< HEAD
   checking_point = gggdgd
   description = Fed
   category = CHECK LIST
@@ -16,6 +17,22 @@ Row:
   CREATED_USER = Admin
   CREATED_DATE = 2026-05-20 13:59:58.517
   UPDATED_USER = Eashwar
+=======
+  checking_point = sdfsd
+  description = sdfsf
+  category = SAFETY
+  frequency = DAILY
+  effective_from = 2026-05-14
+  expiry_date = null
+  reminder_days = null
+  reminder_date = null
+  stock_link = NO
+  photo_required = NO
+  verification_required = YES
+  CREATED_USER = Current User
+  CREATED_DATE = 2026-05-14 19:36:56.627
+  UPDATED_USER = Current User
+>>>>>>> origin/Audit-Darshan
   UPDATED_DATE = null
   dual_check = YES
   carry_forward = YES
@@ -24,17 +41,18 @@ Row:
   verified_by = null
   verified_date = null
   rej_reason = null
-  assign_to = null
+  assign_to = 
   assign_date = null
-  item_code = null
-  qty = null
-  uploaded_files = null
-  scanned_files = null
-  amendment_reason = null
+  item_code = 
+  qty = 
+  uploaded_files = []
+  scanned_files = []
+  amendment_reason = 
   level_ids = 
   WEEK_DAYS = Tuesday
   REPEAT_EVERY_VALUE = null
   REPEAT_EVERY_UNIT = null
+<<<<<<< HEAD
   carry_forward_status = NO
   STATUS = 1
   TASK_STATUS = 0
@@ -319,3 +337,9 @@ Row:
   STATUS = 1
   TASK_STATUS = 0
   VERIFY_STATUS = 1
+=======
+  carry_forward_status = null
+  STATUS = 1
+  TASK_STATUS = 0
+  VERIFY_STATUS = 0
+>>>>>>> origin/Audit-Darshan

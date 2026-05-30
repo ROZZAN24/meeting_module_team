@@ -49,6 +49,7 @@ import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig, resetFilters, setQuery } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 const getCurrentTimeStr = () => {
   const now = new Date();
@@ -198,6 +199,8 @@ const InductionAssignment = () => {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
+
+
 
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
@@ -404,6 +407,11 @@ const InductionAssignment = () => {
   }, [formData, history]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      setEmployees([]);
+      return;
+    }
     setLoading(true);
     try {
       const [assignRes, empRes] = await Promise.all([
@@ -487,9 +495,13 @@ const InductionAssignment = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Fetch dynamic round options from master table
   useEffect(() => {
@@ -791,6 +803,10 @@ const InductionAssignment = () => {
       updatedDate: r.updatedDate || r.updatedAt ? new Date(r.updatedDate || r.updatedAt).toLocaleString('en-GB') : '-'
     }));
   }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard

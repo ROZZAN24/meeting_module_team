@@ -6,14 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  BOSFormSection,
-  btnNew,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, btnNew, errorStyle, BOSStatusField } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 
@@ -286,8 +279,8 @@ export default function InductionRoundMaster() {
               inputProps={{ min: 1 }}
             />
 
-            <BOSTextField
-              select
+            <BOSStatusField
+              isCreate={!formData.id}
               name="status"
               label="STATUS"
               value={formData.status}
@@ -299,9 +292,10 @@ export default function InductionRoundMaster() {
             >
               <MenuItem value="ACTIVE">Active</MenuItem>
               <MenuItem value="IN ACTIVE">Inactive</MenuItem>
-            </BOSTextField>
+            </BOSStatusField>
           </Stack>
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

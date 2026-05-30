@@ -5,7 +5,7 @@ import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery, BOSFileUpload } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSFileGallery, BOSFileUpload, BOSStatusField } from 'ui-component/bos';
 import AddContactDialog from './AddContactDialog';
 import { API_PATHS } from 'utils/api-constants';
 
@@ -313,14 +313,17 @@ export default function AddCustomerDialog({ open, handleClose, initialData, read
           
           <R lg={4} md={6}><BOSTextField fullWidth name="ldApplicable" label="LD Applicable" value={formData.ldApplicable} onChange={handleChange} disabled={readOnly} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
           <R lg={4} md={6}><BOSTextField fullWidth name="negotiateCustomer" label="Is Negotiate Customer" value={formData.negotiateCustomer} onChange={handleChange} disabled={readOnly} select><MenuItem value="Yes">Yes</MenuItem><MenuItem value="No">No</MenuItem></BOSTextField></R>
-          <R lg={4} md={6}><BOSAutocomplete
-  label="Status"
-  name="status"
-  value={formData.status}
-  options={['Active', 'Inactive']}
-  onChange={(val) => setFormData(p => ({ ...p, status: val || 'Active' }))}
-  disabled={readOnly}
-/></R>
+          <R lg={4} md={6}>
+            <BOSStatusField
+              isCreate={!initialData}
+              type="string-capital"
+              name="status"
+              label="Status"
+              value={formData.status}
+              onChange={handleChange}
+              disabled={readOnly}
+            />
+          </R>
         </Grid>
       </BOSFormSection>
 
@@ -332,6 +335,7 @@ export default function AddCustomerDialog({ open, handleClose, initialData, read
           </Grid>
         </Grid>
       </BOSFormSection>
+      
     </BOSFormDialog>
   );
 }

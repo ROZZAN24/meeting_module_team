@@ -95,8 +95,26 @@ export default function BulkUploadDialog({ open, handleClose }) {
         });
       }
 
-      if (rowsToSave.length === 0) {
+      // Check for duplicate part numbers in the parsed rows (case-insensitive)
+      const filePartNos = new Set();
+      const duplicatePartNos = [];
+      for (const row of rowsToSave) {
+        const key = row.partNo.toLowerCase();
+        if (filePartNos.has(key)) {
+          if (!duplicatePartNos.includes(row.partNo)) {
+            duplicatePartNos.push(row.partNo);
+          }
+        } else {
+          filePartNos.add(key);
+        }
+      }
+
+      if (duplicatePartNos.length > 0) {
+        setErrorMsg(`Duplicate Part No(s) found in the file: ${duplicatePartNos.join(', ')}. Please remove duplicate rows and try again.`);
+        setParsedData([]);
+      } else if (rowsToSave.length === 0) {
         setErrorMsg('No valid rows found in the sheet. Please make sure Part No and OEM Part No are not empty.');
+        setParsedData([]);
       } else {
         setParsedData(rowsToSave);
       }
@@ -110,11 +128,7 @@ export default function BulkUploadDialog({ open, handleClose }) {
 
   const handleDownloadTemplate = () => {
     const templateHeaders = [['Part No', 'OEM Part No', 'OEM Description', 'Status']];
-    const dummyRows = [
-      ['NT/V54121', '115491', 'V54121 Coupling Mapping', 'ACTIVE'],
-      ['NT/GW101', 'GP018631/GP028818', 'GW101 Mapping', 'ACTIVE']
-    ];
-    const ws = XLSX.utils.aoa_to_sheet([...templateHeaders, ...dummyRows]);
+    const ws = XLSX.utils.aoa_to_sheet(templateHeaders);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Template');
     XLSX.writeFile(wb, 'OEM_Mapping_Bulk_Upload_Template.xlsx');
@@ -127,15 +141,15 @@ export default function BulkUploadDialog({ open, handleClose }) {
     try {
       const dataWithUser = parsedData.map(row => ({
         ...row,
-        createdBy: user?.name || 'Admin',
-        updatedBy: user?.name || 'Admin'
+        createdBy: user?.id || 'Admin',
+        updatedBy: user?.id || 'Admin'
       }));
       const response = await axios.post(`${API_PATHS.NPD.ITEM_OEM_MAPPING}/bulk`, dataWithUser);
-      const { savedCount, duplicateCount } = response.data;
+      const { savedCount } = response.data;
 
       dispatch(openSnackbar({
         open: true,
-        message: `Successfully imported ${savedCount} mappings! (${duplicateCount} duplicate part numbers skipped)`,
+        message: `Successfully imported ${savedCount} mappings!`,
         variant: 'alert',
         alert: { variant: 'filled' },
         severity: 'success',
@@ -146,9 +160,17 @@ export default function BulkUploadDialog({ open, handleClose }) {
       handleClear();
     } catch (error) {
       console.error('Failed bulk import:', error);
+      const backendData = error.response?.data;
+      let displayMsg = 'Bulk import failed. Please verify your data formatting.';
+      if (typeof backendData === 'string' && backendData.trim().length > 0) {
+        displayMsg = backendData;
+      } else if (backendData && typeof backendData === 'object' && backendData.message) {
+        displayMsg = backendData.message;
+      }
+
       dispatch(openSnackbar({
         open: true,
-        message: 'Bulk import failed. Please verify your data formatting.',
+        message: displayMsg,
         variant: 'alert',
         alert: { variant: 'filled' },
         severity: 'error',
@@ -160,7 +182,7 @@ export default function BulkUploadDialog({ open, handleClose }) {
   };
 
   return (
-    <Dialog open={open} onClose={() => handleClose()} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={() => handleClose()} maxWidth="md" fullWidth>
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'primary.light', py: 1.5 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, color: 'primary.dark' }}>Bulk OEM Upload</Typography>
         <IconButton onClick={() => handleClose()} size="small"><IconX size={20} /></IconButton>

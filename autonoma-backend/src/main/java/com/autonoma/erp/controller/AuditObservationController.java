@@ -102,6 +102,7 @@ public class AuditObservationController {
         dto.setPreventiveAction(detail.getPreventiveAction());
         dto.setTargetDate(detail.getTargetDate());
         dto.setRemarks(detail.getComments());
+        dto.setAttachmentPath(detail.getAttachmentPath());
         
         return dto;
     }

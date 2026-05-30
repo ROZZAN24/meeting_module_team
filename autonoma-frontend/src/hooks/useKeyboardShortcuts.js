@@ -80,5 +80,8 @@ export default function useKeyboardShortcuts(shortcuts = {}, enabled = true) {
  * @returns {string} Formatted tooltip string
  */
 export function shortcutTooltip(label, shortcut) {
+  if (label && String(label).toLowerCase().startsWith('save')) {
+    return shortcut;
+  }
   return `${label} (${shortcut})`;
 }

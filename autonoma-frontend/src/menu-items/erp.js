@@ -122,30 +122,6 @@ export const masters = {
           icon: icons.IconSearch,
           children: [
             {
-              id: 'master-hr-ats-interview',
-              title: 'Interview Criteria Master',
-              type: 'item',
-              url: '/master/hr/ats/interview-criteria',
-              icon: icons.IconClipboardCheck,
-              pageCode: 'M2110'
-            },
-            {
-              id: 'master-hr-ats-email',
-              title: 'Email Content Master',
-              type: 'item',
-              url: '/master/hr/ats/email-content',
-              icon: icons.IconMessage2,
-              pageCode: 'M2120'
-            },
-            {
-              id: 'master-hr-ats-verification',
-              title: 'Applicant Verification Criteria',
-              type: 'item',
-              url: '/master/hr/ats/verification',
-              icon: icons.IconShieldCheck,
-              pageCode: 'M2130'
-            },
-            {
               id: 'master-hr-ats-induction',
               title: 'Induction Criteria',
               type: 'item',
@@ -642,12 +618,44 @@ export const hra = {
   icon: icons.IconUsers,
   children: [
     {
-      id: 'hra-ats',
-      title: 'Application Tracking System',
-      type: 'item',
-      url: '/hra/ats',
-      icon: icons.IconUserPlus,
-      pageCode: 'HA1110'
+      id: 'hra-ats-collapse',
+      title: 'ATS',
+      type: 'collapse',
+      icon: icons.IconSearch,
+      children: [
+        {
+          id: 'hra-ats',
+          title: 'Application Tracking System',
+          type: 'item',
+          url: '/hra/ats',
+          icon: icons.IconSearch,
+          pageCode: 'HA1110'
+        },
+        {
+          id: 'hra-ats-interview',
+          title: 'Interview Criteria Master',
+          type: 'item',
+          url: '/master/hr/ats/interview-criteria',
+          icon: icons.IconClipboardCheck,
+          pageCode: 'M2110'
+        },
+        {
+          id: 'hra-ats-email',
+          title: 'Email Content Master',
+          type: 'item',
+          url: '/master/hr/ats/email-content',
+          icon: icons.IconMessage2,
+          pageCode: 'M2120'
+        },
+        {
+          id: 'hra-ats-verification',
+          title: 'Applicant Verification Criteria',
+          type: 'item',
+          url: '/master/hr/ats/verification',
+          icon: icons.IconShieldCheck,
+          pageCode: 'M2130'
+        }
+      ]
     }
   ]
 };

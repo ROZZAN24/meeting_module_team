@@ -54,7 +54,7 @@ const useNavigationTracker = () => {
         const handleBeforeUnload = () => {
             if (user) {
                 const data = JSON.stringify({ userId: user.id || user.userId });
-                navigator.sendBeacon(`${import.meta.env.VITE_APP_API_URL || 'http://localhost:8081'}/api/analytics/sessions/record-exit`, data);
+                navigator.sendBeacon(`${import.meta.env.VITE_APP_API_URL || 'http://127.0.0.1:8081'}/api/analytics/sessions/record-exit`, data);
             }
         };
 

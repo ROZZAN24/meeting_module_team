@@ -4,8 +4,9 @@ import { IconRocket, IconRefresh } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import AddWindFarmDialog from './AddWindFarmDialog';
+import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -44,18 +45,18 @@ export default function WindFarmMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Dispatch starred filter configuration matching Wind Farm Search
+  // Dispatch starred filter configuration matching CREATED DATE and Wind Farm Name
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
-      {
-        id: 'windFarmNameContains',
-        label: 'Wind Farm Contains',
-        type: 'text',
-        defaultValue: '',
-        isStarred: true
-      }
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'windFarmName', label: 'Wind Farm Name', type: 'text', placeholder: 'Search wind farm name...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -103,19 +104,25 @@ export default function WindFarmMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      // 1. Wind Farm Contains Filter
-      const nameFilter = globalFilters.windFarmNameContains || '';
-      const matchesName = !nameFilter ||
-        (row.windFarmName && row.windFarmName.toLowerCase().includes(nameFilter.toLowerCase()));
+      // 1. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
 
-      // 2. Global search query
+      // 2. Primary Field Filter (Wind Farm Name)
+      const windFarmNameFilter = globalFilters.windFarmName || '';
+      if (windFarmNameFilter && !(row.windFarmName || '').toLowerCase().includes(windFarmNameFilter.toLowerCase())) return false;
+
+      // 3. Search query
       const matchesSearch = !globalQuery ||
         (row.windFarmName && row.windFarmName.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.city && row.city.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.state && row.state.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.country && row.country.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesName && matchesSearch;
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

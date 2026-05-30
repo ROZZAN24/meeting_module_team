@@ -23,6 +23,7 @@ import {
   BOSTextField,
   BOSFormSection,
   BOSPersonnelCard,
+  BOSDatePicker,
   getPhotoUrl,
   btnSave,
   btnCancel,
@@ -247,9 +248,10 @@ export default function AddMeetingSchedule() {
           endTime: to24h(form.endTime),
           intervalTime: to24h(form.intervalTime),
           departments: form.departments.map(d => ({ department: d })),
-          participants: form.participants.map(e => ({ employee: e })),
-          createdUser: form.createdUser || user?.employeeName || user?.userName || user?.name || 'System'
+          participants: form.participants.map(e => ({ employee: e }))
         };
+        delete payload.createdUser;
+        delete payload.updatedUser;
 
         if (id) {
           await axios.put(`${API_PATHS.QMS.MEETING_SCHEDULES}/${id}`, payload);
@@ -597,16 +599,15 @@ export default function AddMeetingSchedule() {
         <BOSFormSection title="Date & Time" icon={<IconCalendarEvent size={22} />}>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={6}>
-              <BOSTextField 
-                type="date" 
-                label="Meeting Date" 
-                name="meetingDate" 
-                value={form.meetingDate} 
-                onChange={h} 
-                required 
-                error={!!errors.meetingDate} 
-                fullWidth 
-                inputProps={{ min: new Date().toISOString().split('T')[0] }}
+              <BOSDatePicker
+                required
+                label="Meeting Date"
+                name="meetingDate"
+                value={form.meetingDate}
+                onChange={h}
+                minDate={new Date()}
+                error={!!errors.meetingDate}
+                helperText={errors.meetingDate}
               />
             </Grid>
             <Grid item xs={12} sm={6}>

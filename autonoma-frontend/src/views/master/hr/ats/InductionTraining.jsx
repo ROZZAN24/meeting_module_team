@@ -56,6 +56,7 @@ import BOSMovableDialog from 'ui-component/bos/BOSMovableDialog';
 import { openSnackbar } from 'store/slices/snackbar';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION TRAINING (TRAINER PAGE) ||============================== //
 
@@ -176,6 +177,10 @@ export default function InductionTraining() {
   }, [dispatch]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
     try {
       const { data } = await axios.get('/api/hr/induction-training');
@@ -206,9 +211,13 @@ export default function InductionTraining() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Open training dialog
   const handleStartTraining = useCallback(async (row) => {
@@ -597,6 +606,10 @@ export default function InductionTraining() {
       };
     });
   }, [rows, globalFilters.status, globalQuery]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard

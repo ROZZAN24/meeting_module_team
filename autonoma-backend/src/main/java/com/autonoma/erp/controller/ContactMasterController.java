@@ -55,6 +55,8 @@ public class ContactMasterController {
                     contact.setLandlineNo(contactDetails.getLandlineNo());
                     contact.setMobileNo(contactDetails.getMobileNo());
                     contact.setWhatsAppNo(contactDetails.getWhatsAppNo());
+                    contact.setType(contactDetails.getType());
+                    contact.setContactType(contactDetails.getContactType());
                     contact.setFileUpload(contactDetails.getFileUpload());
                     contact.setStatus(contactDetails.getStatus());
                     contact.setUpdatedBy(contactDetails.getUpdatedBy());

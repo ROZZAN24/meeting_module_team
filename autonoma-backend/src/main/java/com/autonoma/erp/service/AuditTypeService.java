@@ -51,6 +51,27 @@ public class AuditTypeService {
             auditType.setAuditType(auditType.getAuditType().toUpperCase().trim());
         }
 
+        // Duplicate value checks
+        if (auditType.getId() == null) {
+            if (auditType.getAuditType() != null && auditTypeRepository.existsByAuditTypeIgnoreCase(auditType.getAuditType().trim())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value on field auditType");
+            }
+            if (auditType.getDescription() != null && auditTypeRepository.existsByDescriptionIgnoreCase(auditType.getDescription().trim())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value on field description");
+            }
+        } else {
+            if (auditType.getAuditType() != null && auditTypeRepository.existsByAuditTypeIgnoreCaseAndIdNot(auditType.getAuditType().trim(), auditType.getId())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value on field auditType");
+            }
+            if (auditType.getDescription() != null && auditTypeRepository.existsByDescriptionIgnoreCaseAndIdNot(auditType.getDescription().trim(), auditType.getId())) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.BAD_REQUEST, "Duplicate value on field description");
+            }
+        }
+
         // SOP: Validation - Criteria Minimum Count must be greater than zero
         if (auditType.getCriteriaMinCount() == null || auditType.getCriteriaMinCount() <= 0) {
             throw new IllegalArgumentException("Please Enter Audit Criteria Minimum Count...");

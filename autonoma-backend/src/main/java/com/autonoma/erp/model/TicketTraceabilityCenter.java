@@ -121,7 +121,7 @@ public class TicketTraceabilityCenter {
     @Column(name = "attachment_path", length = 500)
     private String attachmentPath;
 
-    @Column(name = "created_by", nullable = false, length = 100)
+    @Column(name = "created_by", nullable = false, length = 100, updatable = false)
     private String createdBy;
 
     @Column(name = "verified_by", length = 100)
