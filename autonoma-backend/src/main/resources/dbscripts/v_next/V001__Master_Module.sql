@@ -12,7 +12,14 @@
 -- ==========================================
 IF OBJECT_ID('MASTER_COUNTRY', 'U') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'MASTER_COUNTRY', 'MST_COUNTRY';
+    IF OBJECT_ID('MST_COUNTRY', 'U') IS NULL
+    BEGIN
+        EXEC sp_rename 'MASTER_COUNTRY', 'MST_COUNTRY';
+    END
+    ELSE
+    BEGIN
+        DROP TABLE MASTER_COUNTRY;
+    END
 END
 GO
 
@@ -84,7 +91,14 @@ GO
 -- ==========================================
 IF OBJECT_ID('MASTER_STATE', 'U') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'MASTER_STATE', 'MST_STATE';
+    IF OBJECT_ID('MST_STATE', 'U') IS NULL
+    BEGIN
+        EXEC sp_rename 'MASTER_STATE', 'MST_STATE';
+    END
+    ELSE
+    BEGIN
+        DROP TABLE MASTER_STATE;
+    END
 END
 GO
 
@@ -180,7 +194,14 @@ GO
 -- ==========================================
 IF OBJECT_ID('product_master', 'U') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'product_master', 'MST_PRODUCT';
+    IF OBJECT_ID('MST_PRODUCT', 'U') IS NULL
+    BEGIN
+        EXEC sp_rename 'product_master', 'MST_PRODUCT';
+    END
+    ELSE
+    BEGIN
+        DROP TABLE product_master;
+    END
 END
 GO
 
@@ -234,7 +255,14 @@ GO
 -- ==========================================
 IF OBJECT_ID('FREIGHT_MASTER', 'U') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'FREIGHT_MASTER', 'MST_FREIGHT';
+    IF OBJECT_ID('MST_FREIGHT', 'U') IS NULL
+    BEGIN
+        EXEC sp_rename 'FREIGHT_MASTER', 'MST_FREIGHT';
+    END
+    ELSE
+    BEGIN
+        DROP TABLE FREIGHT_MASTER;
+    END
 END
 GO
 
@@ -322,7 +350,14 @@ GO
 -- ==========================================
 IF OBJECT_ID('MODE_OF_DESPATCH', 'U') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
+    IF OBJECT_ID('MST_DESPATCH_MODE', 'U') IS NULL
+    BEGIN
+        EXEC sp_rename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
+    END
+    ELSE
+    BEGIN
+        DROP TABLE MODE_OF_DESPATCH;
+    END
 END
 GO
 
