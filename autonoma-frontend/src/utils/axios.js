@@ -107,8 +107,20 @@ axiosServices.interceptors.response.use(
     // Log the error details to the console always
     console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status || 'Network Error'} | Error: ${errMsg}`, error);
 
-    // Only alert for non-auth errors
-    if (error.response?.status !== 401) {
+    const isMockRoute = error.config?.url && (
+      error.config.url.includes('/api/posts/') || 
+      error.config.url.includes('/api/friends/') || 
+      error.config.url.includes('/api/followers/') ||
+      error.config.url.includes('/api/friend-request/') ||
+      error.config.url.includes('/api/gallery/') ||
+      error.config.url.includes('/api/details-card/') ||
+      error.config.url.includes('/api/simple-card/') ||
+      error.config.url.includes('/api/profile-card/') ||
+      error.config.url.includes('/api/user-list/')
+    );
+
+    // Only alert for non-auth errors and non-mock routes
+    if (error.response?.status !== 401 && !isMockRoute) {
       // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
       import('../store').then(({ dispatch }) => {
         import('../store/slices/snackbar').then(({ openSnackbar }) => {
