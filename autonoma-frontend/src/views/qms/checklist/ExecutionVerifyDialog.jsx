@@ -176,6 +176,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
       title={isExecution ? `Update Progress - ${master.seqNo}` : (isAssignment ? `Verify Execution - ${master.seqNo}` : `Verify Master Record - ${master.seqNo}`)}
       maxWidth="lg"
       isViewOnly={!isExecution}
+      showCloseInFooter={false}
       secondaryActions={
         (onVerify || onReject) && (
           <Stack direction="row" spacing={1.5}>
