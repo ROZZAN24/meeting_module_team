@@ -35,12 +35,15 @@ public abstract class BaseAuditEntity {
     public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
 
     // Backward compatibility aliases
+    @com.fasterxml.jackson.annotation.JsonProperty("createdBy")
     public String getCreatedBy() { return getCreatedUser(); }
     public void setCreatedBy(String createdBy) { setCreatedUser(createdBy); }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedBy")
     public String getUpdatedBy() { return getUpdatedUser(); }
     public void setUpdatedBy(String updatedBy) { setUpdatedUser(updatedBy); }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
     public Date getCreatedAt() { return getCreatedDate(); }
     public void setCreatedAt(Date createdAt) { setCreatedDate(createdAt); }
     @com.fasterxml.jackson.annotation.JsonIgnore
@@ -52,6 +55,7 @@ public abstract class BaseAuditEntity {
         }
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
     public Date getUpdatedAt() { return getUpdatedDate(); }
     public void setUpdatedAt(Date updatedAt) { setUpdatedDate(updatedAt); }
     @com.fasterxml.jackson.annotation.JsonIgnore

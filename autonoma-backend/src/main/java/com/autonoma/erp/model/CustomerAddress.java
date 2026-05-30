@@ -91,4 +91,41 @@ public class CustomerAddress {
         updatedDate = new Date();
         if (updatedBy == null) updatedBy = "Admin";
     }
+
+    // Backward-compatible aliases
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public Date getCreatedAt() {
+        return this.createdDate;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdDate = createdAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
+    public Date getUpdatedAt() {
+        return this.updatedDate;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedDate = updatedAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() {
+        return this.createdBy;
+    }
+
+    public void setCreatedUser(String createdUser) {
+        this.createdBy = createdUser;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() {
+        return this.updatedBy;
+    }
+
+    public void setUpdatedUser(String updatedUser) {
+        this.updatedBy = updatedUser;
+    }
 }

@@ -62,8 +62,18 @@ public class EmployeeTypeMaster {
     }
 
     // Backward-compatible aliases for legacy service code
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
     public Date getCreatedAt() { return createdDate; }
     public void setCreatedAt(Date d) { this.createdDate = d; }
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
     public Date getUpdatedAt() { return updatedDate; }
     public void setUpdatedAt(Date d) { this.updatedDate = d; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() { return this.createdBy; }
+    public void setCreatedUser(String createdUser) { this.createdBy = createdUser; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() { return this.updatedBy; }
+    public void setUpdatedUser(String updatedUser) { this.updatedBy = updatedUser; }
 }
