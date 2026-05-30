@@ -165,6 +165,45 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.println("[QMS DB Fix] FK_Dept_Checklist_Master skipped/already exists: " + ex.getMessage());
             }
 
+            // ── Step 6: Self-healing H2 data sync from QMS_CHECKLIST_MASTER to QMS_CHECKLIST ──
+            try {
+                Integer countChecklist = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM QMS_CHECKLIST", Integer.class);
+                if (countChecklist == null || countChecklist == 0) {
+                    System.out.println("[QMS DB Fix] QMS_CHECKLIST is empty. Syncing from QMS_CHECKLIST_MASTER...");
+                    Integer countMaster = jdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = 'QMS_CHECKLIST_MASTER'", Integer.class);
+                    if (countMaster != null && countMaster > 0) {
+                        Integer masterRows = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM QMS_CHECKLIST_MASTER", Integer.class);
+                        if (masterRows != null && masterRows > 0) {
+                            jdbcTemplate.execute(
+                                "INSERT INTO QMS_CHECKLIST (" +
+                                "  id, seq_no, checking_point, description, category, frequency, " +
+                                "  week_days, repeat_every_value, repeat_every_unit, effective_from, " +
+                                "  expiry_date, reminder_days, reminder_date, stock_link, photo_required, " +
+                                "  verification_required, last_completed_date, next_due_date, dual_check, " +
+                                "  carry_forward, carry_forward_status, amendment_reason, level_ids, " +
+                                "  uploaded_files, scanned_files, status, task_status, verify_status, " +
+                                "  verified_by, verified_date, rej_reason, assign_to, assign_date, " +
+                                "  item_code, qty, is_active, created_user, created_date, updated_user, updated_date" +
+                                ") SELECT " +
+                                "  id, seq_no, checking_point, description, category, frequency, " +
+                                "  week_days, repeat_every_value, repeat_every_unit, effective_from, " +
+                                "  expiry_date, reminder_days, reminder_date, stock_link, photo_required, " +
+                                "  verification_required, last_completed_date, next_due_date, dual_check, " +
+                                "  carry_forward, carry_forward_status, amendment_reason, level_ids, " +
+                                "  uploaded_files, scanned_files, status, task_status, verify_status, " +
+                                "  verified_by, verified_date, rej_reason, assign_to, assign_date, " +
+                                "  item_code, qty, TRUE, created_user, created_date, updated_user, updated_date " +
+                                "FROM QMS_CHECKLIST_MASTER"
+                            );
+                            System.out.println("[QMS DB Fix] Successfully copied " + masterRows + " records from QMS_CHECKLIST_MASTER to QMS_CHECKLIST.");
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                System.out.println("[QMS DB Fix] Self-healing copy failed: " + ex.getMessage());
+            }
+
             System.out.println("[QMS DB Fix] ✅ Final 5-table schema enforced successfully!");
         } catch (Exception e) {
             System.out.println("[QMS DB Fix] Self-healing cleanup failed: " + e.getMessage());
