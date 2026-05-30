@@ -11,6 +11,7 @@ import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 // ==============================|| INDUCTION CRITERIA MASTER ||============================== //
 
@@ -164,6 +165,10 @@ export default function InductionCriteria() {
   }, [dispatch]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      return;
+    }
     setLoading(true);
     try {
       const response = await axios.get('/api/hr/induction-master');
@@ -174,9 +179,13 @@ export default function InductionCriteria() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Fetch dynamic round options from master table
   useEffect(() => {
@@ -376,6 +385,10 @@ export default function InductionCriteria() {
       updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
     }));
   }, [rows]);
+
+  if (perms.loading) {
+    return null;
+  }
 
   return (
     <MainCard
