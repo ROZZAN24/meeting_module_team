@@ -146,7 +146,7 @@ export const getDialogStyles = (theme, isDark) => ({
     bgcolor: isDark ? '#161b22' : theme.palette.background.paper,
     width: '100%',
     overflowX: 'hidden',
-    overflowY: 'hidden',
+    overflowY: 'auto',
     flexGrow: 1
   },
   footer: {

@@ -99,7 +99,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "V13.0__Fix_User_Mapping_FK_References.sql",
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
-        "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql"
+        "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
+        // NPD Process page registration skip on H2
+        "20260526_V38.0__Create_NPD_Process.sql",
+        // Support ticket page rename skip on H2
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
