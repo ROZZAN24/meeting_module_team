@@ -137,7 +137,9 @@ export default function BulkUploadDialog({ open, handleClose }) {
       if (hasOemDescDup) duplicateFields.push('OEM Description');
 
       if (duplicateFields.length > 0) {
-        setErrorMsg(`Duplicate data found in ${duplicateFields.join(', ')}`);
+        const msg = `Duplicate data found in ${duplicateFields.join(', ')}`;
+        alert(msg);
+        setErrorMsg(msg);
         setParsedData([]);
       } else if (rowsToSave.length === 0) {
         setErrorMsg('No valid rows found in the sheet. Please make sure Part No and OEM Part No are not empty.');
