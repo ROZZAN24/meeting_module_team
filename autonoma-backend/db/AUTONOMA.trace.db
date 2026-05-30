@@ -2671,3 +2671,6 @@ org.h2.jdbc.JdbcSQLSyntaxErrorException: Column "PAGE_URL" not found; SQL statem
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at org.springframework.boot.devtools.restart.RestartLauncher.run(RestartLauncher.java:50)
+2026-05-30 13:31:26.944091+05:30 jdbc[5]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Syntax error in SQL statement " EXEC[*](@drop_country_pk)"; expected "identifier"; SQL statement:
+ EXEC(@drop_country_pk) [42001-224]

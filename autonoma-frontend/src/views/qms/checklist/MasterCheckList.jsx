@@ -240,39 +240,35 @@ const exportColumns = [
   { header: 'UPDATED DATE',       key: (r) => formatDateTime(r.updatedAt) },
 ];
 
-// ── Filter config for the global search bar ─────────────────────────────────────
-const filterConfig = [
-  { id: 'category',    label: 'Category',      type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'RENEWAL', label: 'RENEWAL' }, { value: 'CHECK LIST', label: 'CHECK LIST' }
-  ]},
-  { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Pending for Verify', label: 'Pending for Verify' },
-    { value: 'Verified', label: 'Verified' }, { value: 'Rejected', label: 'Rejected' }
-  ]},
-  { id: 'recordStatus', label: 'Record Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'In Active', label: 'In Active' }
-  ]},
-  { id: 'taskStatus',  label: 'Task Status',   type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }, { value: 'In Progress', label: 'In Progress' },
-    { value: 'Completed', label: 'Completed' }, { value: 'Missed', label: 'Missed' }
-  ]},
-  { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'DAILY', label: 'DAILY' }, { value: 'WEEKLY', label: 'WEEKLY' },
-    { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' }, { value: 'MONTHLY', label: 'MONTHLY' },
-    { value: 'QUARTERLY', label: 'QUARTERLY' }, { value: 'HALF YEARLY', label: 'HALF YEARLY' }, { value: 'YEARLY', label: 'YEARLY' }
-  ]},
-  { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }
-  ]},
-  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }
-  ]},
-];
+// ── Static filter options (department options are loaded dynamically) ────────────
+const STATIC_FILTER_OPTIONS = {
+  category:    [{ value: 'All', label: 'All' }, { value: 'RENEWAL', label: 'RENEWAL' }, { value: 'CHECK LIST', label: 'CHECK LIST' }],
+  verifyStatus:[{ value: 'All', label: 'All' }, { value: 'Pending for Verify', label: 'Pending for Verify' }, { value: 'Verified', label: 'Verified' }, { value: 'Rejected', label: 'Rejected' }],
+  recordStatus:[{ value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'In Active', label: 'In Active' }],
+  taskStatus:  [{ value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }, { value: 'In Progress', label: 'In Progress' }, { value: 'Completed', label: 'Completed' }, { value: 'Missed', label: 'Missed' }],
+  frequency:   [{ value: 'All', label: 'All' }, { value: 'DAILY', label: 'DAILY' }, { value: 'WEEKLY', label: 'WEEKLY' }, { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' }, { value: 'MONTHLY', label: 'MONTHLY' }, { value: 'QUARTERLY', label: 'QUARTERLY' }, { value: 'HALF YEARLY', label: 'HALF YEARLY' }, { value: 'YEARLY', label: 'YEARLY' }],
+  stockLink:   [{ value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }],
+  photoRequired:[{ value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }],
+};
 
 const DEFAULT_FILTERS = {
-  category: 'All', verifyStatus: 'All', recordStatus: 'All',
+  department: 'All', category: 'All', verifyStatus: 'All', recordStatus: 'All',
   taskStatus: 'All', frequency: 'All', stockLink: 'All', photoRequired: 'All',
 };
+
+// Build the filter config from department options (called inside component)
+const buildFilterConfig = (departmentOptions) => [
+  { id: 'department',   label: 'Department',    type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' }, ...departmentOptions
+  ]},
+  { id: 'category',    label: 'Category',      type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.category },
+  { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.verifyStatus },
+  { id: 'recordStatus', label: 'Record Status', type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.recordStatus },
+  { id: 'taskStatus',  label: 'Task Status',   type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.taskStatus },
+  { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.frequency },
+  { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.stockLink },
+  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.photoRequired },
+];
 
 // ==============================|| MASTER CHECKLIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -293,7 +289,7 @@ export default function MasterCheckList() {
   const [loading,          setLoading]          = useState(false);
   const [selectedRow,      setSelectedRow]      = useState(null);
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
-
+  const [departmentOptions, setDepartmentOptions] = useState([]);
 
   // Column picker states & toggles
   const [anchorEl, setAnchorEl] = useState(null);
@@ -321,11 +317,23 @@ export default function MasterCheckList() {
     setVisibleColumnIds(columns.map(c => c.id));
   };
 
-  // Register global filter bar config
+  // Fetch active departments for the filter dropdown
   useEffect(() => {
-    dispatch(setFilterConfig(filterConfig));
+    axios.get('/api/master/hr/departments/active')
+      .then((res) => {
+        const opts = (Array.isArray(res.data) ? res.data : (res.data?.content || []))
+          .map((d) => ({ value: d.departmentName, label: d.departmentName }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+        setDepartmentOptions(opts);
+      })
+      .catch(() => setDepartmentOptions([]));
+  }, []);
+
+  // Register global filter bar config (rebuilds when department options change)
+  useEffect(() => {
+    dispatch(setFilterConfig(buildFilterConfig(departmentOptions)));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  }, [dispatch, departmentOptions]);
 
   // Sync global search bar filters → local filters
   useEffect(() => {
@@ -351,6 +359,7 @@ export default function MasterCheckList() {
     try {
       const params = {
         page, size,
+        department:   filters.department   !== 'All' ? filters.department   : undefined,
         category:     filters.category     !== 'All' ? filters.category     : undefined,
         verifyStatus: filters.verifyStatus  !== 'All' ? filters.verifyStatus  : undefined,
         status:       filters.recordStatus  !== 'All' ? filters.recordStatus  : undefined,
