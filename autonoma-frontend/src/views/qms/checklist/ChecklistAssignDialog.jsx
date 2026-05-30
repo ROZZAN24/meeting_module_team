@@ -368,7 +368,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                         setSelectedRowId(row.id);
                         handleEditAssignment(row);
                       }}
-                      sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                     >
                       {row.checkingPoint}
                     </Box>

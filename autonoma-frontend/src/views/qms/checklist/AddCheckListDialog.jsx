@@ -766,13 +766,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 onChange: e => {
                   const val = e.target.value;
                   if (val.includes('Select All')) {
-                    if (department.length === departmentsList.length) {
-                      setDepartment([]);
-                    } else {
-                      setDepartment(departmentsList);
-                    }
+                    setDepartment(prev => prev.length === departmentsList.length ? [] : departmentsList);
                   } else {
-                    setDepartment(typeof val === 'string' ? val.split(',') : val);
+                    setDepartment(prev => {
+                      const next = typeof val === 'string' ? val.split(',') : val;
+                      if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+                      return next;
+                    });
                   }
                 }
               }}
