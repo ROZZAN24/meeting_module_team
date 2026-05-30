@@ -13,7 +13,7 @@ public class AuditObservationDetail extends BaseAuditEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "observation_id")
+    @JoinColumn(name = "OBSERVATION_ID")
     @com.fasterxml.jackson.annotation.JsonIgnore
     @lombok.ToString.Exclude
     @lombok.EqualsAndHashCode.Exclude
@@ -64,58 +64,69 @@ public class AuditObservationDetail extends BaseAuditEntity {
         return auditObservation != null ? auditObservation.getDepartmentName() : null;
     }
 
-    @Column(name = "ncr_no", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "NCR_NO", columnDefinition = "NVARCHAR(50)")
     private String ncrNo;
 
-    @Column(name = "seq_no", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "SEQ_NO", columnDefinition = "NVARCHAR(50)")
     private String seqNo;
 
-    @Column(name = "clause", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "CLAUSE", columnDefinition = "NVARCHAR(100)")
     private String clause;
 
-    @Column(name = "criteria_details", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "CRITERIA_DETAILS", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaDetails;
 
-    @Column(name = "attachment_req", columnDefinition = "NVARCHAR(10)")
+    @Column(name = "ATTACHMENT_REQ", columnDefinition = "NVARCHAR(10)")
     private String attachmentReq;
 
-    @Column(name = "attachment_path", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ATTACHMENT_PATH", length = 1000)
     private String attachmentPath;
 
-    @Column(name = "observation_status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "OBSERVATION_STATUS", columnDefinition = "NVARCHAR(50)")
     private String observationStatus;
 
-    @Column(name = "approval_status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "APPROVAL_STATUS", columnDefinition = "NVARCHAR(50)")
     private String approvalStatus;
 
-    @Column(name = "comments", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "root_cause", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ROOT_CAUSE", columnDefinition = "NVARCHAR(MAX)")
     private String rootCause;
 
-    @Column(name = "corrective_action", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "CORRECTIVE_ACTION", columnDefinition = "NVARCHAR(MAX)")
     private String correctiveAction;
 
-    @Column(name = "preventive_action", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "PREVENTIVE_ACTION", columnDefinition = "NVARCHAR(MAX)")
     private String preventiveAction;
 
-    @Column(name = "target_date")
+    @Column(name = "TARGET_DATE")
     @Temporal(TemporalType.DATE)
     private java.util.Date targetDate;
 
-    @Column(name = "closed_date")
+    @Column(name = "CLOSED_DATE")
     @Temporal(TemporalType.DATE)
     private java.util.Date closedDate;
 
-    @Column(name = "closed_by", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "CLOSED_BY", columnDefinition = "NVARCHAR(255)")
     private String closedBy;
 
-    @Column(name = "ncr_status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "NCR_STATUS", columnDefinition = "NVARCHAR(50)")
     private String ncrStatus;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     // Helper method for bi-directional sync
     public void setAuditObservation(AuditObservation observation) {
         this.auditObservation = observation;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

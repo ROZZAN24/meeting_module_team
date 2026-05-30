@@ -18,151 +18,154 @@ public class EmployeeJobProfile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "wages_type", length = 50)
+    @Column(name = "WAGES_TYPE", length = 50)
     private String wagesType;
 
-    @Column(name = "payment_mode", length = 50)
+    @Column(name = "PAYMENT_MODE", length = 50)
     private String paymentMode;
 
-    @Column(name = "salary_account_number", length = 50)
+    @Column(name = "SALARY_ACCOUNT_NUMBER", length = 50)
     private String salaryAccountNumber;
 
-    @Column(name = "account_name", length = 100)
+    @Column(name = "ACCOUNT_NAME", length = 100)
     private String accountName;
 
-    @Column(name = "bank_account_type", length = 50)
+    @Column(name = "BANK_ACCOUNT_TYPE", length = 50)
     private String bankAccountType;
 
-    @Column(name = "personal_account_number", length = 50)
+    @Column(name = "PERSONAL_ACCOUNT_NUMBER", length = 50)
     private String personalAccountNumber;
 
-    @Column(name = "bank_name", length = 100)
+    @Column(name = "BANK_NAME", length = 100)
     private String bankName;
 
-    @Column(name = "ifsc_code", length = 20)
+    @Column(name = "IFSC_CODE", length = 20)
     private String ifscCode;
 
-    @Column(name = "branch_name", length = 100)
+    @Column(name = "BRANCH_NAME", length = 100)
     private String branchName;
 
     // === Pay Components ===
-    @Column(name = "gross_salary", precision = 18, scale = 2)
+    @Column(name = "GROSS_SALARY", precision = 18, scale = 2)
     private BigDecimal grossSalary;
 
-    @Column(name = "net_salary", precision = 18, scale = 2)
+    @Column(name = "NET_SALARY", precision = 18, scale = 2)
     private BigDecimal netSalary;
 
-    @Column(name = "basic_salary", precision = 18, scale = 2)
+    @Column(name = "BASIC_SALARY", precision = 18, scale = 2)
     private BigDecimal basicSalary;
 
-    @Column(name = "da", precision = 18, scale = 2)
+    @Column(name = "DA", precision = 18, scale = 2)
     private BigDecimal da;
 
-    @Column(name = "hra", precision = 18, scale = 2)
+    @Column(name = "HRA", precision = 18, scale = 2)
     private BigDecimal hra;
 
-    @Column(name = "special_allowance", precision = 18, scale = 2)
+    @Column(name = "SPECIAL_ALLOWANCE", precision = 18, scale = 2)
     private BigDecimal specialAllowance;
 
-    @Column(name = "performance_incentive", precision = 18, scale = 2)
+    @Column(name = "PERFORMANCE_INCENTIVE", precision = 18, scale = 2)
     private BigDecimal performanceIncentive;
 
-    @Column(name = "canteen_deduction", precision = 18, scale = 2)
+    @Column(name = "CANTEEN_DEDUCTION", precision = 18, scale = 2)
     private BigDecimal canteenDeduction;
 
-    @Column(name = "pf_type", length = 50)
+    @Column(name = "PF_TYPE", length = 50)
     private String pfType;
 
-    @Column(name = "pf_employee", precision = 18, scale = 2)
+    @Column(name = "PF_EMPLOYEE", precision = 18, scale = 2)
     private BigDecimal pfEmployee;
 
-    @Column(name = "esi_employee", precision = 18, scale = 2)
+    @Column(name = "ESI_EMPLOYEE", precision = 18, scale = 2)
     private BigDecimal esiEmployee;
 
-    @Column(name = "professional_tax_amount", precision = 18, scale = 2)
+    @Column(name = "PROFESSIONAL_TAX_AMOUNT", precision = 18, scale = 2)
     private BigDecimal professionalTaxAmount;
 
-    @Column(name = "pf_document", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "PF_DOCUMENT", length = 1000)
     private String pfDocument;
 
     // === CTC Details ===
-    @Column(name = "monthly_ctc", precision = 18, scale = 2)
+    @Column(name = "MONTHLY_CTC", precision = 18, scale = 2)
     private BigDecimal monthlyCtc;
 
-    @Column(name = "basic_salary_ctc", precision = 18, scale = 2)
+    @Column(name = "BASIC_SALARY_CTC", precision = 18, scale = 2)
     private BigDecimal basicSalaryCtc;
 
-    @Column(name = "da_ctc", precision = 18, scale = 2)
+    @Column(name = "DA_CTC", precision = 18, scale = 2)
     private BigDecimal daCtc;
 
-    @Column(name = "special_allowance_ctc", precision = 18, scale = 2)
+    @Column(name = "SPECIAL_ALLOWANCE_CTC", precision = 18, scale = 2)
     private BigDecimal specialAllowanceCtc;
 
-    @Column(name = "canteen_allowance", precision = 18, scale = 2)
+    @Column(name = "CANTEEN_ALLOWANCE", precision = 18, scale = 2)
     private BigDecimal canteenAllowance;
 
-    @Column(name = "performance_incentive_ctc", precision = 18, scale = 2)
+    @Column(name = "PERFORMANCE_INCENTIVE_CTC", precision = 18, scale = 2)
     private BigDecimal performanceIncentiveCtc;
 
-    @Column(name = "esi_ctc", precision = 18, scale = 2)
+    @Column(name = "ESI_CTC", precision = 18, scale = 2)
     private BigDecimal esiCtc;
 
-    @Column(name = "pf_ctc", precision = 18, scale = 2)
+    @Column(name = "PF_CTC", precision = 18, scale = 2)
     private BigDecimal pfCtc;
 
-    @Column(name = "gross_ctc", precision = 18, scale = 2)
+    @Column(name = "GROSS_CTC", precision = 18, scale = 2)
     private BigDecimal grossCtc;
 
-    @Column(name = "employer_pf", precision = 18, scale = 2)
+    @Column(name = "EMPLOYER_PF", precision = 18, scale = 2)
     private BigDecimal employerPf;
 
-    @Column(name = "employer_esi", precision = 18, scale = 2)
+    @Column(name = "EMPLOYER_ESI", precision = 18, scale = 2)
     private BigDecimal employerEsi;
 
-    @Column(name = "uniform_allowance", precision = 18, scale = 2)
+    @Column(name = "UNIFORM_ALLOWANCE", precision = 18, scale = 2)
     private BigDecimal uniformAllowance;
 
-    @Column(name = "shoe_allowance", precision = 18, scale = 2)
+    @Column(name = "SHOE_ALLOWANCE", precision = 18, scale = 2)
     private BigDecimal shoeAllowance;
 
-    @Column(name = "mobile_allowance_cug", precision = 18, scale = 2)
+    @Column(name = "MOBILE_ALLOWANCE_CUG", precision = 18, scale = 2)
     private BigDecimal mobileAllowanceCug;
 
-    @Column(name = "annual_ctc", precision = 18, scale = 2)
+    @Column(name = "ANNUAL_CTC", precision = 18, scale = 2)
     private BigDecimal annualCtc;
 
-    @Column(name = "salary_ctc", precision = 18, scale = 2)
+    @Column(name = "SALARY_CTC", precision = 18, scale = 2)
     private BigDecimal salaryCtc;
 
-    @Column(name = "gratuity", precision = 18, scale = 2)
+    @Column(name = "GRATUITY", precision = 18, scale = 2)
     private BigDecimal gratuity;
 
-    @Column(name = "bonus", precision = 18, scale = 2)
+    @Column(name = "BONUS", precision = 18, scale = 2)
     private BigDecimal bonus;
 
-    @Column(name = "special_incentive", precision = 18, scale = 2)
+    @Column(name = "SPECIAL_INCENTIVE", precision = 18, scale = 2)
     private BigDecimal specialIncentive;
 
-    @Column(name = "performance_linked_incentive", precision = 18, scale = 2)
+    @Column(name = "PERFORMANCE_LINKED_INCENTIVE", precision = 18, scale = 2)
     private BigDecimal performanceLinkedIncentive;
 
-    @Column(name = "health_insurance", precision = 18, scale = 2)
+    @Column(name = "HEALTH_INSURANCE", precision = 18, scale = 2)
     private BigDecimal healthInsurance;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

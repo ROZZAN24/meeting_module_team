@@ -129,20 +129,37 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
-        Resource[] resources = resolver.getResources("classpath:dbscripts/*.sql");
-
-        List<Resource> sortedResources = Arrays.stream(resources)
+        // Phase 1: Retrieve and sort legacy scripts from dbscripts/*.sql
+        Resource[] legacyResources = resolver.getResources("classpath:dbscripts/*.sql");
+        List<Resource> sortedLegacy = Arrays.stream(legacyResources)
                 .sorted((r1, r2) -> {
                     String f1 = r1.getFilename();
                     String f2 = r2.getFilename();
-
-                    if (f1 == null || f2 == null) {
-                        return 0;
-                    }
-
+                    if (f1 == null || f2 == null) return 0;
                     return f1.compareToIgnoreCase(f2);
                 })
                 .collect(Collectors.toList());
+
+        // Phase 2: Retrieve and sort new standardization scripts from dbscripts/v_next/*.sql
+        Resource[] newResources = new Resource[0];
+        try {
+            newResources = resolver.getResources("classpath:dbscripts/v_next/*.sql");
+        } catch (Exception e) {
+            // v_next folder might not exist in target classpath if completely empty
+        }
+        List<Resource> sortedNew = Arrays.stream(newResources)
+                .sorted((r1, r2) -> {
+                    String f1 = r1.getFilename();
+                    String f2 = r2.getFilename();
+                    if (f1 == null || f2 == null) return 0;
+                    return f1.compareToIgnoreCase(f2);
+                })
+                .collect(Collectors.toList());
+
+        // Combine both lists (Legacy runs first, followed by v_next)
+        List<Resource> sortedResources = new java.util.ArrayList<>();
+        sortedResources.addAll(sortedLegacy);
+        sortedResources.addAll(sortedNew);
 
         for (Resource resource : sortedResources) {
 

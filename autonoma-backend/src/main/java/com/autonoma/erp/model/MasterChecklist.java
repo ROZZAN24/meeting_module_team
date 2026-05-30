@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
-@Table(name = "QMS_CHECKLIST_MASTER")
+@Table(name = "QMS_CHECKLIST")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class MasterChecklist extends BaseAuditEntity {
     @Column(name = "CHECKING_POINT")
     private String checkingPoint;
 
-    @Column(name = "DESCRIPTION", columnDefinition = "TEXT")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Column(name = "CATEGORY")
@@ -80,10 +80,6 @@ public class MasterChecklist extends BaseAuditEntity {
     @Temporal(TemporalType.DATE)
     private Date nextDueDate;
 
-
-
-
-
     @Column(name = "DUAL_CHECK")
     private String dualCheck;
 
@@ -93,16 +89,16 @@ public class MasterChecklist extends BaseAuditEntity {
     @Column(name = "CARRY_FORWARD_STATUS")
     private String carryForwardStatus;
 
-    @Column(name = "AMENDMENT_REASON", columnDefinition = "TEXT")
+    @Column(name = "AMENDMENT_REASON", columnDefinition = "NVARCHAR(MAX)")
     private String amendmentReason;
 
     @Column(name = "LEVEL_IDS")
     private String levelIds;
 
-    @Column(name = "UPLOADED_FILES", columnDefinition = "TEXT")
+    @Column(name = "UPLOADED_FILES", length = 1000)
     private String uploadedFiles;
 
-    @Column(name = "SCANNED_FILES", columnDefinition = "TEXT")
+    @Column(name = "SCANNED_FILES", length = 1000)
     private String scannedFiles;
 
     @Column(name = "STATUS")
@@ -141,6 +137,9 @@ public class MasterChecklist extends BaseAuditEntity {
 
     @Column(name = "QTY")
     private String qty;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "checklist", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties({ "checklist", "hibernateLazyInitializer" })
@@ -277,18 +276,6 @@ public class MasterChecklist extends BaseAuditEntity {
         this.nextDueDate = nextDueDate;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
     public String getDualCheck() {
         return dualCheck;
     }
@@ -423,5 +410,13 @@ public class MasterChecklist extends BaseAuditEntity {
 
     public void setCarryForwardStatus(String carryForwardStatus) {
         this.carryForwardStatus = carryForwardStatus;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

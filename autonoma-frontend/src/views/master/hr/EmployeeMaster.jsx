@@ -155,7 +155,7 @@ const INITIAL = {
 const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Dr.'];
 const REF_MODES = ['-SELECT-', 'EMPLOYEE', 'LINKED IN', 'NEWS PAPER', 'POSTER', 'WEBSITE', 'WHATS APP', 'OTHERS'];
 const CATEGORIES = [{id: 1, categoryName: 'EMPLOYEE'}, {id: 2, categoryName: 'CONTRACTOR'}, {id: 3, categoryName: 'CONSULTANT'}];
-const TYPES = [{id: 1, typeName: 'PERMANENT'}, {id: 2, typeName: 'TEMPORARY'}, {id: 3, typeName: 'TRAINEE'}, {id: 4, typeName: 'PROBATION'}];
+
 const YES_NO = ['YES', 'NO'];
 
 const RULES = [
@@ -203,6 +203,7 @@ export default function EmployeeMaster() {
   const { errors, validate, clearErrors } = useBOSValidation();
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
+  const [employeeTypes, setEmployeeTypes] = useState([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { 
     departments = [], 
@@ -235,6 +236,12 @@ export default function EmployeeMaster() {
   }, [employeeId]);
 
   useEffect(() => { fetchEmployee(); }, [fetchEmployee]);
+
+  useEffect(() => {
+    axios.get(API_PATHS.HRM.TYPES)
+      .then(({ data }) => setEmployeeTypes(data || []))
+      .catch(() => setEmployeeTypes([]));
+  }, []);
 
   const h = (e) => {
     const { name, value } = e.target;
@@ -487,7 +494,7 @@ export default function EmployeeMaster() {
             </R>
             <R>
               <BOSTextField select name="employeeTypeId" label="Employee Type *" value={form.employeeTypeId} onChange={h} error={!!errors.employeeTypeId} helperText={errors.employeeTypeId}>
-                {TYPES.map((t) => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}
+                {employeeTypes.map((t) => <MenuItem key={t.id} value={t.id}>{t.typeName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>

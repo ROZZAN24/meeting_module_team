@@ -15,24 +15,27 @@ public class AuditScheduleCriteria extends BaseAuditEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "audit_schedule_id")
+    @JoinColumn(name = "AUDIT_SCHEDULE_ID")
     @JsonIgnore
     private AuditSchedule auditSchedule;
 
-    @Column(name = "seq_no")
+    @Column(name = "SEQ_NO")
     private String seqNo;
 
-    @Column(name = "clause", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "CLAUSE", columnDefinition = "NVARCHAR(255)")
     private String clause;
 
-    @Column(name = "criteria_details", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "CRITERIA_DETAILS", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaDetails;
 
-    @Column(name = "attachment_req", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "ATTACHMENT_REQ", columnDefinition = "NVARCHAR(50)")
     private String attachmentReq;
 
-    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -48,4 +51,6 @@ public class AuditScheduleCriteria extends BaseAuditEntity {
     public void setAttachmentReq(String attachmentReq) { this.attachmentReq = attachmentReq; }
     public String getRemarks() { return remarks; }
     public void setRemarks(String remarks) { this.remarks = remarks; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

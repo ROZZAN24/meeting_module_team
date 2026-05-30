@@ -3,10 +3,10 @@ package com.autonoma.erp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.Nationalized;
-import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
-@Table(name = "HR_DESIGNATION_MASTER")
+@Table(name = "HR_DESIGNATION")
 @Data
 public class Designation {
     @Id
@@ -14,58 +14,61 @@ public class Designation {
     private Long id;
 
     @Nationalized
-    @Column(name = "designation_code", length = 50)
+    @Column(name = "DESIGNATION_CODE", length = 50)
     private String designationCode;
 
     @Nationalized
-    @Column(name = "designation_name")
+    @Column(name = "DESIGNATION_NAME", length = 100)
     private String designationName;
 
     @Nationalized
-    @Column(name = "sub_category_level")
+    @Column(name = "SUB_CATEGORY_LEVEL", length = 50)
     private String subCategoryLevel;
 
     @Nationalized
-    @Column(name = "experience")
+    @Column(name = "EXPERIENCE", length = 50)
     private String experience;
 
     @Nationalized
-    @Column(name = "appear_in_competency", length = 10)
+    @Column(name = "APPEAR_IN_COMPETENCY", length = 10)
     private String appearInCompetency;
 
-    @Column(name = "display_sl_no")
+    @Column(name = "DISPLAY_SL_NO")
     private Integer displaySlNo;
 
     @Nationalized
-    @Column(name = "qualification")
+    @Column(name = "QUALIFICATION", length = 100)
     private String qualification;
 
     @Nationalized
-    @Column(name = "job_description", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "JOB_DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String jobDescription;
 
-    @Column(name = "org_seq_no")
+    @Column(name = "ORG_SEQUENCE_NO")
     private Integer orgSeqNo;
 
-    @Column(name = "budgeted_positions")
+    @Column(name = "BUDGETED_POSITIONS")
     private Integer budgetedPositions;
 
     @Nationalized
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_date")
-    private java.util.Date createdDate;
+    @Column(name = "CREATED_DATE")
+    private Date createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_date")
-    private java.util.Date updatedDate;
+    @Column(name = "UPDATED_DATE")
+    private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {
-        createdDate = new java.util.Date();
+        createdDate = new Date();
         if (createdBy == null) {
             createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         }
@@ -73,7 +76,7 @@ public class Designation {
 
     @PreUpdate
     protected void onUpdate() {
-        updatedDate = new java.util.Date();
+        updatedDate = new Date();
         updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
     }
 
@@ -102,10 +105,10 @@ public class Designation {
     public void setBudgetedPositions(Integer budgetedPositions) { this.budgetedPositions = budgetedPositions; }
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
-    public java.util.Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(java.util.Date createdDate) { this.createdDate = createdDate; }
+    public Date getCreatedDate() { return createdDate; }
+    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
     public String getUpdatedBy() { return updatedBy; }
     public void setUpdatedBy(String updatedBy) { this.updatedBy = updatedBy; }
-    public java.util.Date getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(java.util.Date updatedDate) { this.updatedDate = updatedDate; }
+    public Date getUpdatedDate() { return updatedDate; }
+    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
 }

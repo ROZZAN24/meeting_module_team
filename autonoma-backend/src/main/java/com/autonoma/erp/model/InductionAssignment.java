@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "IND_INDUCTION_ASSIGNMENT")
+@Table(name = "HR_INDUCTION_ASSIGNMENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,63 +16,70 @@ public class InductionAssignment extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "emp_code", nullable = false)
+    @Column(name = "EMP_CODE", nullable = false)
     private String empCode;
 
-    @Column(name = "emp_name")
+    @Column(name = "EMP_NAME")
     private String empName;
 
-    @Column(name = "old_emp_code")
+    @Column(name = "OLD_EMP_CODE")
     private String oldEmpCode;
 
-    @Column(name = "department")
+    @Column(name = "DEPARTMENT")
     private String department;
 
-    @Column(name = "designation")
+    @Column(name = "DESIGNATION")
     private String designation;
 
-    @Column(name = "induction_round", nullable = false)
+    @Column(name = "INDUCTION_ROUND", nullable = false)
     private String inductionRound; // HR, QMS, DEPARTMENT, MANAGEMENT
 
-    @Column(name = "screening_level", nullable = false)
+    @Column(name = "SCREENING_LEVEL", nullable = false)
     private String screeningLevel; // Level 1, 2, 3, 4
 
-    @Column(name = "induction_date", nullable = false)
+    @Column(name = "INDUCTION_DATE", nullable = false)
     @Temporal(TemporalType.DATE)
     @com.fasterxml.jackson.annotation.JsonFormat(pattern = "yyyy-MM-dd")
     private Date inductionDate;
 
-    @Column(name = "induction_time", nullable = false)
+    @Column(name = "INDUCTION_TIME", nullable = false)
     private String inductionTime;
 
-    @Column(name = "trainer_name", nullable = false)
+    @Column(name = "TRAINER_NAME", nullable = false)
     private String trainerName; // Induction Person
 
-    @Column(name = "current_status")
+    @Column(name = "CURRENT_STATUS")
     private String currentStatus; // PENDING, RESCHEDULE, TRAINING GIVEN, COMPLETED
 
-    @Column(name = "induction_status", length = 20)
+    @Column(name = "INDUCTION_STATUS", length = 20)
     private String inductionStatus; // ACTIVE, IN ACTIVE
 
-    @Column(name = "remarks", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
-    @Column(name = "trainer_emp_code", length = 50)
+    @Column(name = "TRAINER_EMP_CODE", length = 50)
     private String trainerEmpCode;
 
-    @Column(name = "average_rating")
+    @Column(name = "AVERAGE_RATING")
     private Double averageRating;
 
-    @Column(name = "training_started_at")
+    @Column(name = "TRAINING_STARTED_AT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date trainingStartedAt;
 
-    @Column(name = "training_completed_at")
+    @Column(name = "TRAINING_COMPLETED_AT")
     @Temporal(TemporalType.TIMESTAMP)
     private Date trainingCompletedAt;
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
+    // Explicit getter/setter for isActive
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-
-
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

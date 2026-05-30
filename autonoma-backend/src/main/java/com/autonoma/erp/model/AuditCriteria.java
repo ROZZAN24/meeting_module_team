@@ -1,7 +1,6 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import java.util.Date;
 
 @Entity
 @Table(name = "QMS_AUDIT_CRITERIA")
@@ -10,36 +9,35 @@ public class AuditCriteria extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "seq_no", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "SEQ_NO", columnDefinition = "NVARCHAR(50)")
     private String seqNo;
 
-    @Column(name = "audit_type", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_TYPE", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
-    @Column(name = "clause", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "CLAUSE", columnDefinition = "NVARCHAR(255)")
     private String clause;
     
-    @Column(name = "criteria_text", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "CRITERIA_TEXT", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaText;
     
-    @Column(name = "department", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "DEPARTMENT", columnDefinition = "NVARCHAR(255)")
     private String department;
 
-    @Column(name = "attachment_required", columnDefinition = "NVARCHAR(20)")
+    @Column(name = "ATTACHMENT_REQUIRED", columnDefinition = "NVARCHAR(20)")
     private String attachmentRequired; // YES/NO
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATUS", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(name = "attachment_info", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ATTACHMENT_INFO", columnDefinition = "NVARCHAR(MAX)")
     private String attachmentInfo; // JSON string of file metadata
 
-    @Column(name = "level", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "LEVEL", columnDefinition = "NVARCHAR(100)")
     private String level; // L1,L2...
 
-
-    
-
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     // Explicit Getters and Setters
     public Long getId() { return id; }
@@ -62,4 +60,6 @@ public class AuditCriteria extends BaseAuditEntity {
     public void setAttachmentInfo(String attachmentInfo) { this.attachmentInfo = attachmentInfo; }
     public String getLevel() { return level; }
     public void setLevel(String level) { this.level = level; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

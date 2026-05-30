@@ -18,23 +18,34 @@ public class QmsMomAttendance extends BaseAuditEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mom_id", nullable = false)
+    @JoinColumn(name = "MOM_ID", nullable = false)
     @lombok.ToString.Exclude
     @lombok.EqualsAndHashCode.Exclude
     private QmsMomMaster mom;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employee_id", nullable = false)
+    @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
     private EmployeeMaster employee;
 
-    @Column(name = "in_time")
+    @Column(name = "IN_TIME")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime inTime;
 
-    @Column(name = "out_time")
+    @Column(name = "OUT_TIME")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime outTime;
 
-    @Column(name = "attendance_status")
+    @Column(name = "ATTENDANCE_STATUS")
     private String attendanceStatus; // Present / Absent
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }
