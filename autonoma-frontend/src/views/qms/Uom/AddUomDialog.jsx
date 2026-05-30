@@ -119,7 +119,7 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconClipboardCheck size={20} color={theme.palette.primary.main} />} title="UOM Details">
+        <BOSFormSection>
           <BOSTextField
             name="uomCode"
             label="UOM Name"
@@ -147,7 +147,7 @@ const AddUomDialog = ({ open, handleClose, initialData, readOnly = false }) => {
             label="Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
             required
           >
             <MenuItem value="ACTIVE">ACTIVE</MenuItem>

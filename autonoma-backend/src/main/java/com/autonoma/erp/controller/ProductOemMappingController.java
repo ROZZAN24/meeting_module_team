@@ -72,9 +72,8 @@ public class ProductOemMappingController {
     @RequirePagePermission(pageCode = "M3150", action = "write")
     public ResponseEntity<?> createMappingsBulk(@RequestBody List<ProductOemMapping> mappings) {
         try {
-            int savedCount = 0;
-            int duplicateCount = 0;
-            List<String> messages = new ArrayList<>();
+            List<String> fileDuplicates = new ArrayList<>();
+            List<String> dbDuplicates = new ArrayList<>();
             java.util.Set<String> processedPartNos = new java.util.HashSet<>();
 
             for (ProductOemMapping mapping : mappings) {
@@ -88,13 +87,46 @@ public class ProductOemMappingController {
                 String cleanPartNo = mapping.getPartNo().trim();
                 String key = cleanPartNo.toLowerCase();
 
-                if (processedPartNos.contains(key) || mappingRepository.existsByPartNoIgnoreCase(cleanPartNo)) {
-                    duplicateCount++;
-                    messages.add("Part No '" + cleanPartNo + "' already exists — skipped.");
+                if (processedPartNos.contains(key)) {
+                    if (!fileDuplicates.contains(cleanPartNo)) {
+                        fileDuplicates.add(cleanPartNo);
+                    }
+                } else {
+                    processedPartNos.add(key);
+                }
+
+                if (mappingRepository.existsByPartNoIgnoreCase(cleanPartNo)) {
+                    if (!dbDuplicates.contains(cleanPartNo)) {
+                        dbDuplicates.add(cleanPartNo);
+                    }
+                }
+            }
+
+            if (!fileDuplicates.isEmpty() || !dbDuplicates.isEmpty()) {
+                StringBuilder errorMsg = new StringBuilder();
+                if (!fileDuplicates.isEmpty()) {
+                    errorMsg.append("Duplicate Part No(s) found in the file: ")
+                            .append(String.join(", ", fileDuplicates))
+                            .append(". ");
+                }
+                if (!dbDuplicates.isEmpty()) {
+                    errorMsg.append("Part No(s) already exist in the database: ")
+                            .append(String.join(", ", dbDuplicates))
+                            .append(". ");
+                }
+                return ResponseEntity.badRequest().body(errorMsg.toString().trim());
+            }
+
+            int savedCount = 0;
+            for (ProductOemMapping mapping : mappings) {
+                if (mapping.getPartNo() == null || mapping.getPartNo().trim().isEmpty()) {
                     continue;
                 }
-                processedPartNos.add(key);
+                if (mapping.getOemPartNo() == null || mapping.getOemPartNo().trim().isEmpty()) {
+                    continue;
+                }
 
+                String cleanPartNo = mapping.getPartNo().trim();
                 mapping.setPartNo(cleanPartNo);
                 mapping.setOemPartNo(mapping.getOemPartNo().trim());
                 if (mapping.getOemDescription() != null) {
@@ -116,8 +148,8 @@ public class ProductOemMappingController {
 
             Map<String, Object> result = new HashMap<>();
             result.put("savedCount", savedCount);
-            result.put("duplicateCount", duplicateCount);
-            result.put("messages", messages);
+            result.put("duplicateCount", 0);
+            result.put("messages", new ArrayList<String>());
 
             return ResponseEntity.ok(result);
         } catch (Exception e) {

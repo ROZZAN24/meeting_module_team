@@ -6,7 +6,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddItemTypeDialog from './AddItemTypeDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -22,6 +22,7 @@ const columns = [
   { id: 'itemType', label: 'Item Type', minWidth: 150, bold: true },
   { id: 'groupPrefix', label: 'Group Prefix', minWidth: 120 },
   { id: 'itemPrefix', label: 'Item Prefix', minWidth: 120 },
+  { id: 'status', label: 'Status', minWidth: 100, status: true },
   { id: 'createdBy', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedBy', label: 'UPDATED USER', minWidth: 120 },
@@ -59,32 +60,42 @@ export default function ItemTypeMaster() {
     fetchGroups();
   }, []);
 
-  // Set standard star filters for Item Group and Status
+  // Set standard star filters for Item Group, Status, Date range, and Item Type
   useEffect(() => {
     const groupOptions = [
       { value: 'All', label: 'ALL' },
       ...groups.map(g => ({ value: g.id.toString(), label: g.groupName }))
     ];
 
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
       {
-        id: 'groupId', label: 'Item Group', type: 'select',
-        options: groupOptions,
-        defaultValue: 'All',
-        isStarred: true
-      },
-      {
-        id: 'status', label: 'Status', type: 'select',
+        id: 'status',
+        label: 'Status',
+        type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All',
-        isStarred: true
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'itemType', label: 'Item Type', type: 'text', placeholder: 'Search item type...', isStarred: true },
+      {
+        id: 'groupId', label: 'Item Group', type: 'select',
+        options: groupOptions,
+        defaultValue: 'All'
       }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today,
+      groupId: 'All'
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch, groups]);
 
@@ -133,21 +144,33 @@ export default function ItemTypeMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const statusFilter = globalFilters.status || 'ACTIVE';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
-      // 2. Item Group Filter
+      // 2. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
+
+      // 3. Primary Field (Item Type)
+      const itemTypeFilter = globalFilters.itemType || '';
+      if (itemTypeFilter && !(row.itemType || '').toLowerCase().includes(itemTypeFilter.toLowerCase())) return false;
+
+      // 4. Item Group Filter
       const groupFilter = globalFilters.groupId || 'All';
       const matchesGroup = groupFilter === 'All' || (row.group?.id && row.group.id.toString() === groupFilter);
+      if (!matchesGroup) return false;
 
-      // 3. Search query
+      // 5. Wildcard Search query
       const matchesSearch = !globalQuery ||
         (row.itemType && row.itemType.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.group?.groupName && row.group.groupName.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.groupPrefix && row.groupPrefix.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.itemPrefix && row.itemPrefix.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesStatus && matchesGroup && matchesSearch;
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

@@ -2427,7 +2427,7 @@ export default function TicketManagement({ viewType }) {
               {/* Right Side: Save Button */}
               {selectedTicket.ticketStatus !== 'Closed' && (
                 <Box sx={{ ml: 'auto', flexShrink: 0 }}>
-                  <Tooltip title="Save Changes (Ctrl + S)" arrow placement="bottom">
+                  <Tooltip title="Ctrl + S" arrow placement="bottom">
                     <span>
                       <Button
                         id="ticket-update-button"

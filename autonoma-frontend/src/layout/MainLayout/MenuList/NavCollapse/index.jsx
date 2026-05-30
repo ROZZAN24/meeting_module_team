@@ -280,7 +280,14 @@ export default function NavCollapse({ menu, level, parentId }) {
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   width: 120,
-                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
+                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
+                  '.MuiListItemButton-root:hover &': {
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    whiteSpace: 'normal',
+                    width: 'auto',
+                    wordBreak: 'break-word'
+                  }
                 }}
               >
                 <FormattedMessage id={menu.title} />

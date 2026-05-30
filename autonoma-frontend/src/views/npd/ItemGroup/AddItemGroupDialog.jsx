@@ -62,8 +62,8 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
     try {
       const payload = {
         ...formData,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin'
       };
 
       if (formData.id) {
@@ -109,7 +109,7 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Group Details">
+        <BOSFormSection>
           <BOSTextField
             name="groupName"
             label="Product Item Group"
@@ -141,7 +141,7 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
             label="Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
           >
             <MenuItem value="ACTIVE">Active</MenuItem>
             <MenuItem value="INACTIVE">Inactive</MenuItem>

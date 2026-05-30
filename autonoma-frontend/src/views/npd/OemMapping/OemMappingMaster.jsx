@@ -7,7 +7,7 @@ import AddOemMappingDialog from './AddOemMappingDialog';
 import BulkUploadDialog from './BulkUploadDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters, setQuery } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -47,36 +47,31 @@ export default function OemMappingMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Dispatch starred filter configuration matching Status and Search By
+  // Dispatch starred filter configuration matching Status, Date range, and Part No
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
-      {
-        id: 'searchBy',
-        label: 'Search By',
-        type: 'select',
-        options: [
-          { value: 'All', label: '-Select-' },
-          { value: 'partNo', label: 'Part No' },
-          { value: 'oemPartNo', label: 'OEM Part No' },
-          { value: 'oemDescription', label: 'OEM Description' }
-        ],
-        defaultValue: 'All',
-        isStarred: true
-      },
       {
         id: 'status',
         label: 'Status',
         type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All',
-        isStarred: true
-      }
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'partNo', label: 'Part No', type: 'text', placeholder: 'Search part no...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -98,7 +93,19 @@ export default function OemMappingMaster() {
   const handleOpenAdd = () => { setSelectedRow(null); setIsReadOnly(false); setDialogOpen(true); };
   const handleOpenEdit = (row) => { setSelectedRow(row); setIsReadOnly(false); setDialogOpen(true); };
   const handleCloseDialog = (refresh) => { setDialogOpen(false); if (refresh === true) fetchMappings(); };
-  const handleCloseBulkDialog = (refresh) => { setBulkDialogOpen(false); if (refresh === true) fetchMappings(); };
+  const handleCloseBulkDialog = (refresh) => {
+    setBulkDialogOpen(false);
+    if (refresh === true) {
+      dispatch(setQuery(''));
+      dispatch(setFilters({
+        status: 'ALL',
+        createdAtStart: '',
+        createdAtEnd: ''
+      }));
+      setPage(0);
+      fetchMappings();
+    }
+  };
 
   const handleDeleteClick = (row) => {
     setDeleteTargetId(row.id);
@@ -126,30 +133,32 @@ export default function OemMappingMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const statusFilter = globalFilters.status || 'ACTIVE';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
-      // 2. Search By Column + Global Query Filter
-      const searchBy = globalFilters.searchBy || 'All';
-      let matchesSearch = true;
-
-      if (globalQuery) {
-        const query = globalQuery.toLowerCase();
-        if (searchBy === 'partNo') {
-          matchesSearch = row.partNo && row.partNo.toLowerCase().includes(query);
-        } else if (searchBy === 'oemPartNo') {
-          matchesSearch = row.oemPartNo && row.oemPartNo.toLowerCase().includes(query);
-        } else if (searchBy === 'oemDescription') {
-          matchesSearch = row.oemDescription && row.oemDescription.toLowerCase().includes(query);
-        } else {
-          // General wildcard search
-          matchesSearch = (row.partNo && row.partNo.toLowerCase().includes(query)) ||
-            (row.oemPartNo && row.oemPartNo.toLowerCase().includes(query)) ||
-            (row.oemDescription && row.oemDescription.toLowerCase().includes(query));
-        }
+      // 2. Created Date Range Filter
+      const startDate = globalFilters.createdAtStart;
+      const endDate = globalFilters.createdAtEnd;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate) {
+        if (startDate && rowDate < startDate) return false;
+        if (endDate && rowDate > endDate) return false;
       }
 
-      return matchesStatus && matchesSearch;
+      // 3. Primary Field (Part No)
+      const partNoFilter = globalFilters.partNo || '';
+      if (partNoFilter && !(row.partNo || '').toLowerCase().includes(partNoFilter.toLowerCase())) return false;
+
+      // 4. Wildcard Query Filter
+      let matchesSearch = true;
+      if (globalQuery) {
+        const query = globalQuery.toLowerCase();
+        matchesSearch = (row.partNo && row.partNo.toLowerCase().includes(query)) ||
+          (row.oemPartNo && row.oemPartNo.toLowerCase().includes(query)) ||
+          (row.oemDescription && row.oemDescription.toLowerCase().includes(query));
+      }
+
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

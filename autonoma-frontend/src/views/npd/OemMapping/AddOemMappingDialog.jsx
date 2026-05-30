@@ -74,8 +74,8 @@ const AddOemMappingDialog = ({ open, handleClose, initialData, readOnly = false 
         oemPartNo: formData.oemPartNo,
         oemDescription: formData.oemDescription,
         status: formData.status,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin',
         createdAt: formData.createdAt
       };
 
@@ -122,7 +122,7 @@ const AddOemMappingDialog = ({ open, handleClose, initialData, readOnly = false 
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Mapping Details">
+        <BOSFormSection>
           <BOSTextField
             name="partNo"
             label="Part No"
@@ -165,7 +165,7 @@ const AddOemMappingDialog = ({ open, handleClose, initialData, readOnly = false 
             label="Status"
             value={formData.status}
             onChange={handleChange}
-            disabled={isViewOnly}
+            disabled={isViewOnly || !formData.id}
             required
           >
             <MenuItem value="ACTIVE">ACTIVE</MenuItem>

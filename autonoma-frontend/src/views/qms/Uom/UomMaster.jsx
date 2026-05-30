@@ -4,8 +4,9 @@ import { IconListCheck, IconRefresh } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import AddUomDialog from './AddUomDialog';
+import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -41,30 +42,31 @@ export default function UomMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Dispatch starred filter configuration matching UOM Code and Status
+  // Dispatch starred filter configuration matching Status, Date range, and UOM NAME
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
-      {
-        id: 'uomCodeContains',
-        label: 'UOM Contains',
-        type: 'text',
-        defaultValue: '',
-        isStarred: true
-      },
       {
         id: 'status',
         label: 'Status',
         type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ACTIVE',
-        isStarred: true
-      }
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'uomCode', label: 'UOM NAME', type: 'text', placeholder: 'Search UOM Name...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -114,19 +116,25 @@ export default function UomMaster() {
     return rows.filter((row) => {
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
-      // 2. UOM Code Contains Filter
-      const uomCodeContains = globalFilters.uomCodeContains || '';
-      const matchesUomCodeContains = !uomCodeContains ||
-        (row.uomCode && row.uomCode.toLowerCase().includes(uomCodeContains.toLowerCase()));
+      // 2. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
 
-      // 3. Search query
+      // 3. Primary Field (UOM NAME / uomCode)
+      const uomCodeFilter = globalFilters.uomCode || '';
+      if (uomCodeFilter && !(row.uomCode || '').toLowerCase().includes(uomCodeFilter.toLowerCase())) return false;
+
+      // 4. Search query
       const matchesSearch = !globalQuery ||
         (row.uomCode && row.uomCode.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.uomDescription && row.uomDescription.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesStatus && matchesUomCodeContains && matchesSearch;
+      return matchesSearch;
     }).map((r) => ({
       ...r,
       createdUser: r.createdUser || r.createdBy || '-',
