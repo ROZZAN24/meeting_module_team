@@ -1983,13 +1983,19 @@ export default function TicketManagement({ viewType }) {
       const myName = (user?.name || '').toLowerCase();
       const myEmail = (user?.email || '').toLowerCase();
       const myUsername = (user?.username || '').toLowerCase();
+      
+      let myEmpName = '';
+      if (user?.empId && employeesList) {
+        const emp = employeesList.find(e => e.id === user.empId || e.empCode === user.empId || e.employeeCode === user.empId);
+        if (emp && emp.employeeName) myEmpName = emp.employeeName.toLowerCase();
+      }
 
       if (currentViewType === 'raised-for-me') {
         if (accessLevel === 'Mine') {
           const assignedTo = (t.assignedTo || '').toLowerCase();
           const devName = (t.developerName || '').toLowerCase();
           const devEmail = (t.developerEmail || '').toLowerCase();
-          return assignedTo === myName || assignedTo === myUsername || devName === myName || devEmail === myEmail;
+          return assignedTo === myName || assignedTo === myUsername || assignedTo === myEmpName || devName === myName || devName === myEmpName || devEmail === myEmail;
         } else if (accessLevel === 'My Team') {
           const tDept = (t.department || '').toLowerCase();
           const userDept = (formDeptName || '').toLowerCase();
@@ -2002,7 +2008,8 @@ export default function TicketManagement({ viewType }) {
         const createdBy = (t.createdBy || '').toLowerCase();
         const email = (t.email || '').toLowerCase();
         const empName = (t.employeeName || '').toLowerCase();
-        const matchesRaisedByMe = createdBy === myUsername || createdBy === myEmail || email === myEmail || empName === myName;
+        const verifiedBy = (t.verifiedBy || t.verifierName || '').toLowerCase();
+        const matchesRaisedByMe = createdBy === myUsername || createdBy === myEmail || createdBy === myEmpName || email === myEmail || empName === myName || empName === myEmpName || verifiedBy === myUsername || verifiedBy === myEmail || verifiedBy === myName || (myEmpName && verifiedBy === myEmpName);
         if (!matchesRaisedByMe) return false;
 
         if (raisedToFilter) {
@@ -2013,7 +2020,7 @@ export default function TicketManagement({ viewType }) {
         return true;
       }
     });
-  }, [tickets, currentViewType, accessLevel, user, formDeptName, raisedToFilter]);
+  }, [tickets, currentViewType, accessLevel, user, formDeptName, raisedToFilter, employeesList]);
 
   // Statistics KPIs
   const stats = useMemo(() => {
@@ -2295,10 +2302,10 @@ export default function TicketManagement({ viewType }) {
     if (t.pageId && pagesData.length > 0) {
       const p = pagesData.find(page => page.pageId === t.pageId);
       if (p) {
-        return `${p.module?.modName || 'System'} > ${p.pageName}`;
+        return p.pageName || 'Unknown Page';
       }
     }
-    return `${t.moduleName || 'System'} ${t.pageName ? `> ${t.pageName}` : ''}`;
+    return t.pageName || 'Unknown Page';
   };
 
   const activeTicketsForSelectedPage = useMemo(() => {
@@ -2485,9 +2492,9 @@ export default function TicketManagement({ viewType }) {
                   {[
                     { label: 'Severity', value: selectedTicket.severityLevel, icon: <SecurityOutlinedIcon sx={{ color: '#f59e0b', fontSize: 16 }} /> },
                     { label: 'Source', value: selectedTicket.sourceType, icon: <LanguageOutlinedIcon sx={{ color: '#3b82f6', fontSize: 16 }} /> },
-                    { label: 'Module', value: selectedTicket.moduleName, icon: <ViewModuleOutlinedIcon sx={{ color: '#8b5cf6', fontSize: 16 }} /> },
-                    { label: 'Screen Name', value: selectedTicket.pageName, icon: <DesktopWindowsOutlinedIcon sx={{ color: '#0ea5e9', fontSize: 16 }} /> },
-                    { label: 'Created By', value: selectedTicket.employeeName || selectedTicket.createdBy, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} />, xs: 12 },
+                    { label: 'Page Name', value: getPageDisplay(selectedTicket), icon: <DesktopWindowsOutlinedIcon sx={{ color: '#0ea5e9', fontSize: 16 }} />, xs: 12 },
+                    { label: 'Created By', value: selectedTicket.employeeName || selectedTicket.createdBy, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> },
+                    { label: 'Verified By', value: selectedTicket.verifiedBy || selectedTicket.verifierName, icon: <CheckCircleIcon sx={{ color: '#10b981', fontSize: 16 }} /> },
                     ...(selectedTicket.verifierName ? [{ label: 'Verifier Name', value: selectedTicket.verifierName, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> }] : []),
                     ...(selectedTicket.verifierPhone ? [{ label: 'Verifier Phone', value: selectedTicket.verifierPhone, icon: <PersonOutlineIcon sx={{ color: '#6366f1', fontSize: 16 }} /> }] : [])
                   ].map((item, idx) => (
@@ -2955,16 +2962,16 @@ export default function TicketManagement({ viewType }) {
                           </Grid>
 
                           <Grid item xs={6} sm={4}>
-                            <Typography variant="caption" color="text.secondary">Module</Typography>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.moduleName || 'None'}</Typography>
-                          </Grid>
-                          <Grid item xs={6} sm={4}>
-                            <Typography variant="caption" color="text.secondary">Screen Name</Typography>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.pageName || 'None'}</Typography>
+                            <Typography variant="caption" color="text.secondary">Page Name</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{getPageDisplay(selectedTicket) || 'None'}</Typography>
                           </Grid>
                           <Grid item xs={6} sm={4}>
                             <Typography variant="caption" color="text.secondary">Created By</Typography>
                             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.employeeName || selectedTicket.createdBy}</Typography>
+                          </Grid>
+                          <Grid item xs={6} sm={4}>
+                            <Typography variant="caption" color="text.secondary">Verified By</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{selectedTicket.verifiedBy || selectedTicket.verifierName || 'None'}</Typography>
                           </Grid>
 
                           {selectedTicket.takenTime && (
@@ -3632,7 +3639,7 @@ export default function TicketManagement({ viewType }) {
               <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50', '& .MuiTableCell-root': { py: 1.5 } }}>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>Ticket ID</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Title / Module / Screen</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Title / Page Name</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 220 }}>Assigned To</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Status</TableCell>
