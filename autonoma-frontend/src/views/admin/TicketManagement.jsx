@@ -962,10 +962,13 @@ export default function TicketManagement({ viewType }) {
   };
 
   // ── Auto Target Date Calculation ─────────────────────────────────────────────
-  //   Daily capacity: 8 h = 480 min per working day (Mon–Sat, Sundays and Govt Holidays are off).
+  //   Working hours: 9 AM – 6 PM = 9 h = 540 min per working day (Mon–Sat, Sundays and Govt Holidays are off).
+  //   On the first day (task-raise day), only the remaining time from NOW to 6 PM is counted.
   //   Fetches the assignee's existing workload from the backend, then distributes
   //   the new ticket's assigned minutes across available slots day-by-day.
-  const DAILY_CAPACITY_MINS = 8 * 60; // 480
+  const DAILY_CAPACITY_MINS = 9 * 60; // 540 (9 AM to 6 PM)
+  const WORK_START_HOUR = 9;  // 9 AM
+  const WORK_END_HOUR = 18;   // 6 PM
 
   const GOVERNMENT_HOLIDAYS = [
     // 2025
@@ -1044,6 +1047,7 @@ export default function TicketManagement({ viewType }) {
     }
 
     let remaining = mins;
+    const now = new Date(); // actual current time (for first-day partial capacity)
     let cursor = new Date(); // start from today
     cursor.setHours(0, 0, 0, 0);
     const trail = [];
@@ -1052,6 +1056,7 @@ export default function TicketManagement({ viewType }) {
     for (let i = 0; i < MAX_DAYS; i++) {
       const key = dateKey(cursor);
       const formattedDate = format(cursor, 'dd-MM-yyyy');
+      const isFirstDay = (i === 0);
 
       // 1. Sunday check (Silently skip Sundays without showing in Info tooltip)
       if (cursor.getDay() === 0) {
@@ -1070,7 +1075,27 @@ export default function TicketManagement({ viewType }) {
         continue;
       }
 
-      // 3. Working Day
+      // 3. Working Day — determine day capacity
+      //    First day: only minutes from NOW until 6 PM are available
+      //    Other days: full 9h (9 AM – 6 PM = 540 mins)
+      let dayCapacity = DAILY_CAPACITY_MINS;
+      if (isFirstDay) {
+        const nowHour = now.getHours();
+        const nowMin = now.getMinutes();
+        if (nowHour >= WORK_END_HOUR) {
+          // After 6 PM — no capacity today, move to next working day
+          cursor = addDays(cursor, 1);
+          continue;
+        } else if (nowHour < WORK_START_HOUR) {
+          // Before 9 AM — full day available
+          dayCapacity = DAILY_CAPACITY_MINS;
+        } else {
+          // Between 9 AM and 6 PM — remaining minutes until 6 PM
+          const minsUntilEnd = (WORK_END_HOUR * 60) - (nowHour * 60 + nowMin);
+          dayCapacity = Math.max(0, minsUntilEnd);
+        }
+      }
+
       const dayData = workload[key] || { totalMinutes: 0 };
       let existingTickets = [];
       let alreadyAllocated = 0;
@@ -1082,7 +1107,7 @@ export default function TicketManagement({ viewType }) {
         alreadyAllocated = dayData.totalMinutes || 0;
       }
 
-      const available = Math.max(0, DAILY_CAPACITY_MINS - alreadyAllocated);
+      const available = Math.max(0, dayCapacity - alreadyAllocated);
       let allocatedForThis = 0;
 
       if (remaining > 0 && available > 0) {
@@ -1228,7 +1253,7 @@ export default function TicketManagement({ viewType }) {
                         fontSize: '0.7rem'
                       }}
                     >
-                      * Workload full (8h limit reached) - Skipped
+                       * Workload full (9 AM–6 PM capacity reached) - Skipped
                     </Typography>
                   )}
 
@@ -4216,7 +4241,7 @@ export default function TicketManagement({ viewType }) {
                       title={
                         <Box sx={{ p: 1, maxHeight: 400, overflowY: 'auto' }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, borderBottom: '1px solid rgba(255,255,255,0.2)', pb: 0.5 }}>
-                            Developer Workload Details (Max 8h/day)
+                            Developer Workload Details (9 AM To 6 PM)
                           </Typography>
                           {renderWorkloadTrail(devWorkloadTrail)}
                         </Box>
