@@ -30,9 +30,40 @@ GO
 -- ==========================================
 -- 1. SLS_CUSTOMER (from SM_CUSTOMER_MASTER)
 -- ==========================================
-IF OBJECT_ID('SM_CUSTOMER_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'SM_CUSTOMER_MASTER', 'SLS_CUSTOMER';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'SM_CUSTOMER_MASTER', 'SLS_CUSTOMER';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('SM_CUSTOMER_MASTER', 'U') IS NOT NULL AND OBJECT_ID('SLS_CUSTOMER', 'U') IS NULL
+        EXEC sp_rename 'SM_CUSTOMER_MASTER', 'SLS_CUSTOMER';
+END
+GO
+
+IF OBJECT_ID('SLS_CUSTOMER', 'U') IS NOT NULL
+BEGIN
+    -- Drop unique constraint/index on CUSTOMER_CODE dynamically BEFORE column renames to avoid filtered index rename errors
+    DECLARE @cust_idx NVARCHAR(256);
+    DECLARE @cust_is_uq BIT;
+    
+    SELECT TOP 1 @cust_idx = i.name, @cust_is_uq = i.is_unique_constraint
+    FROM sys.indexes i
+    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE i.object_id = OBJECT_ID('SLS_CUSTOMER')
+      AND c.name = 'CUSTOMER_CODE'
+      AND i.is_primary_key = 0 AND i.is_unique = 1;
+
+    IF @cust_idx IS NOT NULL
+    BEGIN
+        DECLARE @drop_cust_sql NVARCHAR(MAX);
+        IF @cust_is_uq = 1 OR EXISTS (SELECT 1 FROM sys.objects WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER') AND name = @cust_idx AND type = 'UQ')
+            SET @drop_cust_sql = 'ALTER TABLE SLS_CUSTOMER DROP CONSTRAINT ' + QUOTENAME(@cust_idx);
+        ELSE
+            SET @drop_cust_sql = 'DROP INDEX ' + QUOTENAME(@cust_idx) + ' ON SLS_CUSTOMER';
+        EXEC(@drop_cust_sql);
+    END
 END
 GO
 
@@ -99,27 +130,6 @@ GO
 
 IF OBJECT_ID('SLS_CUSTOMER', 'U') IS NOT NULL
 BEGIN
-    -- Drop unique constraint/index on CUSTOMER_CODE dynamically to allow type alteration
-    DECLARE @drop_uq NVARCHAR(MAX) = N'';
-    SELECT @drop_uq += N'ALTER TABLE [SLS_CUSTOMER] DROP CONSTRAINT ' + QUOTENAME(dc.name) + ';' + CHAR(13) + CHAR(10)
-    FROM sys.key_constraints dc
-    INNER JOIN sys.index_columns ic ON dc.parent_object_id = ic.object_id AND dc.unique_index_id = ic.index_id
-    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-    WHERE dc.parent_object_id = OBJECT_ID('SLS_CUSTOMER')
-      AND c.name = 'CUSTOMER_CODE';
-    IF @drop_uq <> N'' EXEC sp_executesql @drop_uq;
-
-    DECLARE @drop_idx NVARCHAR(MAX) = N'';
-    SELECT @drop_idx += N'DROP INDEX ' + QUOTENAME(i.name) + ' ON [SLS_CUSTOMER];' + CHAR(13) + CHAR(10)
-    FROM sys.indexes i
-    INNER JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-    WHERE i.object_id = OBJECT_ID('SLS_CUSTOMER')
-      AND c.name = 'CUSTOMER_CODE'
-      AND i.is_primary_key = 0
-      AND i.is_unique_constraint = 0;
-    IF @drop_idx <> N'' EXEC sp_executesql @drop_idx;
-
     -- Alter types and lengths to NVARCHAR
     ALTER TABLE SLS_CUSTOMER ALTER COLUMN CUSTOMER_CODE NVARCHAR(50) NOT NULL;
     ALTER TABLE SLS_CUSTOMER ALTER COLUMN CUSTOMER_NAME NVARCHAR(200) NOT NULL;
@@ -176,12 +186,12 @@ BEGIN
     -- Drop old PK
     DECLARE @cust_pk NVARCHAR(256);
     SELECT TOP 1 @cust_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER') AND type = 'PK';
-    IF @cust_pk IS NOT NULL AND @cust_pk <> 'PK_SLS_CUSTOMER'
+    IF @cust_pk IS NOT NULL AND @cust_pk <> 'PK_SLS_CUSTOMER' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('SLS_CUSTOMER'))
     BEGIN
         DECLARE @drop_cust_pk NVARCHAR(MAX) = 'ALTER TABLE SLS_CUSTOMER DROP CONSTRAINT ' + @cust_pk;
         EXEC(@drop_cust_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER') AND name = 'PK_SLS_CUSTOMER')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER') AND type = 'PK')
     BEGIN
         ALTER TABLE SLS_CUSTOMER ADD CONSTRAINT PK_SLS_CUSTOMER PRIMARY KEY (id);
     END
@@ -198,9 +208,14 @@ GO
 -- ==========================================
 -- 2. SLS_CUSTOMER_ADDRESS (from SM_CUSTOMER_ADDRESS)
 -- ==========================================
-IF OBJECT_ID('SM_CUSTOMER_ADDRESS', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'SM_CUSTOMER_ADDRESS', 'SLS_CUSTOMER_ADDRESS';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'SM_CUSTOMER_ADDRESS', 'SLS_CUSTOMER_ADDRESS';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('SM_CUSTOMER_ADDRESS', 'U') IS NOT NULL AND OBJECT_ID('SLS_CUSTOMER_ADDRESS', 'U') IS NULL
+        EXEC sp_rename 'SM_CUSTOMER_ADDRESS', 'SLS_CUSTOMER_ADDRESS';
 END
 GO
 
@@ -273,9 +288,40 @@ GO
 -- ==========================================
 -- 3. VND_VENDOR (from SM_SUPPLIER_MASTER)
 -- ==========================================
-IF OBJECT_ID('SM_SUPPLIER_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'SM_SUPPLIER_MASTER', 'VND_VENDOR';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'SM_SUPPLIER_MASTER', 'VND_VENDOR';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('SM_SUPPLIER_MASTER', 'U') IS NOT NULL AND OBJECT_ID('VND_VENDOR', 'U') IS NULL
+        EXEC sp_rename 'SM_SUPPLIER_MASTER', 'VND_VENDOR';
+END
+GO
+
+IF OBJECT_ID('VND_VENDOR', 'U') IS NOT NULL
+BEGIN
+    -- Drop unique constraint/index on SUPPLIER_CODE dynamically BEFORE column renames to avoid filtered index rename errors
+    DECLARE @vend_idx NVARCHAR(256);
+    DECLARE @vend_is_uq BIT;
+    
+    SELECT TOP 1 @vend_idx = i.name, @vend_is_uq = i.is_unique_constraint
+    FROM sys.indexes i
+    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE i.object_id = OBJECT_ID('VND_VENDOR')
+      AND c.name = 'SUPPLIER_CODE'
+      AND i.is_primary_key = 0 AND i.is_unique = 1;
+
+    IF @vend_idx IS NOT NULL
+    BEGIN
+        DECLARE @drop_vend_sql NVARCHAR(MAX);
+        IF @vend_is_uq = 1 OR EXISTS (SELECT 1 FROM sys.objects WHERE parent_object_id = OBJECT_ID('VND_VENDOR') AND name = @vend_idx AND type = 'UQ')
+            SET @drop_vend_sql = 'ALTER TABLE VND_VENDOR DROP CONSTRAINT ' + QUOTENAME(@vend_idx);
+        ELSE
+            SET @drop_vend_sql = 'DROP INDEX ' + QUOTENAME(@vend_idx) + ' ON VND_VENDOR';
+        EXEC(@drop_vend_sql);
+    END
 END
 GO
 
@@ -345,26 +391,31 @@ GO
 IF OBJECT_ID('VND_VENDOR', 'U') IS NOT NULL
 BEGIN
     -- Drop unique constraint/index on SUPPLIER_CODE dynamically to allow type alteration
-    DECLARE @drop_uq_vend NVARCHAR(MAX) = N'';
-    SELECT @drop_uq_vend += N'ALTER TABLE [VND_VENDOR] DROP CONSTRAINT ' + QUOTENAME(dc.name) + ';' + CHAR(13) + CHAR(10)
-    FROM sys.key_constraints dc
-    INNER JOIN sys.index_columns ic ON dc.parent_object_id = ic.object_id AND dc.unique_index_id = ic.index_id
-    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
-    WHERE dc.parent_object_id = OBJECT_ID('VND_VENDOR')
-      AND c.name = 'SUPPLIER_CODE';
-    IF @drop_uq_vend <> N'' EXEC sp_executesql @drop_uq_vend;
-
-    DECLARE @drop_idx_vend NVARCHAR(MAX) = N'';
-    SELECT @drop_idx_vend += N'DROP INDEX ' + QUOTENAME(i.name) + ' ON [VND_VENDOR];' + CHAR(13) + CHAR(10)
+    DECLARE @vend_idx NVARCHAR(256);
+    DECLARE @vend_is_uq BIT;
+    
+    SELECT TOP 1 @vend_idx = i.name, @vend_is_uq = i.is_unique_constraint
     FROM sys.indexes i
-    INNER JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
-    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
     WHERE i.object_id = OBJECT_ID('VND_VENDOR')
       AND c.name = 'SUPPLIER_CODE'
-      AND i.is_primary_key = 0
-      AND i.is_unique_constraint = 0;
-    IF @drop_idx_vend <> N'' EXEC sp_executesql @drop_idx_vend;
+      AND i.is_primary_key = 0 AND i.is_unique = 1;
 
+    IF @vend_idx IS NOT NULL
+    BEGIN
+        DECLARE @drop_vend_sql NVARCHAR(MAX);
+        IF @vend_is_uq = 1 OR EXISTS (SELECT 1 FROM sys.objects WHERE parent_object_id = OBJECT_ID('VND_VENDOR') AND name = @vend_idx AND type = 'UQ')
+            SET @drop_vend_sql = 'ALTER TABLE VND_VENDOR DROP CONSTRAINT ' + QUOTENAME(@vend_idx);
+        ELSE
+            SET @drop_vend_sql = 'DROP INDEX ' + QUOTENAME(@vend_idx) + ' ON VND_VENDOR';
+        EXEC(@drop_vend_sql);
+    END
+END
+GO
+
+IF OBJECT_ID('VND_VENDOR', 'U') IS NOT NULL
+BEGIN
     -- Alter types and lengths to NVARCHAR
     ALTER TABLE VND_VENDOR ALTER COLUMN SUPPLIER_CODE NVARCHAR(50) NOT NULL;
     ALTER TABLE VND_VENDOR ALTER COLUMN GST_NO NVARCHAR(50);
@@ -422,12 +473,12 @@ BEGIN
     -- PK
     DECLARE @vend_pk NVARCHAR(256);
     SELECT TOP 1 @vend_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('VND_VENDOR') AND type = 'PK';
-    IF @vend_pk IS NOT NULL AND @vend_pk <> 'PK_VND_VENDOR'
+    IF @vend_pk IS NOT NULL AND @vend_pk <> 'PK_VND_VENDOR' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('VND_VENDOR'))
     BEGIN
         DECLARE @drop_vend_pk NVARCHAR(MAX) = 'ALTER TABLE VND_VENDOR DROP CONSTRAINT ' + @vend_pk;
         EXEC(@drop_vend_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('VND_VENDOR') AND name = 'PK_VND_VENDOR')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('VND_VENDOR') AND type = 'PK')
     BEGIN
         ALTER TABLE VND_VENDOR ADD CONSTRAINT PK_VND_VENDOR PRIMARY KEY (id);
     END
@@ -444,9 +495,14 @@ GO
 -- ==========================================
 -- 4. VND_CUSTOMER_MAPPING (from SM_VENDOR_CUSTOMER_MASTER)
 -- ==========================================
-IF OBJECT_ID('SM_VENDOR_CUSTOMER_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'SM_VENDOR_CUSTOMER_MASTER', 'VND_CUSTOMER_MAPPING';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'SM_VENDOR_CUSTOMER_MASTER', 'VND_CUSTOMER_MAPPING';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('SM_VENDOR_CUSTOMER_MASTER', 'U') IS NOT NULL AND OBJECT_ID('VND_CUSTOMER_MAPPING', 'U') IS NULL
+        EXEC sp_rename 'SM_VENDOR_CUSTOMER_MASTER', 'VND_CUSTOMER_MAPPING';
 END
 GO
 
@@ -602,12 +658,12 @@ IF OBJECT_ID('VND_CUSTOMER_MAPPING', 'U') IS NOT NULL
 BEGIN
     DECLARE @map_pk NVARCHAR(256);
     SELECT TOP 1 @map_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('VND_CUSTOMER_MAPPING') AND type = 'PK';
-    IF @map_pk IS NOT NULL AND @map_pk <> 'PK_VND_CUSTOMER_MAPPING'
+    IF @map_pk IS NOT NULL AND @map_pk <> 'PK_VND_CUSTOMER_MAPPING' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('VND_CUSTOMER_MAPPING'))
     BEGIN
         DECLARE @drop_map_pk NVARCHAR(MAX) = 'ALTER TABLE VND_CUSTOMER_MAPPING DROP CONSTRAINT ' + @map_pk;
         EXEC(@drop_map_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('VND_CUSTOMER_MAPPING') AND name = 'PK_VND_CUSTOMER_MAPPING')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('VND_CUSTOMER_MAPPING') AND type = 'PK')
     BEGIN
         ALTER TABLE VND_CUSTOMER_MAPPING ADD CONSTRAINT PK_VND_CUSTOMER_MAPPING PRIMARY KEY (id);
     END
@@ -618,9 +674,14 @@ GO
 -- ==========================================
 -- 5. SLS_CUSTOMER_POTENTIAL (from SM_CUSTOMER_POTENTIAL)
 -- ==========================================
-IF OBJECT_ID('SM_CUSTOMER_POTENTIAL', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'SM_CUSTOMER_POTENTIAL', 'SLS_CUSTOMER_POTENTIAL';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'SM_CUSTOMER_POTENTIAL', 'SLS_CUSTOMER_POTENTIAL';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('SM_CUSTOMER_POTENTIAL', 'U') IS NOT NULL AND OBJECT_ID('SLS_CUSTOMER_POTENTIAL', 'U') IS NULL
+        EXEC sp_rename 'SM_CUSTOMER_POTENTIAL', 'SLS_CUSTOMER_POTENTIAL';
 END
 GO
 
@@ -704,12 +765,12 @@ IF OBJECT_ID('SLS_CUSTOMER_POTENTIAL', 'U') IS NOT NULL
 BEGIN
     DECLARE @pot_pk NVARCHAR(256);
     SELECT TOP 1 @pot_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER_POTENTIAL') AND type = 'PK';
-    IF @pot_pk IS NOT NULL AND @pot_pk <> 'PK_SLS_CUSTOMER_POTENTIAL'
+    IF @pot_pk IS NOT NULL AND @pot_pk <> 'PK_SLS_CUSTOMER_POTENTIAL' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('SLS_CUSTOMER_POTENTIAL'))
     BEGIN
         DECLARE @drop_pot_pk NVARCHAR(MAX) = 'ALTER TABLE SLS_CUSTOMER_POTENTIAL DROP CONSTRAINT ' + @pot_pk;
         EXEC(@drop_pot_pk);
     END
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER_POTENTIAL') AND name = 'PK_SLS_CUSTOMER_POTENTIAL')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('SLS_CUSTOMER_POTENTIAL') AND type = 'PK')
     BEGIN
         ALTER TABLE SLS_CUSTOMER_POTENTIAL ADD CONSTRAINT PK_SLS_CUSTOMER_POTENTIAL PRIMARY KEY (id);
     END

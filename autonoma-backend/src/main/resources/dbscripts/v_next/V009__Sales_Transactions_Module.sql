@@ -32,6 +32,34 @@ AS
 BEGIN
     IF OBJECT_ID(@tableName, 'U') IS NOT NULL
     BEGIN
+        -- Check if BOTH columns exist (can happen if Hibernate pre-creates the new column name)
+        IF COL_LENGTH(@tableName, @oldCol) IS NOT NULL AND COL_LENGTH(@tableName, @newCol) IS NOT NULL
+        BEGIN
+            DECLARE @oldRealName NVARCHAR(256) = (SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @oldCol);
+            DECLARE @newRealName NVARCHAR(256) = (SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @newCol);
+            
+            IF @oldRealName IS NOT NULL AND @newRealName IS NOT NULL AND LOWER(@oldRealName) <> LOWER(@newRealName)
+            BEGIN
+                -- Merge data from old column to new column
+                DECLARE @sqlMerge NVARCHAR(MAX) = 'UPDATE ' + QUOTENAME(@tableName) + ' SET ' + QUOTENAME(@newRealName) + ' = ' + QUOTENAME(@oldRealName) + ' WHERE ' + QUOTENAME(@newRealName) + ' IS NULL';
+                EXEC sp_executesql @sqlMerge;
+                
+                -- Drop default constraint if any exists on the old column
+                DECLARE @dropDefault NVARCHAR(MAX) = N'';
+                SELECT @dropDefault += N'ALTER TABLE ' + QUOTENAME(@tableName) + ' DROP CONSTRAINT ' + QUOTENAME(d.name) + ';' + CHAR(13) + CHAR(10)
+                FROM sys.default_constraints d
+                INNER JOIN sys.columns c ON d.parent_column_id = c.column_id AND d.parent_object_id = c.object_id
+                WHERE d.parent_object_id = OBJECT_ID(@tableName) AND c.name = @oldRealName;
+                IF @dropDefault <> N'' EXEC sp_executesql @dropDefault;
+
+                -- Drop the old duplicate column
+                DECLARE @sqlDrop NVARCHAR(MAX) = 'ALTER TABLE ' + QUOTENAME(@tableName) + ' DROP COLUMN ' + QUOTENAME(@oldRealName);
+                EXEC sp_executesql @sqlDrop;
+                RETURN;
+            END
+        END
+
+        -- Normal case-sensitive rename flow
         IF COL_LENGTH(@tableName, @oldCol) IS NOT NULL
         BEGIN
             IF (SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @oldCol) COLLATE Latin1_General_CS_AS <> @newCol
@@ -54,7 +82,7 @@ DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'ALTER TABLE ' + QUOTENAME(t.name) + ' DROP CONSTRAINT ' + QUOTENAME(d.name) + ';' + CHAR(13) + CHAR(10)
 FROM sys.default_constraints d
 INNER JOIN sys.tables t ON d.parent_object_id = t.object_id
-WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation');
+WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation', 'SLS_ENQUIRY', 'SLS_PRICE_MASTER', 'SLS_QUOTATION');
 IF @sql <> N'' EXEC sp_executesql @sql;
 GO
 
@@ -62,7 +90,7 @@ DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'ALTER TABLE ' + QUOTENAME(t.name) + ' DROP CONSTRAINT ' + QUOTENAME(tc.name) + ';' + CHAR(13) + CHAR(10)
 FROM sys.key_constraints tc
 INNER JOIN sys.tables t ON tc.parent_object_id = t.object_id
-WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation') AND tc.type IN ('UQ', 'PK');
+WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation', 'SLS_ENQUIRY', 'SLS_PRICE_MASTER', 'SLS_QUOTATION') AND tc.type IN ('UQ', 'PK');
 IF @sql <> N'' EXEC sp_executesql @sql;
 GO
 
@@ -70,7 +98,7 @@ DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'DROP INDEX ' + QUOTENAME(i.name) + ' ON ' + QUOTENAME(t.name) + ';' + CHAR(13) + CHAR(10)
 FROM sys.indexes i
 INNER JOIN sys.tables t ON i.object_id = t.object_id
-WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation')
+WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation', 'SLS_ENQUIRY', 'SLS_PRICE_MASTER', 'SLS_QUOTATION')
   AND i.is_unique = 1 AND i.is_primary_key = 0 AND i.is_unique_constraint = 0;
 IF @sql <> N'' EXEC sp_executesql @sql;
 GO
