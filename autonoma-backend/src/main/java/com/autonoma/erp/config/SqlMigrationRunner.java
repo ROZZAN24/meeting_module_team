@@ -189,7 +189,9 @@ public class SqlMigrationRunner implements CommandLineRunner {
             String fileName = resource.getFilename();
 
             if (SQL_SERVER_SKIP_SCRIPTS.contains(fileName)) {
-                markAsExecuted(targetJdbcTemplate, fileName);
+                if (!isAlreadyExecuted(targetJdbcTemplate, fileName)) {
+                    markAsExecuted(targetJdbcTemplate, fileName);
+                }
                 System.out.println("COMPLETED (SQL SERVER SKIP) : " + fileName);
                 continue;
             }
