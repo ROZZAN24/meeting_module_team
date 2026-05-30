@@ -938,14 +938,14 @@ export const erpSupport = {
       children: [
         {
           id: 'support-raised-by-me',
-          title: 'Raised By Me',
+          title: 'My Requests',
           type: 'item',
           url: '/support/ticket-by-me',
           breadcrumbs: false
         },
         {
           id: 'support-raised-for-me',
-          title: 'Raised For Me',
+          title: 'Requests For Me',
           type: 'item',
           url: '/support/raised-for-me',
           breadcrumbs: false
