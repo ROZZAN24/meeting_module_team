@@ -354,6 +354,7 @@ public class AuthController {
                     if (empOpt.isPresent()) {
                         com.autonoma.erp.model.EmployeeMaster emp = empOpt.get();
                         empName = emp.getEmployeeName();
+                        userMap.put("empCode", emp.getEmpCode());
                         userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
                         userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                         userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());
@@ -406,6 +407,7 @@ public class AuthController {
                             if (empOpt.isPresent()) {
                                 com.autonoma.erp.model.EmployeeMaster emp = empOpt.get();
                                 empName = emp.getEmployeeName();
+                                userMap.put("empCode", emp.getEmpCode());
                                 userMap.put("departmentName", emp.getDepartment() != null ? emp.getDepartment().getDepartmentName() : "");
                                 userMap.put("designationName", emp.getDesignation() != null ? emp.getDesignation().getDesignationName() : "");
                                 userMap.put("employeePhotoUpload", emp.getEmployeePhotoUpload());

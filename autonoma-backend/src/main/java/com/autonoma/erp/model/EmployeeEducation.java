@@ -17,41 +17,44 @@ public class EmployeeEducation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(length = 100)
+    @Column(name = "EDUCATION", length = 100)
     private String education;
 
-    @Column(name = "institution_name", length = 255)
+    @Column(name = "INSTITUTION_NAME", length = 255)
     private String institutionName;
 
-    @Column(length = 255)
+    @Column(name = "UNIVERSITY", length = 255)
     private String university;
 
-    @Column(length = 50)
+    @Column(name = "TYPE", length = 50)
     private String type;
 
-    @Column(name = "year_of_passing", length = 10)
+    @Column(name = "YEAR_OF_PASSING", length = 10)
     private String yearOfPassing;
 
-    @Column(name = "percentage_grade", length = 20)
+    @Column(name = "PERCENTAGE_GRADE", length = 20)
     private String percentageGrade;
 
-    @Column(name = "documents", length = 500)
+    @Column(name = "DOCUMENTS", length = 500)
     private String certificateFile;
 
-    @Column(name = "created_by", length = 100, updatable = false)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

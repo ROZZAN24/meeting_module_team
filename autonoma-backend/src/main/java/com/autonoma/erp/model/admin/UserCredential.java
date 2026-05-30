@@ -15,49 +15,65 @@ import java.util.Date;
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class UserCredential {
     @Id
-    @Column(name = "user_id", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "USER_ID", columnDefinition = "NVARCHAR(50)")
     private String userId;
 
-    @Column(name = "emp_id", nullable = false)
+    @Column(name = "EMP_ID", nullable = false)
     private Long empId;
 
-    @Column(name = "password", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "PASSWORD", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String password;
 
-    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)", updatable = false)
+    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(100)")
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     private Integer status;
 
-    @Column(name = "img_name", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
     private String imgName;
 
     @Column(name = "IS_BOS_ADMIN")
     private Integer isBosAdmin;
 
-    @Column(name = "face_image", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "FACE_IMAGE", columnDefinition = "NVARCHAR(MAX)")
     private String faceImage;
 
-    @Column(name = "auth_method", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "AUTH_METHOD", columnDefinition = "NVARCHAR(50)")
     private String authMethod = "PASSWORD";
 
-    @Column(name = "face_descriptor", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "FACE_DESCRIPTOR", columnDefinition = "NVARCHAR(MAX)")
     private String faceDescriptor;
 
-    @Column(name = "auto_logout_on_face_absence")
+    @Column(name = "AUTO_LOGOUT_ON_FACE_ABSENCE")
     private Integer autoLogoutOnFaceAbsence = 0;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new Date();
+        if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
+        if (isActive == null) isActive = true;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new Date();
+        if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
+    }
 
     public String getUserId() {
         return userId;

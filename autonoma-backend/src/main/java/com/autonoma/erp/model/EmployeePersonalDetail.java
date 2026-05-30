@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
-@Table(name = "HR_EMPLOYEE_PERSONAL_DETAIL")
+@Table(name = "HR_EMPLOYEE_PERSONAL")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -18,120 +18,123 @@ public class EmployeePersonalDetail {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(length = 20)
+    @Column(name = "GENDER", length = 20)
     private String gender;
 
-    @Column(name = "birth_date")
+    @Column(name = "BIRTH_DATE")
     @Temporal(TemporalType.DATE)
     private Date birthDate;
 
-    @Column(name = "marital_status", length = 30)
+    @Column(name = "MARITAL_STATUS", length = 30)
     private String maritalStatus;
 
-    @Column(name = "marriage_date")
+    @Column(name = "MARRIAGE_DATE")
     @Temporal(TemporalType.DATE)
     private Date marriageDate;
 
-    @Column(name = "number_of_children")
+    @Column(name = "NUMBER_OF_CHILDREN")
     private Integer numberOfChildren;
 
-    @Column(name = "email_id", length = 255)
+    @Column(name = "PERSONAL_EMAIL", length = 255)
     private String personalEmail;
 
-    @Column(name = "passport_number", length = 50)
+    @Column(name = "PASSPORT_NUMBER", length = 50)
     private String passportNumber;
 
-    @Column(name = "passport_issue_city", length = 100)
+    @Column(name = "PASSPORT_ISSUE_CITY", length = 100)
     private String passportIssueCity;
 
-    @Column(length = 100)
+    @Column(name = "NATIONALITY", length = 100)
     private String nationality;
 
-    @Column(name = "blood_group", length = 10)
+    @Column(name = "BLOOD_GROUP", length = 10)
     private String bloodGroup;
 
-    @Column(length = 50)
+    @Column(name = "RELIGION", length = 50)
     private String religion;
 
-    @Column(name = "region", length = 100)
+    @Column(name = "REGION", length = 100)
     private String region;
 
-    @Column(length = 20)
+    @Column(name = "HEIGHT", length = 20)
     private String height;
 
-    @Column(length = 20)
+    @Column(name = "WEIGHT", length = 20)
     private String weight;
 
-    @Column(name = "shirt_size", length = 20)
+    @Column(name = "SHIRT_SIZE", length = 20)
     private String shirtSize;
 
-    @Column(name = "pant_size", length = 20)
+    @Column(name = "PANT_SIZE", length = 20)
     private String pantSize;
 
-    @Column(name = "shoe_size", length = 20)
+    @Column(name = "SHOE_SIZE", length = 20)
     private String shoeSize;
 
-    @Column(name = "insurance_number", length = 100)
+    @Column(name = "INSURANCE_NUMBER", length = 100)
     private String insuranceNumber;
 
-    @Column(name = "esic_number", length = 100)
+    @Column(name = "ESIC_NUMBER", length = 100)
     private String esicNumber;
 
-    @Column(name = "pf_number", length = 100)
+    @Column(name = "PF_NUMBER", length = 100)
     private String pfNumber;
 
-    @Column(name = "insurance_expiry_date")
+    @Column(name = "INSURANCE_EXPIRY_DATE")
     @Temporal(TemporalType.DATE)
     private Date insuranceExpiryDate;
 
-    @Column(name = "uan_number", length = 100)
+    @Column(name = "UAN_NUMBER", length = 100)
     private String uanNumber;
 
-    @Column(name = "pan_number", length = 20)
+    @Column(name = "PAN_NUMBER", length = 20)
     private String panNumber;
 
-    @Column(name = "aadhar_number", length = 20)
+    @Column(name = "AADHAR_NUMBER", length = 20)
     private String aadharNumber;
 
-    @Column(name = "driving_license_number", length = 50)
+    @Column(name = "DRIVING_LICENSE_NUMBER", length = 50)
     private String drivingLicenseNumber;
 
-    @Column(name = "license_expiry_date")
+    @Column(name = "LICENSE_EXPIRY_DATE")
     @Temporal(TemporalType.DATE)
     private Date licenseExpiryDate;
 
-    @Column(name = "election_card_number", length = 50)
+    @Column(name = "ELECTION_CARD_NUMBER", length = 50)
     private String electionCardNumber;
 
-    @Column(name = "ration_card_number", length = 50)
+    @Column(name = "RATION_CARD_NUMBER", length = 50)
     private String rationCardNumber;
 
-    @Column(name = "company_issued_mobile", length = 20)
+    @Column(name = "COMPANY_ISSUED_MOBILE", length = 20)
     private String companyIssuedMobile;
 
-    @Column(name = "mobile_deduction", precision = 10, scale = 2)
+    @Column(name = "MOBILE_DEDUCTION", precision = 10, scale = 2)
     private BigDecimal mobileDeduction;
 
-    @Column(name = "canteen_allowance", precision = 10, scale = 2)
+    @Column(name = "CANTEEN_ALLOWANCE", precision = 10, scale = 2)
     private BigDecimal canteenAllowance;
 
-    @Column(name = "loan_installment_month", length = 50)
+    @Column(name = "LOAN_INSTALLMENT_MONTH", length = 50)
     private String loanInstallmentMonth;
 
-    @Column(name = "created_by", length = 100, updatable = false)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

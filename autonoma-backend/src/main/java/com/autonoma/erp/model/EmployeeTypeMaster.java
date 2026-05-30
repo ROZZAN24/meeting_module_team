@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "HR_EMPLOYEE_TYPE_MASTER")
+@Table(name = "HR_EMPLOYEE_TYPE")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,31 +16,64 @@ public class EmployeeTypeMaster {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "type_name", unique = true, nullable = false)
+    @Column(name = "TYPE_NAME", unique = true, nullable = false, length = 100)
     private String typeName;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "DESCRIPTION", length = 500)
     private String description;
 
-    @Column(name = "status")
+    @Column(name = "STATUS", length = 20)
     private String status; // ACTIVE, INACTIVE
 
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     public EmployeeTypeMaster(String name) {
         this.typeName = name;
         this.status = "ACTIVE";
     }
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new Date();
+        if (createdBy == null) {
+            createdBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new Date();
+        updatedBy = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+    }
+
+    // Backward-compatible aliases for legacy service code
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public Date getCreatedAt() { return createdDate; }
+    public void setCreatedAt(Date d) { this.createdDate = d; }
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
+    public Date getUpdatedAt() { return updatedDate; }
+    public void setUpdatedAt(Date d) { this.updatedDate = d; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() { return this.createdBy; }
+    public void setCreatedUser(String createdUser) { this.createdBy = createdUser; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() { return this.updatedBy; }
+    public void setUpdatedUser(String updatedUser) { this.updatedBy = updatedUser; }
 }

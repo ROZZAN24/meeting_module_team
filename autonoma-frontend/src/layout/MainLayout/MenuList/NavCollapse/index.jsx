@@ -288,8 +288,15 @@ export default function NavCollapse({ menu, level, parentId }) {
                   color: 'inherit',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  width: 200,
-                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
+                  width: 120,
+                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
+                  '.MuiListItemButton-root:hover &': {
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    whiteSpace: 'normal',
+                    width: 'auto',
+                    wordBreak: 'break-word'
+                  }
                 }}
               >
                 <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}

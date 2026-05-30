@@ -351,7 +351,15 @@ export default function BOSFormDialog({
 
       {/* ── CONTENT ── */}
       {!isCollapsed && (
-        <DialogContent sx={{ ...ds.content, ...contentSx }}>
+        <DialogContent sx={{
+          ...ds.content,
+          pt: '20px !important',
+          overflowY: 'auto !important',
+          '&::-webkit-scrollbar': { width: 6, height: 6 },
+          '&::-webkit-scrollbar-track': { backgroundColor: 'transparent' },
+          '&::-webkit-scrollbar-thumb': { backgroundColor: 'grey.300', borderRadius: 10, '&:hover': { backgroundColor: 'grey.400' } },
+          ...contentSx
+        }}>
           {sidebar ? (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 320px' }, gap: 4, width: '100%', alignItems: 'start' }}>
               <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 3, width: '100%' }}>

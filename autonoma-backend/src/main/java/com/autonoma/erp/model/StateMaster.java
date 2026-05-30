@@ -4,41 +4,45 @@ import jakarta.persistence.*;
 import lombok.Data;
 
 @Entity
-@Table(name = "MASTER_STATE")
+@Table(name = "MST_STATE")
 @Data
 public class StateMaster {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "COUNTRY_NAME", length = 100)
+    @Column(name = "COUNTRY_NAME", length = 100, nullable = false)
     private String countryName;
 
-    @Column(name = "STATE_NAME", length = 100)
+    @Column(name = "STATE_NAME", length = 100, nullable = false)
     private String stateName;
 
-    @Column(name = "STATE_CODE", length = 20)
+    @Column(name = "STATE_CODE", length = 20, nullable = false)
     private String stateCode;
 
     @Column(name = "STATUS", length = 20)
     private String status;
 
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     private java.time.LocalDateTime createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     private java.time.LocalDateTime updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {
         createdDate = java.time.LocalDateTime.now();
         if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
+        if (isActive == null) isActive = true;
     }
 
     @PreUpdate

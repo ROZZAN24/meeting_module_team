@@ -17,58 +17,61 @@ public class EmployeeContact {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "mobile", length = 20)
+    @Column(name = "MOBILE", length = 20)
     private String mobile;
 
-    @Column(name = "alternate_mobile", length = 20)
+    @Column(name = "ALTERNATE_MOBILE", length = 20)
     private String alternateMobile;
 
     // Permanent Address
-    @Column(name = "perm_address1", length = 500)
+    @Column(name = "PERM_ADDRESS1", length = 500)
     private String address;
 
-    @Column(name = "perm_city", length = 100)
+    @Column(name = "PERM_CITY", length = 100)
     private String city;
 
-    @Column(name = "perm_state", length = 100)
+    @Column(name = "PERM_STATE", length = 100)
     private String state;
 
-    @Column(name = "perm_country", length = 100)
+    @Column(name = "PERM_COUNTRY", length = 100)
     private String country;
 
-    @Column(name = "perm_pin_code", length = 20)
+    @Column(name = "PERM_PIN_CODE", length = 20)
     private String pincode;
 
     // Communication Address
-    @Column(name = "comm_address1", length = 500)
+    @Column(name = "COMM_ADDRESS1", length = 500)
     private String commAddress;
 
-    @Column(name = "comm_city", length = 100)
+    @Column(name = "COMM_CITY", length = 100)
     private String commCity;
 
-    @Column(name = "comm_state", length = 100)
+    @Column(name = "COMM_STATE", length = 100)
     private String commState;
 
-    @Column(name = "comm_country", length = 100)
+    @Column(name = "COMM_COUNTRY", length = 100)
     private String commCountry;
 
-    @Column(name = "comm_pin_code", length = 20)
+    @Column(name = "COMM_PIN_CODE", length = 20)
     private String commPincode;
 
-    @Column(name = "created_by", length = 100, updatable = false)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

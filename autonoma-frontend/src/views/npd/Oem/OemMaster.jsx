@@ -6,7 +6,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import AddOemDialog from './AddOemDialog';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -23,6 +23,7 @@ const columns = [
   { id: 'oemDescription', label: 'OEM Description', minWidth: 220 },
   { id: 'originCountry', label: 'Origin Country', minWidth: 150 },
   { id: 'statusYear', label: 'Status/Year', minWidth: 130 },
+  { id: 'status', label: 'Status', minWidth: 100, status: true },
   { id: 'createdBy', label: 'CREATED USER', minWidth: 140 },
   { id: 'createdAt', label: 'CREATED DATE', minWidth: 160 },
   { id: 'updatedBy', label: 'UPDATED USER', minWidth: 140 },
@@ -46,30 +47,31 @@ export default function OemMaster() {
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
-  // Dispatch starred filter configuration matching: OEM Name Contains
+  // Dispatch starred filter configuration matching Status, Date range, and OEM Short Name
   useEffect(() => {
+    const today = format(new Date(), 'yyyy-MM-dd');
     const config = [
-      {
-        id: 'oemNameContains',
-        label: 'OEM Name Contains',
-        type: 'text',
-        defaultValue: '',
-        isStarred: true
-      },
       {
         id: 'status',
         label: 'Status',
         type: 'select',
+        isStarred: true,
         options: [
-          { value: 'All', label: 'ALL' },
+          { value: 'ALL', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'All',
-        isStarred: true
-      }
+        defaultValue: 'ACTIVE'
+      },
+      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'oemShortName', label: 'OEM Short Name', type: 'text', placeholder: 'Search OEM short name...', isStarred: true }
     ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today,
+      createdAtEnd: today
+    }));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -118,21 +120,27 @@ export default function OemMaster() {
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
       // 1. Status Filter
-      const statusFilter = globalFilters.status || 'All';
-      const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
+      const statusFilter = globalFilters.status || 'ACTIVE';
+      if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
-      // 2. OEM Name Contains (Starred Text Filter)
-      const nameContains = globalFilters.oemNameContains || '';
-      const matchesNameContains = !nameContains ||
-        (row.oemShortName && row.oemShortName.toLowerCase().includes(nameContains.toLowerCase()));
+      // 2. Created Date Range Filter
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const startDate = globalFilters.createdAtStart || today;
+      const endDate = globalFilters.createdAtEnd || today;
+      const rowDate = row.createdAt ? format(new Date(row.createdAt), 'yyyy-MM-dd') : '';
+      if (rowDate && (rowDate < startDate || rowDate > endDate)) return false;
 
-      // 3. Search query
+      // 3. Primary Field (OEM Short Name)
+      const oemShortNameFilter = globalFilters.oemShortName || '';
+      if (oemShortNameFilter && !(row.oemShortName || '').toLowerCase().includes(oemShortNameFilter.toLowerCase())) return false;
+
+      // 4. Wildcard search query
       const matchesSearch = !globalQuery ||
         (row.oemShortName && row.oemShortName.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.oemPrefix && row.oemPrefix.toLowerCase().includes(globalQuery.toLowerCase())) ||
         (row.oemDescription && row.oemDescription.toLowerCase().includes(globalQuery.toLowerCase()));
 
-      return matchesStatus && matchesNameContains && matchesSearch;
+      return matchesSearch;
     });
   }, [rows, globalQuery, globalFilters]);
 

@@ -434,11 +434,13 @@ export default function BOSDataTable({
                   }
                 };
 
-                const isDoubleTapSupported = !!onDoubleClickRow || !!onEditRow;
+                const showEditTooltip = Boolean(onDoubleClickRow || onEditRow);
+                const isDoubleTapSupported = showEditTooltip;
                 const rowElement = (
                   <TableRow 
                     key={rowId}
                     hover 
+                    title={showEditTooltip ? "Double Tap To Edit" : undefined}
                     sx={rowSx} 
                     onClick={() => {
                       setLocalSelectedId(rowId);

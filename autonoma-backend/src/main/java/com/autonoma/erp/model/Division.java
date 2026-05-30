@@ -16,7 +16,7 @@ import java.util.Date;
  * via the BaseDivisionTenantEntity filter.
  */
 @Entity
-@Table(name = "AD_DIVISION_MASTER")
+@Table(name = "AD_DIVISION")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,7 +31,7 @@ public class Division {
      * FK to ad_company_credential — which company this division belongs to.
      * NOT a JPA join; kept as plain Long to avoid cross-DB FK constraints.
      */
-    @Column(name = "company_id", nullable = false)
+    @Column(name = "COMPANY_ID", nullable = false)
     private Long companyId;
 
     /**
@@ -42,60 +42,104 @@ public class Division {
     @Transient
     private String companyName;
 
-    @Column(name = "division_name", nullable = false, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "DIVISION_NAME", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String divisionName;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(250)")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(250)")
     private String description;
 
-    @Column(name = "address", columnDefinition = "NVARCHAR(500)")
+    @Column(name = "ADDRESS", columnDefinition = "NVARCHAR(500)")
     private String address;
 
-    @Column(name = "city", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "CITY", columnDefinition = "NVARCHAR(50)")
     private String city;
 
-    @Column(name = "state", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATE", columnDefinition = "NVARCHAR(50)")
     private String state;
 
-    @Column(name = "country", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "COUNTRY", columnDefinition = "NVARCHAR(50)")
     private String country;
 
-    @Column(name = "pincode", columnDefinition = "NVARCHAR(10)")
+    @Column(name = "PINCODE", columnDefinition = "NVARCHAR(10)")
     private String pincode;
 
-    @Column(name = "gst_in", columnDefinition = "NVARCHAR(15)")
+    @Column(name = "GST_IN", columnDefinition = "NVARCHAR(15)")
     private String gstIn;
 
-    @Column(name = "state_cd")
+    @Column(name = "STATE_CODE")
     private Integer stateCode;
 
-    @Column(name = "seq_no")
+    @Column(name = "SEQUENCE_NO")
     private Integer sequenceNo = 0;
 
-    @Column(name = "status", nullable = false)
+    @Column(name = "STATUS", nullable = false)
     private Boolean status = true; // true = 1 = Active, false = 0 = Inactive
 
-    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)", updatable = false)
+    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(100)")
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {
         createdDate = new Date();
+        if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
+        if (isActive == null) isActive = true;
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedDate = new Date();
+        if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
+    }
+
+    // Backward-compatible aliases
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public Date getCreatedAt() {
+        return this.createdDate;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdDate = createdAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
+    public Date getUpdatedAt() {
+        return this.updatedDate;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedDate = updatedAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() {
+        return this.createdBy;
+    }
+
+    public void setCreatedUser(String createdUser) {
+        this.createdBy = createdUser;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() {
+        return this.updatedBy;
+    }
+
+    public void setUpdatedUser(String updatedUser) {
+        this.updatedBy = updatedUser;
     }
 }
+

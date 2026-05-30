@@ -3,49 +3,33 @@ package com.autonoma.erp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.Date;
 
 @Entity
 @Table(name = "NPD_ITEM_GROUP")
 @Data
 @NoArgsConstructor
-public class ProductItemGroup {
+public class ProductItemGroup extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "group_name", unique = true, nullable = false, length = 100)
+    @Column(name = "GROUP_NAME", unique = true, nullable = false, length = 100)
     private String groupName;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "STATUS", nullable = false, length = 20)
     private String status = "ACTIVE";
 
-    @Column(name = "created_by", length = 100, updatable = false)
-    private String createdBy;
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
-    @Column(name = "created_at", updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
-
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
-
+    @Override
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        super.onCreate();
         if (status == null) status = "ACTIVE";
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = new Date();
     }
 }

@@ -161,7 +161,14 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
                       textOverflow: 'ellipsis',
                       width: 200,
                       color: 'inherit',
-                      ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' })
+                      ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
+                      '.MuiListItemButton-root:hover &': {
+                        overflow: 'visible',
+                        textOverflow: 'clip',
+                        whiteSpace: 'normal',
+                        width: 'auto',
+                        wordBreak: 'break-word'
+                      }
                     }}
                   >
                     <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}

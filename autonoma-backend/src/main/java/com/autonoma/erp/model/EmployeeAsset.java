@@ -18,48 +18,51 @@ public class EmployeeAsset {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "asset_id", length = 50)
+    @Column(name = "ASSET_ID", length = 50)
     private String assetId;
 
-    @Column(name = "asset_name", length = 255)
+    @Column(name = "ASSET_NAME", length = 255)
     private String assetName;
 
-    @Column(name = "asset_value", precision = 12, scale = 2)
+    @Column(name = "ASSET_VALUE", precision = 12, scale = 2)
     private BigDecimal assetValue;
 
-    @Column(name = "issue_date")
+    @Column(name = "ISSUE_DATE")
     @Temporal(TemporalType.DATE)
     private Date issueDate;
 
-    @Column(name = "condition_of_asset", length = 100)
+    @Column(name = "CONDITION_OF_ASSET", length = 100)
     private String condition;
 
-    @Column(name = "qty")
+    @Column(name = "QTY")
     private Integer qty;
 
-    @Column(name = "serial_no", length = 100)
+    @Column(name = "SERIAL_NO", length = 100)
     private String serialNo;
 
-    @Column(precision = 12, scale = 2)
+    @Column(name = "VALUE", precision = 12, scale = 2)
     private BigDecimal value;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "created_by", length = 100, updatable = false)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

@@ -125,8 +125,8 @@ const AddWindFarmDialog = ({ open, handleClose, initialData, readOnly = false })
         city: formData.city,
         state: formData.state,
         country: formData.country,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin',
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin',
         createdAt: formData.createdAt
       };
 
@@ -173,7 +173,7 @@ const AddWindFarmDialog = ({ open, handleClose, initialData, readOnly = false })
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconClipboardCheck size={20} color={theme.palette.primary.main} />} title="Wind Farm Details">
+        <BOSFormSection>
           <BOSTextField
             name="windFarmName"
             label="Wind Farm Name"

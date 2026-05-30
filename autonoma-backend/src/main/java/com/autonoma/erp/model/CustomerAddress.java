@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_CUSTOMER_ADDRESS")
+@Table(name = "SLS_CUSTOMER_ADDRESS")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,70 +19,113 @@ public class CustomerAddress {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_id")
+    @Column(name = "CUSTOMER_ID", nullable = false)
     private Long customerId;
 
-    @Column(name = "customer_name", length = 200)
+    @Column(name = "CUSTOMER_NAME", length = 200)
     private String customerName;
 
-    @Column(name = "invoice_name", length = 200)
+    @Column(name = "INVOICE_NAME", length = 200)
     private String invoiceName;
 
-    @Column(name = "shipment", length = 100)
+    @Column(name = "SHIPMENT", length = 100)
     private String shipment;
 
-    @Column(name = "address", columnDefinition = "TEXT")
+    @Column(name = "ADDRESS", columnDefinition = "TEXT")
     private String address;
 
-    @Column(name = "city", length = 100)
+    @Column(name = "CITY", length = 100)
     private String city;
 
-    @Column(name = "district", length = 100)
+    @Column(name = "DISTRICT", length = 100)
     private String district;
 
-    @Column(name = "state", length = 100)
+    @Column(name = "STATE", length = 100)
     private String state;
 
-    @Column(name = "country", length = 100)
+    @Column(name = "COUNTRY", length = 100)
     private String country;
 
-    @Column(name = "pincode", length = 20)
+    @Column(name = "PINCODE", length = 20)
     private String pincode;
 
-    @Column(name = "distance")
+    @Column(name = "DISTANCE")
     private Double distance;
 
-    @Column(name = "contact_name", length = 200)
+    @Column(name = "CONTACT_NAME", length = 200)
     private String contactName;
 
-    @Column(name = "contact_no", length = 50)
+    @Column(name = "CONTACT_NO", length = 50)
     private String contactNo;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "CREATED_BY")
     private String createdBy;
 
-    @Column(name = "created_date", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY")
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    @Builder.Default
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {
         createdDate = new Date();
+        if (createdBy == null) createdBy = "Admin";
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedDate = new Date();
+        if (updatedBy == null) updatedBy = "Admin";
+    }
+
+    // Backward-compatible aliases
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public Date getCreatedAt() {
+        return this.createdDate;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdDate = createdAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
+    public Date getUpdatedAt() {
+        return this.updatedDate;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedDate = updatedAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() {
+        return this.createdBy;
+    }
+
+    public void setCreatedUser(String createdUser) {
+        this.createdBy = createdUser;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() {
+        return this.updatedBy;
+    }
+
+    public void setUpdatedUser(String updatedUser) {
+        this.updatedBy = updatedUser;
     }
 }

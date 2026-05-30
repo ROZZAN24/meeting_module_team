@@ -5,31 +5,47 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "MODE_OF_DESPATCH")
+@Table(name = "MST_DESPATCH_MODE")
 @Data
 public class ModeOfDespatch {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "mode_name", length = 100, nullable = false)
+    @Column(name = "MODE_NAME", length = 100, nullable = false)
     private String modeName;
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "DESCRIPTION", length = 1000)
     private String description;
 
-    @Column(name = "status", length = 50, nullable = false)
+    @Column(name = "STATUS", length = 50, nullable = false)
     private String status = "Active";
 
-    @Column(name = "created_by", length = 255, updatable = false)
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_date", updatable = false)
+    @Column(name = "CREATED_DATE")
     private LocalDateTime createdDate;
 
-    @Column(name = "updated_by", length = 255)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_date")
+    @Column(name = "UPDATED_DATE")
     private LocalDateTime updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = LocalDateTime.now();
+        if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
+        if (isActive == null) isActive = true;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = LocalDateTime.now();
+        if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
+    }
 }

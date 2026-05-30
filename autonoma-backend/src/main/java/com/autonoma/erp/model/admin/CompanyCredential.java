@@ -18,64 +18,64 @@ public class CompanyCredential {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "company_name", nullable = false, columnDefinition = "NVARCHAR(100)")
+    @Column(name = "COMPANY_NAME", nullable = false, columnDefinition = "NVARCHAR(100)")
     private String companyName;
 
-    @Column(name = "short_name", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "SHORT_NAME", columnDefinition = "NVARCHAR(50)")
     private String shortName;
 
-    @Column(name = "address", columnDefinition = "NVARCHAR(500)")
+    @Column(name = "ADDRESS", columnDefinition = "NVARCHAR(500)")
     private String address;
 
-    @Column(name = "city", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "CITY", columnDefinition = "NVARCHAR(50)")
     private String city;
 
-    @Column(name = "state", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATE", columnDefinition = "NVARCHAR(50)")
     private String state;
 
-    @Column(name = "state_cd")
+    @Column(name = "STATE_CODE")
     private Integer stateCode;
 
-    @Column(name = "country", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "COUNTRY", columnDefinition = "NVARCHAR(50)")
     private String country;
 
-    @Column(name = "pincode", columnDefinition = "NVARCHAR(10)")
+    @Column(name = "PINCODE", columnDefinition = "NVARCHAR(10)")
     private String pincode;
 
-    @Column(name = "gst_in", columnDefinition = "NVARCHAR(15)")
+    @Column(name = "GST_IN", columnDefinition = "NVARCHAR(15)")
     private String gstIn;
 
-    @Column(name = "db_source_name", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "DB_SOURCE_NAME", columnDefinition = "NVARCHAR(50)")
     private String dbSourceName;
 
-    @Column(name = "lic_renewal_date")
+    @Column(name = "LIC_RENEWAL_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date licRenewalDate;
 
-    @Column(name = "lic_expiry_date")
+    @Column(name = "LIC_EXPIRY_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date licExpiryDate;
 
-    @Column(name = "logo_file_name", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "LOGO_FILE_NAME", columnDefinition = "NVARCHAR(100)")
     private String logoFileName;
 
-    @Column(name = "login_bg_file_name", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "LOGIN_BG_FILE_NAME", columnDefinition = "NVARCHAR(100)")
     private String logInBgFileName;
 
-    @Column(name = "dir_path", columnDefinition = "NVARCHAR(200)")
+    @Column(name = "DIRECTORY_PATH", columnDefinition = "NVARCHAR(1000)")
     private String directoryPath;
 
-    @Column(name = "created_by", columnDefinition = "NVARCHAR(50)", updatable = false)
+    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(100)")
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 
@@ -84,6 +84,22 @@ public class CompanyCredential {
 
     @Column(name = "RESTORE_ENABLE_DAYS")
     private Integer restoreEnableDays;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @PrePersist
+    protected void onCreate() {
+        createdDate = new Date();
+        if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
+        if (isActive == null) isActive = true;
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedDate = new Date();
+        if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
+    }
 
     public Long getId() {
         return id;

@@ -4,14 +4,11 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalTime;
-import java.time.LocalDateTime;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
 @Table(name = "QMS_MEETING_USER_ATTENDANCE",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"schedule_id", "employee_id"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"SCHEDULE_ID", "EMPLOYEE_ID"}))
 @Data
 @NoArgsConstructor
 public class QmsMeetingUserAttendance extends BaseAuditEntity {
@@ -20,25 +17,32 @@ public class QmsMeetingUserAttendance extends BaseAuditEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "schedule_id", nullable = false)
+    @JoinColumn(name = "SCHEDULE_ID", nullable = false)
     private QmsMeetingSchedule schedule;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employee_id", nullable = false)
+    @JoinColumn(name = "EMPLOYEE_ID", nullable = false)
     private EmployeeMaster employee;
 
-    @Column(name = "in_time")
+    @Column(name = "IN_TIME")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime inTime;
 
-    @Column(name = "out_time")
+    @Column(name = "OUT_TIME")
     @JsonFormat(pattern = "HH:mm")
     private LocalTime outTime;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     private String status = "PRESENT"; // PRESENT, LATE, ABSENT
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

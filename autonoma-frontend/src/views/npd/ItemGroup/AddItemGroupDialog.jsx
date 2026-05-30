@@ -62,8 +62,8 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
     try {
       const payload = {
         ...formData,
-        createdBy: formData.id ? formData.createdBy : (user?.name || 'Admin'),
-        updatedBy: user?.name || 'Admin'
+        createdBy: formData.id ? formData.createdBy : (user?.id || 'Admin'),
+        updatedBy: user?.id || 'Admin'
       };
 
       if (formData.id) {
@@ -109,7 +109,7 @@ const AddItemGroupDialog = ({ open, handleClose, initialData, readOnly = false }
         hasId={!!formData.id}
         maxWidth="md"
       >
-        <BOSFormSection icon={<IconSettings size={20} color={theme.palette.primary.main} />} title="Group Details">
+        <BOSFormSection>
           <BOSTextField
             name="groupName"
             label="Product Item Group"

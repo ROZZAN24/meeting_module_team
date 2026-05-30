@@ -7,82 +7,65 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_ENQUIRY")
+@Table(name = "SLS_ENQUIRY")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SmEnquiry {
+public class SmEnquiry extends BaseAuditEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "enquiry_no", nullable = false, length = 50)
+    @Column(name = "ENQUIRY_NO", nullable = false, length = 50)
     private String enquiryNo;
 
-    @Column(name = "enquiry_date")
+    @Column(name = "ENQUIRY_DATE")
     @Temporal(TemporalType.DATE)
     private Date enquiryDate;
 
-    @Column(name = "customer_name", length = 200)
+    @Column(name = "CUSTOMER_NAME", length = 200)
     private String customerName;
 
     @ManyToOne
     @JoinColumn(name = "CUSTOMER_ID")
     private CustomerMaster customer;
 
-    @Column(name = "contact_person", length = 200)
+    @Column(name = "CONTACT_PERSON", length = 200)
     private String contactPerson;
 
-    @Column(name = "email", length = 200)
+    @Column(name = "EMAIL", length = 200)
     private String email;
 
-    @Column(name = "phone", length = 50)
+    @Column(name = "PHONE", length = 50)
     private String phone;
 
-    @Column(name = "subject", length = 500)
+    @Column(name = "SUBJECT", length = 500)
     private String subject;
 
-    @Column(name = "requirements", columnDefinition = "TEXT")
+    @Column(name = "REQUIREMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String requirements;
 
-    @Column(name = "source", length = 100)
+    @Column(name = "SOURCE", length = 100)
     private String source;
 
-    @Column(name = "priority", length = 50)
+    @Column(name = "PRIORITY", length = 50)
     private String priority = "Medium";
 
-    @Column(name = "ocr_document_path", length = 500)
+    @Column(name = "OCR_DOCUMENT_PATH", length = 1000)
     private String ocrDocumentPath;
 
-    @Column(name = "ocr_extracted_text", columnDefinition = "TEXT")
+    @Column(name = "OCR_EXTRACTED_TEXT", columnDefinition = "NVARCHAR(MAX)")
     private String ocrExtractedText;
 
-    @Column(name = "ocr_confidence", length = 10)
+    @Column(name = "OCR_CONFIDENCE", length = 10)
     private String ocrConfidence;
 
-    @Column(name = "status", length = 50)
+    @Column(name = "STATUS", length = 50)
     private String status = "Open";
 
-    @Column(name = "remarks", columnDefinition = "TEXT")
+    @Column(name = "REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String remarks;
 
-    @Column(name = "created_by", length = 100, updatable = false)
-    private String createdBy;
-
-    @Column(name = "created_at", updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdDate;
-
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedDate;
-
-    @PrePersist
-    protected void onCreate() { createdDate = new Date(); }
-
-    @PreUpdate
-    protected void onUpdate() { updatedDate = new Date(); }
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 }
