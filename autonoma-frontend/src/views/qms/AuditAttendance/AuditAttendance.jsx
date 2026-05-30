@@ -12,6 +12,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useBOSValidation from 'hooks/useBOSValidation';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useAuth from 'hooks/useAuth';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -53,6 +54,7 @@ const getSystemTime12h = () => {
 
 export default function AuditAttendance() {
   const dispatch = useDispatch();
+  const { user } = useAuth();
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_ATTENDANCE);
   const { validate, clearErrors, errors } = useBOSValidation();
   const [rows, setRows] = useState([]);
@@ -65,6 +67,23 @@ export default function AuditAttendance() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [schedules, setSchedules] = useState([]);
+  const [currentUserEmp, setCurrentUserEmp] = useState(null);
+
+  useEffect(() => {
+    const fetchUserEmp = async () => {
+      if (user?.empId) {
+        try {
+          const res = await axios.get(`/api/master/hr/employees/${user.empId}`);
+          if (res.data) {
+            setCurrentUserEmp(res.data);
+          }
+        } catch (err) {
+          console.error('[AuditAttendance] Failed to fetch logged-in user employee details:', err);
+        }
+      }
+    };
+    fetchUserEmp();
+  }, [user?.empId]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -115,8 +134,56 @@ export default function AuditAttendance() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const filteredSchedules = useMemo(() => {
+    const completedScheduleNos = new Set(rows.map(r => r.auditScheduleNo));
+    const now = new Date();
+    
+    return (schedules || []).filter(s => {
+      // If editing or already matches the selected value, always show it
+      if (s.scheduleNo === formData.auditScheduleNo) {
+        return true;
+      }
+      
+      // 1. Once attendance is submitted, schedule no should not appear again
+      if (completedScheduleNos.has(s.scheduleNo)) {
+        return false;
+      }
+      
+      // 2. Only show starting from 10 minutes before the audit schedule timing
+      if (!s.auditDate || !s.startTime) return false;
+      
+      const dStr = s.auditDate.split('T')[0];
+      const match = s.startTime.match(/^(\d{2}):(\d{2})\s*(AM|PM)$/i);
+      if (!match) return false;
+      
+      let hours = parseInt(match[1], 10);
+      const minutes = parseInt(match[2], 10);
+      const modifier = match[3].toUpperCase();
+      
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+      
+      const scheduleTime = new Date(`${dStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+      
+      // 10 minutes before the start time
+      const windowStart = new Date(scheduleTime.getTime() - 10 * 60 * 1000);
+      
+      return now >= windowStart;
+    });
+  }, [schedules, rows, formData.auditScheduleNo]);
+
   const handleOpenAdd = () => {
-    setFormData({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: getSystemTime12h(), outTime: '', attendanceStatus: 'PRESENT' });
+    const defaultName = currentUserEmp?.employeeName || user?.name || '';
+    const defaultCode = currentUserEmp?.empCode || user?.employeeCode || '';
+    setFormData({
+      id: null,
+      auditScheduleNo: '',
+      name: defaultName,
+      employeeCode: defaultCode,
+      inTime: getSystemTime12h(),
+      outTime: '',
+      attendanceStatus: 'PRESENT'
+    });
     clearErrors();
     setDialogOpen(true);
   };
@@ -279,35 +346,47 @@ export default function AuditAttendance() {
               error={!!errors.auditScheduleNo}
               helperText={errors.auditScheduleNo}
             >
-              {schedules.length > 0 ? (
-                schedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo} ({s.startTime})</MenuItem>)
+              {filteredSchedules.length > 0 ? (
+                filteredSchedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo} ({s.startTime})</MenuItem>)
               ) : (
                 <MenuItem disabled value="">No Schedules Available</MenuItem>
               )}
             </BOSTextField>
             
-            <BOSTextField
-              select
-              required
-              label="Name"
-              value={formData.name && formData.employeeCode ? formData.name + '|' + formData.employeeCode : ''}
-              onChange={(e) => {
-                const [n, c] = e.target.value.split('|');
-                setFormData({ ...formData, name: n, employeeCode: c });
-              }}
-              error={!!errors.name}
-              helperText={errors.name}
-            >
-              {participants.length > 0 ? (
-                participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{p.name} ({p.code})</MenuItem>)
-              ) : (
-                formData.name ? (
-                  <MenuItem value={formData.name + '|' + formData.employeeCode}>{formData.name} ({formData.employeeCode})</MenuItem>
+            {(currentUserEmp?.employeeName && currentUserEmp?.empCode) || (user?.name && user?.employeeCode) ? (
+              <BOSTextField
+                required
+                disabled
+                label="Name"
+                value={formData.name ? `${formData.name} (${formData.employeeCode})` : `${currentUserEmp?.employeeName || user?.name} (${currentUserEmp?.empCode || user?.employeeCode})`}
+                InputProps={{ readOnly: true }}
+                error={!!errors.name}
+                helperText={errors.name}
+              />
+            ) : (
+              <BOSTextField
+                select
+                required
+                label="Name"
+                value={formData.name && formData.employeeCode ? formData.name + '|' + formData.employeeCode : ''}
+                onChange={(e) => {
+                  const [n, c] = e.target.value.split('|');
+                  setFormData({ ...formData, name: n, employeeCode: c });
+                }}
+                error={!!errors.name}
+                helperText={errors.name}
+              >
+                {participants.length > 0 ? (
+                  participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{p.name} ({p.code})</MenuItem>)
                 ) : (
-                  <MenuItem disabled value="">No Participants Found</MenuItem>
-                )
-              )}
-            </BOSTextField>
+                  formData.name ? (
+                    <MenuItem value={formData.name + '|' + formData.employeeCode}>{formData.name} ({formData.employeeCode})</MenuItem>
+                  ) : (
+                    <MenuItem disabled value="">No Participants Found</MenuItem>
+                  )
+                )}
+              </BOSTextField>
+            )}
 
             <BOSTextField
               label="In Time"

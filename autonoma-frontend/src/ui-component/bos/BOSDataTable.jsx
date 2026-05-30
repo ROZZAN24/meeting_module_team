@@ -8,7 +8,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
-import { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { setTableConfig } from 'store/slices/search';
 import {
   tableContainerSx, tableHeadCellSx, getTableRowSx,
@@ -91,7 +91,7 @@ export default function BOSDataTable({
     try { 
       const dateObj = new Date(d);
       if (isNaN(dateObj.getTime())) return String(d);
-      return format(dateObj, 'dd/MM/yyyy HH:mm'); 
+      return format(dateObj, 'dd/MM/yyyy'); 
     } catch { 
       return '-'; 
     }
@@ -160,19 +160,105 @@ export default function BOSDataTable({
     if (disableSearchFilter) return rows;
 
     return rows.filter((row, idx) => {
-      // 1. Dynamic Filters from Search Popover (Only apply filters relevant to this table's columns)
+      // 1. Dynamic Filters from Search Popover
       if (globalFilters) {
+        // Collect all base date keys that have start or end filters active
+        const activeDateKeys = new Set();
+        for (const key of Object.keys(globalFilters)) {
+          if (key.endsWith('Start')) {
+            activeDateKeys.add(key.slice(0, -5));
+          } else if (key.endsWith('End')) {
+            activeDateKeys.add(key.slice(0, -3));
+          }
+        }
+
+        // Loop through all regular filters
         for (const [key, fVal] of Object.entries(globalFilters)) {
           if (fVal === undefined || fVal === null || fVal === '' || fVal === 'All') continue;
           
-          // Check if this filter key exists in our columns
+          // Skip start, end, and consider keys as they will be processed together
+          if (key.endsWith('Start') || key.endsWith('End') || key.endsWith('Consider')) {
+            continue;
+          }
+
           const col = columns.find(c => c.id === key);
           if (!col && key !== 'status') continue; 
 
-          const filterVal = String(fVal).toLowerCase().trim();
+          let filterVal = String(fVal).toLowerCase().trim();
+          const isDateField = (col && (col.id.toLowerCase().includes('date') || 
+                              col.id.endsWith('At') || 
+                              col.id.endsWith('_at') || 
+                              col.id === 'entryDate' ||
+                              col.id === 'invoiceDate') &&
+                              !col.id.toLowerCase().includes('by'));
+          
+          if (isDateField && filterVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            try {
+              const [y, m, d] = filterVal.split('-');
+              filterVal = `${d}/${m}/${y}`;
+            } catch {}
+          }
+
           const displayVal = col ? getCellDisplayValue(col, row, idx).toLowerCase().trim() : String(row[key] || '').toLowerCase().trim();
           
           if (filterVal && !displayVal.includes(filterVal)) {
+            return false;
+          }
+        }
+
+        // Process active date range filters together
+        for (const baseKey of activeDateKeys) {
+          const col = columns.find(c => c.id === baseKey);
+          if (!col) continue;
+
+          const startVal = globalFilters[`${baseKey}Start`];
+          const endVal = globalFilters[`${baseKey}End`];
+          const considerVal = globalFilters[`${baseKey}Consider`] || 'Yes';
+
+          if (!startVal && !endVal) continue;
+
+          let cellVal = resolveNestedValue(col.id, row);
+          if (cellVal === undefined || cellVal === null || cellVal === '') {
+            const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            cellVal = row[snakeCaseId];
+            if (cellVal === undefined || cellVal === null || cellVal === '') {
+              if (col.id === 'createdDate') cellVal = row['createdAt'] || row['created_at'];
+              if (col.id === 'updatedDate') cellVal = row['updatedAt'] || row['updated_at'];
+              if (col.id === 'createdUser') cellVal = row['createdBy'] || row['created_by'] || row['created_user'];
+              if (col.id === 'updatedUser') cellVal = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+              if (col.id === 'createdBy') cellVal = row['createdUser'] || row['created_by'] || row['created_user'];
+              if (col.id === 'updatedBy') cellVal = row['updatedUser'] || row['updated_by'] || row['updated_user'];
+            }
+          }
+
+          if (!cellVal) return false;
+
+          try {
+            const cellDate = new Date(cellVal);
+            if (isNaN(cellDate.getTime())) return false;
+            const cellDateMidnight = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+
+            const startDate = startVal ? new Date(startVal) : null;
+            const startDateMidnight = startDate && !isNaN(startDate.getTime()) ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+
+            const endDate = endVal ? new Date(endVal) : null;
+            const endDateMidnight = endDate && !isNaN(endDate.getTime()) ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+
+            // Check boundaries
+            let inBetween = true;
+            if (startDateMidnight && cellDateMidnight < startDateMidnight) {
+              inBetween = false;
+            }
+            if (endDateMidnight && cellDateMidnight > endDateMidnight) {
+              inBetween = false;
+            }
+
+            if (considerVal === 'Yes') {
+              if (!inBetween) return false;
+            } else {
+              if (inBetween) return false;
+            }
+          } catch {
             return false;
           }
         }
@@ -349,7 +435,8 @@ export default function BOSDataTable({
                 };
 
                 const showEditTooltip = Boolean(onDoubleClickRow || onEditRow);
-                return (
+                const isDoubleTapSupported = showEditTooltip;
+                const rowElement = (
                   <TableRow 
                     key={rowId}
                     hover 
@@ -413,6 +500,14 @@ export default function BOSDataTable({
                     </TableCell>
                   )}
                 </TableRow>
+                );
+
+                return isDoubleTapSupported ? (
+                  <Tooltip key={rowId} title="Double Tap" followCursor placement="top" arrow>
+                    {rowElement}
+                  </Tooltip>
+                ) : (
+                  React.cloneElement(rowElement, { key: rowId })
                 );
               })
             )}

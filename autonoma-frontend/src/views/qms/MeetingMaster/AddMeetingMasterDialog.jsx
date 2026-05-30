@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { MenuItem, Autocomplete, Chip, Button, Typography, Stack, IconButton, Box, Checkbox } from '@mui/material';
 import { IconUpload, IconX, IconPaperclip } from '@tabler/icons-react';
-import { BOSFormDialog, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -250,16 +250,14 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         )}
       />
 
-      <BOSTextField
-        select
+      <BOSStatusField
+        isCreate={!item}
+        type="string-upper"
         name="status"
         label="Status"
-        value={form.status || 'ACTIVE'}
+        value={form.status}
         onChange={h}
-      >
-        <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-        <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-      </BOSTextField>
+      />
 
       <Box sx={{ mt: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
         <Stack direction="row" alignItems="center" spacing={2} justifyContent="space-between">
@@ -285,23 +283,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
           )}
         </Stack>
       </Box>
-
-      {item && (
-        <>
-          <BOSTextField
-            name="createdUser"
-            label="Created User"
-            value={form.createdUser || form.createdBy || '-'}
-            disabled
-          />
-          <BOSTextField
-            name="updatedUser"
-            label="Updated User"
-            value={form.updatedUser || form.updatedBy || '-'}
-            disabled
-          />
-        </>
-      )}
+      
     </BOSFormDialog>
   );
 };

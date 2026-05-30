@@ -40,8 +40,7 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
         id: initialData.id,
         type: initialData.type || 'AREA',
         description: initialData.description || '',
-        status: initialData.status || 'ACTIVE',
-        createdUser: initialData.createdUser
+        status: initialData.status || 'ACTIVE'
       });
       setIsEditing(false);
     } else {
@@ -68,10 +67,10 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
 
     try {
       const payload = {
-        ...formData,
-        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
-        ...(formData.id ? { updatedUser: user?.empId || '1001' } : {})
+        ...formData
       };
+      delete payload.createdUser;
+      delete payload.updatedUser;
 
       if (formData.id) {
         await axios.put(`${API_PATHS.QMS.AUDIT_AREA}/${formData.id}`, payload);

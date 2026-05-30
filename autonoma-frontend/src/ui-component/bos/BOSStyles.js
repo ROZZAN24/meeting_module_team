@@ -210,20 +210,26 @@ export const getInputStyles = (theme, isDark) => ({
       height: '38px !important',
       paddingTop: '0px !important',
       paddingBottom: '0px !important',
+      paddingLeft: '14px !important',
+      paddingRight: '14px !important',
       boxSizing: 'border-box !important',
       lineHeight: '38px !important',
       fontSize: '0.9rem', 
+      letterSpacing: '0.03em !important',
       color: isDark ? '#c9d1d9' : '#121212' 
     },
     '& .MuiSelect-select': { 
       height: '38px !important',
       paddingTop: '0px !important',
       paddingBottom: '0px !important',
+      paddingLeft: '14px !important',
+      paddingRight: '14px !important',
       boxSizing: 'border-box !important',
       display: 'flex',
       alignItems: 'center',
       lineHeight: '38px !important',
       fontSize: '0.9rem', 
+      letterSpacing: '0.03em !important',
       width: '100%', 
       minWidth: '150px', 
       color: isDark ? '#c9d1d9' : '#121212' 
@@ -240,6 +246,7 @@ export const getInputStyles = (theme, isDark) => ({
     '&.Mui-focused fieldset': { borderColor: isDark ? '#58a6ff' : theme.palette.primary.main },
     '& textarea': {
       fontSize: '0.9rem',
+      letterSpacing: '0.03em !important',
       color: isDark ? '#c9d1d9' : '#121212',
       padding: '0 !important'
     }

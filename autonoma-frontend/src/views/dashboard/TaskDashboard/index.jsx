@@ -62,10 +62,15 @@ const TopStatCard = styled(Card)(({ theme }) => ({
   '&:hover': { transform: 'translateY(-3px)', boxShadow: '0 8px 24px rgba(0,0,0,0.1)' }
 }));
 
-const IconBox = styled(Box)(({ color, bg, size = 44 }) => ({
-  width: size, height: size, borderRadius: 12,
-  display: 'flex', alignItems: 'center', justifyContent: 'center',
-  color, background: bg,
+const IconBox = styled(Box)(({ color, bg, size = 48 }) => ({
+  width: size,
+  height: size,
+  borderRadius: 12,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  color: color,
+  background: bg,
 }));
 
 const AVATAR_COLORS = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#0EA5E9','#EC4899','#14B8A6'];

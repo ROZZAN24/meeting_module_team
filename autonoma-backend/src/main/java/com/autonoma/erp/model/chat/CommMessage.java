@@ -40,7 +40,7 @@ public class CommMessage {
     @Column(name = "attachment_type")
     private String attachmentType; // PDF, EXCEL, IMAGE, DOC
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt = new Date();
 
