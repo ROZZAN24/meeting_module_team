@@ -289,17 +289,15 @@ const UserAccess = () => {
           >
             {!selectedUserInfo?.imgName && <IconUser size={26} color="#ccc" />}
           </Avatar>
-          <Box>
+          <Box sx={{ mr: 2 }}>
             <Typography variant="h3" sx={{ fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1.2 }}>User Access</Typography>
             <Typography variant="caption" sx={{ fontWeight: 700, color: theme.palette.text.secondary, textTransform: 'uppercase', fontSize: '0.65rem' }}>GRANULAR CONTROL</Typography>
           </Box>
-        </Stack>
 
-        <Stack direction="row" spacing={1.5} alignItems="center">
           <TextField
             select
             size="small"
-            label="Target User"
+            label="User Name"
             value={selectedUser}
             onChange={handleUserChange}
             sx={{
@@ -330,11 +328,22 @@ const UserAccess = () => {
               </MenuItem>
             ))}
           </TextField>
+        </Stack>
 
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Button
+            variant="contained"
+            startIcon={<IconDeviceFloppy size={20} />}
+            onClick={handleSaveAll}
+            disabled={!selectedUser || !perms.write}
+            sx={{ height: 38, borderRadius: '8px', bgcolor: '#673ab7', '&:hover': { bgcolor: '#5e35b1' }, px: 3, fontWeight: 700, boxShadow: 'none' }}
+          >
+            Save
+          </Button>
           <TextField
             select
             size="small"
-            label="Copy From"
+            label="Copy From User"
             value={sourceUser}
             onChange={(e) => setSourceUser(e.target.value)}
             disabled={!selectedUser}
@@ -372,15 +381,7 @@ const UserAccess = () => {
             Copy
           </Button>
 
-          <Button
-            variant="contained"
-            startIcon={<IconDeviceFloppy size={20} />}
-            onClick={handleSaveAll}
-            disabled={!selectedUser || !perms.write}
-            sx={{ height: 38, borderRadius: '8px', bgcolor: '#673ab7', '&:hover': { bgcolor: '#5e35b1' }, px: 3, fontWeight: 700, boxShadow: 'none' }}
-          >
-            Save All
-          </Button>
+
         </Stack>
       </Box>
 
@@ -462,7 +463,7 @@ const UserAccess = () => {
                           <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.pageName}</Typography>
                           <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? theme.palette.text.secondary : '#a6b0cf', fontSize: '0.6rem' }}>ID: {row.pageId} | {row.page?.pageCode}</Typography>
                         </TableCell>
-                        
+
                         {/* Row-wise Select All Cell */}
                         <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
                           <Checkbox
