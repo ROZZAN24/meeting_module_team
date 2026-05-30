@@ -124,7 +124,10 @@ public class TicketTraceabilityCenter {
     @Column(name = "created_by", nullable = false, length = 100, updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at", updatable = false)
+    @Column(name = "verified_by", length = 100)
+    private String verifiedBy;
+
+    @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
