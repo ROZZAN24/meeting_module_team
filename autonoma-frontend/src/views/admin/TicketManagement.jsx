@@ -4054,7 +4054,7 @@ export default function TicketManagement({ viewType }) {
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formVerifiedBy, 'Verified By', 90)}px` }}>
                     <Autocomplete
                       size="small"
-                      options={employeesList}
+                      options={employeesList.filter(e => e.isTaskVerifier === 'YES')}
                       getOptionLabel={(option) => option.employeeName || ''}
                       value={employeesList.find(e => e.employeeName === formVerifiedBy) || null}
                       onChange={(event, selectedEmp) => {

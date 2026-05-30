@@ -85,6 +85,7 @@ const INITIAL = {
   isAuditor: 'NO', auditorType: '', auditorFileInfo: '',
   isAuditee: 'NO', auditeeType: '', auditeeFileInfo: '',
   isNcrApprover: 'NO', ncrApproverType: '', ncrApproverFileInfo: '',
+  isTaskVerifier: 'NO', taskVerifierType: '', taskVerifierFileInfo: '',
   isChaired: 'NO', chairedType: '', chairedFileInfo: '',
   isHost: 'NO', hostType: '', hostFileInfo: '',
   isParticipants: 'YES', participantsType: '', participantsFileInfo: '',
@@ -739,7 +740,8 @@ export default function EmployeeMaster() {
             {renderAbilityTable('Audit & Compliance', <IconShieldCheck size={20} />, [
               { label: 'Auditor', toggleName: 'isAuditor', typeName: 'auditorType', fileName: 'auditorFileInfo' },
               { label: 'Auditee', toggleName: 'isAuditee', typeName: 'auditeeType', fileName: 'auditeeFileInfo' },
-              { label: 'NCR approved by', toggleName: 'isNcrApprover', typeName: 'ncrApproverType', fileName: 'ncrApproverFileInfo' }
+              { label: 'NCR approved by', toggleName: 'isNcrApprover', typeName: 'ncrApproverType', fileName: 'ncrApproverFileInfo' },
+              { label: 'Task Verified By', toggleName: 'isTaskVerifier', typeName: 'taskVerifierType', fileName: 'taskVerifierFileInfo', hasType: false, hasFile: false }
             ])}
 
             <Divider />

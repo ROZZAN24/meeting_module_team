@@ -226,6 +226,15 @@ public class EmployeeMaster {
     @Column(name = "NCR_APPROVER_FILE_INFO", columnDefinition = "NVARCHAR(MAX)")
     private String ncrApproverFileInfo;
 
+    @Column(name = "IS_TASK_VERIFIER", length = 10)
+    private String isTaskVerifier = "NO";
+
+    @Column(name = "TASK_VERIFIER_TYPE", length = 255)
+    private String taskVerifierType;
+
+    @Column(name = "TASK_VERIFIER_FILE_INFO", columnDefinition = "NVARCHAR(MAX)")
+    private String taskVerifierFileInfo;
+
     @Column(name = "IS_CHAIRED", length = 10)
     private String isChaired = "NO";
 
