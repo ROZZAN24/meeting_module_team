@@ -235,7 +235,7 @@ const exportColumns = [
   { header: 'Verified By',        key: 'verifiedBy' },
   { header: 'Verified Date',      key: (r) => formatDate(r.verifiedDate) },
   { header: 'CREATED USER',       key: 'createdUser' },
-  { header: 'CREATED DATE',       key: (r) => formatDate(r.createdAt) },
+  { header: 'CREATED DATE',       key: (r) => formatDateTime(r.createdAt) },
   { header: 'UPDATED USER',       key: 'updatedUser' },
   { header: 'UPDATED DATE',       key: (r) => formatDateTime(r.updatedAt) },
 ];
@@ -407,7 +407,7 @@ export default function MasterCheckList() {
       reminderDate:  formatDate(row.reminderDate),
       verifiedDate:  formatDate(row.verifiedDate),
       createdUser:   row.createdUser || row.createdBy || '-',
-      createdDate:   formatDate(row.createdAt),
+      createdDate:   formatDateTime(row.createdAt),
       updatedUser:   row.updatedUser || row.updatedBy || '-',
       updatedDate:   formatDateTime(row.updatedAt),
       status:        row.status || 'Active',
