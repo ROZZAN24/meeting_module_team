@@ -37,7 +37,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     const fetchAreas = async () => {
       try {
         const res = await axios.get(API_PATHS.QMS.AUDIT_AREA);
-        setAuditAreas(res.data);
+        setAuditAreas((res.data || []).filter(a => a && a.status === 'ACTIVE'));
       } catch (error) {
         console.error('Failed to fetch areas:', error);
         setAuditAreas([]);
