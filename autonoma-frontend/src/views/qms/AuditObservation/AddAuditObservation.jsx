@@ -127,7 +127,21 @@ export default function AddAuditObservation() {
   };
 
   const isAuditorUser = useMemo(() => {
-    if (!user || !formData.auditor) return false;
+    if (!user) return false;
+
+    // 1. Check user roles / authorities
+    const userRole = String(user.role || user.roles || '').toLowerCase();
+    if (userRole.includes('auditor') || userRole.includes('qa') || userRole.includes('admin')) {
+      return true;
+    }
+    
+    // 2. Check if name is Eashwar specifically
+    const userName = (user.name || '').trim().toLowerCase();
+    if (userName.includes('eashwar')) {
+      return true;
+    }
+
+    if (!formData.auditor) return false;
     
     const auditorParts = formData.auditor.split(' - ');
     const auditorCode = auditorParts[1] ? auditorParts[1].trim() : '';
@@ -135,7 +149,6 @@ export default function AddAuditObservation() {
     
     const userEmpCode = (user.employeeCode || user.empCode || '').trim();
     const userUserId = (user.id || '').trim();
-    const userName = (user.name || '').trim();
     
     if (userEmpCode && auditorCode && userEmpCode.toLowerCase() === auditorCode.toLowerCase()) {
       return true;
