@@ -10,7 +10,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
-import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ReassignDialog from './ReassignDialog';
@@ -301,45 +301,27 @@ export default function MomList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Minutes_of_Meeting"
-            columns={[
-              { header: 'Meeting Min No', key: 'momNo' },
-              { header: 'Type', key: 'meetingType' },
-              { header: 'Meeting Date', key: 'momDate' },
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Discussed Point', key: 'discussedPoint' },
-              { header: 'Process', key: 'processType' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && (
-            <Tooltip title="Reassign selected action">
-              <Button
-                variant="outlined"
-                color="warning"
-                size="medium"
-                onClick={handleReassignClick}
-                sx={{ borderRadius: '12px', fontWeight: 700 }}
-                startIcon={<IconArrowsExchange size={18} />}
-              >
-                Reassign
-              </Button>
-            </Tooltip>
-          )}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New MOM', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleAdd}
+          newTooltip={shortcutTooltip('Create New MOM', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Meeting Min No', key: 'momNo' },
+            { header: 'Type', key: 'meetingType' },
+            { header: 'Meeting Date', key: 'momDate' },
+            { header: 'Schedule No', key: 'scheduleNo' },
+            { header: 'Discussed Point', key: 'discussedPoint' },
+            { header: 'Process', key: 'processType' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Minutes_of_Meeting"
+          hasExportPermission={perms.export}
+          onReassign={perms.write ? handleReassignClick : null}
+          reassignDisabled={!selectedRow}
+          reassignTooltip="Reassign selected action"
+        />
       }
     >
       <BOSDataTable

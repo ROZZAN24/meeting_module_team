@@ -41,3 +41,5 @@ export { getPhotoUrl } from './BOSUtils';
 export { default as BOSActionSection } from './BOSActionSection';
 export { default as useBOSForm } from 'hooks/useBOSForm';
 export * from './BOSUtils';
+export { default as BOSTableToolbar } from './BOSTableToolbar';
+

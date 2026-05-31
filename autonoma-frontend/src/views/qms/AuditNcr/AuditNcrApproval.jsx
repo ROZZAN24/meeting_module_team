@@ -7,16 +7,16 @@ import { format, differenceInDays } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { 
-  BOSDataTable, 
-  BOSExportButton,
-  BOSFormDialog, 
-  BOSFormSection, 
-  BOSTextField, 
-  BOSPersonnelCard, 
-  useBOSForm, 
+import {
+  BOSDataTable,
+  BOSFormDialog,
+  BOSFormSection,
+  BOSTextField,
+  BOSPersonnelCard,
+  useBOSForm,
   getStatusChipSx,
-  btnNew
+  btnNew,
+  BOSTableToolbar
 } from 'ui-component/bos';
 import { getFileDownloadUrl, getFileViewUrl } from 'utils/upload-helper';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -329,26 +329,20 @@ export default function AuditNcrApproval() {
     <MainCard
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconChecks size={24} /><Typography variant="h3">NC / OFI Approval & CAPA Management</Typography></Stack>}
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Button
-            variant="contained"
-            onClick={handleOpenNew}
-            sx={btnNew}
-          >
-            + New
-          </Button>
-          <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          {perms.export && <BOSExportButton
-            data={rows}
-            filename="NC_Approval_Report"
-            columns={[
-              { header: 'NC No', key: 'ncrNo' },
-              { header: 'Department', key: 'departmentName' },
-              { header: 'Observation No', key: 'observationNo' },
-              { header: 'Status', key: 'ncrStatus' }
-            ]}
-          />}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleOpenNew}
+          hasWritePermission={perms.write}
+          exportData={rows}
+          exportColumns={[
+            { header: 'NC No', key: 'ncrNo' },
+            { header: 'Department', key: 'departmentName' },
+            { header: 'Observation No', key: 'observationNo' },
+            { header: 'Status', key: 'ncrStatus' }
+          ]}
+          exportFilename="NC_Approval_Report"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenReview} renderCell={renderCell} customActions={(row) => (<Tooltip title="Review & Approve"><IconButton size="small" color="success" onClick={() => handleOpenReview(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}><IconEye size={18} /></IconButton></Tooltip>)} />

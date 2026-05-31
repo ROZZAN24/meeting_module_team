@@ -19,7 +19,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar } from 'ui-component/bos';
 
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -471,9 +471,12 @@ export default function CheckListRenewalVerify() {
       }}
       title="Check List / Renewal Verify"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          exportColumns={exportColumns}
+          exportFilename="Checklist_Renewal_Verify"
+          hasExportPermission={perms.export}
+        />
       }
     >
 

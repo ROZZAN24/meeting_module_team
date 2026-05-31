@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, Chip, Box, Popover, Checkbox } from '@mui/material';
-import { IconRefresh, IconEdit, IconUserPlus, IconFileDots, IconClipboardList, IconAdjustmentsHorizontal, IconCheck, IconBan } from '@tabler/icons-react';
+import { Typography, Stack, Chip, Box, Tooltip, IconButton } from '@mui/material';
+import { IconClipboardList, IconCheck, IconBan, IconFileDots, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
@@ -8,7 +8,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -291,31 +291,8 @@ export default function MasterCheckList() {
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
   const [departmentOptions, setDepartmentOptions] = useState([]);
 
-  // Column picker states & toggles
-  const [anchorEl, setAnchorEl] = useState(null);
+  // Column picker state
   const [visibleColumnIds, setVisibleColumnIds] = useState(() => columns.map(c => c.id));
-
-  const handlePopoverOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handlePopoverClose = () => {
-    setAnchorEl(null);
-  };
-  const handleToggleColumn = (colId) => {
-    setVisibleColumnIds((prev) => {
-      if (prev.includes(colId)) {
-        if (colId === 'index' || colId === 'seqNo' || colId === 'checkingPoint') {
-          return prev;
-        }
-        return prev.filter((id) => id !== colId);
-      } else {
-        return [...prev, colId];
-      }
-    });
-  };
-  const handleSelectAllColumns = () => {
-    setVisibleColumnIds(columns.map(c => c.id));
-  };
 
   // Fetch active departments for the filter dropdown
   useEffect(() => {
@@ -571,106 +548,38 @@ export default function MasterCheckList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton
-              onClick={fetchChecklists}
-              size="small"
-              sx={{
-                ...btnNew,
-                bgcolor: 'primary.main',
-                color: '#fff',
-                p: 1,
-                width: '38px',
-                height: '38px',
-                '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)', boxShadow: 4 }
-              }}
-            >
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Column Visibility">
-            <IconButton
-              onClick={handlePopoverOpen}
-              size="small"
-              sx={{
-                ...btnNew,
-                bgcolor: 'primary.main',
-                color: '#fff',
-                p: 1,
-                width: '38px',
-                height: '38px',
-                '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)', boxShadow: 4 }
-              }}
-            >
-              <IconAdjustmentsHorizontal size={20} />
-            </IconButton>
-          </Tooltip>
-
-          {perms.export && (
-            <BOSExportButton
-              data={resolvedRows}
-              filename="Master_Check_List"
-              columns={exportColumns}
-              variant="contained"
-              color="primary"
-              sx={btnNew}
-            />
-          )}
-
-          <Tooltip title={
+        <BOSTableToolbar
+          onRefresh={fetchChecklists}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Add New Checklist', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          columns={columns}
+          visibleColumnIds={visibleColumnIds}
+          onColumnVisibilityChange={setVisibleColumnIds}
+          requiredColumnIds={['index', 'seqNo', 'checkingPoint']}
+          exportData={resolvedRows}
+          exportColumns={exportColumns}
+          exportFilename="Master_Check_List"
+          hasExportPermission={perms.export}
+          onAmendment={selectedRow ? () => handleAmendment(selectedRow) : null}
+          amendmentDisabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
+          amendmentTooltip={
             !selectedRow
               ? 'Select a row first'
               : selectedRow.verifyStatus !== 'Verified'
               ? 'Checklist must be verified before amendment'
               : `Amendment: ${selectedRow.seqNo || selectedRow.id}`
-          }>
-            <span>
-              <Button
-                variant="contained"
-                color="primary"
-                size="medium"
-                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
-                startIcon={<IconFileDots size={18} />}
-                onClick={() => selectedRow && handleAmendment(selectedRow)}
-                sx={btnNew}
-              >
-                Amendment
-              </Button>
-            </span>
-          </Tooltip>
-
-          <Tooltip title={
+          }
+          onAssign={selectedRow ? () => handleAssign(selectedRow) : null}
+          assignDisabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
+          assignTooltip={
             !selectedRow
               ? 'Select a row first'
               : selectedRow.verifyStatus !== 'Verified'
               ? 'Checklist must be verified before assigning'
               : `Assign: ${selectedRow.seqNo || selectedRow.id}`
-          }>
-            <span>
-              <Button
-                variant="contained"
-                color="primary"
-                size="medium"
-                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
-                startIcon={<IconUserPlus size={18} />}
-                onClick={() => selectedRow && handleAssign(selectedRow)}
-                sx={btnNew}
-              >
-                Assign
-              </Button>
-            </span>
-          </Tooltip>
-
-          {perms.write && (
-            <Tooltip title={shortcutTooltip('Add New Checklist', 'Ctrl + N')}>
-              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                + New
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+          }
+        />
       }
     >
       <BOSDataTable
@@ -705,80 +614,6 @@ export default function MasterCheckList() {
         checklistId={selectedRow?.id}
         initialData={selectedRow}
       />
-
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={handlePopoverClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            p: 2,
-            width: 280,
-            maxHeight: 450,
-            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-            borderRadius: '12px',
-            border: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-          }
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Toggle Columns</Typography>
-          <Button size="small" onClick={handleSelectAllColumns} sx={{ textTransform: 'none', fontWeight: 600 }}>
-            Show All
-          </Button>
-        </Stack>
-
-        <Box sx={{ overflowY: 'auto', flex: 1, py: 1, my: 1, pr: 0.5, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '4px' } }}>
-          <Stack spacing={0.5}>
-            {columns.map((col) => {
-              const isRequired = col.id === 'index' || col.id === 'seqNo' || col.id === 'checkingPoint';
-              return (
-                <Box
-                  key={col.id}
-                  onClick={() => !isRequired && handleToggleColumn(col.id)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: '6px',
-                    cursor: isRequired ? 'default' : 'pointer',
-                    bgcolor: isRequired ? 'grey.50' : 'transparent',
-                    opacity: isRequired ? 0.7 : 1,
-                    '&:hover': {
-                      bgcolor: isRequired ? 'grey.50' : 'grey.100',
-                    }
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: isRequired ? 600 : 400 }}>
-                    {col.label}
-                  </Typography>
-                  <Checkbox
-                    size="small"
-                    checked={visibleColumnIds.includes(col.id)}
-                    disabled={isRequired}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => handleToggleColumn(col.id)}
-                    sx={{ p: 0.5 }}
-                  />
-                </Box>
-              );
-            })}
-          </Stack>
-        </Box>
-      </Popover>
     </MainCard>
   );
 }

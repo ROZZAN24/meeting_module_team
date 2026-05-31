@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -202,31 +202,24 @@ export default function AuditScheduleList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchAuditSchedules} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Schedule_Details"
-            columns={[
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Audit Type', key: 'auditType' },
-              { header: 'Audit Area', key: 'auditArea' },
-              { header: 'Auditee', key: 'auditee' },
-              { header: 'Status', key: 'status' },
-              { header: 'Reschedule Count', key: 'rescheduleCount' },
-              { header: 'Total Point', key: 'totalPoint' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Schedule', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchAuditSchedules}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Schedule No', key: 'scheduleNo' },
+            { header: 'Audit Type', key: 'auditType' },
+            { header: 'Audit Area', key: 'auditArea' },
+            { header: 'Auditee', key: 'auditee' },
+            { header: 'Status', key: 'status' },
+            { header: 'Reschedule Count', key: 'rescheduleCount' },
+            { header: 'Total Point', key: 'totalPoint' }
+          ]}
+          exportFilename="Audit_Schedule_Details"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

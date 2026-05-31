@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -169,29 +169,22 @@ export default function AuditObservationList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Observations"
-            columns={[
-              { header: 'Observation No', key: 'observationNo' },
-              { header: 'Date', key: 'observationDate' },
-              { header: 'Schedule No', key: 'auditScheduleNo' },
-              { header: 'Dept Name', key: 'departmentName' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Observation', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Observation', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Observation No', key: 'observationNo' },
+            { header: 'Date', key: 'observationDate' },
+            { header: 'Schedule No', key: 'auditScheduleNo' },
+            { header: 'Dept Name', key: 'departmentName' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Audit_Observations"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

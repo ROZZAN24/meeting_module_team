@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { Chip } from '@mui/material';
@@ -204,28 +204,21 @@ export default function AuditCriteriaMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchAuditCriteria} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Criteria_Details"
-            columns={[
-              { header: 'Audit Type', key: 'auditType' },
-              { header: 'Clause', key: 'clause' },
-              { header: 'Criteria', key: 'criteriaText' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Criteria', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchAuditCriteria}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Criteria', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Audit Type', key: 'auditType' },
+            { header: 'Clause', key: 'clause' },
+            { header: 'Criteria', key: 'criteriaText' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Audit_Criteria_Details"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

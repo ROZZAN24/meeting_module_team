@@ -9,19 +9,19 @@ import { format, differenceInDays } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { 
-  BOSDataTable, 
-  BOSExportButton,
-  BOSFormDialog, 
-  BOSFormSection, 
-  BOSTextField, 
-  BOSPersonnelCard, 
-  BOSActionSection, 
-  useBOSForm, 
-  btnExport, 
+import {
+  BOSDataTable,
+  BOSFormDialog,
+  BOSFormSection,
+  BOSTextField,
+  BOSPersonnelCard,
+  BOSActionSection,
+  useBOSForm,
+  btnExport,
   btnNew,
   btnSave,
-  getStatusChipSx 
+  getStatusChipSx,
+  BOSTableToolbar
 } from 'ui-component/bos';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -340,36 +340,22 @@ export default function AuditNcrClose() {
     <MainCard
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconCircleCheck size={24} /><Typography variant="h3">Close NC / OFI Findings</Typography></Stack>}
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          {perms.export && <BOSExportButton
-            data={rows}
-            filename="NC_Closure_List"
-            columns={[
-              { header: 'OBSERVATION NO', key: 'observationNo' },
-              { header: 'OBSERVATION DATE', key: 'observationDate' },
-              { header: 'SCHEDULE NO', key: 'auditScheduleNo' },
-              { header: 'DEPARTMENT', key: 'departmentName' },
-              { header: 'APPROVAL STATUS', key: 'ncrStatus' }
-            ]}
-          />}
-          {perms.write && (
-            <Tooltip title={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}>
-              <span>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  size="medium"
-                  onClick={() => selectedRecord && handleOpenClose(selectedRecord)}
-                  disabled={!selectedRecord}
-                  sx={btnNew}
-                >
-                  Close NCR / OFI
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          exportData={rows}
+          exportColumns={[
+            { header: 'OBSERVATION NO', key: 'observationNo' },
+            { header: 'OBSERVATION DATE', key: 'observationDate' },
+            { header: 'SCHEDULE NO', key: 'auditScheduleNo' },
+            { header: 'DEPARTMENT', key: 'departmentName' },
+            { header: 'APPROVAL STATUS', key: 'ncrStatus' }
+          ]}
+          exportFilename="NC_Closure_List"
+          hasExportPermission={perms.export}
+          onCloseNcr={perms.write ? () => selectedRecord && handleOpenClose(selectedRecord) : null}
+          closeNcrDisabled={!selectedRecord}
+          closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
+        />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />

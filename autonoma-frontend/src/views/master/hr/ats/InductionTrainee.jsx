@@ -37,8 +37,8 @@ import {
   BOSFormDialog,
   BOSFormSection,
   BOSTextField,
-  BOSExportButton,
-  errorStyle
+  errorStyle,
+  BOSTableToolbar
 } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -219,21 +219,13 @@ export default function InductionTrainee() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Induction_Trainee"
-            columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          exportData={resolvedRows}
+          exportColumns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          exportFilename="Induction_Trainee"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

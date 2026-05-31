@@ -9,7 +9,7 @@ import {
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import MomActionClosureDialog from './MomActionClosureDialog';
@@ -208,25 +208,20 @@ export default function MomActionReviewList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <BOSExportButton
-            data={filteredRows}
-            filename="MOM_Actions_Summary"
-            columns={[
-              { header: '#', key: 'index' },
-              { header: 'MOM Number', key: 'momNo' },
-              { header: 'Discussed Point', key: 'discussedPoint' },
-              { header: 'Target Date', key: 'targetDate' },
-              { header: 'Assigned To', key: 'assignedTo' },
-              { header: 'Status', key: 'displayStatus' }
-            ]}
-          />
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: '#', key: 'index' },
+            { header: 'MOM Number', key: 'momNo' },
+            { header: 'Discussed Point', key: 'discussedPoint' },
+            { header: 'Target Date', key: 'targetDate' },
+            { header: 'Assigned To', key: 'assignedTo' },
+            { header: 'Status', key: 'displayStatus' }
+          ]}
+          exportFilename="MOM_Actions_Summary"
+          hasExportPermission={true}
+        />
       }
     >
       <BOSDataTable

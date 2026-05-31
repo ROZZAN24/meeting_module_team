@@ -28,7 +28,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -476,10 +476,14 @@ export default function CloseCheckListRenewal() {
       }}
       title="Close Check List / Renewal"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {canEditSelected && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => setDialogOpen(true)} disabled={!selectedRowId}>Complete Task</Button>}
-          {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          exportColumns={exportColumns}
+          exportFilename="Close_Checklist"
+          hasExportPermission={perms.export}
+          onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
+          completeTaskDisabled={!selectedRowId}
+        />
       }
     >
       {activeCount > 0 && (

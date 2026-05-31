@@ -8,7 +8,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { setTableConfig } from 'store/slices/search';
 import {
   tableContainerSx, tableHeadCellSx, getTableRowSx,
@@ -54,6 +54,7 @@ export default function BOSDataTable({
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
   const dispatch = useDispatch();
   const [localSelectedId, setLocalSelectedId] = useState(null);
+  const lastConfigRef = useRef(null);
 
   useEffect(() => {
     if (columns && rows) {
@@ -67,12 +68,27 @@ export default function BOSDataTable({
 
         return { ...col, options: uniqueValues };
       });
-      dispatch(setTableConfig(columnsWithData));
+
+      // Serialize options safely to avoid redundant dispatches
+      const serialized = JSON.stringify(
+        columnsWithData.map(c => ({
+          id: c.id,
+          label: c.label,
+          options: c.options
+        }))
+      );
+      if (lastConfigRef.current !== serialized) {
+        lastConfigRef.current = serialized;
+        dispatch(setTableConfig(columnsWithData));
+      }
     }
+  }, [columns, rows, dispatch]);
+
+  useEffect(() => {
     return () => {
       dispatch(setTableConfig(null));
     };
-  }, [columns, rows, dispatch]);
+  }, [dispatch]);
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -319,16 +335,68 @@ export default function BOSDataTable({
 
     if (col.id === 'index') return (page * size) + idx + 1;
 
-    // Standard Photo Rendering (SOP Compliance)
+    // Standard Photo Rendering (SOP Compliance with Hover Zoom & Enlargement)
     if (col.id === 'photo' || col.id === 'employeePhotoUpload' || col.id === 'avatar') {
+      const photoUrl = getPhotoUrl(val);
       return (
-        <Avatar
-          src={getPhotoUrl(val)}
-          variant="rounded"
-          sx={{ width: 32, height: 40, bgcolor: 'grey.100', border: '1px solid', borderColor: 'divider' }}
+        <Tooltip
+          placement="right"
+          arrow
+          enterDelay={150}
+          leaveDelay={0}
+          componentsProps={{
+            tooltip: {
+              sx: {
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.15)',
+                border: '1px solid',
+                borderColor: 'divider',
+                p: 0.5,
+                borderRadius: '12px',
+                maxWidth: 'none'
+              }
+            }
+          }}
+          title={
+            photoUrl && val && val !== '-' && val !== 'null' && val !== 'undefined' ? (
+              <Box
+                component="img"
+                src={photoUrl}
+                alt="Enlarged Photo"
+                sx={{
+                  width: 140,
+                  height: 175,
+                  objectFit: 'contain',
+                  display: 'block',
+                  borderRadius: '8px'
+                }}
+              />
+            ) : (
+              <Typography variant="caption" sx={{ p: 1, display: 'block' }}>No Photo Available</Typography>
+            )
+          }
         >
-          <IconUser size={18} color="#ccc" />
-        </Avatar>
+          <Avatar
+            src={photoUrl}
+            variant="rounded"
+            sx={{
+              width: 32,
+              height: 40,
+              bgcolor: 'grey.100',
+              border: '1px solid',
+              borderColor: 'divider',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease-in-out',
+              '&:hover': {
+                transform: 'scale(1.15)',
+                boxShadow: 2
+              }
+            }}
+          >
+            <IconUser size={18} color="#ccc" />
+          </Avatar>
+        </Tooltip>
       );
     }
 

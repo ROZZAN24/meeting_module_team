@@ -7,7 +7,7 @@ import { exportToExcel } from 'utils/excelExport';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, BOSExportButton, BOSFormDialog, BOSFormSection, BOSTextField, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnExport, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -333,20 +333,20 @@ export default function AuditAttendance() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5}>
-          <IconButton onClick={fetchData} color="primary" sx={{ border: '1px solid divider', p: 1 }}><IconRefresh size={20} /></IconButton>
-          {perms.export && <BOSExportButton
-            data={rows}
-            filename="Audit_Attendance"
-            columns={[
-              { header: 'Audit Schedule No', key: 'auditScheduleNo' },
-              { header: 'Employee Code', key: 'employeeCode' },
-              { header: 'Name', key: 'name' },
-              { header: 'Attendance Status', key: 'attendanceStatus' }
-            ]}
-          />}
-          {perms.write && <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleOpenAdd}
+          hasWritePermission={perms.write}
+          exportData={rows}
+          exportColumns={[
+            { header: 'Audit Schedule No', key: 'auditScheduleNo' },
+            { header: 'Employee Code', key: 'employeeCode' },
+            { header: 'Name', key: 'name' },
+            { header: 'Attendance Status', key: 'attendanceStatus' }
+          ]}
+          exportFilename="Audit_Attendance"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

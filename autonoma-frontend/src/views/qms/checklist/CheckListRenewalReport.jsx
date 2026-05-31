@@ -26,7 +26,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -379,9 +379,12 @@ export default function CheckListRenewalReport() {
       }}
       title="Check List / Renewal Report"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Report" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          exportColumns={exportColumns}
+          exportFilename="Checklist_Report"
+          hasExportPermission={perms.export}
+        />
       }
     >
       {activeCount > 0 && (

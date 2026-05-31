@@ -10,7 +10,12 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
+import {
+  BOSDataTable,
+  btnNew,
+  getStatusChipSx,
+  BOSTableToolbar
+} from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { isMobile } from 'react-device-detect';
@@ -410,48 +415,36 @@ export default function MeetingScheduleList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Meeting_Schedule"
-            columns={[
-              { header: '#', key: 'index' },
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Amendment No', key: 'revSourceScheduleNo' },
-              { header: 'Meeting Type', key: 'meetingTypeName' },
-              { header: 'Meeting Date', key: 'meetingDateTime' },
-              { header: 'Status', key: 'status' },
-              { header: 'Chaired By', key: 'chairedByName' },
-              { header: 'Host By', key: 'hostByName' },
-              { header: 'Created User', key: 'createdUser' }
-            ]}
-          />}
-          <Tooltip title="Create Amendment">
-            <Button
-              variant="outlined"
-              color="warning"
-              size="medium"
-              onClick={() => {
-                if (resolvedRows.length > 0) handleAmendmentClick(resolvedRows[0]);
-                else dispatch(openSnackbar({ open: true, message: 'Please select a schedule to amend', variant: 'alert', severity: 'warning' }));
-              }}
-              sx={{ borderRadius: '12px', fontWeight: 700 }}
-              startIcon={<IconGitBranch size={18} />}
-            >
-              + Amendment
-            </Button>
-          </Tooltip>
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Schedule', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleAdd}
+          newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: '#', key: 'index' },
+            { header: 'Schedule No', key: 'scheduleNo' },
+            { header: 'Amendment No', key: 'revSourceScheduleNo' },
+            { header: 'Meeting Type', key: 'meetingTypeName' },
+            { header: 'Meeting Date', key: 'meetingDateTime' },
+            { header: 'Status', key: 'status' },
+            { header: 'Chaired By', key: 'chairedByName' },
+            { header: 'Host By', key: 'hostByName' },
+            { header: 'Created User', key: 'createdUser' }
+          ]}
+          exportFilename="Meeting_Schedule"
+          hasExportPermission={perms.export}
+          onAmendment={() => {
+            if (resolvedRows.length > 0) handleAmendmentClick(resolvedRows[0]);
+            else dispatch(openSnackbar({ open: true, message: 'Please select a schedule to amend', variant: 'alert', severity: 'warning' }));
+          }}
+          amendmentLabel="+ Amendment"
+          amendmentColor="warning"
+          amendmentVariant="outlined"
+          amendmentIcon={<IconGitBranch size={18} />}
+          amendmentTooltip="Create Amendment"
+          amendmentSx={{ borderRadius: '12px', fontWeight: 700 }}
+        />
       }
     >
       <BOSDataTable

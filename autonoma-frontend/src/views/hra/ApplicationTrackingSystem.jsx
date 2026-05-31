@@ -58,7 +58,8 @@ import {
   BOSTextField,
   BOSDatePicker,
   BOSFileUpload,
-  errorStyle
+  errorStyle,
+  BOSTableToolbar
 } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -1116,29 +1117,14 @@ export default function ApplicationTrackingSystem() {
           <Typography variant="h3">Application Tracking System</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchApplicants} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={shortcutTooltip('Register Candidate', 'Ctrl + N')}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="medium"
-              onClick={handleOpenAdd}
-              startIcon={<IconPlus size={18} />}
-              sx={{ borderRadius: '8px', textTransform: 'none', px: 2 }}
-            >
-              New
-            </Button>
-          </Tooltip>
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchApplicants}
+          onNew={handleOpenAdd}
+          newLabel="New"
+          newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+        />
       }
     >
       <Box sx={{ mb: 2 }}>

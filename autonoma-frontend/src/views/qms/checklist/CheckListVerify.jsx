@@ -16,7 +16,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 
 import { IconCheck, IconBan } from '@tabler/icons-react';
@@ -285,9 +285,12 @@ export default function CheckListVerify() {
       }}
       title="Check List Verify"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          exportColumns={exportColumns}
+          exportFilename="Checklist_Verify"
+          hasExportPermission={perms.export}
+        />
       }
     >
       {/* ── Cursor-following 'Double tap' label ── */}
