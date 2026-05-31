@@ -173,8 +173,19 @@ export default function AuditAttendance() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredSchedules = useMemo(() => {
-    const completedScheduleNos = new Set(rows.map(r => r.auditScheduleNo));
-    const now = new Date();
+    const userCode = (currentUserEmp?.empCode || user?.employeeCode || '').trim();
+    
+    const submittedByCurrentUser = new Set(
+      rows
+        .filter(r => {
+          const empCodeOfRow = (r.employeeCode || '').trim();
+          const rowCode = (!empCodeOfRow || empCodeOfRow === '-') && r.name && r.name.includes(' - ')
+            ? r.name.split(' - ')[1].trim()
+            : empCodeOfRow;
+          return rowCode.toLowerCase() === userCode.toLowerCase();
+        })
+        .map(r => r.auditScheduleNo)
+    );
     
     return (schedules || []).filter(s => {
       // If editing or already matches the selected value, always show it
@@ -182,33 +193,14 @@ export default function AuditAttendance() {
         return true;
       }
       
-      // 1. Once attendance is submitted, schedule no should not appear again
-      if (completedScheduleNos.has(s.scheduleNo)) {
+      // 1. Once the current user has submitted attendance, do not show it again
+      if (submittedByCurrentUser.has(s.scheduleNo)) {
         return false;
       }
       
-      // 2. Only show starting from 10 minutes before the audit schedule timing
-      if (!s.auditDate || !s.startTime) return false;
-      
-      const dStr = s.auditDate.split('T')[0];
-      const match = s.startTime.match(/^(\d{2}):(\d{2})\s*(AM|PM)$/i);
-      if (!match) return false;
-      
-      let hours = parseInt(match[1], 10);
-      const minutes = parseInt(match[2], 10);
-      const modifier = match[3].toUpperCase();
-      
-      if (modifier === 'PM' && hours < 12) hours += 12;
-      if (modifier === 'AM' && hours === 12) hours = 0;
-      
-      const scheduleTime = new Date(`${dStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
-      
-      // 10 minutes before the start time
-      const windowStart = new Date(scheduleTime.getTime() - 10 * 60 * 1000);
-      
-      return now >= windowStart;
+      return true;
     });
-  }, [schedules, rows, formData.auditScheduleNo]);
+  }, [schedules, rows, formData.auditScheduleNo, currentUserEmp, user]);
 
   const handleOpenAdd = () => {
     const defaultName = currentUserEmp?.employeeName || user?.name || '';

@@ -32,6 +32,9 @@ public class NcrOfiService {
     @Autowired
     private com.autonoma.erp.repository.AuditObservationDetailRepository observationDetailRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditObservationRepository auditObservationRepository;
+
     private final Path root = Paths.get("uploads");
 
     public NcrOfiService() {
@@ -183,6 +186,7 @@ public class NcrOfiService {
     public void approveNcr(Number observationDetailId) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("CLOSED");
+            detail.setNcrStatus("CLOSED");
             observationDetailRepository.save(detail);
             
             ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
@@ -192,7 +196,45 @@ public class NcrOfiService {
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
+
+            if (detail.getAuditObservation() != null) {
+                recalculateParentScore(detail.getAuditObservation());
+            }
         });
+    }
+
+    private void recalculateParentScore(com.autonoma.erp.model.AuditObservation observation) {
+        if (observation == null || observation.getDetails() == null) return;
+        
+        int compliance = 0;
+        int ofi = 0;
+        int ncCount = 0;
+        
+        for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
+            String obsStatus = detail.getObservationStatus();
+            String appStatus = detail.getApprovalStatus();
+            
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
+                compliance++;
+            } else if ("OFI".equalsIgnoreCase(obsStatus)) {
+                if (!"CLOSED".equalsIgnoreCase(appStatus)) {
+                    ofi++;
+                }
+            } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
+                if (!"CLOSED".equalsIgnoreCase(appStatus)) {
+                    ncCount++;
+                }
+            }
+        }
+        
+        int score = (compliance * 1) + (ncCount * -1);
+        
+        observation.setComplianceCount(compliance);
+        observation.setOfiCount(ofi);
+        observation.setNcrCount(ncCount);
+        observation.setAuditScore(score);
+        
+        auditObservationRepository.save(observation);
     }
 
     @Transactional

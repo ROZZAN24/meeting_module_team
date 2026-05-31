@@ -51,24 +51,80 @@ import { useLookups } from 'hooks/useLookups';
 import { autoUploadFile } from 'utils/upload-helper';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
-import { IconX, IconDownload } from '@tabler/icons-react';
+import { IconX, IconDownload, IconDeviceFloppy } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import useAuth from 'hooks/useAuth';
 
 const VALIDATION_RULES = [
   { field: 'observationDate', label: 'Observation Date', required: true },
   { field: 'auditScheduleNo', label: 'Schedule No', required: true }
 ];
 
-const OBS_STATUSES = ['COMPLIANCE', 'OFI', 'NC'];
+const OBS_STATUSES = ['COMPLIANCE', 'OFI', 'NCR', 'NO ENTRY'];
+
+const TIME_OPTIONS = [
+  '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
+  '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM'
+];
 
 export default function AddAuditObservation() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const theme = useTheme();
+  const { user } = useAuth();
   const isEditing = Boolean(id);
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_OBSERVATION);
   const { errors, validate, clearErrors } = useBOSValidation();
+
+  const isAuditorUser = useMemo(() => {
+    if (!user || !formData.auditor) return false;
+    
+    const auditorParts = formData.auditor.split(' - ');
+    const auditorCode = auditorParts[1] ? auditorParts[1].trim() : '';
+    const auditorName = auditorParts[0] ? auditorParts[0].trim() : '';
+    
+    const userEmpCode = (user.employeeCode || user.empCode || '').trim();
+    const userUserId = (user.id || '').trim();
+    const userName = (user.name || '').trim();
+    
+    if (userEmpCode && auditorCode && userEmpCode.toLowerCase() === auditorCode.toLowerCase()) {
+      return true;
+    }
+    if (userUserId && auditorCode && userUserId.toLowerCase() === auditorCode.toLowerCase()) {
+      return true;
+    }
+    if (userName && auditorName && userName.toLowerCase() === auditorName.toLowerCase()) {
+      return true;
+    }
+    return false;
+  }, [user, formData.auditor]);
+
+  const attendanceColumns = useMemo(() => {
+    const base = [
+      { id: 'name', label: 'Name', minWidth: 150 },
+      { id: 'inTime', label: 'In Time', minWidth: 100 },
+      { id: 'outTime', label: 'Out Time', minWidth: 120 },
+      { id: 'attendanceStatus', label: 'Status', minWidth: 100 }
+    ];
+    if (isAuditorUser) {
+      base.push({ id: 'saveAction', label: 'Action', minWidth: 80 });
+    }
+    return base;
+  }, [isAuditorUser]);
+
+  const handleSaveAttendanceRow = async (row) => {
+    try {
+      await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, row);
+      dispatch(openSnackbar({ open: true, message: `Out Time saved for ${row.name}!`, severity: 'success', variant: 'alert' }));
+      if (formData.auditScheduleNo) {
+        fetchAttendance(formData.auditScheduleNo);
+      }
+    } catch (e) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time', severity: 'error', variant: 'alert' }));
+    }
+  };
 
   const [formData, setFormData] = useState({
     observationNo: '',
@@ -267,12 +323,7 @@ export default function AddAuditObservation() {
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3fr 1fr' }, gap: 3 }}>
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.secondary.main} />} title="Audit Attendance" sx={{ height: 'fit-content' }}>
             <BOSDataTable
-              columns={[
-                { id: 'name', label: 'Name', minWidth: 150 },
-                { id: 'inTime', label: 'In Time', minWidth: 100 },
-                { id: 'outTime', label: 'Out Time', minWidth: 100 },
-                { id: 'attendanceStatus', label: 'Status', minWidth: 100 }
-              ]}
+              columns={attendanceColumns}
               rows={attendance}
               page={0}
               size={attendance.length || 5}
@@ -281,30 +332,142 @@ export default function AddAuditObservation() {
               sx={{ height: attendance.length > 0 ? '250px' : '135px' }}
               renderCell={(col, row) => {
                 if (col.id === 'attendanceStatus') return <Chip label={row.attendanceStatus} size="small" sx={getStatusChipSx(row.attendanceStatus === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
+                if (col.id === 'outTime') {
+                  if (isAuditorUser) {
+                    return (
+                      <BOSTextField
+                        select
+                        size="small"
+                        value={row.outTime || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAttendance((prev) => 
+                            prev.map((item) => item.id === row.id ? { ...item, outTime: val } : item)
+                          );
+                        }}
+                        fullWidth
+                      >
+                        <MenuItem value="">-Select-</MenuItem>
+                        {TIME_OPTIONS.map((t) => (
+                          <MenuItem key={t} value={t}>{t}</MenuItem>
+                        ))}
+                      </BOSTextField>
+                    );
+                  }
+                  return row.outTime || '-';
+                }
+                if (col.id === 'saveAction') {
+                  return (
+                    <Tooltip title="Save Out Time">
+                      <IconButton 
+                        color="primary" 
+                        size="small" 
+                        onClick={() => handleSaveAttendanceRow(row)}
+                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}
+                      >
+                        <IconDeviceFloppy size={18} />
+                      </IconButton>
+                    </Tooltip>
+                  );
+                }
                 return row[col.id] || '-';
               }}
             />
           </BOSFormSection>
 
-          <Card sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '12px', height: 'fit-content' }}>
-            <CardContent>
-              <Stack spacing={2} alignItems="center">
-                <IconReportAnalytics size={40} color={theme.palette.primary.main} />
-                <Typography variant="h4">Audit Score</Typography>
-                <Typography variant="h1" color="primary" sx={{ fontSize: '3rem', fontWeight: 800 }}>{formData.auditScore}</Typography>
-                <Box sx={{ width: '100%', mt: 2 }}>
-                  <Stack spacing={1}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2">Compliance</Typography>
-                      <Typography variant="body2" fontWeight={700}>{formData.complianceCount}</Typography>
+          <Card sx={{ 
+            border: 'none',
+            borderRadius: '20px', 
+            height: 'fit-content',
+            background: theme.palette.mode === 'dark' 
+              ? `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, rgba(20, 24, 33, 0.95) 100%)`
+              : `linear-gradient(135deg, ${theme.palette.primary.light} 0%, #ffffff 100%)`,
+            boxShadow: theme.palette.mode === 'dark'
+              ? '0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+              : '0 10px 30px rgba(98, 54, 255, 0.08)',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+            '&:hover': {
+              transform: 'translateY(-4px)',
+              boxShadow: theme.palette.mode === 'dark'
+                ? '0 15px 35px rgba(0, 0, 0, 0.6)'
+                : '0 15px 35px rgba(98, 54, 255, 0.15)',
+            }
+          }}>
+            <Box sx={{
+              position: 'absolute',
+              top: '-50px',
+              right: '-50px',
+              width: '120px',
+              height: '120px',
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${theme.palette.primary.main} 0%, transparent 70%)`,
+              opacity: 0.15,
+              filter: 'blur(10px)',
+              zIndex: 0
+            }} />
+            <CardContent sx={{ position: 'relative', zIndex: 1, p: 3 }}>
+              <Stack spacing={2.5} alignItems="center">
+                <Avatar sx={{ 
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : 'rgba(98, 54, 255, 0.08)',
+                  color: 'primary.main', 
+                  width: 56, 
+                  height: 56,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
+                }}>
+                  <IconReportAnalytics size={30} />
+                </Avatar>
+                <Stack spacing={0.5} alignItems="center">
+                  <Typography variant="subtitle2" sx={{ 
+                    fontWeight: 700, 
+                    color: 'text.secondary', 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '1px',
+                    fontSize: '0.75rem'
+                  }}>
+                    Audit Score
+                  </Typography>
+                  <Typography variant="h1" sx={{ 
+                    fontSize: '3.5rem', 
+                    fontWeight: 900,
+                    background: `linear-gradient(45deg, ${theme.palette.primary.main} 30%, ${theme.palette.secondary.main} 90%)`,
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    lineHeight: 1.1
+                  }}>
+                    {formData.auditScore}
+                  </Typography>
+                </Stack>
+                <Box sx={{ 
+                  width: '100%', 
+                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
+                  borderRadius: '14px', 
+                  p: 2,
+                  border: '1px solid',
+                  borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+                }}>
+                  <Stack spacing={1.5}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>Compliance</Typography>
+                      </Stack>
+                      <Chip label={formData.complianceCount} size="small" color="success" sx={{ fontWeight: 700, borderRadius: '6px', height: 20 }} />
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="warning.main">OFI</Typography>
-                      <Typography variant="body2" fontWeight={700} color="warning.main">{formData.ofiCount}</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>OFI</Typography>
+                      </Stack>
+                      <Chip label={formData.ofiCount} size="small" color="warning" sx={{ fontWeight: 700, borderRadius: '6px', height: 20 }} />
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="body2" color="error.main">NC</Typography>
-                      <Typography variant="body2" fontWeight={700} color="error.main">{formData.ncrCount}</Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>NC / NCR</Typography>
+                      </Stack>
+                      <Chip label={formData.ncrCount} size="small" color="error" sx={{ fontWeight: 700, borderRadius: '6px', height: 20 }} />
                     </Box>
                   </Stack>
                 </Box>
@@ -334,8 +497,7 @@ export default function AddAuditObservation() {
             renderCell={(col, row, idx) => {
               if (col.id === 'observationStatus') {
                 return (
-                  <BOSTextField select size="small" value={row.observationStatus || ''} onChange={(e) => updateDetail(idx, 'observationStatus', e.target.value)} disabled={!perms.write} fullWidth>
-                    <MenuItem value="">NO ENTRY</MenuItem>
+                  <BOSTextField select size="small" value={row.observationStatus || 'NO ENTRY'} onChange={(e) => updateDetail(idx, 'observationStatus', e.target.value)} disabled={!perms.write} fullWidth>
                     {OBS_STATUSES.map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}
                   </BOSTextField>
                 );

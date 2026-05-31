@@ -356,11 +356,11 @@ export default function AddAuditSchedule() {
       { field: 'auditDate', label: 'Audit Date', required: true },
       { field: 'department', label: 'Department', required: true },
       { field: 'auditee', label: 'Auditee', required: true },
-      { field: 'ncrApprovedBy', label: 'NCR Approved By', required: true }
+      { field: 'ncrApprovedBy', label: 'NCR Approved By', required: true },
+      { field: 'auditArea', label: 'Audit Area', required: true }
     ];
 
     if (category === 'CUSTOMER_AUDIT') {
-      rules.push({ field: 'auditArea', label: 'Audit Area', required: true });
       rules.push({ field: 'customerName', label: 'Customer Name', required: true });
       rules.push({ field: 'contactName', label: 'Contact Name', required: true });
       rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
@@ -368,8 +368,6 @@ export default function AddAuditSchedule() {
         rules.push({ field: 'fromEmailToCustomer', label: 'From Email to Customer', required: true });
       }
     } else {
-      rules.push({ field: 'auditZone', label: 'Audit Zone', required: true });
-      rules.push({ field: 'auditAreaDetail', label: 'Audit Area', required: true });
       if (category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
         rules.push({ field: 'externalName', label: 'External Name', required: true });
         rules.push({ field: 'contactName', label: 'Contact Name', required: true });
@@ -397,6 +395,16 @@ export default function AddAuditSchedule() {
       dispatch(openSnackbar({
         open: true,
         message: 'Start Time cannot be in the past for today.',
+        severity: 'error',
+        variant: 'alert'
+      }));
+      return;
+    }
+
+    if (isPastTime(formData.endTime, formData.auditDate)) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'End Time cannot be in the past for today.',
         severity: 'error',
         variant: 'alert'
       }));
@@ -610,7 +618,7 @@ export default function AddAuditSchedule() {
     });
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
 
-  const customerAuditAreas = useMemo(() => {
+  const mappedAuditAreas = useMemo(() => {
     if (!formData.auditType) return [];
     const selectedTypeObj = auditTypes.find(t => t.auditType === formData.auditType);
     if (!selectedTypeObj || !selectedTypeObj.auditArea) return [];
@@ -741,16 +749,12 @@ export default function AddAuditSchedule() {
                 getOptionLabel={(option) => option.auditType || ''}
                 value={auditTypes.find((t) => t.auditType === formData.auditType) || null}
                 onChange={(event, newValue) => {
-                  const mappedNames = newValue && newValue.auditArea ? newValue.auditArea.split(',').map(s => s.trim()) : [];
-                  const matchedZone = (auditAreas || []).find(a => a && a.type === 'ZONE' && mappedNames.includes(a.description))?.description || '';
-                  const matchedArea = (auditAreas || []).find(a => a && a.type === 'AREA' && mappedNames.includes(a.description))?.description || '';
-                  
                   setFormData((prev) => ({ 
                     ...prev, 
                     auditType: newValue ? newValue.auditType : '',
-                    auditArea: category === 'CUSTOMER_AUDIT' ? '' : (matchedZone && matchedArea ? `${matchedZone} / ${matchedArea}` : (matchedZone || matchedArea || '')),
-                    auditZone: matchedZone,
-                    auditAreaDetail: matchedArea
+                    auditArea: '',
+                    auditZone: '',
+                    auditAreaDetail: ''
                   }));
                 }}
                 disabled={!canWrite}
@@ -765,82 +769,30 @@ export default function AddAuditSchedule() {
                 )}
               />
 
-              {category === 'CUSTOMER_AUDIT' ? (
-                <BOSTextField
-                  select
-                  required
-                  label="Audit Area"
-                  name="auditArea"
-                  value={formData.auditArea}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData((prev) => ({
-                      ...prev,
-                      auditArea: val,
-                      auditZone: '',
-                      auditAreaDetail: ''
-                    }));
-                  }}
-                  error={!!errors.auditArea}
-                  helperText={errors.auditArea}
-                  disabled={!canWrite}
-                >
-                  <MenuItem value="">-SELECT AUDIT AREA-</MenuItem>
-                  {customerAuditAreas.map((areaName) => (
-                    <MenuItem key={areaName} value={areaName}>{areaName}</MenuItem>
-                  ))}
-                </BOSTextField>
-              ) : (
-                <>
-                  <BOSTextField
-                    select
-                    required
-                    label="Audit Zone"
-                    name="auditZone"
-                    value={formData.auditZone}
-                    onChange={(e) => {
-                      const zoneVal = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        auditZone: zoneVal,
-                        auditArea: zoneVal && prev.auditAreaDetail ? `${zoneVal} / ${prev.auditAreaDetail}` : (zoneVal || prev.auditAreaDetail || '')
-                      }));
-                    }}
-                    error={!!errors.auditZone || !!errors.auditArea}
-                    helperText={errors.auditZone || errors.auditArea}
-                    disabled={!canWrite}
-                  >
-                    <MenuItem value="">-SELECT AUDIT ZONE-</MenuItem>
-                    {zones.map((z) => (
-                      <MenuItem key={z.id} value={z.description}>{z.description}</MenuItem>
-                    ))}
-                  </BOSTextField>
-                  
-                  <BOSTextField
-                    select
-                    required
-                    label="Audit Area"
-                    name="auditAreaDetail"
-                    value={formData.auditAreaDetail}
-                    onChange={(e) => {
-                      const areaVal = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        auditAreaDetail: areaVal,
-                        auditArea: prev.auditZone && areaVal ? `${prev.auditZone} / ${areaVal}` : (prev.auditZone || areaVal || '')
-                      }));
-                    }}
-                    error={!!errors.auditAreaDetail}
-                    helperText={errors.auditAreaDetail}
-                    disabled={!canWrite}
-                  >
-                    <MenuItem value="">-SELECT AUDIT AREA-</MenuItem>
-                    {areas.map((a) => (
-                      <MenuItem key={a.id} value={a.description}>{a.description}</MenuItem>
-                    ))}
-                  </BOSTextField>
-                </>
-              )}
+              <BOSTextField
+                select
+                required
+                label="Audit Area"
+                name="auditArea"
+                value={formData.auditArea}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    auditArea: val,
+                    auditZone: '',
+                    auditAreaDetail: ''
+                  }));
+                }}
+                error={!!errors.auditArea}
+                helperText={errors.auditArea}
+                disabled={!canWrite}
+              >
+                <MenuItem value="">-SELECT AUDIT AREA-</MenuItem>
+                {mappedAuditAreas.map((areaName) => (
+                  <MenuItem key={areaName} value={areaName}>{areaName}</MenuItem>
+                ))}
+              </BOSTextField>
 
               {/* Dynamic Field: Process Name for Process Audit */}
               {category === 'PROCESS_AUDIT' && (
@@ -1071,7 +1023,7 @@ export default function AddAuditSchedule() {
                 disabled={!canWrite}
               >
                 {END_TIME_OPTIONS.map((t) => (
-                  <MenuItem key={t} value={t}>{t}</MenuItem>
+                  <MenuItem key={t} value={t} disabled={isPastTime(t, formData.auditDate)}>{t}</MenuItem>
                 ))}
               </BOSTextField>
 
