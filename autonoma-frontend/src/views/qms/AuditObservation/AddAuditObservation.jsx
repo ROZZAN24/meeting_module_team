@@ -543,7 +543,8 @@ export default function AddAuditObservation() {
                 );
               }
               if (col.id === 'approvalStatus') {
-                return <Chip label={row.approvalStatus} size="small" color={row.approvalStatus === 'APPROVED' ? 'success' : 'warning'} variant="outlined" />;
+                const chipStatus = row.approvalStatus === 'APPROVED' || row.approvalStatus === 'CLOSED' ? 'ACTIVE' : 'PENDING';
+                return <Chip label={row.approvalStatus} size="small" sx={getStatusChipSx(chipStatus)} />;
               }
               if (col.id === 'attachment') {
                 const attachmentFiles = row.attachmentPath 
