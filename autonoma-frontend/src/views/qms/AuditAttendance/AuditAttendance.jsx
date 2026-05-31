@@ -257,9 +257,9 @@ export default function AuditAttendance() {
     console.log('[AuditAttendance] Attempting to save attendance record:', finalData);
     try {
       if (finalData.id) {
-        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData);
+        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData, { skipGlobalAlert: true });
       } else {
-        await axios.post('/api/qms/audit/attendance', finalData);
+        await axios.post('/api/qms/audit/attendance', finalData, { skipGlobalAlert: true });
       }
       console.log('[AuditAttendance] Save successful');
       dispatch(openSnackbar({ 

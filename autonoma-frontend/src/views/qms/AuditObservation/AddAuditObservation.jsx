@@ -78,6 +78,27 @@ export default function AddAuditObservation() {
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_OBSERVATION);
   const { errors, validate, clearErrors } = useBOSValidation();
 
+  const [formData, setFormData] = useState({
+    observationNo: '',
+    observationDate: new Date().toISOString().split('T')[0],
+    auditScheduleNo: '',
+    auditType: '',
+    auditArea: '',
+    departmentName: '',
+    auditee: '',
+    auditor: '',
+    ncrApprovedBy: '',
+    status: 'PENDING',
+    auditScore: 0,
+    ofiCount: 0,
+    complianceCount: 0,
+    ncrCount: 0
+  });
+
+  const [details, setDetails] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
+
   const isAuditorUser = useMemo(() => {
     if (!user || !formData.auditor) return false;
     
@@ -125,27 +146,6 @@ export default function AddAuditObservation() {
       dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time', severity: 'error', variant: 'alert' }));
     }
   };
-
-  const [formData, setFormData] = useState({
-    observationNo: '',
-    observationDate: new Date().toISOString().split('T')[0],
-    auditScheduleNo: '',
-    auditType: '',
-    auditArea: '',
-    departmentName: '',
-    auditee: '',
-    auditor: '',
-    ncrApprovedBy: '',
-    status: 'PENDING',
-    auditScore: 0,
-    ofiCount: 0,
-    complianceCount: 0,
-    ncrCount: 0
-  });
-
-  const [details, setDetails] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
   useEffect(() => {
     if (isEditing) {
@@ -262,9 +262,9 @@ export default function AddAuditObservation() {
     try {
       const payload = { ...formData, details };
       if (isEditing) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_OBSERVATION}/${id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_OBSERVATION}/${id}`, payload, { skipGlobalAlert: true });
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_OBSERVATION, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_OBSERVATION, payload, { skipGlobalAlert: true });
       }
       dispatch(openSnackbar({ open: true, message: 'Observation saved successfully!', severity: 'success', variant: 'alert' }));
       navigate('/qms/audit/observation');

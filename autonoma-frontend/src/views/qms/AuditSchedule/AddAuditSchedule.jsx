@@ -465,10 +465,10 @@ export default function AddAuditSchedule() {
       };
 
       if (isEditing) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`, payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule updated successfully!', severity: 'success', variant: 'alert' }));
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_SCHEDULE, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_SCHEDULE, payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule created successfully!', severity: 'success', variant: 'alert' }));
       }
       navigate('/qms/audit/schedule');

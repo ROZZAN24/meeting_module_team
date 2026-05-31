@@ -133,9 +133,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
       delete payload.updatedUser;
 
       if (formData.id) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload, { skipGlobalAlert: true });
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload, { skipGlobalAlert: true });
       }
       handleClose(true);
     } catch (error) {
