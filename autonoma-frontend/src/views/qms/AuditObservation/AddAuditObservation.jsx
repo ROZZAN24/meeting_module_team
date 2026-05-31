@@ -99,6 +99,33 @@ export default function AddAuditObservation() {
   const [attendance, setAttendance] = useState([]);
   const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
+  const [outTimeDialogOpen, setOutTimeDialogOpen] = useState(false);
+  const [selectedAttendanceId, setSelectedAttendanceId] = useState('');
+  const [selectedOutTime, setSelectedOutTime] = useState('');
+
+  const handleSaveOutTimeFromDialog = async () => {
+    if (!selectedAttendanceId || !selectedOutTime) {
+      dispatch(openSnackbar({ open: true, message: 'Please select an employee and out time.', severity: 'error', variant: 'alert' }));
+      return;
+    }
+    const rowToUpdate = attendance.find(a => a.id === selectedAttendanceId);
+    if (!rowToUpdate) return;
+
+    try {
+      const updatedRow = { ...rowToUpdate, outTime: selectedOutTime };
+      await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${selectedAttendanceId}`, updatedRow);
+      dispatch(openSnackbar({ open: true, message: `Out Time saved for ${rowToUpdate.name}!`, severity: 'success', variant: 'alert' }));
+      setOutTimeDialogOpen(false);
+      setSelectedAttendanceId('');
+      setSelectedOutTime('');
+      if (formData.auditScheduleNo) {
+        fetchAttendance(formData.auditScheduleNo);
+      }
+    } catch (e) {
+      dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time', severity: 'error', variant: 'alert' }));
+    }
+  };
+
   const isAuditorUser = useMemo(() => {
     if (!user || !formData.auditor) return false;
     
@@ -122,30 +149,12 @@ export default function AddAuditObservation() {
     return false;
   }, [user, formData.auditor]);
 
-  const attendanceColumns = useMemo(() => {
-    const base = [
-      { id: 'name', label: 'Name', minWidth: 150 },
-      { id: 'inTime', label: 'In Time', minWidth: 100 },
-      { id: 'outTime', label: 'Out Time', minWidth: 120 },
-      { id: 'attendanceStatus', label: 'Status', minWidth: 100 }
-    ];
-    if (isAuditorUser) {
-      base.push({ id: 'saveAction', label: 'Action', minWidth: 80 });
-    }
-    return base;
-  }, [isAuditorUser]);
-
-  const handleSaveAttendanceRow = async (row) => {
-    try {
-      await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, row);
-      dispatch(openSnackbar({ open: true, message: `Out Time saved for ${row.name}!`, severity: 'success', variant: 'alert' }));
-      if (formData.auditScheduleNo) {
-        fetchAttendance(formData.auditScheduleNo);
-      }
-    } catch (e) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time', severity: 'error', variant: 'alert' }));
-    }
-  };
+  const attendanceColumns = useMemo(() => [
+    { id: 'name', label: 'Name', minWidth: 150 },
+    { id: 'inTime', label: 'In Time', minWidth: 100 },
+    { id: 'outTime', label: 'Out Time', minWidth: 120 },
+    { id: 'attendanceStatus', label: 'Status', minWidth: 100 }
+  ], []);
 
   useEffect(() => {
     if (isEditing) {
@@ -359,6 +368,19 @@ export default function AddAuditObservation() {
         {/* Section 2: Attendance & Stats */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3fr 1fr' }, gap: 3 }}>
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.secondary.main} />} title="Audit Attendance" sx={{ height: 'fit-content' }}>
+            {isAuditorUser && (
+              <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                <Button 
+                  variant="contained" 
+                  size="small" 
+                  startIcon={<IconPlus size={18} />}
+                  onClick={() => setOutTimeDialogOpen(true)}
+                  sx={{ borderRadius: '12px', textTransform: 'none' }}
+                >
+                  Add Out Time
+                </Button>
+              </Stack>
+            )}
             <BOSDataTable
               columns={attendanceColumns}
               rows={attendance}
@@ -369,39 +391,7 @@ export default function AddAuditObservation() {
               sx={{ height: attendance.length > 0 ? '250px' : '135px' }}
               renderCell={(col, row) => {
                 if (col.id === 'attendanceStatus') return <Chip label={row.attendanceStatus} size="small" sx={getStatusChipSx(row.attendanceStatus === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
-                if (col.id === 'outTime') {
-                  if (isAuditorUser) {
-                    return (
-                      <BOSTextField
-                        size="small"
-                        placeholder="e.g. 05:00 PM"
-                        value={row.outTime || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setAttendance((prev) => 
-                            prev.map((item) => item.id === row.id ? { ...item, outTime: val } : item)
-                          );
-                        }}
-                        fullWidth
-                      />
-                    );
-                  }
-                  return row.outTime || '-';
-                }
-                if (col.id === 'saveAction') {
-                  return (
-                    <Tooltip title="Save Out Time">
-                      <IconButton 
-                        color="primary" 
-                        size="small" 
-                        onClick={() => handleSaveAttendanceRow(row)}
-                        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px' }}
-                      >
-                        <IconDeviceFloppy size={18} />
-                      </IconButton>
-                    </Tooltip>
-                  );
-                }
+                if (col.id === 'outTime') return row.outTime || '-';
                 return row[col.id] || '-';
               }}
             />
@@ -578,6 +568,55 @@ export default function AddAuditObservation() {
         </BOSFormSection>
       </Stack>
 
+      <Dialog 
+        open={outTimeDialogOpen} 
+        onClose={() => setOutTimeDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            p: 1.5
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Add Attendance Out Time</DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1.5 }}>
+            <BOSTextField
+              select
+              label="Select Employee"
+              value={selectedAttendanceId}
+              onChange={(e) => setSelectedAttendanceId(e.target.value)}
+              fullWidth
+            >
+              <MenuItem value="">-Select-</MenuItem>
+              {attendance.map((a) => (
+                <MenuItem key={a.id} value={a.id}>
+                  {a.name} ({a.employeeCode || a.employeeId})
+                </MenuItem>
+              ))}
+            </BOSTextField>
+
+            <BOSTextField
+              select
+              label="Out Time"
+              value={selectedOutTime}
+              onChange={(e) => setSelectedOutTime(e.target.value)}
+              fullWidth
+            >
+              <MenuItem value="">-Select Time-</MenuItem>
+              {TIME_OPTIONS.map((t) => (
+                <MenuItem key={t} value={t}>{t}</MenuItem>
+              ))}
+            </BOSTextField>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setOutTimeDialogOpen(false)} color="grey">Cancel</Button>
+          <Button variant="contained" onClick={handleSaveOutTimeFromDialog} sx={btnSave}>Save</Button>
+        </DialogActions>
+      </Dialog>
 
     </MainCard>
   );

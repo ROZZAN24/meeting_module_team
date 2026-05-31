@@ -20,7 +20,6 @@ const columns = [
   { id: 'employeeCode', label: 'Employee Code', minWidth: 120 },
   { id: 'name', label: 'Name', minWidth: 200 },
   { id: 'inTime', label: 'In Time', minWidth: 100 },
-  { id: 'outTime', label: 'Out Time', minWidth: 100 },
   { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
@@ -100,7 +99,7 @@ export default function AuditAttendance() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', outTime: '', attendanceStatus: 'PRESENT' });
+  const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', attendanceStatus: 'PRESENT' });
   const [participants, setParticipants] = useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -212,7 +211,6 @@ export default function AuditAttendance() {
       name: defaultName,
       employeeCode: defaultCode,
       inTime: getSystemTime12h(),
-      outTime: '',
       attendanceStatus: 'PRESENT'
     });
     clearErrors();
