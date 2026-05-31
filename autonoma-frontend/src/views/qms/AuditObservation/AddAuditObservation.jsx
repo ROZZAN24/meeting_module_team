@@ -62,11 +62,40 @@ const VALIDATION_RULES = [
 
 const OBS_STATUSES = ['COMPLIANCE', 'OFI', 'NCR', 'NO ENTRY'];
 
-const TIME_OPTIONS = [
-  '08:00 AM', '08:30 AM', '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
-  '12:00 PM', '12:30 PM', '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM',
-  '04:00 PM', '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM', '08:00 PM'
-];
+const formatTime12 = (hour, minute) => {
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  const displayHour = hour % 12 || 12;
+  return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
+};
+
+const TIME_OPTIONS = [];
+for (let h = 0; h < 24; h++) {
+  for (let m = 0; m < 60; m += 30) {
+    TIME_OPTIONS.push(formatTime12(h, m));
+  }
+}
+
+const convertToMinutes = (timeStr) => {
+  if (!timeStr) return 0;
+  const parts = timeStr.trim().split(' ');
+  if (parts.length < 2) return 0;
+  const timeParts = parts[0].split(':');
+  let hours = parseInt(timeParts[0], 10);
+  const minutes = parseInt(timeParts[1], 10) || 0;
+  const ampm = parts[1].toUpperCase();
+
+  if (ampm === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (ampm === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  return hours * 60 + minutes;
+};
+
+const isTimeBefore = (t1, t2) => {
+  if (!t1 || !t2) return false;
+  return convertToMinutes(t1) < convertToMinutes(t2);
+};
 
 export default function AddAuditObservation() {
   const { id } = useParams();
@@ -99,6 +128,12 @@ export default function AddAuditObservation() {
   const [attendance, setAttendance] = useState([]);
   const [editingRowId, setEditingRowId] = useState(null);
   const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
+
+  const activeScheduleStartTime = useMemo(() => {
+    if (!formData.auditScheduleNo || !schedules.length) return '';
+    const sch = schedules.find(s => s.scheduleNo === formData.auditScheduleNo);
+    return sch?.startTime || '';
+  }, [formData.auditScheduleNo, schedules]);
 
   const [isAuditorEligible, setIsAuditorEligible] = useState(false);
 
@@ -469,7 +504,7 @@ export default function AddAuditObservation() {
                       >
                         <MenuItem value="">-Select-</MenuItem>
                         {TIME_OPTIONS.map((t) => (
-                          <MenuItem key={t} value={t}>{t}</MenuItem>
+                          <MenuItem key={t} value={t} disabled={isTimeBefore(t, activeScheduleStartTime)}>{t}</MenuItem>
                         ))}
                       </BOSTextField>
                     );
@@ -694,7 +729,7 @@ export default function AddAuditObservation() {
             >
               <MenuItem value="">-Select Time-</MenuItem>
               {TIME_OPTIONS.map((t) => (
-                <MenuItem key={t} value={t}>{t}</MenuItem>
+                <MenuItem key={t} value={t} disabled={isTimeBefore(t, activeScheduleStartTime)}>{t}</MenuItem>
               ))}
             </BOSTextField>
           </Stack>
