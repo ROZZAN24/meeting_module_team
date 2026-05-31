@@ -20,6 +20,7 @@ import {
   useBOSForm, 
   btnExport, 
   btnNew,
+  btnSave,
   getStatusChipSx 
 } from 'ui-component/bos';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -66,6 +67,7 @@ export default function AuditNcrClose() {
   const [nextNcrNo, setNextNcrNo] = useState('');
   const [isNewMode, setIsNewMode] = useState(false);
   const [ncrAttachments, setNcrAttachments] = useState([]);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   const matchingCriteria = useMemo(() => {
     if (!selectedFinding || !criteriaList.length) return null;
@@ -213,6 +215,7 @@ export default function AuditNcrClose() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setSelectedRecord(null);
     try {
       const [fRes, eRes, cRes] = await Promise.all([
         axios.get('/api/qms/audit/observation/ncr/findings', { params: { ...globalFilters, query: globalQuery } }),
@@ -351,22 +354,25 @@ export default function AuditNcrClose() {
             ]}
           />}
           {perms.write && (
-            <Tooltip title="Submit NC / OFI for Closure">
-              <Button
-                variant="contained"
-                color="primary"
-                size="medium"
-                onClick={handleOpenNew}
-                sx={btnNew}
-              >
-                + New
-              </Button>
+            <Tooltip title={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  size="medium"
+                  onClick={() => selectedRecord && handleOpenClose(selectedRecord)}
+                  disabled={!selectedRecord}
+                  sx={btnNew}
+                >
+                  Close NCR / OFI
+                </Button>
+              </span>
             </Tooltip>
           )}
         </Stack>
       }
     >
-      <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />
+      <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />
 
       <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="NCR / OFI Details" maxWidth="lg" hideFooter={true}>
         <Stack spacing={3} sx={{ width: '100%' }}>
@@ -408,31 +414,10 @@ export default function AuditNcrClose() {
 
             <Stack direction="row" spacing={1.5}>
               <Button 
-                variant="outlined" 
-                startIcon={<IconEraser size={18} />} 
-                onClick={handleReset}
-                sx={{ 
-                  borderRadius: '8px', 
-                  bgcolor: 'background.paper', 
-                  textTransform: 'none',
-                  borderColor: 'divider',
-                  color: 'text.primary',
-                  '&:hover': { bgcolor: 'grey.100', borderColor: 'grey.400' }
-                }}
-              >
-                Clear
-              </Button>
-              <Button 
                 variant="contained" 
                 startIcon={<IconDeviceFloppy size={18} />} 
                 onClick={handleSaveClose}
-                sx={{ 
-                  borderRadius: '8px', 
-                  bgcolor: '#0A2540', 
-                  color: 'white', 
-                  textTransform: 'none',
-                  '&:hover': { bgcolor: '#001a35' }
-                }}
+                sx={btnSave}
               >
                 Save
               </Button>

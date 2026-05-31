@@ -44,7 +44,7 @@ public class Designation {
     @Column(name = "JOB_DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String jobDescription;
 
-    @Column(name = "org_sequence_no")
+    @Column(name = "ORG_SEQUENCE_NO")
     private Integer orgSeqNo;
 
     @Column(name = "BUDGETED_POSITIONS")
@@ -54,16 +54,16 @@ public class Designation {
     @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     private Date createdDate;
 
     @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     private Date updatedDate;
 
-    @Column(name = "is_active")
+    @Column(name = "IS_ACTIVE")
     private Boolean isActive = true;
 
     @PrePersist

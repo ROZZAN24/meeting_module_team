@@ -7,18 +7,55 @@
 -- 4. FREIGHT_MASTER -> MST_FREIGHT
 -- 5. MODE_OF_DESPATCH -> MST_DESPATCH_MODE
 
+-- Safe drop helper for pre-created empty tables
+IF OBJECT_ID('dbo.sp_SafeDropEmptyTableForRename', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_SafeDropEmptyTableForRename;
+GO
+
+CREATE PROCEDURE dbo.sp_SafeDropEmptyTableForRename
+    @oldName NVARCHAR(256),
+    @newName NVARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND OBJECT_ID(@newName, 'U') IS NOT NULL
+    BEGIN
+        DECLARE @rows INT = -1;
+        DECLARE @query NVARCHAR(MAX) = N'SELECT @rows = COUNT(*) FROM ' + QUOTENAME(@newName);
+        EXEC sp_executesql @query, N'@rows INT OUTPUT', @rows = @rows OUTPUT;
+        
+        IF @rows = 0
+        BEGIN
+            PRINT 'Dropping empty pre-created table ' + @newName + ' to allow rename of ' + @oldName;
+            
+            -- Drop foreign keys referencing the empty new table
+            DECLARE @dropFkSql NVARCHAR(MAX) = '';
+            SELECT @dropFkSql = @dropFkSql + 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+            FROM sys.foreign_keys
+            WHERE referenced_object_id = OBJECT_ID(@newName);
+            IF @dropFkSql <> '' EXEC sp_executesql @dropFkSql;
+            
+            -- Drop foreign keys on the empty new table itself
+            DECLARE @dropFkSelfSql NVARCHAR(MAX) = '';
+            SELECT @dropFkSelfSql = @dropFkSelfSql + 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+            FROM sys.foreign_keys
+            WHERE parent_object_id = OBJECT_ID(@newName);
+            IF @dropFkSelfSql <> '' EXEC sp_executesql @dropFkSelfSql;
+            
+            -- Drop the empty table
+            DECLARE @dropTableSql NVARCHAR(MAX) = N'DROP TABLE ' + QUOTENAME(@newName);
+            EXEC sp_executesql @dropTableSql;
+        END
+    END
+END;
+GO
+
 -- ==========================================
 -- 1. MASTER_COUNTRY -> MST_COUNTRY
 -- ==========================================
-IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
-BEGIN
-    EXEC dbo.sp_RenameTableCasingAndPrefix 'MASTER_COUNTRY', 'MST_COUNTRY';
-END
-ELSE
-BEGIN
-    IF OBJECT_ID('MASTER_COUNTRY', 'U') IS NOT NULL AND OBJECT_ID('MST_COUNTRY', 'U') IS NULL
-        EXEC sp_rename 'MASTER_COUNTRY', 'MST_COUNTRY';
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'MASTER_COUNTRY', 'MST_COUNTRY';
+IF OBJECT_ID('MASTER_COUNTRY', 'U') IS NOT NULL AND OBJECT_ID('MST_COUNTRY', 'U') IS NULL
+    EXEC sp_rename 'MASTER_COUNTRY', 'MST_COUNTRY';
 GO
 
 IF COL_LENGTH('MST_COUNTRY', 'created_by') IS NOT NULL
@@ -83,15 +120,9 @@ GO
 -- ==========================================
 -- 2. MASTER_STATE -> MST_STATE
 -- ==========================================
-IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
-BEGIN
-    EXEC dbo.sp_RenameTableCasingAndPrefix 'MASTER_STATE', 'MST_STATE';
-END
-ELSE
-BEGIN
-    IF OBJECT_ID('MASTER_STATE', 'U') IS NOT NULL AND OBJECT_ID('MST_STATE', 'U') IS NULL
-        EXEC sp_rename 'MASTER_STATE', 'MST_STATE';
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'MASTER_STATE', 'MST_STATE';
+IF OBJECT_ID('MASTER_STATE', 'U') IS NOT NULL AND OBJECT_ID('MST_STATE', 'U') IS NULL
+    EXEC sp_rename 'MASTER_STATE', 'MST_STATE';
 GO
 
 IF COL_LENGTH('MST_STATE', 'created_by') IS NOT NULL
@@ -180,15 +211,9 @@ GO
 -- ==========================================
 -- 3. product_master -> MST_PRODUCT
 -- ==========================================
-IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
-BEGIN
-    EXEC dbo.sp_RenameTableCasingAndPrefix 'product_master', 'MST_PRODUCT';
-END
-ELSE
-BEGIN
-    IF OBJECT_ID('product_master', 'U') IS NOT NULL AND OBJECT_ID('MST_PRODUCT', 'U') IS NULL
-        EXEC sp_rename 'product_master', 'MST_PRODUCT';
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'product_master', 'MST_PRODUCT';
+IF OBJECT_ID('product_master', 'U') IS NOT NULL AND OBJECT_ID('MST_PRODUCT', 'U') IS NULL
+    EXEC sp_rename 'product_master', 'MST_PRODUCT';
 GO
 
 IF OBJECT_ID('MST_PRODUCT', 'U') IS NOT NULL
@@ -235,15 +260,9 @@ GO
 -- ==========================================
 -- 4. FREIGHT_MASTER -> MST_FREIGHT
 -- ==========================================
-IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
-BEGIN
-    EXEC dbo.sp_RenameTableCasingAndPrefix 'FREIGHT_MASTER', 'MST_FREIGHT';
-END
-ELSE
-BEGIN
-    IF OBJECT_ID('FREIGHT_MASTER', 'U') IS NOT NULL AND OBJECT_ID('MST_FREIGHT', 'U') IS NULL
-        EXEC sp_rename 'FREIGHT_MASTER', 'MST_FREIGHT';
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'FREIGHT_MASTER', 'MST_FREIGHT';
+IF OBJECT_ID('FREIGHT_MASTER', 'U') IS NOT NULL AND OBJECT_ID('MST_FREIGHT', 'U') IS NULL
+    EXEC sp_rename 'FREIGHT_MASTER', 'MST_FREIGHT';
 GO
 
 IF COL_LENGTH('MST_FREIGHT', 'freight_type') IS NOT NULL
@@ -324,15 +343,9 @@ GO
 -- ==========================================
 -- 5. MODE_OF_DESPATCH -> MST_DESPATCH_MODE
 -- ==========================================
-IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
-BEGIN
-    EXEC dbo.sp_RenameTableCasingAndPrefix 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
-END
-ELSE
-BEGIN
-    IF OBJECT_ID('MODE_OF_DESPATCH', 'U') IS NOT NULL AND OBJECT_ID('MST_DESPATCH_MODE', 'U') IS NULL
-        EXEC sp_rename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
+IF OBJECT_ID('MODE_OF_DESPATCH', 'U') IS NOT NULL AND OBJECT_ID('MST_DESPATCH_MODE', 'U') IS NULL
+    EXEC sp_rename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
 GO
 
 IF COL_LENGTH('MST_DESPATCH_MODE', 'mode_name') IS NOT NULL

@@ -187,7 +187,6 @@ export default function AddAuditSchedule() {
     coOrdinator: '',
     processName: '',
     itemCode: '',
-    auditZone: '',
     auditAreaDetail: ''
   });
 
@@ -510,7 +509,6 @@ export default function AddAuditSchedule() {
         coOrdinator: '',
         itemCode: '',
         processName: '',
-        auditZone: '',
         auditAreaDetail: ''
       });
       setCriteriaList([]);
@@ -624,14 +622,6 @@ export default function AddAuditSchedule() {
     if (!selectedTypeObj || !selectedTypeObj.auditArea) return [];
     return selectedTypeObj.auditArea.split(',').map(s => s.trim()).filter(Boolean);
   }, [formData.auditType, auditTypes]);
-
-  const zones = useMemo(() => {
-    return (auditAreas || []).filter(a => a && a.type === 'ZONE' && a.status === 'ACTIVE');
-  }, [auditAreas]);
-
-  const areas = useMemo(() => {
-    return (auditAreas || []).filter(a => a && a.type === 'AREA' && a.status === 'ACTIVE');
-  }, [auditAreas]);
 
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
@@ -768,7 +758,6 @@ export default function AddAuditSchedule() {
                   />
                 )}
               />
-
               <BOSTextField
                 select
                 required
@@ -781,7 +770,7 @@ export default function AddAuditSchedule() {
                     ...prev,
                     auditArea: val,
                     auditZone: '',
-                    auditAreaDetail: ''
+                    auditAreaDetail: val
                   }));
                 }}
                 error={!!errors.auditArea}
