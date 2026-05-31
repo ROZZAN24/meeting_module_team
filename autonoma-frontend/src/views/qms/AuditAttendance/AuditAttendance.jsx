@@ -20,7 +20,6 @@ const columns = [
   { id: 'employeeCode', label: 'Employee Code', minWidth: 120 },
   { id: 'name', label: 'Name', minWidth: 200 },
   { id: 'inTime', label: 'In Time', minWidth: 100 },
-  { id: 'outTime', label: 'Out Time', minWidth: 100 },
   { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
@@ -100,7 +99,7 @@ export default function AuditAttendance() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', outTime: '', attendanceStatus: 'PRESENT' });
+  const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', attendanceStatus: 'PRESENT' });
   const [participants, setParticipants] = useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -173,8 +172,19 @@ export default function AuditAttendance() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredSchedules = useMemo(() => {
-    const completedScheduleNos = new Set(rows.map(r => r.auditScheduleNo));
-    const now = new Date();
+    const userCode = (currentUserEmp?.empCode || user?.employeeCode || '').trim();
+    
+    const submittedByCurrentUser = new Set(
+      rows
+        .filter(r => {
+          const empCodeOfRow = (r.employeeCode || '').trim();
+          const rowCode = (!empCodeOfRow || empCodeOfRow === '-') && r.name && r.name.includes(' - ')
+            ? r.name.split(' - ')[1].trim()
+            : empCodeOfRow;
+          return rowCode.toLowerCase() === userCode.toLowerCase();
+        })
+        .map(r => r.auditScheduleNo)
+    );
     
     return (schedules || []).filter(s => {
       // If editing or already matches the selected value, always show it
@@ -182,33 +192,14 @@ export default function AuditAttendance() {
         return true;
       }
       
-      // 1. Once attendance is submitted, schedule no should not appear again
-      if (completedScheduleNos.has(s.scheduleNo)) {
+      // 1. Once the current user has submitted attendance, do not show it again
+      if (submittedByCurrentUser.has(s.scheduleNo)) {
         return false;
       }
       
-      // 2. Only show starting from 10 minutes before the audit schedule timing
-      if (!s.auditDate || !s.startTime) return false;
-      
-      const dStr = s.auditDate.split('T')[0];
-      const match = s.startTime.match(/^(\d{2}):(\d{2})\s*(AM|PM)$/i);
-      if (!match) return false;
-      
-      let hours = parseInt(match[1], 10);
-      const minutes = parseInt(match[2], 10);
-      const modifier = match[3].toUpperCase();
-      
-      if (modifier === 'PM' && hours < 12) hours += 12;
-      if (modifier === 'AM' && hours === 12) hours = 0;
-      
-      const scheduleTime = new Date(`${dStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
-      
-      // 10 minutes before the start time
-      const windowStart = new Date(scheduleTime.getTime() - 10 * 60 * 1000);
-      
-      return now >= windowStart;
+      return true;
     });
-  }, [schedules, rows, formData.auditScheduleNo]);
+  }, [schedules, rows, formData.auditScheduleNo, currentUserEmp, user]);
 
   const handleOpenAdd = () => {
     const defaultName = currentUserEmp?.employeeName || user?.name || '';
@@ -220,7 +211,6 @@ export default function AuditAttendance() {
       name: defaultName,
       employeeCode: defaultCode,
       inTime: getSystemTime12h(),
-      outTime: '',
       attendanceStatus: 'PRESENT'
     });
     clearErrors();
@@ -265,9 +255,9 @@ export default function AuditAttendance() {
     console.log('[AuditAttendance] Attempting to save attendance record:', finalData);
     try {
       if (finalData.id) {
-        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData);
+        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData, { skipGlobalAlert: true });
       } else {
-        await axios.post('/api/qms/audit/attendance', finalData);
+        await axios.post('/api/qms/audit/attendance', finalData, { skipGlobalAlert: true });
       }
       console.log('[AuditAttendance] Save successful');
       dispatch(openSnackbar({ 

@@ -37,7 +37,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     const fetchAreas = async () => {
       try {
         const res = await axios.get(API_PATHS.QMS.AUDIT_AREA);
-        setAuditAreas(res.data);
+        setAuditAreas((res.data || []).filter(a => a && a.status === 'ACTIVE'));
       } catch (error) {
         console.error('Failed to fetch areas:', error);
         setAuditAreas([]);
@@ -133,9 +133,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
       delete payload.updatedUser;
 
       if (formData.id) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload, { skipGlobalAlert: true });
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload, { skipGlobalAlert: true });
       }
       handleClose(true);
     } catch (error) {

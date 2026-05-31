@@ -25,6 +25,8 @@ const columns = [
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'rescheduleCount', label: 'Reschedule Count', minWidth: 120 },
+  { id: 'totalPoint', label: 'Total Point', minWidth: 100 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
@@ -123,7 +125,9 @@ export default function AuditScheduleList() {
       'Audit Type': r.auditType,
       'Audit Area': r.auditArea,
       'Auditee': r.auditee,
-      'Status': r.status
+      'Status': r.status,
+      'Reschedule Count': r.rescheduleCount !== undefined && r.rescheduleCount !== null ? r.rescheduleCount : 0,
+      'Total Point': r.totalPoint !== undefined && r.totalPoint !== null ? r.totalPoint : 0
     }));
     exportToExcel(exportData, 'Audit_Schedule_Details');
   };
@@ -168,6 +172,9 @@ export default function AuditScheduleList() {
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
     let val = row[col.id];
+    if (col.id === 'rescheduleCount' || col.id === 'totalPoint') {
+      return val !== undefined && val !== null ? val : 0;
+    }
     if (col.id === 'createdUser') {
       val = row.createdUser || row.createdBy;
     }
@@ -209,7 +216,9 @@ export default function AuditScheduleList() {
               { header: 'Audit Type', key: 'auditType' },
               { header: 'Audit Area', key: 'auditArea' },
               { header: 'Auditee', key: 'auditee' },
-              { header: 'Status', key: 'status' }
+              { header: 'Status', key: 'status' },
+              { header: 'Reschedule Count', key: 'rescheduleCount' },
+              { header: 'Total Point', key: 'totalPoint' }
             ]}
           />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Schedule', 'Ctrl + N')}>

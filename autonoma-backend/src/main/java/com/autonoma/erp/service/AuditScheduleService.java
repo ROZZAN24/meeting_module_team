@@ -43,6 +43,13 @@ public class AuditScheduleService {
     public AuditSchedule updateAuditSchedule(Long id, AuditSchedule updatedAuditSchedule) {
         validateEmployeeAvailability(updatedAuditSchedule, id);
         return repository.findById(id).map(existing -> {
+            // Increment reschedule count if the audit date is changed
+            if (existing.getAuditDate() != null && updatedAuditSchedule.getAuditDate() != null 
+                    && !existing.getAuditDate().equals(updatedAuditSchedule.getAuditDate())) {
+                int currentCount = existing.getRescheduleCount() != null ? existing.getRescheduleCount() : 0;
+                existing.setRescheduleCount(currentCount + 1);
+            }
+
             existing.setScheduleDate(updatedAuditSchedule.getScheduleDate());
             existing.setStatus(updatedAuditSchedule.getStatus());
             existing.setAuditType(updatedAuditSchedule.getAuditType());

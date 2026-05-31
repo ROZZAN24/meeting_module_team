@@ -32,6 +32,9 @@ public class NcrOfiService {
     @Autowired
     private com.autonoma.erp.repository.AuditObservationDetailRepository observationDetailRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditObservationRepository auditObservationRepository;
+
     private final Path root = Paths.get("uploads");
 
     public NcrOfiService() {
@@ -183,6 +186,7 @@ public class NcrOfiService {
     public void approveNcr(Number observationDetailId) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("CLOSED");
+            detail.setNcrStatus("CLOSED");
             observationDetailRepository.save(detail);
             
             ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
@@ -192,7 +196,86 @@ public class NcrOfiService {
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
+
+            if (detail.getAuditObservation() != null) {
+                recalculateParentScore(detail.getAuditObservation());
+            }
         });
+    }
+
+    private void recalculateParentScore(com.autonoma.erp.model.AuditObservation observation) {
+        if (observation == null || observation.getDetails() == null) return;
+        
+        int compliance = 0;
+        int ofi = 0;
+        int ncCount = 0;
+        
+        for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
+            String obsStatus = detail.getObservationStatus();
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
+                compliance++;
+            } else if ("OFI".equalsIgnoreCase(obsStatus)) {
+                ofi++;
+            } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
+                ncCount++;
+            }
+        }
+        
+        java.util.Date obsDate = observation.getObservationDate();
+        long diffDays = 0;
+        if (obsDate != null) {
+            java.util.Calendar calObs = java.util.Calendar.getInstance();
+            calObs.setTime(obsDate);
+            calObs.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            calObs.set(java.util.Calendar.MINUTE, 0);
+            calObs.set(java.util.Calendar.SECOND, 0);
+            calObs.set(java.util.Calendar.MILLISECOND, 0);
+            
+            java.util.Calendar calToday = java.util.Calendar.getInstance();
+            calToday.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            calToday.set(java.util.Calendar.MINUTE, 0);
+            calToday.set(java.util.Calendar.SECOND, 0);
+            calToday.set(java.util.Calendar.MILLISECOND, 0);
+            
+            long diffMs = calToday.getTimeInMillis() - calObs.getTimeInMillis();
+            diffDays = diffMs / (1000 * 60 * 60 * 24);
+            if (diffDays < 0) {
+                diffDays = 0;
+            }
+        }
+        
+        int score = 0;
+        for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
+            String obsStatus = detail.getObservationStatus();
+            String appStatus = detail.getApprovalStatus();
+            
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
+                score += 1;
+            } else if ("OFI".equalsIgnoreCase(obsStatus)) {
+                score += 0;
+            } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
+                if ("CLOSED".equalsIgnoreCase(appStatus)) {
+                    score += 0;
+                } else {
+                    if (diffDays <= 3) {
+                        score += -1;
+                    } else if (diffDays <= 5) {
+                        score += -3;
+                    } else if (diffDays <= 8) {
+                        score += -5;
+                    } else {
+                        score += -8;
+                    }
+                }
+            }
+        }
+        
+        observation.setComplianceCount(compliance);
+        observation.setOfiCount(ofi);
+        observation.setNcrCount(ncCount);
+        observation.setAuditScore(score);
+        
+        auditObservationRepository.save(observation);
     }
 
     @Transactional

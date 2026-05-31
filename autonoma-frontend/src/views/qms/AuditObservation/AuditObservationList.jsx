@@ -165,7 +165,7 @@ export default function AuditObservationList() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconFileText size={24} />
-          <Typography variant="h3">Audit Observation Master</Typography>
+          <Typography variant="h3">Audit Observation</Typography>
         </Stack>
       }
       secondary={

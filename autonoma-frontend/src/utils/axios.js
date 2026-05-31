@@ -116,7 +116,9 @@ axiosServices.interceptors.response.use(
     );
     const isExpectedAuthError = isAuthEndpoint && [400, 403, 405].includes(error.response?.status);
 
-    if (error.response?.status !== 401 && !isExpectedAuthError) {
+    const skipGlobalAlert = error.config?.skipGlobalAlert;
+
+    if (error.response?.status !== 401 && !isExpectedAuthError && !skipGlobalAlert) {
       // Trigger a blocking browser alert with details
       if (window.showAlert) {
         window.showAlert(`Server / Database Error:\n${errMsg}`);
