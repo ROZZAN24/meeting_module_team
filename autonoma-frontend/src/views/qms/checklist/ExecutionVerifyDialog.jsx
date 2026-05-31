@@ -419,9 +419,9 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
             />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', justifyContent: 'center', gap: 2 }}>
           <Button onClick={() => setRejectOpen(false)} variant="outlined" color="primary" sx={{ borderRadius: '8px', fontWeight: 600 }}>
-            Cancel
+            NO
           </Button>
           <Button 
             onClick={() => {
@@ -435,7 +435,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
             disabled={!rejectComment.trim()}
             sx={{ borderRadius: '8px', fontWeight: 600 }}
           >
-            Reject
+            YES
           </Button>
         </DialogActions>
       </Dialog>
