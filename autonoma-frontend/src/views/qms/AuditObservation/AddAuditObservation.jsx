@@ -97,6 +97,7 @@ export default function AddAuditObservation() {
 
   const [details, setDetails] = useState([]);
   const [attendance, setAttendance] = useState([]);
+  const [editingRowId, setEditingRowId] = useState(null);
   const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
   const [isAuditorEligible, setIsAuditorEligible] = useState(false);
@@ -138,58 +139,60 @@ export default function AddAuditObservation() {
   const [selectedOutTime, setSelectedOutTime] = useState('');
 
   const handleSaveOutTimeFromDialog = async () => {
-    if (!selectedAttendanceId || !selectedOutTime) {
-      dispatch(openSnackbar({ open: true, message: 'Please select an employee and out time.', severity: 'error', variant: 'alert' }));
+    if (!selectedOutTime) {
+      dispatch(openSnackbar({ open: true, message: 'Please select an out time.', severity: 'error', variant: 'alert' }));
       return;
     }
-    const rowToUpdate = attendance.find(a => a.id === selectedAttendanceId);
-    if (!rowToUpdate) return;
+    if (attendance.length === 0) {
+      dispatch(openSnackbar({ open: true, message: 'No employees to update out time for.', severity: 'warning', variant: 'alert' }));
+      return;
+    }
 
     try {
-      const updatedRow = { ...rowToUpdate, outTime: selectedOutTime };
-      await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${selectedAttendanceId}`, updatedRow);
-      dispatch(openSnackbar({ open: true, message: `Out Time saved for ${rowToUpdate.name}!`, severity: 'success', variant: 'alert' }));
+      await Promise.all(
+        attendance.map(row => {
+          const updatedRow = { ...row, outTime: selectedOutTime };
+          return axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
+        })
+      );
+      dispatch(openSnackbar({ open: true, message: 'Out Time saved for all employees!', severity: 'success', variant: 'alert' }));
       setOutTimeDialogOpen(false);
-      setSelectedAttendanceId('');
       setSelectedOutTime('');
       if (formData.auditScheduleNo) {
         fetchAttendance(formData.auditScheduleNo);
       }
     } catch (e) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time', severity: 'error', variant: 'alert' }));
+      dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time for employees', severity: 'error', variant: 'alert' }));
     }
   };
 
   const isAuditorUser = useMemo(() => {
     if (!user) return false;
-
-    // 1. Check if logged-in user is explicitly marked as certified auditor in Employee Master
-    if (isAuditorEligible) {
-      return true;
-    }
-
-    // 2. Also allow if they are explicitly scheduled as the auditor for this audit
     if (!formData.auditor) return false;
     
-    const auditorParts = formData.auditor.split(' - ');
-    const auditorCode = auditorParts[1] ? auditorParts[1].trim() : '';
-    const auditorName = auditorParts[0] ? auditorParts[0].trim() : '';
+    const auditorStr = formData.auditor.trim().toLowerCase();
+    const userEmpCode = (user.employeeCode || user.empCode || '').trim().toLowerCase();
+    const userUserId = (user.id || '').trim().toLowerCase();
+    const userName = (user.name || '').trim().toLowerCase();
+
+    // Check with ' - ' splitting (auditor usually stored as "Name - Code" or similar)
+    if (auditorStr.includes(' - ')) {
+      const parts = auditorStr.split(' - ');
+      const namePart = parts[0]?.trim();
+      const codePart = parts[1]?.trim();
+
+      if (userEmpCode && codePart && userEmpCode === codePart) return true;
+      if (userUserId && codePart && userUserId === codePart) return true;
+      if (userName && namePart && userName === namePart) return true;
+    } else {
+      // Direct comparison if no delimiter
+      if (userEmpCode && userEmpCode === auditorStr) return true;
+      if (userUserId && userUserId === auditorStr) return true;
+      if (userName && userName === auditorStr) return true;
+    }
     
-    const userEmpCode = (user.employeeCode || user.empCode || '').trim();
-    const userUserId = (user.id || '').trim();
-    const userName = (user.name || '').trim();
-    
-    if (userEmpCode && auditorCode && userEmpCode.toLowerCase() === auditorCode.toLowerCase()) {
-      return true;
-    }
-    if (userUserId && auditorCode && userUserId.toLowerCase() === auditorCode.toLowerCase()) {
-      return true;
-    }
-    if (userName && auditorName && userName.toLowerCase() === auditorName.toLowerCase()) {
-      return true;
-    }
     return false;
-  }, [user, isAuditorEligible, formData.auditor]);
+  }, [user, formData.auditor]);
 
   const attendanceColumns = useMemo(() => [
     { id: 'name', label: 'Name', minWidth: 150 },
@@ -430,10 +433,67 @@ export default function AddAuditObservation() {
               size={attendance.length || 5}
               loading={false}
               showActions={false}
+              onDoubleClickRow={(row) => {
+                if (isAuditorUser) {
+                  setEditingRowId(row.id);
+                }
+              }}
               sx={{ height: attendance.length > 0 ? '250px' : '135px' }}
               renderCell={(col, row) => {
                 if (col.id === 'attendanceStatus') return <Chip label={row.attendanceStatus} size="small" sx={getStatusChipSx(row.attendanceStatus === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
-                if (col.id === 'outTime') return row.outTime || '-';
+                if (col.id === 'outTime') {
+                  if (isAuditorUser && editingRowId === row.id) {
+                    return (
+                      <BOSTextField
+                        select
+                        size="small"
+                        value={row.outTime || ''}
+                        onChange={async (e) => {
+                          const val = e.target.value;
+                          try {
+                            const updatedRow = { ...row, outTime: val };
+                            await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
+                            setEditingRowId(null);
+                            dispatch(openSnackbar({ open: true, message: `Out Time updated for ${row.name}!`, severity: 'success', variant: 'alert' }));
+                            if (formData.auditScheduleNo) {
+                              fetchAttendance(formData.auditScheduleNo);
+                            }
+                          } catch (err) {
+                            console.error(err);
+                            dispatch(openSnackbar({ open: true, message: 'Failed to update Out Time', severity: 'error', variant: 'alert' }));
+                          }
+                        }}
+                        onBlur={() => setEditingRowId(null)}
+                        autoFocus
+                        fullWidth
+                      >
+                        <MenuItem value="">-Select-</MenuItem>
+                        {TIME_OPTIONS.map((t) => (
+                          <MenuItem key={t} value={t}>{t}</MenuItem>
+                        ))}
+                      </BOSTextField>
+                    );
+                  }
+                  return (
+                    <Box
+                      onDoubleClick={() => {
+                        if (isAuditorUser) {
+                          setEditingRowId(row.id);
+                        }
+                      }}
+                      sx={{
+                        cursor: isAuditorUser ? 'pointer' : 'default',
+                        width: '100%',
+                        height: '100%',
+                        minHeight: '24px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      {row.outTime || '-'}
+                    </Box>
+                  );
+                }
                 return row[col.id] || '-';
               }}
             />
@@ -625,21 +685,6 @@ export default function AddAuditObservation() {
         <DialogTitle sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Add Attendance Out Time</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1.5 }}>
-            <BOSTextField
-              select
-              label="Select Employee"
-              value={selectedAttendanceId}
-              onChange={(e) => setSelectedAttendanceId(e.target.value)}
-              fullWidth
-            >
-              <MenuItem value="">-Select-</MenuItem>
-              {attendance.map((a) => (
-                <MenuItem key={a.id} value={a.id}>
-                  {a.name} ({a.employeeCode || a.employeeId})
-                </MenuItem>
-              ))}
-            </BOSTextField>
-
             <BOSTextField
               select
               label="Out Time"
