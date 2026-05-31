@@ -99,6 +99,40 @@ export default function AddAuditObservation() {
   const [attendance, setAttendance] = useState([]);
   const { auditSchedules: schedules = [] } = useLookups(['AUDIT_SCHEDULE']);
 
+  const [isAuditorEligible, setIsAuditorEligible] = useState(false);
+
+  useEffect(() => {
+    const checkAuditorEligibility = async () => {
+      if (!user) return;
+      try {
+        const res = await axios.get('/api/master/hr/employees/filter/active');
+        const employees = res.data || [];
+        
+        const userEmpCode = (user.employeeCode || user.empCode || '').trim().toLowerCase();
+        const userUserId = (user.id || '').trim().toLowerCase();
+        const userName = (user.name || '').trim().toLowerCase();
+        
+        const emp = employees.find(e => {
+          const empCode = (e.employeeCode || '').trim().toLowerCase();
+          const empName = (e.employeeName || '').trim().toLowerCase();
+          
+          if (userEmpCode && empCode && userEmpCode === empCode) return true;
+          if (userUserId && empCode && userUserId === empCode) return true;
+          if (userName && empName && userName === empName) return true;
+          return false;
+        });
+        
+        if (emp && emp.isAuditor === 'YES') {
+          setIsAuditorEligible(true);
+        }
+      } catch (err) {
+        console.error('Failed to check auditor eligibility:', err);
+      }
+    };
+    
+    checkAuditorEligibility();
+  }, [user]);
+
   const [outTimeDialogOpen, setOutTimeDialogOpen] = useState(false);
   const [selectedAttendanceId, setSelectedAttendanceId] = useState('');
   const [selectedOutTime, setSelectedOutTime] = useState('');
@@ -129,18 +163,12 @@ export default function AddAuditObservation() {
   const isAuditorUser = useMemo(() => {
     if (!user) return false;
 
-    // 1. Check user roles / authorities
-    const userRole = String(user.role || user.roles || '').toLowerCase();
-    if (userRole.includes('auditor') || userRole.includes('qa') || userRole.includes('admin')) {
-      return true;
-    }
-    
-    // 2. Check if name is Eashwar specifically
-    const userName = (user.name || '').trim().toLowerCase();
-    if (userName.includes('eashwar')) {
+    // 1. Check if logged-in user is explicitly marked as certified auditor in Employee Master
+    if (isAuditorEligible) {
       return true;
     }
 
+    // 2. Also allow if they are explicitly scheduled as the auditor for this audit
     if (!formData.auditor) return false;
     
     const auditorParts = formData.auditor.split(' - ');
@@ -149,6 +177,7 @@ export default function AddAuditObservation() {
     
     const userEmpCode = (user.employeeCode || user.empCode || '').trim();
     const userUserId = (user.id || '').trim();
+    const userName = (user.name || '').trim();
     
     if (userEmpCode && auditorCode && userEmpCode.toLowerCase() === auditorCode.toLowerCase()) {
       return true;
@@ -160,7 +189,7 @@ export default function AddAuditObservation() {
       return true;
     }
     return false;
-  }, [user, formData.auditor]);
+  }, [user, isAuditorEligible, formData.auditor]);
 
   const attendanceColumns = useMemo(() => [
     { id: 'name', label: 'Name', minWidth: 150 },
