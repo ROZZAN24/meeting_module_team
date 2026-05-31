@@ -68,12 +68,12 @@ const formatTime12 = (hour, minute) => {
   return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
 };
 
-const TIME_OPTIONS = [];
-for (let h = 0; h < 24; h++) {
-  for (let m = 0; m < 60; m += 30) {
-    TIME_OPTIONS.push(formatTime12(h, m));
-  }
-}
+const TIME_OPTIONS = [
+  '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
+  '01:00 PM', '01:30 PM', '02:00 PM', '02:30 PM', '03:00 PM', '03:30 PM', '04:00 PM',
+  '04:30 PM', '05:00 PM', '05:30 PM', '06:00 PM', '06:30 PM', '07:00 PM', '07:30 PM',
+  '08:00 PM', '08:30 PM', '09:00 PM'
+];
 
 const convertToMinutes = (timeStr) => {
   if (!timeStr) return 0;
@@ -171,7 +171,7 @@ export default function AddAuditObservation() {
 
   const [outTimeDialogOpen, setOutTimeDialogOpen] = useState(false);
   const [selectedAttendanceId, setSelectedAttendanceId] = useState('');
-  const [selectedOutTime, setSelectedOutTime] = useState('');
+  const [selectedOutTime, setSelectedOutTime] = useState('05:00 PM');
 
   const handleSaveOutTimeFromDialog = async () => {
     if (!selectedOutTime) {
@@ -192,7 +192,7 @@ export default function AddAuditObservation() {
       );
       dispatch(openSnackbar({ open: true, message: 'Out Time saved for all employees!', severity: 'success', variant: 'alert' }));
       setOutTimeDialogOpen(false);
-      setSelectedOutTime('');
+      setSelectedOutTime('05:00 PM');
       if (formData.auditScheduleNo) {
         fetchAttendance(formData.auditScheduleNo);
       }
@@ -482,7 +482,7 @@ export default function AddAuditObservation() {
                       <BOSTextField
                         select
                         size="small"
-                        value={row.outTime || ''}
+                        value={row.outTime || '05:00 PM'}
                         onChange={async (e) => {
                           const val = e.target.value;
                           try {
@@ -707,7 +707,10 @@ export default function AddAuditObservation() {
 
       <Dialog 
         open={outTimeDialogOpen} 
-        onClose={() => setOutTimeDialogOpen(false)}
+        onClose={() => {
+          setOutTimeDialogOpen(false);
+          setSelectedOutTime('05:00 PM');
+        }}
         maxWidth="xs"
         fullWidth
         PaperProps={{
@@ -735,7 +738,7 @@ export default function AddAuditObservation() {
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={() => setOutTimeDialogOpen(false)} color="grey">Cancel</Button>
+           <Button onClick={() => { setOutTimeDialogOpen(false); setSelectedOutTime('05:00 PM'); }} color="grey">Cancel</Button>
           <Button variant="contained" onClick={handleSaveOutTimeFromDialog} sx={btnSave}>Save</Button>
         </DialogActions>
       </Dialog>
