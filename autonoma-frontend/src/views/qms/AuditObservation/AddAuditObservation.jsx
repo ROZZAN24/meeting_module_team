@@ -373,8 +373,8 @@ export default function AddAuditObservation() {
                   if (isAuditorUser) {
                     return (
                       <BOSTextField
-                        select
                         size="small"
+                        placeholder="e.g. 05:00 PM"
                         value={row.outTime || ''}
                         onChange={(e) => {
                           const val = e.target.value;
@@ -383,12 +383,7 @@ export default function AddAuditObservation() {
                           );
                         }}
                         fullWidth
-                      >
-                        <MenuItem value="">-Select-</MenuItem>
-                        {TIME_OPTIONS.map((t) => (
-                          <MenuItem key={t} value={t}>{t}</MenuItem>
-                        ))}
-                      </BOSTextField>
+                      />
                     );
                   }
                   return row.outTime || '-';
