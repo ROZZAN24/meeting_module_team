@@ -575,11 +575,15 @@ export default function MasterCheckList() {
           <Tooltip title="Refresh">
             <IconButton
               onClick={fetchChecklists}
-              color="primary"
               size="small"
               sx={{
-                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
+                ...btnNew,
+                bgcolor: 'primary.main',
+                color: '#fff',
+                p: 1,
+                width: '38px',
+                height: '38px',
+                '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)', boxShadow: 4 }
               }}
             >
               <IconRefresh size={20} />
@@ -589,11 +593,15 @@ export default function MasterCheckList() {
           <Tooltip title="Column Visibility">
             <IconButton
               onClick={handlePopoverOpen}
-              color="primary"
               size="small"
               sx={{
-                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
+                ...btnNew,
+                bgcolor: 'primary.main',
+                color: '#fff',
+                p: 1,
+                width: '38px',
+                height: '38px',
+                '&:hover': { bgcolor: 'primary.dark', transform: 'translateY(-2px)', boxShadow: 4 }
               }}
             >
               <IconAdjustmentsHorizontal size={20} />
@@ -605,6 +613,9 @@ export default function MasterCheckList() {
               data={resolvedRows}
               filename="Master_Check_List"
               columns={exportColumns}
+              variant="contained"
+              color="primary"
+              sx={btnNew}
             />
           )}
 
@@ -617,19 +628,13 @@ export default function MasterCheckList() {
           }>
             <span>
               <Button
-                variant="outlined"
-                color="warning"
+                variant="contained"
+                color="primary"
                 size="medium"
                 disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
                 startIcon={<IconFileDots size={18} />}
                 onClick={() => selectedRow && handleAmendment(selectedRow)}
-                sx={{
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { transform: 'scale(1.03)' }
-                }}
+                sx={btnNew}
               >
                 Amendment
               </Button>
@@ -645,19 +650,13 @@ export default function MasterCheckList() {
           }>
             <span>
               <Button
-                variant="outlined"
-                color="info"
+                variant="contained"
+                color="primary"
                 size="medium"
                 disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
                 startIcon={<IconUserPlus size={18} />}
                 onClick={() => selectedRow && handleAssign(selectedRow)}
-                sx={{
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { transform: 'scale(1.03)' }
-                }}
+                sx={btnNew}
               >
                 Assign
               </Button>

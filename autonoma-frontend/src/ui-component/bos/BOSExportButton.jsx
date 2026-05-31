@@ -33,7 +33,8 @@ export default function BOSExportButton({
   size = 'medium',
   pageId = null,
   pageName = null,
-  pageCode = null
+  pageCode = null,
+  sx = {}
 }) {
   const theme = useTheme();
   const { user } = useAuth();
@@ -260,7 +261,8 @@ export default function BOSExportButton({
               textTransform: 'none',
               fontWeight: 600,
               whiteSpace: 'nowrap',
-              px: 2
+              px: 2,
+              ...sx
             }}
           >
             Export
@@ -540,7 +542,8 @@ BOSExportButton.propTypes = {
   size: PropTypes.string,
   pageId: PropTypes.oneOfType([PropTypes.number, PropTypes.string]),
   pageName: PropTypes.string,
-  pageCode: PropTypes.string
+  pageCode: PropTypes.string,
+  sx: PropTypes.object
 };
 
 
