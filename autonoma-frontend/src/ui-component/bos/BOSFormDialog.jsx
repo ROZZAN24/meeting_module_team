@@ -113,7 +113,8 @@ export default function BOSFormDialog({
   children,
   contentSx = {},
   hideCollapse = false,
-  sx = {}
+  sx = {},
+  showCloseInFooter = true
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -402,16 +403,18 @@ export default function BOSFormDialog({
                   </Button>
                 </Tooltip>
               )}
-              <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
-                <Button
-                  onClick={() => onClose()}
-                  variant="contained"
-                  sx={{ ...btnDelete, bgcolor: 'grey.500', '&:hover': { bgcolor: 'grey.700' } }}
-                  startIcon={<IconX size={20} />}
-                >
-                  Close
-                </Button>
-              </Tooltip>
+              {showCloseInFooter && (
+                <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
+                  <Button
+                    onClick={() => onClose()}
+                    variant="contained"
+                    sx={{ ...btnDelete, bgcolor: 'grey.500', '&:hover': { bgcolor: 'grey.700' } }}
+                    startIcon={<IconX size={20} />}
+                  >
+                    Close
+                  </Button>
+                </Tooltip>
+              )}
             </Box>
           ) : (
             <>
@@ -536,5 +539,6 @@ BOSFormDialog.propTypes = {
   children: PropTypes.node,
   contentSx: PropTypes.object,
   hideCollapse: PropTypes.bool,
-  sx: PropTypes.object
+  sx: PropTypes.object,
+  showCloseInFooter: PropTypes.bool
 };

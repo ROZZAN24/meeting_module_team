@@ -890,6 +890,7 @@ public class ChecklistService {
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
+        checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
         checklist.setUpdatedBy(verifiedBy);
         checklist.setUpdatedDate(new Date());
