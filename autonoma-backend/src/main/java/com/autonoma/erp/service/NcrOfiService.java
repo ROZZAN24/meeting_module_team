@@ -212,22 +212,63 @@ public class NcrOfiService {
         
         for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
             String obsStatus = detail.getObservationStatus();
-            String appStatus = detail.getApprovalStatus();
-            
             if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
                 compliance++;
             } else if ("OFI".equalsIgnoreCase(obsStatus)) {
-                if (!"CLOSED".equalsIgnoreCase(appStatus)) {
-                    ofi++;
-                }
+                ofi++;
             } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
-                if (!"CLOSED".equalsIgnoreCase(appStatus)) {
-                    ncCount++;
-                }
+                ncCount++;
             }
         }
         
-        int score = (compliance * 1) + (ncCount * -1);
+        java.util.Date obsDate = observation.getObservationDate();
+        long diffDays = 0;
+        if (obsDate != null) {
+            java.util.Calendar calObs = java.util.Calendar.getInstance();
+            calObs.setTime(obsDate);
+            calObs.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            calObs.set(java.util.Calendar.MINUTE, 0);
+            calObs.set(java.util.Calendar.SECOND, 0);
+            calObs.set(java.util.Calendar.MILLISECOND, 0);
+            
+            java.util.Calendar calToday = java.util.Calendar.getInstance();
+            calToday.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            calToday.set(java.util.Calendar.MINUTE, 0);
+            calToday.set(java.util.Calendar.SECOND, 0);
+            calToday.set(java.util.Calendar.MILLISECOND, 0);
+            
+            long diffMs = calToday.getTimeInMillis() - calObs.getTimeInMillis();
+            diffDays = diffMs / (1000 * 60 * 60 * 24);
+            if (diffDays < 0) {
+                diffDays = 0;
+            }
+        }
+        
+        int score = 0;
+        for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
+            String obsStatus = detail.getObservationStatus();
+            String appStatus = detail.getApprovalStatus();
+            
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
+                score += 1;
+            } else if ("OFI".equalsIgnoreCase(obsStatus)) {
+                score += 0;
+            } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
+                if ("CLOSED".equalsIgnoreCase(appStatus)) {
+                    score += 0;
+                } else {
+                    if (diffDays <= 3) {
+                        score += -1;
+                    } else if (diffDays <= 5) {
+                        score += -3;
+                    } else if (diffDays <= 8) {
+                        score += -5;
+                    } else {
+                        score += -8;
+                    }
+                }
+            }
+        }
         
         observation.setComplianceCount(compliance);
         observation.setOfiCount(ofi);

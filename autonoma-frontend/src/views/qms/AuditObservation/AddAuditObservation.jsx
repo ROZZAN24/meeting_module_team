@@ -172,6 +172,9 @@ export default function AddAuditObservation() {
       setFormData(res.data);
       setDetails(res.data.details || []);
       if (res.data.auditScheduleNo) fetchAttendance(res.data.auditScheduleNo);
+      if (res.data.details) {
+        recalculateCounts(res.data.details, res.data.observationDate);
+      }
     } catch (e) { console.error('Failed to fetch observation'); }
   };
 
@@ -196,7 +199,7 @@ export default function AddAuditObservation() {
         auditor: sch.auditor,
         ncrApprovedBy: sch.ncrApprovedBy
       }));
-      setDetails(sch.criteriaList.map(c => ({
+      const initialDetails = sch.criteriaList.map(c => ({
         seqNo: c.seqNo,
         clause: c.clause,
         criteriaDetails: c.criteriaDetails,
@@ -204,7 +207,9 @@ export default function AddAuditObservation() {
         observationStatus: 'COMPLIANCE',
         approvalStatus: 'PENDING',
         comments: ''
-      })));
+      }));
+      setDetails(initialDetails);
+      recalculateCounts(initialDetails, formData.observationDate);
       fetchAttendance(schNo);
     }
   };
@@ -216,19 +221,47 @@ export default function AddAuditObservation() {
     recalculateCounts(newDetails);
   };
 
-  const recalculateCounts = (currDetails) => {
-    const counts = currDetails.reduce((acc, curr) => {
-      const status = curr.observationStatus || '';
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
+  const recalculateCounts = (currDetails, customDate) => {
+    const obsDateStr = customDate || formData.observationDate || new Date().toISOString().split('T')[0];
+    const obsDate = new Date(obsDateStr);
+    const today = new Date();
+    obsDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - obsDate.getTime();
+    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
 
-    const compliance = counts['COMPLIANCE'] || 0;
-    const ofi = counts['OFI'] || 0;
-    const ncCount = (counts['NC'] || 0) + (counts['NCR'] || 0);
+    let compliance = 0;
+    let ofi = 0;
+    let ncCount = 0;
+    let score = 0;
 
-    // Score format: compliance (+1), NC (-1), OFI (0), NO ENTRY (0)
-    const score = (compliance * 1) + (ncCount * -1) + (ofi * 0);
+    currDetails.forEach(d => {
+      const status = d.observationStatus || '';
+      const appStatus = d.approvalStatus || '';
+      
+      if (status === 'COMPLIANCE') {
+        compliance++;
+        score += 1;
+      } else if (status === 'OFI') {
+        ofi++;
+        score += 0;
+      } else if (status === 'NC' || status === 'NCR') {
+        ncCount++;
+        if (appStatus === 'CLOSED') {
+          score += 0;
+        } else {
+          if (diffDays <= 3) {
+            score += -1;
+          } else if (diffDays <= 5) {
+            score += -3;
+          } else if (diffDays <= 8) {
+            score += -5;
+          } else {
+            score += -8;
+          }
+        }
+      }
+    });
 
     setFormData(prev => ({
       ...prev,
@@ -303,7 +336,11 @@ export default function AddAuditObservation() {
               label="Observation Date"
               name="observationDate"
               value={formData.observationDate || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, observationDate: e.target.value }))}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                setFormData(prev => ({ ...prev, observationDate: newDate }));
+                recalculateCounts(details, newDate);
+              }}
               error={!!errors.observationDate}
               helperText={errors.observationDate}
               disabled={!perms.write}
@@ -436,7 +473,10 @@ export default function AddAuditObservation() {
                     WebkitTextFillColor: 'transparent',
                     lineHeight: 1.1
                   }}>
-                    {formData.auditScore}
+                    {details.length > 0 ? `${Math.round((formData.auditScore / details.length) * 100)}%` : '0%'}
+                  </Typography>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'text.secondary', mt: 0.5 }}>
+                    {formData.auditScore} / {details.length} Points
                   </Typography>
                 </Stack>
                 <Box sx={{ 
