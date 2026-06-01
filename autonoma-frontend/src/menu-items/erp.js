@@ -129,14 +129,7 @@ export const masters = {
               icon: icons.IconUserPlus,
               pageCode: 'M2140'
             },
-            {
-              id: 'master-hr-ats-induction-round',
-              title: 'Induction Round Master',
-              type: 'item',
-              url: '/master/hr/ats/induction-round-master',
-              icon: icons.IconRotate2,
-              pageCode: 'M2145'
-            },
+
             {
               id: 'master-hr-ats-induction-assignment',
               title: 'Induction Pending',

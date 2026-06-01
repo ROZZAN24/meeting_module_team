@@ -96,7 +96,19 @@ export default function InductionCriteria() {
     { id: 'serialNo', label: 'Serial No', bold: true, color: 'primary.main', minWidth: 100 },
     { id: 'inductionDetails', label: 'Induction Details', required: true, bold: true, minWidth: 250 },
     { id: 'answer', label: 'Answer', required: true, minWidth: 200 },
-    { id: 'departmentCodes', label: 'Department', minWidth: 150 },
+    {
+      id: 'departmentCodes',
+      label: 'Department',
+      minWidth: 150,
+      render: (row) => {
+        if (!row.departmentCodes) return '-';
+        const codes = row.departmentCodes.split(',').filter(Boolean);
+        return codes.map(code => {
+          const dept = departments.find(d => d.departmentNo === code);
+          return dept ? dept.departmentName : code;
+        }).join(', ');
+      }
+    },
     { id: 'levelCodes', label: 'Level', minWidth: 120 },
     { id: 'inductionRound', label: 'Round', minWidth: 120 },
     { id: 'attachmentRequired', label: 'Attach Req.', minWidth: 100 },
@@ -140,7 +152,7 @@ export default function InductionCriteria() {
     { id: 'createdAt', label: 'Created Date', minWidth: 150 },
     { id: 'updatedBy', label: 'Edited By', minWidth: 120 },
     { id: 'updatedAt', label: 'Edited Date', minWidth: 150 }
-  ], [handlePreviewFile]);
+  ], [handlePreviewFile, departments]);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
@@ -274,17 +286,19 @@ export default function InductionCriteria() {
 
   const handleLevelChange = (e) => {
     const { value } = e.target;
+    let newLevels = [];
     if (value.includes('ALL')) {
       if (formData.levelCodes.length === levelOptions.length) {
-        setFormData(prev => ({ ...prev, levelCodes: [] }));
+        newLevels = [];
       } else {
-        setFormData(prev => ({ ...prev, levelCodes: levelOptions.map(l => l.code) }));
+        newLevels = levelOptions.map(l => l.code);
       }
-      const rawCodes = typeof value === 'string' ? value.split(',') : value;
-      const order = LEVEL_OPTIONS.map(l => l.code);
-      const sortedCodes = [...rawCodes].sort((a, b) => order.indexOf(a) - order.indexOf(b));
-      setFormData((prev) => ({ ...prev, levelCodes: sortedCodes }));
+    } else {
+      newLevels = value;
     }
+    const order = LEVEL_OPTIONS.map(l => l.code);
+    const sortedLevels = [...newLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    setFormData(prev => ({ ...prev, levelCodes: sortedLevels }));
     if (errors.levelCodes) clearErrors('levelCodes');
   };
 
@@ -377,7 +391,7 @@ export default function InductionCriteria() {
     return rows.map((r, i) => ({
       ...r,
       index: i + 1,
-      serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+      serialNo: r.id ? r.id.toString() : '-',
       createdUser: r.createdUser || r.createdBy || '-',
       updatedUser: r.updatedUser || r.updatedBy || '-',
       createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
@@ -442,7 +456,7 @@ export default function InductionCriteria() {
               <BOSTextField
                 name="id"
                 label="SERIAL NO"
-                value={formData.id ? `IND-${formData.id.toString().padStart(3, '0')}` : (nextSequence ? `IND-${nextSequence.toString().padStart(3, '0')}` : 'IND-001')}
+                value={formData.id ? formData.id.toString() : (nextSequence ? nextSequence.toString() : '1')}
                 disabled
                 InputProps={{
                   readOnly: true,
