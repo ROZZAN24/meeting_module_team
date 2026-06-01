@@ -128,7 +128,7 @@ export default function InductionTraining() {
           { value: 'PENDING', label: 'PENDING' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'PENDING',
         isStarred: true
       },
       ...getCommonDateFilters('createdAt', 'updatedAt')];

@@ -62,7 +62,6 @@ export default function OemMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'oemShortName', label: 'OEM Short Name', type: 'text', placeholder: 'Search OEM short name...', isStarred: true },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));

@@ -80,7 +80,6 @@ export default function ItemTypeMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'itemType', label: 'Item Type', type: 'text', placeholder: 'Search item type...', isStarred: true },
       {
         id: 'groupId', label: 'Item Group', type: 'select',
