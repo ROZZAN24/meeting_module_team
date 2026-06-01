@@ -277,7 +277,7 @@ export default function InterviewCriteria() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardCheck size={24} />
@@ -290,6 +290,9 @@ export default function InterviewCriteria() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Interview_Criteria"
+          hasExportPermission={perms.export}
         />
       }
     >

@@ -1,0 +1,1 @@
+public class A { public static void main(String[] a) throws Exception { javax.crypto.Cipher c = javax.crypto.Cipher.getInstance("AES"); c.init(1, new javax.crypto.spec.SecretKeySpec("AutonomaERP@2026".getBytes(), "AES")); System.out.println(java.util.Base64.getEncoder().encodeToString(c.doFinal("123".getBytes()))); } }

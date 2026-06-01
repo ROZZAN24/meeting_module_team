@@ -325,7 +325,7 @@ export default function AuditAttendance() {
   }, [page, size]);
 
   return (
-    <MainCard 
+    <MainCard fullWidth 
       title={
         <Stack direction="row" alignItems="center" spacing={1}>
           <IconUsers size={20} />
@@ -338,15 +338,10 @@ export default function AuditAttendance() {
           onNew={handleOpenAdd}
           hasWritePermission={perms.write}
           exportData={rows}
-          exportColumns={[
-            { header: 'Audit Schedule No', key: 'auditScheduleNo' },
-            { header: 'Employee Code', key: 'employeeCode' },
-            { header: 'Name', key: 'name' },
-            { header: 'Attendance Status', key: 'attendanceStatus' }
-          ]}
+          
           exportFilename="Audit_Attendance"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

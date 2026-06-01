@@ -8,7 +8,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import AddCustomerDetailsDialog from './AddCustomerDetailsDialog';
 
 // ==============================|| SM - CUSTOMER ADDRESS LIST ||============================== //
@@ -49,11 +49,10 @@ export default function CustomerAddressList() {
   const theme = useTheme();
 
   useEffect(() => {
-    const config = [
-      { id: 'invoiceName', label: 'Customer Name', type: 'text', placeholder: 'Search by Name...' },
+    const config = [{ id: 'invoiceName', label: 'Customer Name', type: 'text', placeholder: 'Search by Name...' },
       { id: 'address', label: 'Address', type: 'text', placeholder: 'Search by Address...' },
-      { id: 'city', label: 'City', type: 'text', placeholder: 'Search by City...' }
-    ];
+      { id: 'city', label: 'City', type: 'text', placeholder: 'Search by City...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -106,6 +105,8 @@ export default function CustomerAddressList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const nameFilter = (globalFilters.invoiceName || '').toLowerCase();
       const addressFilter = (globalFilters.address || '').toLowerCase();
       const cityFilter = (globalFilters.city || '').toLowerCase();
@@ -128,7 +129,7 @@ export default function CustomerAddressList() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconMapPin size={24} />
@@ -148,20 +149,8 @@ export default function CustomerAddressList() {
           <BOSExportButton
             data={filteredRows}
             filename="Customer_Addresses"
-            columns={[
-              { header: 'Customer Name (I)', key: 'invoiceName' },
-              { header: 'Shipment', key: 'shipment' },
-              { header: 'Address', key: 'address' },
-              { header: 'City', key: 'city' },
-              { header: 'District', key: 'district' },
-              { header: 'State', key: 'state' },
-              { header: 'Country', key: 'country' },
-              { header: 'Pincode', key: 'pincode' },
-              { header: 'Contact Name', key: 'contactName' },
-              { header: 'Contact No', key: 'contactNo' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />
+            
+           screenColumns={columns} />
           <Tooltip title={shortcutTooltip('Add New Address', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

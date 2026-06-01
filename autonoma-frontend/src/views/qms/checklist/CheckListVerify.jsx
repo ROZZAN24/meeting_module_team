@@ -286,10 +286,10 @@ export default function CheckListVerify() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Checklist_Verify"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       {/* ── Cursor-following 'Double tap' label ── */}
@@ -359,7 +359,7 @@ export default function CheckListVerify() {
                       <Box
                         component="span"
                         onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                        sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                       >
                         {row.checkingPoint}
                       </Box>

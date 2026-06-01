@@ -479,12 +479,12 @@ export default function CloseCheckListRenewal() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Close_Checklist"
           hasExportPermission={perms.export}
           onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
           completeTaskDisabled={!selectedRowId}
-        />
+         columns={columns} />
       }
     >
       {activeCount > 0 && (
@@ -571,7 +571,7 @@ export default function CloseCheckListRenewal() {
                         <Box
                           component="span"
                           onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                          sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                          sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                         >
                           {row.checklist.checkingPoint}
                         </Box>

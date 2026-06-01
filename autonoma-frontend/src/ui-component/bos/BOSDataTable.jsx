@@ -48,7 +48,8 @@ export default function BOSDataTable({
   onRowMouseEnter,
   onRowMouseLeave,
   onRowMouseMove,
-  disableSearchFilter = false
+  disableSearchFilter = false,
+  disableTableConfig = false
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
@@ -77,18 +78,20 @@ export default function BOSDataTable({
           options: c.options
         }))
       );
-      if (lastConfigRef.current !== serialized) {
+      if (!disableTableConfig && lastConfigRef.current !== serialized) {
         lastConfigRef.current = serialized;
         dispatch(setTableConfig(columnsWithData));
       }
     }
-  }, [columns, rows, dispatch]);
+  }, [columns, rows, dispatch, disableTableConfig]);
 
   useEffect(() => {
     return () => {
-      dispatch(setTableConfig(null));
+      if (!disableTableConfig) {
+        dispatch(setTableConfig(null));
+      }
     };
-  }, [dispatch]);
+  }, [dispatch, disableTableConfig]);
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -662,5 +665,6 @@ BOSDataTable.propTypes = {
   renderCell: PropTypes.func,
   footerActions: PropTypes.node,
   id: PropTypes.string,
-  disableSearchFilter: PropTypes.bool
+  disableSearchFilter: PropTypes.bool,
+  disableTableConfig: PropTypes.bool
 };

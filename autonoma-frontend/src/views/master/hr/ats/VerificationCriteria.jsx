@@ -227,7 +227,7 @@ export default function VerificationCriteria() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconShieldCheck size={24} />
@@ -240,7 +240,11 @@ export default function VerificationCriteria() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
-        />
+          exportData={resolvedRows}
+          exportFilename="Verification_Criteria"
+          hasExportPermission={perms.export}
+          
+         columns={columns} />
       }
     >
       <BOSDataTable

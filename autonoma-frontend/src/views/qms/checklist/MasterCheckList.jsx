@@ -133,7 +133,7 @@ const columns = [
   },
   { 
     id: 'taskStatus',   
-    label: 'Task Status',     
+    label: 'Status',     
     minWidth: 120,
     render: (row) => {
       const statusText = row._displayTaskStatus || 'UN ASSIGNED';
@@ -230,7 +230,7 @@ const exportColumns = [
   { header: 'Level',              key: 'levelIds' },
   { header: 'Assign To',          key: 'assignTo' },
   { header: 'Status',             key: 'status' },
-  { header: 'Task Status',        key: 'taskStatus' },
+  { header: 'Status',             key: 'taskStatus' },
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
   { header: 'Verified Date',      key: (r) => formatDateTime(r.verifiedDate) },
@@ -385,9 +385,9 @@ export default function MasterCheckList() {
       reminderDate:  formatDate(row.reminderDate),
       verifiedDate:  formatDateTime(row.verifiedDate),
       createdUser:   row.createdUser || row.createdBy || '-',
-      createdDate:   formatDateTime(row.createdAt),
-      updatedUser:   row.updatedUser || row.updatedBy || '-',
-      updatedDate:   formatDateTime(row.updatedAt),
+      createdDate:   formatDate(row.createdAt),
+      updatedUser:   (row.updatedAt && row.createdAt && Math.abs(new Date(row.updatedAt) - new Date(row.createdAt)) > 5000) ? (row.updatedUser || row.updatedBy || '-') : '-',
+      updatedDate:   (row.updatedAt && row.createdAt && Math.abs(new Date(row.updatedAt) - new Date(row.createdAt)) > 5000) ? formatDateTime(row.updatedAt) : '-',
       status:        row.status || 'Active',
     };
   }), [rows]);
@@ -459,9 +459,9 @@ export default function MasterCheckList() {
   // ── Make Checking Point a clickable blue link that opens the edit dialog ─────
   const tableColumns = useMemo(() => columns
     .filter((col) => visibleColumnIds.includes(col.id))
-    .map((col) => (
-      col.id === 'checkingPoint'
-        ? {
+    .map((col) => {
+      if (col.id === 'checkingPoint') {
+        return {
             ...col,
             render: (row) => {
               const text = row.checkingPoint;
@@ -472,7 +472,7 @@ export default function MasterCheckList() {
                   onClick={(e) => { e.stopPropagation(); handleOpenEdit(row); }}
                   sx={{
                     color: 'primary.main',
-                    textDecoration: 'underline',
+                    textDecoration: 'none',
                     cursor: 'pointer',
                     fontWeight: 500,
                     '&:hover': { color: 'primary.dark' }
@@ -482,9 +482,19 @@ export default function MasterCheckList() {
                 </Box>
               );
             }
+          };
+      }
+      if (col.id === 'description') {
+        return {
+          ...col,
+          render: (row) => {
+            const text = row.description || '';
+            return text.length > 50 ? `${text.substring(0, 50)}...` : text || '-';
           }
-        : col
-    )), [visibleColumnIds, rows]);
+        };
+      }
+      return col;
+    }), [visibleColumnIds, rows]);
 
   // ── Custom action column (Amendment + Assign) ─────────────────────────────────
   const actionColumn = {
@@ -559,7 +569,7 @@ export default function MasterCheckList() {
           onColumnVisibilityChange={setVisibleColumnIds}
           requiredColumnIds={['index', 'seqNo', 'checkingPoint']}
           exportData={resolvedRows}
-          exportColumns={exportColumns}
+          
           exportFilename="Master_Check_List"
           hasExportPermission={perms.export}
           onAmendment={selectedRow ? () => handleAmendment(selectedRow) : null}

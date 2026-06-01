@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| UOM MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -45,8 +45,7 @@ export default function UomMaster() {
   // Dispatch starred filter configuration matching Status, Date range, and UOM NAME
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -59,8 +58,8 @@ export default function UomMaster() {
         defaultValue: 'ACTIVE'
       },
       { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
-      { id: 'uomCode', label: 'UOM NAME', type: 'text', placeholder: 'Search UOM Name...', isStarred: true }
-    ];
+      { id: 'uomCode', label: 'UOM NAME', type: 'text', placeholder: 'Search UOM Name...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       status: 'ACTIVE',
@@ -114,6 +113,8 @@ export default function UomMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
@@ -147,7 +148,7 @@ export default function UomMaster() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconListCheck size={24} />
@@ -161,18 +162,10 @@ export default function UomMaster() {
           newTooltip={shortcutTooltip('Create New UOM', 'Ctrl + N')}
           hasWritePermission={true}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'UOM Code', key: 'uomCode' },
-            { header: 'Description', key: 'uomDescription' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created User', key: 'createdUser' },
-            { header: 'Created Date', key: 'createdAt' },
-            { header: 'Updated User', key: 'updatedUser' },
-            { header: 'Updated Date', key: 'updatedAt' }
-          ]}
+          
           exportFilename="UOM_Master"
           hasExportPermission={true}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

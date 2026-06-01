@@ -36,6 +36,7 @@ export default function MainCard({
   sx = {},
   title,
   ref,
+  fullWidth = false,
   ...others
 }) {
   const { colorScheme } = useColorScheme();
@@ -51,6 +52,11 @@ export default function MainCard({
         ':hover': {
           boxShadow: boxShadow ? shadow || defaultShadow : 'inherit'
         },
+        ...(fullWidth ? {
+          mx: { xs: -2, sm: -3 },
+          width: { xs: 'calc(100% + 32px)', sm: 'calc(100% + 48px)' },
+          borderRadius: 0
+        } : {}),
         ...(typeof sx === 'function' ? sx(theme) : sx || {})
       })}
     >
@@ -67,8 +73,8 @@ export default function MainCard({
       {content && (
         <CardContent 
           sx={{ 
-            p: 2, 
-            '&:last-child': { pb: 2 },
+            p: fullWidth ? 0 : 2, 
+            '&:last-child': { pb: fullWidth ? 0 : 2 },
             ...contentSX 
           }} 
           className={contentClass}
@@ -95,5 +101,6 @@ MainCard.propTypes = {
   sx: PropTypes.object,
   title: PropTypes.oneOfType([PropTypes.string, PropTypes.node]),
   ref: PropTypes.object,
+  fullWidth: PropTypes.bool,
   others: PropTypes.any
 };

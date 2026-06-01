@@ -381,10 +381,10 @@ export default function CheckListRenewalReport() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Checklist_Report"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       {activeCount > 0 && (
@@ -465,7 +465,7 @@ export default function CheckListRenewalReport() {
                       <Box
                         component="span"
                         onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                        sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                       >
                         {row.checklist.checkingPoint}
                       </Box>

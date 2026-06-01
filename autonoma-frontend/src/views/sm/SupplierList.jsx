@@ -12,7 +12,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 
 // ==============================|| SM - SUPPLIER LIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -97,7 +97,7 @@ export default function SupplierList() {
   useKeyboardShortcuts({ 'ctrl+n': handleOpenAdd });
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUserPlus size={24} />
@@ -117,13 +117,8 @@ export default function SupplierList() {
           {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Supplier_Master"
-            columns={[
-              { header: 'Code', key: 'supplierCode' },
-              { header: 'Supplier Name', key: 'supplierName' },
-              { header: 'GST No', key: 'gstNo' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Supplier', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

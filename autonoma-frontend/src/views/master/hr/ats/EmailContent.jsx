@@ -207,7 +207,7 @@ export default function EmailContent() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconMail size={24} />
@@ -220,6 +220,9 @@ export default function EmailContent() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Email_Content"
+          hasExportPermission={perms.export}
         />
       }
     >
