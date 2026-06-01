@@ -144,7 +144,7 @@ export default function DeliveryTerms() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconTruckDelivery size={24} />

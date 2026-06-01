@@ -110,7 +110,7 @@ export default function CurrencyMaster() {
     ).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalQuery]);
 return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCoins size={24} />

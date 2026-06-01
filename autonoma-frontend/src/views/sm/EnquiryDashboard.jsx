@@ -188,7 +188,7 @@ export default function EnquiryDashboard() {
   });
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconMail size={24} />

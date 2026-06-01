@@ -147,7 +147,7 @@ export default function PaymentTerms() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCreditCard size={24} />

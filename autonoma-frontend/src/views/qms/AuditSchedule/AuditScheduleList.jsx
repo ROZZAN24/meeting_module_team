@@ -195,7 +195,7 @@ export default function AuditScheduleList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCalendarEvent size={24} />

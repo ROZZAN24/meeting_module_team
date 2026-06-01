@@ -119,7 +119,7 @@ export default function CountryMaster() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconWorld size={24} />

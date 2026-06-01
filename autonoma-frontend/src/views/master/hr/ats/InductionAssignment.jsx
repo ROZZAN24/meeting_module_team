@@ -781,7 +781,7 @@ const InductionAssignment = () => {
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title="Employee Induction Summary"
       secondary={
         <BOSTableToolbar

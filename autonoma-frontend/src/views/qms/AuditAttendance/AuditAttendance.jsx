@@ -325,7 +325,7 @@ export default function AuditAttendance() {
   }, [page, size]);
 
   return (
-    <MainCard 
+    <MainCard fullWidth 
       title={
         <Stack direction="row" alignItems="center" spacing={1}>
           <IconUsers size={20} />

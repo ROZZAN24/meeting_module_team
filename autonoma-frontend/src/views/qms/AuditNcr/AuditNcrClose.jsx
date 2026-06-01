@@ -324,7 +324,7 @@ export default function AuditNcrClose() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconCircleCheck size={24} /><Typography variant="h3">Close NC / OFI Findings</Typography></Stack>}
       secondary={
         <BOSTableToolbar

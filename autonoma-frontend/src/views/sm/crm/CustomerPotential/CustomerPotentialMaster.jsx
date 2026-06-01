@@ -194,7 +194,7 @@ export default function CustomerPotentialMaster() {
   );
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCoins size={24} />

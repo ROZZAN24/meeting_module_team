@@ -103,7 +103,7 @@ export default function SubSegmentMaster() {
   }, [dispatch]);
 
 return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconChartPie size={24} />

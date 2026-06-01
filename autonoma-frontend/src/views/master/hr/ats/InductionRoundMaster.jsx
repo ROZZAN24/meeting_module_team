@@ -187,7 +187,7 @@ export default function InductionRoundMaster() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconRotate2 size={24} />

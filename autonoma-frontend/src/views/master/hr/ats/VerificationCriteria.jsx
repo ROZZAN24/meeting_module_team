@@ -227,7 +227,7 @@ export default function VerificationCriteria() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconShieldCheck size={24} />

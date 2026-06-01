@@ -97,7 +97,7 @@ export default function SupplierList() {
   useKeyboardShortcuts({ 'ctrl+n': handleOpenAdd });
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUserPlus size={24} />

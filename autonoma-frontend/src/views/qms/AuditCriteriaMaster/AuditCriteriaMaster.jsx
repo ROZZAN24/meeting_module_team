@@ -197,7 +197,7 @@ export default function AuditCriteriaMaster() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconChecks size={24} />

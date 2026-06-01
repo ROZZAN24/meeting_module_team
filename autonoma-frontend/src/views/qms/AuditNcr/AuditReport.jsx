@@ -152,7 +152,7 @@ export default function AuditReport() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconReport size={24} />
