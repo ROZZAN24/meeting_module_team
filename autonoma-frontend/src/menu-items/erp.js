@@ -122,6 +122,14 @@ export const masters = {
           icon: icons.IconSearch,
           children: [
             {
+              id: 'hra-ats',
+              title: 'Application Tracking System',
+              type: 'item',
+              url: '/master/hr/ats',
+              icon: icons.IconSearch,
+              pageCode: 'HA1110'
+            },
+            {
               id: 'master-hr-ats-induction',
               title: 'Induction Criteria',
               type: 'item',
@@ -615,14 +623,6 @@ export const hra = {
       type: 'collapse',
       icon: icons.IconSearch,
       children: [
-        {
-          id: 'hra-ats',
-          title: 'Application Tracking System',
-          type: 'item',
-          url: '/hra/ats',
-          icon: icons.IconSearch,
-          pageCode: 'HA1110'
-        },
         {
           id: 'master-hr-ats-induction-assignment',
           title: 'Induction Pending',

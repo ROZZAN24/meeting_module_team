@@ -947,7 +947,7 @@ const MainRoutes = {
       element: <EmployeeType />
     },
     {
-      path: '/hra/ats',
+      path: '/master/hr/ats',
       element: <HraApplicationTrackingSystem />
     },
     {
