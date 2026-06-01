@@ -39,7 +39,7 @@ export default function BOSTableToolbar({
   requiredColumnIds = ['index'],
 
   // Export Action
-  exportData = [],
+  exportData = null,
   exportColumns = [],
   exportFilename = 'Export',
   hasExportPermission = true,
@@ -179,7 +179,7 @@ export default function BOSTableToolbar({
   };
 
   const showColumnVisibility = columns.length > 0 && visibleColumnIds.length > 0 && onColumnVisibilityChange;
-  const showExport = exportData.length > 0 && derivedExportColumns.length > 0 && hasExportPermission;
+  const showExport = exportData !== null && derivedExportColumns.length > 0 && hasExportPermission;
 
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" sx={sx}>
