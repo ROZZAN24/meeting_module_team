@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| UOM MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -155,31 +155,24 @@ export default function UomMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchUoms} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <BOSExportButton
-            data={filteredRows}
-            filename="UOM_Master"
-            columns={[
-              { header: 'UOM Code', key: 'uomCode' },
-              { header: 'Description', key: 'uomDescription' },
-              { header: 'Status', key: 'status' },
-              { header: 'Created User', key: 'createdUser' },
-              { header: 'Created Date', key: 'createdAt' },
-              { header: 'Updated User', key: 'updatedUser' },
-              { header: 'Updated Date', key: 'updatedAt' }
-            ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New UOM', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchUoms}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New UOM', 'Ctrl + N')}
+          hasWritePermission={true}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'UOM Code', key: 'uomCode' },
+            { header: 'Description', key: 'uomDescription' },
+            { header: 'Status', key: 'status' },
+            { header: 'Created User', key: 'createdUser' },
+            { header: 'Created Date', key: 'createdAt' },
+            { header: 'Updated User', key: 'updatedUser' },
+            { header: 'Updated Date', key: 'updatedAt' }
+          ]}
+          exportFilename="UOM_Master"
+          hasExportPermission={true}
+        />
       }
     >
       <BOSDataTable

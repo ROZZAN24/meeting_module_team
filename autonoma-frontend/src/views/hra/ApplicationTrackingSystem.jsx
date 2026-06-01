@@ -1,65 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Typography,
-  Button,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Checkbox,
-  Grid,
-  Box,
-  Tabs,
-  Tab,
-  Card,
-  CardContent,
-  FormControlLabel,
-  InputAdornment,
-  Divider,
-  Paper,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TableContainer,
-  Chip
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
-  IconSearch,
-  IconRefresh,
-  IconPlus,
-  IconUser,
-  IconFileText,
-  IconTrash,
-  IconEdit,
-  IconMail,
-  IconCalendar,
-  IconCheck,
-  IconAlertCircle,
-  IconBriefcase,
-  IconSchool,
-  IconCurrencyDollar,
-  IconAddressBook,
-  IconUserCheck,
-  IconUserPlus,
-  IconLock,
-  IconStar,
-  IconTrendingUp
+  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  BOSDatePicker,
-  BOSFileUpload,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSDatePicker, BOSFileUpload, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -314,8 +264,7 @@ export default function ApplicationTrackingSystem() {
 
   // Update default filters
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -329,8 +278,8 @@ export default function ApplicationTrackingSystem() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -1116,29 +1065,14 @@ export default function ApplicationTrackingSystem() {
           <Typography variant="h3">Application Tracking System</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchApplicants} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={shortcutTooltip('Register Candidate', 'Ctrl + N')}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="medium"
-              onClick={handleOpenAdd}
-              startIcon={<IconPlus size={18} />}
-              sx={{ borderRadius: '8px', textTransform: 'none', px: 2 }}
-            >
-              New
-            </Button>
-          </Tooltip>
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchApplicants}
+          onNew={handleOpenAdd}
+          newLabel="New"
+          newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+        />
       }
     >
       <Box sx={{ mb: 2 }}>

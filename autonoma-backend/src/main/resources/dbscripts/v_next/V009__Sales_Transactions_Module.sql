@@ -32,6 +32,34 @@ AS
 BEGIN
     IF OBJECT_ID(@tableName, 'U') IS NOT NULL
     BEGIN
+        -- Check if BOTH columns exist (can happen if Hibernate pre-creates the new column name)
+        IF COL_LENGTH(@tableName, @oldCol) IS NOT NULL AND COL_LENGTH(@tableName, @newCol) IS NOT NULL
+        BEGIN
+            DECLARE @oldRealName NVARCHAR(256) = (SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @oldCol);
+            DECLARE @newRealName NVARCHAR(256) = (SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @newCol);
+            
+            IF @oldRealName IS NOT NULL AND @newRealName IS NOT NULL AND LOWER(@oldRealName) <> LOWER(@newRealName)
+            BEGIN
+                -- Merge data from old column to new column
+                DECLARE @sqlMerge NVARCHAR(MAX) = 'UPDATE ' + QUOTENAME(@tableName) + ' SET ' + QUOTENAME(@newRealName) + ' = ' + QUOTENAME(@oldRealName) + ' WHERE ' + QUOTENAME(@newRealName) + ' IS NULL';
+                EXEC sp_executesql @sqlMerge;
+                
+                -- Drop default constraint if any exists on the old column
+                DECLARE @dropDefault NVARCHAR(MAX) = N'';
+                SELECT @dropDefault += N'ALTER TABLE ' + QUOTENAME(@tableName) + ' DROP CONSTRAINT ' + QUOTENAME(d.name) + ';' + CHAR(13) + CHAR(10)
+                FROM sys.default_constraints d
+                INNER JOIN sys.columns c ON d.parent_column_id = c.column_id AND d.parent_object_id = c.object_id
+                WHERE d.parent_object_id = OBJECT_ID(@tableName) AND c.name = @oldRealName;
+                IF @dropDefault <> N'' EXEC sp_executesql @dropDefault;
+
+                -- Drop the old duplicate column
+                DECLARE @sqlDrop NVARCHAR(MAX) = 'ALTER TABLE ' + QUOTENAME(@tableName) + ' DROP COLUMN ' + QUOTENAME(@oldRealName);
+                EXEC sp_executesql @sqlDrop;
+                RETURN;
+            END
+        END
+
+        -- Normal case-sensitive rename flow
         IF COL_LENGTH(@tableName, @oldCol) IS NOT NULL
         BEGIN
             IF (SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(@tableName) AND name = @oldCol) COLLATE Latin1_General_CS_AS <> @newCol
@@ -47,6 +75,49 @@ BEGIN
 END;
 GO
 
+-- Safe drop helper for pre-created empty tables
+IF OBJECT_ID('dbo.sp_SafeDropEmptyTableForRename', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_SafeDropEmptyTableForRename;
+GO
+
+CREATE PROCEDURE dbo.sp_SafeDropEmptyTableForRename
+    @oldName NVARCHAR(256),
+    @newName NVARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND OBJECT_ID(@newName, 'U') IS NOT NULL
+    BEGIN
+        DECLARE @rows INT = -1;
+        DECLARE @query NVARCHAR(MAX) = N'SELECT @rows = COUNT(*) FROM ' + QUOTENAME(@newName);
+        EXEC sp_executesql @query, N'@rows INT OUTPUT', @rows = @rows OUTPUT;
+        
+        IF @rows = 0
+        BEGIN
+            PRINT 'Dropping empty pre-created table ' + @newName + ' to allow rename of ' + @oldName;
+            
+            -- Drop foreign keys referencing the empty new table
+            DECLARE @dropFkSql NVARCHAR(MAX) = '';
+            SELECT @dropFkSql = @dropFkSql + 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+            FROM sys.foreign_keys
+            WHERE referenced_object_id = OBJECT_ID(@newName);
+            IF @dropFkSql <> '' EXEC sp_executesql @dropFkSql;
+            
+            -- Drop foreign keys on the empty new table itself
+            DECLARE @dropFkSelfSql NVARCHAR(MAX) = '';
+            SELECT @dropFkSelfSql = @dropFkSelfSql + 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+            FROM sys.foreign_keys
+            WHERE parent_object_id = OBJECT_ID(@newName);
+            IF @dropFkSelfSql <> '' EXEC sp_executesql @dropFkSelfSql;
+            
+            -- Drop the empty table
+            DECLARE @dropTableSql NVARCHAR(MAX) = N'DROP TABLE ' + QUOTENAME(@newName);
+            EXEC sp_executesql @dropTableSql;
+        END
+    END
+END;
+GO
+
 -- ==========================================================
 -- 2. Drop Default, Unique, Index and Primary Key constraints dynamically
 -- ==========================================================
@@ -54,7 +125,7 @@ DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'ALTER TABLE ' + QUOTENAME(t.name) + ' DROP CONSTRAINT ' + QUOTENAME(d.name) + ';' + CHAR(13) + CHAR(10)
 FROM sys.default_constraints d
 INNER JOIN sys.tables t ON d.parent_object_id = t.object_id
-WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation');
+WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation', 'SLS_ENQUIRY', 'SLS_PRICE_MASTER', 'SLS_QUOTATION');
 IF @sql <> N'' EXEC sp_executesql @sql;
 GO
 
@@ -62,7 +133,7 @@ DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'ALTER TABLE ' + QUOTENAME(t.name) + ' DROP CONSTRAINT ' + QUOTENAME(tc.name) + ';' + CHAR(13) + CHAR(10)
 FROM sys.key_constraints tc
 INNER JOIN sys.tables t ON tc.parent_object_id = t.object_id
-WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation') AND tc.type IN ('UQ', 'PK');
+WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation', 'SLS_ENQUIRY', 'SLS_PRICE_MASTER', 'SLS_QUOTATION') AND tc.type IN ('UQ', 'PK');
 IF @sql <> N'' EXEC sp_executesql @sql;
 GO
 
@@ -70,7 +141,7 @@ DECLARE @sql NVARCHAR(MAX) = N'';
 SELECT @sql += N'DROP INDEX ' + QUOTENAME(i.name) + ' ON ' + QUOTENAME(t.name) + ';' + CHAR(13) + CHAR(10)
 FROM sys.indexes i
 INNER JOIN sys.tables t ON i.object_id = t.object_id
-WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation')
+WHERE t.name IN ('SM_ENQUIRY', 'SM_PRICE_MASTER', 'SM_QUOTATION', 'sm_enquiry', 'sm_price_master', 'sm_quotation', 'SLS_ENQUIRY', 'SLS_PRICE_MASTER', 'SLS_QUOTATION')
   AND i.is_unique = 1 AND i.is_primary_key = 0 AND i.is_unique_constraint = 0;
 IF @sql <> N'' EXEC sp_executesql @sql;
 GO
@@ -78,6 +149,10 @@ GO
 -- ==========================================================
 -- 3. Table Renames
 -- ==========================================================
+EXEC dbo.sp_SafeDropEmptyTableForRename 'SM_ENQUIRY', 'SLS_ENQUIRY';
+EXEC dbo.sp_SafeDropEmptyTableForRename 'sm_enquiry', 'SLS_ENQUIRY';
+GO
+
 IF OBJECT_ID('SM_ENQUIRY', 'U') IS NOT NULL AND OBJECT_ID('SLS_ENQUIRY', 'U') IS NULL
 BEGIN
     EXEC sp_rename 'SM_ENQUIRY', 'SLS_ENQUIRY';
@@ -87,6 +162,10 @@ IF OBJECT_ID('sm_enquiry', 'U') IS NOT NULL AND OBJECT_ID('SLS_ENQUIRY', 'U') IS
 BEGIN
     EXEC sp_rename 'sm_enquiry', 'SLS_ENQUIRY';
 END
+GO
+
+EXEC dbo.sp_SafeDropEmptyTableForRename 'SM_PRICE_MASTER', 'SLS_PRICE_MASTER';
+EXEC dbo.sp_SafeDropEmptyTableForRename 'sm_price_master', 'SLS_PRICE_MASTER';
 GO
 
 IF OBJECT_ID('SM_PRICE_MASTER', 'U') IS NOT NULL AND OBJECT_ID('SLS_PRICE_MASTER', 'U') IS NULL
@@ -128,6 +207,10 @@ BEGIN
         IS_ACTIVE BIT DEFAULT 1
     );
 END
+GO
+
+EXEC dbo.sp_SafeDropEmptyTableForRename 'SM_QUOTATION', 'SLS_QUOTATION';
+EXEC dbo.sp_SafeDropEmptyTableForRename 'sm_quotation', 'SLS_QUOTATION';
 GO
 
 IF OBJECT_ID('SM_QUOTATION', 'U') IS NOT NULL AND OBJECT_ID('SLS_QUOTATION', 'U') IS NULL

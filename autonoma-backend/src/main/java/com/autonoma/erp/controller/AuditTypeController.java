@@ -22,6 +22,15 @@ public class AuditTypeController {
     @Autowired
     private com.autonoma.erp.service.AuditTypeService auditTypeService;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditCriteriaRepository auditCriteriaRepository;
+
+    @Autowired
+    private com.autonoma.erp.repository.AuditScheduleRepository auditScheduleRepository;
+
+    @Autowired
+    private AuditTypeRepository auditTypeRepository;
+
     @GetMapping
     @Operation(summary = "Get All Audit Types", description = "Fetches a paginated list of audit types with optional filters")
     public ResponseEntity<java.util.Map<String, Object>> getAllAuditTypes(
@@ -59,22 +68,79 @@ public class AuditTypeController {
     @PostMapping
     @RequirePagePermission(pageCode = "M1110", action = "write")
     @Operation(summary = "Create Audit Type", description = "Creates a new audit type configuration")
-    public AuditType createAuditType(@RequestBody AuditType auditType) {
+    public ResponseEntity<?> createAuditType(@RequestBody AuditType auditType) {
         log.info("Saving audit type: {}", auditType);
-        return auditTypeService.save(auditType);
+        auditType.setUpdatedBy(null);
+        auditType.setUpdatedDate(null);
+        AuditType saved = auditTypeService.save(auditType);
+        return ResponseEntity.ok(saved);
     }
 
     @PutMapping("/{id}")
     @RequirePagePermission(pageCode = "M1110", action = "write")
-    public ResponseEntity<AuditType> updateAuditType(@PathVariable Long id, @RequestBody AuditType auditType) {
+    public ResponseEntity<?> updateAuditType(@PathVariable Long id, @RequestBody AuditType auditType) {
+        log.info("Updating audit type with ID {}: {}", id, auditType);
+        AuditType existing = auditTypeRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Preserve created info
         auditType.setId(id);
-        return ResponseEntity.ok(auditTypeService.save(auditType));
+        auditType.setCreatedBy(existing.getCreatedBy());
+        auditType.setCreatedDate(existing.getCreatedDate());
+
+        AuditType saved = auditTypeService.save(auditType);
+        return ResponseEntity.ok(saved);
     }
 
     @DeleteMapping("/{id}")
     @RequirePagePermission(pageCode = "M1110", action = "delete")
-    public ResponseEntity<Void> deleteAuditType(@PathVariable Long id) {
-        auditTypeService.delete(id);
+    public ResponseEntity<?> deleteAuditType(@PathVariable Long id) {
+        log.info("Attempting to delete audit type with ID: {}", id);
+        AuditType existing = auditTypeRepository.findById(id).orElse(null);
+        if (existing == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        String typeName = existing.getAuditType();
+        if (typeName == null || typeName.trim().isEmpty()) {
+            auditTypeRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+
+        typeName = typeName.trim();
+        final String searchName = typeName.toLowerCase();
+
+        List<String> dependencies = new java.util.ArrayList<>();
+
+        // 1. Check if referenced in Audit Criteria
+        boolean inCriteria = auditCriteriaRepository.findAll().stream()
+            .anyMatch(c -> c.getAuditType() != null &&
+                java.util.Arrays.stream(c.getAuditType().split(","))
+                    .map(String::trim)
+                    .anyMatch(t -> t.equalsIgnoreCase(searchName)));
+        if (inCriteria) {
+            dependencies.add("Audit Criteria");
+        }
+
+        // 2. Check if referenced in Audit Schedule
+        boolean inSchedule = auditScheduleRepository.findAll().stream()
+            .filter(sch -> !sch.isDeleted())
+            .anyMatch(sch -> sch.getAuditType() != null &&
+                java.util.Arrays.stream(sch.getAuditType().split(","))
+                    .map(String::trim)
+                    .anyMatch(t -> t.equalsIgnoreCase(searchName)));
+        if (inSchedule) {
+            dependencies.add("Audit Schedule");
+        }
+
+        if (!dependencies.isEmpty()) {
+            String depStr = String.join(", ", dependencies);
+            return ResponseEntity.badRequest().body("Deletion not allowed. Audit Type is in use in: " + depStr + ". Delete related records first.");
+        }
+
+        auditTypeRepository.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 }

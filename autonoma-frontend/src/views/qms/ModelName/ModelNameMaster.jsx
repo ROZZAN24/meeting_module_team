@@ -9,7 +9,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| MODEL NAME MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -147,31 +147,24 @@ export default function ModelNameMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchModelNames} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <BOSExportButton
-            data={filteredRows}
-            filename="Model_Name_Master"
-            columns={[
-              { header: 'Model Name', key: 'modelName' },
-              { header: 'Description', key: 'description' },
-              { header: 'Status', key: 'status' },
-              { header: 'CREATED USER', key: 'createdUser' },
-              { header: 'CREATED DATE', key: 'createdAt' },
-              { header: 'UPDATED USER', key: 'updatedUser' },
-              { header: 'UPDATED DATE', key: 'updatedAt' }
-            ]}
-          />
-          <Tooltip title={shortcutTooltip('Create New Model Name', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchModelNames}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Model Name', 'Ctrl + N')}
+          hasWritePermission={true}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Model Name', key: 'modelName' },
+            { header: 'Description', key: 'description' },
+            { header: 'Status', key: 'status' },
+            { header: 'CREATED USER', key: 'createdUser' },
+            { header: 'CREATED DATE', key: 'createdAt' },
+            { header: 'UPDATED USER', key: 'updatedUser' },
+            { header: 'UPDATED DATE', key: 'updatedAt' }
+          ]}
+          exportFilename="Model_Name_Master"
+          hasExportPermission={true}
+        />
       }
     >
       <BOSDataTable

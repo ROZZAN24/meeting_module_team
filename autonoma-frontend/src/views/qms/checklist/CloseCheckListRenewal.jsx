@@ -28,7 +28,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -154,8 +154,7 @@ const exportColumns = [
   { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
-const filterConfig = [
-  {
+const filterConfig = [{
     id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
@@ -209,8 +208,8 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
-  }
-];
+  },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 function FilterSection({ title, open, onToggle, children }) {
   return (
@@ -378,6 +377,8 @@ export default function CloseCheckListRenewal() {
         // Additional client-side filter: exclude any remaining finalized statuses
         const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed', 'Pending for Verified', 'Pending for Accepted'];
         const filteredRows = response.data.content.filter((r) => {
+      if (!matchCommonDateFilters(r, globalFilters, 'createdDate', 'updatedDate')) return false;
+
           const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
           return !finalizedStatuses.includes(statusName);
         });
@@ -476,10 +477,14 @@ export default function CloseCheckListRenewal() {
       }}
       title="Close Check List / Renewal"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {canEditSelected && <Button variant="contained" color="primary" size="small" startIcon={<IconCheck size={18} />} onClick={() => setDialogOpen(true)} disabled={!selectedRowId}>Complete Task</Button>}
-          {perms.export && <BOSExportButton data={rows} filename="Close_Checklist" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          exportColumns={exportColumns}
+          exportFilename="Close_Checklist"
+          hasExportPermission={perms.export}
+          onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
+          completeTaskDisabled={!selectedRowId}
+        />
       }
     >
       {activeCount > 0 && (

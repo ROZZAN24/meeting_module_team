@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import useLookups from 'hooks/useLookups';
-import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import MomApprovalDialog from './MomApprovalDialog';
@@ -44,8 +44,7 @@ export default function MomApprovalList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'filterType', label: 'Type', type: 'select', isStarred: true,
         options: [{ value: 'Mine', label: 'Mine' }, { value: 'All', label: 'All' }],
         defaultValue: 'Mine'
@@ -75,8 +74,8 @@ export default function MomApprovalList() {
         ],
         defaultValue: 'actionNo'
       },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true }
-    ]));
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -121,6 +120,8 @@ export default function MomApprovalList() {
   // ── FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       const statusFilter = globalFilters.status || 'PENDING FOR APPROVAL';
       if (statusFilter !== 'All' && (row.status || '') !== statusFilter) return false;
 
@@ -197,24 +198,19 @@ export default function MomApprovalList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="MOM_Approval"
-            columns={[
-              { header: 'Action No', key: '_momNo' },
-              { header: 'Discussed Point', key: 'discussedPoint' },
-              { header: 'Action Taken', key: 'actionTaken' },
-              { header: 'Target Date', key: 'targetDate' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Action No', key: '_momNo' },
+            { header: 'Discussed Point', key: 'discussedPoint' },
+            { header: 'Action Taken', key: 'actionTaken' },
+            { header: 'Target Date', key: 'targetDate' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="MOM_Approval"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

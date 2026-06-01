@@ -605,6 +605,7 @@ public class ChecklistService {
         checklist.setAssignTo(allAssignedTo);
         checklist.setAssignDate(new Date());
         checklist.setTaskStatus("Pending");
+        checklist.setSkipAuditUpdate(true);
         masterRepo.save(checklist);
 
         return savedAssignment;
@@ -672,6 +673,7 @@ public class ChecklistService {
             checklist.setAssignDate(null);
             checklist.setTaskStatus(null);
         }
+        checklist.setSkipAuditUpdate(true);
         masterRepo.save(checklist);
     }
 
@@ -942,6 +944,7 @@ public class ChecklistService {
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
+        checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
         checklist.setUpdatedBy(verifiedBy);
         checklist.setUpdatedDate(new Date());

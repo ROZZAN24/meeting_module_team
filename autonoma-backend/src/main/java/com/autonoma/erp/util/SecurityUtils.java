@@ -1,9 +1,25 @@
 package com.autonoma.erp.util;
 
+import com.autonoma.erp.model.admin.UserCredential;
+import com.autonoma.erp.repository.admin.UserRepository;
+import com.autonoma.erp.repository.EmployeeMasterRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import java.util.Optional;
 
+@Component
 public class SecurityUtils {
+
+    private static UserRepository userRepository;
+    private static EmployeeMasterRepository employeeRepository;
+
+    @Autowired
+    public SecurityUtils(UserRepository userRepository, EmployeeMasterRepository employeeRepository) {
+        SecurityUtils.userRepository = userRepository;
+        SecurityUtils.employeeRepository = employeeRepository;
+    }
 
     public static String getCurrentUserId() {
         try {
@@ -39,11 +55,18 @@ public class SecurityUtils {
             com.autonoma.erp.repository.EmployeeMasterRepository empRepo = SpringContext.getBean(com.autonoma.erp.repository.EmployeeMasterRepository.class);
 
             if (userRepo != null && empRepo != null) {
-                java.util.Optional<com.autonoma.erp.model.admin.UserCredential> userOpt = userRepo.findByUserId(principalId);
-                if (!userOpt.isPresent()) {
-                    userOpt = userRepo.findAll().stream()
-                            .filter(u -> u.getUserId().equalsIgnoreCase(principalId))
-                            .findFirst();
+                String originalTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+                java.util.Optional<com.autonoma.erp.model.admin.UserCredential> userOpt = java.util.Optional.empty();
+                try {
+                    com.autonoma.erp.config.TenantContextHolder.setTenantId("AUTONOMA");
+                    userOpt = userRepo.findByUserId(principalId);
+                    if (!userOpt.isPresent()) {
+                        userOpt = userRepo.findAll().stream()
+                                .filter(u -> u.getUserId().equalsIgnoreCase(principalId))
+                                .findFirst();
+                    }
+                } finally {
+                    com.autonoma.erp.config.TenantContextHolder.setTenantId(originalTenant);
                 }
 
                 if (userOpt.isPresent()) {
@@ -87,5 +110,9 @@ public class SecurityUtils {
             return null;
         }
         return employeeNameCache.getOrDefault(principalId, principalId);
+    }
+
+    public static String getCurrentUserDisplayName() {
+        return getCurrentUserEmployeeName();
     }
 }

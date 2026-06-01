@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, BOSExportButton, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
@@ -15,12 +15,12 @@ import AttendanceEntryDialog from './AttendanceEntryDialog';
 import { isMobile } from 'react-device-detect';
 
 const columns = [
-  { id: 'index', label: 'Sl No', minWidth: 60 },
-  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 200, bold: true },
-  { id: 'participantName', label: 'Meeting Participant', minWidth: 180 },
-  { id: 'inTime', label: 'In Time', minWidth: 100 },
-  { id: 'outTime', label: 'Out Time', minWidth: 100 },
-  { id: 'status', label: 'Status', minWidth: 120 }
+  { id: 'index', label: 'Sl No', minWidth: 60, align: 'center' },
+  { id: 'scheduleNo', label: 'Meeting Sch No', minWidth: 200, bold: true, align: 'center' },
+  { id: 'participantName', label: 'Meeting Participant', minWidth: 180, align: 'center' },
+  { id: 'inTime', label: 'In Time', minWidth: 100, align: 'center' },
+  { id: 'outTime', label: 'Out Time', minWidth: 100, align: 'center' },
+  { id: 'status', label: 'Status', minWidth: 120, align: 'center' }
 ];
 
 export default function AttendanceList() {
@@ -39,8 +39,7 @@ export default function AttendanceList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'filterType', label: 'Filter Type', type: 'select', isStarred: true,
         options: [{ value: 'Mine', label: 'Mine' }, { value: 'All', label: 'All' }],
         defaultValue: 'Mine'
@@ -60,8 +59,8 @@ export default function AttendanceList() {
         ],
         defaultValue: 'scheduleNo'
       },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true }
-    ]));
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -85,6 +84,8 @@ export default function AttendanceList() {
   // ── FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       if (user?.isBosAdmin !== 1 && row.employee?.id !== user?.empId) {
         return false;
       }
@@ -147,7 +148,7 @@ export default function AttendanceList() {
     const tooltipText = isMobile ? 'Double-tap to edit' : 'Double-click to edit';
     return (
       <Tooltip title={tooltipText} placement="top" followCursor enterDelay={300}>
-        <div style={{ width: '100%' }}>
+        <div style={{ width: '100%', display: 'flex', justifyContent: col.align === 'center' ? 'center' : 'flex-start' }}>
           {val}
         </div>
       </Tooltip>

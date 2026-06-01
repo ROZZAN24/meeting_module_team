@@ -10,11 +10,12 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
-import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ReassignDialog from './ReassignDialog';
 import { isMobile } from 'react-device-detect';
+import useAuth from 'hooks/useAuth';
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -44,6 +45,7 @@ export default function MomList() {
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.QMS_MEETING_MOM);
+  const { user } = useAuth();
   const lookups = useLookups(['DEPARTMENTS']);
 
   const [rows, setRows] = useState([]);
@@ -64,10 +66,6 @@ export default function MomList() {
   const resolvedRows = useMemo(() => {
     if (!Array.isArray(flatRows)) return [];
     return flatRows.map(row => {
-      const createdMs = row._createdAt ? new Date(row._createdAt).getTime() : 0;
-      const updatedMs = row._updatedAt ? new Date(row._updatedAt).getTime() : 0;
-      const isUnedited = Math.abs(updatedMs - createdMs) < 2000 || !row._updatedAt;
-
       return {
         ...row,
         meetingType: row._meetingType || '-',
@@ -82,8 +80,8 @@ export default function MomList() {
         reviewDate: row.reviewDate || '-',
         createdUser: row._createdUser || row._createdBy || '-',
         createdDate: row._createdAt ? new Date(row._createdAt).toLocaleDateString('en-GB') : '-',
-        updatedUser: isUnedited ? '-' : (row._updatedUser || row._updatedBy || '-'),
-        updatedDate: isUnedited ? '-' : new Date(row._updatedAt).toLocaleDateString('en-GB'),
+        updatedUser: row._updatedUser || row._updatedBy || '-',
+        updatedDate: row._updatedAt ? new Date(row._updatedAt).toLocaleDateString('en-GB') : '-',
         status: row.status || 'OPEN',
         detailStatus: row.status || 'OPEN', // specifically for the status chip column
         momNo: row._momNo || '-'
@@ -93,8 +91,7 @@ export default function MomList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'PENDING', label: 'Pending (Open / In Progress)' },
@@ -111,14 +108,16 @@ export default function MomList() {
         id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true,
         options: [{ value: 'YES', label: 'Yes' }, { value: 'NO', label: 'No' }],
         defaultValue: 'NO'
-      }
-    ]));
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
   // ── FILTERED ROWS (apply status + date filters) ──
   const filteredRows = useMemo(() => {
     return resolvedRows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       // Status Filter
       const statusFilter = globalFilters.status || 'PENDING';
       if (statusFilter !== 'All') {
@@ -196,9 +195,10 @@ export default function MomList() {
               ...det,
               _momId: mom.id,
               _momNo: mom.momNo,
-              _meetingType: mom.meetingType?.meetingName || '-',
+              _meetingType: mom.schedule?.meetingType?.meetingName || '-',
               _momDate: mom.momDate,
-              _scheduleNo: mom.scheduleNo,
+              _scheduleNo: mom.schedule?.scheduleNo || '-',
+              _hostId: mom.schedule?.hostBy?.id || null,
               _createdUser: mom.createdUser,
               _createdBy: mom.createdBy,
               _createdAt: mom.createdAt,
@@ -302,45 +302,27 @@ export default function MomList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Minutes_of_Meeting"
-            columns={[
-              { header: 'Meeting Min No', key: 'momNo' },
-              { header: 'Type', key: 'meetingType' },
-              { header: 'Meeting Date', key: 'momDate' },
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Discussed Point', key: 'discussedPoint' },
-              { header: 'Process', key: 'processType' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && (
-            <Tooltip title="Reassign selected action">
-              <Button
-                variant="outlined"
-                color="warning"
-                size="medium"
-                onClick={handleReassignClick}
-                sx={{ borderRadius: '12px', fontWeight: 700 }}
-                startIcon={<IconArrowsExchange size={18} />}
-              >
-                Reassign
-              </Button>
-            </Tooltip>
-          )}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New MOM', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleAdd}
+          newTooltip={shortcutTooltip('Create New MOM', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Meeting Min No', key: 'momNo' },
+            { header: 'Type', key: 'meetingType' },
+            { header: 'Meeting Date', key: 'momDate' },
+            { header: 'Schedule No', key: 'scheduleNo' },
+            { header: 'Discussed Point', key: 'discussedPoint' },
+            { header: 'Process', key: 'processType' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Minutes_of_Meeting"
+          hasExportPermission={perms.export}
+          onReassign={perms.write ? handleReassignClick : null}
+          reassignDisabled={!selectedRow}
+          reassignTooltip="Reassign selected action"
+        />
       }
     >
       <BOSDataTable
@@ -351,10 +333,10 @@ export default function MomList() {
         loading={loading}
         onPageChange={setPage}
         onSizeChange={(s) => { setSize(s); setPage(0); }}
-        onDoubleClickRow={perms.write ? handleEdit : undefined}
+        onDoubleClickRow={perms.write || perms.read ? handleEdit : undefined}
         onClickRow={(row) => setSelectedRow(row)}
         selectedRowId={selectedRow?.id}
-        onEditRow={perms.write ? handleEdit : undefined}
+        onEditRow={perms.write || perms.read ? handleEdit : undefined}
         onDeleteRow={perms.delete ? handleDeleteClick : undefined}
         renderCell={renderCell}
         id="mom-list-table"

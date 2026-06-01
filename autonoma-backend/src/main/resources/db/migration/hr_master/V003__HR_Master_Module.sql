@@ -35,9 +35,14 @@ GO
 -- ==========================================
 -- 1. HR_DEPARTMENT
 -- ==========================================
-IF OBJECT_ID('HR_DEPARTMENT_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'HR_DEPARTMENT_MASTER', 'HR_DEPARTMENT';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_DEPARTMENT_MASTER', 'HR_DEPARTMENT';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('HR_DEPARTMENT_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_DEPARTMENT', 'U') IS NULL
+        EXEC sp_rename 'HR_DEPARTMENT_MASTER', 'HR_DEPARTMENT';
 END
 GO
 
@@ -129,13 +134,13 @@ BEGIN
     FROM sys.key_constraints 
     WHERE parent_object_id = OBJECT_ID('HR_DEPARTMENT') AND type = 'PK';
     
-    IF @dept_pk IS NOT NULL AND @dept_pk <> 'PK_HR_DEPARTMENT'
+    IF @dept_pk IS NOT NULL AND @dept_pk <> 'PK_HR_DEPARTMENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_DEPARTMENT'))
     BEGIN
         DECLARE @drop_dept_pk NVARCHAR(MAX) = 'ALTER TABLE HR_DEPARTMENT DROP CONSTRAINT ' + @dept_pk;
         EXEC(@drop_dept_pk);
     END
     
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DEPARTMENT') AND name = 'PK_HR_DEPARTMENT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DEPARTMENT') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_DEPARTMENT ADD CONSTRAINT PK_HR_DEPARTMENT PRIMARY KEY (id);
     END
@@ -146,9 +151,14 @@ GO
 -- ==========================================
 -- 2. HR_DESIGNATION
 -- ==========================================
-IF OBJECT_ID('HR_DESIGNATION_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'HR_DESIGNATION_MASTER', 'HR_DESIGNATION';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_DESIGNATION_MASTER', 'HR_DESIGNATION';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('HR_DESIGNATION_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_DESIGNATION', 'U') IS NULL
+        EXEC sp_rename 'HR_DESIGNATION_MASTER', 'HR_DESIGNATION';
 END
 GO
 
@@ -223,7 +233,14 @@ IF COL_LENGTH('HR_DESIGNATION', 'createdBy') IS NOT NULL AND COL_LENGTH('HR_DESI
     EXEC sp_rename 'HR_DESIGNATION.createdBy', 'CREATED_BY', 'COLUMN';
 GO
 
-IF COL_LENGTH('HR_DESIGNATION', 'created_date') IS NOT NULL AND COL_LENGTH('HR_DESIGNATION', 'CREATED_DATE') IS NULL
+IF COL_LENGTH('HR_DESIGNATION', 'created_at') IS NOT NULL
+    EXEC sp_rename 'HR_DESIGNATION.created_at', 'CREATED_DATE', 'COLUMN';
+GO
+IF COL_LENGTH('HR_DESIGNATION', 'createdAt') IS NOT NULL
+    EXEC sp_rename 'HR_DESIGNATION.createdAt', 'CREATED_DATE', 'COLUMN';
+GO
+
+IF COL_LENGTH('HR_DESIGNATION', 'created_date') IS NOT NULL
     EXEC sp_rename 'HR_DESIGNATION.created_date', 'CREATED_DATE', 'COLUMN';
 GO
 IF COL_LENGTH('HR_DESIGNATION', 'createdDate') IS NOT NULL AND COL_LENGTH('HR_DESIGNATION', 'CREATED_DATE') IS NULL
@@ -237,7 +254,14 @@ IF COL_LENGTH('HR_DESIGNATION', 'updatedBy') IS NOT NULL AND COL_LENGTH('HR_DESI
     EXEC sp_rename 'HR_DESIGNATION.updatedBy', 'UPDATED_BY', 'COLUMN';
 GO
 
-IF COL_LENGTH('HR_DESIGNATION', 'updated_date') IS NOT NULL AND COL_LENGTH('HR_DESIGNATION', 'UPDATED_DATE') IS NULL
+IF COL_LENGTH('HR_DESIGNATION', 'updated_at') IS NOT NULL
+    EXEC sp_rename 'HR_DESIGNATION.updated_at', 'UPDATED_DATE', 'COLUMN';
+GO
+IF COL_LENGTH('HR_DESIGNATION', 'updatedAt') IS NOT NULL
+    EXEC sp_rename 'HR_DESIGNATION.updatedAt', 'UPDATED_DATE', 'COLUMN';
+GO
+
+IF COL_LENGTH('HR_DESIGNATION', 'updated_date') IS NOT NULL
     EXEC sp_rename 'HR_DESIGNATION.updated_date', 'UPDATED_DATE', 'COLUMN';
 GO
 IF COL_LENGTH('HR_DESIGNATION', 'updatedDate') IS NOT NULL AND COL_LENGTH('HR_DESIGNATION', 'UPDATED_DATE') IS NULL
@@ -272,13 +296,13 @@ BEGIN
     FROM sys.key_constraints 
     WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION') AND type = 'PK';
     
-    IF @desg_pk IS NOT NULL AND @desg_pk <> 'PK_HR_DESIGNATION'
+    IF @desg_pk IS NOT NULL AND @desg_pk <> 'PK_HR_DESIGNATION' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_DESIGNATION'))
     BEGIN
         DECLARE @drop_desg_pk NVARCHAR(MAX) = 'ALTER TABLE HR_DESIGNATION DROP CONSTRAINT ' + @desg_pk;
         EXEC(@drop_desg_pk);
     END
     
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION') AND name = 'PK_HR_DESIGNATION')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_DESIGNATION ADD CONSTRAINT PK_HR_DESIGNATION PRIMARY KEY (id);
     END
@@ -344,17 +368,13 @@ GO
 IF OBJECT_ID('HR_DESIGNATION_LEVEL', 'U') IS NOT NULL
 BEGIN
     DECLARE @dl_pk NVARCHAR(256);
-    SELECT TOP 1 @dl_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION_LEVEL') AND type = 'PK';
-    
-    IF @dl_pk IS NOT NULL AND @dl_pk <> 'PK_HR_DESIGNATION_LEVEL'
+    SELECT TOP 1 @dl_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION_LEVEL') AND type = 'PK';
+    IF @dl_pk IS NOT NULL AND @dl_pk <> 'PK_HR_DESIGNATION_LEVEL' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_DESIGNATION_LEVEL'))
     BEGIN
         DECLARE @drop_dl_pk NVARCHAR(MAX) = 'ALTER TABLE HR_DESIGNATION_LEVEL DROP CONSTRAINT ' + @dl_pk;
         EXEC(@drop_dl_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION_LEVEL') AND name = 'PK_HR_DESIGNATION_LEVEL')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_DESIGNATION_LEVEL') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_DESIGNATION_LEVEL ADD CONSTRAINT PK_HR_DESIGNATION_LEVEL PRIMARY KEY (ROW_ID);
     END
@@ -365,9 +385,14 @@ GO
 -- ==========================================
 -- 4. HR_LEVEL
 -- ==========================================
-IF OBJECT_ID('HR_LEVEL_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'HR_LEVEL_MASTER', 'HR_LEVEL';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_LEVEL_MASTER', 'HR_LEVEL';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('HR_LEVEL_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_LEVEL', 'U') IS NULL
+        EXEC sp_rename 'HR_LEVEL_MASTER', 'HR_LEVEL';
 END
 GO
 
@@ -377,7 +402,30 @@ GO
 
 IF OBJECT_ID('HR_LEVEL', 'U') IS NOT NULL
 BEGIN
+    DECLARE @index_name NVARCHAR(256);
+    SELECT @index_name = i.name
+    FROM sys.indexes i
+    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE i.object_id = OBJECT_ID('HR_LEVEL') AND c.name = 'LEVEL_NAME';
+    
+    IF @index_name IS NOT NULL
+    BEGIN
+        DECLARE @drop_sql NVARCHAR(MAX) = '';
+        IF EXISTS (SELECT 1 FROM sys.objects WHERE name = @index_name AND parent_object_id = OBJECT_ID('HR_LEVEL') AND type = 'UQ')
+            SET @drop_sql = 'ALTER TABLE HR_LEVEL DROP CONSTRAINT ' + QUOTENAME(@index_name);
+        ELSE
+            SET @drop_sql = 'DROP INDEX ' + QUOTENAME(@index_name) + ' ON HR_LEVEL';
+        EXEC(@drop_sql);
+    END
+
     ALTER TABLE HR_LEVEL ALTER COLUMN LEVEL_NAME NVARCHAR(100) NOT NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_LEVEL') AND name = 'UQ_HR_LEVEL_LEVEL_NAME')
+       AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('HR_LEVEL') AND name = 'UQ_HR_LEVEL_LEVEL_NAME')
+    BEGIN
+        ALTER TABLE HR_LEVEL ADD CONSTRAINT UQ_HR_LEVEL_LEVEL_NAME UNIQUE (LEVEL_NAME);
+    END
 
     IF COL_LENGTH('HR_LEVEL', 'CREATED_BY') IS NULL
         ALTER TABLE HR_LEVEL ADD CREATED_BY NVARCHAR(100);
@@ -395,17 +443,13 @@ GO
 IF OBJECT_ID('HR_LEVEL', 'U') IS NOT NULL
 BEGIN
     DECLARE @lvl_pk NVARCHAR(256);
-    SELECT TOP 1 @lvl_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('HR_LEVEL') AND type = 'PK';
-    
-    IF @lvl_pk IS NOT NULL AND @lvl_pk <> 'PK_HR_LEVEL'
+    SELECT TOP 1 @lvl_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_LEVEL') AND type = 'PK';
+    IF @lvl_pk IS NOT NULL AND @lvl_pk <> 'PK_HR_LEVEL' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_LEVEL'))
     BEGIN
         DECLARE @drop_lvl_pk NVARCHAR(MAX) = 'ALTER TABLE HR_LEVEL DROP CONSTRAINT ' + @lvl_pk;
         EXEC(@drop_lvl_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_LEVEL') AND name = 'PK_HR_LEVEL')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_LEVEL') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_LEVEL ADD CONSTRAINT PK_HR_LEVEL PRIMARY KEY (id);
     END
@@ -416,9 +460,14 @@ GO
 -- ==========================================
 -- 5. HR_EMPLOYEE_TYPE
 -- ==========================================
-IF OBJECT_ID('HR_EMPLOYEE_TYPE_MASTER', 'U') IS NOT NULL
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
 BEGIN
-    EXEC sp_rename 'HR_EMPLOYEE_TYPE_MASTER', 'HR_EMPLOYEE_TYPE';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_EMPLOYEE_TYPE_MASTER', 'HR_EMPLOYEE_TYPE';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('HR_EMPLOYEE_TYPE_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_TYPE', 'U') IS NULL
+        EXEC sp_rename 'HR_EMPLOYEE_TYPE_MASTER', 'HR_EMPLOYEE_TYPE';
 END
 GO
 
@@ -452,7 +501,31 @@ GO
 
 IF OBJECT_ID('HR_EMPLOYEE_TYPE', 'U') IS NOT NULL
 BEGIN
+    DECLARE @index_name NVARCHAR(256);
+    SELECT @index_name = i.name
+    FROM sys.indexes i
+    JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE i.object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND c.name = 'TYPE_NAME';
+    
+    IF @index_name IS NOT NULL
+    BEGIN
+        DECLARE @drop_sql NVARCHAR(MAX) = '';
+        IF EXISTS (SELECT 1 FROM sys.objects WHERE name = @index_name AND parent_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND type = 'UQ')
+            SET @drop_sql = 'ALTER TABLE HR_EMPLOYEE_TYPE DROP CONSTRAINT ' + QUOTENAME(@index_name);
+        ELSE
+            SET @drop_sql = 'DROP INDEX ' + QUOTENAME(@index_name) + ' ON HR_EMPLOYEE_TYPE';
+        EXEC(@drop_sql);
+    END
+
     ALTER TABLE HR_EMPLOYEE_TYPE ALTER COLUMN TYPE_NAME NVARCHAR(100) NOT NULL;
+
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND name = 'UQ_HR_EMPLOYEE_TYPE_TYPE_NAME')
+       AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND name = 'UQ_HR_EMPLOYEE_TYPE_TYPE_NAME')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_TYPE ADD CONSTRAINT UQ_HR_EMPLOYEE_TYPE_TYPE_NAME UNIQUE (TYPE_NAME);
+    END
+
     ALTER TABLE HR_EMPLOYEE_TYPE ALTER COLUMN DESCRIPTION NVARCHAR(500);
     ALTER TABLE HR_EMPLOYEE_TYPE ALTER COLUMN STATUS NVARCHAR(20);
     ALTER TABLE HR_EMPLOYEE_TYPE ALTER COLUMN CREATED_BY NVARCHAR(100);
@@ -470,17 +543,13 @@ GO
 IF OBJECT_ID('HR_EMPLOYEE_TYPE', 'U') IS NOT NULL
 BEGIN
     DECLARE @et_pk NVARCHAR(256);
-    SELECT TOP 1 @et_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND type = 'PK';
-    
-    IF @et_pk IS NOT NULL AND @et_pk <> 'PK_HR_EMPLOYEE_TYPE'
+    SELECT TOP 1 @et_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND type = 'PK';
+    IF @et_pk IS NOT NULL AND @et_pk <> 'PK_HR_EMPLOYEE_TYPE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE'))
     BEGIN
         DECLARE @drop_et_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_TYPE DROP CONSTRAINT ' + @et_pk;
         EXEC(@drop_et_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND name = 'PK_HR_EMPLOYEE_TYPE')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_TYPE') AND type = 'PK')
     BEGIN
         ALTER TABLE HR_EMPLOYEE_TYPE ADD CONSTRAINT PK_HR_EMPLOYEE_TYPE PRIMARY KEY (id);
     END

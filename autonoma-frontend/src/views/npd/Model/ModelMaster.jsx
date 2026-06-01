@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -151,31 +151,24 @@ export default function ModelMaster() {
           <Typography variant="h3">Product Model Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchModels} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Product_Model_Master"
-            columns={[
-              { header: 'OEM Short Name', key: 'oem.oemShortName' },
-              { header: 'Model No', key: 'modelNo' },
-              { header: 'Rotor Diameter', key: 'rotorDiameter' },
-              { header: 'Status', key: 'status' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Created Date', key: 'createdAt' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Model', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchModels}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Model', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'OEM Short Name', key: 'oem.oemShortName' },
+            { header: 'Model No', key: 'modelNo' },
+            { header: 'Rotor Diameter', key: 'rotorDiameter' },
+            { header: 'Status', key: 'status' },
+            { header: 'Created By', key: 'createdBy' },
+            { header: 'Created Date', key: 'createdAt' }
+          ]}
+          exportFilename="Product_Model_Master"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

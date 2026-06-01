@@ -7,20 +7,55 @@
 -- 4. FREIGHT_MASTER -> MST_FREIGHT
 -- 5. MODE_OF_DESPATCH -> MST_DESPATCH_MODE
 
+-- Safe drop helper for pre-created empty tables
+IF OBJECT_ID('dbo.sp_SafeDropEmptyTableForRename', 'P') IS NOT NULL
+    DROP PROCEDURE dbo.sp_SafeDropEmptyTableForRename;
+GO
+
+CREATE PROCEDURE dbo.sp_SafeDropEmptyTableForRename
+    @oldName NVARCHAR(256),
+    @newName NVARCHAR(256)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND OBJECT_ID(@newName, 'U') IS NOT NULL
+    BEGIN
+        DECLARE @rows INT = -1;
+        DECLARE @query NVARCHAR(MAX) = N'SELECT @rows = COUNT(*) FROM ' + QUOTENAME(@newName);
+        EXEC sp_executesql @query, N'@rows INT OUTPUT', @rows = @rows OUTPUT;
+        
+        IF @rows = 0
+        BEGIN
+            PRINT 'Dropping empty pre-created table ' + @newName + ' to allow rename of ' + @oldName;
+            
+            -- Drop foreign keys referencing the empty new table
+            DECLARE @dropFkSql NVARCHAR(MAX) = '';
+            SELECT @dropFkSql = @dropFkSql + 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+            FROM sys.foreign_keys
+            WHERE referenced_object_id = OBJECT_ID(@newName);
+            IF @dropFkSql <> '' EXEC sp_executesql @dropFkSql;
+            
+            -- Drop foreign keys on the empty new table itself
+            DECLARE @dropFkSelfSql NVARCHAR(MAX) = '';
+            SELECT @dropFkSelfSql = @dropFkSelfSql + 'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13)
+            FROM sys.foreign_keys
+            WHERE parent_object_id = OBJECT_ID(@newName);
+            IF @dropFkSelfSql <> '' EXEC sp_executesql @dropFkSelfSql;
+            
+            -- Drop the empty table
+            DECLARE @dropTableSql NVARCHAR(MAX) = N'DROP TABLE ' + QUOTENAME(@newName);
+            EXEC sp_executesql @dropTableSql;
+        END
+    END
+END;
+GO
+
 -- ==========================================
 -- 1. MASTER_COUNTRY -> MST_COUNTRY
 -- ==========================================
-IF OBJECT_ID('MASTER_COUNTRY', 'U') IS NOT NULL
-BEGIN
-    IF OBJECT_ID('MST_COUNTRY', 'U') IS NULL
-    BEGIN
-        EXEC sp_rename 'MASTER_COUNTRY', 'MST_COUNTRY';
-    END
-    ELSE
-    BEGIN
-        DROP TABLE MASTER_COUNTRY;
-    END
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'MASTER_COUNTRY', 'MST_COUNTRY';
+IF OBJECT_ID('MASTER_COUNTRY', 'U') IS NOT NULL AND OBJECT_ID('MST_COUNTRY', 'U') IS NULL
+    EXEC sp_rename 'MASTER_COUNTRY', 'MST_COUNTRY';
 GO
 
 IF COL_LENGTH('MST_COUNTRY', 'created_by') IS NOT NULL AND COL_LENGTH('MST_COUNTRY', 'CREATED_BY') IS NULL
@@ -68,17 +103,13 @@ GO
 IF OBJECT_ID('MST_COUNTRY', 'U') IS NOT NULL
 BEGIN
     DECLARE @country_pk NVARCHAR(256);
-    SELECT TOP 1 @country_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('MST_COUNTRY') AND type = 'PK';
-    
-    IF @country_pk IS NOT NULL AND @country_pk <> 'PK_MST_COUNTRY'
+    SELECT TOP 1 @country_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_COUNTRY') AND type = 'PK';
+    IF @country_pk IS NOT NULL AND @country_pk <> 'PK_MST_COUNTRY' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('MST_COUNTRY'))
     BEGIN
         DECLARE @drop_country_pk NVARCHAR(MAX) = 'ALTER TABLE MST_COUNTRY DROP CONSTRAINT ' + @country_pk;
         EXEC(@drop_country_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_COUNTRY') AND name = 'PK_MST_COUNTRY')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_COUNTRY') AND type = 'PK')
     BEGIN
         ALTER TABLE MST_COUNTRY ADD CONSTRAINT PK_MST_COUNTRY PRIMARY KEY (id);
     END
@@ -89,17 +120,9 @@ GO
 -- ==========================================
 -- 2. MASTER_STATE -> MST_STATE
 -- ==========================================
-IF OBJECT_ID('MASTER_STATE', 'U') IS NOT NULL
-BEGIN
-    IF OBJECT_ID('MST_STATE', 'U') IS NULL
-    BEGIN
-        EXEC sp_rename 'MASTER_STATE', 'MST_STATE';
-    END
-    ELSE
-    BEGIN
-        DROP TABLE MASTER_STATE;
-    END
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'MASTER_STATE', 'MST_STATE';
+IF OBJECT_ID('MASTER_STATE', 'U') IS NOT NULL AND OBJECT_ID('MST_STATE', 'U') IS NULL
+    EXEC sp_rename 'MASTER_STATE', 'MST_STATE';
 GO
 
 IF COL_LENGTH('MST_STATE', 'created_by') IS NOT NULL AND COL_LENGTH('MST_STATE', 'CREATED_BY') IS NULL
@@ -149,17 +172,13 @@ GO
 IF OBJECT_ID('MST_STATE', 'U') IS NOT NULL
 BEGIN
     DECLARE @state_pk NVARCHAR(256);
-    SELECT TOP 1 @state_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('MST_STATE') AND type = 'PK';
-    
-    IF @state_pk IS NOT NULL AND @state_pk <> 'PK_MST_STATE'
+    SELECT TOP 1 @state_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_STATE') AND type = 'PK';
+    IF @state_pk IS NOT NULL AND @state_pk <> 'PK_MST_STATE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('MST_STATE'))
     BEGIN
         DECLARE @drop_state_pk NVARCHAR(MAX) = 'ALTER TABLE MST_STATE DROP CONSTRAINT ' + @state_pk;
         EXEC(@drop_state_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_STATE') AND name = 'PK_MST_STATE')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_STATE') AND type = 'PK')
     BEGIN
         ALTER TABLE MST_STATE ADD CONSTRAINT PK_MST_STATE PRIMARY KEY (id);
     END
@@ -192,17 +211,9 @@ GO
 -- ==========================================
 -- 3. product_master -> MST_PRODUCT
 -- ==========================================
-IF OBJECT_ID('product_master', 'U') IS NOT NULL
-BEGIN
-    IF OBJECT_ID('MST_PRODUCT', 'U') IS NULL
-    BEGIN
-        EXEC sp_rename 'product_master', 'MST_PRODUCT';
-    END
-    ELSE
-    BEGIN
-        DROP TABLE product_master;
-    END
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'product_master', 'MST_PRODUCT';
+IF OBJECT_ID('product_master', 'U') IS NOT NULL AND OBJECT_ID('MST_PRODUCT', 'U') IS NULL
+    EXEC sp_rename 'product_master', 'MST_PRODUCT';
 GO
 
 IF OBJECT_ID('MST_PRODUCT', 'U') IS NOT NULL
@@ -232,17 +243,13 @@ GO
 IF OBJECT_ID('MST_PRODUCT', 'U') IS NOT NULL
 BEGIN
     DECLARE @prod_pk NVARCHAR(256);
-    SELECT TOP 1 @prod_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('MST_PRODUCT') AND type = 'PK';
-    
-    IF @prod_pk IS NOT NULL AND @prod_pk <> 'PK_MST_PRODUCT'
+    SELECT TOP 1 @prod_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_PRODUCT') AND type = 'PK';
+    IF @prod_pk IS NOT NULL AND @prod_pk <> 'PK_MST_PRODUCT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('MST_PRODUCT'))
     BEGIN
         DECLARE @drop_prod_pk NVARCHAR(MAX) = 'ALTER TABLE MST_PRODUCT DROP CONSTRAINT ' + @prod_pk;
         EXEC(@drop_prod_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_PRODUCT') AND name = 'PK_MST_PRODUCT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_PRODUCT') AND type = 'PK')
     BEGIN
         ALTER TABLE MST_PRODUCT ADD CONSTRAINT PK_MST_PRODUCT PRIMARY KEY (id);
     END
@@ -253,17 +260,9 @@ GO
 -- ==========================================
 -- 4. FREIGHT_MASTER -> MST_FREIGHT
 -- ==========================================
-IF OBJECT_ID('FREIGHT_MASTER', 'U') IS NOT NULL
-BEGIN
-    IF OBJECT_ID('MST_FREIGHT', 'U') IS NULL
-    BEGIN
-        EXEC sp_rename 'FREIGHT_MASTER', 'MST_FREIGHT';
-    END
-    ELSE
-    BEGIN
-        DROP TABLE FREIGHT_MASTER;
-    END
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'FREIGHT_MASTER', 'MST_FREIGHT';
+IF OBJECT_ID('FREIGHT_MASTER', 'U') IS NOT NULL AND OBJECT_ID('MST_FREIGHT', 'U') IS NULL
+    EXEC sp_rename 'FREIGHT_MASTER', 'MST_FREIGHT';
 GO
 
 IF COL_LENGTH('MST_FREIGHT', 'freight_type') IS NOT NULL AND COL_LENGTH('MST_FREIGHT', 'FREIGHT_TYPE') IS NULL
@@ -327,17 +326,13 @@ GO
 IF OBJECT_ID('MST_FREIGHT', 'U') IS NOT NULL
 BEGIN
     DECLARE @freight_pk NVARCHAR(256);
-    SELECT TOP 1 @freight_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('MST_FREIGHT') AND type = 'PK';
-    
-    IF @freight_pk IS NOT NULL AND @freight_pk <> 'PK_MST_FREIGHT'
+    SELECT TOP 1 @freight_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_FREIGHT') AND type = 'PK';
+    IF @freight_pk IS NOT NULL AND @freight_pk <> 'PK_MST_FREIGHT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('MST_FREIGHT'))
     BEGIN
         DECLARE @drop_freight_pk NVARCHAR(MAX) = 'ALTER TABLE MST_FREIGHT DROP CONSTRAINT ' + @freight_pk;
         EXEC(@drop_freight_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_FREIGHT') AND name = 'PK_MST_FREIGHT')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_FREIGHT') AND type = 'PK')
     BEGIN
         ALTER TABLE MST_FREIGHT ADD CONSTRAINT PK_MST_FREIGHT PRIMARY KEY (id);
     END
@@ -348,17 +343,9 @@ GO
 -- ==========================================
 -- 5. MODE_OF_DESPATCH -> MST_DESPATCH_MODE
 -- ==========================================
-IF OBJECT_ID('MODE_OF_DESPATCH', 'U') IS NOT NULL
-BEGIN
-    IF OBJECT_ID('MST_DESPATCH_MODE', 'U') IS NULL
-    BEGIN
-        EXEC sp_rename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
-    END
-    ELSE
-    BEGIN
-        DROP TABLE MODE_OF_DESPATCH;
-    END
-END
+EXEC dbo.sp_SafeDropEmptyTableForRename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
+IF OBJECT_ID('MODE_OF_DESPATCH', 'U') IS NOT NULL AND OBJECT_ID('MST_DESPATCH_MODE', 'U') IS NULL
+    EXEC sp_rename 'MODE_OF_DESPATCH', 'MST_DESPATCH_MODE';
 GO
 
 IF COL_LENGTH('MST_DESPATCH_MODE', 'mode_name') IS NOT NULL AND COL_LENGTH('MST_DESPATCH_MODE', 'MODE_NAME') IS NULL
@@ -422,17 +409,13 @@ GO
 IF OBJECT_ID('MST_DESPATCH_MODE', 'U') IS NOT NULL
 BEGIN
     DECLARE @mode_pk NVARCHAR(256);
-    SELECT TOP 1 @mode_pk = name 
-    FROM sys.key_constraints 
-    WHERE parent_object_id = OBJECT_ID('MST_DESPATCH_MODE') AND type = 'PK';
-    
-    IF @mode_pk IS NOT NULL AND @mode_pk <> 'PK_MST_DESPATCH_MODE'
+    SELECT TOP 1 @mode_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_DESPATCH_MODE') AND type = 'PK';
+    IF @mode_pk IS NOT NULL AND @mode_pk <> 'PK_MST_DESPATCH_MODE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('MST_DESPATCH_MODE'))
     BEGIN
         DECLARE @drop_mode_pk NVARCHAR(MAX) = 'ALTER TABLE MST_DESPATCH_MODE DROP CONSTRAINT ' + @mode_pk;
         EXEC(@drop_mode_pk);
     END
-    
-    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_DESPATCH_MODE') AND name = 'PK_MST_DESPATCH_MODE')
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('MST_DESPATCH_MODE') AND type = 'PK')
     BEGIN
         ALTER TABLE MST_DESPATCH_MODE ADD CONSTRAINT PK_MST_DESPATCH_MODE PRIMARY KEY (id);
     END

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, Chip, Box, Popover, Checkbox } from '@mui/material';
-import { IconRefresh, IconEdit, IconUserPlus, IconFileDots, IconClipboardList, IconAdjustmentsHorizontal, IconCheck, IconBan } from '@tabler/icons-react';
+import { Typography, Stack, Chip, Box, Tooltip, IconButton } from '@mui/material';
+import { IconClipboardList, IconCheck, IconBan, IconFileDots, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
@@ -8,7 +8,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -233,46 +233,43 @@ const exportColumns = [
   { header: 'Status',             key: 'taskStatus' },
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
-  { header: 'Verified Date',      key: (r) => formatDate(r.verifiedDate) },
+  { header: 'Verified Date',      key: (r) => formatDateTime(r.verifiedDate) },
   { header: 'CREATED USER',       key: 'createdUser' },
-  { header: 'CREATED DATE',       key: (r) => formatDate(r.createdAt) },
+  { header: 'CREATED DATE',       key: (r) => formatDateTime(r.createdAt) },
   { header: 'UPDATED USER',       key: 'updatedUser' },
   { header: 'UPDATED DATE',       key: (r) => formatDateTime(r.updatedAt) },
 ];
 
-// ── Filter config for the global search bar ─────────────────────────────────────
-const filterConfig = [
-  { id: 'category',    label: 'Category',      type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'RENEWAL', label: 'RENEWAL' }, { value: 'CHECK LIST', label: 'CHECK LIST' }
-  ]},
-  { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Pending for Verify', label: 'Pending for Verify' },
-    { value: 'Verified', label: 'Verified' }, { value: 'Rejected', label: 'Rejected' }
-  ]},
-  { id: 'recordStatus', label: 'Record Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'In Active', label: 'In Active' }
-  ]},
-  { id: 'taskStatus',  label: 'Task Status',   type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }, { value: 'In Progress', label: 'In Progress' },
-    { value: 'Completed', label: 'Completed' }, { value: 'Missed', label: 'Missed' }
-  ]},
-  { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'DAILY', label: 'DAILY' }, { value: 'WEEKLY', label: 'WEEKLY' },
-    { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' }, { value: 'MONTHLY', label: 'MONTHLY' },
-    { value: 'QUARTERLY', label: 'QUARTERLY' }, { value: 'HALF YEARLY', label: 'HALF YEARLY' }, { value: 'YEARLY', label: 'YEARLY' }
-  ]},
-  { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }
-  ]},
-  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }
-  ]},
-];
+// ── Static filter options (department options are loaded dynamically) ────────────
+const STATIC_FILTER_OPTIONS = {
+  category:    [{ value: 'All', label: 'All' }, { value: 'RENEWAL', label: 'RENEWAL' }, { value: 'CHECK LIST', label: 'CHECK LIST' }],
+  verifyStatus:[{ value: 'All', label: 'All' }, { value: 'Pending for Verify', label: 'Pending for Verify' }, { value: 'Verified', label: 'Verified' }, { value: 'Rejected', label: 'Rejected' }],
+  recordStatus:[{ value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'In Active', label: 'In Active' }],
+  taskStatus:  [{ value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }, { value: 'In Progress', label: 'In Progress' }, { value: 'Completed', label: 'Completed' }, { value: 'Missed', label: 'Missed' }],
+  frequency:   [{ value: 'All', label: 'All' }, { value: 'DAILY', label: 'DAILY' }, { value: 'WEEKLY', label: 'WEEKLY' }, { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' }, { value: 'MONTHLY', label: 'MONTHLY' }, { value: 'QUARTERLY', label: 'QUARTERLY' }, { value: 'HALF YEARLY', label: 'HALF YEARLY' }, { value: 'YEARLY', label: 'YEARLY' }],
+  stockLink:   [{ value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }],
+  photoRequired:[{ value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }],
+};
 
 const DEFAULT_FILTERS = {
-  category: 'All', verifyStatus: 'All', recordStatus: 'All',
+  department: 'All', category: 'All', verifyStatus: 'All', recordStatus: 'All',
   taskStatus: 'All', frequency: 'All', stockLink: 'All', photoRequired: 'All',
 };
+
+// Build the filter config from department options (called inside component)
+const buildFilterConfig = (departmentOptions) => [
+  { id: 'department',   label: 'Department',    type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' }, ...departmentOptions
+  ]},
+  { id: 'category',    label: 'Category',      type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.category },
+  { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.verifyStatus },
+  { id: 'recordStatus', label: 'Record Status', type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.recordStatus },
+  { id: 'taskStatus',  label: 'Task Status',   type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.taskStatus },
+  { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.frequency },
+  { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.stockLink },
+  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.photoRequired },
+  ...getCommonDateFilters('createdDate', 'updatedDate')
+];
 
 // ==============================|| MASTER CHECKLIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -293,39 +290,28 @@ export default function MasterCheckList() {
   const [loading,          setLoading]          = useState(false);
   const [selectedRow,      setSelectedRow]      = useState(null);
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
+  const [departmentOptions, setDepartmentOptions] = useState([]);
 
-
-  // Column picker states & toggles
-  const [anchorEl, setAnchorEl] = useState(null);
+  // Column picker state
   const [visibleColumnIds, setVisibleColumnIds] = useState(() => columns.map(c => c.id));
 
-  const handlePopoverOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handlePopoverClose = () => {
-    setAnchorEl(null);
-  };
-  const handleToggleColumn = (colId) => {
-    setVisibleColumnIds((prev) => {
-      if (prev.includes(colId)) {
-        if (colId === 'index' || colId === 'seqNo' || colId === 'checkingPoint') {
-          return prev;
-        }
-        return prev.filter((id) => id !== colId);
-      } else {
-        return [...prev, colId];
-      }
-    });
-  };
-  const handleSelectAllColumns = () => {
-    setVisibleColumnIds(columns.map(c => c.id));
-  };
-
-  // Register global filter bar config
+  // Fetch active departments for the filter dropdown
   useEffect(() => {
-    dispatch(setFilterConfig(filterConfig));
+    axios.get('/api/master/hr/departments/active')
+      .then((res) => {
+        const opts = (Array.isArray(res.data) ? res.data : (res.data?.content || []))
+          .map((d) => ({ value: d.departmentName, label: d.departmentName }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+        setDepartmentOptions(opts);
+      })
+      .catch(() => setDepartmentOptions([]));
+  }, []);
+
+  // Register global filter bar config (rebuilds when department options change)
+  useEffect(() => {
+    dispatch(setFilterConfig(buildFilterConfig(departmentOptions)));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  }, [dispatch, departmentOptions]);
 
   // Sync global search bar filters → local filters
   useEffect(() => {
@@ -351,6 +337,7 @@ export default function MasterCheckList() {
     try {
       const params = {
         page, size,
+        department:   filters.department   !== 'All' ? filters.department   : undefined,
         category:     filters.category     !== 'All' ? filters.category     : undefined,
         verifyStatus: filters.verifyStatus  !== 'All' ? filters.verifyStatus  : undefined,
         status:       filters.recordStatus  !== 'All' ? filters.recordStatus  : undefined,
@@ -396,7 +383,7 @@ export default function MasterCheckList() {
       _expiryExpired: expiryExpired,
       _displayTaskStatus: displayTaskStatus,
       reminderDate:  formatDate(row.reminderDate),
-      verifiedDate:  formatDate(row.verifiedDate),
+      verifiedDate:  formatDateTime(row.verifiedDate),
       createdUser:   row.createdUser || row.createdBy || '-',
       createdDate:   formatDate(row.createdAt),
       updatedUser:   (row.updatedAt && row.createdAt && Math.abs(new Date(row.updatedAt) - new Date(row.createdAt)) > 5000) ? (row.updatedUser || row.updatedBy || '-') : '-',
@@ -572,107 +559,38 @@ export default function MasterCheckList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton
-              onClick={fetchChecklists}
-              color="primary"
-              size="small"
-              sx={{
-                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-              }}
-            >
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Column Visibility">
-            <IconButton
-              onClick={handlePopoverOpen}
-              color="primary"
-              size="small"
-              sx={{
-                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-              }}
-            >
-              <IconAdjustmentsHorizontal size={20} />
-            </IconButton>
-          </Tooltip>
-
-          {perms.export && (
-            <BOSExportButton
-              data={resolvedRows}
-              filename="Master_Check_List"
-              columns={exportColumns}
-            />
-          )}
-
-          <Tooltip title={
+        <BOSTableToolbar
+          onRefresh={fetchChecklists}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Add New Checklist', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          columns={columns}
+          visibleColumnIds={visibleColumnIds}
+          onColumnVisibilityChange={setVisibleColumnIds}
+          requiredColumnIds={['index', 'seqNo', 'checkingPoint']}
+          exportData={resolvedRows}
+          exportColumns={exportColumns}
+          exportFilename="Master_Check_List"
+          hasExportPermission={perms.export}
+          onAmendment={selectedRow ? () => handleAmendment(selectedRow) : null}
+          amendmentDisabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
+          amendmentTooltip={
             !selectedRow
               ? 'Select a row first'
               : selectedRow.verifyStatus !== 'Verified'
               ? 'Checklist must be verified before amendment'
               : `Amendment: ${selectedRow.seqNo || selectedRow.id}`
-          }>
-            <span>
-              <Button
-                variant="outlined"
-                color="warning"
-                size="medium"
-                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
-                startIcon={<IconFileDots size={18} />}
-                onClick={() => selectedRow && handleAmendment(selectedRow)}
-                sx={{
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { transform: 'scale(1.03)' }
-                }}
-              >
-                Amendment
-              </Button>
-            </span>
-          </Tooltip>
-
-          <Tooltip title={
+          }
+          onAssign={selectedRow ? () => handleAssign(selectedRow) : null}
+          assignDisabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
+          assignTooltip={
             !selectedRow
               ? 'Select a row first'
               : selectedRow.verifyStatus !== 'Verified'
               ? 'Checklist must be verified before assigning'
               : `Assign: ${selectedRow.seqNo || selectedRow.id}`
-          }>
-            <span>
-              <Button
-                variant="outlined"
-                color="info"
-                size="medium"
-                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
-                startIcon={<IconUserPlus size={18} />}
-                onClick={() => selectedRow && handleAssign(selectedRow)}
-                sx={{
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { transform: 'scale(1.03)' }
-                }}
-              >
-                Assign
-              </Button>
-            </span>
-          </Tooltip>
-
-          {perms.write && (
-            <Tooltip title={shortcutTooltip('Add New Checklist', 'Ctrl + N')}>
-              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                + New
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+          }
+        />
       }
     >
       <BOSDataTable
@@ -707,80 +625,6 @@ export default function MasterCheckList() {
         checklistId={selectedRow?.id}
         initialData={selectedRow}
       />
-
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={handlePopoverClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            p: 2,
-            width: 280,
-            maxHeight: 450,
-            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-            borderRadius: '12px',
-            border: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-          }
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Toggle Columns</Typography>
-          <Button size="small" onClick={handleSelectAllColumns} sx={{ textTransform: 'none', fontWeight: 600 }}>
-            Show All
-          </Button>
-        </Stack>
-
-        <Box sx={{ overflowY: 'auto', flex: 1, py: 1, my: 1, pr: 0.5, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '4px' } }}>
-          <Stack spacing={0.5}>
-            {columns.map((col) => {
-              const isRequired = col.id === 'index' || col.id === 'seqNo' || col.id === 'checkingPoint';
-              return (
-                <Box
-                  key={col.id}
-                  onClick={() => !isRequired && handleToggleColumn(col.id)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: '6px',
-                    cursor: isRequired ? 'default' : 'pointer',
-                    bgcolor: isRequired ? 'grey.50' : 'transparent',
-                    opacity: isRequired ? 0.7 : 1,
-                    '&:hover': {
-                      bgcolor: isRequired ? 'grey.50' : 'grey.100',
-                    }
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: isRequired ? 600 : 400 }}>
-                    {col.label}
-                  </Typography>
-                  <Checkbox
-                    size="small"
-                    checked={visibleColumnIds.includes(col.id)}
-                    disabled={isRequired}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => handleToggleColumn(col.id)}
-                    sx={{ p: 0.5 }}
-                  />
-                </Box>
-              );
-            })}
-          </Stack>
-        </Box>
-      </Popover>
     </MainCard>
   );
 }

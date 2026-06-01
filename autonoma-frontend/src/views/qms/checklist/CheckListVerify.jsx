@@ -16,7 +16,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 
 import { IconCheck, IconBan } from '@tabler/icons-react';
@@ -95,8 +95,7 @@ const exportColumns = [
   { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) }
 ];
 
-const getFilterConfig = (departments) => [
-  {
+const getFilterConfig = (departments) => [{
     id: 'status', label: 'Status', type: 'select', isStarred: true, defaultValue: 'Pending for Verify', options: [
       { value: 'All', label: 'All' },
       { value: 'Pending for Verify', label: 'Pending for Verify' },
@@ -139,8 +138,8 @@ const getFilterConfig = (departments) => [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
-  }
-];
+  },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 const formatDateTime = (dateVal) => {
   if (!dateVal) return '-';
@@ -285,9 +284,12 @@ export default function CheckListVerify() {
       }}
       title="Check List Verify"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Verify" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          exportColumns={exportColumns}
+          exportFilename="Checklist_Verify"
+          hasExportPermission={perms.export}
+        />
       }
     >
       {/* ── Cursor-following 'Double tap' label ── */}

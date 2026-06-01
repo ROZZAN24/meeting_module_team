@@ -6,52 +6,15 @@ import useAuth from 'hooks/useAuth';
 
 // MUI & Icons
 import {
-  Box,
-  Typography,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Button,
-  Chip,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TextField,
-  Radio,
-  FormControlLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
+  Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Radio, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
-  IconRefresh,
-  IconPlayerPlay,
-  IconCheck,
-  IconClipboardCheck,
-  IconInfoCircle,
-  IconCloudUpload,
-  IconTrash,
-  IconX
+  IconRefresh, IconPlayerPlay, IconCheck, IconClipboardCheck, IconInfoCircle, IconCloudUpload, IconTrash, IconX
 } from '@tabler/icons-react';
 
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSExportButton,
-  BOSFileUpload,
-  btnCancel,
-  btnSave
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSFileUpload, btnCancel, btnSave, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import BOSMovableDialog from 'ui-component/bos/BOSMovableDialog';
 import { openSnackbar } from 'store/slices/snackbar';
 import { setFilterConfig } from 'store/slices/search';
@@ -156,8 +119,7 @@ export default function InductionTraining() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -168,8 +130,8 @@ export default function InductionTraining() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -620,21 +582,13 @@ export default function InductionTraining() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Induction_Training"
-            columns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          exportData={resolvedRows}
+          exportColumns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          exportFilename="Induction_Training"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

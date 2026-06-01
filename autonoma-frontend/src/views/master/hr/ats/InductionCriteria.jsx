@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSExportButton, btnNew, BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload, BOSFilePreview, errorStyle, BOSStatusField } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload, BOSFilePreview, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -144,8 +144,7 @@ export default function InductionCriteria() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -156,8 +155,8 @@ export default function InductionCriteria() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -399,35 +398,16 @@ export default function InductionCriteria() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && (
-            <BOSExportButton
-              data={resolvedRows}
-              filename="Induction_Criteria"
-              columns={columns.filter((c) => c.id !== 'index').map((c) => ({ header: c.label, key: c.id }))}
-            />
-          )}
-
-          {perms.write && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleOpenAdd}
-              sx={btnNew}
-              startIcon={<IconPlus size={18} />}
-            >
-              New
-            </Button>
-          )}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          onNew={handleOpenAdd}
+          newLabel="New"
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportColumns={columns.filter((c) => c.id !== 'index').map((c) => ({ header: c.label, key: c.id }))}
+          exportFilename="Induction_Criteria"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

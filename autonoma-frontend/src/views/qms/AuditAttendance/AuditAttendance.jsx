@@ -7,7 +7,7 @@ import { exportToExcel } from 'utils/excelExport';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, BOSExportButton, BOSFormDialog, BOSFormSection, BOSTextField, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnExport, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -20,7 +20,6 @@ const columns = [
   { id: 'employeeCode', label: 'Employee Code', minWidth: 120 },
   { id: 'name', label: 'Name', minWidth: 200 },
   { id: 'inTime', label: 'In Time', minWidth: 100 },
-  { id: 'outTime', label: 'Out Time', minWidth: 100 },
   { id: 'attendanceStatus', label: 'Attendance Status', minWidth: 150 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
@@ -52,6 +51,44 @@ const getSystemTime12h = () => {
   return `${strHours}:${strMinutes} ${ampm}`;
 };
 
+const parseScheduleDateTime = (s) => {
+  if (!s || !s.auditDate || !s.startTime) return null;
+  const dStr = s.auditDate.split('T')[0];
+  const match = s.startTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (!match) return null;
+  
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const modifier = match[3] ? match[3].toUpperCase() : null;
+  
+  if (modifier) {
+    if (modifier === 'PM' && hours < 12) hours += 12;
+    if (modifier === 'AM' && hours === 12) hours = 0;
+  }
+  
+  return new Date(`${dStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
+};
+
+const getNearestScheduleNo = (availableSchedules) => {
+  if (!availableSchedules || availableSchedules.length === 0) return '';
+  const now = new Date();
+  let nearestSch = null;
+  let minDiff = Infinity;
+  
+  availableSchedules.forEach(s => {
+    const schTime = parseScheduleDateTime(s);
+    if (schTime) {
+      const diff = Math.abs(schTime.getTime() - now.getTime());
+      if (diff < minDiff) {
+        minDiff = diff;
+        nearestSch = s;
+      }
+    }
+  });
+  
+  return nearestSch ? nearestSch.scheduleNo : '';
+};
+
 export default function AuditAttendance() {
   const dispatch = useDispatch();
   const { user } = useAuth();
@@ -62,7 +99,7 @@ export default function AuditAttendance() {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', outTime: '', attendanceStatus: 'PRESENT' });
+  const [formData, setFormData] = useState({ id: null, auditScheduleNo: '', name: '', employeeCode: '', inTime: '', attendanceStatus: 'PRESENT' });
   const [participants, setParticipants] = useState([]);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -135,8 +172,19 @@ export default function AuditAttendance() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const filteredSchedules = useMemo(() => {
-    const completedScheduleNos = new Set(rows.map(r => r.auditScheduleNo));
-    const now = new Date();
+    const userCode = (currentUserEmp?.empCode || user?.employeeCode || '').trim();
+    
+    const submittedByCurrentUser = new Set(
+      rows
+        .filter(r => {
+          const empCodeOfRow = (r.employeeCode || '').trim();
+          const rowCode = (!empCodeOfRow || empCodeOfRow === '-') && r.name && r.name.includes(' - ')
+            ? r.name.split(' - ')[1].trim()
+            : empCodeOfRow;
+          return rowCode.toLowerCase() === userCode.toLowerCase();
+        })
+        .map(r => r.auditScheduleNo)
+    );
     
     return (schedules || []).filter(s => {
       // If editing or already matches the selected value, always show it
@@ -144,44 +192,25 @@ export default function AuditAttendance() {
         return true;
       }
       
-      // 1. Once attendance is submitted, schedule no should not appear again
-      if (completedScheduleNos.has(s.scheduleNo)) {
+      // 1. Once the current user has submitted attendance, do not show it again
+      if (submittedByCurrentUser.has(s.scheduleNo)) {
         return false;
       }
       
-      // 2. Only show starting from 10 minutes before the audit schedule timing
-      if (!s.auditDate || !s.startTime) return false;
-      
-      const dStr = s.auditDate.split('T')[0];
-      const match = s.startTime.match(/^(\d{2}):(\d{2})\s*(AM|PM)$/i);
-      if (!match) return false;
-      
-      let hours = parseInt(match[1], 10);
-      const minutes = parseInt(match[2], 10);
-      const modifier = match[3].toUpperCase();
-      
-      if (modifier === 'PM' && hours < 12) hours += 12;
-      if (modifier === 'AM' && hours === 12) hours = 0;
-      
-      const scheduleTime = new Date(`${dStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`);
-      
-      // 10 minutes before the start time
-      const windowStart = new Date(scheduleTime.getTime() - 10 * 60 * 1000);
-      
-      return now >= windowStart;
+      return true;
     });
-  }, [schedules, rows, formData.auditScheduleNo]);
+  }, [schedules, rows, formData.auditScheduleNo, currentUserEmp, user]);
 
   const handleOpenAdd = () => {
     const defaultName = currentUserEmp?.employeeName || user?.name || '';
     const defaultCode = currentUserEmp?.empCode || user?.employeeCode || '';
+    const nearestScheduleNo = getNearestScheduleNo(filteredSchedules);
     setFormData({
       id: null,
-      auditScheduleNo: '',
+      auditScheduleNo: nearestScheduleNo,
       name: defaultName,
       employeeCode: defaultCode,
       inTime: getSystemTime12h(),
-      outTime: '',
       attendanceStatus: 'PRESENT'
     });
     clearErrors();
@@ -226,9 +255,9 @@ export default function AuditAttendance() {
     console.log('[AuditAttendance] Attempting to save attendance record:', finalData);
     try {
       if (finalData.id) {
-        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData);
+        await axios.put(`/api/qms/audit/attendance/${finalData.id}`, finalData, { skipGlobalAlert: true });
       } else {
-        await axios.post('/api/qms/audit/attendance', finalData);
+        await axios.post('/api/qms/audit/attendance', finalData, { skipGlobalAlert: true });
       }
       console.log('[AuditAttendance] Save successful');
       dispatch(openSnackbar({ 
@@ -304,20 +333,20 @@ export default function AuditAttendance() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5}>
-          <IconButton onClick={fetchData} color="primary" sx={{ border: '1px solid divider', p: 1 }}><IconRefresh size={20} /></IconButton>
-          {perms.export && <BOSExportButton
-            data={rows}
-            filename="Audit_Attendance"
-            columns={[
-              { header: 'Audit Schedule No', key: 'auditScheduleNo' },
-              { header: 'Employee Code', key: 'employeeCode' },
-              { header: 'Name', key: 'name' },
-              { header: 'Attendance Status', key: 'attendanceStatus' }
-            ]}
-          />}
-          {perms.write && <Button variant="contained" onClick={handleOpenAdd} sx={btnNew}>+ New</Button>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleOpenAdd}
+          hasWritePermission={perms.write}
+          exportData={rows}
+          exportColumns={[
+            { header: 'Audit Schedule No', key: 'auditScheduleNo' },
+            { header: 'Employee Code', key: 'employeeCode' },
+            { header: 'Name', key: 'name' },
+            { header: 'Attendance Status', key: 'attendanceStatus' }
+          ]}
+          exportFilename="Audit_Attendance"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable
@@ -334,7 +363,7 @@ export default function AuditAttendance() {
         renderCell={renderCell}
       />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'Edit Attendance' : 'Add Attendance'} isViewOnly={!perms.write}>
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={handleSave} title={formData.id ? 'View Attendance' : 'Add Attendance'} isViewOnly={!!formData.id || !perms.write}>
         <BOSFormSection title="Details" icon={<IconPlus size={20} />}>
           <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2.5 }}>
             <BOSTextField
@@ -345,6 +374,7 @@ export default function AuditAttendance() {
               onChange={(e) => setFormData({ ...formData, auditScheduleNo: e.target.value })}
               error={!!errors.auditScheduleNo}
               helperText={errors.auditScheduleNo}
+              disabled={!!formData.id}
             >
               {filteredSchedules.length > 0 ? (
                 filteredSchedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo} ({s.startTime})</MenuItem>)
@@ -375,6 +405,7 @@ export default function AuditAttendance() {
                 }}
                 error={!!errors.name}
                 helperText={errors.name}
+                disabled={!!formData.id}
               >
                 {participants.length > 0 ? (
                   participants.map(p => <MenuItem key={p.code + p.name} value={p.name + '|' + p.code}>{p.name} ({p.code})</MenuItem>)
@@ -391,32 +422,21 @@ export default function AuditAttendance() {
             <BOSTextField
               label="In Time"
               value={formData.inTime}
-              disabled={formData.attendanceStatus === 'ABSENT'}
+              disabled={formData.attendanceStatus === 'ABSENT' || !!formData.id}
               InputProps={{ readOnly: true }}
               error={!!errors.inTime}
               helperText={errors.inTime}
             />
 
             <BOSTextField
-              select
               required
+              disabled
               label="Attendance Status"
               value={formData.attendanceStatus}
-              onChange={(e) => {
-                const s = e.target.value;
-                setFormData(prev => ({
-                  ...prev,
-                  attendanceStatus: s,
-                  inTime: s === 'ABSENT' ? '' : (prev.inTime || getSystemTime12h()),
-                  outTime: s === 'ABSENT' ? '' : prev.outTime
-                }));
-              }}
+              InputProps={{ readOnly: true }}
               error={!!errors.attendanceStatus}
               helperText={errors.attendanceStatus}
-            >
-              <MenuItem value="PRESENT">PRESENT</MenuItem>
-              <MenuItem value="ABSENT">ABSENT</MenuItem>
-            </BOSTextField>
+            />
           </Box>
         </BOSFormSection>
       </BOSFormDialog>

@@ -40,6 +40,9 @@ public class AuditSchedule extends BaseAuditEntity {
 
     @Column(name = "CRITERIA_MIN_COUNT")
     private Integer criteriaMinCount;
+
+    @Column(name = "RESCHEDULE_COUNT")
+    private Integer rescheduleCount = 0;
     
     @Column(name = "AUDIT_DATE")
     @Temporal(TemporalType.DATE)
@@ -89,6 +92,16 @@ public class AuditSchedule extends BaseAuditEntity {
 
     @OneToMany(mappedBy = "auditSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditScheduleCriteria> criteriaList = new ArrayList<>();
+
+    @Transient
+    private Integer totalPoint;
+
+    public Integer getRescheduleCount() { return rescheduleCount != null ? rescheduleCount : 0; }
+    public void setRescheduleCount(Integer rescheduleCount) { this.rescheduleCount = rescheduleCount; }
+
+    public Integer getTotalPoint() {
+        return criteriaList != null ? criteriaList.size() : 0;
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { 
   Box, Grid, Stack, Typography, MenuItem, Button, Divider, IconButton, 
@@ -202,6 +202,7 @@ export default function EmployeeMaster() {
   const [searchParams] = useSearchParams();
   const employeeId = searchParams.get('id');
   const { errors, validate, clearErrors } = useBOSValidation();
+  const subsectionsRef = useRef();
   const [form, setForm] = useState(INITIAL);
   const [loading, setLoading] = useState(false);
   const [employeeTypes, setEmployeeTypes] = useState([]);
@@ -210,6 +211,7 @@ export default function EmployeeMaster() {
     departments = [], 
     designations = [], 
     levels = [],
+    designationLevels = [],
     auditTypes = [],
     meetings = [],
     employees = [],
@@ -217,7 +219,9 @@ export default function EmployeeMaster() {
     divisions = [],
     segments = [],
     subSegments = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS', 'SEGMENTS', 'SUB_SEGMENTS']);
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'DESIGNATION_LEVELS', 'AUDIT_TYPE', 'MEETINGS', 'EMPLOYEES', 'GRADES', 'DIVISIONS', 'SEGMENTS', 'SUB_SEGMENTS']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
@@ -304,6 +308,9 @@ export default function EmployeeMaster() {
 
       if (employeeId) {
         await axios.put(`${API_PATHS.HRM.EMPLOYEES}/${employeeId}`, payload);
+        if (subsectionsRef.current) {
+          await subsectionsRef.current.saveAll();
+        }
         dispatch(openSnackbar({ open: true, message: 'Employee Master updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
         const { data } = await axios.post(API_PATHS.HRM.EMPLOYEES, payload);
@@ -461,10 +468,10 @@ export default function EmployeeMaster() {
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconUserPlus size={24} /><Typography variant="h3">{employeeId ? 'Edit Employee' : 'New Employee'}</Typography></Stack>}
       secondary={
         <Stack direction="row" spacing={1.5}>
-          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hr/employee/master')} sx={btnCancel}>Back</Button></Tooltip>
-          {employeeId && <Tooltip title="Delete"><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={btnDelete}>Delete</Button></Tooltip>}
-          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hr/employee/master/create', { replace: true }); }} sx={btnClear}>Clear</Button></Tooltip>
-          <Tooltip title="Save"><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={btnSave}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
+          <Tooltip title="Back to List"><Button variant="contained" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/hr/employee/master')} sx={{ ...btnCancel, px: 2.2, py: 0.75 }}>Back</Button></Tooltip>
+          {employeeId && <Tooltip title="Delete"><Button variant="contained" startIcon={<IconTrash size={18} />} onClick={() => setDeleteOpen(true)} sx={{ ...btnDelete, px: 2.2, py: 0.75 }}>Delete</Button></Tooltip>}
+          <Tooltip title="Clear"><Button variant="contained" startIcon={<IconEraser size={18} />} onClick={() => { setForm(INITIAL); clearErrors(); navigate('/hr/employee/master/create', { replace: true }); }} sx={{ ...btnClear, px: 2.2, py: 0.75 }}>Clear</Button></Tooltip>
+          <Tooltip title="Save"><span><Button variant="contained" startIcon={<IconDeviceFloppy size={18} />} onClick={handleSave} disabled={loading} sx={{ ...btnSave, px: 2.2, py: 0.75 }}>{loading ? 'Saving...' : 'Save'}</Button></span></Tooltip>
         </Stack>
       }
     >
@@ -490,7 +497,7 @@ export default function EmployeeMaster() {
             </R>
             <R>
               <BOSTextField select name="empLevelId" label="Level *" value={form.empLevelId} onChange={h} error={!!errors.empLevelId} helperText={errors.empLevelId}>
-                {levels.map((l) => <MenuItem key={l.rowId} value={l.rowId}>{l.level}</MenuItem>)}
+                {finalLevels.map((l) => <MenuItem key={l.rowId || l.id} value={l.rowId || l.id}>{l.level || l.levelName}</MenuItem>)}
               </BOSTextField>
             </R>
             <R>
@@ -730,7 +737,7 @@ export default function EmployeeMaster() {
           </GridContainer>
         </BOSFormSection>
 
-        <EmployeeSubSections employeeId={employeeId} />
+        <EmployeeSubSections ref={subsectionsRef} employeeId={employeeId} />
 
         {/* ═══ SECTION 16: ABILITY ═══ */}
         <BOSFormSection icon={<IconShieldCheck size={20} color={theme.palette.secondary.main} />} title="Ability">

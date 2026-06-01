@@ -37,7 +37,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     const fetchAreas = async () => {
       try {
         const res = await axios.get(API_PATHS.QMS.AUDIT_AREA);
-        setAuditAreas(res.data);
+        setAuditAreas((res.data || []).filter(a => a && a.status === 'ACTIVE'));
       } catch (error) {
         console.error('Failed to fetch areas:', error);
         setAuditAreas([]);
@@ -133,24 +133,36 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
       delete payload.updatedUser;
 
       if (formData.id) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload, { skipGlobalAlert: true });
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload, { skipGlobalAlert: true });
       }
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit type:', error);
-      const errorMsg = error.response?.data?.message || error.response?.data || 'An error occurred while saving.';
-      if (typeof errorMsg === 'string') {
-        if (errorMsg.includes('auditType')) {
-          setErrors({ auditType: 'Duplicate value! Please check.' });
-        } else if (errorMsg.includes('description')) {
-          setErrors({ description: 'Duplicate value! Please check.' });
-        } else {
-          dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'An error occurred while saving.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        } else if (error.response.data.error) {
+          errorMsg = error.response.data.error;
         }
+      }
+      if (errorMsg.includes('auditType')) {
+        setErrors({ auditType: 'Duplicate value! Please check.' });
+      } else if (errorMsg.includes('description')) {
+        setErrors({ description: 'Duplicate value! Please check.' });
       } else {
-        dispatch(openSnackbar({ open: true, message: 'Duplicate value or error occurred.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+        dispatch(openSnackbar({
+          open: true,
+          message: errorMsg,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        }));
       }
     }
   };

@@ -28,7 +28,8 @@ const isDepartmentMatch = (allowedDepts, empDeptName) => {
   if (!allowedDepts || !allowedDepts.length) return true;
   if (!empDeptName) return false;
   
-  const cleanEmpDept = empDeptName.toUpperCase().trim();
+  const cleanEmpDept = (empDeptName || '').toUpperCase().trim();
+  if (!cleanEmpDept) return false;
   
   // Custom mapping rules for QMS checklist codes vs HRM department names
   const mappings = {
@@ -46,7 +47,9 @@ const isDepartmentMatch = (allowedDepts, empDeptName) => {
   };
 
   return allowedDepts.some(allowedDept => {
+    if (!allowedDept) return false;  // guard: skip null/undefined department names
     const cleanAllowed = allowedDept.toUpperCase().trim();
+    if (!cleanAllowed) return false;
     if (cleanAllowed === cleanEmpDept) return true;
     if (mappings[cleanAllowed] && mappings[cleanAllowed].includes(cleanEmpDept)) return true;
     if (mappings[cleanEmpDept] && mappings[cleanEmpDept].includes(cleanAllowed)) return true;
@@ -210,32 +213,45 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
   };
 
   const columns = [
-    { id: 'seqNo', label: 'Seq No', minWidth: 80 },
+    { id: 'seqNo',         label: 'Seq No',        minWidth: 80  },
     { id: 'checkingPoint', label: 'Checking Point', minWidth: 150 },
-    { id: 'frequency', label: 'Frequency', minWidth: 100 },
-    { id: 'level', label: 'Level', minWidth: 100 },
-    { id: 'department', label: 'Department', minWidth: 120 },
-    { id: 'assignTo', label: 'Assign To', minWidth: 120 },
-    { id: 'assignType', label: 'Assign Type', minWidth: 100 },
-    { id: 'assignDate', label: 'Assign Date', minWidth: 100 },
-    { id: 'assignedBy', label: 'Created By', minWidth: 100 },
-    { id: 'modifiedBy', label: 'Modified By', minWidth: 100 },
-    { id: 'status', label: 'Status', minWidth: 100 }
+    { id: 'frequency',     label: 'Frequency',      minWidth: 100 },
+    { id: 'level',         label: 'Level',          minWidth: 100 },
+    { id: 'department',    label: 'Department',     minWidth: 120 },
+    { id: 'assignTo',      label: 'Assign To',      minWidth: 120 },
+    { id: 'assignType',    label: 'Assign Type',    minWidth: 100 },
+    { id: 'assignDate',    label: 'Assign Date',    minWidth: 110 },
+    { id: 'createdUser',   label: 'Created User',   minWidth: 120 },
+    { id: 'createdDate',   label: 'Created Date',   minWidth: 140 },
+    { id: 'updatedUser',   label: 'Updated User',   minWidth: 120 },
+    { id: 'updatedDate',   label: 'Updated Date',   minWidth: 140 },
+    { id: 'status',        label: 'Status',         minWidth: 100 }
   ];
 
+  const fmtDate = (d) => {
+    if (!d) return '-';
+    try {
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return '-';
+      return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    } catch { return '-'; }
+  };
+
   const rows = assignments.map(a => ({
-    id: a.id,
-    seqNo: a.checklist?.seqNo || '-',
+    id:            a.id,
+    seqNo:         a.checklist?.seqNo || '-',
     checkingPoint: a.checklist?.checkingPoint || '-',
-    frequency: a.checklist?.frequency || '-',
-    level: a.checklist?.levelIds || '-',
-    department: (a.checklist?.departments || []).map(d => d.departmentName).join(', ') || '-',
-    assignTo: a.assignedTo,
-    assignType: a.assignType || 'PRIMARY',
-    assignDate: a.assignedDate ? new Date(a.assignedDate).toLocaleDateString() : '-',
-    assignedBy: a.assignedBy || '-',
-    modifiedBy: '-',
-    status: a.status?.name || 'ACTIVE'
+    frequency:     a.checklist?.frequency || '-',
+    level:         a.checklist?.levelIds || '-',
+    department:    (a.checklist?.departments || []).map(d => d.departmentName).join(', ') || '-',
+    assignTo:      a.assignedTo || '-',
+    assignType:    a.assignType || 'PRIMARY',
+    assignDate:    a.assignedDate ? new Date(a.assignedDate).toLocaleDateString('en-GB') : '-',
+    createdUser:   a.createdUser  || a.createdBy  || a.assignedBy || '-',
+    createdDate:   fmtDate(a.createdDate  || a.createdAt),
+    updatedUser:   a.updatedUser  || a.updatedBy  || '-',
+    updatedDate:   fmtDate(a.updatedDate  || a.updatedAt),
+    status:        a.status?.name || 'ACTIVE'
   }));
 
   const handleEditAssignment = (row) => {

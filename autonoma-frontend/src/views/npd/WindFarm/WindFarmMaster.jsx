@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -136,31 +136,24 @@ export default function WindFarmMaster() {
           <Typography variant="h3">Wind Farm Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchWindFarms} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Wind_Farm_Master"
-            columns={[
-              { header: 'Wind Farm Name', key: 'windFarmName' },
-              { header: 'City', key: 'city' },
-              { header: 'State', key: 'state' },
-              { header: 'Country', key: 'country' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Created Date', key: 'createdAt' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Wind Farm', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchWindFarms}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Wind Farm', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Wind Farm Name', key: 'windFarmName' },
+            { header: 'City', key: 'city' },
+            { header: 'State', key: 'state' },
+            { header: 'Country', key: 'country' },
+            { header: 'Created By', key: 'createdBy' },
+            { header: 'Created Date', key: 'createdAt' }
+          ]}
+          exportFilename="Wind_Farm_Master"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable
