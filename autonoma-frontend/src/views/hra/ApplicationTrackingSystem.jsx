@@ -58,7 +58,8 @@ import {
   BOSTextField,
   BOSDatePicker,
   BOSFileUpload,
-  errorStyle
+  errorStyle,
+  btnNew
 } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -1117,26 +1118,66 @@ export default function ApplicationTrackingSystem() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Call Letter
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleAssignInterview}
+            startIcon={<IconCalendar size={18} />}
+            sx={{
+              borderRadius: '24px',
+              textTransform: 'none',
+              color: 'orange.dark',
+              borderColor: 'orange.main',
+              '&:hover': {
+                borderColor: 'orange.dark',
+                bgcolor: 'orange.light'
+              }
+            }}
+          >
+            Assign Interview
+          </Button>
+          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Offer Letter
+          </Button>
+          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
+            Push To On-Roll
+          </Button>
+          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Cancel Selection
+          </Button>
+          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Edit Candidate
+          </Button>
+
+          {perms.write && (
+            <Tooltip title={shortcutTooltip('Register Candidate', 'Ctrl + N')}>
+              <span>
+                <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
+                  New
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+
           <Tooltip title="Refresh">
-            <IconButton onClick={fetchApplicants} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
+            <IconButton
+              onClick={fetchApplicants}
+              size="small"
+              sx={{
+                ...btnNew,
+                bgcolor: 'primary.main',
+                color: '#fff',
+                p: 1,
+                width: '38px',
+                height: '38px',
+                '&:hover': { bgcolor: 'primary.dark', boxShadow: 4 }
+              }}
+            >
               <IconRefresh size={20} />
             </IconButton>
-          </Tooltip>
-          <Tooltip title={shortcutTooltip('Register Candidate', 'Ctrl + N')}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="medium"
-              onClick={handleOpenAdd}
-              startIcon={<IconPlus size={18} />}
-              sx={{ borderRadius: '8px', textTransform: 'none', px: 2 }}
-            >
-              New
-            </Button>
           </Tooltip>
         </Stack>
       }
@@ -1171,29 +1212,6 @@ export default function ApplicationTrackingSystem() {
         onDeleteRow={handleDeleteRow}
       />
 
-      {/* Bottom Footer Actions */}
-      <Paper elevation={0} sx={{ p: 2, mt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'grey.50', borderRadius: '12px' }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end">
-          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Call Letter
-          </Button>
-          <Button variant="outlined" color="warning" onClick={handleAssignInterview} startIcon={<IconCalendar size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Assign Interview
-          </Button>
-          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Offer Letter
-          </Button>
-          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
-            Push To On-Roll
-          </Button>
-          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Cancel Selection
-          </Button>
-          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Edit Candidate
-          </Button>
-        </Stack>
-      </Paper>
 
       {/* Candidate Registration and Detailed Dialog */}
       <BOSFormDialog
