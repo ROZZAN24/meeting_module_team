@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid, Dialog, DialogTitl
 import { IconTractor, IconPlus, IconX, IconDeviceFloppy } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -184,15 +184,16 @@ export default function Freight() {
                 <BOSTextField name="description" label="Description" value={form.description} onChange={h} multiline rows={3} placeholder="Enter details..." />
               </Grid>
               <Grid item xs={12}>
-                <BOSAutocomplete
-                  label="Status"
+                <BOSStatusField
+                  isCreate={!selectedId}
                   name="status"
+                  label="Status"
                   value={form.status}
-                  options={['Active', 'Inactive']}
-                  onChange={(val) => setForm(p => ({ ...p, status: val || 'Active' }))}
+                  onChange={h}
                 />
               </Grid>
             </Grid>
+            
           </Stack>
         </DialogContent>
         <DialogActions>

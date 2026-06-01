@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, Chip, Box, Popover, Checkbox } from '@mui/material';
-import { IconRefresh, IconEdit, IconUserPlus, IconFileDots, IconClipboardList, IconAdjustmentsHorizontal, IconCheck, IconBan } from '@tabler/icons-react';
+import { Typography, Stack, Chip, Box, Tooltip, IconButton } from '@mui/material';
+import { IconClipboardList, IconCheck, IconBan, IconFileDots, IconUserPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
@@ -8,7 +8,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -35,6 +35,21 @@ const formatDate = (dateVal) => {
   }
 };
 
+// ── DateTime formatter (Date + Time) ────────────────────────────────────────────
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    return `${date} ${hours}:${mins}`;
+  } catch {
+    return '-';
+  }
+};
+
 // ── Column definitions ──────────────────────────────────────────────────────────
 const columns = [
   { id: 'index',        label: 'No',             minWidth: 55  },
@@ -45,7 +60,33 @@ const columns = [
   { id: 'department',   label: 'Department',      minWidth: 160 },
   { id: 'effectiveFrom',label: 'Effective From',  minWidth: 120 },
   { id: 'frequency',    label: 'Frequency',       minWidth: 120 },
-  { id: 'expiryDate',   label: 'Expiry Date',     minWidth: 120 },
+  {
+    id: 'expiryDate',
+    label: 'Expiry Date',
+    minWidth: 120,
+    render: (row) => {
+      const val = row.expiryDate;
+      if (!val || val === '-') return <span>-</span>;
+      const isExpired = row._expiryExpired;
+      return (
+        <Box
+          component="span"
+          sx={{
+            fontWeight: isExpired ? 700 : 400,
+            color: isExpired ? '#C62828' : 'text.primary',
+            bgcolor: isExpired ? '#FFEBEE' : 'transparent',
+            px: isExpired ? 1 : 0,
+            py: isExpired ? 0.4 : 0,
+            borderRadius: isExpired ? '4px' : 0,
+            display: 'inline-block',
+            fontSize: '0.82rem',
+          }}
+        >
+          {val}
+        </Box>
+      );
+    }
+  },
   { id: 'reminderDays', label: 'Reminder Days',   minWidth: 110 },
   { id: 'reminderDate', label: 'Reminder Date',   minWidth: 120 },
   { id: 'stockLink',    label: 'Stock Link',      minWidth: 100 },
@@ -57,18 +98,35 @@ const columns = [
   { id: 'assignTo',     label: 'Assign To',       minWidth: 130 },
   { 
     id: 'status',       
-    label: 'Record Status',   
+    label: 'Status',   
     minWidth: 120,
     render: (row) => {
       const statusText = row.status || 'Active';
-      const isActive = statusText === 'Active';
+      const map = {
+        'Active':      { bg: '#E8F5E9', text: '#2E7D32' },
+        'In Active':   { bg: '#EEEEEE', text: '#616161' },
+        'Pending':     { bg: '#FFEBEE', text: '#C62828' },
+        'Not Assigned':{ bg: '#FFEBEE', text: '#C62828' },
+        'Rejected':    { bg: '#FFEBEE', text: '#C62828' }
+      };
+      const cfg = map[statusText] || { bg: '#FFEBEE', text: '#C62828' };
       return (
         <Chip 
           label={statusText} 
           size="small" 
-          color={isActive ? 'success' : 'error'} 
-          variant="outlined" 
-          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ 
+            minWidth: 140, 
+            maxWidth: 140, 
+            height: 26, 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            justifyContent: 'center', 
+            bgcolor: cfg.bg,
+            color: cfg.text,
+            border: 'none',
+            borderRadius: '4px',
+            '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+          }}
         />
       );
     }
@@ -78,21 +136,34 @@ const columns = [
     label: 'Task Status',     
     minWidth: 120,
     render: (row) => {
-      const statusText = row.taskStatus || 'Pending';
+      const statusText = row._displayTaskStatus || 'UN ASSIGNED';
       const map = {
-        'Completed': { color: 'success' },
-        'Pending': { color: 'warning' },
-        'In Progress': { color: 'info' },
-        'Missed': { color: 'error' }
+        'ASSIGNED':    { bg: '#E8F5E9', text: '#2E7D32' },
+        'UN ASSIGNED':  { bg: '#FFEBEE', text: '#C62828' },
+        'Completed':   { bg: '#E8F5E9', text: '#2E7D32' },
+        'Pending':     { bg: '#FFEBEE', text: '#C62828' },
+        'In Progress': { bg: '#E3F2FD', text: '#1565C0' },
+        'Missed':      { bg: '#FFEBEE', text: '#C62828' }
       };
-      const cfg = map[statusText] || { color: 'default' };
+      const cfg = map[statusText] || { bg: '#F5F5F5', text: '#424242' };
       return (
         <Chip 
           label={statusText} 
           size="small" 
-          color={cfg.color} 
-          variant="outlined" 
-          sx={{ minWidth: 140, maxWidth: 140, height: 26, fontSize: '0.75rem', fontWeight: 600, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ 
+            minWidth: 140, 
+            maxWidth: 140, 
+            height: 26, 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            justifyContent: 'center', 
+            bgcolor: cfg.bg,
+            color: cfg.text,
+            border: 'none',
+            borderRadius: '4px',
+            textTransform: 'uppercase',
+            '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+          }}
         />
       );
     }
@@ -104,19 +175,29 @@ const columns = [
     render: (row) => {
       const statusText = row.verifyStatus || 'Pending for Verify';
       const map = {
-        'Verified': { color: 'success', icon: <IconCheck size={14} /> },
-        'Rejected': { color: 'error', icon: <IconBan size={14} /> },
-        'Pending for Verify': { color: 'warning', icon: null }
+        'Verified': { bg: '#E8F5E9', text: '#2E7D32', icon: <IconCheck size={14} style={{ color: '#2E7D32' }} /> },
+        'Rejected': { bg: '#FFEBEE', text: '#C62828', icon: <IconBan size={14} style={{ color: '#C62828' }} /> },
+        'Pending for Verify': { bg: '#FFF3E0', text: '#E65100', icon: null }
       };
-      const cfg = map[statusText] || { color: 'default', icon: null };
+      const cfg = map[statusText] || { bg: '#F5F5F5', text: '#424242', icon: null };
       return (
         <Chip 
           label={statusText} 
           size="small" 
-          color={cfg.color} 
           icon={cfg.icon} 
-          variant="outlined" 
-          sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+          sx={{ 
+            minWidth: 160, 
+            maxWidth: 160, 
+            height: 26, 
+            fontSize: '0.75rem', 
+            fontWeight: 700, 
+            justifyContent: 'center', 
+            bgcolor: cfg.bg,
+            color: cfg.text,
+            border: 'none',
+            borderRadius: '4px',
+            '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+          }}
         />
       );
     }
@@ -126,7 +207,7 @@ const columns = [
   { id: 'createdUser',  label: 'CREATED USER',    minWidth: 120 },
   { id: 'createdDate',  label: 'CREATED DATE',    minWidth: 140 },
   { id: 'updatedUser',  label: 'UPDATED USER',    minWidth: 120 },
-  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 140 },
+  { id: 'updatedDate',  label: 'UPDATED DATE',    minWidth: 160 },
 ];
 
 // ── Export columns ──────────────────────────────────────────────────────────────
@@ -148,50 +229,47 @@ const exportColumns = [
   { header: 'Carry Forward',      key: 'carryForward' },
   { header: 'Level',              key: 'levelIds' },
   { header: 'Assign To',          key: 'assignTo' },
-  { header: 'Record Status',      key: 'status' },
+  { header: 'Status',             key: 'status' },
   { header: 'Task Status',        key: 'taskStatus' },
   { header: 'Verify Status',      key: 'verifyStatus' },
   { header: 'Verified By',        key: 'verifiedBy' },
-  { header: 'Verified Date',      key: (r) => formatDate(r.verifiedDate) },
+  { header: 'Verified Date',      key: (r) => formatDateTime(r.verifiedDate) },
   { header: 'CREATED USER',       key: 'createdUser' },
-  { header: 'CREATED DATE',       key: (r) => formatDate(r.createdAt) },
+  { header: 'CREATED DATE',       key: (r) => formatDateTime(r.createdAt) },
   { header: 'UPDATED USER',       key: 'updatedUser' },
-  { header: 'UPDATED DATE',       key: (r) => formatDate(r.updatedAt) },
+  { header: 'UPDATED DATE',       key: (r) => formatDateTime(r.updatedAt) },
 ];
 
-// ── Filter config for the global search bar ─────────────────────────────────────
-const filterConfig = [
-  { id: 'category',    label: 'Category',      type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'RENEWAL', label: 'RENEWAL' }, { value: 'CHECK LIST', label: 'CHECK LIST' }
-  ]},
-  { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Pending for Verify', label: 'Pending for Verify' },
-    { value: 'Verified', label: 'Verified' }, { value: 'Rejected', label: 'Rejected' }
-  ]},
-  { id: 'recordStatus', label: 'Record Status', type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'In Active', label: 'In Active' }
-  ]},
-  { id: 'taskStatus',  label: 'Task Status',   type: 'select', isStarred: true, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }, { value: 'In Progress', label: 'In Progress' },
-    { value: 'Completed', label: 'Completed' }, { value: 'Missed', label: 'Missed' }
-  ]},
-  { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'DAILY', label: 'DAILY' }, { value: 'WEEKLY', label: 'WEEKLY' },
-    { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' }, { value: 'MONTHLY', label: 'MONTHLY' },
-    { value: 'QUARTERLY', label: 'QUARTERLY' }, { value: 'HALF YEARLY', label: 'HALF YEARLY' }, { value: 'YEARLY', label: 'YEARLY' }
-  ]},
-  { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }
-  ]},
-  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: [
-    { value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }
-  ]},
-];
+// ── Static filter options (department options are loaded dynamically) ────────────
+const STATIC_FILTER_OPTIONS = {
+  category:    [{ value: 'All', label: 'All' }, { value: 'RENEWAL', label: 'RENEWAL' }, { value: 'CHECK LIST', label: 'CHECK LIST' }],
+  verifyStatus:[{ value: 'All', label: 'All' }, { value: 'Pending for Verify', label: 'Pending for Verify' }, { value: 'Verified', label: 'Verified' }, { value: 'Rejected', label: 'Rejected' }],
+  recordStatus:[{ value: 'All', label: 'All' }, { value: 'Active', label: 'Active' }, { value: 'In Active', label: 'In Active' }],
+  taskStatus:  [{ value: 'All', label: 'All' }, { value: 'Pending', label: 'Pending' }, { value: 'In Progress', label: 'In Progress' }, { value: 'Completed', label: 'Completed' }, { value: 'Missed', label: 'Missed' }],
+  frequency:   [{ value: 'All', label: 'All' }, { value: 'DAILY', label: 'DAILY' }, { value: 'WEEKLY', label: 'WEEKLY' }, { value: 'FORTNIGHTLY', label: 'FORTNIGHTLY' }, { value: 'MONTHLY', label: 'MONTHLY' }, { value: 'QUARTERLY', label: 'QUARTERLY' }, { value: 'HALF YEARLY', label: 'HALF YEARLY' }, { value: 'YEARLY', label: 'YEARLY' }],
+  stockLink:   [{ value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }],
+  photoRequired:[{ value: 'All', label: 'All' }, { value: 'YES', label: 'YES' }, { value: 'NO', label: 'NO' }],
+};
 
 const DEFAULT_FILTERS = {
-  category: 'All', verifyStatus: 'All', recordStatus: 'All',
+  department: 'All', category: 'All', verifyStatus: 'All', recordStatus: 'All',
   taskStatus: 'All', frequency: 'All', stockLink: 'All', photoRequired: 'All',
 };
+
+// Build the filter config from department options (called inside component)
+const buildFilterConfig = (departmentOptions) => [
+  { id: 'department',   label: 'Department',    type: 'select', isStarred: true, defaultValue: 'All', options: [
+    { value: 'All', label: 'All' }, ...departmentOptions
+  ]},
+  { id: 'category',    label: 'Category',      type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.category },
+  { id: 'verifyStatus', label: 'Verify Status', type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.verifyStatus },
+  { id: 'recordStatus', label: 'Record Status', type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.recordStatus },
+  { id: 'taskStatus',  label: 'Task Status',   type: 'select', isStarred: true, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.taskStatus },
+  { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.frequency },
+  { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.stockLink },
+  { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.photoRequired },
+  ...getCommonDateFilters('createdDate', 'updatedDate')
+];
 
 // ==============================|| MASTER CHECKLIST (BOS SOP COMPLIANT) ||============================== //
 
@@ -212,40 +290,28 @@ export default function MasterCheckList() {
   const [loading,          setLoading]          = useState(false);
   const [selectedRow,      setSelectedRow]      = useState(null);
   const [filters,          setFilters]          = useState({ ...DEFAULT_FILTERS });
-  const [cursorPos,        setCursorPos]        = useState({ x: 0, y: 0 });
-  const [showDoubleTap,    setShowDoubleTap]    = useState(false);
+  const [departmentOptions, setDepartmentOptions] = useState([]);
 
-  // Column picker states & toggles
-  const [anchorEl, setAnchorEl] = useState(null);
+  // Column picker state
   const [visibleColumnIds, setVisibleColumnIds] = useState(() => columns.map(c => c.id));
 
-  const handlePopoverOpen = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handlePopoverClose = () => {
-    setAnchorEl(null);
-  };
-  const handleToggleColumn = (colId) => {
-    setVisibleColumnIds((prev) => {
-      if (prev.includes(colId)) {
-        if (colId === 'index' || colId === 'seqNo' || colId === 'checkingPoint') {
-          return prev;
-        }
-        return prev.filter((id) => id !== colId);
-      } else {
-        return [...prev, colId];
-      }
-    });
-  };
-  const handleSelectAllColumns = () => {
-    setVisibleColumnIds(columns.map(c => c.id));
-  };
-
-  // Register global filter bar config
+  // Fetch active departments for the filter dropdown
   useEffect(() => {
-    dispatch(setFilterConfig(filterConfig));
+    axios.get('/api/master/hr/departments/active')
+      .then((res) => {
+        const opts = (Array.isArray(res.data) ? res.data : (res.data?.content || []))
+          .map((d) => ({ value: d.departmentName, label: d.departmentName }))
+          .sort((a, b) => a.label.localeCompare(b.label));
+        setDepartmentOptions(opts);
+      })
+      .catch(() => setDepartmentOptions([]));
+  }, []);
+
+  // Register global filter bar config (rebuilds when department options change)
+  useEffect(() => {
+    dispatch(setFilterConfig(buildFilterConfig(departmentOptions)));
     return () => dispatch(setFilterConfig(null));
-  }, [dispatch]);
+  }, [dispatch, departmentOptions]);
 
   // Sync global search bar filters → local filters
   useEffect(() => {
@@ -271,6 +337,7 @@ export default function MasterCheckList() {
     try {
       const params = {
         page, size,
+        department:   filters.department   !== 'All' ? filters.department   : undefined,
         category:     filters.category     !== 'All' ? filters.category     : undefined,
         verifyStatus: filters.verifyStatus  !== 'All' ? filters.verifyStatus  : undefined,
         status:       filters.recordStatus  !== 'All' ? filters.recordStatus  : undefined,
@@ -293,19 +360,37 @@ export default function MasterCheckList() {
   useEffect(() => { fetchChecklists(); }, [fetchChecklists]);
 
   // ── Resolved rows — flatten computed display fields ───────────────────────────
-  const resolvedRows = useMemo(() => rows.map((row) => ({
-    ...row,
-    department:   (row.departments || []).map(d => d.departmentName).join(', '),
-    effectiveFrom: formatDate(row.effectiveFrom),
-    expiryDate:    formatDate(row.expiryDate),
-    reminderDate:  formatDate(row.reminderDate),
-    verifiedDate:  formatDate(row.verifiedDate),
-    createdUser:   row.createdUser || row.createdBy || '-',
-    createdDate:   formatDate(row.createdAt),
-    updatedUser:   row.updatedUser || row.updatedBy || '-',
-    updatedDate:   formatDate(row.updatedAt),
-    status:        row.status || 'Active',
-  })), [rows]);
+  const resolvedRows = useMemo(() => rows.map((row) => {
+    // Check expiry
+    let expiryExpired = false;
+    if (row.expiryDate) {
+      const exp = new Date(row.expiryDate);
+      if (!isNaN(exp.getTime())) {
+        exp.setHours(23, 59, 59, 999);
+        expiryExpired = exp < new Date();
+      }
+    }
+    
+    // Determine ASSIGNED / UN ASSIGNED based on assignTo field
+    const isAssigned = row.assignTo && row.assignTo !== '-' && row.assignTo.trim() !== '';
+    const displayTaskStatus = isAssigned ? 'ASSIGNED' : 'UN ASSIGNED';
+
+    return {
+      ...row,
+      department:    (row.departments || []).map(d => d.departmentName).join(', '),
+      effectiveFrom: formatDate(row.effectiveFrom),
+      expiryDate:    formatDate(row.expiryDate),
+      _expiryExpired: expiryExpired,
+      _displayTaskStatus: displayTaskStatus,
+      reminderDate:  formatDate(row.reminderDate),
+      verifiedDate:  formatDateTime(row.verifiedDate),
+      createdUser:   row.createdUser || row.createdBy || '-',
+      createdDate:   formatDateTime(row.createdAt),
+      updatedUser:   row.updatedUser || row.updatedBy || '-',
+      updatedDate:   formatDateTime(row.updatedAt),
+      status:        row.status || 'Active',
+    };
+  }), [rows]);
 
   // ── Save / Edit ───────────────────────────────────────────────────────────────
   const handleSave = async (data) => {
@@ -315,7 +400,8 @@ export default function MasterCheckList() {
       const body = Object.fromEntries(
         Object.entries(rawBody).filter(([, v]) => v !== undefined && v !== null && v === v)
       );
-      body.updatedUser = user?.name || user?.id || 'Admin';
+      delete body.createdUser;
+      delete body.updatedUser;
       const qs = new URLSearchParams();
       departments.forEach((d) => qs.append('departments', d));
       await axios.post(`/api/qms/checklist?${qs.toString()}`, body);
@@ -463,135 +549,40 @@ export default function MasterCheckList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton
-              onClick={fetchChecklists}
-              color="primary"
-              size="small"
-              sx={{
-                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-              }}
-            >
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Column Visibility">
-            <IconButton
-              onClick={handlePopoverOpen}
-              color="primary"
-              size="small"
-              sx={{
-                border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-                transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-              }}
-            >
-              <IconAdjustmentsHorizontal size={20} />
-            </IconButton>
-          </Tooltip>
-
-          {perms.export && (
-            <BOSExportButton
-              data={resolvedRows}
-              filename="Master_Check_List"
-              columns={exportColumns}
-            />
-          )}
-
-          <Tooltip title={
+        <BOSTableToolbar
+          onRefresh={fetchChecklists}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Add New Checklist', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          columns={columns}
+          visibleColumnIds={visibleColumnIds}
+          onColumnVisibilityChange={setVisibleColumnIds}
+          requiredColumnIds={['index', 'seqNo', 'checkingPoint']}
+          exportData={resolvedRows}
+          exportColumns={exportColumns}
+          exportFilename="Master_Check_List"
+          hasExportPermission={perms.export}
+          onAmendment={selectedRow ? () => handleAmendment(selectedRow) : null}
+          amendmentDisabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
+          amendmentTooltip={
             !selectedRow
               ? 'Select a row first'
               : selectedRow.verifyStatus !== 'Verified'
               ? 'Checklist must be verified before amendment'
               : `Amendment: ${selectedRow.seqNo || selectedRow.id}`
-          }>
-            <span>
-              <Button
-                variant="outlined"
-                color="warning"
-                size="medium"
-                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
-                startIcon={<IconFileDots size={18} />}
-                onClick={() => selectedRow && handleAmendment(selectedRow)}
-                sx={{
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { transform: 'scale(1.03)' }
-                }}
-              >
-                Amendment
-              </Button>
-            </span>
-          </Tooltip>
-
-          <Tooltip title={
+          }
+          onAssign={selectedRow ? () => handleAssign(selectedRow) : null}
+          assignDisabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
+          assignTooltip={
             !selectedRow
               ? 'Select a row first'
               : selectedRow.verifyStatus !== 'Verified'
               ? 'Checklist must be verified before assigning'
               : `Assign: ${selectedRow.seqNo || selectedRow.id}`
-          }>
-            <span>
-              <Button
-                variant="outlined"
-                color="info"
-                size="medium"
-                disabled={!selectedRow || selectedRow.verifyStatus !== 'Verified'}
-                startIcon={<IconUserPlus size={18} />}
-                onClick={() => selectedRow && handleAssign(selectedRow)}
-                sx={{
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  textTransform: 'none',
-                  transition: 'all 0.2s',
-                  '&:hover': { transform: 'scale(1.03)' }
-                }}
-              >
-                Assign
-              </Button>
-            </span>
-          </Tooltip>
-
-          {perms.write && (
-            <Tooltip title={shortcutTooltip('Add New Checklist', 'Ctrl + N')}>
-              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                + New
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+          }
+        />
       }
     >
-      {/* ── Cursor-following 'Double tap' label ── */}
-      {showDoubleTap && (
-        <Box
-          sx={{
-            position: 'fixed',
-            left: cursorPos.x + 14,
-            top: cursorPos.y - 28,
-            bgcolor: 'grey.800',
-            color: '#fff',
-            px: 1,
-            py: 0.3,
-            borderRadius: 1,
-            fontSize: '0.7rem',
-            fontWeight: 600,
-            pointerEvents: 'none',
-            zIndex: 9999,
-            letterSpacing: 0.4,
-            userSelect: 'none',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          Double tap
-        </Box>
-      )}
-
       <BOSDataTable
         columns={tableColumns}
         rows={resolvedRows}
@@ -608,9 +599,6 @@ export default function MasterCheckList() {
         }}
         selectedRowId={selectedRow?.id}
         actionColumn={actionColumn}
-        onRowMouseEnter={() => setShowDoubleTap(true)}
-        onRowMouseLeave={() => setShowDoubleTap(false)}
-        onRowMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
       />
 
       <AddCheckListDialog
@@ -627,80 +615,6 @@ export default function MasterCheckList() {
         checklistId={selectedRow?.id}
         initialData={selectedRow}
       />
-
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={handlePopoverClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            p: 2,
-            width: 280,
-            maxHeight: 450,
-            boxShadow: '0px 8px 24px rgba(0, 0, 0, 0.12)',
-            borderRadius: '12px',
-            border: '1px solid',
-            borderColor: 'divider',
-            display: 'flex',
-            flexDirection: 'column',
-          }
-        }}
-      >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Toggle Columns</Typography>
-          <Button size="small" onClick={handleSelectAllColumns} sx={{ textTransform: 'none', fontWeight: 600 }}>
-            Show All
-          </Button>
-        </Stack>
-
-        <Box sx={{ overflowY: 'auto', flex: 1, py: 1, my: 1, pr: 0.5, '&::-webkit-scrollbar': { width: '6px' }, '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: '4px' } }}>
-          <Stack spacing={0.5}>
-            {columns.map((col) => {
-              const isRequired = col.id === 'index' || col.id === 'seqNo' || col.id === 'checkingPoint';
-              return (
-                <Box
-                  key={col.id}
-                  onClick={() => !isRequired && handleToggleColumn(col.id)}
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: '6px',
-                    cursor: isRequired ? 'default' : 'pointer',
-                    bgcolor: isRequired ? 'grey.50' : 'transparent',
-                    opacity: isRequired ? 0.7 : 1,
-                    '&:hover': {
-                      bgcolor: isRequired ? 'grey.50' : 'grey.100',
-                    }
-                  }}
-                >
-                  <Typography variant="body2" sx={{ fontWeight: isRequired ? 600 : 400 }}>
-                    {col.label}
-                  </Typography>
-                  <Checkbox
-                    size="small"
-                    checked={visibleColumnIds.includes(col.id)}
-                    disabled={isRequired}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={() => handleToggleColumn(col.id)}
-                    sx={{ p: 0.5 }}
-                  />
-                </Box>
-              );
-            })}
-          </Stack>
-        </Box>
-      </Popover>
     </MainCard>
   );
 }

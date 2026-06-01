@@ -11,7 +11,12 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import {
+  BOSDataTable,
+  btnExport,
+  btnNew,
+  BOSTableToolbar
+} from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -121,7 +126,22 @@ export default function AuditTypeMaster() {
       fetchAuditTypes();
     } catch (error) {
       console.error('Failed to delete audit type:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'Failed to delete audit type.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        }
+      }
+      dispatch(openSnackbar({
+        open: true,
+        message: errorMsg,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 
@@ -198,27 +218,20 @@ export default function AuditTypeMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchAuditTypes} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Type_Details"
-            columns={[
-              { header: 'Audit Type', key: 'auditType' },
-              { header: 'Standard', key: 'standard' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchAuditTypes}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Audit Type', key: 'auditType' },
+            { header: 'Standard', key: 'standard' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Audit_Type_Details"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

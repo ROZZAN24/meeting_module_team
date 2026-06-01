@@ -15,7 +15,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, BOSFormSection, btnExport, btnNew, getPhotoUrl, btnSave, btnCancel } from 'ui-component/bos';
+import { BOSDataTable, BOSFormSection, getPhotoUrl, btnSave, btnCancel, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import { useLookups } from 'hooks/useLookups';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -25,8 +25,8 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 const columns = [
   { id: 'index', label: 'Sno', minWidth: 50 },
   { id: 'photo', label: 'PHOTO', minWidth: 80 },
-  { id: 'firstName', label: 'First Name', required: true, minWidth: 120 },
-  { id: 'lastName', label: 'Last Name', required: true, minWidth: 120 },
+  { id: 'employeeName', label: 'Emp Name', minWidth: 150 },
+  { id: 'fatherHusbandName', label: 'Father Name', minWidth: 150 },
   { id: 'designationId', label: 'Designation', minWidth: 150 },
   { id: 'gradeCode', label: 'Grade', required: true, minWidth: 100 },
   { id: 'departmentId', label: 'Department', required: true, minWidth: 150 },
@@ -75,13 +75,19 @@ export default function EmployeeList() {
     departments = [], 
     designations = [], 
     levels = [],
+    designationLevels = [],
     users = [],
     grades = []
-  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'USERS', 'GRADES']);
+  } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'LEVELS', 'DESIGNATION_LEVELS', 'USERS', 'GRADES']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   const getDeptName = (id) => String(departments.find(d => String(d.id) === String(id))?.departmentName || id || '-');
   const getDesigName = (id) => String(designations.find(d => String(d.id) === String(id))?.designationName || id || '-');
-  const getLevelName = (id) => String(levels.find(l => String(l.rowId) === String(id))?.level || id || '-');
+  const getLevelName = (id) => {
+    const found = finalLevels.find(l => String(l.rowId || l.id) === String(id));
+    return String(found?.level || found?.levelName || id || '-');
+  };
   const getUnitName = (id) => String([{ id: 1, name: 'UNIT 1' }, { id: 2, name: 'UNIT 2' }].find(u => String(u.id) === String(id))?.name || id || '-');
 
   // Helper: format manager dropdown label as "Name - EmpCode / Designation / Level"
@@ -264,6 +270,7 @@ export default function EmployeeList() {
         firstName: getFirstName(row),
         lastName: getLastName(row),
         employeeName: row.employeeName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '-',
+        fatherHusbandName: row.fatherHusbandName || '-',
         departmentId: getDeptName(row.departmentId),
         designationId: getDesigName(row.designationId),
         empLevelId: getLevelName(row.empLevelId),
@@ -279,6 +286,8 @@ export default function EmployeeList() {
   const handleExport = () => {
     const exportData = resolvedRows.map((r, i) => ({
       'Sno': i + 1,
+      'Emp Name': r.employeeName,
+      'Father Name': r.fatherHusbandName,
       'First Name': r.firstName,
       'Last Name': r.lastName,
       'Designation': r.designationId,
@@ -312,50 +321,25 @@ export default function EmployeeList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchEmployees} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && (
-            <BOSExportButton
-              data={resolvedRows}
-              filename="Employee_Master"
-              columns={[
-                { header: 'Emp Code', key: 'empCode' },
-                { header: 'First Name', key: 'firstName' },
-                { header: 'Last Name', key: 'lastName' },
-                { header: 'Status', key: 'status' }
-              ]}
-            />
-          )}
-          {perms.write && (
-            <Button 
-              variant="contained" 
-              color="secondary" 
-              size="medium" 
-              onClick={handleMapManagerOpen} 
-              sx={{
-                ...btnNew,
-                backgroundColor: 'secondary.main',
-                '&:hover': { backgroundColor: 'secondary.dark' }
-              }}
-            >
-              Map Manager
-            </Button>
-          )}
-          {perms.write && (
-            <Tooltip title={shortcutTooltip('Create New Employee', 'Ctrl + N')}>
-              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                + New
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchEmployees}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Employee', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          columns={columns}
+          exportData={resolvedRows}
+          exportColumns={[
+            { header: 'Emp Code', key: 'empCode' },
+            { header: 'Emp Name', key: 'employeeName' },
+            { header: 'Father Name', key: 'fatherHusbandName' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Employee_Master"
+          hasExportPermission={perms.export}
+          onMapManager={perms.write ? handleMapManagerOpen : null}
+          mapManagerDisabled={!selectedRow}
+          mapManagerTooltip={selectedRow ? 'Map Reporting Managers' : 'Select row first'}
+        />
       }
     >
       <BOSDataTable

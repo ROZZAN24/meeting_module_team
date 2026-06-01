@@ -160,7 +160,9 @@ export default function NavCollapse({ menu, level, parentId }) {
   useEffect(() => {
     compareSize();
     window.addEventListener('resize', compareSize);
-    window.removeEventListener('resize', compareSize);
+    return () => {
+      window.removeEventListener('resize', compareSize);
+    };
   }, []);
 
   useEffect(() => {
@@ -268,7 +270,14 @@ export default function NavCollapse({ menu, level, parentId }) {
         </ListItemIcon>
       )}
       {(drawerOpen || (!drawerOpen && level !== 1)) && (
-        <Tooltip title={menu.pageCode ? `Code: ${menu.pageCode}` : <FormattedMessage id={menu.title} />} disableHoverListener={menu.pageCode ? false : !hoverStatus}>
+        <Tooltip 
+          title={
+            <span>
+              <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
+            </span>
+          } 
+          disableHoverListener={false}
+        >
           <ListItemText
             primary={
               <Typography
@@ -290,7 +299,7 @@ export default function NavCollapse({ menu, level, parentId }) {
                   }
                 }}
               >
-                <FormattedMessage id={menu.title} />
+                <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
               </Typography>
             }
             secondary={
@@ -374,8 +383,8 @@ export default function NavCollapse({ menu, level, parentId }) {
       id={`boundary-${popperId}`}
       disableRipple
       selected={isSelected}
-      onMouseEnter={handleHover}
-      onMouseLeave={handleClosePopper}
+      onMouseEnter={handleMouseEnterHorizontal}
+      onMouseLeave={handleMouseLeaveHorizontal}
       onClick={handleHover}
       aria-describedby={popperId}
       className={anchorEl ? 'Mui-selected' : ''}
@@ -385,7 +394,11 @@ export default function NavCollapse({ menu, level, parentId }) {
       )}
       {menu.pageCode ? (
         <Tooltip 
-          title={`Code: ${menu.pageCode}`} 
+          title={
+            <span>
+              <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
+            </span>
+          } 
           placement="top" 
           arrow
           slotProps={{
@@ -400,20 +413,31 @@ export default function NavCollapse({ menu, level, parentId }) {
             sx={{ mb: 0.25 }}
             primary={
               <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
-                <FormattedMessage id={menu.title} />
+                <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
               </Typography>
             }
           />
         </Tooltip>
       ) : (
-        <ListItemText
-          sx={{ mb: 0.25 }}
-          primary={
-            <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+        <Tooltip
+          title={
+            <span>
               <FormattedMessage id={menu.title} />
-            </Typography>
+            </span>
           }
-        />
+          placement="top"
+          arrow
+          slotProps={{ popper: { sx: { zIndex: 2500 } } }}
+        >
+          <ListItemText
+            sx={{ mb: 0.25 }}
+            primary={
+              <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
+                <FormattedMessage id={menu.title} />
+              </Typography>
+            }
+          />
+        </Tooltip>
       )}
       {openMini ? <IconChevronRight stroke={1.5} size="16px" /> : <IconChevronDown stroke={1.5} size="16px" />}
 
@@ -434,6 +458,8 @@ export default function NavCollapse({ menu, level, parentId }) {
               }
             }
           ]}
+          onMouseEnter={handlePopperMouseEnterHorizontal}
+          onMouseLeave={handleMouseLeaveHorizontal}
         >
           {({ TransitionProps }) => (
             <Transitions in={openMini} {...TransitionProps}>

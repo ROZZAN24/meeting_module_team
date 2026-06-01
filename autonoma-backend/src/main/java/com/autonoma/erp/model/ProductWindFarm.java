@@ -3,51 +3,29 @@ package com.autonoma.erp.model;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "NPD_WIND_FARM")
 @Getter
 @Setter
-public class ProductWindFarm {
+public class ProductWindFarm extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "wind_farm_name", nullable = false, unique = true, length = 100)
+    @Column(name = "WIND_FARM_NAME", nullable = false, unique = true, length = 100)
     private String windFarmName;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "CITY", nullable = false, length = 100)
     private String city;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "STATE", nullable = false, length = 100)
     private String state;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "COUNTRY", nullable = false, length = 100)
     private String country;
 
-    @Column(name = "created_by", length = 100)
-    private String createdBy;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_by", length = 100)
-    private String updatedBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 }

@@ -1,0 +1,1151 @@
+-- V004__Employee_Module.sql
+-- Phase 4: Employee Core HR Schema Standardization
+-- Renames and normalizes:
+-- 1. HR_EMPLOYEE_MASTER -> HR_EMPLOYEE
+-- 2. HR_EMPLOYEE_PERSONAL_DETAIL -> HR_EMPLOYEE_PERSONAL
+-- 3. EMPLOYEE_MANAGER_MAPPING -> HR_EMPLOYEE_MANAGER_MAPPING
+-- 4. Standardizes columns across all 14 employee tables to UPPERCASE
+-- 5. Standardizes datatypes to NVARCHAR and sizes file paths to NVARCHAR(1000)
+-- 6. Adds standard audit columns (CREATED_BY, CREATED_DATE, UPDATED_BY, UPDATED_DATE, IS_ACTIVE) where missing
+
+-- ==========================================
+-- Drop referencing Foreign Key constraints dynamically to avoid cascade/drop errors
+-- ==========================================
+DECLARE @sql NVARCHAR(MAX) = N'';
+SELECT @sql += N'ALTER TABLE ' + QUOTENAME(OBJECT_SCHEMA_NAME(parent_object_id)) + '.' + QUOTENAME(OBJECT_NAME(parent_object_id)) + 
+               ' DROP CONSTRAINT ' + QUOTENAME(name) + ';' + CHAR(13) + CHAR(10)
+FROM sys.foreign_keys
+WHERE referenced_object_id IN (
+    OBJECT_ID('HR_EMPLOYEE_MASTER'),
+    OBJECT_ID('hrm_employee_master'),
+    OBJECT_ID('HR_EMPLOYEE_PERSONAL_DETAIL'),
+    OBJECT_ID('hrm_employee_personal_detail'),
+    OBJECT_ID('HR_EMPLOYEE_CONTACT'),
+    OBJECT_ID('hrm_employee_contact'),
+    OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE'),
+    OBJECT_ID('HR_EMPLOYEE_EDUCATION'),
+    OBJECT_ID('HR_EMPLOYEE_EXPERIENCE'),
+    OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT'),
+    OBJECT_ID('HR_EMPLOYEE_PASSPORT'),
+    OBJECT_ID('HR_EMPLOYEE_DEPENDENT'),
+    OBJECT_ID('HR_EMPLOYEE_ASSET'),
+    OBJECT_ID('HR_EMPLOYEE_KYC'),
+    OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT'),
+    OBJECT_ID('HR_EMPLOYEE_ACTIVITY'),
+    OBJECT_ID('EMPLOYEE_MANAGER_MAPPING')
+);
+IF @sql <> N''
+BEGIN
+    EXEC sp_executesql @sql;
+END
+GO
+
+-- ==========================================
+-- 1. HR_EMPLOYEE (from HR_EMPLOYEE_MASTER / hrm_employee_master)
+-- ==========================================
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
+BEGIN
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_EMPLOYEE_MASTER', 'HR_EMPLOYEE';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hrm_employee_master', 'HR_EMPLOYEE';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('HR_EMPLOYEE_MASTER', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NULL
+        EXEC sp_rename 'HR_EMPLOYEE_MASTER', 'HR_EMPLOYEE';
+    IF OBJECT_ID('hrm_employee_master', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NULL
+        EXEC sp_rename 'hrm_employee_master', 'HR_EMPLOYEE';
+END
+GO
+
+-- Rename columns to UPPERCASE
+IF COL_LENGTH('HR_EMPLOYEE', 'emp_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.emp_code', 'EMP_CODE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'old_emp_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.old_emp_code', 'OLD_EMP_CODE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'title') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.title', 'TITLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'employee_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.employee_name', 'EMPLOYEE_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'first_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.first_name', 'FIRST_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'last_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.last_name', 'LAST_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'father_husband_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.father_husband_name', 'FATHER_HUSBAND_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'category_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.category_id', 'CATEGORY_ID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'emp_level_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.emp_level_id', 'EMP_LEVEL_ID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'employee_type_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.employee_type_id', 'EMPLOYEE_TYPE_ID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'grade_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.grade_code', 'GRADE_CODE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'unit_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.unit_id', 'UNIT_ID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'department_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.department_id', 'DEPARTMENT_ID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'designation_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.designation_id', 'DESIGNATION_ID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'employee_photo_upload') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.employee_photo_upload', 'EMPLOYEE_PHOTO_UPLOAD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'employee_signature_upload') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.employee_signature_upload', 'EMPLOYEE_SIGNATURE_UPLOAD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'nda_upload') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.nda_upload', 'NDA_UPLOAD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'fitness_certificate_upload') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.fitness_certificate_upload', 'FITNESS_CERTIFICATE_UPLOAD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'vertical_head') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.vertical_head', 'VERTICAL_HEAD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'hr_manager') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.hr_manager', 'HR_MANAGER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'office_mail') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.office_mail', 'OFFICE_MAIL', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'office_mail_password') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.office_mail_password', 'OFFICE_MAIL_PASSWORD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'pf_toggle') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.pf_toggle', 'PF_TOGGLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'esi_toggle') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.esi_toggle', 'ESI_TOGGLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'p_tax_toggle') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.p_tax_toggle', 'P_TAX_TOGGLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'bonus_toggle') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.bonus_toggle', 'BONUS_TOGGLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'ot_toggle') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.ot_toggle', 'OT_TOGGLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'ot_factorial') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.ot_factorial', 'OT_FACTORIAL', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'lom_deduction') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.lom_deduction', 'LOM_DEDUCTION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'lom_allow') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.lom_allow', 'LOM_ALLOW', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'lta_eligible') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.lta_eligible', 'LTA_ELIGIBLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'pf_restriction') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.pf_restriction', 'PF_RESTRICTION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'permission_toggle') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.permission_toggle', 'PERMISSION_TOGGLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'permission_limit') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.permission_limit', 'PERMISSION_LIMIT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'vendor_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.vendor_name', 'VENDOR_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'refer_mode') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.refer_mode', 'REFER_MODE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'reference_comments') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.reference_comments', 'REFERENCE_COMMENTS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'home_manager') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.home_manager', 'HOME_MANAGER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'business_manager') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.business_manager', 'BUSINESS_MANAGER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'supplier_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.supplier_name', 'SUPPLIER_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'date_of_joining') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.date_of_joining', 'DATE_OF_JOINING', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'probation_period') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.probation_period', 'PROBATION_PERIOD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'confirmation_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.confirmation_date', 'CONFIRMATION_DATE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'induction_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.induction_status', 'INDUCTION_STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'exit_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.exit_date', 'EXIT_DATE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'exit_reason') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.exit_reason', 'EXIT_REASON', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'exit_comments') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.exit_comments', 'EXIT_COMMENTS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'rejoining_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.rejoining_date', 'REJOINING_DATE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'grace_minutes') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.grace_minutes', 'GRACE_MINUTES', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'petrol_mode') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.petrol_mode', 'PETROL_MODE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'petrol_allowance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.petrol_allowance', 'PETROL_ALLOWANCE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'shift') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.shift', 'SHIFT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'shift_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.shift_name', 'SHIFT_NAME', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'shift_duration') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.shift_duration', 'SHIFT_DURATION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_auditor') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_auditor', 'IS_AUDITOR', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'auditor_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.auditor_type', 'AUDITOR_TYPE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'auditor_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.auditor_file_info', 'AUDITOR_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_auditee') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_auditee', 'IS_AUDITEE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'auditee_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.auditee_type', 'AUDITEE_TYPE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'auditee_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.auditee_file_info', 'AUDITEE_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_ncr_approver') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_ncr_approver', 'IS_NCR_APPROVER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'ncr_approver_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.ncr_approver_type', 'NCR_APPROVER_TYPE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'ncr_approver_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.ncr_approver_file_info', 'NCR_APPROVER_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_chaired') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_chaired', 'IS_CHAIRED', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'chaired_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.chaired_type', 'CHAIRED_TYPE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'chaired_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.chaired_file_info', 'CHAIRED_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_host') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_host', 'IS_HOST', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'host_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.host_type', 'HOST_TYPE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'host_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.host_file_info', 'HOST_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_participants') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_participants', 'IS_PARTICIPANTS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'participants_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.participants_type', 'PARTICIPANTS_TYPE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'participants_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.participants_file_info', 'PARTICIPANTS_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'segment') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.segment', 'SEGMENT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'sub_segment') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.sub_segment', 'SUB_SEGMENT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_first_aid') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_first_aid', 'IS_FIRST_AID', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'first_aid_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.first_aid_file_info', 'FIRST_AID_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_fire_fighter') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_fire_fighter', 'IS_FIRE_FIGHTER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'fire_fighter_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.fire_fighter_file_info', 'FIRE_FIGHTER_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_two_wheeler') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_two_wheeler', 'IS_TWO_WHEELER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'two_wheeler_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.two_wheeler_file_info', 'TWO_WHEELER_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_four_wheeler') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_four_wheeler', 'IS_FOUR_WHEELER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'four_wheeler_file_info') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.four_wheeler_file_info', 'FOUR_WHEELER_FILE_INFO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_induction_eligible') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_induction_eligible', 'IS_INDUCTION_ELIGIBLE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_interviewer') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_interviewer', 'IS_INTERVIEWER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_enquiry_assignee') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_enquiry_assignee', 'IS_ENQUIRY_ASSIGNEE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'is_pr_assignee') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.is_pr_assignee', 'IS_PR_ASSIGNEE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'applicant_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.applicant_date', 'APPLICANT_DATE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'age') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.age', 'AGE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'position_look_for') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.position_look_for', 'POSITION_LOOK_FOR', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'call_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.call_status', 'CALL_STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'interview_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.interview_status', 'INTERVIEW_STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'offer_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.offer_status', 'OFFER_STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'verification_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.verification_status', 'VERIFICATION_STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'payslip_path') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.payslip_path', 'PAYSLIP_PATH', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.status', 'STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.created_by', 'CREATED_BY', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.created_at', 'CREATED_DATE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.updated_by', 'UPDATED_BY', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.updated_at', 'UPDATED_DATE', 'COLUMN';
+
+-- Self-assessment Q&A columns
+IF COL_LENGTH('HR_EMPLOYEE', 'q1_native') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q1_native', 'Q1_NATIVE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q2_present_address') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q2_present_address', 'Q2_PRESENT_ADDRESS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q3_permanent_address') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q3_permanent_address', 'Q3_PERMANENT_ADDRESS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q4_father_occupation') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q4_father_occupation', 'Q4_FATHER_OCCUPATION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q5_mother_occupation') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q5_mother_occupation', 'Q5_MOTHER_OCCUPATION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q6_marital_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q6_marital_status', 'Q6_MARITAL_STATUS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q7_spouse_occupation') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q7_spouse_occupation', 'Q7_SPOUSE_OCCUPATION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q8_children') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q8_children', 'Q8_CHILDREN', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q9_has_relatives') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q9_has_relatives', 'Q9_HAS_RELATIVES', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q10_relatives_details') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q10_relatives_details', 'Q10_RELATIVES_DETAILS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q11_siblings_occupations') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q11_siblings_occupations', 'Q11_SIBLINGS_OCCUPATIONS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q12_has_two_wheeler') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q12_has_two_wheeler', 'Q12_HAS_TWO_WHEELER', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q13_has_android_phone') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q13_has_android_phone', 'Q13_HAS_ANDROID_PHONE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q14_knows_car_driving') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q14_knows_car_driving', 'Q14_KNOWS_CAR_DRIVING', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q15_willing_to_travel') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q15_willing_to_travel', 'Q15_WILLING_TO_TRAVEL', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q16_covid_vaccination') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q16_covid_vaccination', 'Q16_COVID_VACCINATION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q17_positive_points') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q17_positive_points', 'Q17_POSITIVE_POINTS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q18_negative_points') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q18_negative_points', 'Q18_NEGATIVE_POINTS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q19_life_goals') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q19_life_goals', 'Q19_LIFE_GOALS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q20_improvement_suggestions') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q20_improvement_suggestions', 'Q20_IMPROVEMENT_SUGGESTIONS', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q21_is_experienced') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q21_is_experienced', 'Q21_IS_EXPERIENCED', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q22_total_experience') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q22_total_experience', 'Q22_TOTAL_EXPERIENCE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q23_core_experience') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q23_core_experience', 'Q23_CORE_EXPERIENCE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q24_prev_net_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q24_prev_net_salary', 'Q24_PREV_NET_SALARY', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q25_prev_gross_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q25_prev_gross_salary', 'Q25_PREV_GROSS_SALARY', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q26_expected_net_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q26_expected_net_salary', 'Q26_EXPECTED_NET_SALARY', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q27_expected_gross_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q27_expected_gross_salary', 'Q27_EXPECTED_GROSS_SALARY', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q28_pf_higher_pension') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q28_pf_higher_pension', 'Q28_PF_HIGHER_PENSION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q29_pf_deduction_amount') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q29_pf_deduction_amount', 'Q29_PF_DEDUCTION_AMOUNT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q30_alternative_department') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q30_alternative_department', 'Q30_ALTERNATIVE_DEPARTMENT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q31_prev_location') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q31_prev_location', 'Q31_PREV_LOCATION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q32_prev_shift') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q32_prev_shift', 'Q32_PREV_SHIFT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q33_reason_for_leaving') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q33_reason_for_leaving', 'Q33_REASON_FOR_LEAVING', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q34_notice_period') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q34_notice_period', 'Q34_NOTICE_PERIOD', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q35_prev_dept_position') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q35_prev_dept_position', 'Q35_PREV_DEPT_POSITION', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q36_prev_dept_count') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q36_prev_dept_count', 'Q36_PREV_DEPT_COUNT', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q37_prev_reporting_to') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q37_prev_reporting_to', 'Q37_PREV_REPORTING_TO', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q38_handle_mistake') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q38_handle_mistake', 'Q38_HANDLE_MISTAKE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q39_handle_opinion_difference') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q39_handle_opinion_difference', 'Q39_HANDLE_OPINION_DIFFERENCE', 'COLUMN';
+IF COL_LENGTH('HR_EMPLOYEE', 'q40_computer_self_rating') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE.q40_computer_self_rating', 'Q40_COMPUTER_SELF_RATING', 'COLUMN';
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    -- Drop unique constraint/index on EMP_CODE dynamically to allow type alteration
+    DECLARE @drop_uq NVARCHAR(MAX) = N'';
+    SELECT @drop_uq += N'ALTER TABLE [HR_EMPLOYEE] DROP CONSTRAINT ' + QUOTENAME(dc.name) + ';' + CHAR(13) + CHAR(10)
+    FROM sys.key_constraints dc
+    INNER JOIN sys.index_columns ic ON dc.parent_object_id = ic.object_id AND dc.unique_index_id = ic.index_id
+    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE dc.parent_object_id = OBJECT_ID('HR_EMPLOYEE')
+      AND c.name = 'EMP_CODE';
+    IF @drop_uq <> N'' EXEC sp_executesql @drop_uq;
+
+    DECLARE @drop_idx NVARCHAR(MAX) = N'';
+    SELECT @drop_idx += N'DROP INDEX ' + QUOTENAME(i.name) + ' ON [HR_EMPLOYEE];' + CHAR(13) + CHAR(10)
+    FROM sys.indexes i
+    INNER JOIN sys.index_columns ic ON i.object_id = ic.object_id AND i.index_id = ic.index_id
+    INNER JOIN sys.columns c ON ic.object_id = c.object_id AND ic.column_id = c.column_id
+    WHERE i.object_id = OBJECT_ID('HR_EMPLOYEE')
+      AND c.name = 'EMP_CODE'
+      AND i.is_primary_key = 0
+      AND i.is_unique_constraint = 0;
+    IF @drop_idx <> N'' EXEC sp_executesql @drop_idx;
+
+    -- Size modification: Convert upload columns to standard NVARCHAR(1000) instead of MAX
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN EMP_CODE NVARCHAR(50) NOT NULL;
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN EMPLOYEE_NAME NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN FIRST_NAME NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN LAST_NAME NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN EMPLOYEE_PHOTO_UPLOAD NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN EMPLOYEE_SIGNATURE_UPLOAD NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN NDA_UPLOAD NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN FITNESS_CERTIFICATE_UPLOAD NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN PAYSLIP_PATH NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE', 'IS_ACTIVE') IS NULL
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE ADD IS_ACTIVE BIT DEFAULT 1;
+    END
+END
+GO
+
+-- Standardize PK for HR_EMPLOYEE
+IF OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    DECLARE @emp_pk NVARCHAR(256);
+    SELECT TOP 1 @emp_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE') AND type = 'PK';
+    IF @emp_pk IS NOT NULL AND @emp_pk <> 'PK_HR_EMPLOYEE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE'))
+    BEGIN
+        DECLARE @drop_emp_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE DROP CONSTRAINT ' + @emp_pk;
+        EXEC(@drop_emp_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE ADD CONSTRAINT PK_HR_EMPLOYEE PRIMARY KEY (id);
+    END
+
+    -- Re-create Standard Unique Constraint UQ_HR_EMPLOYEE_EMP_CODE on EMP_CODE column
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE') AND name = 'UQ_HR_EMPLOYEE_EMP_CODE')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE ADD CONSTRAINT UQ_HR_EMPLOYEE_EMP_CODE UNIQUE (EMP_CODE);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 2. HR_EMPLOYEE_PERSONAL (from HR_EMPLOYEE_PERSONAL_DETAIL / hrm_employee_personal_detail)
+-- ==========================================
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
+BEGIN
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'HR_EMPLOYEE_PERSONAL_DETAIL', 'HR_EMPLOYEE_PERSONAL';
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hrm_employee_personal_detail', 'HR_EMPLOYEE_PERSONAL';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('HR_EMPLOYEE_PERSONAL_DETAIL', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NULL
+        EXEC sp_rename 'HR_EMPLOYEE_PERSONAL_DETAIL', 'HR_EMPLOYEE_PERSONAL';
+    IF OBJECT_ID('hrm_employee_personal_detail', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NULL
+        EXEC sp_rename 'hrm_employee_personal_detail', 'HR_EMPLOYEE_PERSONAL';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'gender') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.gender', 'GENDER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'birth_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.birth_date', 'BIRTH_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'marital_status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.marital_status', 'MARITAL_STATUS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'marriage_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.marriage_date', 'MARRIAGE_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'number_of_children') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.number_of_children', 'NUMBER_OF_CHILDREN', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'email_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.email_id', 'PERSONAL_EMAIL', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'passport_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.passport_number', 'PASSPORT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'passport_issue_city') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.passport_issue_city', 'PASSPORT_ISSUE_CITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'nationality') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.nationality', 'NATIONALITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'blood_group') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.blood_group', 'BLOOD_GROUP', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'religion') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.religion', 'RELIGION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'region') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.region', 'REGION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'height') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.height', 'HEIGHT', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'weight') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.weight', 'WEIGHT', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'shirt_size') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.shirt_size', 'SHIRT_SIZE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'pant_size') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.pant_size', 'PANT_SIZE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'shoe_size') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.shoe_size', 'SHOE_SIZE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'insurance_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.insurance_number', 'INSURANCE_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'esic_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.esic_number', 'ESIC_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'pf_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.pf_number', 'PF_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'insurance_expiry_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.insurance_expiry_date', 'INSURANCE_EXPIRY_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'uan_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.uan_number', 'UAN_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'pan_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.pan_number', 'PAN_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'aadhar_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.aadhar_number', 'AADHAR_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'driving_license_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.driving_license_number', 'DRIVING_LICENSE_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'license_expiry_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.license_expiry_date', 'LICENSE_EXPIRY_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'election_card_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.election_card_number', 'ELECTION_CARD_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'ration_card_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.ration_card_number', 'RATION_CARD_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'company_issued_mobile') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.company_issued_mobile', 'COMPANY_ISSUED_MOBILE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'mobile_deduction') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.mobile_deduction', 'MOBILE_DEDUCTION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'canteen_allowance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.canteen_allowance', 'CANTEEN_ALLOWANCE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'loan_installment_month') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.loan_installment_month', 'LOAN_INSTALLMENT_MONTH', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PERSONAL.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN GENDER NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN MARITAL_STATUS NVARCHAR(30);
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN PERSONAL_EMAIL NVARCHAR(255);
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_PERSONAL', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_PERSONAL ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- Standardize PK for HR_EMPLOYEE_PERSONAL
+IF OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NOT NULL
+BEGIN
+    DECLARE @pers_pk NVARCHAR(256);
+    SELECT TOP 1 @pers_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL') AND type = 'PK';
+    IF @pers_pk IS NOT NULL AND @pers_pk <> 'PK_HR_EMPLOYEE_PERSONAL' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL'))
+    BEGIN
+        DECLARE @drop_pers_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_PERSONAL DROP CONSTRAINT ' + @pers_pk;
+        EXEC(@drop_pers_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PERSONAL') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_PERSONAL ADD CONSTRAINT PK_HR_EMPLOYEE_PERSONAL PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 3. HR_EMPLOYEE_CONTACT (from HR_EMPLOYEE_CONTACT / hrm_employee_contact)
+-- ==========================================
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
+BEGIN
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'hrm_employee_contact', 'HR_EMPLOYEE_CONTACT';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('hrm_employee_contact', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NULL
+        EXEC sp_rename 'hrm_employee_contact', 'HR_EMPLOYEE_CONTACT';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'mobile') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.mobile', 'MOBILE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'alternate_mobile') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.alternate_mobile', 'ALTERNATE_MOBILE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'perm_address1') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.perm_address1', 'PERM_ADDRESS1', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'perm_city') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.perm_city', 'PERM_CITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'perm_state') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.perm_state', 'PERM_STATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'perm_country') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.perm_country', 'PERM_COUNTRY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'perm_pin_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.perm_pin_code', 'PERM_PIN_CODE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'comm_address1') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.comm_address1', 'COMM_ADDRESS1', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'comm_city') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.comm_city', 'COMM_CITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'comm_state') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.comm_state', 'COMM_STATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'comm_country') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.comm_country', 'COMM_COUNTRY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'comm_pin_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.comm_pin_code', 'COMM_PIN_CODE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_CONTACT.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN MOBILE NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN ALTERNATE_MOBILE NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN PERM_ADDRESS1 NVARCHAR(500);
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN COMM_ADDRESS1 NVARCHAR(500);
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_CONTACT ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_CONTACT', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_CONTACT ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- Standardize PK for HR_EMPLOYEE_CONTACT
+IF OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NOT NULL
+BEGIN
+    DECLARE @cont_pk NVARCHAR(256);
+    SELECT TOP 1 @cont_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT') AND type = 'PK';
+    IF @cont_pk IS NOT NULL AND @cont_pk <> 'PK_HR_EMPLOYEE_CONTACT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT'))
+    BEGIN
+        DECLARE @drop_cont_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_CONTACT DROP CONSTRAINT ' + @cont_pk;
+        EXEC(@drop_cont_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_CONTACT') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_CONTACT ADD CONSTRAINT PK_HR_EMPLOYEE_CONTACT PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 4. HR_EMPLOYEE_JOB_PROFILE
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'wages_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.wages_type', 'WAGES_TYPE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'payment_mode') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.payment_mode', 'PAYMENT_MODE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'salary_account_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.salary_account_number', 'SALARY_ACCOUNT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'account_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.account_name', 'ACCOUNT_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'bank_account_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.bank_account_type', 'BANK_ACCOUNT_TYPE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'personal_account_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.personal_account_number', 'PERSONAL_ACCOUNT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'bank_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.bank_name', 'BANK_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'ifsc_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.ifsc_code', 'IFSC_CODE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'branch_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.branch_name', 'BRANCH_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'gross_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.gross_salary', 'GROSS_SALARY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'net_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.net_salary', 'NET_SALARY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'basic_salary') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.basic_salary', 'BASIC_SALARY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'da') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.da', 'DA', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'hra') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.hra', 'HRA', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'special_allowance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.special_allowance', 'SPECIAL_ALLOWANCE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'performance_incentive') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.performance_incentive', 'PERFORMANCE_INCENTIVE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'canteen_deduction') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.canteen_deduction', 'CANTEEN_DEDUCTION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'pf_type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.pf_type', 'PF_TYPE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'pf_employee') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.pf_employee', 'PF_EMPLOYEE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'esi_employee') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.esi_employee', 'ESI_EMPLOYEE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'professional_tax_amount') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.professional_tax_amount', 'PROFESSIONAL_TAX_AMOUNT', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'pf_document') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.pf_document', 'PF_DOCUMENT', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'monthly_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.monthly_ctc', 'MONTHLY_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'basic_salary_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.basic_salary_ctc', 'BASIC_SALARY_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'da_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.da_ctc', 'DA_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'special_allowance_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.special_allowance_ctc', 'SPECIAL_ALLOWANCE_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'canteen_allowance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.canteen_allowance', 'CANTEEN_ALLOWANCE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'performance_incentive_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.performance_incentive_ctc', 'PERFORMANCE_INCENTIVE_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'esi_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.esi_ctc', 'ESI_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'pf_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.pf_ctc', 'PF_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'gross_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.gross_ctc', 'GROSS_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'employer_pf') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.employer_pf', 'EMPLOYER_PF', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'employer_esi') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.employer_esi', 'EMPLOYER_ESI', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'uniform_allowance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.uniform_allowance', 'UNIFORM_ALLOWANCE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'shoe_allowance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.shoe_allowance', 'SHOE_ALLOWANCE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'mobile_allowance_cug') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.mobile_allowance_cug', 'MOBILE_ALLOWANCE_CUG', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'annual_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.annual_ctc', 'ANNUAL_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'salary_ctc') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.salary_ctc', 'SALARY_CTC', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'gratuity') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.gratuity', 'GRATUITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'bonus') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.bonus', 'BONUS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'special_incentive') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.special_incentive', 'SPECIAL_INCENTIVE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'performance_linked_incentive') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.performance_linked_incentive', 'PERFORMANCE_LINKED_INCENTIVE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'health_insurance') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.health_insurance', 'HEALTH_INSURANCE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_JOB_PROFILE.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN WAGES_TYPE NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN PAYMENT_MODE NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN SALARY_ACCOUNT_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN PF_DOCUMENT NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_JOB_PROFILE', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- Standardize PK for HR_EMPLOYEE_JOB_PROFILE
+IF OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE', 'U') IS NOT NULL
+BEGIN
+    DECLARE @job_pk NVARCHAR(256);
+    SELECT TOP 1 @job_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE') AND type = 'PK';
+    IF @job_pk IS NOT NULL AND @job_pk <> 'PK_HR_EMPLOYEE_JOB_PROFILE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE'))
+    BEGIN
+        DECLARE @drop_job_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_JOB_PROFILE DROP CONSTRAINT ' + @job_pk;
+        EXEC(@drop_job_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ADD CONSTRAINT PK_HR_EMPLOYEE_JOB_PROFILE PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 5. HR_EMPLOYEE_EDUCATION
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_EDUCATION', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'education') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.education', 'EDUCATION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'institution_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.institution_name', 'INSTITUTION_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'university') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.university', 'UNIVERSITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'type') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.type', 'TYPE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'year_of_passing') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.year_of_passing', 'YEAR_OF_PASSING', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'percentage_grade') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.percentage_grade', 'PERCENTAGE_GRADE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'documents') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.documents', 'DOCUMENTS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EDUCATION.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_EDUCATION', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ALTER COLUMN EDUCATION NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ALTER COLUMN DOCUMENTS NVARCHAR(500);
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_EDUCATION', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_EDUCATION ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_EDUCATION', 'U') IS NOT NULL
+BEGIN
+    DECLARE @edu_pk NVARCHAR(256);
+    SELECT TOP 1 @edu_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION') AND type = 'PK';
+    IF @edu_pk IS NOT NULL AND @edu_pk <> 'PK_HR_EMPLOYEE_EDUCATION' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION'))
+    BEGIN
+        DECLARE @drop_edu_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_EDUCATION DROP CONSTRAINT ' + @edu_pk;
+        EXEC(@drop_edu_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EDUCATION') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_EDUCATION ADD CONSTRAINT PK_HR_EMPLOYEE_EDUCATION PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 6. HR_EMPLOYEE_EXPERIENCE
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_EXPERIENCE', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'company_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.company_name', 'COMPANY_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'location') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.location', 'LOCATION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'from_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.from_date', 'FROM_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'to_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.to_date', 'TO_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'total_experience_months') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.total_experience_months', 'TOTAL_EXPERIENCE_MONTHS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'documents') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.documents', 'DOCUMENTS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EXPERIENCE.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_EXPERIENCE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ALTER COLUMN COMPANY_NAME NVARCHAR(255);
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ALTER COLUMN DOCUMENTS NVARCHAR(500);
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_EXPERIENCE', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_EXPERIENCE ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_EXPERIENCE', 'U') IS NOT NULL
+BEGIN
+    DECLARE @exp_pk NVARCHAR(256);
+    SELECT TOP 1 @exp_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE') AND type = 'PK';
+    IF @exp_pk IS NOT NULL AND @exp_pk <> 'PK_HR_EMPLOYEE_EXPERIENCE' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE'))
+    BEGIN
+        DECLARE @drop_exp_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_EXPERIENCE DROP CONSTRAINT ' + @exp_pk;
+        EXEC(@drop_exp_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EXPERIENCE') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_EXPERIENCE ADD CONSTRAINT PK_HR_EMPLOYEE_EXPERIENCE PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 7. HR_EMPLOYEE_EMERGENCY_CONTACT
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'contact_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.contact_name', 'CONTACT_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'relation') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.relation', 'RELATION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'address1') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.address1', 'ADDRESS1', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'address2') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.address2', 'ADDRESS2', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'mobile_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.mobile_number', 'MOBILE_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'home_phone_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.home_phone_number', 'HOME_PHONE_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_EMERGENCY_CONTACT.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN CONTACT_NAME NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN RELATION NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN MOBILE_NUMBER NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_EMERGENCY_CONTACT', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT', 'U') IS NOT NULL
+BEGIN
+    DECLARE @emg_pk NVARCHAR(256);
+    SELECT TOP 1 @emg_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT') AND type = 'PK';
+    IF @emg_pk IS NOT NULL AND @emg_pk <> 'PK_HR_EMPLOYEE_EMERGENCY_CONTACT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT'))
+    BEGIN
+        DECLARE @drop_emg_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT DROP CONSTRAINT ' + @emg_pk;
+        EXEC(@drop_emg_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ADD CONSTRAINT PK_HR_EMPLOYEE_EMERGENCY_CONTACT PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 8. HR_EMPLOYEE_PASSPORT
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_PASSPORT', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'passport_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.passport_number', 'PASSPORT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'passport_issue_city') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.passport_issue_city', 'PASSPORT_ISSUE_CITY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'issue_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.issue_date', 'ISSUE_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'expiry_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.expiry_date', 'EXPIRY_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'comments') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.comments', 'COMMENTS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_PASSPORT.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_PASSPORT', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN PASSPORT_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN PASSPORT_ISSUE_CITY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN COMMENTS NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_PASSPORT', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_PASSPORT ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_PASSPORT', 'U') IS NOT NULL
+BEGIN
+    DECLARE @pass_pk NVARCHAR(256);
+    SELECT TOP 1 @pass_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT') AND type = 'PK';
+    IF @pass_pk IS NOT NULL AND @pass_pk <> 'PK_HR_EMPLOYEE_PASSPORT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT'))
+    BEGIN
+        DECLARE @drop_pass_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_PASSPORT DROP CONSTRAINT ' + @pass_pk;
+        EXEC(@drop_pass_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_PASSPORT') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_PASSPORT ADD CONSTRAINT PK_HR_EMPLOYEE_PASSPORT PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 9. HR_EMPLOYEE_DEPENDENT
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_DEPENDENT', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'relation_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.relation_name', 'RELATION_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'gender') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.gender', 'GENDER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'date_of_birth') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.date_of_birth', 'DATE_OF_BIRTH', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'relationship') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.relationship', 'RELATIONSHIP', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'occupation') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.occupation', 'OCCUPATION', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'blood_group') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.blood_group', 'BLOOD_GROUP', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'contact_number1') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.contact_number1', 'CONTACT_NUMBER1', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_DEPENDENT.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_DEPENDENT', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN RELATION_NAME NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN GENDER NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN RELATIONSHIP NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN OCCUPATION NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_DEPENDENT', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_DEPENDENT ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_DEPENDENT', 'U') IS NOT NULL
+BEGIN
+    DECLARE @dep_pk NVARCHAR(256);
+    SELECT TOP 1 @dep_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT') AND type = 'PK';
+    IF @dep_pk IS NOT NULL AND @dep_pk <> 'PK_HR_EMPLOYEE_DEPENDENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT'))
+    BEGIN
+        DECLARE @drop_dep_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_DEPENDENT DROP CONSTRAINT ' + @dep_pk;
+        EXEC(@drop_dep_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_DEPENDENT') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_DEPENDENT ADD CONSTRAINT PK_HR_EMPLOYEE_DEPENDENT PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 10. HR_EMPLOYEE_ASSET
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_ASSET', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'asset_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.asset_id', 'ASSET_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'asset_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.asset_name', 'ASSET_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'asset_value') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.asset_value', 'ASSET_VALUE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'issue_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.issue_date', 'ISSUE_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'condition_of_asset') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.condition_of_asset', 'CONDITION_OF_ASSET', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'qty') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.qty', 'QTY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'serial_no') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.serial_no', 'SERIAL_NO', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'value') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.value', 'VALUE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'comments') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.comments', 'COMMENTS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ASSET.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_ASSET', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN ASSET_ID NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN ASSET_NAME NVARCHAR(255);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN CONDITION_OF_ASSET NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN SERIAL_NO NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN COMMENTS NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_ASSET ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_ASSET', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_ASSET ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_ASSET', 'U') IS NOT NULL
+BEGIN
+    DECLARE @ast_pk NVARCHAR(256);
+    SELECT TOP 1 @ast_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET') AND type = 'PK';
+    IF @ast_pk IS NOT NULL AND @ast_pk <> 'PK_HR_EMPLOYEE_ASSET' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET'))
+    BEGIN
+        DECLARE @drop_ast_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_ASSET DROP CONSTRAINT ' + @ast_pk;
+        EXEC(@drop_ast_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ASSET') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_ASSET ADD CONSTRAINT PK_HR_EMPLOYEE_ASSET PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 11. HR_EMPLOYEE_KYC
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_KYC', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'pf_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.pf_number', 'PF_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'uan_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.uan_number', 'UAN_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'pan_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.pan_number', 'PAN_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'aadhar_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.aadhar_number', 'AADHAR_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'driving_license_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.driving_license_number', 'DRIVING_LICENSE_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'license_expiry_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.license_expiry_date', 'LICENSE_EXPIRY_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'election_card_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.election_card_number', 'ELECTION_CARD_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'ration_card_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.ration_card_number', 'RATION_CARD_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'personal_account_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.personal_account_number', 'PERSONAL_ACCOUNT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'bank_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.bank_name', 'BANK_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'ifsc_code') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.ifsc_code', 'IFSC_CODE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'physically_challenged') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.physically_challenged', 'PHYSICALLY_CHALLENGED', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'physically_challenged_category') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.physically_challenged_category', 'PHYSICALLY_CHALLENGED_CATEGORY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'international_worker') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.international_worker', 'INTERNATIONAL_WORKER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'passport_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.passport_number', 'PASSPORT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'passport_expiry_date') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.passport_expiry_date', 'PASSPORT_EXPIRY_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_KYC', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN PF_NUMBER NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN UAN_NUMBER NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN PAN_NUMBER NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN AADHAR_NUMBER NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN DRIVING_LICENSE_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN ELECTION_CARD_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN RATION_CARD_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN PERSONAL_ACCOUNT_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN BANK_NAME NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN IFSC_CODE NVARCHAR(20);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN PHYSICALLY_CHALLENGED NVARCHAR(10);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN PHYSICALLY_CHALLENGED_CATEGORY NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN INTERNATIONAL_WORKER NVARCHAR(10);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN PASSPORT_NUMBER NVARCHAR(50);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_KYC', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_KYC ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_KYC', 'U') IS NOT NULL
+BEGIN
+    DECLARE @kyc_pk NVARCHAR(256);
+    SELECT TOP 1 @kyc_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC') AND type = 'PK';
+    IF @kyc_pk IS NOT NULL AND @kyc_pk <> 'PK_HR_EMPLOYEE_KYC' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_KYC'))
+    BEGIN
+        DECLARE @drop_kyc_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_KYC DROP CONSTRAINT ' + @kyc_pk;
+        EXEC(@drop_kyc_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_KYC ADD CONSTRAINT PK_HR_EMPLOYEE_KYC PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 12. HR_EMPLOYEE_KYC_DOCUMENT
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'seq_no') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.seq_no', 'SEQ_NO', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'document_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.document_name', 'DOCUMENT_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'document_number') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.document_number', 'DOCUMENT_NUMBER', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'attachment') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.attachment', 'ATTACHMENT', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'file_name') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.file_name', 'FILE_NAME', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_KYC_DOCUMENT.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN DOCUMENT_NAME NVARCHAR(255);
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN DOCUMENT_NUMBER NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN ATTACHMENT NVARCHAR(1000);
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN FILE_NAME NVARCHAR(255);
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_KYC_DOCUMENT', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT', 'U') IS NOT NULL
+BEGIN
+    DECLARE @kycd_pk NVARCHAR(256);
+    SELECT TOP 1 @kycd_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT') AND type = 'PK';
+    IF @kycd_pk IS NOT NULL AND @kycd_pk <> 'PK_HR_EMPLOYEE_KYC_DOCUMENT' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT'))
+    BEGIN
+        DECLARE @drop_kycd_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT DROP CONSTRAINT ' + @kycd_pk;
+        EXEC(@drop_kycd_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ADD CONSTRAINT PK_HR_EMPLOYEE_KYC_DOCUMENT PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 13. HR_EMPLOYEE_ACTIVITY
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_ACTIVITY', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'employee_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ACTIVITY.employee_id', 'EMPLOYEE_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'activity_details') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ACTIVITY.activity_details', 'ACTIVITY_DETAILS', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ACTIVITY.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ACTIVITY.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ACTIVITY.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_ACTIVITY.updated_at', 'UPDATED_DATE', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_ACTIVITY', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_ACTIVITY ALTER COLUMN ACTIVITY_DETAILS NVARCHAR(MAX);
+    ALTER TABLE HR_EMPLOYEE_ACTIVITY ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_ACTIVITY ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_ACTIVITY ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_ACTIVITY ALTER COLUMN UPDATED_DATE DATETIME;
+
+    IF COL_LENGTH('HR_EMPLOYEE_ACTIVITY', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_ACTIVITY ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_ACTIVITY', 'U') IS NOT NULL
+BEGIN
+    DECLARE @act_pk NVARCHAR(256);
+    SELECT TOP 1 @act_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY') AND type = 'PK';
+    IF @act_pk IS NOT NULL AND @act_pk <> 'PK_HR_EMPLOYEE_ACTIVITY' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY'))
+    BEGIN
+        DECLARE @drop_act_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_ACTIVITY DROP CONSTRAINT ' + @act_pk;
+        EXEC(@drop_act_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_ACTIVITY') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_ACTIVITY ADD CONSTRAINT PK_HR_EMPLOYEE_ACTIVITY PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- 14. HR_EMPLOYEE_MANAGER_MAPPING (from EMPLOYEE_MANAGER_MAPPING)
+-- ==========================================
+IF OBJECT_ID('dbo.sp_RenameTableCasingAndPrefix', 'P') IS NOT NULL
+BEGIN
+    EXEC dbo.sp_RenameTableCasingAndPrefix 'EMPLOYEE_MANAGER_MAPPING', 'HR_EMPLOYEE_MANAGER_MAPPING';
+END
+ELSE
+BEGIN
+    IF OBJECT_ID('EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NULL
+        EXEC sp_rename 'EMPLOYEE_MANAGER_MAPPING', 'HR_EMPLOYEE_MANAGER_MAPPING';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'emp_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.emp_id', 'EMP_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'home_manager_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.home_manager_id', 'HOME_MANAGER_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'business_manager_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.business_manager_id', 'BUSINESS_MANAGER_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'vertical_head_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.vertical_head_id', 'VERTICAL_HEAD_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'hr_id') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.hr_id', 'HR_ID', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'created_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.created_by', 'CREATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'created_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.created_at', 'CREATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'updated_by') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.updated_by', 'UPDATED_BY', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'updated_at') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.updated_at', 'UPDATED_DATE', 'COLUMN';
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'status') IS NOT NULL EXEC sp_rename 'HR_EMPLOYEE_MANAGER_MAPPING.status', 'STATUS', 'COLUMN';
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ALTER COLUMN CREATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ALTER COLUMN CREATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ALTER COLUMN UPDATED_BY NVARCHAR(100);
+    ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ALTER COLUMN UPDATED_DATE DATETIME;
+    ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ALTER COLUMN STATUS NVARCHAR(50);
+
+    IF COL_LENGTH('HR_EMPLOYEE_MANAGER_MAPPING', 'IS_ACTIVE') IS NULL
+        ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ADD IS_ACTIVE BIT DEFAULT 1;
+END
+GO
+
+-- PK
+IF OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL
+BEGIN
+    DECLARE @map_pk NVARCHAR(256);
+    SELECT TOP 1 @map_pk = name FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING') AND type = 'PK';
+    IF @map_pk IS NOT NULL AND @map_pk <> 'PK_HR_EMPLOYEE_MANAGER_MAPPING' AND NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE referenced_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING'))
+    BEGIN
+        DECLARE @drop_map_pk NVARCHAR(MAX) = 'ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING DROP CONSTRAINT ' + @map_pk;
+        EXEC(@drop_map_pk);
+    END
+    IF NOT EXISTS (SELECT 1 FROM sys.key_constraints WHERE parent_object_id = OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING') AND type = 'PK')
+    BEGIN
+        ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ADD CONSTRAINT PK_HR_EMPLOYEE_MANAGER_MAPPING PRIMARY KEY (id);
+    END
+END
+GO
+
+
+-- ==========================================
+-- Re-establish Foreign Keys where essential (Parent-Child relations)
+-- ==========================================
+IF OBJECT_ID('HR_EMPLOYEE_CONTACT', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_CONTACT ADD CONSTRAINT FK_HR_EMPLOYEE_CONTACT_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_PERSONAL', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_PERSONAL ADD CONSTRAINT FK_HR_EMPLOYEE_PERSONAL_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_JOB_PROFILE', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_JOB_PROFILE ADD CONSTRAINT FK_HR_EMPLOYEE_JOB_PROFILE_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_EDUCATION', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_EDUCATION ADD CONSTRAINT FK_HR_EMPLOYEE_EDUCATION_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_EXPERIENCE', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_EXPERIENCE ADD CONSTRAINT FK_HR_EMPLOYEE_EXPERIENCE_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_EMERGENCY_CONTACT', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_EMERGENCY_CONTACT ADD CONSTRAINT FK_HR_EMPLOYEE_EMERGENCY_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_PASSPORT', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_PASSPORT ADD CONSTRAINT FK_HR_EMPLOYEE_PASSPORT_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_DEPENDENT', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_DEPENDENT ADD CONSTRAINT FK_HR_EMPLOYEE_DEPENDENT_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_ASSET', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_ASSET ADD CONSTRAINT FK_HR_EMPLOYEE_ASSET_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_KYC', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_KYC ADD CONSTRAINT FK_HR_EMPLOYEE_KYC_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_KYC_DOCUMENT', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_KYC_DOCUMENT ADD CONSTRAINT FK_HR_EMPLOYEE_KYC_DOC_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_ACTIVITY', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_ACTIVITY ADD CONSTRAINT FK_HR_EMPLOYEE_ACTIVITY_EMPLOYEE FOREIGN KEY (EMPLOYEE_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO
+
+IF OBJECT_ID('HR_EMPLOYEE_MANAGER_MAPPING', 'U') IS NOT NULL AND OBJECT_ID('HR_EMPLOYEE', 'U') IS NOT NULL
+BEGIN
+    ALTER TABLE HR_EMPLOYEE_MANAGER_MAPPING ADD CONSTRAINT FK_HR_EMPLOYEE_MANAGER_EMPLOYEE FOREIGN KEY (EMP_ID) REFERENCES HR_EMPLOYEE(id);
+END
+GO

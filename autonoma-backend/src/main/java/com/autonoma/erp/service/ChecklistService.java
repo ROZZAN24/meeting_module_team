@@ -3,6 +3,7 @@ package com.autonoma.erp.service;
 import com.autonoma.erp.model.*;
 import com.autonoma.erp.repository.*;
 import com.autonoma.erp.repository.admin.UserRepository;
+import com.autonoma.erp.repository.EmployeeMasterRepository;
 import jakarta.persistence.criteria.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,9 @@ public class ChecklistService {
 
     @Autowired
     private ChecklistClosedRepository closedRepo;
+
+    @Autowired
+    private EmployeeMasterRepository employeeMasterRepository;
 
     // --- Master Checklist ---
 
@@ -226,10 +230,8 @@ public class ChecklistService {
                 } else if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                     checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 }
-                checklist.setUpdatedDate(new Date());
-                if (checklist.getUpdatedBy() == null || checklist.getUpdatedBy().isEmpty()) {
-                    checklist.setUpdatedBy(checklist.getCreatedBy());
-                }
+                checklist.setUpdatedDate(null);
+                checklist.setUpdatedBy(null);
 
                 MasterChecklist saved = masterRepo.save(checklist);
 
@@ -331,10 +333,8 @@ public class ChecklistService {
             if (checklist.getCreatedBy() == null || checklist.getCreatedBy().isEmpty()) {
                 checklist.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
             }
-            checklist.setUpdatedDate(new Date());
-            if (checklist.getUpdatedBy() == null || checklist.getUpdatedBy().isEmpty()) {
-                checklist.setUpdatedBy(checklist.getCreatedBy());
-            }
+            checklist.setUpdatedDate(null);
+            checklist.setUpdatedBy(null);
             MasterChecklist saved = masterRepo.save(checklist);
 
             if (departments != null) {
@@ -543,9 +543,11 @@ public class ChecklistService {
         assignment.setAssignedDate(new Date());
         assignment.setChecklistDate(checklistDate);
 
-        ChecklistClosed saved = saveToFrequencyTable(assignment);
-        assignment.setId(saved.getId());
-        ChecklistAssignment savedAssignment = assignment;
+        // Save to active assignments table (QMS_CHECKLIST_ASSIGNMENT)
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        
+        // Sync to unified closed history table (QMS_CHECKLIST_CLOSED)
+        saveToFrequencyTable(savedAssignment);
 
         // Also update the MasterChecklist for the UI data table to show ALL assignees
         java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklistId);
@@ -558,6 +560,7 @@ public class ChecklistService {
         checklist.setAssignTo(allAssignedTo);
         checklist.setAssignDate(new Date());
         checklist.setTaskStatus("Pending");
+        checklist.setSkipAuditUpdate(true);
         masterRepo.save(checklist);
 
         return savedAssignment;
@@ -623,6 +626,7 @@ public class ChecklistService {
             checklist.setAssignDate(null);
             checklist.setTaskStatus(null);
         }
+        checklist.setSkipAuditUpdate(true);
         masterRepo.save(checklist);
     }
 
@@ -680,7 +684,8 @@ public class ChecklistService {
                 oldRejected.setUpdatedBy(verifiedBy);
                 oldRejected.setUpdatedAt(new Date());
                 
-                // Save A to frequency table
+                // Save A to active table and frequency table
+                assignRepo.save(oldRejected);
                 saveToFrequencyTable(oldRejected);
 
                 // Delete B (the again-created helper assignment) entirely
@@ -735,7 +740,8 @@ public class ChecklistService {
             assignment.setComments(remarks);
         }
 
-        // Save active/closed details directly in the respective frequency table
+        // Save active details in active table and frequency table
+        assignRepo.save(assignment);
         saveToFrequencyTable(assignment);
 
         // Create a dummy verification object to return (deprecation safety)
@@ -869,20 +875,22 @@ public class ChecklistService {
         next.setChecklistDate(nextDate);
         statusRepo.findByName("Pending").ifPresent(next::setStatus);
 
-        saveToFrequencyTable(next);
+        ChecklistAssignment saved = assignRepo.save(next);
+        saveToFrequencyTable(saved);
     }
 
     @Transactional
     public ChecklistAssignment saveAssignment(ChecklistAssignment assignment) {
-        ChecklistClosed saved = saveToFrequencyTable(assignment);
-        assignment.setId(saved.getId());
-        return assignment;
+        ChecklistAssignment saved = assignRepo.save(assignment);
+        saveToFrequencyTable(saved);
+        return saved;
     }
 
     @Transactional
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
+        checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
         checklist.setUpdatedBy(verifiedBy);
         checklist.setUpdatedDate(new Date());
@@ -919,5 +927,128 @@ public class ChecklistService {
                 statusRepo.save(sm);
             }
         }
+    }
+
+    /**
+     * One-time data repair: fixes assignments where ASSIGNED_TO was saved as
+     * the employee display name instead of their empCode (userId).
+     * Safe to call multiple times — it updates records that don't already
+     * look like an empCode.
+     */
+    @Transactional
+    public String repairAssignedToFields() {
+        // Build a map: employeeName (lower) -> empCode
+        java.util.Map<String, String> nameToCode = new java.util.HashMap<>();
+        for (com.autonoma.erp.model.EmployeeMaster emp : employeeMasterRepository.findAll()) {
+            if (emp.getEmpCode() != null && emp.getEmployeeName() != null) {
+                nameToCode.put(emp.getEmployeeName().trim().toLowerCase(), emp.getEmpCode());
+            }
+        }
+
+        // Collect all known empCodes so we can skip already-correct records
+        java.util.Set<String> knownCodes = new java.util.HashSet<>(nameToCode.values());
+
+        int fixedActive = 0;
+        int fixedClosed = 0;
+        int fixedMaster = 0;
+
+        // 1. Repair active assignments
+        java.util.List<ChecklistAssignment> allActive = assignRepo.findAll();
+        for (ChecklistAssignment a : allActive) {
+            String at = a.getAssignedTo();
+            if (at == null || at.trim().isEmpty()) continue;
+            if (knownCodes.contains(at.trim())) continue;
+            String code = nameToCode.get(at.trim().toLowerCase());
+            if (code != null) {
+                a.setAssignedTo(code);
+                assignRepo.save(a);
+                fixedActive++;
+            }
+        }
+
+        // 2. Repair closed history assignments
+        java.util.List<ChecklistClosed> allClosed = closedRepo.findAll();
+        for (ChecklistClosed c : allClosed) {
+            String at = c.getAssignedTo();
+            if (at == null || at.trim().isEmpty()) continue;
+            if (knownCodes.contains(at.trim())) continue;
+            String code = nameToCode.get(at.trim().toLowerCase());
+            if (code != null) {
+                c.setAssignedTo(code);
+                closedRepo.save(c);
+                fixedClosed++;
+            }
+        }
+
+        // 3. Repair master checklists
+        java.util.List<MasterChecklist> allMaster = masterRepo.findAll();
+        for (MasterChecklist m : allMaster) {
+            String at = m.getAssignTo();
+            if (at != null && !at.trim().isEmpty()) {
+                String[] parts = at.split(",");
+                java.util.List<String> repairedParts = new java.util.ArrayList<>();
+                boolean changed = false;
+                for (String part : parts) {
+                    String trimmed = part.trim();
+                    if (knownCodes.contains(trimmed)) {
+                        repairedParts.add(trimmed);
+                    } else {
+                        String code = nameToCode.get(trimmed.toLowerCase());
+                        if (code != null) {
+                            repairedParts.add(code);
+                            changed = true;
+                        } else {
+                            repairedParts.add(trimmed);
+                        }
+                    }
+                }
+                if (changed) {
+                    m.setAssignTo(String.join(", ", repairedParts));
+                    masterRepo.save(m);
+                    fixedMaster++;
+                }
+            }
+
+            // 4. Recovery: If the master checklist has empty/null assignTo but has assignments in active/closed, restore it!
+            if (m.getAssignTo() == null || m.getAssignTo().trim().isEmpty()) {
+                java.util.Set<String> assignees = new java.util.HashSet<>();
+                // Check active
+                for (ChecklistAssignment a : allActive) {
+                    if (a.getChecklist().getId().equals(m.getId()) && a.getAssignedTo() != null && !a.getAssignedTo().trim().isEmpty()) {
+                        assignees.add(a.getAssignedTo().trim());
+                    }
+                }
+                // Check closed
+                for (ChecklistClosed c : allClosed) {
+                    if (c.getChecklist().getId().equals(m.getId()) && c.getAssignedTo() != null && !c.getAssignedTo().trim().isEmpty()) {
+                        assignees.add(c.getAssignedTo().trim());
+                    }
+                }
+                if (!assignees.isEmpty()) {
+                    // Repair those assignees if they are names
+                    java.util.List<String> repairedAssignees = new java.util.ArrayList<>();
+                    for (String asg : assignees) {
+                        if (knownCodes.contains(asg)) {
+                            repairedAssignees.add(asg);
+                        } else {
+                            String code = nameToCode.get(asg.toLowerCase());
+                            if (code != null) {
+                                repairedAssignees.add(code);
+                            } else {
+                                repairedAssignees.add(asg);
+                            }
+                        }
+                    }
+                    m.setAssignTo(String.join(", ", repairedAssignees));
+                    m.setAssignDate(new Date());
+                    m.setTaskStatus("Pending");
+                    masterRepo.save(m);
+                    fixedMaster++;
+                }
+            }
+        }
+
+        return String.format("Repaired: Active=%d, Closed=%d, Master=%d. Scanned: Active=%d, Closed=%d, Master=%d.",
+            fixedActive, fixedClosed, fixedMaster, allActive.size(), allClosed.size(), allMaster.size());
     }
 }

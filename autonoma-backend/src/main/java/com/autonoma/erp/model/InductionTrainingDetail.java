@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "IND_INDUCTION_TRAINING_DETAIL")
+@Table(name = "HR_INDUCTION_TRAINING")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,31 +16,31 @@ public class InductionTrainingDetail extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "assignment_id", nullable = false)
+    @Column(name = "ASSIGNMENT_ID", nullable = false)
     private Long assignmentId;
 
-    @Column(name = "induction_master_id", nullable = false)
+    @Column(name = "INDUCTION_MASTER_ID", nullable = false)
     private Long inductionMasterId;
 
     // === Trainer fills these ===
-    @Column(name = "trainer_status", length = 20)
+    @Column(name = "TRAINER_STATUS", length = 20)
     private String trainerStatus = "PENDING"; // PENDING, COMPLETED
 
-    @Column(name = "trainer_comments", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "TRAINER_COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String trainerComments;
 
-    @Column(name = "skill_rating")
+    @Column(name = "SKILL_RATING")
     private Integer skillRating; // 1-5
 
     // === Trainee fills these ===
-    @Column(name = "trainee_status", length = 20)
+    @Column(name = "TRAINEE_STATUS", length = 20)
     private String traineeStatus; // UNDERSTOOD, NEED MORE TRAINING
 
-    @Column(name = "trainee_comments", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "TRAINEE_COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String traineeComments;
 
     // === Attachment ===
-    @Column(name = "attachment_path", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ATTACHMENT_PATH", length = 1000)
     private String attachmentPath;
 
     // === Transient: loaded from InductionMaster for display ===
@@ -56,8 +56,15 @@ public class InductionTrainingDetail extends BaseAuditEntity {
     @Transient
     private String attachmentRequired;
 
-    // === Audit ===
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
+    // Explicit getter/setter for isActive
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

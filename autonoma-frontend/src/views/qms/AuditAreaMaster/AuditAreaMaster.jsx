@@ -1,17 +1,16 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton } from '@mui/material';
-import { IconFileDownload, IconMapPin, IconRefresh } from '@tabler/icons-react';
+import { Typography, Stack } from '@mui/material';
+import { IconMapPin } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
 import AddAuditAreaDialog from './AddAuditAreaDialog';
-import { exportToExcel } from 'utils/excelExport';
 import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -44,6 +43,9 @@ export default function AuditAreaMaster() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleteTargetName, setDeleteTargetName] = useState('');
+  const [visibleColumnIds, setVisibleColumnIds] = useState(() => columns.map(c => c.id));
+
+  const tableColumns = useMemo(() => columns.filter(col => visibleColumnIds.includes(col.id)), [visibleColumnIds]);
 
   useEffect(() => {
     const config = [
@@ -105,7 +107,17 @@ export default function AuditAreaMaster() {
       fetchAuditAreas();
     } catch (error) {
       console.error('Failed to delete audit area:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete audit area.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'Failed to delete audit area.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        }
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 
@@ -165,31 +177,28 @@ export default function AuditAreaMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchAuditAreas} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Area_Details"
-            columns={[
-              { header: 'Type', key: 'type' },
-              { header: 'Description', key: 'description' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Audit Area', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchAuditAreas}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Audit Area', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          columns={columns}
+          visibleColumnIds={visibleColumnIds}
+          onColumnVisibilityChange={setVisibleColumnIds}
+          requiredColumnIds={['index', 'type']}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Type', key: 'type' },
+            { header: 'Description', key: 'description' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Audit_Area_Details"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable
-        columns={columns}
+        columns={tableColumns}
         rows={paginatedRows}
         page={page}
         size={size}

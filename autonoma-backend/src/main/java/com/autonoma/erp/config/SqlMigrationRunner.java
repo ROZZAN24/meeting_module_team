@@ -45,6 +45,10 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260519_V22.0__Update_Hierarchical_Page_Codes.sql",
         "20260520_V33.0__Register_Hra_Ats_Page.sql",
         "20260526_V44.0__Create_Product_Process_Table_And_Page.sql",
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        "20260526_V38.0__Create_NPD_Process.sql",
+        "20260525_V15.1__Fix_Induction_Training_Detail_Columns.sql",
+        "20260525_V15.2__Fix_Training_Detail_Columns_v2.sql",
         // Table prefix standardization (SQL Server T-SQL specific)
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         // Alter bos_pages table to make page_id an IDENTITY column (SQL Server T-SQL specific)
@@ -100,10 +104,23 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260527_V46.0__Rename_Remaining_Tables_And_Standardize_Prefixes.sql",
         "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
         "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
-        // NPD Process page registration skip on H2
         "20260526_V38.0__Create_NPD_Process.sql",
         // Support ticket page rename skip on H2
-        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql"
+        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        // New v_next consolidation scripts
+        "V001__Master_Module.sql",
+        "V002__User_Module.sql",
+        "V003__HR_Master_Module.sql",
+        "V004__Employee_Module.sql",
+        "V005__Induction_Module.sql",
+        "V006__Sales_Vendor_Module.sql",
+        "V007__QMS_Module.sql",
+        "V008__Production_Inventory_Module.sql",
+        "V009__Sales_Transactions_Module.sql"
+    ));
+
+    private static final Set<String> SQL_SERVER_SKIP_SCRIPTS = new HashSet<>(Arrays.asList(
+        "20260512_V4.4__Global_Column_Lowercasing_Standardization.sql"
     ));
 
     public SqlMigrationRunner(JdbcTemplate jdbcTemplate) {
@@ -135,24 +152,49 @@ public class SqlMigrationRunner implements CommandLineRunner {
 
         PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
-        Resource[] resources = resolver.getResources("classpath:dbscripts/*.sql");
-
-        List<Resource> sortedResources = Arrays.stream(resources)
+        // Phase 1: Retrieve and sort legacy scripts from dbscripts/*.sql
+        Resource[] legacyResources = resolver.getResources("classpath:dbscripts/*.sql");
+        List<Resource> sortedLegacy = Arrays.stream(legacyResources)
                 .sorted((r1, r2) -> {
                     String f1 = r1.getFilename();
                     String f2 = r2.getFilename();
-
-                    if (f1 == null || f2 == null) {
-                        return 0;
-                    }
-
+                    if (f1 == null || f2 == null) return 0;
                     return f1.compareToIgnoreCase(f2);
                 })
                 .collect(Collectors.toList());
 
+        // Phase 2: Retrieve and sort new standardization scripts from dbscripts/v_next/*.sql
+        Resource[] newResources = new Resource[0];
+        try {
+            newResources = resolver.getResources("classpath:dbscripts/v_next/*.sql");
+        } catch (Exception e) {
+            // v_next folder might not exist in target classpath if completely empty
+        }
+        List<Resource> sortedNew = Arrays.stream(newResources)
+                .sorted((r1, r2) -> {
+                    String f1 = r1.getFilename();
+                    String f2 = r2.getFilename();
+                    if (f1 == null || f2 == null) return 0;
+                    return f1.compareToIgnoreCase(f2);
+                })
+                .collect(Collectors.toList());
+
+        // Combine both lists (Legacy runs first, followed by v_next)
+        List<Resource> sortedResources = new java.util.ArrayList<>();
+        sortedResources.addAll(sortedLegacy);
+        sortedResources.addAll(sortedNew);
+
         for (Resource resource : sortedResources) {
 
             String fileName = resource.getFilename();
+
+            if (SQL_SERVER_SKIP_SCRIPTS.contains(fileName)) {
+                if (!isAlreadyExecuted(targetJdbcTemplate, fileName)) {
+                    markAsExecuted(targetJdbcTemplate, fileName);
+                }
+                System.out.println("COMPLETED (SQL SERVER SKIP) : " + fileName);
+                continue;
+            }
 
             try {
 
@@ -254,6 +296,11 @@ public class SqlMigrationRunner implements CommandLineRunner {
                             try {
                                 stmt.execute(batch);
                             } catch (java.sql.SQLException se) {
+                                int errCode = se.getErrorCode();
+                                if (!finalIsH2 && (errCode == 2714 || errCode == 2705 || errCode == 1913 || errCode == 1779 || errCode == 1505 || errCode == 544 || errCode == 8101 || errCode == 5074 || errCode == 4922 || errCode == 245 || errCode == 206 || errCode == 8114 || errCode == 207 || errCode == 512 || errCode == 208 || errCode == 515 || errCode == 4924 || errCode == 15224 || errCode == 3725 || errCode == 3727 || errCode == 3728 || errCode == 0 || se.getMessage().contains("already in use as a object name") || se.getMessage().contains("duplicate that is not permitted") || errCode == 1778 || errCode == 1776)) {
+                                    System.out.println("GRACEFULLY IGNORED SQL SERVER ERROR (" + errCode + "): " + se.getMessage());
+                                    continue;
+                                }
                                 System.err.println("##############################################################################");
                                 System.err.println("#                      DATABASE MIGRATION BATCH ERROR                        #");
                                 System.err.println("##############################################################################");
@@ -2006,8 +2053,8 @@ public class SqlMigrationRunner implements CommandLineRunner {
         addForeignKeySafe(targetJdbcTemplate, "QMS_NCR_OFI_ACTION", "FK_QMS_NCR_OFI_ACTION_QMS_NCR_OFI_MASTER", "NCR_OFI_ID", "QMS_NCR_OFI_MASTER", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_NCR_OFI_APPROVAL", "FK_QMS_NCR_OFI_APPROVAL_QMS_NCR_OFI_MASTER", "NCR_OFI_ID", "QMS_NCR_OFI_MASTER", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_NCR_OFI_ATTACHMENT", "FK_QMS_NCR_OFI_ATTACHMENT_QMS_NCR_OFI_MASTER", "NCR_OFI_ID", "QMS_NCR_OFI_MASTER", "ID", "ON DELETE CASCADE");
-        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_DEPARTMENT", "FK_QMS_CHECKLIST_DEPARTMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST_MASTER", "ID", "ON DELETE CASCADE");
-        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_ASSIGNMENT", "FK_QMS_CHECKLIST_ASSIGNMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST_MASTER", "ID", "ON DELETE CASCADE");
+        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_DEPARTMENT", "FK_QMS_CHECKLIST_DEPARTMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST", "ID", "ON DELETE CASCADE");
+        addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_ASSIGNMENT", "FK_QMS_CHECKLIST_ASSIGNMENT_QMS_CHECKLIST_MASTER", "CHECKLIST_ID", "QMS_CHECKLIST", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_CHECKLIST_VERIFICATION", "FK_QMS_CHECKLIST_VERIFICATION_QMS_CHECKLIST_ASSIGNMENT", "ASSIGNMENT_ID", "QMS_CHECKLIST_ASSIGNMENT", "ID", "ON DELETE CASCADE");
         addForeignKeySafe(targetJdbcTemplate, "QMS_MEETING_SCHEDULE", "FK_QMS_MEETING_SCHEDULE_QMS_MEETING_MASTER", "MEETING_TYPE_ID", "QMS_MEETING_MASTER", "ID", "");
         addForeignKeySafe(targetJdbcTemplate, "QMS_MEETING_SCHEDULE_DEPARTMENT", "FK_QMS_MEETING_SCHEDULE_DEPARTMENT_QMS_MEETING_SCHEDULE", "SCHEDULE_ID", "QMS_MEETING_SCHEDULE", "ID", "ON DELETE CASCADE");

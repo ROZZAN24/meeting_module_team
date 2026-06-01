@@ -16,80 +16,92 @@ public class AuditSchedule extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "schedule_no", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "SCHEDULE_NO", columnDefinition = "NVARCHAR(255)")
     private String scheduleNo;
     
-    @Column(name = "schedule_date")
+    @Column(name = "SCHEDULE_DATE")
     @Temporal(TemporalType.DATE)
     private Date scheduleDate;
     
-    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATUS", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-    @Column(name = "audit_type", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_TYPE", columnDefinition = "NVARCHAR(255)")
     private String auditType;
 
-    @Column(name = "item_code", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "ITEM_CODE", columnDefinition = "NVARCHAR(255)")
     private String itemCode;
 
-    @Column(name = "audit_area", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_AREA", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
-    @Column(name = "is_deleted", nullable = false)
+    @Column(name = "IS_DELETED", nullable = false)
     private boolean isDeleted = false;
 
-    @Column(name = "criteria_min_count")
+    @Column(name = "CRITERIA_MIN_COUNT")
     private Integer criteriaMinCount;
+
+    @Column(name = "RESCHEDULE_COUNT")
+    private Integer rescheduleCount = 0;
     
-    @Column(name = "audit_date")
+    @Column(name = "AUDIT_DATE")
     @Temporal(TemporalType.DATE)
     private Date auditDate;
     
-    @Column(name = "audit_month", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "AUDIT_MONTH", columnDefinition = "NVARCHAR(50)")
     private String auditMonth;
 
-    @Column(name = "start_time", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "START_TIME", columnDefinition = "NVARCHAR(50)")
     private String startTime;
 
-    @Column(name = "end_time", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "END_TIME", columnDefinition = "NVARCHAR(50)")
     private String endTime;
 
-    @Column(name = "department", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "DEPARTMENT", columnDefinition = "NVARCHAR(255)")
     private String department;
     
-    @Column(name = "auditee", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDITEE", columnDefinition = "NVARCHAR(255)")
     private String auditee;
 
-    @Column(name = "auditee_type", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDITEE_TYPE", columnDefinition = "NVARCHAR(255)")
     private String auditeeType;
 
-    @Column(name = "auditee_details", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "AUDITEE_DETAILS", columnDefinition = "NVARCHAR(MAX)")
     private String auditeeDetails;
 
-    @Column(name = "auditor", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDITOR", columnDefinition = "NVARCHAR(255)")
     private String auditor;
 
-    @Column(name = "auditor_type", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDITOR_TYPE", columnDefinition = "NVARCHAR(255)")
     private String auditorType;
 
-    @Column(name = "auditor_details", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "AUDITOR_DETAILS", columnDefinition = "NVARCHAR(MAX)")
     private String auditorDetails;
 
-    @Column(name = "ncr_approved_by", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "NCR_APPROVED_BY", columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedBy;
 
-    @Column(name = "ncr_approved_by_type", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "NCR_APPROVED_BY_TYPE", columnDefinition = "NVARCHAR(255)")
     private String ncrApprovedByType;
 
-    @Column(name = "ncr_approved_by_details", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "NCR_APPROVED_BY_DETAILS", columnDefinition = "NVARCHAR(MAX)")
     private String ncrApprovedByDetails;
 
-    
-    
-    
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     @OneToMany(mappedBy = "auditSchedule", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<AuditScheduleCriteria> criteriaList = new ArrayList<>();
+
+    @Transient
+    private Integer totalPoint;
+
+    public Integer getRescheduleCount() { return rescheduleCount != null ? rescheduleCount : 0; }
+    public void setRescheduleCount(Integer rescheduleCount) { this.rescheduleCount = rescheduleCount; }
+
+    public Integer getTotalPoint() {
+        return criteriaList != null ? criteriaList.size() : 0;
+    }
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -138,4 +150,6 @@ public class AuditSchedule extends BaseAuditEntity {
     public String getNcrApprovedByDetails() { return ncrApprovedByDetails; }
     public void setNcrApprovedByDetails(String ncrApprovedByDetails) { this.ncrApprovedByDetails = ncrApprovedByDetails; }
     public void setCriteriaList(List<AuditScheduleCriteria> criteriaList) { this.criteriaList = criteriaList; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean isActive) { this.isActive = isActive; }
 }

@@ -42,6 +42,7 @@ export const useLookups = (lookupTypes = []) => {
           results[result.value.key] = result.value.data;
         }
       });
+      console.log('useLookups resolved results:', results);
       
       setLookups({
         ...results,

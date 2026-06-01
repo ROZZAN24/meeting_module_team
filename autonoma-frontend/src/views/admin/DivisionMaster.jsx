@@ -11,7 +11,7 @@ import AddDivisionDialog from './AddDivisionDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| DIVISION MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -188,39 +188,25 @@ export default function DivisionMaster() {
           <Typography variant="h3">Division Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchDivisions} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && (
-            <BOSExportButton
-              data={filteredRows}
-              filename="Division_Master"
-              columns={[
-                { header: 'Division Name', key: 'divisionName' },
-                { header: 'Company', key: 'companyName' },
-                { header: 'City', key: 'city' },
-                { header: 'State', key: 'state' },
-                { header: 'Description', key: 'description' },
-                { header: 'Seq No', key: 'sequenceNo' },
-                { header: 'Status', key: 'statusLabel' }
-              ]}
-            />
-          )}
-          {perms.write && (
-            <Tooltip title={shortcutTooltip('Create New Division', 'Ctrl + N')}>
-              <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                + New
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchDivisions}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Division', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          exportColumns={[
+            { header: 'Division Name', key: 'divisionName' },
+            { header: 'Company', key: 'companyName' },
+            { header: 'City', key: 'city' },
+            { header: 'State', key: 'state' },
+            { header: 'Description', key: 'description' },
+            { header: 'Seq No', key: 'sequenceNo' },
+            { header: 'Status', key: 'statusLabel' }
+          ]}
+          exportFilename="Division_Master"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

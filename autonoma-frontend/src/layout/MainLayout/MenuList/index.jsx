@@ -14,7 +14,7 @@ import menuItem from 'menu-items';
 import useConfig from 'hooks/useConfig';
 import useAuth from 'hooks/useAuth';
 import { useDispatch, useSelector } from 'store';
-import { fetchUserPermissions } from 'store/slices/permissions';
+import { fetchUserPermissions, clearPermissions } from 'store/slices/permissions';
 
 import { HORIZONTAL_MAX_ITEM } from 'config';
 import { useGetMenu, useGetMenuMaster } from 'api/menu';
@@ -36,8 +36,8 @@ function filterMenuByPermissions(items, permMap) {
       // Leaf item with a pageCode → check if user has enable=true
       if (item.type === 'item' && item.pageCode) {
         const perm = permMap[item.pageCode];
-        // If permission record exists and enable is explicitly false or 0 → hide
-        if (perm && (perm.enable === false || perm.enable === 0)) return null;
+        // If permission record does not exist or enable is explicitly false or 0 → hide
+        if (!perm || perm.enable === false || perm.enable === 0) return null;
         return item;
       }
 
@@ -71,15 +71,17 @@ function MenuList() {
   const [selectedID, setSelectedID] = useState('');
   const [menuItems, setMenuItems] = useState({ items: [] });
 
-  // ── Fetch permissions on mount (once per session) ──
+  // ── Fetch/Clear permissions on user.id change ──
   const permStatus = useSelector((state) => state.permissions.status);
   const permMap = useSelector((state) => state.permissions.map);
 
   useEffect(() => {
-    if (user?.id && permStatus === 'idle') {
+    if (user?.id) {
       reduxDispatch(fetchUserPermissions(user.id));
+    } else {
+      reduxDispatch(clearPermissions());
     }
-  }, [user?.id, permStatus, reduxDispatch]);
+  }, [user?.id, reduxDispatch]);
 
   // ── Build filtered menu items ──
   useLayoutEffect(() => {

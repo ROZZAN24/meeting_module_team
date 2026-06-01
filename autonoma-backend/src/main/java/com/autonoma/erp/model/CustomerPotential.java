@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "SM_CUSTOMER_POTENTIAL")
+@Table(name = "SLS_CUSTOMER_POTENTIAL")
 @Data
 @Builder
 @NoArgsConstructor
@@ -19,91 +19,134 @@ public class CustomerPotential {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_group_name", length = 200)
+    @Column(name = "CUSTOMER_GROUP_NAME", length = 200)
     private String customerGroupName;
 
-    @Column(name = "customer_code", nullable = false, length = 50)
+    @Column(name = "CUSTOMER_CODE", nullable = false, length = 50)
     private String customerCode;
 
-    @Column(name = "customer_type", length = 50)
+    @Column(name = "CUSTOMER_TYPE", length = 50)
     private String customerType;
 
-    @Column(name = "manufacturer_oem", length = 100)
+    @Column(name = "MANUFACTURER_OEM", length = 100)
     private String manufacturerOem;
 
-    @Column(name = "wtg_model", length = 100)
+    @Column(name = "WTG_MODEL", length = 100)
     private String wtgModel;
 
-    @Column(name = "wind_turbine_power", length = 100)
+    @Column(name = "WIND_TURBINE_POWER", length = 100)
     private String windTurbinePower;
 
-    @Column(name = "wind_farm_name", length = 100)
+    @Column(name = "WIND_FARM_NAME", length = 100)
     private String windFarmName;
 
-    @Column(name = "area", length = 200)
+    @Column(name = "AREA", length = 200)
     private String area;
 
-    @Column(name = "pincode", length = 20)
+    @Column(name = "PINCODE", length = 20)
     private String pincode;
 
-    @Column(name = "state", length = 100)
+    @Column(name = "STATE", length = 100)
     private String state;
 
-    @Column(name = "country", length = 100)
+    @Column(name = "COUNTRY", length = 100)
     private String country;
 
-    @Column(name = "developer", length = 200)
+    @Column(name = "DEVELOPER", length = 200)
     private String developer;
 
-    @Column(name = "plant_mw")
+    @Column(name = "PLANT_MW")
     private Double plantMw;
 
-    @Column(name = "turbine_count")
+    @Column(name = "TURBINE_COUNT")
     private Integer turbineCount;
 
-    @Column(name = "hub", length = 100)
+    @Column(name = "HUB", length = 100)
     private String hub;
 
-    @Column(name = "operational_status", length = 100)
+    @Column(name = "OPERATIONAL_STATUS", length = 100)
     private String operationalStatus;
 
-    @Column(name = "commissioning_year", length = 20)
+    @Column(name = "COMMISSIONING_YEAR", length = 20)
     private String commissioningYear;
 
-    @Column(name = "commissioning_month", length = 20)
+    @Column(name = "COMMISSIONING_MONTH", length = 20)
     private String commissioningMonth;
 
-    @Column(name = "latitude")
+    @Column(name = "LATITUDE")
     private Double latitude;
 
-    @Column(name = "longitude")
+    @Column(name = "LONGITUDE")
     private Double longitude;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     @Builder.Default
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY")
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    private Date createdDate;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY")
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    private Date updatedDate;
+
+    @Column(name = "IS_ACTIVE")
+    @Builder.Default
+    private Boolean isActive = true;
 
     @PrePersist
     protected void onCreate() {
-        createdAt = new Date();
+        createdDate = new Date();
+        if (createdBy == null) createdBy = "Admin";
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = new Date();
+        updatedDate = new Date();
+        if (updatedBy == null) updatedBy = "Admin";
+    }
+
+    // Backward-compatible aliases
+    @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
+    public Date getCreatedAt() {
+        return this.createdDate;
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        this.createdDate = createdAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
+    public Date getUpdatedAt() {
+        return this.updatedDate;
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        this.updatedDate = updatedAt;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("createdUser")
+    public String getCreatedUser() {
+        return this.createdBy;
+    }
+
+    public void setCreatedUser(String createdUser) {
+        this.createdBy = createdUser;
+    }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("updatedUser")
+    public String getUpdatedUser() {
+        return this.updatedBy;
+    }
+
+    public void setUpdatedUser(String updatedUser) {
+        this.updatedBy = updatedUser;
     }
 }

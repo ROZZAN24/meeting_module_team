@@ -34,7 +34,7 @@ import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Cropper from 'react-easy-crop';
 
 import autonomaLogo from 'assets/images/logo.png';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSStatusField } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { openSnackbar } from 'store/slices/snackbar';
 import axios from 'utils/axios';
@@ -401,8 +401,8 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
-                  <BOSTextField
-                    select
+                  <BOSStatusField
+                    isCreate={!editingUser}
                     name="status"
                     label="Account Status"
                     value={formData.status}
@@ -411,7 +411,7 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                   >
                     <MenuItem value={1}>ACTIVE</MenuItem>
                     <MenuItem value={0}>SUSPENDED</MenuItem>
-                  </BOSTextField>
+                  </BOSStatusField>
                 </Grid>
                 <Grid item xs={12} sm={6}>
                   <BOSTextField
@@ -494,6 +494,9 @@ export default function AddUserDialog({ open, onClose, editingUser, employees, f
                 </Grid>
               </Grid>
             </BOSFormSection>
+          </Grid>
+          <Grid item xs={12}>
+            
           </Grid>
         </Grid>
       </BOSFormDialog>

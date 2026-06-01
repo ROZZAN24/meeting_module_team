@@ -8,13 +8,43 @@ CREATE PROCEDURE dbo.sp_RenameTableCasingAndPrefix
     @newName NVARCHAR(256)
 AS
 BEGIN
-    -- Check if the old table exists and the current metadata casing does not match the desired casing
-    IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND 
-       (SELECT name FROM sys.tables WHERE object_id = OBJECT_ID(@oldName)) COLLATE Latin1_General_CS_AS <> @newName
+    -- Check if both tables exist as distinct objects (e.g. hrm_category_master and HR_CATEGORY_MASTER)
+    IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND OBJECT_ID(@newName, 'U') IS NOT NULL AND OBJECT_ID(@oldName) <> OBJECT_ID(@newName)
+    BEGIN
+        DECLARE @sql NVARCHAR(MAX);
+        SET @sql = '
+            IF EXISTS (SELECT * FROM ' + QUOTENAME(@oldName) + ') AND NOT EXISTS (SELECT * FROM ' + QUOTENAME(@newName) + ')
+            BEGIN
+                DECLARE @cols NVARCHAR(MAX) = '''';
+                SELECT @cols = @cols + QUOTENAME(c.name) + '',''
+                FROM sys.columns c
+                WHERE c.object_id = OBJECT_ID(''' + @newName + ''')
+                  AND c.is_identity = 0;
+                
+                IF LEN(@cols) > 0
+                BEGIN
+                    SET @cols = SUBSTRING(@cols, 1, LEN(@cols) - 1);
+                    EXEC(''INSERT INTO ' + QUOTENAME(@newName) + ' ('' + @cols + '') SELECT '' + @cols + '' FROM ' + QUOTENAME(@oldName) + ''');
+                END
+            END
+            DROP TABLE ' + QUOTENAME(@oldName) + ';
+        ';
+        EXEC sp_executesql @sql;
+    END
+    -- If only the old table exists, rename it to the new name
+    ELSE IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND OBJECT_ID(@newName, 'U') IS NULL
     BEGIN
         DECLARE @tempName NVARCHAR(300) = @oldName + '_TEMP';
         EXEC sp_rename @oldName, @tempName;
         EXEC sp_rename @tempName, @newName;
+    END
+    -- If they point to the SAME object (case-insensitive match), but the metadata casing is different, rename it
+    ELSE IF OBJECT_ID(@oldName, 'U') IS NOT NULL AND OBJECT_ID(@newName, 'U') IS NOT NULL AND OBJECT_ID(@oldName) = OBJECT_ID(@newName)
+         AND (SELECT name FROM sys.tables WHERE object_id = OBJECT_ID(@oldName)) COLLATE Latin1_General_CS_AS <> @newName
+    BEGIN
+        DECLARE @tempName2 NVARCHAR(300) = @oldName + '_TEMP';
+        EXEC sp_rename @oldName, @tempName2;
+        EXEC sp_rename @tempName2, @newName;
     END
 END;
 GO

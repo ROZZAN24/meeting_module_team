@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useImperativeHandle, forwardRef, useRef } from 'react';
 import { Grid, Button, Stack, MenuItem, Typography, useTheme, Box, Divider, IconButton } from '@mui/material';
 import { IconPlus, IconDeviceFloppy, IconTrash, IconHeart, IconFileText, IconMapPin, IconCertificate, IconCar, IconActivity, IconGavel, IconCamera, IconDeviceLaptop, IconUsers, IconAmbulance, IconAlertTriangle, IconEPassport, IconShieldCheck, IconBuildingBank, IconSchool, IconReceipt2, IconBriefcase, IconDevices } from '@tabler/icons-react';
 import { BOSFormSection, BOSTextField, BOSDatePicker, BOSDataTable, btnSave, btnDelete, BOSFileUpload } from 'ui-component/bos';
@@ -31,7 +31,7 @@ const R = ({ children, lg }) => {
   return <Box sx={{ gridColumn }}>{children}</Box>;
 };
 
-function Section1to1({ title, icon, endpoint, employeeId, fields, validation, onPreview }) {
+function Section1to1({ title, icon, endpoint, employeeId, fields, validation, onPreview, registerSave }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const [form, setForm] = useState({});
@@ -58,24 +58,37 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
       .catch(() => setLoaded(true));
   }, [employeeId, endpoint, fields]);
 
-  const save = async () => {
+  const save = async (isOverall = false) => {
     if (!employeeId) return;
     
     // Check if any data was actually entered
     const hasData = Object.values(form).some(v => v !== null && v !== '' && v !== undefined);
     if (!hasData) {
-      snack(dispatch, 'Please fill the details in this section before saving.', 'warning');
       return;
     }
 
-    if (validation && !validation(form)) return;
+    if (validation && !validation(form)) {
+      if (isOverall) throw new Error(`Validation failed for ${title}`);
+      return;
+    }
     try { 
       const { data } = await axios.post(`${API}/${employeeId}/${endpoint}`, form); 
       setForm(data); 
-      snack(dispatch, `${title} saved successfully!`); 
+      if (!isOverall) {
+        snack(dispatch, `${title} saved successfully!`); 
+      }
     }
-    catch { snack(dispatch, `Failed to save ${title}. Please try again.`, 'error'); }
+    catch (err) { 
+      if (isOverall) throw err;
+      snack(dispatch, `Failed to save ${title}. Please try again.`, 'error'); 
+    }
   };
+
+  useEffect(() => {
+    if (registerSave) {
+      return registerSave(title || endpoint, save);
+    }
+  }, [registerSave, save, title, endpoint]);
 
   const upload = (field, files) => {
     if (files && files.length > 0) {
@@ -153,13 +166,7 @@ function Section1to1({ title, icon, endpoint, employeeId, fields, validation, on
     </GridContainer>
   );
 
-  const footer = employeeId ? (
-    <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 2 }}>
-      <Button variant="contained" startIcon={<IconDeviceFloppy size={16} />} onClick={save} sx={{ ...btnSave, ml: 'auto' }}>
-        Save Section
-      </Button>
-    </Box>
-  ) : null;
+  const footer = null;
 
   if (!title) return (
     <Box sx={{ p: 0 }}>
@@ -287,8 +294,8 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, tra
 
       {!disabled && (
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', mt: 2 }}>
-          <Button variant="contained" startIcon={<IconDeviceFloppy size={16} />} onClick={add} sx={{ ...btnSave, ml: 'auto' }}>
-            Save Section
+          <Button variant="contained" startIcon={<IconPlus size={16} />} onClick={add} sx={{ ...btnSave, ml: 'auto' }}>
+            Add
           </Button>
         </Box>
       )}
@@ -314,7 +321,23 @@ function Section1toN({ title, icon, endpoint, employeeId, fields, tableCols, tra
   );
 }
 
-export default function EmployeeSubSections({ employeeId, onPreview }) {
+const EmployeeSubSections = forwardRef(({ employeeId, onPreview }, ref) => {
+  const saveRegistry = useRef({});
+  const registerSave = useCallback((name, saveFn) => {
+    saveRegistry.current[name] = saveFn;
+    return () => {
+      delete saveRegistry.current[name];
+    };
+  }, []);
+
+  useImperativeHandle(ref, () => ({
+    saveAll: async () => {
+      const saveFns = Object.values(saveRegistry.current);
+      if (saveFns.length === 0) return;
+      const promises = saveFns.map(fn => fn(true));
+      await Promise.all(promises);
+    }
+  }));
   const theme = useTheme();
   const dispatch = useDispatch();
   const pc = theme.palette.primary.main;
@@ -335,7 +358,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         </Box>
       )}
       {/* 5. PERSONAL DETAILS */}
-      <Section1to1 title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} onPreview={onPreview} fields={[
+      <Section1to1 registerSave={registerSave} title="Personal Details" icon={<IconHeart size={20} color={pc} />} endpoint="personal" employeeId={employeeId} onPreview={onPreview} fields={[
         { name: 'gender', label: 'Gender', select: true, options: ['MALE', 'FEMALE', 'OTHER'] },
         { name: 'maritalStatus', label: 'Marital Status', select: true, options: ['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'] },
         { name: 'marriageDate', label: 'Married Date', type: 'date', disabled: (f) => f.maritalStatus !== 'MARRIED', required: true }, 
@@ -354,7 +377,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
 
       {/* 6. ADDRESS DETAILS */}
       <BOSFormSection icon={<IconMapPin size={20} color={pc} />} title="Address Details">
-        <Section1to1 endpoint="contact" employeeId={employeeId} fields={[
+        <Section1to1 registerSave={registerSave} endpoint="contact" employeeId={employeeId} fields={[
           { name: 'address', label: 'Permanent Address (Communication Address)', max: 500, multiline: true, rows: 2, lg: 12 },
           { name: 'city', label: 'City', max: 100 },
           { name: 'state', label: 'State', max: 100 },
@@ -365,6 +388,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
 
       {/* 7. ID DETAILS */}
       <Section1to1 
+        registerSave={registerSave}
         title="ID Details" 
         icon={<IconEPassport size={20} color={pc} />} 
         endpoint="personal" 
@@ -390,14 +414,14 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         ]} />
 
       {/* 8. STATUTORY DETAILS */}
-      <Section1to1 title="Statutory Details" icon={<IconShieldCheck size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
+      <Section1to1 registerSave={registerSave} title="Statutory Details" icon={<IconShieldCheck size={20} color={pc} />} endpoint="personal" employeeId={employeeId} fields={[
         { name: 'panNumber', label: 'PAN No', max: 20 },
         { name: 'pfNumber', label: 'PF No', max: 100 },
         { name: 'uanNumber', label: 'UAN No', max: 100 }
       ]} />
 
       {/* 9. BANK DETAILS */}
-      <Section1to1 title="Bank Details" icon={<IconBuildingBank size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
+      <Section1to1 registerSave={registerSave} title="Bank Details" icon={<IconBuildingBank size={20} color={pc} />} endpoint="job-profile" employeeId={employeeId} fields={[
         { name: 'salaryAccountNumber', label: 'Account No', max: 50 },
         { name: 'accountName', label: 'Account Name', max: 100 },
         { name: 'branchName', label: 'Branch Name', max: 100 },
@@ -440,7 +464,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
       />
 
       {/* 11. PAY COMPONENTS */}
-      <Section1to1 title="Pay Component" icon={<IconReceipt2 size={20} color={sc} />} endpoint="job-profile" employeeId={employeeId} onPreview={onPreview} fields={[
+      <Section1to1 registerSave={registerSave} title="Pay Component" icon={<IconReceipt2 size={20} color={sc} />} endpoint="job-profile" employeeId={employeeId} onPreview={onPreview} fields={[
         { name: 'grossSalary', label: 'Gross Salary', type: 'number' },
         { name: 'netSalary', label: 'Net Salary', type: 'number' },
         { name: 'basicSalary', label: 'Basic', type: 'number' },
@@ -457,7 +481,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
       ]} />
 
       {/* 12. CTC DETAILS */}
-      <Section1to1 title="CTC Details" icon={<IconReceipt2 size={20} color={sc} />} endpoint="job-profile" employeeId={employeeId} fields={[
+      <Section1to1 registerSave={registerSave} title="CTC Details" icon={<IconReceipt2 size={20} color={sc} />} endpoint="job-profile" employeeId={employeeId} fields={[
         { type: 'subheader', label: 'Monthly Components' },
         { name: 'monthlyCtc', label: 'Monthly CTC', type: 'number', lg: 4 },
         { name: 'basicSalaryCtc', label: 'Basic Salary', type: 'number', lg: 4 },
@@ -615,7 +639,7 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
         ]}
       />
 
-      <Section1to1 title="Self Assessment" icon={<IconActivity size={20} color={pc} />} endpoint="self-assessment" employeeId={employeeId} fields={[
+      <Section1to1 registerSave={registerSave} title="Self Assessment" icon={<IconActivity size={20} color={pc} />} endpoint="self-assessment" employeeId={employeeId} fields={[
         { type: 'subheader', label: '1. Personal Details' },
         { name: 'q1_native', label: '1. Native Place', max: 255, lg: 12 },
         { name: 'q2_presentAddress', label: '2. Present Address', lg: 12 },
@@ -670,4 +694,6 @@ export default function EmployeeSubSections({ employeeId, onPreview }) {
 
     </Stack>
   );
-}
+});
+
+export default EmployeeSubSections;

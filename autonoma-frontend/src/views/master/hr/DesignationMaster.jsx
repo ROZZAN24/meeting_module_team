@@ -7,7 +7,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationDialog from './AddDesignationDialog';
@@ -134,44 +134,25 @@ export default function DesignationMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton
-              onClick={fetchDesignations}
-              color="primary"
-              size="small"
-              sx={{
-                border: '2px solid',
-                borderColor: 'divider',
-                borderRadius: '8px',
-                p: 1,
-                transition: 'all 0.2s',
-                '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-              }}
-            >
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Designation_Master"
-            columns={[
-              { header: 'Code', key: 'designationCode' },
-              { header: 'Name', key: 'designationName' },
-              { header: 'Level', key: 'subCategoryLevel' },
-              { header: 'Status', key: 'status' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Created Date', key: 'createdDate' },
-              { header: 'Updated By', key: 'updatedBy' },
-              { header: 'Updated Date', key: 'updatedDate' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Designation', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchDesignations}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Designation', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportColumns={[
+            { header: 'Code', key: 'designationCode' },
+            { header: 'Name', key: 'designationName' },
+            { header: 'Level', key: 'subCategoryLevel' },
+            { header: 'Status', key: 'status' },
+            { header: 'Created By', key: 'createdBy' },
+            { header: 'Created Date', key: 'createdDate' },
+            { header: 'Updated By', key: 'updatedBy' },
+            { header: 'Updated Date', key: 'updatedDate' }
+          ]}
+          exportFilename="Designation_Master"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

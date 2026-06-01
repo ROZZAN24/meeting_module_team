@@ -46,6 +46,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     // Update user last activity/seen time in UserSessionService
                     userSessionService.updateLastSeen(username);
 
+                    // Pre-resolve and cache employee name to prevent ConcurrentModificationException inside Hibernate flush lifecycle
+                    com.autonoma.erp.util.SecurityUtils.resolveAndCacheEmployeeName(username);
+
                     if (SecurityContextHolder.getContext().getAuthentication() == null) {
                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                                 username,

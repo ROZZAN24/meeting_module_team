@@ -57,6 +57,40 @@ const formatTime12 = (hour, minute) => {
   return `${displayHour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${ampm}`;
 };
 
+const isPastTime = (timeOption, selectedDateStr) => {
+  if (!selectedDateStr || !timeOption) return false;
+  
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  
+  if (selectedDateStr !== todayStr) {
+    return false;
+  }
+  
+  const [time, ampm] = timeOption.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+  
+  if (ampm === 'PM' && hours !== 12) {
+    hours += 12;
+  } else if (ampm === 'AM' && hours === 12) {
+    hours = 0;
+  }
+  
+  const currentHours = today.getHours();
+  const currentMinutes = today.getMinutes();
+  
+  if (hours < currentHours) {
+    return true;
+  } else if (hours === currentHours && minutes < currentMinutes) {
+    return true;
+  }
+  
+  return false;
+};
+
 const START_TIME_OPTIONS = [];
 for (let h = 9; h <= 20; h++) {
   for (let m = 0; m < 60; m += 30) {
@@ -152,8 +186,11 @@ export default function AddAuditSchedule() {
     supplierName: '',
     coOrdinator: '',
     processName: '',
-    itemCode: ''
+    itemCode: '',
+    auditAreaDetail: ''
   });
+
+  const canWrite = perms.write && (!id || formData.status === 'OPEN');
 
   const [criteriaList, setCriteriaList] = useState([]);
   const category = getAuditCategory(formData.auditType);
@@ -163,12 +200,15 @@ export default function AddAuditSchedule() {
     auditCriterias: masterCriteria = [], 
     employees = [],
     levels = [],
+    designationLevels = [],
     designations = [],
     customers = [],
     contacts = [],
     auditAreas = [],
     process: processMaster = []
-  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS', 'AUDIT_AREA', 'PROCESS']);
+  } = useLookups(['AUDIT_TYPE', 'DEPARTMENTS', 'AUDIT_CRITERIA', 'EMPLOYEES', 'LEVELS', 'DESIGNATION_LEVELS', 'DESIGNATIONS', 'CUSTOMERS', 'CONTACTS', 'AUDIT_AREA', 'PROCESS']);
+
+  const finalLevels = levels.length > 0 ? levels : designationLevels;
 
   // Criteria Dialog state
   const [criteriaDialogOpen, setCriteriaDialogOpen] = useState(false);
@@ -312,12 +352,11 @@ export default function AddAuditSchedule() {
     const category = getAuditCategory(formData.auditType);
     const rules = [
       { field: 'auditType', label: 'Audit Type', required: true },
-      { field: 'auditZone', label: 'Zone', required: true },
-      { field: 'auditAreaDetail', label: 'Area', required: true },
       { field: 'auditDate', label: 'Audit Date', required: true },
       { field: 'department', label: 'Department', required: true },
       { field: 'auditee', label: 'Auditee', required: true },
-      { field: 'ncrApprovedBy', label: 'NCR Approved By', required: true }
+      { field: 'ncrApprovedBy', label: 'NCR Approved By', required: true },
+      { field: 'auditArea', label: 'Audit Area', required: true }
     ];
 
     if (category === 'CUSTOMER_AUDIT') {
@@ -327,27 +366,49 @@ export default function AddAuditSchedule() {
       if (formData.emailToCustomer === 'YES') {
         rules.push({ field: 'fromEmailToCustomer', label: 'From Email to Customer', required: true });
       }
-    } else if (category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
-      rules.push({ field: 'externalName', label: 'External Name', required: true });
-      rules.push({ field: 'contactName', label: 'Contact Name', required: true });
-      rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
-    } else if (category === 'PRODUCT_AUDIT') {
-      rules.push({ field: 'itemCode', label: 'Item Code', required: true });
-      rules.push({ field: 'auditor', label: 'Auditor', required: true });
-    } else if (category === 'SUBCONTRACTOR_AUDIT') {
-      rules.push({ field: 'subcontractorName', label: 'Subcontractor Name', required: true });
-      rules.push({ field: 'auditor', label: 'Auditor', required: true });
-    } else if (category === 'SUPPLIER_AUDIT') {
-      rules.push({ field: 'supplierName', label: 'Supplier Name', required: true });
-      rules.push({ field: 'auditor', label: 'Auditor', required: true });
-    } else if (category === 'PROCESS_AUDIT') {
-      rules.push({ field: 'processName', label: 'Process Name', required: true });
-      rules.push({ field: 'auditor', label: 'Auditor', required: true });
     } else {
-      rules.push({ field: 'auditor', label: 'Auditor', required: true });
+      if (category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
+        rules.push({ field: 'externalName', label: 'External Name', required: true });
+        rules.push({ field: 'contactName', label: 'Contact Name', required: true });
+        rules.push({ field: 'coOrdinator', label: 'Co-Ordinator', required: true });
+      } else if (category === 'PRODUCT_AUDIT') {
+        rules.push({ field: 'itemCode', label: 'Item Code', required: true });
+        rules.push({ field: 'auditor', label: 'Auditor', required: true });
+      } else if (category === 'SUBCONTRACTOR_AUDIT') {
+        rules.push({ field: 'subcontractorName', label: 'Subcontractor Name', required: true });
+        rules.push({ field: 'auditor', label: 'Auditor', required: true });
+      } else if (category === 'SUPPLIER_AUDIT') {
+        rules.push({ field: 'supplierName', label: 'Supplier Name', required: true });
+        rules.push({ field: 'auditor', label: 'Auditor', required: true });
+      } else if (category === 'PROCESS_AUDIT') {
+        rules.push({ field: 'processName', label: 'Process Name', required: true });
+        rules.push({ field: 'auditor', label: 'Auditor', required: true });
+      } else {
+        rules.push({ field: 'auditor', label: 'Auditor', required: true });
+      }
     }
 
     if (!validate(formData, rules)) return;
+
+    if (isPastTime(formData.startTime, formData.auditDate)) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Start Time cannot be in the past for today.',
+        severity: 'error',
+        variant: 'alert'
+      }));
+      return;
+    }
+
+    if (isPastTime(formData.endTime, formData.auditDate)) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'End Time cannot be in the past for today.',
+        severity: 'error',
+        variant: 'alert'
+      }));
+      return;
+    }
 
     const convertTo24h = (time12h) => {
       const ensured = ensure12h(time12h);
@@ -403,15 +464,16 @@ export default function AddAuditSchedule() {
       };
 
       if (isEditing) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_SCHEDULE}/${id}`, payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule updated successfully!', severity: 'success', variant: 'alert' }));
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_SCHEDULE, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_SCHEDULE, payload, { skipGlobalAlert: true });
         dispatch(openSnackbar({ open: true, message: 'Audit Schedule created successfully!', severity: 'success', variant: 'alert' }));
       }
       navigate('/qms/audit/schedule');
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Error saving Audit Schedule.', severity: 'error', variant: 'alert' }));
+      const errorMsg = error.response?.data?.message || error.response?.data?.details || error.message || 'Error saving Audit Schedule.';
+      dispatch(openSnackbar({ open: true, message: errorMsg, severity: 'error', variant: 'alert' }));
     }
   };
 
@@ -447,7 +509,6 @@ export default function AddAuditSchedule() {
         coOrdinator: '',
         itemCode: '',
         processName: '',
-        auditZone: '',
         auditAreaDetail: ''
       });
       setCriteriaList([]);
@@ -528,7 +589,7 @@ export default function AddAuditSchedule() {
   useKeyboardShortcuts({
     'ctrl+s': handleSave,
     'ctrl+n': () => {
-      if (perms.write) {
+      if (canWrite) {
         if (category === 'CUSTOMER_AUDIT' || category === 'ISO_AUDIT' || category === 'SUPPLIER_ASSESSMENT') {
           handleOpenCustomCriteria();
         } else {
@@ -540,28 +601,27 @@ export default function AddAuditSchedule() {
   });
 
   const availableCriteria = useMemo(() => {
-    const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
-    const selectedDept = formData.department;
+    const selectedTypes = (formData.auditType || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const selectedDept = (formData.department || '').trim().toLowerCase();
     return (masterCriteria || []).filter(c => c).filter((c) => {
-      const criteriaTypes = c.auditType ? c.auditType.split(', ') : [];
-      const criteriaDepts = c.department ? c.department.split(', ') : [];
+      const criteriaTypes = c.auditType ? c.auditType.split(',').map(s => s.trim().toLowerCase()) : [];
+      const criteriaDepts = c.department ? c.department.split(',').map(s => s.trim().toLowerCase()) : [];
       
       const matchesType = selectedTypes.length === 0 || selectedTypes.some((st) => criteriaTypes.includes(st));
       // SOP: Load criteria based on Audit Type AND Department
       const matchesDept = !selectedDept || criteriaDepts.includes(selectedDept);
       
-      const isAlreadyAdded = (Array.isArray(criteriaList) ? criteriaList : []).some((cl) => cl.criteriaDetails === c.criteriaText);
+      const isAlreadyAdded = (Array.isArray(criteriaList) ? criteriaList : []).some((cl) => (cl.criteriaDetails || '').trim().toLowerCase() === (c.criteriaText || '').trim().toLowerCase());
       return matchesType && matchesDept && !isAlreadyAdded;
     });
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
 
-  const zones = useMemo(() => {
-    return (auditAreas || []).filter(a => a && a.type === 'ZONE' && a.status === 'ACTIVE');
-  }, [auditAreas]);
-
-  const areas = useMemo(() => {
-    return (auditAreas || []).filter(a => a && a.type === 'AREA' && a.status === 'ACTIVE');
-  }, [auditAreas]);
+  const mappedAuditAreas = useMemo(() => {
+    if (!formData.auditType) return [];
+    const selectedTypeObj = auditTypes.find(t => t.auditType === formData.auditType);
+    if (!selectedTypeObj || !selectedTypeObj.auditArea) return [];
+    return selectedTypeObj.auditArea.split(',').map(s => s.trim()).filter(Boolean);
+  }, [formData.auditType, auditTypes]);
 
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
@@ -588,7 +648,7 @@ export default function AddAuditSchedule() {
         }
         secondary={
           <Stack direction="row" spacing={2}>
-            {perms.write ? (
+            {canWrite ? (
               <>
                 <Button
                   variant="outlined"
@@ -622,19 +682,17 @@ export default function AddAuditSchedule() {
           <BOSFormSection icon={<IconFileDescription size={20} color={theme.palette.primary.main} />} title="General Information">
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2.5 }}>
               <BOSTextField label="Schedule No" value={formData.scheduleNo} inputProps={{ readOnly: true }} />
-              <BOSTextField
+              <BOSDatePicker
                 required
-                type="date"
                 label="Schedule Date"
                 name="scheduleDate"
                 value={formData.scheduleDate}
-                inputProps={{ readOnly: true }}
-                InputLabelProps={{ shrink: true }}
                 error={!!errors.scheduleDate}
                 helperText={errors.scheduleDate}
-                disabled={!perms.write}
+                disabled={true}
               />
-              <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} disabled={!perms.write}>
+
+              <BOSTextField select label="Status" name="status" value={formData.status} onChange={handleChange} disabled={!canWrite}>
                 <MenuItem value="OPEN">OPEN</MenuItem>
                 <MenuItem value="CLOSED">CLOSED</MenuItem>
                 <MenuItem value="CANCELLED">CANCELLED</MenuItem>
@@ -664,7 +722,7 @@ export default function AddAuditSchedule() {
                 onChange={(event, newValue) => {
                   setFormData({ ...formData, department: newValue ? newValue.departmentName : '', auditee: '' }); // Reset auditee when dept changes
                 }}
-                disabled={!perms.write}
+                disabled={!canWrite}
                 renderInput={(params) => (
                   <BOSTextField
                     {...params}
@@ -681,19 +739,15 @@ export default function AddAuditSchedule() {
                 getOptionLabel={(option) => option.auditType || ''}
                 value={auditTypes.find((t) => t.auditType === formData.auditType) || null}
                 onChange={(event, newValue) => {
-                  const mappedNames = newValue && newValue.auditArea ? newValue.auditArea.split(',').map(s => s.trim()) : [];
-                  const matchedZone = (auditAreas || []).find(a => a && a.type === 'ZONE' && mappedNames.includes(a.description))?.description || '';
-                  const matchedArea = (auditAreas || []).find(a => a && a.type === 'AREA' && mappedNames.includes(a.description))?.description || '';
-                  
                   setFormData((prev) => ({ 
                     ...prev, 
                     auditType: newValue ? newValue.auditType : '',
-                    auditArea: matchedZone && matchedArea ? `${matchedZone} / ${matchedArea}` : (matchedZone || matchedArea || ''),
-                    auditZone: matchedZone,
-                    auditAreaDetail: matchedArea
+                    auditArea: '',
+                    auditZone: '',
+                    auditAreaDetail: ''
                   }));
                 }}
-                disabled={!perms.write}
+                disabled={!canWrite}
                 renderInput={(params) => (
                   <BOSTextField
                     {...params}
@@ -704,68 +758,30 @@ export default function AddAuditSchedule() {
                   />
                 )}
               />
-
-              {/* Separate Dropdowns for Zone and Area rendered side-by-side */}
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: { xs: 'column', sm: 'row' }, 
-                alignItems: { xs: 'flex-start', sm: 'center' }, 
-                gap: { xs: 0.5, sm: 2 },
-                gridColumn: { xs: 'span 1', sm: 'span 2', md: 'span 2' }
-              }}>
-                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', minWidth: { sm: '120px' } }}>
-                  Audit Zone/Area <span style={{ color: 'red' }}>*</span>
-                </Typography>
-                <Box sx={{ display: 'flex', gap: 1.5, flex: 1, width: '100%' }}>
-                  <BOSTextField
-                    select
-                    required
-                    label="Zone"
-                    name="auditZone"
-                    value={formData.auditZone}
-                    onChange={(e) => {
-                      const zoneVal = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        auditZone: zoneVal,
-                        auditArea: zoneVal && prev.auditAreaDetail ? `${zoneVal} / ${prev.auditAreaDetail}` : (zoneVal || prev.auditAreaDetail || '')
-                      }));
-                    }}
-                    error={!!errors.auditZone || !!errors.auditArea}
-                    helperText={errors.auditZone || errors.auditArea}
-                    sx={{ flex: 1 }}
-                  >
-                    <MenuItem value="">-SELECT ZONE-</MenuItem>
-                    {zones.map((z) => (
-                      <MenuItem key={z.id} value={z.description}>{z.description}</MenuItem>
-                    ))}
-                  </BOSTextField>
-                  
-                  <BOSTextField
-                    select
-                    required
-                    label="Area"
-                    name="auditAreaDetail"
-                    value={formData.auditAreaDetail}
-                    onChange={(e) => {
-                      const areaVal = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        auditAreaDetail: areaVal,
-                        auditArea: prev.auditZone && areaVal ? `${prev.auditZone} / ${areaVal}` : (prev.auditZone || areaVal || '')
-                      }));
-                    }}
-                    error={!!errors.auditAreaDetail}
-                    helperText={errors.auditAreaDetail}
-                    sx={{ flex: 1 }}
-                  >
-                    <MenuItem value="">-SELECT AREA-</MenuItem>
-                    {areas.map((a) => (
-                      <MenuItem key={a.id} value={a.description}>{a.description}</MenuItem>
-                    ))}
-                  </BOSTextField>
-                </Box>
-              </Box>
+              <BOSTextField
+                select
+                required
+                label="Audit Area"
+                name="auditArea"
+                value={formData.auditArea}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    auditArea: val,
+                    auditZone: '',
+                    auditAreaDetail: val
+                  }));
+                }}
+                error={!!errors.auditArea}
+                helperText={errors.auditArea}
+                disabled={!canWrite}
+              >
+                <MenuItem value="">-SELECT AUDIT AREA-</MenuItem>
+                {mappedAuditAreas.map((areaName) => (
+                  <MenuItem key={areaName} value={areaName}>{areaName}</MenuItem>
+                ))}
+              </BOSTextField>
 
               {/* Dynamic Field: Process Name for Process Audit */}
               {category === 'PROCESS_AUDIT' && (
@@ -779,7 +795,7 @@ export default function AddAuditSchedule() {
                       processName: newValue ? newValue.processName : ''
                     }));
                   }}
-                  disabled={!perms.write}
+                  disabled={!canWrite}
                   renderInput={(params) => (
                     <BOSTextField
                       {...params}
@@ -802,6 +818,7 @@ export default function AddAuditSchedule() {
                   onChange={handleChange}
                   error={!!errors.itemCode}
                   helperText={errors.itemCode}
+                  disabled={!canWrite}
                 />
               )}
 
@@ -815,6 +832,7 @@ export default function AddAuditSchedule() {
                   onChange={handleChange}
                   error={!!errors.supplierName}
                   helperText={errors.supplierName}
+                  disabled={!canWrite}
                 />
               )}
 
@@ -828,6 +846,7 @@ export default function AddAuditSchedule() {
                   onChange={handleChange}
                   error={!!errors.subcontractorName}
                   helperText={errors.subcontractorName}
+                  disabled={!canWrite}
                 />
               )}
 
@@ -845,6 +864,7 @@ export default function AddAuditSchedule() {
                         contactName: ''
                       }));
                     }}
+                    disabled={!canWrite}
                     renderInput={(params) => (
                       <BOSTextField
                         {...params}
@@ -866,6 +886,7 @@ export default function AddAuditSchedule() {
                         contactName: newValue ? newValue.contactName : ''
                       }));
                     }}
+                    disabled={!canWrite}
                     renderInput={(params) => (
                       <BOSTextField
                         {...params}
@@ -885,6 +906,7 @@ export default function AddAuditSchedule() {
                     onChange={handleChange}
                     error={!!errors.emailToCustomer}
                     helperText={errors.emailToCustomer}
+                    disabled={!canWrite}
                   >
                     <MenuItem value="">-Select-</MenuItem>
                     <MenuItem value="YES">YES</MenuItem>
@@ -900,6 +922,7 @@ export default function AddAuditSchedule() {
                       onChange={handleChange}
                       error={!!errors.fromEmailToCustomer}
                       helperText={errors.fromEmailToCustomer}
+                      disabled={!canWrite}
                     />
                   )}
                 </>
@@ -916,6 +939,7 @@ export default function AddAuditSchedule() {
                     onChange={handleChange}
                     error={!!errors.externalName}
                     helperText={errors.externalName}
+                    disabled={!canWrite}
                   />
                   <Autocomplete
                     options={(contacts || []).filter(c => c && (c.status === 'Active' || c.contactName === formData.contactName))}
@@ -927,6 +951,7 @@ export default function AddAuditSchedule() {
                         contactName: newValue ? newValue.contactName : ''
                       }));
                     }}
+                    disabled={!canWrite}
                     renderInput={(params) => (
                       <BOSTextField
                         {...params}
@@ -940,18 +965,16 @@ export default function AddAuditSchedule() {
                 </>
               )}
 
-              <BOSTextField
+              <BOSDatePicker
                 required
-                type="date"
                 label="Audit Date"
                 name="auditDate"
                 value={formData.auditDate}
                 onChange={handleChange}
-                inputProps={{ min: getLocalDateString() }}
-                InputLabelProps={{ shrink: true }}
+                minDate={new Date()}
                 error={!!errors.auditDate}
                 helperText={errors.auditDate}
-                disabled={!perms.write}
+                disabled={!canWrite}
               />
               <BOSTextField
                 select
@@ -962,7 +985,7 @@ export default function AddAuditSchedule() {
                 onChange={handleChange}
                 error={!!errors.auditMonth}
                 helperText={errors.auditMonth}
-                disabled={!perms.write}
+                disabled={!canWrite}
               >
                 {MONTHS.map((m) => (
                   <MenuItem key={m} value={m}>{m}</MenuItem>
@@ -974,10 +997,10 @@ export default function AddAuditSchedule() {
                 name="startTime"
                 value={formData.startTime}
                 onChange={handleChange}
-                disabled={!perms.write}
+                disabled={!canWrite}
               >
                 {START_TIME_OPTIONS.map((t) => (
-                  <MenuItem key={t} value={t}>{t}</MenuItem>
+                  <MenuItem key={t} value={t} disabled={isPastTime(t, formData.auditDate)}>{t}</MenuItem>
                 ))}
               </BOSTextField>
               <BOSTextField
@@ -986,10 +1009,10 @@ export default function AddAuditSchedule() {
                 name="endTime"
                 value={formData.endTime}
                 onChange={handleChange}
-                disabled={!perms.write}
+                disabled={!canWrite}
               >
                 {END_TIME_OPTIONS.map((t) => (
-                  <MenuItem key={t} value={t}>{t}</MenuItem>
+                  <MenuItem key={t} value={t} disabled={isPastTime(t, formData.auditDate)}>{t}</MenuItem>
                 ))}
               </BOSTextField>
 
@@ -1004,6 +1027,7 @@ export default function AddAuditSchedule() {
                   onChange={handleChange}
                   error={!!errors.coOrdinator}
                   helperText={errors.coOrdinator}
+                  disabled={!canWrite}
                 >
                   <MenuItem value="">-Select-</MenuItem>
                   {(employees || []).filter(emp => emp).filter(emp => {
@@ -1099,9 +1123,9 @@ export default function AddAuditSchedule() {
                 // Resolution for Level (using levels or designations lookup)
                 let empLevel = '-';
                 if (selectedEmp) {
-                  const levelMatch = (levels || []).find(l => l && String(l.rowId || l.id) === String(selectedEmp.empLevelId));
+                  const levelMatch = (finalLevels || []).find(l => l && String(l.rowId || l.id) === String(selectedEmp.empLevelId));
                   const desigMatch = (designations || []).find(d => d && String(d.id) === String(selectedEmp.designationId));
-                  empLevel = levelMatch?.level || desigMatch?.designationName || '-';
+                  empLevel = levelMatch?.level || levelMatch?.levelName || desigMatch?.designationName || '-';
                 }
 
                 const employeeOptions = filteredEmployees.map(emp => getEmpLabel(emp));
@@ -1153,6 +1177,7 @@ export default function AddAuditSchedule() {
                           onChange={handleChange}
                           error={!!errors[person.field]}
                           helperText={errors[person.field]}
+                          disabled={!canWrite}
                         >
                           <MenuItem value="">-Select-</MenuItem>
                           {employeeOptions.map((opt) => (
@@ -1169,7 +1194,7 @@ export default function AddAuditSchedule() {
 
           {/* Card 4: Audit Criteria Checklist */}
           <BOSFormSection icon={<IconListCheck size={20} color={theme.palette.success.main} />} title="Audit Criteria Checklist">
-            {perms.write && (
+            {canWrite && (
               <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box />
                 <Stack direction="row" spacing={1.5}>
@@ -1217,8 +1242,8 @@ export default function AddAuditSchedule() {
               disableSearchFilter={true}
               onPageChange={() => {}}
               onSizeChange={() => {}}
-              onDeleteRow={perms.write ? (row) => handleRemoveCriteria(criteriaList.indexOf(row)) : undefined}
-              showActions={perms.write}
+              onDeleteRow={canWrite ? (row) => handleRemoveCriteria(criteriaList.indexOf(row)) : undefined}
+              showActions={canWrite}
               renderCell={(col, row, idx) => {
                 if (col.id === 'index') return idx + 1;
                 if (col.id === 'attachmentReq') return <Chip label={row.attachmentReq} size="small" sx={getStatusChipSx(row.attachmentReq === 'YES' ? 'ACTIVE' : 'INACTIVE')} />;

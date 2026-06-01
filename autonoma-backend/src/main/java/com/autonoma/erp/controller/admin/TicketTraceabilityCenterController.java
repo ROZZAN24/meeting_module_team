@@ -69,6 +69,18 @@ public class TicketTraceabilityCenterController {
         return false;
     }
 
+    private boolean isBosAdmin() {
+        String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        if (userId == null)
+            return false;
+        Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
+        if (userOpt.isPresent()) {
+            UserCredential user = userOpt.get();
+            return (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+        }
+        return false;
+    }
+
     private String getCurrentUser() {
         String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         return userId != null ? userId : "System";
@@ -79,14 +91,40 @@ public class TicketTraceabilityCenterController {
     public List<TicketTraceabilityCenter> getAllTickets() {
         log.info("Fetching tickets");
         List<TicketTraceabilityCenter> allTickets = ticketRepository.findAllByOrderByCreatedAtDesc();
-        boolean isInternal = isInternalUser();
+        boolean isAdmin = isBosAdmin();
         String currentUserId = getCurrentUser();
+        String currentUserEmail = currentUserId;
+        String currentUserName = currentUserId;
+        
+        Optional<UserCredential> userOpt = userRepository.findByUserId(currentUserId);
+        if (userOpt.isPresent()) {
+            UserCredential user = userOpt.get();
+            if (user.getEmpId() != null) {
+                Optional<EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                if (empOpt.isPresent()) {
+                    EmployeeMaster emp = empOpt.get();
+                    if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
+                    if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
+                }
+            }
+        }
 
         List<TicketTraceabilityCenter> filtered = new ArrayList<>();
         for (TicketTraceabilityCenter t : allTickets) {
-            if (isInternal
-                    || (t.getCreatedBy() != null && t.getCreatedBy().equalsIgnoreCase(currentUserId))
-                    || (t.getEmail() != null && t.getEmail().equalsIgnoreCase(currentUserId))) {
+            if (isAdmin) {
+                filtered.add(t);
+                continue;
+            }
+
+            boolean isCreator = t.getCreatedBy() != null && (t.getCreatedBy().equalsIgnoreCase(currentUserId) || t.getCreatedBy().equalsIgnoreCase(currentUserName));
+            boolean isEmail = t.getEmail() != null && t.getEmail().equalsIgnoreCase(currentUserEmail);
+            boolean isEmpName = t.getEmployeeName() != null && t.getEmployeeName().equalsIgnoreCase(currentUserName);
+            boolean isVerifier = t.getVerifiedBy() != null && (t.getVerifiedBy().equalsIgnoreCase(currentUserId) || t.getVerifiedBy().equalsIgnoreCase(currentUserName) || t.getVerifiedBy().equalsIgnoreCase(currentUserEmail));
+            boolean isAssignee = t.getAssignedTo() != null && (t.getAssignedTo().equalsIgnoreCase(currentUserId) || t.getAssignedTo().equalsIgnoreCase(currentUserName));
+            boolean isDev = t.getDeveloperName() != null && t.getDeveloperName().equalsIgnoreCase(currentUserName);
+            boolean isDevEmail = t.getDeveloperEmail() != null && t.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
+
+            if (isCreator || isEmail || isEmpName || isVerifier || isAssignee || isDev || isDevEmail) {
                 filtered.add(t);
             }
         }
@@ -103,14 +141,37 @@ public class TicketTraceabilityCenterController {
         }
 
         TicketTraceabilityCenter ticket = ticketOpt.get();
-        boolean isInternal = isInternalUser();
+        boolean isAdmin = isBosAdmin();
         String currentUserId = getCurrentUser();
+        String currentUserEmail = currentUserId;
+        String currentUserName = currentUserId;
+        
+        Optional<UserCredential> userOpt = userRepository.findByUserId(currentUserId);
+        if (userOpt.isPresent()) {
+            UserCredential user = userOpt.get();
+            if (user.getEmpId() != null) {
+                Optional<EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                if (empOpt.isPresent()) {
+                    EmployeeMaster emp = empOpt.get();
+                    if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
+                    if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
+                }
+            }
+        }
 
         // Access check
-        if (!isInternal
-                && (ticket.getCreatedBy() != null && !ticket.getCreatedBy().equalsIgnoreCase(currentUserId))
-                && (ticket.getEmail() != null && !ticket.getEmail().equalsIgnoreCase(currentUserId))) {
-            return ResponseEntity.status(403).build();
+        if (!isAdmin) {
+            boolean isCreator = ticket.getCreatedBy() != null && (ticket.getCreatedBy().equalsIgnoreCase(currentUserId) || ticket.getCreatedBy().equalsIgnoreCase(currentUserName));
+            boolean isEmail = ticket.getEmail() != null && ticket.getEmail().equalsIgnoreCase(currentUserEmail);
+            boolean isEmpName = ticket.getEmployeeName() != null && ticket.getEmployeeName().equalsIgnoreCase(currentUserName);
+            boolean isVerifier = ticket.getVerifiedBy() != null && (ticket.getVerifiedBy().equalsIgnoreCase(currentUserId) || ticket.getVerifiedBy().equalsIgnoreCase(currentUserName) || ticket.getVerifiedBy().equalsIgnoreCase(currentUserEmail));
+            boolean isAssignee = ticket.getAssignedTo() != null && (ticket.getAssignedTo().equalsIgnoreCase(currentUserId) || ticket.getAssignedTo().equalsIgnoreCase(currentUserName));
+            boolean isDev = ticket.getDeveloperName() != null && ticket.getDeveloperName().equalsIgnoreCase(currentUserName);
+            boolean isDevEmail = ticket.getDeveloperEmail() != null && ticket.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
+
+            if (!isCreator && !isEmail && !isEmpName && !isVerifier && !isAssignee && !isDev && !isDevEmail) {
+                return ResponseEntity.status(403).build();
+            }
         }
 
         return ResponseEntity.ok(ticket);
@@ -201,17 +262,38 @@ public class TicketTraceabilityCenterController {
             }
 
             TicketTraceabilityCenter existingTicket = ticketOpt.get();
-            boolean isInternal = isInternalUser();
-            String currentUserId = getCurrentUser();
+            boolean isAdmin = isBosAdmin();
+        String currentUserId = getCurrentUser();
+        String currentUserEmail = currentUserId;
+        String currentUserName = currentUserId;
+        
+        Optional<UserCredential> userOpt = userRepository.findByUserId(currentUserId);
+        if (userOpt.isPresent()) {
+            UserCredential user = userOpt.get();
+            if (user.getEmpId() != null) {
+                Optional<EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
+                if (empOpt.isPresent()) {
+                    EmployeeMaster emp = empOpt.get();
+                    if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
+                    if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
+                }
+            }
+        }
 
-            // Access check
-            if (!isInternal
-                    && (existingTicket.getCreatedBy() != null
-                            && !existingTicket.getCreatedBy().equalsIgnoreCase(currentUserId))
-                    && (existingTicket.getEmail() != null
-                            && !existingTicket.getEmail().equalsIgnoreCase(currentUserId))) {
+        // Access check
+        if (!isAdmin) {
+            boolean isCreator = existingTicket.getCreatedBy() != null && (existingTicket.getCreatedBy().equalsIgnoreCase(currentUserId) || existingTicket.getCreatedBy().equalsIgnoreCase(currentUserName));
+            boolean isEmail = existingTicket.getEmail() != null && existingTicket.getEmail().equalsIgnoreCase(currentUserEmail);
+            boolean isEmpName = existingTicket.getEmployeeName() != null && existingTicket.getEmployeeName().equalsIgnoreCase(currentUserName);
+            boolean isVerifier = existingTicket.getVerifiedBy() != null && (existingTicket.getVerifiedBy().equalsIgnoreCase(currentUserId) || existingTicket.getVerifiedBy().equalsIgnoreCase(currentUserName) || existingTicket.getVerifiedBy().equalsIgnoreCase(currentUserEmail));
+            boolean isAssignee = existingTicket.getAssignedTo() != null && (existingTicket.getAssignedTo().equalsIgnoreCase(currentUserId) || existingTicket.getAssignedTo().equalsIgnoreCase(currentUserName));
+            boolean isDev = existingTicket.getDeveloperName() != null && existingTicket.getDeveloperName().equalsIgnoreCase(currentUserName);
+            boolean isDevEmail = existingTicket.getDeveloperEmail() != null && existingTicket.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
+
+            if (!isCreator && !isEmail && !isEmpName && !isVerifier && !isAssignee && !isDev && !isDevEmail) {
                 return ResponseEntity.status(403).build();
             }
+        }
 
             String oldStatus = existingTicket.getTicketStatus();
 
@@ -245,6 +327,8 @@ public class TicketTraceabilityCenterController {
                 existingTicket.setPriorityLevel(ticketDetails.getPriorityLevel());
             if (ticketDetails.getSeverityLevel() != null)
                 existingTicket.setSeverityLevel(ticketDetails.getSeverityLevel());
+            if (ticketDetails.getVerifiedBy() != null)
+                existingTicket.setVerifiedBy(ticketDetails.getVerifiedBy());
 
             // Workflow details
             if (ticketDetails.getAssignedTo() != null) {
@@ -422,7 +506,7 @@ public class TicketTraceabilityCenterController {
             if (ticketOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            if (!isInternalUser()) {
+            if (!isBosAdmin()) {
                 return ResponseEntity.status(403).build();
             }
             ticketRepository.deleteById(rowId);

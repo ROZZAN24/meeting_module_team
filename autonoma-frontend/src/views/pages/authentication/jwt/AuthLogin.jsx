@@ -50,7 +50,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
 
   // Step management: 'credentials' | 'selection'
   const [step, setStep] = useState('credentials');
-  const [loginMethod, setLoginMethod] = useState('password'); // 'password' | 'face'
+  const [loginMethod, setLoginMethod] = useState('face'); // 'password' | 'face'
   const [showPassword, setShowPassword] = useState(false);
   const [checkError, setCheckError] = useState(null);
   const [loginError, setLoginError] = useState(null);
@@ -419,7 +419,7 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                           gap: 1
                         }}
                       >
-                        <IconShieldCheck size={28} /> Welcome Back
+                        <IconShieldCheck size={28} /> Your Workspace is Ready. Let's Get Things Done.
                       </Typography>
                     </Box>
                   )}
@@ -434,30 +434,6 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                       mb: 3
                     }}
                   >
-                    <Button
-                      fullWidth
-                      type="button"
-                      onClick={() => {
-                        setLoginMethod('password');
-                        stopWebcam();
-                        setCheckError(null);
-                      }}
-                      variant={loginMethod === 'password' ? 'contained' : 'text'}
-                      sx={{
-                        borderRadius: '10px',
-                        py: 1,
-                        fontSize: '0.875rem',
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : 'transparent',
-                        color: loginMethod === 'password' ? '#fff' : theme.palette.text.secondary,
-                        '&:hover': {
-                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
-                        }
-                      }}
-                    >
-                      Password
-                    </Button>
                     <Button
                       fullWidth
                       type="button"
@@ -485,6 +461,31 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
                     >
                       Face Id
                     </Button>
+                    <Button
+                      fullWidth
+                      type="button"
+                      onClick={() => {
+                        setLoginMethod('password');
+                        stopWebcam();
+                        setCheckError(null);
+                      }}
+                      variant={loginMethod === 'password' ? 'contained' : 'text'}
+                      sx={{
+                        borderRadius: '10px',
+                        py: 1,
+                        fontSize: '0.875rem',
+                        fontWeight: 700,
+                        textTransform: 'none',
+                        bgcolor: loginMethod === 'password' ? theme.palette.primary.main : 'transparent',
+                        color: loginMethod === 'password' ? '#fff' : theme.palette.text.secondary,
+                        '&:hover': {
+                          bgcolor: loginMethod === 'password' ? theme.palette.primary.dark : alpha(theme.palette.primary.main, 0.15)
+                        }
+                      }}
+                    >
+                      Password
+                    </Button>
+
                   </Box>
 
                   {loginMethod === 'password' && (

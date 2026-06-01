@@ -7,7 +7,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationLevelDialog from './AddDesignationLevelDialog';
@@ -126,40 +126,21 @@ export default function DesignationLevelMaster() {
                 </Stack>
             }
             secondary={
-                <Stack direction="row" spacing={1.5} alignItems="center">
-                    <Tooltip title="Refresh">
-                        <IconButton
-                            onClick={fetchDesignationLevels}
-                            color="primary"
-                            size="small"
-                            sx={{
-                                border: '2px solid',
-                                borderColor: 'divider',
-                                borderRadius: '8px',
-                                p: 1,
-                                transition: 'all 0.2s',
-                                '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-                            }}
-                        >
-                            <IconRefresh size={20} />
-                        </IconButton>
-                    </Tooltip>
-                    {perms.export && <BOSExportButton
-                        data={filteredRows}
-                        filename="Designation_Level"
-                        columns={[
-                            { header: 'Level', key: 'level' },
-                            { header: 'Basic', key: 'basic' },
-                            { header: 'DA', key: 'da' },
-                            { header: 'HRA', key: 'hra' }
-                        ]}
-                    />}
-                    {perms.write && <Tooltip title={shortcutTooltip('Create Designation Level', 'Ctrl + N')}>
-                        <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                            + New
-                        </Button>
-                    </Tooltip>}
-                </Stack>
+                <BOSTableToolbar
+                    onRefresh={fetchDesignationLevels}
+                    onNew={handleOpenAdd}
+                    newTooltip={shortcutTooltip('Create Designation Level', 'Ctrl + N')}
+                    hasWritePermission={perms.write}
+                    exportData={filteredRows}
+                    exportColumns={[
+                        { header: 'Level', key: 'level' },
+                        { header: 'Basic', key: 'basic' },
+                        { header: 'DA', key: 'da' },
+                        { header: 'HRA', key: 'hra' }
+                    ]}
+                    exportFilename="Designation_Level"
+                    hasExportPermission={perms.export}
+                />
             }
         >
             <BOSDataTable

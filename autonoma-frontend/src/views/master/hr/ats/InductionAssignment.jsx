@@ -5,50 +5,22 @@ import { useTheme } from '@mui/material/styles';
 
 // MUI & Icons
 import {
-  Box,
-  Typography,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Button,
-  Chip,
-  Divider,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper
+  Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper
 } from '@mui/material';
 import {
-  IconRefresh,
-  IconPlus,
-  IconCalendarEvent,
-  IconEdit,
-  IconUserPlus,
-  IconCloudUpload,
-  IconTrash
+  IconRefresh, IconPlus, IconCalendarEvent, IconEdit, IconUserPlus, IconCloudUpload, IconTrash
 } from '@tabler/icons-react';
 
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSTextField,
-  BOSExportButton,
-  btnNew,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnNew, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig, resetFilters, setQuery } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
+import { Navigate } from 'react-router-dom';
 
 const getCurrentTimeStr = () => {
   const now = new Date();
@@ -199,10 +171,11 @@ const InductionAssignment = () => {
   const globalFilters = useSelector((state) => state.search.filters);
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_PENDING);
 
+
+
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -227,8 +200,8 @@ const InductionAssignment = () => {
         ],
         defaultValue: 'empCode',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -404,6 +377,11 @@ const InductionAssignment = () => {
   }, [formData, history]);
 
   const fetchRows = useCallback(async () => {
+    if (!perms.enabled) {
+      setRows([]);
+      setEmployees([]);
+      return;
+    }
     setLoading(true);
     try {
       const [assignRes, empRes] = await Promise.all([
@@ -487,9 +465,13 @@ const InductionAssignment = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [perms.enabled]);
 
-  useEffect(() => { fetchRows(); }, [fetchRows]);
+  useEffect(() => {
+    if (!perms.loading) {
+      fetchRows();
+    }
+  }, [fetchRows, perms.loading]);
 
   // Fetch dynamic round options from master table
   useEffect(() => {
@@ -774,6 +756,8 @@ const InductionAssignment = () => {
 
   const resolvedRows = useMemo(() => {
     return rows.filter(row => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusVal = globalFilters.status || 'ALL';
       const matchesStatus = statusVal === 'ALL' || row.inductionStatus === statusVal;
 
@@ -792,26 +776,21 @@ const InductionAssignment = () => {
     }));
   }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
 
+  if (perms.loading) {
+    return null;
+  }
+
   return (
     <MainCard
       title="Employee Induction Summary"
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Induction_Summary"
-            columns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
-          />}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          exportData={resolvedRows}
+          exportColumns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          exportFilename="Induction_Summary"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

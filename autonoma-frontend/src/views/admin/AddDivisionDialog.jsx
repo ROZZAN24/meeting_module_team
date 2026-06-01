@@ -5,7 +5,7 @@ import { IconLayoutColumns, IconBuilding, IconMapPin } from '@tabler/icons-react
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSAutocomplete, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 
@@ -361,8 +361,9 @@ const AddDivisionDialog = ({ open, handleClose, initialData, readOnly = false })
             onChange={handleChange}
             disabled={isViewOnly}
           />
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!initialData}
+            type="boolean"
             name="status"
             label="Status"
             value={formData.status}
@@ -371,10 +372,7 @@ const AddDivisionDialog = ({ open, handleClose, initialData, readOnly = false })
               setFormData(prev => ({ ...prev, status: val === 'true' || val === true }));
             }}
             disabled={isViewOnly}
-          >
-            <MenuItem value={true}>Active</MenuItem>
-            <MenuItem value={false}>Inactive</MenuItem>
-          </BOSTextField>
+          />
         </BOSFormSection>
 
         {/* ── Section 3: Location & Tax Details ──────────────────────────── */}
@@ -457,6 +455,7 @@ const AddDivisionDialog = ({ open, handleClose, initialData, readOnly = false })
             helperText={errors.gstIn}
           />
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

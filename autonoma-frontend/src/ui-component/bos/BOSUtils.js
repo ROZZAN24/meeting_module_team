@@ -70,3 +70,74 @@ export const resolveNestedValue = (keyPath, obj) => {
   return keyPath.split('.').reduce((acc, part) => (acc && acc[part] !== undefined) ? acc[part] : undefined, obj);
 };
 
+/**
+ * Common date range filter configuration for global filter system.
+ */
+export const getCommonDateFilters = (createdAtId = 'createdAt', updatedAtId = 'updatedAt') => [
+  { id: createdAtId, label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+  { id: updatedAtId, label: 'UPDATED DATE', type: 'dateRange', isStarred: true }
+];
+
+/**
+ * Checks if a row matches the given date range filters.
+ */
+export const matchDateRange = (row, globalFilters, filterId, rowDateKey = filterId) => {
+  if (!globalFilters) return true;
+  const startVal = globalFilters[`${filterId}Start`];
+  const endVal = globalFilters[`${filterId}End`];
+  const considerVal = globalFilters[`${filterId}Consider`] || 'Yes';
+
+  if (!startVal && !endVal) return true;
+  if (considerVal === 'No') return true;
+
+  // Resolve cell value
+  let cellVal = resolveNestedValue(rowDateKey, row);
+  if (cellVal === undefined || cellVal === null || cellVal === '') {
+    const snakeCaseId = rowDateKey.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    cellVal = row[snakeCaseId] || row[`_${rowDateKey}`];
+    if (cellVal === undefined || cellVal === null || cellVal === '') {
+      if (rowDateKey === 'createdAt' || rowDateKey === 'createdDate') {
+        cellVal = row['createdAt'] || row['created_at'] || row['createdDate'] || row['_createdAt'] || row['_createdDate'];
+      }
+      if (rowDateKey === 'updatedAt' || rowDateKey === 'updatedDate') {
+        cellVal = row['updatedAt'] || row['updated_at'] || row['updatedDate'] || row['_updatedAt'] || row['_updatedDate'];
+      }
+    }
+  }
+
+  if (!cellVal || cellVal === '-') return false;
+
+  try {
+    const cellDate = new Date(cellVal);
+    if (isNaN(cellDate.getTime())) return true;
+    const cellDateMidnight = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+
+    const startDate = startVal ? new Date(startVal) : null;
+    const startDateMidnight = startDate && !isNaN(startDate.getTime()) ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+
+    const endDate = endVal ? new Date(endVal) : null;
+    const endDateMidnight = endDate && !isNaN(endDate.getTime()) ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+
+    let inBetween = true;
+    if (startDateMidnight && cellDateMidnight < startDateMidnight) {
+      inBetween = false;
+    }
+    if (endDateMidnight && cellDateMidnight > endDateMidnight) {
+      inBetween = false;
+    }
+
+    return inBetween;
+  } catch (e) {
+    return true;
+  }
+};
+
+/**
+ * Checks if a row matches both created and updated date range filters.
+ */
+export const matchCommonDateFilters = (row, globalFilters, createdAtId = 'createdAt', updatedAtId = 'updatedAt') => {
+  if (!matchDateRange(row, globalFilters, createdAtId)) return false;
+  if (!matchDateRange(row, globalFilters, updatedAtId)) return false;
+  return true;
+};
+

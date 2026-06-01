@@ -11,4 +11,6 @@ public interface InductionTrainingDetailRepository extends JpaRepository<Inducti
     List<InductionTrainingDetail> findByAssignmentId(Long assignmentId);
 
     long countByAssignmentIdAndTrainerStatus(Long assignmentId, String trainerStatus);
+
+    boolean existsByInductionMasterId(Long inductionMasterId);
 }

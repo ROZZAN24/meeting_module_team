@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -190,31 +190,24 @@ export default function ItemSubtypeMaster() {
           <Typography variant="h3">Product Item Sub Type Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchItemSubtypes} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={mappedRows}
-            filename="Product_Item_Sub_Type_Master"
-            columns={[
-              { header: 'Item Type', key: 'itemType' },
-              { header: 'Sub Type', key: 'subType' },
-              { header: 'Sub Item Prefix', key: 'subItemPrefix' },
-              { header: 'Is Auto Generate Code', key: 'isAutoGenerateCode' },
-              { header: 'Prefix Based', key: 'prefixBased' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Item Sub Type', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchItemSubtypes}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Item Sub Type', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={mappedRows}
+          exportColumns={[
+            { header: 'Item Type', key: 'itemType' },
+            { header: 'Sub Type', key: 'subType' },
+            { header: 'Sub Item Prefix', key: 'subItemPrefix' },
+            { header: 'Is Auto Generate Code', key: 'isAutoGenerateCode' },
+            { header: 'Prefix Based', key: 'prefixBased' },
+            { header: 'Status', key: 'status' }
+          ]}
+          exportFilename="Product_Item_Sub_Type_Master"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable

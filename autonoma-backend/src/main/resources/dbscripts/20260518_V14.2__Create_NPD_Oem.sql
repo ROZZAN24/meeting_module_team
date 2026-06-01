@@ -16,34 +16,73 @@ BEGIN
         updated_by NVARCHAR(100) NULL,
         updated_at DATETIME NULL
     );
+END;
+GO
 
-    -- Seed the 25 exact OEM records requested by the user
-    INSERT INTO npd_oem (oem_short_name, oem_prefix, oem_description, origin_country, status_year, status, created_by, created_at)
-    VALUES 
-    ('SUZLON', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('INOX WIND', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('VESTAS', 'V', 'VESTAS', NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('REGEN', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('SENVION/KENERYS', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('GLOBAL WIND', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('PIONEER WINCON', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('LEITWIND', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('RRB (VESTAS)', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('CWEL', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('SIEMENS CAMESA', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('GENERAL', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('ENERCON', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('ADANI', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('NEPC', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('NORDEX ACCIONA', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('NEG MICON', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('MITSUBISHI', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('TACKE', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('TTG', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('AWT', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('BHEL', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('BONUS', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('CARTER', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE()),
-    ('ENVISON', NULL, NULL, NULL, NULL, 'ACTIVE', 'System', GETDATE());
+-- Seed the 25 exact OEM records requested by the user (idempotent, outside table creation block)
+IF NOT EXISTS (SELECT 1 FROM npd_oem WHERE oem_short_name = 'SUZLON')
+BEGIN
+    IF COL_LENGTH('npd_oem', 'created_by') IS NOT NULL
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_oem (oem_short_name, oem_prefix, oem_description, origin_country, status_year, status, created_by, created_at)
+        VALUES 
+        (''SUZLON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''INOX WIND'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''VESTAS'', ''V'', ''VESTAS'', NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''REGEN'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''SENVION/KENERYS'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''GLOBAL WIND'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''PIONEER WINCON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''LEITWIND'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''RRB (VESTAS)'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''CWEL'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''SIEMENS CAMESA'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''GENERAL'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''ENERCON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''ADANI'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''NEPC'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''NORDEX ACCIONA'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''NEG MICON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''MITSUBISHI'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''TACKE'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''TTG'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''AWT'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''BHEL'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''BONUS'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''CARTER'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''ENVISON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE());';
+    END
+    ELSE
+    BEGIN
+        EXEC sp_executesql N'
+        INSERT INTO npd_oem (oem_short_name, oem_prefix, oem_description, origin_country, status_year, status, CREATED_USER, created_at)
+        VALUES 
+        (''SUZLON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''INOX WIND'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''VESTAS'', ''V'', ''VESTAS'', NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''REGEN'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''SENVION/KENERYS'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''GLOBAL WIND'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''PIONEER WINCON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''LEITWIND'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''RRB (VESTAS)'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''CWEL'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''SIEMENS CAMESA'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''GENERAL'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''ENERCON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''ADANI'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''NEPC'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''NORDEX ACCIONA'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''NEG MICON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''MITSUBISHI'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''TACKE'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''TTG'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''AWT'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''BHEL'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''BONUS'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''CARTER'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE()),
+        (''ENVISON'', NULL, NULL, NULL, NULL, ''ACTIVE'', ''System'', GETDATE());';
+    END
 END;
 GO
