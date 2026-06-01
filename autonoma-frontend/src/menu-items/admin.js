@@ -109,6 +109,15 @@ const admin = {
           icon: icons.IconDatabaseExport,
           breadcrumbs: true,
           pageCode: 'AD1180'
+        },
+        {
+          id: 'organization-chart',
+          title: 'Organization Chart',
+          type: 'item',
+          url: '/admin/organization-chart',
+          icon: icons.IconUsers,
+          breadcrumbs: true,
+          pageCode: 'AD1190'
         }
       ]
     },
