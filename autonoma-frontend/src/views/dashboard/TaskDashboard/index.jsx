@@ -705,7 +705,7 @@ export default function TaskDashboard() {
         audit.forEach(a => { const name = getName(a.auditee || a.auditor); tasksList.push({ _status: a.status || 'Pending', _dueDate: a.auditDate || a.scheduleDate, _title: `Audit ${a.scheduleNo || ''}`, _id: a.scheduleNo || `AUDIT-${a.id}`, _user: name, _rawDate: a.createdAt || a.createdDate || a.auditDate || a.scheduleDate, _hrs: a.estimatedHours || 8, _pageName: a.pageName || a.moduleName || 'Audit Schedule' }); });
 
         let stats = { total: tasksList.length, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0 };
-        const today = new Date(); today.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
         let overdueList = [];
 
         tasksList.forEach(t => {
