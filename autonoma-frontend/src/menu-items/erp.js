@@ -130,36 +130,28 @@ export const masters = {
               pageCode: 'M2140'
             },
             {
-              id: 'master-hr-ats-induction-round',
-              title: 'Induction Round Master',
+              id: 'hra-ats-interview',
+              title: 'Interview Criteria Master',
               type: 'item',
-              url: '/master/hr/ats/induction-round-master',
-              icon: icons.IconRotate2,
-              pageCode: 'M2145'
-            },
-            {
-              id: 'master-hr-ats-induction-assignment',
-              title: 'Induction Pending',
-              type: 'item',
-              url: '/master/hr/ats/induction-assignment',
-              icon: icons.IconCalendarEvent,
-              pageCode: 'M2150'
-            },
-            {
-              id: 'master-hr-ats-induction-training',
-              title: 'Induction Training',
-              type: 'item',
-              url: '/master/hr/ats/induction-training',
+              url: '/master/hr/ats/interview-criteria',
               icon: icons.IconClipboardCheck,
-              pageCode: 'M2160'
+              pageCode: 'M2110'
             },
             {
-              id: 'master-hr-ats-induction-trainee',
-              title: 'Induction Trainee',
+              id: 'hra-ats-email',
+              title: 'Email Content Master',
               type: 'item',
-              url: '/master/hr/ats/induction-trainee',
-              icon: icons.IconUserCheck,
-              pageCode: 'M2170'
+              url: '/master/hr/ats/email-content',
+              icon: icons.IconMessage2,
+              pageCode: 'M2120'
+            },
+            {
+              id: 'hra-ats-verification',
+              title: 'Applicant Verification Criteria',
+              type: 'item',
+              url: '/master/hr/ats/verification',
+              icon: icons.IconShieldCheck,
+              pageCode: 'M2130'
             }
           ]
         },
@@ -632,28 +624,28 @@ export const hra = {
           pageCode: 'HA1110'
         },
         {
-          id: 'hra-ats-interview',
-          title: 'Interview Criteria Master',
+          id: 'master-hr-ats-induction-assignment',
+          title: 'Induction Pending',
           type: 'item',
-          url: '/master/hr/ats/interview-criteria',
+          url: '/hra/ats/induction-assignment',
+          icon: icons.IconCalendarEvent,
+          pageCode: 'M2150'
+        },
+        {
+          id: 'master-hr-ats-induction-training',
+          title: 'Induction Training',
+          type: 'item',
+          url: '/hra/ats/induction-training',
           icon: icons.IconClipboardCheck,
-          pageCode: 'M2110'
+          pageCode: 'M2160'
         },
         {
-          id: 'hra-ats-email',
-          title: 'Email Content Master',
+          id: 'master-hr-ats-induction-trainee',
+          title: 'Induction Trainee',
           type: 'item',
-          url: '/master/hr/ats/email-content',
-          icon: icons.IconMessage2,
-          pageCode: 'M2120'
-        },
-        {
-          id: 'hra-ats-verification',
-          title: 'Applicant Verification Criteria',
-          type: 'item',
-          url: '/master/hr/ats/verification',
-          icon: icons.IconShieldCheck,
-          pageCode: 'M2130'
+          url: '/hra/ats/induction-trainee',
+          icon: icons.IconUserCheck,
+          pageCode: 'M2170'
         }
       ]
     }
