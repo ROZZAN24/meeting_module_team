@@ -217,6 +217,10 @@ const CompanyProfile = () => {
       if (name === 'country') { updated.state = ''; updated.city = ''; updated.stateCode = ''; }
       // Reset city if state changes
       if (name === 'state') { updated.city = ''; }
+      // Auto-update license renewal date to current date when expiry date changes
+      if (name === 'licExpiryDate') {
+        updated.licRenewalDate = new Date().toISOString().split('T')[0];
+      }
       return updated;
     });
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
