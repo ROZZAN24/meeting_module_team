@@ -29,7 +29,13 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
 
     @Override
     public boolean onPreInsert(PreInsertEvent event) {
-        String currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        String currentUser;
+        String className = event.getEntity().getClass().getSimpleName();
+        if (className.startsWith("Product")) {
+            currentUser = SecurityUtils.getCurrentUserId();
+        } else {
+            currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        }
         if (currentUser == null) {
             currentUser = "Admin"; // Fallback to Admin for default data/migrations if session is missing
         }
@@ -62,7 +68,13 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
             return false;
         }
 
-        String currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        String currentUser;
+        String className = event.getEntity().getClass().getSimpleName();
+        if (className.startsWith("Product")) {
+            currentUser = SecurityUtils.getCurrentUserId();
+        } else {
+            currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        }
         if (currentUser == null) {
             currentUser = "Admin"; // Fallback
         }
