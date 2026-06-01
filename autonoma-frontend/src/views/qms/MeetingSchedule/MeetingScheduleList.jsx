@@ -10,12 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import {
-  BOSDataTable,
-  btnNew,
-  getStatusChipSx,
-  BOSTableToolbar
-} from 'ui-component/bos';
+import { BOSDataTable, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { isMobile } from 'react-device-detect';
@@ -100,6 +95,8 @@ export default function MeetingScheduleList() {
   // ── FILTERED ROWS ──
   const filteredRows = useMemo(() => {
     return resolvedRows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters?.status || 'OPEN';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
@@ -116,8 +113,7 @@ export default function MeetingScheduleList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'dateType', label: 'Date Type', type: 'select', isStarred: true,
         options: [
           { value: 'meetingDate', label: 'Meeting Date' },
@@ -143,8 +139,8 @@ export default function MeetingScheduleList() {
           { value: 'CANCELLED', label: 'Cancelled' }
         ],
         defaultValue: 'OPEN'
-      }
-    ]));
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 

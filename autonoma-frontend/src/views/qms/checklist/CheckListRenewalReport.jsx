@@ -26,7 +26,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
-import { BOSTableToolbar } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconX, IconFileDownload } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -119,8 +119,7 @@ const exportColumns = [
   { header: 'Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status }
 ];
 
-const getFilterConfig = (departments) => [
-  { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
+const getFilterConfig = (departments) => [{ id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
   { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
   {
     id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'All', options: [
@@ -169,8 +168,8 @@ const getFilterConfig = (departments) => [
     ]
   },
   { id: 'assignedTo', label: 'Assigned To', type: 'text', isStarred: false },
-  { id: 'assignedBy', label: 'Assigned By', type: 'text', isStarred: false }
-];
+  { id: 'assignedBy', label: 'Assigned By', type: 'text', isStarred: false },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 function FilterSection({ title, open, onToggle, children }) {
   return (
@@ -337,6 +336,7 @@ export default function CheckListRenewalReport() {
       };
       const response = await axios.get('/api/qms/checklist/assignments', { params });
       let displayRows = response.data.content || [];
+      displayRows = displayRows.filter((r) => matchCommonDateFilters(r, globalFilters, 'createdDate', 'updatedDate'));
       if (filters.status === 'All') {
         const excludedStatuses = ['Pending', 'Started', 'Pending for Verified', 'Pending for Accepted'];
         displayRows = displayRows.filter((r) => {

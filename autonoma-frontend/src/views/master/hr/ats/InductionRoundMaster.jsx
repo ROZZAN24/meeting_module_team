@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, btnNew, errorStyle, BOSStatusField, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, btnNew, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 
@@ -62,8 +62,7 @@ export default function InductionRoundMaster() {
 
   // Filter config
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -74,8 +73,8 @@ export default function InductionRoundMaster() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));

@@ -8,7 +8,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import AddCheckListDialog from './AddCheckListDialog';
 import ChecklistAssignDialog from './ChecklistAssignDialog';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
@@ -268,6 +268,7 @@ const buildFilterConfig = (departmentOptions) => [
   { id: 'frequency',   label: 'Frequency',     type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.frequency },
   { id: 'stockLink',   label: 'Stock Link',    type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.stockLink },
   { id: 'photoRequired', label: 'Photo Required', type: 'select', isStarred: false, defaultValue: 'All', options: STATIC_FILTER_OPTIONS.photoRequired },
+  ...getCommonDateFilters('createdDate', 'updatedDate')
 ];
 
 // ==============================|| MASTER CHECKLIST (BOS SOP COMPLIANT) ||============================== //

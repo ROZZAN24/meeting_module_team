@@ -1,66 +1,15 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Typography,
-  Button,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Checkbox,
-  Grid,
-  Box,
-  Tabs,
-  Tab,
-  Card,
-  CardContent,
-  FormControlLabel,
-  InputAdornment,
-  Divider,
-  Paper,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TableContainer,
-  Chip
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
-  IconSearch,
-  IconRefresh,
-  IconPlus,
-  IconUser,
-  IconFileText,
-  IconTrash,
-  IconEdit,
-  IconMail,
-  IconCalendar,
-  IconCheck,
-  IconAlertCircle,
-  IconBriefcase,
-  IconSchool,
-  IconCurrencyDollar,
-  IconAddressBook,
-  IconUserCheck,
-  IconUserPlus,
-  IconLock,
-  IconStar,
-  IconTrendingUp
+  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  BOSDatePicker,
-  BOSFileUpload,
-  errorStyle,
-  BOSTableToolbar
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSDatePicker, BOSFileUpload, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -315,8 +264,7 @@ export default function ApplicationTrackingSystem() {
 
   // Update default filters
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -330,8 +278,8 @@ export default function ApplicationTrackingSystem() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));

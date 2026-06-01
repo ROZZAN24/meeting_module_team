@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import useLookups from 'hooks/useLookups';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import MomApprovalDialog from './MomApprovalDialog';
@@ -44,8 +44,7 @@ export default function MomApprovalList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'filterType', label: 'Type', type: 'select', isStarred: true,
         options: [{ value: 'Mine', label: 'Mine' }, { value: 'All', label: 'All' }],
         defaultValue: 'Mine'
@@ -75,8 +74,8 @@ export default function MomApprovalList() {
         ],
         defaultValue: 'actionNo'
       },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true }
-    ]));
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -121,6 +120,8 @@ export default function MomApprovalList() {
   // ── FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       const statusFilter = globalFilters.status || 'PENDING FOR APPROVAL';
       if (statusFilter !== 'All' && (row.status || '') !== statusFilter) return false;
 

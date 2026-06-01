@@ -8,12 +8,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import {
-  BOSDataTable,
-  btnNew,
-  getStatusChipSx,
-  BOSTableToolbar
-} from 'ui-component/bos';
+import { BOSDataTable, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
@@ -52,8 +47,7 @@ export default function MeetingMasterList() {
 
   // ── GLOBAL FILTER CONFIG (same pattern as AuditScheduleList) ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'All', label: 'ALL' },
@@ -71,8 +65,8 @@ export default function MeetingMasterList() {
         ],
         defaultValue: 'meetingName'
       },
-      { id: 'meetingName', label: 'Meeting Name', type: 'text', placeholder: 'Search meeting name...', isStarred: true }
-    ]));
+      { id: 'meetingName', label: 'Meeting Name', type: 'text', placeholder: 'Search meeting name...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -96,6 +90,8 @@ export default function MeetingMasterList() {
   // ── CLIENT-SIDE FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'All' && row.status !== statusFilter) return false;
 

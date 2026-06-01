@@ -19,7 +19,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
-import { BOSTableToolbar } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -127,8 +127,7 @@ const exportColumns = [
   { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
-const filterConfig = [
-  {
+const filterConfig = [{
     id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
@@ -191,8 +190,8 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
-  }
-];
+  },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 // Local Filter drawer helper functions removed (filtering managed globally)
 

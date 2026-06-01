@@ -225,29 +225,30 @@ export default function BOSDataTable({
         // Process active date range filters together
         for (const baseKey of activeDateKeys) {
           const col = columns.find(c => c.id === baseKey);
-          if (!col) continue;
+          const colId = col ? col.id : baseKey;
 
           const startVal = globalFilters[`${baseKey}Start`];
           const endVal = globalFilters[`${baseKey}End`];
           const considerVal = globalFilters[`${baseKey}Consider`] || 'Yes';
 
           if (!startVal && !endVal) continue;
+          if (considerVal === 'No') continue;
 
-          let cellVal = resolveNestedValue(col.id, row);
+          let cellVal = resolveNestedValue(colId, row);
           if (cellVal === undefined || cellVal === null || cellVal === '') {
-            const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            const snakeCaseId = colId.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
             cellVal = row[snakeCaseId];
             if (cellVal === undefined || cellVal === null || cellVal === '') {
-              if (col.id === 'createdDate') cellVal = row['createdAt'] || row['created_at'];
-              if (col.id === 'updatedDate') cellVal = row['updatedAt'] || row['updated_at'];
-              if (col.id === 'createdUser') cellVal = row['createdBy'] || row['created_by'] || row['created_user'];
-              if (col.id === 'updatedUser') cellVal = row['updatedBy'] || row['updated_by'] || row['updated_user'];
-              if (col.id === 'createdBy') cellVal = row['createdUser'] || row['created_by'] || row['created_user'];
-              if (col.id === 'updatedBy') cellVal = row['updatedUser'] || row['updated_by'] || row['updated_user'];
+              if (colId === 'createdDate' || colId === 'createdAt') cellVal = row['createdAt'] || row['created_at'];
+              if (colId === 'updatedDate' || colId === 'updatedAt') cellVal = row['updatedAt'] || row['updated_at'];
+              if (colId === 'createdUser') cellVal = row['createdBy'] || row['created_by'] || row['created_user'];
+              if (colId === 'updatedUser') cellVal = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+              if (colId === 'createdBy') cellVal = row['createdUser'] || row['created_by'] || row['created_user'];
+              if (colId === 'updatedBy') cellVal = row['updatedUser'] || row['updated_by'] || row['updated_user'];
             }
           }
 
-          if (!cellVal) return false;
+          if (!cellVal || cellVal === '-') return false;
 
           try {
             const cellDate = new Date(cellVal);
@@ -269,11 +270,7 @@ export default function BOSDataTable({
               inBetween = false;
             }
 
-            if (considerVal === 'Yes') {
-              if (!inBetween) return false;
-            } else {
-              if (inBetween) return false;
-            }
+            if (!inBetween) return false;
           } catch {
             return false;
           }

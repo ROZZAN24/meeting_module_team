@@ -9,7 +9,7 @@ import {
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import MomActionClosureDialog from './MomActionClosureDialog';
@@ -57,8 +57,7 @@ export default function MomActionReviewList() {
   const [selectedAction, setSelectedAction] = useState(null);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'dateType', label: 'Date Type', type: 'select', isStarred: true,
         options: [
           { value: 'targetDate', label: 'Target Date' },
@@ -95,8 +94,8 @@ export default function MomActionReviewList() {
         ],
         defaultValue: 'momNo'
       },
-      { id: 'searchText', label: 'Search Here', type: 'text', placeholder: 'Min 3 chars...', isStarred: true }
-    ]));
+      { id: 'searchText', label: 'Search Here', type: 'text', placeholder: 'Min 3 chars...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -130,6 +129,8 @@ export default function MomActionReviewList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // Status Filter
       const statusFilter = globalFilters.status || 'PENDING';
       if (statusFilter === 'PENDING') {
