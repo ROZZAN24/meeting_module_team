@@ -57,6 +57,10 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
 import TrackChangesRoundedIcon from '@mui/icons-material/TrackChangesRounded';
 import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
+import NotificationsActiveRoundedIcon from '@mui/icons-material/NotificationsActiveRounded';
+import ThumbUpAltRoundedIcon from '@mui/icons-material/ThumbUpAltRounded';
+import MonitorHeartRoundedIcon from '@mui/icons-material/MonitorHeartRounded';
+import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
 
 import ReopenDashboard from './ReopenDashboard';
 import ToBeTestedDashboard from './ToBeTestedDashboard';
@@ -147,6 +151,60 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+const NeonMetricCard = styled(Paper)(({ theme, basecolor }) => ({
+  borderRadius: '16px',
+  position: 'relative',
+  overflow: 'hidden',
+  background: `linear-gradient(135deg, ${alpha(basecolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  backgroundColor: '#060B14',
+  backdropFilter: 'blur(20px)',
+  border: `1px solid ${alpha(basecolor, 0.2)}`,
+  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(basecolor, 0.3)}`,
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '12px 16px',
+  height: '100px',
+  minHeight: '90px',
+  width: '100%',
+  transition: 'all 0.3s ease-in-out',
+  cursor: 'pointer',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: '-30%', left: '-30%', width: '160%', height: '160%',
+    background: `radial-gradient(circle at 30% 30%, ${alpha(basecolor, 0.2)} 0%, transparent 60%)`,
+    pointerEvents: 'none',
+    zIndex: 0
+  },
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.3, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(basecolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '24px 24px',
+  },
+  '&:hover': {
+    transform: 'translateY(-5px)',
+    boxShadow: `0 12px 40px -10px ${alpha(basecolor, 0.6)}, inset 0 1px 3px 0 ${alpha(basecolor, 0.6)}`,
+    border: `1px solid ${alpha(basecolor, 0.6)}`
+  }
+}));
+
+const GlowingIcon = styled(Box)(({ color }) => ({
+  width: 32,
+  height: 32,
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: `radial-gradient(circle, ${alpha(color, 0.4)} 0%, ${alpha(color, 0.05)} 70%)`,
+  boxShadow: `0 0 25px ${alpha(color, 0.6)}, inset 0 0 15px ${alpha(color, 0.5)}`,
+  border: `1px solid ${alpha(color, 0.6)}`,
+  color: '#fff',
+  backdropFilter: 'blur(8px)',
+  zIndex: 1,
+  position: 'relative',
+  marginBottom: '8px'
+}));
+
 // ── Workload View ─────────────────────────────────────────────────────────────
 const WorkloadView = ({ realWorkload, isDark }) => {
   const [viewAllOpen, setViewAllOpen] = useState(false);
@@ -161,10 +219,42 @@ const WorkloadView = ({ realWorkload, isDark }) => {
   const healthyEmployees = realWorkload.filter((w) => w.status === 'Healthy').length;
 
   const sparklineOptions = (color) => ({
-    chart: { type: 'line', sparkline: { enabled: true }, animations: { enabled: false } },
-    stroke: { curve: 'smooth', width: 2 },
+    chart: {
+      type: 'line',
+      sparkline: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+      dropShadow: { enabled: true, top: 3, left: 0, blur: 4, opacity: 0.5, color: color }
+    },
+    stroke: { curve: 'smooth', width: 3 },
     colors: [color],
-    tooltip: { fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+    markers: { size: 0, hover: { size: 5 } },
+    tooltip: { theme: 'dark', fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+  });
+
+  const areaSparklineOptions = (color) => ({
+    chart: {
+      type: 'area',
+      sparkline: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+    },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.0, stops: [0, 100] }
+    },
+    colors: [color],
+    markers: {
+      size: 0,
+      discrete: [{
+        seriesIndex: 0,
+        dataPointIndex: 5,
+        fillColor: color,
+        strokeColor: '#fff',
+        size: 4,
+        shape: "circle"
+      }]
+    },
+    tooltip: { theme: isDark ? 'dark' : 'light', fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
   });
 
   const borderColor = isDark ? 'rgba(255,255,255,0.05)' : '#E2E8F0';
@@ -332,160 +422,92 @@ const WorkloadView = ({ realWorkload, isDark }) => {
 
   return (
     <Box sx={{ p: 0 }}>
-      <Grid container spacing={2.5} mb={2.5}>
-        <Grid item xs={12} lg={8}>
-          <Grid container spacing={2.5} sx={{ height: '100%' }}>
-            {[
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+          gap: 2.5,
+          mb: 2.5
+        }}
+      >
+        {[
+              {
+                c: '#8B5CF6',
+                label: 'All Employees',
+                n: realWorkload.length,
+                icon: <AssignmentRoundedIcon sx={{ fontSize: 18 }} />,
+                data: [40, 60, 45, 80, 50, 90],
+                trend: '+5%'
+              },
               {
                 c: '#EF4444',
-                bg: isDark ? '#2A161A' : '#FFF0F2',
                 label: 'Critical',
                 n: criticalCount,
-                emoji: '1f6a8',
-                data: [10, 25, 15, 40, 20, 50]
+                icon: <NotificationsActiveRoundedIcon sx={{ fontSize: 18 }} />,
+                data: [10, 25, 15, 40, 20, 50],
+                trend: '+25%'
               },
               {
                 c: '#3B82F6',
-                bg: isDark ? '#17223B' : '#F0F5FF',
                 label: 'Normal',
                 n: normalCount,
-                emoji: '1f44d',
-                data: [20, 10, 30, 15, 40, 25]
+                icon: <ThumbUpAltRoundedIcon sx={{ fontSize: 18 }} />,
+                data: [20, 10, 30, 15, 40, 25],
+                trend: '+12%'
               },
               {
                 c: '#10B981',
-                bg: isDark ? '#14251E' : '#F0FAF5',
                 label: 'Healthy',
                 n: healthyCount,
-                emoji: '1f60e',
-                data: [30, 40, 20, 50, 30, 60]
+                icon: <MonitorHeartRoundedIcon sx={{ fontSize: 18 }} />,
+                data: [30, 40, 20, 50, 30, 60],
+                trend: '+40%'
               }
             ].map((s, i) => (
-              <Grid item xs={12} sm={4} key={i}>
-                <Card
-                  sx={{
-                    p: 2,
-                    pb: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    bgcolor: s.bg,
-                    border: `1px solid ${borderColor}`,
-                    boxShadow: 'none',
-                    height: '100%',
-                    borderRadius: 3
-                  }}
-                >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <Box
-                      sx={{
-                        position: 'relative',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        width: 40,
-                        height: 40
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          bottom: -2,
-                          width: 24,
-                          height: 6,
-                          bgcolor: s.c,
-                          filter: 'blur(8px)',
-                          opacity: 0.5,
-                          borderRadius: '50%'
-                        }}
-                      />
-                      <NotoEmoji hex={s.emoji} size={40} />
-                    </Box>
-                    <Box>
-                      <Typography variant="subtitle2" color={s.c} fontWeight={800} sx={{ lineHeight: 1 }}>
-                        {s.label}
-                      </Typography>
-                      <Typography variant="h5" fontWeight={900} sx={{ lineHeight: 1.1, mt: 0.3 }} color="text.primary">
-                        {s.n}
-                      </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        fontWeight={600}
-                        sx={{ fontSize: '0.6rem', display: 'block', mt: 0.1 }}
-                      >
-                        Employees
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ mt: 'auto', pt: 1 }}>
-                    <ReactApexChart options={sparklineOptions(s.c)} series={[{ data: s.data }]} type="line" height={25} width="100%" />
-                  </Box>
-                </Card>
-              </Grid>
+              <NeonMetricCard key={i} basecolor={s.c}>
+                <Box className="particles" />
+                <Box display="flex" alignItems="center" gap={1} zIndex={2} mb={0.5}>
+                  <GlowingIcon color={s.c} sx={{ width: 24, height: 24 }}>{React.cloneElement(s.icon, { sx: { fontSize: 14 } })}</GlowingIcon>
+                  <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.8rem' }}>
+                    {s.label}
+                  </Typography>
+                </Box>
+                <Typography variant="h4" fontWeight={900} sx={{ lineHeight: 1, mb: 0.5, color: '#fff', zIndex: 2, textShadow: `0 0 15px ${alpha(s.c, 0.8)}` }}>
+                  {s.n}
+                </Typography>
+                <Stack direction="row" alignItems="center" gap={1} zIndex={2}>
+                  <Typography variant="caption" sx={{ color: s.c, fontWeight: 800, fontSize: '0.65rem' }}>{s.trend}</Typography>
+                  <Typography variant="caption" color={alpha('#fff', 0.5)} sx={{ fontSize: '0.6rem' }}>vs last 7 days</Typography>
+                </Stack>
+                <Box sx={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 35, zIndex: 1, opacity: 0.5, pointerEvents: 'none' }}>
+                  <ReactApexChart options={sparklineOptions(s.c)} series={[{ data: s.data }]} type="line" height="100%" width="100%" />
+                </Box>
+              </NeonMetricCard>
             ))}
-          </Grid>
-        </Grid>
-        <Grid item xs={12} lg={4}>
-          <Card
-            sx={{
-              height: '100%',
-              background: isDark ? '#1E293B' : '#F8FAFC',
-              border: `1px solid ${borderColor}`,
-              boxShadow: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              p: 2,
-              borderRadius: 3,
-              overflow: 'hidden',
-              position: 'relative'
-            }}
-          >
-            <Box sx={{ zIndex: 2, flex: 1 }}>
-              <Typography variant="h6" fontWeight={900} mb={0.5} color="text.primary">
-                Team Performance <NotoEmoji hex="1f680" size={20} style={{ display: 'inline-block', verticalAlign: 'text-bottom' }} />
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                fontWeight={600}
-                sx={{ maxWidth: 200, display: 'block', lineHeight: 1.4, mb: 1.5 }}
-              >
-                Track workload, active tasks and productivity in real-time.
-              </Typography>
-              <Button
-                variant="contained"
-                endIcon={<TrendingUpRoundedIcon />}
-                onClick={() => setViewAllOpen(true)}
-                sx={{
-                  bgcolor: '#6366F1',
-                  '&:hover': { bgcolor: '#4F46E5' },
-                  borderRadius: 1.5,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  px: 2,
-                  py: 0.6,
-                  fontSize: '0.75rem'
-                }}
-              >
-                View All
-              </Button>
-            </Box>
-            <Box sx={{ zIndex: 2, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 0.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0.5, mb: 1 }}>
-                <Box sx={{ width: 12, height: 24, bgcolor: '#A855F7', borderRadius: '3px 3px 0 0' }} />
-                <Box sx={{ width: 12, height: 40, bgcolor: '#8B5CF6', borderRadius: '3px 3px 0 0' }} />
-                <Box sx={{ width: 12, height: 56, bgcolor: '#06B6D4', borderRadius: '3px 3px 0 0' }} />
-              </Box>
-              <Box sx={{ position: 'relative', bottom: -5 }}>
-                <NotoEmoji hex="1f3c6" size={80} />
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
-      </Grid>
+      </Box>
 
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+        <Typography variant="h6" fontWeight={900} color="text.primary">
+          Employee Workload
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => setViewAllOpen(true)}
+          endIcon={<TrendingUpRoundedIcon />}
+          sx={{
+            bgcolor: '#6366F1',
+            '&:hover': { bgcolor: '#4F46E5' },
+            borderRadius: 1.5,
+            textTransform: 'none',
+            fontWeight: 700,
+            px: 2,
+            py: 0.8,
+            fontSize: '0.75rem'
+          }}
+        >
+          View All
+        </Button>
+      </Box>
       <Card sx={{ p: 0, borderRadius: 3, border: `1px solid ${borderColor}`, boxShadow: 'none', mb: 2.5 }}>
         <DataTable rows={realWorkload.slice(0, 5)} />
       </Card>
@@ -507,7 +529,7 @@ const WorkloadView = ({ realWorkload, isDark }) => {
             bgcolor: isDark ? '#1E293B' : '#FFFFFF'
           }}
         >
-          <Typography variant="h5" fontWeight={900}>
+          <Typography variant="h5" fontWeight={900} color="text.primary">
             All Employees Workload List
           </Typography>
           <IconButton onClick={() => setViewAllOpen(false)} sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }}>
@@ -522,190 +544,117 @@ const WorkloadView = ({ realWorkload, isDark }) => {
       </Dialog>
 
       {/* Footer Area */}
-      <Grid container spacing={2.5}>
-        <Grid item xs={12} md={5}>
-          <Card
-            sx={{
-              p: 3,
-              bgcolor: isDark ? '#2A161A' : '#F5F3FF',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 3,
-              height: '100%',
-              borderRadius: 3,
-              boxShadow: 'none',
-              position: 'relative'
-            }}
-          >
-            <Box sx={{ width: 64, height: 64, flexShrink: 0 }}>
-              <NotoEmoji hex="1f3c6" size={64} />
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+          gap: 2.5
+        }}
+      >
+        <Card
+          sx={{
+            p: 2,
+            background: 'linear-gradient(135deg, #A855F7 0%, #EC4899 100%)',
+            border: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            height: '100px',
+            minHeight: '100px',
+            borderRadius: 3,
+            boxShadow: '0 4px 15px rgba(168, 85, 247, 0.3)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}
+        >
+          <Box sx={{ position: 'absolute', top: -20, left: -20, width: 80, height: 80, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(15px)' }} />
+          <Box sx={{ position: 'absolute', bottom: -20, right: -20, width: 100, height: 100, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: '50%', filter: 'blur(20px)' }} />
+          
+          <Box display="flex" alignItems="center" gap={1.5} zIndex={2}>
+            <Box sx={{ filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.2))' }}>
+              <NotoEmoji hex="1f3c6" size={40} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={900} color="text.primary" mb={0.5}>
-                Great job team! 🎊
+              <Typography variant="h5" fontWeight={900} color="#FDE047" sx={{ lineHeight: 1 }}>
+                2 Employees
               </Typography>
-              <Typography variant="body2" color="text.secondary" fontWeight={600} lineHeight={1.5}>
-                {healthyEmployees} employees are performing great.
-                <br />
-                Let's keep the momentum going!
+              <Typography variant="caption" fontWeight={600} color="rgba(255,255,255,0.9)" sx={{ lineHeight: 1.2, mt: 0.5, display: 'block' }}>
+                Great job team! 🎊 Let's keep the momentum going!
               </Typography>
-              <Box sx={{ width: 40, height: 4, bgcolor: '#8B5CF6', borderRadius: 2, mt: 1.5 }} />
+            </Box>
+          </Box>
+        </Card>
+
+        {[
+          {
+            title: 'Average Workload',
+            val: `${avgWorkload}%`,
+            trend: '↑ 12%',
+            trendColor: '#8B5CF6',
+            icon: <TrendingUpRoundedIcon fontSize="small" />,
+            data: [20, 40, 30, 50, 40, 60]
+          },
+          {
+            title: 'Average Active Tasks',
+            val: avgActiveTasks,
+            trend: '↓ 8%',
+            trendColor: '#3B82F6',
+            icon: <AccessTimeRoundedIcon fontSize="small" />,
+            data: [10, 25, 20, 40, 30, 50]
+          },
+          {
+            title: 'Overall Productivity',
+            val: overallProductivity,
+            trend: '↑ 14%',
+            trendColor: '#10B981',
+            icon: <TrackChangesRoundedIcon fontSize="small" />,
+            data: [30, 50, 40, 60, 50, 70]
+          }
+        ].map((s, i) => (
+          <Card
+            key={i}
+            sx={{
+              p: 1.5,
+              bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+              border: `1px solid ${borderColor}`,
+              height: '100px',
+              minHeight: '100px',
+              display: 'flex',
+              flexDirection: 'column',
+              borderRadius: 3,
+              boxShadow: isDark ? 'none' : '0 4px 15px rgba(0,0,0,0.03)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Box display="flex" justifyContent="space-between" alignItems="center" zIndex={2} mb={0.5}>
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Box sx={{ width: 26, height: 26, borderRadius: '8px', bgcolor: alpha(s.trendColor, 0.15), color: s.trendColor, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {React.cloneElement(s.icon, { sx: { fontSize: 14 } })}
+                </Box>
+                <Typography variant="subtitle2" color="text.secondary" fontWeight={800} sx={{ fontSize: '0.75rem' }}>
+                  {s.title}
+                </Typography>
+              </Stack>
+              <IconButton size="small" sx={{ color: '#94A3B8', p: 0 }}>
+                <MoreVertRoundedIcon fontSize="small" />
+              </IconButton>
+            </Box>
+            
+            <Typography variant="h4" fontWeight={900} color={s.trendColor} sx={{ lineHeight: 1, zIndex: 2, mb: 0.5 }}>
+              {s.val}
+            </Typography>
+            <Stack direction="row" alignItems="center" gap={1} zIndex={2}>
+              <Chip label={s.trend} size="small" sx={{ bgcolor: alpha(s.trendColor, 0.1), color: s.trendColor, fontWeight: 800, fontSize: '0.6rem', height: 18 }} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>vs last 7 days</Typography>
+            </Stack>
+
+            <Box sx={{ position: 'absolute', bottom: -15, left: 0, right: 0, height: 40, zIndex: 1, pointerEvents: 'none' }}>
+              <ReactApexChart options={areaSparklineOptions(s.trendColor)} series={[{ data: s.data }]} type="area" height="100%" width="100%" />
             </Box>
           </Card>
-        </Grid>
-        <Grid item xs={12} md={7}>
-          <Grid container spacing={2.5} sx={{ height: '100%' }}>
-            <Grid item xs={4}>
-              <Card
-                sx={{
-                  p: 2.5,
-                  pb: 1.5,
-                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-                  border: `1px solid ${borderColor}`,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 'none'
-                }}
-              >
-                <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '30%',
-                      bgcolor: alpha('#8B5CF6', 0.15),
-                      color: '#8B5CF6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <TrendingUpRoundedIcon fontSize="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.65rem' }}>
-                      Average Workload
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={900} color="#8B5CF6" sx={{ lineHeight: 1.2 }}>
-                      {avgWorkload}%
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ mt: 'auto', mx: -2 }}>
-                  <ReactApexChart
-                    options={sparklineOptions('#8B5CF6')}
-                    series={[{ data: [20, 40, 30, 50, 40, 60] }]}
-                    type="line"
-                    height={30}
-                    width="100%"
-                  />
-                </Box>
-              </Card>
-            </Grid>
-            <Grid item xs={4}>
-              <Card
-                sx={{
-                  p: 2.5,
-                  pb: 1.5,
-                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-                  border: `1px solid ${borderColor}`,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 'none'
-                }}
-              >
-                <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '30%',
-                      bgcolor: alpha('#3B82F6', 0.15),
-                      color: '#3B82F6',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <AccessTimeRoundedIcon fontSize="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.65rem' }}>
-                      Average Active Tasks
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={900} color="#3B82F6" sx={{ lineHeight: 1.2 }}>
-                      {avgActiveTasks}
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ mt: 'auto', mx: -2 }}>
-                  <ReactApexChart
-                    options={sparklineOptions('#3B82F6')}
-                    series={[{ data: [10, 25, 20, 40, 30, 50] }]}
-                    type="line"
-                    height={30}
-                    width="100%"
-                  />
-                </Box>
-              </Card>
-            </Grid>
-            <Grid item xs={4}>
-              <Card
-                sx={{
-                  p: 2.5,
-                  pb: 1.5,
-                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-                  border: `1px solid ${borderColor}`,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: 3,
-                  boxShadow: 'none'
-                }}
-              >
-                <Stack direction="row" alignItems="center" gap={1.5} mb={1}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: '30%',
-                      bgcolor: alpha('#10B981', 0.15),
-                      color: '#10B981',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <TrackChangesRoundedIcon fontSize="small" />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.65rem' }}>
-                      Overall Productivity
-                    </Typography>
-                    <Typography variant="subtitle1" fontWeight={900} color="#10B981" sx={{ lineHeight: 1.2 }}>
-                      {overallProductivity}
-                    </Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ mt: 'auto', mx: -2 }}>
-                  <ReactApexChart
-                    options={sparklineOptions('#10B981')}
-                    series={[{ data: [30, 50, 40, 60, 50, 70] }]}
-                    type="line"
-                    height={30}
-                    width="100%"
-                  />
-                </Box>
-              </Card>
-            </Grid>
-          </Grid>
-        </Grid>
-      </Grid>
+        ))}
+      </Box>
     </Box>
   );
 };
@@ -1489,12 +1438,14 @@ export default function TaskDashboard() {
         tasksList.forEach((t) => {
           const st = String(t._status).toLowerCase();
           const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
+          const isToBeTested = ['to be tested', 'testing', 'ready for testing'].includes(st);
+          const isDevDone = isDone || isToBeTested;
           const hrs = t._hrs || 8;
           const uName = t._user || 'Unknown';
           if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0 };
           devHoursMap[uName].assignedHrs += hrs;
-          if (isDone) devHoursMap[uName].completedHrs += hrs;
-          if (!isDone) {
+          if (isDevDone) devHoursMap[uName].completedHrs += hrs;
+          if (!isDevDone) {
             if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
             workloadMap[uName].tasks += 1;
             workloadMap[uName].hours += hrs;
@@ -1502,17 +1453,17 @@ export default function TaskDashboard() {
           if (isDone) stats.completed++;
           if (['open', 'new', 'pending'].includes(st)) stats.open++;
           else if (['in progress', 'wip', 'assigned', 'rework'].includes(st)) stats.inProgress++;
-          else if (['to be tested', 'testing', 'ready for testing'].includes(st)) stats.toBeTested++;
+          else if (isToBeTested) stats.toBeTested++;
           else if (['reopened', 're-opened'].includes(st)) stats.reopened++;
           else if (!isDone) stats.open++;
           if (t._dueDate) {
             const d = new Date(t._dueDate);
             d.setHours(0, 0, 0, 0);
-            if (d < today && !isDone) {
+            if (d < today && !isDevDone) {
               stats.overdue++;
               const diff = Math.ceil(Math.abs(today - d) / 864e5);
               overdueList.push({ id: t._id, title: t._title, user: t._user, days: `${diff} Days` });
-            } else if (d.getTime() === today.getTime() && !isDone) stats.dueToday++;
+            } else if (d.getTime() === today.getTime() && !isDevDone) stats.dueToday++;
           }
         });
 
@@ -1522,18 +1473,20 @@ export default function TaskDashboard() {
             let percent = Math.min(100, Math.round((w.tasks / 8) * 100));
             if (w.tasks === 0) percent = 0;
             else if (percent === 0) percent = 10;
-            let color = '#10B981',
-              status = 'Healthy';
-            if (w.tasks === 0) {
+            let color = '#10B981', status = 'Healthy';
+            if (days < 5) {
               color = '#EF4444';
               status = 'Critical';
-            } else if (w.tasks >= 3 && w.tasks <= 5) {
+            } else if (days === 5) {
               color = '#3B82F6';
               status = 'Normal';
+            } else {
+              color = '#10B981';
+              status = 'Healthy';
             }
             return { ...w, days, percent, color, status };
           })
-          .sort((a, b) => ({ Critical: 0, Normal: 1, Healthy: 2 })[a.status] - { Critical: 0, Normal: 1, Healthy: 2 }[b.status]);
+          .sort((a, b) => a.days - b.days);
 
         const devStatsArr = Object.values(devHoursMap)
           .filter((d) => d.assignedHrs > 0)
