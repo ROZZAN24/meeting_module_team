@@ -47,7 +47,7 @@ import {
   IconMoodSmile,
   IconSearch,
   IconCategory,
-  IconRotate2
+  IconRotate2, IconFileBarcode, IconTicket, IconBrowserCheck
 } from '@tabler/icons-react';
 
 const icons = {
@@ -99,7 +99,7 @@ const icons = {
   IconTractor,
   IconMoodSmile,
   IconSearch,
-  IconRotate2
+  IconRotate2, IconFileBarcode, IconTicket, IconBrowserCheck
 };
 
 export const masters = {
@@ -942,13 +942,14 @@ export const erpSupport = {
       id: 'support-ticket-management',
       title: 'Task Management',
       type: 'collapse',
-      icon: icons.IconHelp,
+      icon: icons.IconFileBarcode,
       children: [
         {
           id: 'support-raised-by-me',
           title: 'My Requests',
           type: 'item',
           url: '/support/ticket-by-me',
+          icon: icons.IconTicket,
           breadcrumbs: false
         },
         {
@@ -956,6 +957,7 @@ export const erpSupport = {
           title: 'Requests For Me',
           type: 'item',
           url: '/support/raised-for-me',
+          icon: icons.IconBrowserCheck,
           breadcrumbs: false
         }
       ]

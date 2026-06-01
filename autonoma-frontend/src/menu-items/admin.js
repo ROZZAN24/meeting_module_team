@@ -34,7 +34,7 @@ const admin = {
   children: [
     {
       id: 'admin-hub',
-      title: 'Admin Hub',
+      title: 'BOSS',
       type: 'collapse',
       icon: icons.IconCategory,
       children: [
@@ -114,7 +114,7 @@ const admin = {
     },
     {
       id: 'BOS(S)-Admin',
-      title: 'BOS(S) Admin',
+      title: 'Super BOSS',
       type: 'collapse',
       icon: icons.IconUserShield,
       children: [
