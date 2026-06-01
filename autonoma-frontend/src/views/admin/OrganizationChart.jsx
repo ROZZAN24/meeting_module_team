@@ -19,7 +19,9 @@ import { getUserImageUrl } from 'utils/api-base';
 const StyledNode = ({ position, isRoot, theme, fields, collapsedNodes, toggleCollapse, handleDragStart, handleDrop, handleDragOver, isDraggingTarget, onAddPosition, onAssignEmployee, onUnassignEmployee, onDeletePosition }) => {
   const hasChildren = position.children && position.children.length > 0;
   const isCollapsed = collapsedNodes.has(position.id);
-  const isVacant = !position.assignedEmployeeId;
+  const isEmptySlot = !position.assignedEmployeeId && !position.isExited;
+  const isExited = position.isExited;
+  const isVacant = isEmptySlot || isExited;
 
   return (
     <Card
@@ -31,21 +33,24 @@ const StyledNode = ({ position, isRoot, theme, fields, collapsedNodes, toggleCol
       sx={{
         padding: 1.5,
         display: 'inline-block',
-        border: isVacant 
+        border: isEmptySlot 
           ? `2px dashed ${theme.palette.text.disabled}` 
+          : isExited ? `2px solid ${theme.palette.error.light}` 
           : `2px solid ${isDraggingTarget ? theme.palette.success.main : (isRoot ? theme.palette.primary.main : theme.palette.divider)}`,
         borderRadius: 2,
-        backgroundColor: isDraggingTarget ? (theme.palette.mode === 'dark' ? 'rgba(16,185,129,0.1)' : '#ECFDF5') : (theme.palette.mode === 'dark' ? '#1E293B' : (isVacant ? '#f9f9f9' : '#fff')),
+        backgroundColor: isDraggingTarget ? (theme.palette.mode === 'dark' ? 'rgba(16,185,129,0.1)' : '#ECFDF5') : (theme.palette.mode === 'dark' ? (isExited ? '#331111' : '#1E293B') : (isEmptySlot ? '#f9f9f9' : isExited ? '#fff1f0' : '#fff')),
         boxShadow: isRoot ? `0 4px 14px ${theme.palette.primary.light}` : '0 2px 8px rgba(0,0,0,0.04)',
         minWidth: 160,
         maxWidth: 200,
         position: 'relative',
         transition: 'all 0.2s',
+        opacity: isExited ? 0.7 : 1,
         cursor: position.isCompanyNode ? 'default' : 'grab',
         '&:hover': {
           transform: 'scale(1.03)',
           boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
-          borderColor: theme.palette.primary.light
+          borderColor: isExited ? theme.palette.error.main : theme.palette.primary.light,
+          opacity: 1
         },
         '&:hover .action-btn': {
           opacity: 1
@@ -126,18 +131,21 @@ const StyledNode = ({ position, isRoot, theme, fields, collapsedNodes, toggleCol
       </Stack>
 
       <Stack alignItems="center" spacing={1} mt={isVacant ? 2 : 0}>
-        {isVacant && (
-          <Chip label="VACANT" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }} />
+        {isEmptySlot && (
+          <Chip label="VACANT" color="default" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }} />
+        )}
+        {isExited && (
+          <Chip label="EXITED / INACTIVE" color="error" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700 }} />
         )}
         
-        {fields.showPhoto && !isVacant && (
+        {fields.showPhoto && !isEmptySlot && (
           <Tooltip 
             title={
               <Box sx={{ p: 0.5, textAlign: 'center' }}>
                 {position.photo ? (
-                  <img src={getUserImageUrl(position.photo)} alt="Profile" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: '4px' }} />
+                  <img src={getUserImageUrl(position.photo)} alt="Profile" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: '4px', filter: isExited ? 'grayscale(100%)' : 'none' }} />
                 ) : (
-                  <Avatar sx={{ width: 100, height: 100, fontSize: '3rem', margin: '0 auto', bgcolor: theme.palette.primary.main }}>
+                  <Avatar sx={{ width: 100, height: 100, fontSize: '3rem', margin: '0 auto', bgcolor: isExited ? theme.palette.grey[500] : theme.palette.primary.main }}>
                     {position.firstName ? position.firstName[0].toUpperCase() : (position.employeeName ? position.employeeName[0].toUpperCase() : '?')}
                   </Avatar>
                 )}
@@ -162,12 +170,13 @@ const StyledNode = ({ position, isRoot, theme, fields, collapsedNodes, toggleCol
               sx={{
                 width: 48,
                 height: 48,
-                border: `2px solid ${theme.palette.background.default}`,
+                border: `2px solid ${isExited ? theme.palette.error.main : theme.palette.background.default}`,
                 boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                bgcolor: 'primary.main',
+                bgcolor: isExited ? 'error.main' : 'primary.main',
                 color: 'white',
                 fontWeight: 'bold',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                filter: isExited ? 'grayscale(100%)' : 'none'
               }}
             >
               {position.firstName ? position.firstName[0].toUpperCase() : (position.employeeName ? position.employeeName[0].toUpperCase() : '?')}
@@ -176,11 +185,11 @@ const StyledNode = ({ position, isRoot, theme, fields, collapsedNodes, toggleCol
         )}
         
         <Box textAlign="center" width="100%">
-          <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.2, mb: 0.5, wordWrap: 'break-word', color: isVacant ? 'text.secondary' : 'text.primary' }}>
-            {isVacant ? position.positionTitle : `${position.firstName || ''} ${position.lastName || ''}`.trim() || position.employeeName || 'Unknown'}
+          <Typography variant="subtitle2" fontWeight={700} sx={{ lineHeight: 1.2, mb: 0.5, wordWrap: 'break-word', color: isEmptySlot ? 'text.secondary' : isExited ? 'error.main' : 'text.primary', textDecoration: isExited ? 'line-through' : 'none' }}>
+            {isEmptySlot ? position.positionTitle : `${position.firstName || ''} ${position.lastName || ''}`.trim() || position.employeeName || 'Unknown'}
           </Typography>
           
-          {fields.showDesignation && !isVacant && (
+          {fields.showDesignation && !isEmptySlot && (
             <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.1 }}>
               {position.designationId || position.positionTitle || '-'}
             </Typography>
@@ -192,8 +201,8 @@ const StyledNode = ({ position, isRoot, theme, fields, collapsedNodes, toggleCol
             </Typography>
           )}
           
-          {fields.showCode && !isVacant && (
-            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 600, mt: 0.5, display: 'block' }}>
+          {fields.showCode && !isEmptySlot && (
+            <Typography variant="caption" sx={{ fontSize: '0.65rem', color: isExited ? 'text.secondary' : 'primary.main', fontWeight: 600, mt: 0.5, display: 'block' }}>
               {position.empCode || '-'}
             </Typography>
           )}
@@ -340,11 +349,23 @@ export default function OrganizationChart() {
   }, [positions]);
 
   const activeEmpList = useMemo(() => {
+    const assignedIds = new Set();
+    const extractAssigned = (nodes) => {
+      nodes.forEach(n => {
+        if (n.assignedEmployeeId) assignedIds.add(String(n.assignedEmployeeId));
+        if (n.children) extractAssigned(n.children);
+      });
+    };
+    extractAssigned(positions);
+
     return employees.filter(r => {
       const code = r.oldEmpCode || r.empCode || '';
-      return !code.startsWith('ATS-') && (r.status === 'Active' || !r.status);
+      return !code.startsWith('ATS-') && 
+             (r.status === 'Active' || !r.status) && 
+             !r.exitDate &&
+             !assignedIds.has(String(r.id));
     });
-  }, [employees]);
+  }, [employees, positions]);
 
   // ─── Handlers ────────────────────────────────────────────────────────────
   const handleZoomIn = () => setZoom(z => Math.min(z + 0.1, 2));

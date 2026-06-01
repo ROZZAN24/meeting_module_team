@@ -21,6 +21,7 @@ public class OrgPositionDTO {
     private String designationId;
     private String departmentName;
     private String photo;
+    private Boolean isExited = false;
 
     private List<OrgPositionDTO> children = new ArrayList<>();
 }

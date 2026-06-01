@@ -49,6 +49,14 @@ public class OrgPositionService {
     }
 
     public OrgPosition assignEmployee(Long positionId, Long employeeId) {
+        // Prevent assigning if employee is already assigned to another active position
+        List<OrgPosition> allActive = positionRepository.findByStatus("Active");
+        for (OrgPosition p : allActive) {
+            if (employeeId.equals(p.getAssignedEmployeeId()) && !p.getId().equals(positionId)) {
+                throw new RuntimeException("This employee is already assigned to another position. Please unassign them first.");
+            }
+        }
+
         OrgPosition position = positionRepository.findById(positionId).orElseThrow(() -> new RuntimeException("Position not found"));
         position.setAssignedEmployeeId(employeeId);
         return positionRepository.save(position);
@@ -113,12 +121,15 @@ public class OrgPositionService {
 
             if (pos.getAssignedEmployeeId() != null) {
                 EmployeeMaster emp = empMap.get(pos.getAssignedEmployeeId());
-                if (emp != null && !"Inactive".equalsIgnoreCase(emp.getStatus())) {
-                    dto.setFirstName(emp.getEmployeeName()); // employeeName holds full name usually
+                boolean hasExited = (emp != null && emp.getExitDate() != null) || (emp != null && "Inactive".equalsIgnoreCase(emp.getStatus()));
+                
+                if (emp != null) {
+                    dto.setFirstName(emp.getEmployeeName()); 
                     dto.setLastName(""); 
                     dto.setEmployeeName(emp.getEmployeeName());
                     dto.setEmpCode(emp.getEmpCode() != null ? emp.getEmpCode() : emp.getOldEmpCode());
                     dto.setPhoto(emp.getEmployeePhotoUpload());
+                    dto.setIsExited(hasExited);
 
                     if (emp.getDesignationId() != null) {
                         dto.setDesignationId(desigMap.getOrDefault(emp.getDesignationId(), String.valueOf(emp.getDesignationId())));
@@ -126,8 +137,18 @@ public class OrgPositionService {
                     if (emp.getDepartmentId() != null) {
                         dto.setDepartmentName(deptMap.getOrDefault(emp.getDepartmentId(), String.valueOf(emp.getDepartmentId())));
                     }
+                } else {
+                    dto.setIsExited(true);
+                    dto.setFirstName("Vacant");
+                    dto.setLastName(pos.getPositionTitle());
+                    dto.setEmployeeName("Vacant");
+                    dto.setDesignationId(pos.getPositionTitle());
+                    if (pos.getDepartmentId() != null) {
+                        dto.setDepartmentName(deptMap.getOrDefault(pos.getDepartmentId(), String.valueOf(pos.getDepartmentId())));
+                    }
                 }
             } else {
+                dto.setIsExited(false); // It's just an empty position, not an exited employee
                 dto.setFirstName("Vacant");
                 dto.setLastName(pos.getPositionTitle());
                 dto.setEmployeeName("Vacant");
