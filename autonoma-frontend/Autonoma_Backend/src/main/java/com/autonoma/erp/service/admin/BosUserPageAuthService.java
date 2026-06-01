@@ -56,6 +56,14 @@ public class BosUserPageAuthService {
                 auth.setManager(0);
                 auth.setAdditional1(0);
                 auth.setAdditional2(0);
+                auth.setAddTaskEnable(0);
+
+                // Default Close Checklist / Renewal (QM1120) to enabled & read/write for regular users
+                if ("QM1120".equals(page.getPageCode())) {
+                    auth.setEnable(1);
+                    auth.setReadAcs(1);
+                    auth.setWrite(1);
+                }
             }
             if (isBosAdmin) {
                 auth.setEnable(1);
@@ -67,6 +75,7 @@ public class BosUserPageAuthService {
                 auth.setManager(1);
                 auth.setAdditional1(1);
                 auth.setAdditional2(1);
+                auth.setAddTaskEnable(1);
             }
             auth.setPage(page);
             result.add(auth);

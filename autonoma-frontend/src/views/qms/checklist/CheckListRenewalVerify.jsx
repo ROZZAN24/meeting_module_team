@@ -19,7 +19,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
-import { BOSExportButton } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -124,11 +124,10 @@ const exportColumns = [
   { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
   { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
   { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => formatDate(r.updatedAt || r.checklist?.updatedAt) }
+  { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
-const filterConfig = [
-  {
+const filterConfig = [{
     id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
@@ -191,21 +190,60 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
-  }
-];
+  },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 // Local Filter drawer helper functions removed (filtering managed globally)
 
+const formatDateTime = (dateVal) => {
+  if (!dateVal) return '-';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '-';
+    const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const hours = String(d.getHours()).padStart(2, '0');
+    const mins  = String(d.getMinutes()).padStart(2, '0');
+    return `${date} ${hours}:${mins}`;
+  } catch {
+    return '-';
+  }
+};
+
 function StatusChip({ status }) {
-  const colorMap = { 'Pending for Verified': 'warning', 'Pending for Accepted': 'warning', Verified: 'success', Rejected: 'error', 'Not Accepted': 'error', Accepted: 'success', Missed: 'error' };
-  const label = typeof status === 'object' ? status?.name : status;
+  let label = typeof status === 'object' ? status?.name : status;
+  label = label || 'Pending';
+  
+  const greenStates = ['Verified', 'Accepted', 'Completed'];
+  const redStates   = ['Pending for Verified', 'Pending for Accepted', 'Rejected', 'Not Accepted', 'Missed', 'Pending'];
+  
+  let bg = '#EEEEEE';
+  let text = '#616161';
+  
+  if (greenStates.includes(label)) {
+    bg = '#E8F5E9';
+    text = '#2E7D32';
+  } else if (redStates.includes(label)) {
+    bg = '#FFEBEE';
+    text = '#C62828';
+  }
+  
   return (
     <Chip
-      label={label || 'Pending'}
+      label={label}
       size="small"
-      color={colorMap[label] || 'default'}
-      variant="outlined"
-      sx={{ minWidth: 160, maxWidth: 160, height: 26, fontSize: '0.75rem', fontWeight: 700, justifyContent: 'center', '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }}
+      sx={{ 
+        minWidth: 160, 
+        maxWidth: 160, 
+        height: 26, 
+        fontSize: '0.75rem', 
+        fontWeight: 700, 
+        justifyContent: 'center', 
+        bgcolor: bg,
+        color: text,
+        border: 'none',
+        borderRadius: '4px',
+        '& .MuiChip-label': { px: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } 
+      }}
     />
   );
 }
@@ -283,7 +321,7 @@ export default function CheckListRenewalVerify() {
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
-        currentUser: user?.name || user?.id || undefined,
+        currentUser: user?.id || user?.name || undefined,
         excludePending: true,
 
         // Add-on filters
@@ -432,9 +470,12 @@ export default function CheckListRenewalVerify() {
       }}
       title="Check List / Renewal Verify"
       secondary={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {perms.export && <BOSExportButton data={rows} filename="Checklist_Renewal_Verify" columns={exportColumns} size="small" />}
-        </Box>
+        <BOSTableToolbar
+          exportData={rows}
+          
+          exportFilename="Checklist_Renewal_Verify"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
 
@@ -506,20 +547,52 @@ export default function CheckListRenewalVerify() {
                       <Box
                         component="span"
                         onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                        sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                       >
                         {row.checklist.checkingPoint}
                       </Box>
                     ) : '-'}
                   </TableCell>
-                  <TableCell>{row.checklist?.description}</TableCell>
+                  <TableCell>
+                    {row.checklist?.description?.length > 50 
+                      ? `${row.checklist.description.substring(0, 50)}...` 
+                      : row.checklist?.description || '-'}
+                  </TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>
-                  <TableCell>{formatDate(row.assignedDate)}</TableCell>
+                   <TableCell>{formatDate(row.assignedDate)}</TableCell>
                   <TableCell>{formatDate(row.checklistDate)}</TableCell>
                   <TableCell><StatusChip status={row.status} /></TableCell>
-                  <TableCell>{formatDate(row.checklist?.nextDueDate)}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const val = formatDate(row.checklist?.nextDueDate);
+                      if (!row.checklist?.nextDueDate || val === '-') return '-';
+                      const exp = new Date(row.checklist.nextDueDate);
+                      let isExpired = false;
+                      if (!isNaN(exp.getTime())) {
+                        exp.setHours(23, 59, 59, 999);
+                        isExpired = exp < new Date();
+                      }
+                      return (
+                        <Box
+                          component="span"
+                          sx={{
+                            fontWeight: isExpired ? 700 : 400,
+                            color: isExpired ? '#C62828' : 'text.primary',
+                            bgcolor: isExpired ? '#FFEBEE' : 'transparent',
+                            px: isExpired ? 1 : 0,
+                            py: isExpired ? 0.4 : 0,
+                            borderRadius: isExpired ? '4px' : 0,
+                            display: 'inline-block',
+                            fontSize: '0.82rem',
+                          }}
+                        >
+                          {val}
+                        </Box>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell>{row.assignedTo}</TableCell>
                   <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
                   <TableCell>{row.checklist?.dualCheck?.toUpperCase() === 'YES' ? 'yes' : 'No'}</TableCell>
@@ -527,7 +600,7 @@ export default function CheckListRenewalVerify() {
                   <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
                   <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
-                  <TableCell>{formatDate(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
+                  <TableCell>{formatDateTime(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

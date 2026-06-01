@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, MenuItem
+  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem
 } from '@mui/material';
 import { IconCreditCard, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -35,6 +34,7 @@ export default function PaymentTerms() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState('');
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     termCode: '',
     termName: '',
@@ -57,6 +57,7 @@ export default function PaymentTerms() {
   }, []);
 
   const handleOpen = (row = null) => {
+    setErrors({});
     if (row) {
       setEditId(row.id);
       setFormData({
@@ -79,9 +80,17 @@ export default function PaymentTerms() {
     setOpen(true);
   };
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setErrors({});
+  };
 
   const handleSubmit = async () => {
+    setErrors({});
+    if (!formData.termName?.trim()) {
+      setErrors({ termName: 'Payment Term name should not be empty.' });
+      return;
+    }
     try {
       if (editId) {
         await axios.put(`/api/payment-terms/${editId}`, formData);
@@ -93,7 +102,11 @@ export default function PaymentTerms() {
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
-      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
+      if (typeof errorMsg === 'string' && (errorMsg.toLowerCase().includes('duplicate') || errorMsg.toLowerCase().includes('already exists'))) {
+        setErrors({ termName: 'Duplicate value! Please check.' });
+      } else {
+        dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      }
     }
   };
 
@@ -116,10 +129,9 @@ export default function PaymentTerms() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'termName', label: 'Payment Term', type: 'text' },
-      { id: 'description', label: 'Payment Term Description', type: 'text' }
-    ];
+    const config = [{ id: 'termName', label: 'Payment Term', type: 'text' },
+      { id: 'description', label: 'Payment Term Description', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -135,7 +147,7 @@ export default function PaymentTerms() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCreditCard size={24} />
@@ -147,12 +159,8 @@ export default function PaymentTerms() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Payment_Terms"
-            columns={[
-              { header: 'Payment Term', key: 'termName' },
-              { header: 'Description', key: 'description' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Term
@@ -181,7 +189,12 @@ export default function PaymentTerms() {
               label="Payment Term"
               fullWidth
               value={formData.termName}
-              onChange={(e) => setFormData({ ...formData, termName: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, termName: e.target.value });
+                if (errors.termName) setErrors((prev) => ({ ...prev, termName: '' }));
+              }}
+              error={!!errors.termName}
+              helperText={errors.termName}
             />
             <BOSTextField
               disabled={!perms.write}

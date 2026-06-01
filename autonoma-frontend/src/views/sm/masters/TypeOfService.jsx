@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, MenuItem
+  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem
 } from '@mui/material';
 import { IconSettings, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -35,6 +34,7 @@ export default function TypeOfService() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
   const [deleteName, setDeleteName] = useState('');
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     serviceCode: '',
     serviceName: '',
@@ -56,6 +56,7 @@ export default function TypeOfService() {
   }, []);
 
   const handleOpen = (row = null) => {
+    setErrors({});
     if (row) {
       setEditId(row.id);
       setFormData({
@@ -76,9 +77,17 @@ export default function TypeOfService() {
     setOpen(true);
   };
 
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setErrors({});
+  };
 
   const handleSubmit = async () => {
+    setErrors({});
+    if (!formData.serviceName?.trim()) {
+      setErrors({ serviceName: 'Service Name should not be empty.' });
+      return;
+    }
     try {
       if (editId) {
         await axios.put(`/api/type-of-service/${editId}`, formData);
@@ -90,7 +99,11 @@ export default function TypeOfService() {
     } catch (err) {
       console.error(err);
       const errorMsg = err.response?.data?.message || err.response?.data || 'An error occurred while saving.';
-      alert(typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.');
+      if (typeof errorMsg === 'string' && (errorMsg.toLowerCase().includes('duplicate') || errorMsg.toLowerCase().includes('already exists'))) {
+        setErrors({ serviceName: 'Duplicate value! Please check.' });
+      } else {
+        dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      }
     }
   };
 
@@ -113,10 +126,9 @@ export default function TypeOfService() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'serviceCode', label: 'Service Code', type: 'text' },
-      { id: 'serviceName', label: 'Service Name', type: 'text' }
-    ];
+    const config = [{ id: 'serviceCode', label: 'Service Code', type: 'text' },
+      { id: 'serviceName', label: 'Service Name', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -132,7 +144,7 @@ export default function TypeOfService() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconSettings size={24} />
@@ -144,12 +156,8 @@ export default function TypeOfService() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Type_Of_Service"
-            columns={[
-              { header: 'Service Code', key: 'serviceCode' },
-              { header: 'Service Name', key: 'serviceName' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Service Type
@@ -185,7 +193,12 @@ export default function TypeOfService() {
               label="Service Name"
               fullWidth
               value={formData.serviceName}
-              onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, serviceName: e.target.value });
+                if (errors.serviceName) setErrors((prev) => ({ ...prev, serviceName: '' }));
+              }}
+              error={!!errors.serviceName}
+              helperText={errors.serviceName}
             />
             <BOSTextField
               disabled={!perms.write}

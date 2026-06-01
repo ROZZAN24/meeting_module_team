@@ -14,6 +14,9 @@ public class InductionMasterService {
     @Autowired
     private InductionMasterRepository repository;
 
+    @Autowired
+    private com.autonoma.erp.repository.InductionTrainingDetailRepository trainingDetailRepository;
+
     public List<InductionMaster> getAll() {
         return repository.findAll();
     }
@@ -87,12 +90,14 @@ public class InductionMasterService {
     }
 
     public void delete(Long id) {
-        // Soft delete logic could be implemented here, but for now we follow standard delete
-        // SOP says: "Perform soft delete only. Restrict deletion if induction already assigned"
-        // Since we don't have assignment table yet, we'll just delete or set status to IN ACTIVE
         InductionMaster existing = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Induction Criteria not found."));
-        existing.setStatus("IN ACTIVE");
-        repository.save(existing);
+        
+        // Restrict deletion if induction already assigned/used in responses
+        if (trainingDetailRepository.existsByInductionMasterId(id)) {
+            throw new RuntimeException("Cannot delete this induction criteria because it is already assigned to trainees.");
+        }
+        
+        repository.delete(existing);
     }
 }

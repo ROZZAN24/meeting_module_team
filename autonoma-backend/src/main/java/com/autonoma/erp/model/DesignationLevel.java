@@ -24,37 +24,40 @@ public class DesignationLevel {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "row_id")
+	@Column(name = "ROW_ID")
 	private Long rowId;
 
-	@Column(name = "level", columnDefinition = "NVARCHAR(10)")
+	@Column(name = "LEVEL", columnDefinition = "NVARCHAR(10)")
 	private String level;
 
-	@Column(name = "basic")
+	@Column(name = "BASIC")
 	private double basic;
 
-	@Column(name = "da")
+	@Column(name = "DA")
 	private double da;
 
-	@Column(name = "hra")
+	@Column(name = "HRA")
 	private double hra;
 
-	@Column(name = "screening_level")
+	@Column(name = "SCREENING_LEVEL")
 	private int screeningLevel;
 
-	@Column(name = "created_by", nullable = false, columnDefinition = "NVARCHAR(100)")
+	@Column(name = "CREATED_BY", nullable = false, columnDefinition = "NVARCHAR(100)")
 	private String createdBy;
 
-	@Column(name = "created_at")
+	@Column(name = "CREATED_DATE")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date createdDate;
 
-	@Column(name = "updated_by", columnDefinition = "NVARCHAR(100)")
+	@Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
 	private String updatedBy;
 
-	@Column(name = "updated_at")
+	@Column(name = "UPDATED_DATE")
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date updatedDate;
+
+	@Column(name = "IS_ACTIVE")
+	private Boolean isActive = true;
 
 	public String getLevel() {
 		return level;

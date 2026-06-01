@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "IND_INDUCTION_MASTER")
+@Table(name = "HR_INDUCTION")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,31 +16,39 @@ public class InductionMaster extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "induction_details", columnDefinition = "NVARCHAR(MAX)", nullable = false)
+    @Column(name = "INDUCTION_DETAILS", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String inductionDetails;
 
-    @Column(name = "answer", columnDefinition = "NVARCHAR(MAX)", nullable = false)
+    @Column(name = "ANSWER", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String answer;
 
-    @Column(name = "department_codes", length = 100)
+    @Column(name = "DEPARTMENT_CODES", length = 100)
     private String departmentCodes; // Comma separated list of department codes
 
-    @Column(name = "level_codes", length = 100)
+    @Column(name = "LEVEL_CODES", length = 100)
     private String levelCodes; // Comma separated list of levels (L1, L2, etc.)
 
-    @Column(name = "induction_round")
+    @Column(name = "INDUCTION_ROUND")
     private String inductionRound; // HR, QMS, DEPARTMENT, MANAGEMENT
 
-    @Column(name = "attachment_required")
+    @Column(name = "ATTACHMENT_REQUIRED")
     private String attachmentRequired; // YES, NO
 
-    @Column(name = "induction_attachment", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "INDUCTION_ATTACHMENT", length = 1000)
     private String inductionAttachment;
 
-    @Column(name = "status", length = 20)
+    @Column(name = "STATUS", length = 20)
     private String status; // ACTIVE, IN ACTIVE
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
+    // Explicit getter/setter for isActive
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
-
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

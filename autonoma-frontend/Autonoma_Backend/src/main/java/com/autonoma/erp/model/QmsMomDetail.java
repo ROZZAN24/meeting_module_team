@@ -90,4 +90,7 @@ public class QmsMomDetail {
 
     @Column(name = "updated_by")
     private String updatedBy;
+
+    @Column(name = "attachment_info", columnDefinition = "NVARCHAR(MAX)")
+    private String attachmentInfo;
 }

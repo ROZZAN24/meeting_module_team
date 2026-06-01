@@ -17,42 +17,45 @@ public class EmployeeDependent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "relation_name", length = 100)
+    @Column(name = "RELATION_NAME", length = 100)
     private String name;
 
-    @Column(length = 20)
+    @Column(name = "GENDER", length = 20)
     private String gender;
 
-    @Column(name = "date_of_birth")
+    @Column(name = "DATE_OF_BIRTH")
     @Temporal(TemporalType.DATE)
     private Date dob;
 
-    @Column(length = 50)
+    @Column(name = "RELATIONSHIP", length = 50)
     private String relationship;
 
-    @Column(length = 100)
+    @Column(name = "OCCUPATION", length = 100)
     private String occupation;
 
-    @Column(name = "blood_group", length = 20)
+    @Column(name = "BLOOD_GROUP", length = 20)
     private String bloodGroup;
 
-    @Column(name = "contact_number1", length = 20)
+    @Column(name = "CONTACT_NUMBER1", length = 20)
     private String contactNo;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

@@ -17,37 +17,40 @@ public class EmployeePassport {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "employee_id", nullable = false)
+    @Column(name = "EMPLOYEE_ID", nullable = false)
     private Long employeeId;
 
-    @Column(name = "passport_number", length = 50)
+    @Column(name = "PASSPORT_NUMBER", length = 50)
     private String passportNumber;
 
-    @Column(name = "passport_issue_city", length = 100)
+    @Column(name = "PASSPORT_ISSUE_CITY", length = 100)
     private String passportIssueCity;
 
-    @Column(name = "issue_date")
+    @Column(name = "ISSUE_DATE")
     @Temporal(TemporalType.DATE)
     private Date issueDate;
 
-    @Column(name = "expiry_date")
+    @Column(name = "EXPIRY_DATE")
     @Temporal(TemporalType.DATE)
     private Date expiryDate;
 
-    @Column(columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    @Column(name = "CREATED_BY", length = 100)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 100)
     private String updatedBy;
 
-    @Column(name = "updated_at")
+    @Column(name = "UPDATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date updatedDate;
 

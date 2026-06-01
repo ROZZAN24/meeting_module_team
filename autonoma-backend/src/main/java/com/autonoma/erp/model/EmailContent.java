@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "IND_EMAIL_CONTENT")
+@Table(name = "HR_EMAIL_CONTENT")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,18 +16,30 @@ public class EmailContent extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "type", length = 100, nullable = false)
+    @Column(name = "TYPE", length = 100, nullable = false)
     private String type;
 
-    @Column(name = "subject", length = 500, nullable = false)
+    @Column(name = "SUBJECT", length = 500, nullable = false)
     private String subject;
 
-    @Column(name = "body_content", columnDefinition = "NVARCHAR(MAX)", nullable = false)
+    @Column(name = "BODY_CONTENT", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String bodyContent;
 
-    @Column(name = "yours_windfully", length = 200, nullable = false)
+    @Column(name = "YOURS_WINDFULLY", length = 200, nullable = false)
     private String yoursWindfully;
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     private String status; // ACTIVE, INACTIVE
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    // Explicit getter/setter for isActive
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

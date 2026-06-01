@@ -112,7 +112,9 @@ export default function BOSFormDialog({
   sidebar,
   children,
   contentSx = {},
-  hideCollapse = false
+  hideCollapse = false,
+  sx = {},
+  showCloseInFooter = true
 }) {
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
@@ -292,6 +294,7 @@ export default function BOSFormDialog({
           overflow: 'visible',
         }
       }}
+      sx={{ ...sx }}
     >
       {/* ── TITLE BAR ── */}
       <DialogTitle
@@ -400,16 +403,18 @@ export default function BOSFormDialog({
                   </Button>
                 </Tooltip>
               )}
-              <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
-                <Button
-                  onClick={() => onClose()}
-                  variant="contained"
-                  sx={{ ...btnDelete, bgcolor: 'grey.500', '&:hover': { bgcolor: 'grey.700' } }}
-                  startIcon={<IconX size={20} />}
-                >
-                  Close
-                </Button>
-              </Tooltip>
+              {showCloseInFooter && (
+                <Tooltip title={shortcutTooltip('Close Dialog', 'Esc')}>
+                  <Button
+                    onClick={() => onClose()}
+                    variant="contained"
+                    sx={{ ...btnDelete, bgcolor: 'grey.500', '&:hover': { bgcolor: 'grey.700' } }}
+                    startIcon={<IconX size={20} />}
+                  >
+                    Close
+                  </Button>
+                </Tooltip>
+              )}
             </Box>
           ) : (
             <>
@@ -533,5 +538,7 @@ BOSFormDialog.propTypes = {
   secondaryActions: PropTypes.node,
   children: PropTypes.node,
   contentSx: PropTypes.object,
-  hideCollapse: PropTypes.bool
+  hideCollapse: PropTypes.bool,
+  sx: PropTypes.object,
+  showCloseInFooter: PropTypes.bool
 };

@@ -1,29 +1,18 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Stack, Button, Tooltip, IconButton, Box, Chip, Grid, Divider, useTheme, Card, CardContent } from '@mui/material';
-import { IconAlertTriangle, IconFileDownload, IconCircleCheck, IconRefresh, IconFileDescription, IconUser, IconChecks, IconX, IconEye, IconEdit } from '@tabler/icons-react';
+import { Typography, Stack, Button, Tooltip, IconButton, Box, Chip, MenuItem, useTheme } from '@mui/material';
+import { IconFileDownload, IconCircleCheck, IconRefresh, IconUser, IconChecks, IconX, IconEye, IconExternalLink } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import MainCard from 'ui-component/cards/MainCard';
-import { exportToExcel } from 'utils/excelExport';
 import { format, differenceInDays } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { 
-  BOSDataTable, 
-  BOSExportButton,
-  BOSFormDialog, 
-  BOSFormSection, 
-  BOSTextField, 
-  BOSPersonnelCard, 
-  useBOSForm, 
-  BOSFileGallery, 
-  btnExport, 
-  getStatusChipSx 
-} from 'ui-component/bos';
-import { getFileViewUrl } from 'utils/upload-helper';
+import {
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
+import { getFileDownloadUrl, getFileViewUrl } from 'utils/upload-helper';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
-// ==============================|| AUDIT NCR / OFI APPROVAL (REFACTORED WITH PATTERNS) ||============================== //
+// ==============================|| AUDIT NCR / OFI APPROVAL (REDESIGNED) ||============================== //
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
@@ -39,8 +28,6 @@ const columns = [
   { id: 'ncrStatus', label: 'Status', minWidth: 130 }
 ];
 
-const R = ({ children, lg = 6 }) => <Grid item xs={12} md={lg}>{children}</Grid>;
-
 export default function AuditNcrApproval() {
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -50,73 +37,166 @@ export default function AuditNcrApproval() {
 
   const [rows, setRows] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [criteriaList, setCriteriaList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFinding, setSelectedFinding] = useState(null);
-  const [attachments, setAttachments] = useState([]);
+  const [ncrAttachments, setNcrAttachments] = useState([]);
 
-  // useBOSForm ensures no uncontrolled input warnings
   const { formData, handleFormChange, updateForm, resetForm } = useBOSForm({ remarks: '' });
   const [errors, setErrors] = useState({});
+
+  // Match criteria by seqNo or clause+auditType fallback
+  const matchingCriteria = useMemo(() => {
+    if (!selectedFinding || !criteriaList.length) return null;
+    let match = criteriaList.find(c => String(c.seqNo) === String(selectedFinding.seqNo));
+    if (!match && selectedFinding.clause) {
+      match = criteriaList.find(c => 
+        String(c.clause).toLowerCase() === String(selectedFinding.clause).toLowerCase() &&
+        (!selectedFinding.auditType || !c.auditType || 
+          String(c.auditType).toLowerCase().includes(String(selectedFinding.auditType).toLowerCase()))
+      );
+    }
+    return match;
+  }, [selectedFinding, criteriaList]);
+
+  // Parse criteria attachments from JSON
+  const criteriaAttachments = useMemo(() => {
+    if (!matchingCriteria?.attachmentInfo) return [];
+    try {
+      const parsed = JSON.parse(matchingCriteria.attachmentInfo);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }, [matchingCriteria]);
+
+  // Parse observation detail attachments robustly
+  const observationAttachments = useMemo(() => {
+    const path = selectedFinding?.attachmentPath;
+    if (!path || !path.trim()) return [];
+    try {
+      const parsed = JSON.parse(path);
+      if (Array.isArray(parsed)) {
+        return parsed.map(item => ({
+          fileName: item.fileName || item.serverFileName?.split('/').pop() || 'Document',
+          serverFileName: item.serverFileName || item.filePath || ''
+        }));
+      }
+    } catch (e) { /* Not JSON */ }
+    return path.split(',').filter(Boolean).map(p => ({
+      fileName: p.trim().split('/').pop(),
+      serverFileName: p.trim()
+    }));
+  }, [selectedFinding]);
+
+  // Filter NCR attachments by category
+  const rootCauseAttachments = useMemo(() => ncrAttachments.filter(a => a.fileType === 'ROOT_CAUSE'), [ncrAttachments]);
+  const correctiveAttachments = useMemo(() => ncrAttachments.filter(a => a.fileType === 'CORRECTIVE'), [ncrAttachments]);
+  const preventiveAttachments = useMemo(() => ncrAttachments.filter(a => a.fileType === 'PREVENTIVE'), [ncrAttachments]);
 
   const getEmployeeDetails = (input) => {
     if (!input) return {};
     const parts = input.split(' - ');
     const emp = employees.find(e => e.employeeName === parts[0]?.trim() || e.empCode === input);
-    if (!emp) return { empCode: parts[1]?.trim() || '-', departmentName: '-', empLevelId: '-' };
+    if (!emp) return { empCode: parts[1]?.trim() || '-', departmentName: '-', level: '-' };
     return {
       ...emp,
-      departmentName: emp.department?.departmentName || '-'
+      departmentName: emp.department?.departmentName || '-',
+      level: emp.empLevelId ? `L${emp.empLevelId}` : '-'
     };
   };
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
       { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING APPROVAL' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'REJECTED', label: 'REJECTED' }], defaultValue: 'WAITING_APPROVAL' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' }
-    ]));
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' },
+      ...getCommonDateFilters('createdDate', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [fRes, eRes] = await Promise.all([
+      const [fRes, eRes, cRes] = await Promise.all([
         axios.get('/api/qms/audit/observation/ncr/findings', { params: { ...globalFilters, query: globalQuery } }),
-        axios.get('/api/master/hr/employees')
+        axios.get('/api/master/hr/employees'),
+        axios.get('/api/master/qms/audit-criteria')
       ]);
       setRows(fRes.data || []);
       setEmployees(eRes.data || []);
+      setCriteriaList(cRes.data || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   }, [globalFilters, globalQuery]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const fetchNcrAttachments = async (detailId) => {
+    try {
+      const res = await axios.get(`/api/qms/ncr-ofi/attachments/${detailId}`);
+      setNcrAttachments(res.data || []);
+    } catch (e) {
+      setNcrAttachments([]);
+    }
+  };
+
+  const [isNewMode, setIsNewMode] = useState(false);
+
   const handleOpenReview = async (row) => {
+    setIsNewMode(false);
     setSelectedFinding(row);
     updateForm({ remarks: row.remarks || '' });
-    
-    try {
-        const res = await axios.get(`/api/qms/ncr-ofi/attachments/${row.id}`);
-        setAttachments(res.data || []);
-    } catch (e) { setAttachments([]); }
-    
     setErrors({});
+    setNcrAttachments([]);
+    fetchNcrAttachments(row.id);
     setDialogOpen(true);
   };
 
+  const handleOpenNew = () => {
+    setIsNewMode(true);
+    setSelectedFinding(null);
+    resetForm();
+    setErrors({});
+    setNcrAttachments([]);
+    setDialogOpen(true);
+  };
+
+  const handleFindingSelectChange = async (e) => {
+    const findingId = e.target.value;
+    const row = rows.find(r => r.id === findingId);
+    if (row) {
+      setSelectedFinding(row);
+      updateForm({ remarks: row.remarks || '' });
+      setErrors({});
+      setNcrAttachments([]);
+      fetchNcrAttachments(row.id);
+    } else {
+      setSelectedFinding(null);
+      resetForm();
+      setNcrAttachments([]);
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setIsNewMode(false);
+    setSelectedFinding(null);
+    resetForm();
+    setNcrAttachments([]);
+  };
+
   const handleProcessApproval = async (status) => {
+    if (!selectedFinding) return;
     if (status === 'REJECTED' && !formData.remarks) {
-        setErrors({ remarks: 'Remarks are mandatory for rejection' });
-        return;
+      setErrors({ remarks: 'Remarks are mandatory for rejection' });
+      return;
     }
     
     try {
@@ -125,7 +205,7 @@ export default function AuditNcrApproval() {
         params: { remarks: formData.remarks }
       });
       dispatch(openSnackbar({ open: true, message: `NC / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
-      setDialogOpen(false);
+      handleCloseDialog();
       fetchData();
     } catch (e) { dispatch(openSnackbar({ open: true, message: 'Process failed', severity: 'error' })); }
   };
@@ -147,120 +227,343 @@ export default function AuditNcrApproval() {
     return d > 0 ? d : 0;
   };
 
-  const getAttachment = (category) => attachments.find(a => a.category === category);
+  // Render a document panel
+  const renderDocumentPanel = (title, attachmentsList, bgColor = '#e3f2fd') => (
+    <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '8px', overflow: 'hidden', flex: 1 }}>
+      <Box sx={{ bgcolor: bgColor, color: 'rgba(0, 0, 0, 0.87)', py: 1, px: 2, textAlign: 'center', fontWeight: 700, fontSize: '0.8rem' }}>
+        {title}
+      </Box>
+      <Box sx={{ p: 1.5, minHeight: '160px', bgcolor: 'background.paper' }}>
+        {attachmentsList.length > 0 ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            {attachmentsList.map((att, idx) => {
+              const path = att.filePath || att.serverFileName || '';
+              const name = att.fileName || path.split('/').pop() || 'Document';
+              const downloadUrl = getFileDownloadUrl(path);
+              const viewUrl = getFileViewUrl(path);
+              const isImage = /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(name);
+              
+              return (
+                <Box key={idx}>
+                  <Stack 
+                    direction="row" 
+                    spacing={1} 
+                    alignItems="center"
+                    onClick={() => window.open(downloadUrl, '_blank')}
+                    sx={{ 
+                      cursor: 'pointer', 
+                      p: 0.5,
+                      borderRadius: '6px',
+                      '&:hover': { bgcolor: 'action.hover' }
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ fontWeight: 700, color: 'primary.main' }}>
+                      {idx + 1}.
+                    </Typography>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        fontWeight: 700, 
+                        color: 'primary.main', 
+                        textDecoration: 'underline',
+                        flex: 1,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}
+                    >
+                      {name}
+                    </Typography>
+                    <IconButton size="small" color="primary" sx={{ p: 0.5 }}>
+                      <IconFileDownload size={16} />
+                    </IconButton>
+                  </Stack>
+                  {isImage && (
+                    <Box 
+                      sx={{ 
+                        mt: 0.5, 
+                        borderRadius: '6px', 
+                        overflow: 'hidden', 
+                        border: '1px solid', 
+                        borderColor: 'divider',
+                        cursor: 'pointer',
+                        '&:hover': { opacity: 0.85 }
+                      }}
+                      onClick={() => window.open(viewUrl, '_blank')}
+                    >
+                      <Box 
+                        component="img" 
+                        src={viewUrl} 
+                        alt={name}
+                        sx={{ width: '100%', maxHeight: '180px', objectFit: 'contain', display: 'block' }}
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    </Box>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: '120px' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              No documents attached.
+            </Typography>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  );
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconChecks size={24} /><Typography variant="h3">NC / OFI Approval & CAPA Management</Typography></Stack>}
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh"><IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1 }}><IconRefresh size={20} /></IconButton></Tooltip>
-          {perms.export && <BOSExportButton
-            data={rows}
-            filename="NC_Approval_Report"
-            columns={[
-              { header: 'NC No', key: 'ncrNo' },
-              { header: 'Department', key: 'departmentName' },
-              { header: 'Observation No', key: 'observationNo' },
-              { header: 'Status', key: 'ncrStatus' }
-            ]}
-          />}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleOpenNew}
+          hasWritePermission={perms.write}
+          exportData={rows}
+          
+          exportFilename="NC_Approval_Report"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenReview} renderCell={renderCell} customActions={(row) => (<Tooltip title="Review & Approve"><IconButton size="small" color="success" onClick={() => handleOpenReview(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}><IconEye size={18} /></IconButton></Tooltip>)} />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSave={() => handleProcessApproval('APPROVED')} onClear={resetForm} title="NC / OFI Approval Workflow" maxWidth="lg"
-        customButtons={
-          <Stack direction="row" spacing={2}>
-            <Button variant="outlined" color="error" startIcon={<IconX size={20} />} onClick={() => handleProcessApproval('REJECTED')}>Reject CAPA</Button>
-            <Button variant="contained" color="success" startIcon={<IconCircleCheck size={20} />} onClick={() => handleProcessApproval('APPROVED')}>Approve & Close</Button>
-          </Stack>
-        }
-      >
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.8fr 1.2fr' }, gap: 4, width: '100%' }}>
+      <BOSFormDialog open={dialogOpen} onClose={handleCloseDialog} title="NCR / OFI Approval" maxWidth="lg" hideFooter={true}>
+        <Stack spacing={3} sx={{ width: '100%' }}>
           
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <Box sx={{ p: 2.5, bgcolor: 'primary.light', borderRadius: '12px', border: '1px solid', borderColor: 'primary.200' }}>
-               <Grid container spacing={2}>
-                  <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>NC / OFI NO</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.ncrNo || 'N/A'}</Typography></Grid>
-                  <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>OBS NO</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.observationNo || 'N/A'}</Typography></Grid>
-                  <Grid item xs={3}><Typography variant="caption" color="primary.main" fontWeight={700}>DATE</Typography><Typography variant="h4" fontWeight={800}>{selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : '-'}</Typography></Grid>
-                  <Grid item xs={3}><Typography variant="caption" color="error.main" fontWeight={700}>DELAY DAYS</Typography><Typography variant="h4" fontWeight={800} color="error.main">{getDelayDays()} Days</Typography></Grid>
-               </Grid>
-            </Box>
+          {/* ═══════════════ PREMIUM HEADER BAR ═══════════════ */}
+          <Box sx={{ 
+            bgcolor: '#1565C0', 
+            borderRadius: '12px', 
+            p: 2, 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            gap: 2,
+            boxShadow: '0 4px 20px rgba(21, 101, 192, 0.25)',
+            width: '100%'
+          }}>
+            <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" alignItems="center">
+              <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                NCR No : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.ncrNo || selectedFinding?.ncrOfiNo || '-'}</Box>
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                Date : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy')}</Box>
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                Observation No : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.observationNo || '-'}</Box>
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                Schedule No : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.auditScheduleNo || '-'}</Box>
+              </Typography>
+              <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
+                Delay Days : <Box component="span" sx={{ color: '#ff8a80', fontWeight: 800 }}>{getDelayDays()}</Box>
+              </Typography>
+            </Stack>
 
-            <BOSFormSection title="Observation Details" icon={<IconAlertTriangle size={20} color={theme.palette.error.main} />}>
-              <Grid container spacing={3.5}>
-                <R lg={6}><BOSTextField label="Audit Type" value={selectedFinding?.auditType || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
-                <R lg={6}><BOSTextField label="Clause / Criteria" value={selectedFinding?.clause || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
-                <Grid item xs={12}><BOSTextField label="Finding / Observation" value={selectedFinding?.criteriaDetails || ''} multiline rows={2} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></Grid>
-              </Grid>
-            </BOSFormSection>
-
-            <BOSFormSection title="CAPA Analysis Review" icon={<IconEdit size={20} color={theme.palette.secondary.main} />}>
-              <Grid container spacing={3.5}>
-                {[
-                  { label: 'Root Cause Analysis', value: selectedFinding?.rootCause, key: 'ROOT_CAUSE' },
-                  { label: 'Corrective Action Plan', value: selectedFinding?.correctiveAction, key: 'CORRECTIVE' },
-                  { label: 'Preventive Action Plan', value: selectedFinding?.preventiveAction, key: 'PREVENTIVE' }
-                ].map((a) => (
-                  <Grid item xs={12} key={a.label}>
-                    <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'flex-start' }}>
-                      <Card variant="outlined" sx={{ flex: 1, bgcolor: 'grey.50', border: '1px solid', borderColor: 'divider' }}>
-                        <CardContent sx={{ p: 2 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 800, color: 'primary.main', mb: 1, display: 'block' }}>{a.label.toUpperCase()}</Typography>
-                          <Typography variant="body2" sx={{ lineHeight: 1.6, color: 'text.primary' }}>{a.value || 'No content provided'}</Typography>
-                        </CardContent>
-                      </Card>
-                      {getAttachment(a.key) && (
-                        <Tooltip title="Preview Proof">
-                          <IconButton size="small" color="secondary" onClick={() => window.open(getFileViewUrl(getAttachment(a.key).fileName), '_blank')} sx={{ mt: 1, border: '1px solid', borderColor: 'divider', p: 1.5 }}>
-                            <IconEye size={20} />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </Grid>
-                ))}
-                <R lg={6}><BOSTextField label="Planned Target Date" value={selectedFinding?.targetDate ? format(new Date(selectedFinding.targetDate), 'dd/MM/yyyy') : ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} /></R>
-                <Grid item xs={12}>
-                  <BOSTextField required label="Approver Remarks" name="remarks" value={formData.remarks} onChange={handleFormChange} multiline rows={3} error={!!errors.remarks} helperText={errors.remarks} placeholder="Enter approval or rejection remarks here..." InputLabelProps={{ shrink: true }} />
-                </Grid>
-              </Grid>
-            </BOSFormSection>
+            <Stack direction="row" spacing={1.5}>
+              <Button 
+                variant="contained" 
+                startIcon={<IconX size={18} />} 
+                onClick={() => handleProcessApproval('REJECTED')}
+                disabled={!selectedFinding}
+                sx={{ 
+                  borderRadius: '8px', 
+                  bgcolor: '#d32f2f', 
+                  color: 'white', 
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: '#b71c1c' }
+                }}
+              >
+                Rejected
+              </Button>
+              <Button 
+                variant="contained" 
+                startIcon={<IconCircleCheck size={18} />} 
+                onClick={() => handleProcessApproval('APPROVED')}
+                disabled={!selectedFinding}
+                sx={{ 
+                  borderRadius: '8px', 
+                  bgcolor: '#2e7d32', 
+                  color: 'white', 
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: '#1b5e20' }
+                }}
+              >
+                Approved
+              </Button>
+            </Stack>
           </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            <BOSFormSection title="Personnel Information" icon={<IconUser size={20} color={theme.palette.primary.main} />}>
-              <Stack spacing={3}>
-                <BOSPersonnelCard 
-                    title="Auditee / Owner" 
+          {/* ═══════════════ MAIN CONTENT: LEFT FIELDS + RIGHT PERSONNEL ═══════════════ */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.8fr 1.2fr' }, gap: 4, width: '100%' }}>
+            
+            {/* LEFT COLUMN — Read-only / Select fields */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+              {isNewMode && (
+                <BOSTextField
+                  select
+                  label="Observation No *"
+                  name="observationNoSelect"
+                  value={selectedFinding?.id || ''}
+                  onChange={handleFindingSelectChange}
+                  error={!!errors.observationNo}
+                  helperText={errors.observationNo}
+                  InputLabelProps={{ shrink: true }}
+                >
+                  <MenuItem value=""><em>— Select Observation —</em></MenuItem>
+                  {rows
+                    .filter(r => r.ncrStatus === 'WAITING_APPROVAL')
+                    .map(r => (
+                      <MenuItem key={r.id} value={r.id}>
+                        {`${r.observationNo} (${r.observationStatus}) - ${r.criteriaDetails || ''}`.substring(0, 100)}
+                      </MenuItem>
+                    ))}
+                </BOSTextField>
+              )}
+              <BOSTextField label="Audit Type" value={selectedFinding?.auditType || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
+              <BOSTextField label="Audit Area" value={selectedFinding?.auditAreaDetail || selectedFinding?.departmentName || ''} inputProps={{ readOnly: true }} InputLabelProps={{ shrink: true }} />
+              
+              <Box sx={{ position: 'relative' }}>
+                <BOSTextField 
+                  label="Audit Criteria Details" 
+                  value={selectedFinding?.criteriaDetails || ''} 
+                  multiline 
+                  rows={2} 
+                  inputProps={{ readOnly: true }} 
+                  InputLabelProps={{ shrink: true }} 
+                />
+                {criteriaAttachments.length > 0 && (
+                  <Tooltip title="View criteria attachment">
+                    <IconButton 
+                      size="small" 
+                      color="primary"
+                      onClick={() => {
+                        const att = criteriaAttachments[0];
+                        const url = getFileViewUrl(att.serverFileName || att.filePath || '');
+                        window.open(url, '_blank');
+                      }}
+                      sx={{ position: 'absolute', top: 8, right: 8, border: '1px solid', borderColor: 'divider', p: 0.5 }}
+                    >
+                      <IconEye size={16} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+
+              <Box sx={{ position: 'relative' }}>
+                <BOSTextField 
+                  label="Observation Comment" 
+                  value={selectedFinding?.remarks || selectedFinding?.clause || ''} 
+                  multiline 
+                  rows={2} 
+                  inputProps={{ readOnly: true }} 
+                  InputLabelProps={{ shrink: true }} 
+                />
+                {observationAttachments.length > 0 && (
+                  <Tooltip title="View observation attachment">
+                    <IconButton 
+                      size="small" 
+                      color="primary"
+                      onClick={() => {
+                        const att = observationAttachments[0];
+                        const url = getFileViewUrl(att.serverFileName || '');
+                        window.open(url, '_blank');
+                      }}
+                      sx={{ position: 'absolute', top: 8, right: 8, border: '1px solid', borderColor: 'divider', p: 0.5 }}
+                    >
+                      <IconEye size={16} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+
+              <BOSTextField 
+                label="NCR/OFI Observation" 
+                value={formData.remarks || ''} 
+                name="remarks"
+                onChange={handleFormChange}
+                multiline 
+                rows={2} 
+                InputLabelProps={{ shrink: true }}
+                error={!!errors.remarks}
+                helperText={errors.remarks}
+                placeholder="Enter approval / rejection remarks..."
+              />
+            </Box>
+
+            {/* RIGHT COLUMN — Personnel Cards */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <BOSFormSection title="Personnel Information" icon={<IconUser size={20} color={theme.palette.primary.main} />}>
+                <Stack spacing={3}>
+                  <BOSPersonnelCard 
+                    title="AUDITEE" 
                     name={selectedFinding?.auditee} 
                     empCode={getEmployeeDetails(selectedFinding?.auditee).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditee).departmentName}
                     photo={getEmployeeDetails(selectedFinding?.auditee).employeePhotoUpload}
+                    level={getEmployeeDetails(selectedFinding?.auditee).level}
                     color="primary.main"
-                />
-                <BOSPersonnelCard 
-                    title="Auditor / Reviewer" 
+                  />
+                  <BOSPersonnelCard 
+                    title="AUDITOR" 
                     name={selectedFinding?.auditor} 
                     empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
                     photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}
+                    level={getEmployeeDetails(selectedFinding?.auditor).level}
                     color="secondary.main"
-                />
-              </Stack>
-            </BOSFormSection>
-
-            <BOSFormSection title="Attachment Gallery" icon={<IconFileDescription size={20} color={theme.palette.warning.main} />}>
-              <Stack spacing={2}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.secondary', borderBottom: '1px solid', borderColor: 'divider', pb: 0.5 }}>CLOSURE EVIDENCE</Typography>
-                <BOSFileGallery files={attachments} maxHeight={400} />
-              </Stack>
-            </BOSFormSection>
+                  />
+                </Stack>
+              </BOSFormSection>
+            </Box>
           </Box>
-        </Box>
+
+          {/* ═══════════════ ACTION ROW: Root Cause | Corrective | Preventive ═══════════════ */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2.5, width: '100%' }}>
+            {[
+              { label: 'Root Cause', value: selectedFinding?.rootCause },
+              { label: 'Corrective Action', value: selectedFinding?.correctiveAction },
+              { label: 'Preventive Action', value: selectedFinding?.preventiveAction }
+            ].map((item) => (
+              <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', width: '100%', gap: 1.5 }}>
+                <Typography sx={{ fontWeight: 700, color: 'text.secondary', fontSize: '0.75rem', whiteSpace: 'nowrap', width: '110px' }}>
+                  {item.label}
+                </Typography>
+                <Box sx={{ 
+                  flex: 1, 
+                  border: '1px solid', 
+                  borderColor: 'divider',
+                  borderRadius: '4px',
+                  p: 1,
+                  minHeight: '38px',
+                  bgcolor: 'background.paper',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}>
+                  <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.primary', wordBreak: 'break-word' }}>
+                    {item.value || '-'}
+                  </Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+
+          {/* ═══════════════ DOCUMENT PANELS: 3 Columns ═══════════════ */}
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2.5, width: '100%' }}>
+            {renderDocumentPanel('Root Cause Document', rootCauseAttachments, '#ffe082')}
+            {renderDocumentPanel('Corrective Action Document', correctiveAttachments, '#ffe082')}
+            {renderDocumentPanel('Preventive Action Document', preventiveAttachments, '#ffe082')}
+          </Box>
+
+        </Stack>
       </BOSFormDialog>
     </MainCard>
   );

@@ -11,7 +11,7 @@ import AddDepartmentDialog from './AddDepartmentDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| DEPARTMENT MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -70,8 +70,7 @@ export default function DepartmentDetails() {
   }, [fetchDepartments]);
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'ndaCertificate',
         label: 'NDA Required',
         type: 'select',
@@ -96,8 +95,8 @@ export default function DepartmentDetails() {
       },
       { id: 'sequenceNo', label: 'Org Sequence', type: 'text', placeholder: 'Sequence No...' },
       { id: 'createdDate', label: 'Created Date', type: 'date' },
-      { id: 'updatedDate', label: 'Updated Date', type: 'date' }
-    ];
+      { id: 'updatedDate', label: 'Updated Date', type: 'date' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -146,30 +145,16 @@ export default function DepartmentDetails() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchDepartments} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Department_Details"
-            columns={[
-              { header: 'Dept No', key: 'departmentNo' },
-              { header: 'Department Name', key: 'departmentName' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Department', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchDepartments}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Department', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          
+          exportFilename="Department_Details"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

@@ -173,7 +173,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
   const [levelIds, setLevelIds] = useState([]);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
-  const isViewOnly = initialData?.verifyStatus === 'Verified' && !isAmendment;
+  const isViewOnly = false;
   const speechRef = useRef(null);
   const isSpeechSupported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -283,7 +283,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
 
   useEffect(() => {
     if (open) {
-      axios.get('/api/hrm/departments')
+      axios.get('/api/master/hr/departments')
         .then(res => {
           const list = (res.data || [])
             .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
@@ -385,6 +385,17 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
     }
     if (isAmendment && !amendmentReason) {
       dispatch(openSnackbar({ open: true, message: 'Please provide an Amendment Reason!', variant: 'alert', alert: { color: 'warning' }, severity: 'warning' }));
+      return;
+    }
+
+    if (description && description.length < 500) {
+      dispatch(openSnackbar({
+        open: true,
+        message: `Descriptions/SOP must be at least 500 characters. Currently it is ${description.length} characters.`,
+        variant: 'alert',
+        alert: { color: 'warning' },
+        severity: 'warning'
+      }));
       return;
     }
 
@@ -705,6 +716,38 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               <IconMicrophone size={12} /> Listening… speak now
             </Typography>
           )}
+
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: description.length < 500 ? 'error.main' : 'success.main',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5
+              }}
+            >
+              {!isViewOnly ? (
+                description.length < 500 ? (
+                  <>
+                    <IconAlertCircle size={14} /> Min. 500 characters required (Currently {description.length}/500)
+                  </>
+                ) : (
+                  <>
+                    <IconInfoCircle size={14} style={{ color: theme.palette.success.main }} /> Met minimum length requirements ({description.length} characters)
+                  </>
+                )
+              ) : (
+                <>
+                  <IconInfoCircle size={14} style={{ color: theme.palette.info.main }} /> Description length: {description.length} characters
+                </>
+              )}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+              {(isListening && interimText ? description + ' ' + interimText : description).trim().split(/\s+/).filter(Boolean).length} words | {(isListening && interimText ? description + ' ' + interimText : description).length} characters
+            </Typography>
+          </Box>
         </BOSFormSection>
 
         <BOSFormSection
@@ -723,13 +766,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 onChange: e => {
                   const val = e.target.value;
                   if (val.includes('Select All')) {
-                    if (department.length === departmentsList.length) {
-                      setDepartment([]);
-                    } else {
-                      setDepartment(departmentsList);
-                    }
+                    setDepartment(prev => prev.length === departmentsList.length ? [] : departmentsList);
                   } else {
-                    setDepartment(typeof val === 'string' ? val.split(',') : val);
+                    setDepartment(prev => {
+                      const next = typeof val === 'string' ? val.split(',') : val;
+                      if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+                      return next;
+                    });
                   }
                 }
               }}
@@ -765,7 +808,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             )}
           </Box>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: (category !== 'RENEWAL' && frequency === 'CUSTOM') ? '1fr 1fr 1fr' : '1fr 1fr' }, gap: 3 }}>
             {category !== 'RENEWAL' && (
               <BOSAutocomplete
                 label="Frequency"
@@ -778,43 +821,39 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               />
             )}
 
-            {category !== 'RENEWAL' && (frequency === 'WEEKLY' || frequency === 'CUSTOM') && (
-              <Box sx={{ p: 2.5, border: '1px dashed', borderColor: 'primary.light', borderRadius: 2, bgcolor: 'background.paper', display: 'flex', gap: 2.5, alignItems: 'center' }}>
-                {frequency === 'WEEKLY' && (
-                  <BOSAutocomplete
-                    label="Week Day"
-                    value={weekDays}
-                    options={WEEK_DAYS}
-                    onChange={val => setWeekDays(val)}
-                    required
-                    disabled={isViewOnly}
-                    sx={{ minWidth: 200 }}
-                    autoHighlight
-                  />
-                )}
-                {frequency === 'CUSTOM' && (
-                  <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center', width: '100%' }}>
-                    <BOSTextField
-                      label="Repeat Every"
-                      type="number"
-                      placeholder="e.g. 2"
-                      value={repeatEveryValue}
-                      onChange={e => setRepeatEveryValue(e.target.value)}
-                      required
-                      disabled={isViewOnly}
-                    />
-                    <BOSAutocomplete
-                      label="Unit"
-                      value={repeatEveryUnit}
-                      options={['DAYS','WEEKS','MONTHS','YEARS']}
-                      onChange={val => setRepeatEveryUnit(val)}
-                      required
-                      disabled={isViewOnly}
-                      autoHighlight
-                    />
-                  </Box>
-                )}
-              </Box>
+            {category !== 'RENEWAL' && frequency === 'WEEKLY' && (
+              <BOSAutocomplete
+                label="Week Day"
+                value={weekDays}
+                options={WEEK_DAYS}
+                onChange={val => setWeekDays(val)}
+                required
+                disabled={isViewOnly}
+                autoHighlight
+              />
+            )}
+
+            {category !== 'RENEWAL' && frequency === 'CUSTOM' && (
+              <>
+                <BOSTextField
+                  label="Repeat Every"
+                  type="number"
+                  placeholder="e.g. 2"
+                  value={repeatEveryValue}
+                  onChange={e => setRepeatEveryValue(e.target.value)}
+                  required
+                  disabled={isViewOnly}
+                />
+                <BOSAutocomplete
+                  label="Schedule"
+                  value={repeatEveryUnit}
+                  options={['DAYS','WEEKS','MONTHS','YEARS']}
+                  onChange={val => setRepeatEveryUnit(val)}
+                  required
+                  disabled={isViewOnly}
+                  autoHighlight
+                />
+              </>
             )}
           </Box>
 
@@ -863,15 +902,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               />
             )}
 
-            <BOSAutocomplete
-              label="Status"
-              value={status}
-              options={['Active', 'Inactive']}
-              onChange={val => setStatus(val)}
-              required
-              disabled={isViewOnly}
-              autoHighlight
-            />
+
           </Box>
 
           {isAmendment && (

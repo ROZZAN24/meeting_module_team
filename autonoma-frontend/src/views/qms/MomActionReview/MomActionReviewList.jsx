@@ -9,7 +9,7 @@ import {
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, BOSExportButton, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import axios from 'utils/axios';
 import { API_PATHS } from 'utils/api-constants';
 import MomActionClosureDialog from './MomActionClosureDialog';
@@ -57,8 +57,7 @@ export default function MomActionReviewList() {
   const [selectedAction, setSelectedAction] = useState(null);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'dateType', label: 'Date Type', type: 'select', isStarred: true,
         options: [
           { value: 'targetDate', label: 'Target Date' },
@@ -95,8 +94,8 @@ export default function MomActionReviewList() {
         ],
         defaultValue: 'momNo'
       },
-      { id: 'searchText', label: 'Search Here', type: 'text', placeholder: 'Min 3 chars...', isStarred: true }
-    ]));
+      { id: 'searchText', label: 'Search Here', type: 'text', placeholder: 'Min 3 chars...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -130,6 +129,8 @@ export default function MomActionReviewList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // Status Filter
       const statusFilter = globalFilters.status || 'PENDING';
       if (statusFilter === 'PENDING') {
@@ -200,7 +201,7 @@ export default function MomActionReviewList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconListCheck size={24} />
@@ -208,25 +209,13 @@ export default function MomActionReviewList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <BOSExportButton
-            data={filteredRows}
-            filename="MOM_Actions_Summary"
-            columns={[
-              { header: '#', key: 'index' },
-              { header: 'MOM Number', key: 'momNo' },
-              { header: 'Discussed Point', key: 'discussedPoint' },
-              { header: 'Target Date', key: 'targetDate' },
-              { header: 'Assigned To', key: 'assignedTo' },
-              { header: 'Status', key: 'displayStatus' }
-            ]}
-          />
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          exportData={filteredRows}
+          
+          exportFilename="MOM_Actions_Summary"
+          hasExportPermission={true}
+         columns={columns} />
       }
     >
       <BOSDataTable

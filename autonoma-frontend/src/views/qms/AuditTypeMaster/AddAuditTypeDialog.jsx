@@ -4,16 +4,19 @@ import { MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { IconSettings } from '@tabler/icons-react';
 import axios from 'utils/axios';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import Autocomplete from '@mui/material/Autocomplete';
 import Checkbox from '@mui/material/Checkbox';
 import { API_PATHS } from 'utils/api-constants';
 import useAuth from 'hooks/useAuth';
+import { useDispatch } from 'react-redux';
+import { openSnackbar } from 'store/slices/snackbar';
 
 // ==============================|| AUDIT TYPE - ADD/EDIT DIALOG (BOS SOP COMPLIANT) ||============================== //
 
 const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }) => {
   const theme = useTheme();
+  const dispatch = useDispatch();
 
   const [formData, setFormData] = useState({
     auditType: '',
@@ -27,13 +30,14 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
   });
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
   const [auditAreas, setAuditAreas] = useState([]);
 
   useEffect(() => {
     const fetchAreas = async () => {
       try {
         const res = await axios.get(API_PATHS.QMS.AUDIT_AREA);
-        setAuditAreas(res.data);
+        setAuditAreas((res.data || []).filter(a => a && a.status === 'ACTIVE'));
       } catch (error) {
         console.error('Failed to fetch areas:', error);
         setAuditAreas([]);
@@ -43,6 +47,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
   }, [open]);
 
   useEffect(() => {
+    setErrors({});
     if (initialData) {
       setFormData({
         id: initialData.id,
@@ -53,8 +58,7 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
         customerAuditArea: initialData.customerAuditArea || 'NO',
         auditArea: initialData.auditArea ? initialData.auditArea.split(', ') : [],
         criteriaType: initialData.criteriaType || 'Fixed',
-        status: initialData.status || 'ACTIVE',
-        createdUser: initialData.createdUser
+        status: initialData.status || 'ACTIVE'
       });
       setIsEditing(false);
     } else {
@@ -77,6 +81,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     // SOP: Converted to uppercase automatically for auditType
     const finalValue = name === 'auditType' ? value.toUpperCase() : value;
     setFormData((prev) => ({ ...prev, [name]: finalValue }));
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleClear = () => {
@@ -102,36 +109,61 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
   };
 
   const handleSave = async () => {
+    setErrors({});
     // SOP: Mandatory Field Validation & Error Messages
     if (!formData.auditType?.trim()) {
-      alert('Please Enter Audit Type...');
+      setErrors((prev) => ({ ...prev, auditType: 'Please Enter Audit Type...' }));
       return;
     }
     if (!formData.description?.trim()) {
-      alert('Please Enter Audit Description...');
+      setErrors((prev) => ({ ...prev, description: 'Please Enter Audit Description...' }));
       return;
     }
     if (Number(formData.criteriaMinCount) <= 0) {
-      alert('Please Enter Audit Criteria Minimum Count...');
+      setErrors((prev) => ({ ...prev, criteriaMinCount: 'Please Enter Audit Criteria Minimum Count...' }));
       return;
     }
 
     try {
       const payload = {
         ...formData,
-        auditArea: Array.isArray(formData.auditArea) ? formData.auditArea.join(', ') : formData.auditArea,
-        createdUser: formData.id ? formData.createdUser : (user?.empId || '1001'),
-        updatedUser: user?.empId || '1001'
+        auditArea: Array.isArray(formData.auditArea) ? formData.auditArea.join(', ') : formData.auditArea
       };
+      delete payload.createdUser;
+      delete payload.updatedUser;
 
       if (formData.id) {
-        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload);
+        await axios.put(`${API_PATHS.QMS.AUDIT_TYPE}/${formData.id}`, payload, { skipGlobalAlert: true });
       } else {
-        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload);
+        await axios.post(API_PATHS.QMS.AUDIT_TYPE, payload, { skipGlobalAlert: true });
       }
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit type:', error);
+      let errorMsg = 'An error occurred while saving.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        } else if (error.response.data.error) {
+          errorMsg = error.response.data.error;
+        }
+      }
+      if (errorMsg.includes('auditType')) {
+        setErrors({ auditType: 'Duplicate value! Please check.' });
+      } else if (errorMsg.includes('description')) {
+        setErrors({ description: 'Duplicate value! Please check.' });
+      } else {
+        dispatch(openSnackbar({
+          open: true,
+          message: errorMsg,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        }));
+      }
     }
   };
 
@@ -159,6 +191,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           // SOP: During edit operation, Audit Type field should become Read Only
           disabled={isViewOnly || !!formData.id}
           required
+          error={!!errors.auditType}
+          helperText={errors.auditType}
         />
 
         <BOSTextField
@@ -178,6 +212,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           onChange={handleChange}
           disabled={isViewOnly}
           required
+          error={!!errors.description}
+          helperText={errors.description}
         />
 
         <BOSTextField
@@ -188,6 +224,8 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           onChange={handleChange}
           disabled={isViewOnly}
           required
+          error={!!errors.criteriaMinCount}
+          helperText={errors.criteriaMinCount}
         />
 
         <BOSTextField
@@ -246,18 +284,17 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
           <MenuItem value="Variable">Open</MenuItem>
         </BOSTextField>
 
-        <BOSTextField
-          select
+        <BOSStatusField
+          isCreate={!initialData}
+          type="string-upper"
           name="status"
           label="Status"
           value={formData.status}
           onChange={handleChange}
           disabled={isViewOnly}
-        >
-          <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-          <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-        </BOSTextField>
+        />
       </BOSFormSection>
+      
     </BOSFormDialog>
   );
 };

@@ -16,10 +16,13 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('hrm_employ
     ALTER TABLE hrm_employee_asset ADD serial_no NVARCHAR(100);
 
 -- 4. audit_type
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('audit_type') AND name = 'updated_by')
-    ALTER TABLE audit_type ADD updated_by NVARCHAR(100);
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('audit_type') AND name = 'updated_at')
-    ALTER TABLE audit_type ADD updated_at DATETIME2;
+IF OBJECT_ID('audit_type', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('audit_type') AND name = 'updated_by')
+        ALTER TABLE audit_type ADD updated_by NVARCHAR(100);
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('audit_type') AND name = 'updated_at')
+        ALTER TABLE audit_type ADD updated_at DATETIME2;
+END;
 
 -- 5. hrm_employee_job_profile
 -- Pay Components

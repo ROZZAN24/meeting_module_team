@@ -601,9 +601,15 @@ const CompanyProfile = () => {
             <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1.2 }}>
               Company Profile
             </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.85, mt: 0.4 }}>
-              Manage your company credentials and branding assets
-            </Typography>
+            {form.companyName ? (
+              <Typography variant="body1" sx={{ opacity: 1, mt: 0.4, fontWeight: 700, fontSize: '1.05rem', letterSpacing: 0.2 }}>
+                {form.companyName}
+              </Typography>
+            ) : (
+              <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.4 }}>
+                Manage your company credentials and branding assets
+              </Typography>
+            )}
           </Box>
           {recordId && (
             <Chip

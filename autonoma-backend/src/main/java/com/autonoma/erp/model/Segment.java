@@ -23,10 +23,10 @@ public class Segment {
     @Column(name = "STATUS")
     private String status = "Active";
 
-    @Column(name = "created_by")
+    @Column(name = "created_by", updatable = false)
     private String createdBy;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private java.util.Date createdDate;
 
     @Column(name = "updated_by")

@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -67,8 +67,7 @@ export default function ItemSubtypeMaster() {
     ];
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -80,14 +79,13 @@ export default function ItemSubtypeMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'subType', label: 'Sub Type', type: 'text', placeholder: 'Search sub type...', isStarred: true },
       {
         id: 'typeId', label: 'Item Type', type: 'select',
         options: typeOptions,
         defaultValue: 'All'
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       status: 'ACTIVE',
@@ -142,6 +140,8 @@ export default function ItemSubtypeMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
@@ -183,38 +183,24 @@ export default function ItemSubtypeMaster() {
   const paginatedRows = useMemo(() => mappedRows.slice(page * size, page * size + size), [mappedRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconFolders size={24} />
           <Typography variant="h3">Product Item Sub Type Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchItemSubtypes} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={mappedRows}
-            filename="Product_Item_Sub_Type_Master"
-            columns={[
-              { header: 'Item Type', key: 'itemType' },
-              { header: 'Sub Type', key: 'subType' },
-              { header: 'Sub Item Prefix', key: 'subItemPrefix' },
-              { header: 'Is Auto Generate Code', key: 'isAutoGenerateCode' },
-              { header: 'Prefix Based', key: 'prefixBased' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Item Sub Type', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchItemSubtypes}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Item Sub Type', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={mappedRows}
+          
+          exportFilename="Product_Item_Sub_Type_Master"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

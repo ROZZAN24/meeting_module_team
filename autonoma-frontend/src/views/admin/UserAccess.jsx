@@ -43,6 +43,7 @@ import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 import { getUserImageUrl } from 'utils/upload-helper';
+import { showAppAlert } from 'utils/alert';
 
 const userAccessSearchConfig = [
   { id: 'module', label: 'Module', type: 'text', placeholder: 'Search Module...' },
@@ -106,6 +107,16 @@ const UserAccess = () => {
     const userId = e.target.value;
     setSelectedUser(userId);
     fetchAuthData(userId);
+    const u = users.find(user => user.userId === userId);
+    if (u?.isBosAdmin === 1) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Global Administrator permissions are permanently locked to active to prevent console lockout.',
+        variant: 'alert',
+        severity: 'info',
+        anchorOrigin: { vertical: 'top', horizontal: 'right' }
+      }));
+    }
   };
 
   const handleCheckboxChange = (idx, field) => {
@@ -213,6 +224,10 @@ const UserAccess = () => {
     }
   });
 
+  const showAdminLockedAlert = () => {
+    showAppAlert('Warning: This is a Global Administrator (SuperUser) account. All permissions are permanently locked to active to prevent accidental console lockout.', 'warning');
+  };
+
   const filteredData = useMemo(() => {
     if (!Array.isArray(authData)) return [];
 
@@ -256,7 +271,15 @@ const UserAccess = () => {
           checked={isAllChecked(header.id)}
           indeterminate={isSomeChecked(header.id)}
           disabled={!perms.write}
-          onChange={(e) => perms.write && handleSelectAll(header.id, e.target.checked)}
+          onChange={(e) => {
+            if (selectedUserInfo?.isBosAdmin === 1) {
+              showAdminLockedAlert();
+              return;
+            }
+            if (perms.write) {
+              handleSelectAll(header.id, e.target.checked);
+            }
+          }}
           sx={{ color: header.color, '&.Mui-checked': { color: header.color }, '&.MuiCheckbox-indeterminate': { color: header.color }, p: 0.2 }}
         />
         <Typography variant="caption" sx={{ fontWeight: 800, color: isDark ? theme.palette.text.secondary : '#333', fontSize: '0.6rem', textTransform: 'uppercase' }}>{header.label}</Typography>
@@ -268,7 +291,7 @@ const UserAccess = () => {
   const sourceUserInfo = useMemo(() => users.find(u => u.userId === sourceUser), [users, sourceUser]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 145px)', gap: 1.5, overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 175px)', gap: 1.5, overflow: 'hidden' }}>
       {/* ── HEADER SECTION ── */}
       <Box sx={{
         bgcolor: isDark ? theme.palette.background.paper : 'white',
@@ -289,17 +312,15 @@ const UserAccess = () => {
           >
             {!selectedUserInfo?.imgName && <IconUser size={26} color="#ccc" />}
           </Avatar>
-          <Box>
+          <Box sx={{ mr: 2 }}>
             <Typography variant="h3" sx={{ fontWeight: 800, color: theme.palette.text.primary, lineHeight: 1.2 }}>User Access</Typography>
             <Typography variant="caption" sx={{ fontWeight: 700, color: theme.palette.text.secondary, textTransform: 'uppercase', fontSize: '0.65rem' }}>GRANULAR CONTROL</Typography>
           </Box>
-        </Stack>
 
-        <Stack direction="row" spacing={1.5} alignItems="center">
           <TextField
             select
             size="small"
-            label="Target User"
+            label="User Name"
             value={selectedUser}
             onChange={handleUserChange}
             sx={{
@@ -330,11 +351,28 @@ const UserAccess = () => {
               </MenuItem>
             ))}
           </TextField>
+        </Stack>
 
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Button
+            variant="contained"
+            startIcon={<IconDeviceFloppy size={20} />}
+            onClick={() => {
+              if (selectedUserInfo?.isBosAdmin === 1) {
+                showAdminLockedAlert();
+                return;
+              }
+              handleSaveAll();
+            }}
+            disabled={!selectedUser || !perms.write}
+            sx={{ height: 38, borderRadius: '8px', bgcolor: '#673ab7', '&:hover': { bgcolor: '#5e35b1' }, px: 3, fontWeight: 700, boxShadow: 'none' }}
+          >
+            Save
+          </Button>
           <TextField
             select
             size="small"
-            label="Copy From"
+            label="Copy From User"
             value={sourceUser}
             onChange={(e) => setSourceUser(e.target.value)}
             disabled={!selectedUser}
@@ -365,38 +403,54 @@ const UserAccess = () => {
           <Button
             variant="outlined"
             startIcon={<IconCopy size={18} />}
-            onClick={handleCopyPermissions}
+            onClick={() => {
+              if (selectedUserInfo?.isBosAdmin === 1) {
+                showAdminLockedAlert();
+                return;
+              }
+              handleCopyPermissions();
+            }}
             disabled={!selectedUser || !sourceUser || !perms.write}
             sx={{ height: 38, borderRadius: '8px', color: '#2196f3', borderColor: '#2196f3', textTransform: 'none', fontWeight: 700 }}
           >
             Copy
           </Button>
 
-          <Button
-            variant="contained"
-            startIcon={<IconDeviceFloppy size={20} />}
-            onClick={handleSaveAll}
-            disabled={!selectedUser || !perms.write}
-            sx={{ height: 38, borderRadius: '8px', bgcolor: '#673ab7', '&:hover': { bgcolor: '#5e35b1' }, px: 3, fontWeight: 700, boxShadow: 'none' }}
-          >
-            Save All
-          </Button>
+
         </Stack>
       </Box>
 
       {/* ── TABLE SECTION ── */}
       <Fade in={Boolean(selectedUser)}>
-        <Box sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          border: '1px solid',
-          borderColor: theme.palette.divider,
-          bgcolor: isDark ? theme.palette.background.paper : 'white',
-          minHeight: 0
-        }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, gap: 1.5 }}>
+          {selectedUserInfo?.isBosAdmin === 1 && (
+            <Box sx={{
+              p: '12px 20px',
+              borderRadius: '8px',
+              border: '1px solid',
+              borderColor: alpha(theme.palette.info.main, 0.4),
+              bgcolor: isDark ? alpha(theme.palette.info.main, 0.08) : alpha(theme.palette.info.main, 0.03),
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2,
+              flexShrink: 0
+            }}>
+              <Typography variant="body2" sx={{ color: theme.palette.info.main, fontWeight: 700, fontSize: '0.82rem' }}>
+                ℹ️ Global Administrator (SuperUser): This user has global Administrator status. All permissions are permanently locked to checked to prevent locking out console access.
+              </Typography>
+            </Box>
+          )}
+          <Box sx={{
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: theme.palette.divider,
+            bgcolor: isDark ? theme.palette.background.paper : 'white',
+            minHeight: 0
+          }}>
           {/* Sub-toolbar inside Table Card for local search bar */}
           <Box sx={{
             p: '12px 16px',
@@ -462,7 +516,7 @@ const UserAccess = () => {
                           <Typography variant="body2" sx={{ fontWeight: 800, color: '#2196f3', textTransform: 'uppercase', fontSize: '0.75rem', lineHeight: 1.2 }}>{row.page?.pageName}</Typography>
                           <Typography variant="caption" sx={{ fontWeight: 700, color: isDark ? theme.palette.text.secondary : '#a6b0cf', fontSize: '0.6rem' }}>ID: {row.pageId} | {row.page?.pageCode}</Typography>
                         </TableCell>
-                        
+
                         {/* Row-wise Select All Cell */}
                         <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
                           <Checkbox
@@ -470,7 +524,15 @@ const UserAccess = () => {
                             checked={isRowAllChecked(row)}
                             indeterminate={isRowSomeChecked(row)}
                             disabled={!perms.write}
-                            onChange={(e) => perms.write && handleRowSelectAll(globalIdx, e.target.checked)}
+                            onChange={(e) => {
+                              if (selectedUserInfo?.isBosAdmin === 1) {
+                                showAdminLockedAlert();
+                                return;
+                              }
+                              if (perms.write) {
+                                handleRowSelectAll(globalIdx, e.target.checked);
+                              }
+                            }}
                             sx={{ color: '#78909c', '&.Mui-checked': { color: '#4caf50' } }}
                           />
                         </TableCell>
@@ -480,7 +542,15 @@ const UserAccess = () => {
                             <Checkbox
                               checked={row[h.id] === 1}
                               disabled={!perms.write}
-                              onChange={() => perms.write && handleCheckboxChange(globalIdx, h.id)}
+                              onChange={() => {
+                                if (selectedUserInfo?.isBosAdmin === 1) {
+                                  showAdminLockedAlert();
+                                  return;
+                                }
+                                if (perms.write) {
+                                  handleCheckboxChange(globalIdx, h.id);
+                                }
+                              }}
                               icon={<IconX size={16} color={isDark ? '#475569' : '#e5e7eb'} />}
                               checkedIcon={<IconCheck size={16} color="#4caf50" stroke={3} />}
                               sx={{ p: 0.2 }}
@@ -495,7 +565,17 @@ const UserAccess = () => {
                         </TableCell>
                         <TableCell align="center" sx={{ borderLeft: '1px solid', borderLeftColor: theme.palette.divider }}>
                           <Tooltip title="Save Permissions" arrow>
-                            <IconButton onClick={() => handleSaveRow(row)} disabled={!perms.write} sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}>
+                            <IconButton 
+                              onClick={() => {
+                                if (selectedUserInfo?.isBosAdmin === 1) {
+                                  showAdminLockedAlert();
+                                  return;
+                                }
+                                handleSaveRow(row);
+                              }} 
+                              disabled={!perms.write} 
+                              sx={{ bgcolor: alpha('#2196f3', 0.1), color: '#2196f3', borderRadius: '4px', p: 0.4, '&:hover': { bgcolor: '#2196f3', color: 'white' } }}
+                            >
                               <IconDeviceFloppy size={18} />
                             </IconButton>
                           </Tooltip>
@@ -523,6 +603,7 @@ const UserAccess = () => {
               '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': { m: 0, fontSize: '0.75rem', color: theme.palette.text.secondary }
             }}
           />
+        </Box>
         </Box>
       </Fade>
     </Box>

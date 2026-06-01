@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Tooltip, Grid, Dialog, D
 import { IconCoins, IconDeviceFloppy, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -28,6 +28,7 @@ export default function CurrencyMaster() {
   const theme = useTheme();
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.LOG_CURRENCY);
+  const globalQuery = useSelector((state) => state.search.query);
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -90,11 +91,10 @@ export default function CurrencyMaster() {
 
   
   useEffect(() => {
-    const config = [
-      { id: 'currencyCode', label: 'Currency Code', type: 'text' },
+    const config = [{ id: 'currencyCode', label: 'Currency Code', type: 'text' },
       { id: 'currencyName', label: 'Currency Name', type: 'text' },
-      { id: 'symbol', label: 'Symbol', type: 'text' }
-    ];
+      { id: 'symbol', label: 'Symbol', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -110,7 +110,7 @@ export default function CurrencyMaster() {
     ).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalQuery]);
 return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCoins size={24} />
@@ -122,13 +122,8 @@ return (
           {perms.export && <BOSExportButton
             data={rows}
             filename="Currency_Master"
-            columns={[
-              { header: 'Currency Code', key: 'currencyCode' },
-              { header: 'Currency Name', key: 'currencyName' },
-              { header: 'Symbol', key: 'symbol' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
             Add New
           </Button>
@@ -161,15 +156,16 @@ return (
                 <BOSTextField name="symbol" label="Symbol" value={form.symbol} onChange={h} placeholder="e.g. $" />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <BOSAutocomplete
-  label="Status"
-  name="status"
-  value={form.status}
-  options={['Active', 'Inactive']}
-  onChange={(val) => setForm(p => ({ ...p, status: val || 'Active' }))}
-/>
+                <BOSStatusField
+                  isCreate={!selectedId}
+                  name="status"
+                  label="Status"
+                  value={form.status}
+                  onChange={h}
+                />
               </Grid>
             </Grid>
+            
           </Stack>
         </DialogContent>
         <DialogActions>

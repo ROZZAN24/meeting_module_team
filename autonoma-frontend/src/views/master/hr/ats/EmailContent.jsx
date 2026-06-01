@@ -6,12 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -79,8 +74,7 @@ export default function EmailContent() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -91,8 +85,8 @@ export default function EmailContent() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -213,27 +207,23 @@ export default function EmailContent() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconMail size={24} />
           <Typography variant="h3">Email Content</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <Button variant="contained" color="primary" onClick={handleOpenAdd} sx={{ borderRadius: '8px', textTransform: 'none' }} startIcon={<IconPlus size={18} />}>
-            New
-          </Button>
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          onNew={handleOpenAdd}
+          newLabel="New"
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Email_Content"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable
@@ -337,8 +327,9 @@ export default function EmailContent() {
             sx={errorStyle(!!errors.yoursWindfully)}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!formData.id}
+            type="string-upper"
             name="status"
             label="STATUS"
             value={formData.status}
@@ -346,11 +337,9 @@ export default function EmailContent() {
             error={!!errors.status}
             helperText={errors.status}
             sx={errorStyle(!!errors.status)}
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </Stack>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

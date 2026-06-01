@@ -8,7 +8,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
@@ -47,8 +47,7 @@ export default function MeetingMasterList() {
 
   // ── GLOBAL FILTER CONFIG (same pattern as AuditScheduleList) ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'All', label: 'ALL' },
@@ -66,8 +65,8 @@ export default function MeetingMasterList() {
         ],
         defaultValue: 'meetingName'
       },
-      { id: 'meetingName', label: 'Meeting Name', type: 'text', placeholder: 'Search meeting name...', isStarred: true }
-    ]));
+      { id: 'meetingName', label: 'Meeting Name', type: 'text', placeholder: 'Search meeting name...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -91,6 +90,8 @@ export default function MeetingMasterList() {
   // ── CLIENT-SIDE FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'All' && row.status !== statusFilter) return false;
 
@@ -116,18 +117,13 @@ export default function MeetingMasterList() {
 
   const handleSave = async (form) => {
     try {
+      const payload = { ...form };
+      delete payload.createdUser;
+      delete payload.updatedUser;
       if (selectedItem) {
-        const payload = {
-          ...form,
-          updatedUser: user?.name || ''
-        };
         await axios.put(`${API_PATHS.QMS.MEETINGS}/${selectedItem.id}`, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting updated successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       } else {
-        const payload = {
-          ...form,
-          createdUser: user?.name || ''
-        };
         await axios.post(API_PATHS.QMS.MEETINGS, payload);
         dispatch(openSnackbar({ open: true, message: 'Meeting created successfully!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success' }));
       }
@@ -203,7 +199,7 @@ export default function MeetingMasterList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUsersGroup size={24} />
@@ -211,40 +207,21 @@ export default function MeetingMasterList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows.map(row => ({
-              ...row,
-              createdUser: row.createdUser || row.createdBy || '-',
-              updatedUser: row.updatedUser || row.updatedBy || '-',
-              updatedAt: (row.updatedUser || row.updatedBy) ? row.updatedAt : null
-            }))}
-            filename="Meeting_Master"
-            columns={[
-              { header: '#', key: 'index' },
-              { header: 'Meeting Name', key: 'meetingName' },
-              { header: 'Meeting Description', key: 'meetingDescription' },
-              { header: 'Meeting Prefix', key: 'meetingPrefix' },
-              { header: 'Meeting Agenda', key: 'meetingAgenda' },
-              { header: 'Employee Name', key: 'employeeName' },
-              { header: 'Created User', key: 'createdUser' },
-              { header: 'Created Date', key: 'createdAt' },
-              { header: 'Updated User', key: 'updatedUser' },
-              { header: 'Updated Date', key: 'updatedAt' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('New Meeting', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleAdd}
+          newTooltip={shortcutTooltip('New Meeting', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows.map(row => ({
+            ...row,
+            createdUser: row.createdUser || row.createdBy || '-',
+            updatedUser: row.updatedUser || row.updatedBy || '-',
+            updatedAt: (row.updatedUser || row.updatedBy) ? row.updatedAt : null
+          }))}
+          
+          exportFilename="Meeting_Master"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

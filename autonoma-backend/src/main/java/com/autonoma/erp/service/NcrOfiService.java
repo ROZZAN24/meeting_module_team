@@ -32,6 +32,9 @@ public class NcrOfiService {
     @Autowired
     private com.autonoma.erp.repository.AuditObservationDetailRepository observationDetailRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditObservationRepository auditObservationRepository;
+
     private final Path root = Paths.get("uploads");
 
     public NcrOfiService() {
@@ -51,7 +54,7 @@ public class NcrOfiService {
         
         // 2. Find the saved master to link files
         Number detailId = (Number) payload.get("observationDetailId");
-        NcrOfiMaster master = ncrOfiMasterRepository.findByObservationDetailId(detailId.intValue())
+        NcrOfiMaster master = ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(detailId.intValue())
             .orElseThrow(() -> new RuntimeException("Master record not found after save"));
 
         // 3. Save files to disk and create attachment records
@@ -97,10 +100,15 @@ public class NcrOfiService {
         String auditeeName = (String) payload.get("auditee");
         String ncrApproverName = (String) payload.get("ncrApprovedBy");
 
-        // 1. Create NcrOfiMaster record
-        NcrOfiMaster master = new NcrOfiMaster();
+        // 1. Get or Create NcrOfiMaster record to prevent NonUniqueResultException
+        NcrOfiMaster master = ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue())
+            .orElseGet(() -> {
+                NcrOfiMaster newMaster = new NcrOfiMaster();
+                newMaster.setObservationDetailId(observationDetailId != null ? observationDetailId.intValue() : null);
+                return newMaster;
+            });
+            
         master.setObservationId(observationId != null ? observationId.intValue() : null);
-        master.setObservationDetailId(observationDetailId != null ? observationDetailId.intValue() : null);
         master.setType(type);
         master.setAuditeeName(auditeeName);
         master.setNcrApproverName(ncrApproverName);
@@ -129,18 +137,22 @@ public class NcrOfiService {
         master.setPreventiveAction(preventiveAction);
         master.setStatus("WAITING_APPROVAL");
         master.setApprovalStatus("PENDING");
-        master.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        if (master.getCreatedBy() == null) {
+            master.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+        }
         
-        // Use provided No or generate
-        if (ncrOfiNo != null && !ncrOfiNo.isEmpty() && !ncrOfiNo.equals("N/A")) {
-            master.setNcrOfiNo(ncrOfiNo);
-        } else {
-            master.setNcrOfiNo(generateNcrOfiNo(type));
+        // Use provided No or generate if not already set
+        if (master.getNcrOfiNo() == null || master.getNcrOfiNo().isEmpty()) {
+            if (ncrOfiNo != null && !ncrOfiNo.isEmpty() && !ncrOfiNo.equals("N/A")) {
+                master.setNcrOfiNo(ncrOfiNo);
+            } else {
+                master.setNcrOfiNo(generateNcrOfiNo(type));
+            }
         }
         
         NcrOfiMaster savedMaster = ncrOfiMasterRepository.save(master);
 
-        // 2. Create Action records
+        // 2. Upsert Action records to avoid duplicate key or excessive entries
         saveAction(savedMaster.getId(), "ROOT_CAUSE", rootCause);
         saveAction(savedMaster.getId(), "CORRECTIVE", correctiveAction);
         saveAction(savedMaster.getId(), "PREVENTIVE", preventiveAction);
@@ -155,17 +167,17 @@ public class NcrOfiService {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("WAITING_APPROVAL");
             detail.setNcrStatus("WAITING_APPROVAL");
-            detail.setNcrNo(ncrOfiNo);
+            detail.setNcrNo(savedMaster.getNcrOfiNo());
             detail.setRootCause(rootCause);
             detail.setCorrectiveAction(correctiveAction);
             detail.setPreventiveAction(preventiveAction);
-            detail.setTargetDate(master.getTargetDate() != null ? java.sql.Date.valueOf(master.getTargetDate()) : null);
+            detail.setTargetDate(savedMaster.getTargetDate() != null ? java.sql.Date.valueOf(savedMaster.getTargetDate()) : null);
             observationDetailRepository.save(detail);
         });
     }
 
     public List<com.autonoma.erp.model.NcrOfiAttachment> getAttachmentsByDetailId(Integer detailId) {
-        return ncrOfiMasterRepository.findByObservationDetailId(detailId)
+        return ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(detailId)
             .map(m -> attachmentRepository.findByNcrOfiId(m.getId()))
             .orElse(java.util.Collections.emptyList());
     }
@@ -174,16 +186,96 @@ public class NcrOfiService {
     public void approveNcr(Number observationDetailId) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("CLOSED");
+            detail.setNcrStatus("CLOSED");
             observationDetailRepository.save(detail);
             
-            ncrOfiMasterRepository.findByObservationDetailId(observationDetailId.intValue()).ifPresent(master -> {
+            ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
                 master.setApprovalStatus("APPROVED");
                 master.setStatus("CLOSED");
                 master.setUpdatedAt(new java.util.Date());
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
                 ncrOfiMasterRepository.save(master);
             });
+
+            if (detail.getAuditObservation() != null) {
+                recalculateParentScore(detail.getAuditObservation());
+            }
         });
+    }
+
+    private void recalculateParentScore(com.autonoma.erp.model.AuditObservation observation) {
+        if (observation == null || observation.getDetails() == null) return;
+        
+        int compliance = 0;
+        int ofi = 0;
+        int ncCount = 0;
+        
+        for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
+            String obsStatus = detail.getObservationStatus();
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
+                compliance++;
+            } else if ("OFI".equalsIgnoreCase(obsStatus)) {
+                ofi++;
+            } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
+                ncCount++;
+            }
+        }
+        
+        java.util.Date obsDate = observation.getObservationDate();
+        long diffDays = 0;
+        if (obsDate != null) {
+            java.util.Calendar calObs = java.util.Calendar.getInstance();
+            calObs.setTime(obsDate);
+            calObs.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            calObs.set(java.util.Calendar.MINUTE, 0);
+            calObs.set(java.util.Calendar.SECOND, 0);
+            calObs.set(java.util.Calendar.MILLISECOND, 0);
+            
+            java.util.Calendar calToday = java.util.Calendar.getInstance();
+            calToday.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            calToday.set(java.util.Calendar.MINUTE, 0);
+            calToday.set(java.util.Calendar.SECOND, 0);
+            calToday.set(java.util.Calendar.MILLISECOND, 0);
+            
+            long diffMs = calToday.getTimeInMillis() - calObs.getTimeInMillis();
+            diffDays = diffMs / (1000 * 60 * 60 * 24);
+            if (diffDays < 0) {
+                diffDays = 0;
+            }
+        }
+        
+        int score = 0;
+        for (com.autonoma.erp.model.AuditObservationDetail detail : observation.getDetails()) {
+            String obsStatus = detail.getObservationStatus();
+            String appStatus = detail.getApprovalStatus();
+            
+            if ("COMPLIANCE".equalsIgnoreCase(obsStatus)) {
+                score += 1;
+            } else if ("OFI".equalsIgnoreCase(obsStatus)) {
+                score += 0;
+            } else if ("NC".equalsIgnoreCase(obsStatus) || "NCR".equalsIgnoreCase(obsStatus)) {
+                if ("CLOSED".equalsIgnoreCase(appStatus)) {
+                    score += 0;
+                } else {
+                    if (diffDays <= 3) {
+                        score += -1;
+                    } else if (diffDays <= 5) {
+                        score += -3;
+                    } else if (diffDays <= 8) {
+                        score += -5;
+                    } else {
+                        score += -8;
+                    }
+                }
+            }
+        }
+        
+        observation.setComplianceCount(compliance);
+        observation.setOfiCount(ofi);
+        observation.setNcrCount(ncCount);
+        observation.setAuditScore(score);
+        
+        auditObservationRepository.save(observation);
     }
 
     @Transactional
@@ -192,7 +284,7 @@ public class NcrOfiService {
             detail.setApprovalStatus("REJECTED");
             observationDetailRepository.save(detail);
             
-            ncrOfiMasterRepository.findByObservationDetailId(observationDetailId.intValue()).ifPresent(master -> {
+            ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
                 master.setApprovalStatus("REJECTED");
                 master.setStatus("OPEN");
                 master.setUpdatedAt(new java.util.Date());
@@ -209,7 +301,7 @@ public class NcrOfiService {
             detail.setApprovalStatus("REWORK");
             observationDetailRepository.save(detail);
             
-            ncrOfiMasterRepository.findByObservationDetailId(observationDetailId.intValue()).ifPresent(master -> {
+            ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
                 master.setApprovalStatus("REWORK");
                 master.setStatus("ACTION PENDING");
                 master.setUpdatedAt(new java.util.Date());
@@ -232,9 +324,16 @@ public class NcrOfiService {
 
     private void saveAction(Integer masterId, String type, String desc) {
         if (desc == null || desc.isEmpty()) return;
-        com.autonoma.erp.model.NcrOfiAction action = new com.autonoma.erp.model.NcrOfiAction();
-        action.setNcrOfiId(masterId);
-        action.setActionType(type);
+        List<com.autonoma.erp.model.NcrOfiAction> existingActions = actionRepository.findByNcrOfiId(masterId);
+        com.autonoma.erp.model.NcrOfiAction action = existingActions.stream()
+            .filter(a -> type.equals(a.getActionType()))
+            .findFirst()
+            .orElseGet(() -> {
+                com.autonoma.erp.model.NcrOfiAction newAction = new com.autonoma.erp.model.NcrOfiAction();
+                newAction.setNcrOfiId(masterId);
+                newAction.setActionType(type);
+                return newAction;
+            });
         action.setActionDescription(desc);
         action.setStatus("COMPLETED");
         action.setCreatedAt(new java.util.Date());
@@ -250,7 +349,7 @@ public class NcrOfiService {
     }
 
     public Optional<NcrOfiMaster> getNcrOfiByObservationDetailId(Integer detailId) {
-        return ncrOfiMasterRepository.findByObservationDetailId(detailId);
+        return ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(detailId);
     }
 
     @Transactional

@@ -6,12 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -61,8 +56,7 @@ export default function EmployeeType() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -73,8 +67,8 @@ export default function EmployeeType() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -204,20 +198,16 @@ export default function EmployeeType() {
           <Typography variant="h3">Employee Type</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <Button variant="contained" color="primary" onClick={handleOpenAdd} sx={{ borderRadius: '8px', textTransform: 'none' }} startIcon={<IconPlus size={18} />}>
-            New
-          </Button>
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          onNew={handleOpenAdd}
+          newLabel="New"
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Employee_Type"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable
@@ -289,22 +279,20 @@ export default function EmployeeType() {
             sx={errorStyle(!!errors.description)}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!formData.id}
+            type="string-upper"
             name="status"
             label="STATUS"
             value={formData.status}
             onChange={handleInputChange}
             required
             error={!!errors.status}
-            helperText={errors.status || "Select status"}
+            helperText={errors.status}
             sx={errorStyle(!!errors.status)}
-          >
-            <MenuItem value="">-select-</MenuItem>
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </Stack>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

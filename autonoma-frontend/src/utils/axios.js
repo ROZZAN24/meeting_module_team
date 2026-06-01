@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { showAppAlert } from './alert';
 
 const axiosServices = axios.create({
   baseURL: import.meta.env.VITE_API_URL || window.location.origin
@@ -107,26 +108,29 @@ axiosServices.interceptors.response.use(
     // Log the error details to the console always
     console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status || 'Network Error'} | Error: ${errMsg}`, error);
 
-    // Only alert for non-auth errors
-    if (error.response?.status !== 401) {
-      // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
-      import('../store').then(({ dispatch }) => {
-        import('../store/slices/snackbar').then(({ openSnackbar }) => {
-          try {
-            dispatch(
-              openSnackbar({
-                open: true,
-                message: errMsg,
-                variant: 'alert',
-                severity: 'error',
-                anchorOrigin: { vertical: 'top', horizontal: 'right' }
-              })
-            );
-          } catch (e) {
-            console.warn('Failed to dispatch snackbar action:', e);
-          }
-        }).catch(err => console.warn('Failed to load snackbar slice:', err));
-      }).catch(err => console.warn('Failed to load store dynamically:', err));
+    const isMockRoute = error.config?.url && (
+      error.config.url.includes('/api/posts/') ||
+      error.config.url.includes('/api/friends/') ||
+      error.config.url.includes('/api/followers/') ||
+      error.config.url.includes('/api/friend-request/') ||
+      error.config.url.includes('/api/gallery/') ||
+      error.config.url.includes('/api/details-card/') ||
+      error.config.url.includes('/api/simple-card/') ||
+      error.config.url.includes('/api/profile-card/') ||
+      error.config.url.includes('/api/user-list/')
+    );
+
+    const isAuthEndpoint = error.config?.url && (
+      error.config.url.includes('/check-credentials') ||
+      error.config.url.includes('/account/login') ||
+      error.config.url.includes('/account/face-login')
+    );
+    const isExpectedAuthError = isAuthEndpoint && [400, 403, 405].includes(error.response?.status);
+
+    const skipGlobalAlert = error.config?.skipGlobalAlert;
+
+    if (error.response?.status !== 401 && !isExpectedAuthError && !skipGlobalAlert && !isMockRoute) {
+      showAppAlert(errMsg, 'error');
     }
 
     return Promise.reject(errMsg);

@@ -3,7 +3,6 @@ package com.autonoma.erp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "QMS_NCR_OFI_ACTION")
@@ -13,25 +12,38 @@ public class NcrOfiAction extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "ncr_ofi_id", nullable = false)
+    @Column(name = "NCR_OFI_ID", nullable = false)
     private Integer ncrOfiId;
 
-    @Column(name = "action_type")
+    @Column(name = "ACTION_TYPE")
     private String actionType; // CORRECTIVE, PREVENTIVE, ROOT_CAUSE
 
-    @Column(name = "action_description")
+    @Column(name = "ACTION_DESCRIPTION")
     private String actionDescription;
 
-    @Column(name = "action_by")
+    @Column(name = "ACTION_BY")
     private Integer actionBy;
 
-    @Column(name = "action_date")
+    @Column(name = "ACTION_DATE")
     private LocalDate actionDate;
 
-    @Column(name = "completion_date")
+    @Column(name = "COMPLETION_DATE")
     private LocalDate completionDate;
 
+    @Column(name = "REMARKS")
     private String remarks;
+
+    @Column(name = "STATUS")
     private String status;
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

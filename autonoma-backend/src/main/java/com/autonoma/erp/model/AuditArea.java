@@ -1,7 +1,6 @@
 package com.autonoma.erp.model;
 
 import jakarta.persistence.*;
-import java.util.Date;
 
 @Entity
 @Table(name = "QMS_AUDIT_AREA")
@@ -10,18 +9,17 @@ public class AuditArea extends BaseAuditEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "type", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "TYPE", columnDefinition = "NVARCHAR(50)")
     private String type; // AREA or ZONE
 
-    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "DESCRIPTION", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
-    @Column(name = "status", columnDefinition = "NVARCHAR(50)")
+    @Column(name = "STATUS", columnDefinition = "NVARCHAR(50)")
     private String status;
 
-
-
-
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     // Explicit Getters and Setters
     public Long getId() {
@@ -54,5 +52,13 @@ public class AuditArea extends BaseAuditEntity {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 }

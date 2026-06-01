@@ -8,7 +8,7 @@ import { useColorScheme } from '@mui/material/styles';
 import { IconEdit, IconTrash } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { useSelector, useDispatch } from 'react-redux';
-import { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { setTableConfig } from 'store/slices/search';
 import {
   tableContainerSx, tableHeadCellSx, getTableRowSx,
@@ -48,12 +48,14 @@ export default function BOSDataTable({
   onRowMouseEnter,
   onRowMouseLeave,
   onRowMouseMove,
-  disableSearchFilter = false
+  disableSearchFilter = false,
+  disableTableConfig = false
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
   const dispatch = useDispatch();
   const [localSelectedId, setLocalSelectedId] = useState(null);
+  const lastConfigRef = useRef(null);
 
   useEffect(() => {
     if (columns && rows) {
@@ -67,12 +69,29 @@ export default function BOSDataTable({
 
         return { ...col, options: uniqueValues };
       });
-      dispatch(setTableConfig(columnsWithData));
+
+      // Serialize options safely to avoid redundant dispatches
+      const serialized = JSON.stringify(
+        columnsWithData.map(c => ({
+          id: c.id,
+          label: c.label,
+          options: c.options
+        }))
+      );
+      if (!disableTableConfig && lastConfigRef.current !== serialized) {
+        lastConfigRef.current = serialized;
+        dispatch(setTableConfig(columnsWithData));
+      }
     }
+  }, [columns, rows, dispatch, disableTableConfig]);
+
+  useEffect(() => {
     return () => {
-      dispatch(setTableConfig(null));
+      if (!disableTableConfig) {
+        dispatch(setTableConfig(null));
+      }
     };
-  }, [columns, rows, dispatch]);
+  }, [dispatch, disableTableConfig]);
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -91,7 +110,7 @@ export default function BOSDataTable({
     try { 
       const dateObj = new Date(d);
       if (isNaN(dateObj.getTime())) return String(d);
-      return format(dateObj, 'dd/MM/yyyy HH:mm'); 
+      return format(dateObj, 'dd/MM/yyyy'); 
     } catch { 
       return '-'; 
     }
@@ -160,19 +179,102 @@ export default function BOSDataTable({
     if (disableSearchFilter) return rows;
 
     return rows.filter((row, idx) => {
-      // 1. Dynamic Filters from Search Popover (Only apply filters relevant to this table's columns)
+      // 1. Dynamic Filters from Search Popover
       if (globalFilters) {
+        // Collect all base date keys that have start or end filters active
+        const activeDateKeys = new Set();
+        for (const key of Object.keys(globalFilters)) {
+          if (key.endsWith('Start')) {
+            activeDateKeys.add(key.slice(0, -5));
+          } else if (key.endsWith('End')) {
+            activeDateKeys.add(key.slice(0, -3));
+          }
+        }
+
+        // Loop through all regular filters
         for (const [key, fVal] of Object.entries(globalFilters)) {
           if (fVal === undefined || fVal === null || fVal === '' || fVal === 'All') continue;
           
-          // Check if this filter key exists in our columns
+          // Skip start, end, and consider keys as they will be processed together
+          if (key.endsWith('Start') || key.endsWith('End') || key.endsWith('Consider')) {
+            continue;
+          }
+
           const col = columns.find(c => c.id === key);
           if (!col && key !== 'status') continue; 
 
-          const filterVal = String(fVal).toLowerCase().trim();
+          let filterVal = String(fVal).toLowerCase().trim();
+          const isDateField = (col && (col.id.toLowerCase().includes('date') || 
+                              col.id.endsWith('At') || 
+                              col.id.endsWith('_at') || 
+                              col.id === 'entryDate' ||
+                              col.id === 'invoiceDate') &&
+                              !col.id.toLowerCase().includes('by'));
+          
+          if (isDateField && filterVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            try {
+              const [y, m, d] = filterVal.split('-');
+              filterVal = `${d}/${m}/${y}`;
+            } catch {}
+          }
+
           const displayVal = col ? getCellDisplayValue(col, row, idx).toLowerCase().trim() : String(row[key] || '').toLowerCase().trim();
           
           if (filterVal && !displayVal.includes(filterVal)) {
+            return false;
+          }
+        }
+
+        // Process active date range filters together
+        for (const baseKey of activeDateKeys) {
+          const col = columns.find(c => c.id === baseKey);
+          const colId = col ? col.id : baseKey;
+
+          const startVal = globalFilters[`${baseKey}Start`];
+          const endVal = globalFilters[`${baseKey}End`];
+          const considerVal = globalFilters[`${baseKey}Consider`] || 'Yes';
+
+          if (!startVal && !endVal) continue;
+          if (considerVal === 'No') continue;
+
+          let cellVal = resolveNestedValue(colId, row);
+          if (cellVal === undefined || cellVal === null || cellVal === '') {
+            const snakeCaseId = colId.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            cellVal = row[snakeCaseId];
+            if (cellVal === undefined || cellVal === null || cellVal === '') {
+              if (colId === 'createdDate' || colId === 'createdAt') cellVal = row['createdAt'] || row['created_at'];
+              if (colId === 'updatedDate' || colId === 'updatedAt') cellVal = row['updatedAt'] || row['updated_at'];
+              if (colId === 'createdUser') cellVal = row['createdBy'] || row['created_by'] || row['created_user'];
+              if (colId === 'updatedUser') cellVal = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+              if (colId === 'createdBy') cellVal = row['createdUser'] || row['created_by'] || row['created_user'];
+              if (colId === 'updatedBy') cellVal = row['updatedUser'] || row['updated_by'] || row['updated_user'];
+            }
+          }
+
+          if (!cellVal || cellVal === '-') return false;
+
+          try {
+            const cellDate = new Date(cellVal);
+            if (isNaN(cellDate.getTime())) return false;
+            const cellDateMidnight = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+
+            const startDate = startVal ? new Date(startVal) : null;
+            const startDateMidnight = startDate && !isNaN(startDate.getTime()) ? new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()) : null;
+
+            const endDate = endVal ? new Date(endVal) : null;
+            const endDateMidnight = endDate && !isNaN(endDate.getTime()) ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+
+            // Check boundaries
+            let inBetween = true;
+            if (startDateMidnight && cellDateMidnight < startDateMidnight) {
+              inBetween = false;
+            }
+            if (endDateMidnight && cellDateMidnight > endDateMidnight) {
+              inBetween = false;
+            }
+
+            if (!inBetween) return false;
+          } catch {
             return false;
           }
         }
@@ -233,16 +335,68 @@ export default function BOSDataTable({
 
     if (col.id === 'index') return (page * size) + idx + 1;
 
-    // Standard Photo Rendering (SOP Compliance)
+    // Standard Photo Rendering (SOP Compliance with Hover Zoom & Enlargement)
     if (col.id === 'photo' || col.id === 'employeePhotoUpload' || col.id === 'avatar') {
+      const photoUrl = getPhotoUrl(val);
       return (
-        <Avatar
-          src={getPhotoUrl(val)}
-          variant="rounded"
-          sx={{ width: 32, height: 40, bgcolor: 'grey.100', border: '1px solid', borderColor: 'divider' }}
+        <Tooltip
+          placement="right"
+          arrow
+          enterDelay={150}
+          leaveDelay={0}
+          componentsProps={{
+            tooltip: {
+              sx: {
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                boxShadow: '0px 10px 30px rgba(0, 0, 0, 0.15)',
+                border: '1px solid',
+                borderColor: 'divider',
+                p: 0.5,
+                borderRadius: '12px',
+                maxWidth: 'none'
+              }
+            }
+          }}
+          title={
+            photoUrl && val && val !== '-' && val !== 'null' && val !== 'undefined' ? (
+              <Box
+                component="img"
+                src={photoUrl}
+                alt="Enlarged Photo"
+                sx={{
+                  width: 140,
+                  height: 175,
+                  objectFit: 'contain',
+                  display: 'block',
+                  borderRadius: '8px'
+                }}
+              />
+            ) : (
+              <Typography variant="caption" sx={{ p: 1, display: 'block' }}>No Photo Available</Typography>
+            )
+          }
         >
-          <IconUser size={18} color="#ccc" />
-        </Avatar>
+          <Avatar
+            src={photoUrl}
+            variant="rounded"
+            sx={{
+              width: 32,
+              height: 40,
+              bgcolor: 'grey.100',
+              border: '1px solid',
+              borderColor: 'divider',
+              cursor: 'pointer',
+              transition: 'transform 0.15s ease-in-out',
+              '&:hover': {
+                transform: 'scale(1.15)',
+                boxShadow: 2
+              }
+            }}
+          >
+            <IconUser size={18} color="#ccc" />
+          </Avatar>
+        </Tooltip>
       );
     }
 
@@ -277,7 +431,7 @@ export default function BOSDataTable({
   const activeSelectedId = selectedRowId !== undefined && selectedRowId !== null ? selectedRowId : localSelectedId;
 
   const { 
-    height = 'calc(100vh - 185px)', 
+    height = 'calc(100vh - 215px)', 
     maxHeight, 
     minHeight, 
     ...restSx 
@@ -292,6 +446,7 @@ export default function BOSDataTable({
               {columns.map((col, ci) => (
                 <TableCell
                   key={col.id}
+                  align={col.align || 'left'}
                   sx={{
                     ...tableHeadCellSx,
                     ...(ci === 0 ? { borderTopLeftRadius: '16px' } : {}),
@@ -349,7 +504,8 @@ export default function BOSDataTable({
                 };
 
                 const showEditTooltip = Boolean(onDoubleClickRow || onEditRow);
-                return (
+                const isDoubleTapSupported = showEditTooltip;
+                const rowElement = (
                   <TableRow 
                     key={rowId}
                     hover 
@@ -367,6 +523,7 @@ export default function BOSDataTable({
                   {columns.map((col) => (
                     <TableCell
                       key={col.id}
+                      align={col.align || 'left'}
                       sx={{
                         cursor: (onDoubleClickRow || onClickRow || onEditRow) ? 'pointer' : 'default',
                         ...(col.id === 'index' ? { color: isSelected ? 'primary.dark' : 'primary.main', fontWeight: 600 } : {}),
@@ -413,6 +570,14 @@ export default function BOSDataTable({
                     </TableCell>
                   )}
                 </TableRow>
+                );
+
+                return isDoubleTapSupported ? (
+                  <Tooltip key={rowId} title="Double Tap" followCursor placement="top" arrow>
+                    {rowElement}
+                  </Tooltip>
+                ) : (
+                  React.cloneElement(rowElement, { key: rowId })
                 );
               })
             )}
@@ -500,5 +665,6 @@ BOSDataTable.propTypes = {
   renderCell: PropTypes.func,
   footerActions: PropTypes.node,
   id: PropTypes.string,
-  disableSearchFilter: PropTypes.bool
+  disableSearchFilter: PropTypes.bool,
+  disableTableConfig: PropTypes.bool
 };

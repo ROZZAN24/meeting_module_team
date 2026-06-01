@@ -8,7 +8,8 @@ import { format } from 'date-fns';
 import { useDispatch } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, BOSExportButton, getStatusChipSx, btnNew } from 'ui-component/bos';
+import {
+  BOSDataTable, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useLookups from 'hooks/useLookups';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -73,11 +74,10 @@ export default function AuditReport() {
   }, [rows, auditSchedules]);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true, defaultValue: format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', isStarred: true, defaultValue: format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', isStarred: true, defaultValue: format(new Date(), 'yyyy-MM-dd') },
-      { id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' }
-    ]));
+      { id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -152,7 +152,7 @@ export default function AuditReport() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconReport size={24} />
@@ -160,44 +160,16 @@ export default function AuditReport() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={resolvedRows}
-            filename="Audit_Summary_Report"
-            columns={[
-              { header: 'Audit Type', key: 'auditType' },
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Schedule Date', key: 'scheduleDate' },
-              { header: 'Observation No', key: 'observationNo' },
-              { header: 'Observation Date', key: 'observationDate' },
-              { header: 'Status', key: 'status' },
-              { header: 'Audit Criteria', key: 'auditCriteria' },
-              { header: 'Observation Status', key: 'observationStatus' },
-              { header: 'Created User', key: 'createdUser' },
-              { header: 'Created Date', key: 'createdDate' },
-              { header: 'Updated User', key: 'updatedUser' },
-              { header: 'Updated Date', key: 'updatedDate' }
-            ]}
-          />}
-          {perms.write && (
-            <Tooltip title="Create New Observation">
-              <Button
-                variant="contained"
-                color="primary"
-                size="medium"
-                onClick={() => setAddDialogOpen(true)}
-                sx={btnNew}
-              >
-                + New
-              </Button>
-            </Tooltip>
-          )}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={() => setAddDialogOpen(true)}
+          newTooltip="Create New Observation"
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          
+          exportFilename="Audit_Summary_Report"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -68,8 +68,7 @@ export default function ItemTypeMaster() {
     ];
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -81,14 +80,13 @@ export default function ItemTypeMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'itemType', label: 'Item Type', type: 'text', placeholder: 'Search item type...', isStarred: true },
       {
         id: 'groupId', label: 'Item Group', type: 'select',
         options: groupOptions,
         defaultValue: 'All'
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       status: 'ACTIVE',
@@ -143,6 +141,8 @@ export default function ItemTypeMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
@@ -185,39 +185,24 @@ export default function ItemTypeMaster() {
   const paginatedRows = useMemo(() => mappedRows.slice(page * size, page * size + size), [mappedRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconPackage size={24} />
           <Typography variant="h3">Product Item Type Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchItemTypes} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={mappedRows}
-            filename="Product_Item_Type_Master"
-            columns={[
-              { header: 'Item Group', key: 'groupName' },
-              { header: 'Item Type', key: 'itemType' },
-              { header: 'Group Prefix', key: 'groupPrefix' },
-              { header: 'Item Prefix', key: 'itemPrefix' },
-              { header: 'Is Auto Generate Code', key: 'isAutoGenerateCode' },
-              { header: 'Prefix Based', key: 'prefixBased' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Item Type', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchItemTypes}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Item Type', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={mappedRows}
+          
+          exportFilename="Product_Item_Type_Master"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

@@ -1,52 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  Typography,
-  Button,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Checkbox,
-  Grid,
-  Box,
-  Tabs,
-  Tab,
-  Card,
-  CardContent,
-  FormControlLabel,
-  InputAdornment,
-  Divider,
-  Paper,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TableContainer,
-  Chip
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
-  IconSearch,
-  IconRefresh,
-  IconPlus,
-  IconUser,
-  IconFileText,
-  IconTrash,
-  IconEdit,
-  IconMail,
-  IconCalendar,
-  IconCheck,
-  IconAlertCircle,
-  IconBriefcase,
-  IconSchool,
-  IconCurrencyDollar,
-  IconAddressBook,
-  IconUserCheck,
-  IconUserPlus,
-  IconLock,
-  IconStar,
-  IconTrendingUp
+  IconSearch, IconRefresh, IconPlus, IconUser, IconFileText, IconTrash, IconEdit, IconMail, IconCalendar, IconCheck, IconAlertCircle, IconBriefcase, IconSchool, IconCurrencyDollar, IconAddressBook, IconUserCheck, IconUserPlus, IconLock, IconStar, IconTrendingUp
 } from '@tabler/icons-react';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -59,7 +16,10 @@ import {
   BOSDatePicker,
   BOSFileUpload,
   errorStyle,
-  btnNew
+  btnNew,
+  BOSTableToolbar,
+  getCommonDateFilters,
+  matchCommonDateFilters
 } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -315,8 +275,7 @@ export default function ApplicationTrackingSystem() {
 
   // Update default filters
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -330,8 +289,8 @@ export default function ApplicationTrackingSystem() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -1118,7 +1077,13 @@ export default function ApplicationTrackingSystem() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+        <BOSTableToolbar
+          onRefresh={fetchApplicants}
+          onNew={handleOpenAdd}
+          newLabel="New"
+          newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+        >
           <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
             Call Letter
           </Button>
@@ -1151,35 +1116,7 @@ export default function ApplicationTrackingSystem() {
           <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
             Edit Candidate
           </Button>
-
-          {perms.write && (
-            <Tooltip title={shortcutTooltip('Register Candidate', 'Ctrl + N')}>
-              <span>
-                <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-                  New
-                </Button>
-              </span>
-            </Tooltip>
-          )}
-
-          <Tooltip title="Refresh">
-            <IconButton
-              onClick={fetchApplicants}
-              size="small"
-              sx={{
-                ...btnNew,
-                bgcolor: 'primary.main',
-                color: '#fff',
-                p: 1,
-                width: '38px',
-                height: '38px',
-                '&:hover': { bgcolor: 'primary.dark', boxShadow: 4 }
-              }}
-            >
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+        </BOSTableToolbar>
       }
     >
       <Box sx={{ mb: 2 }}>

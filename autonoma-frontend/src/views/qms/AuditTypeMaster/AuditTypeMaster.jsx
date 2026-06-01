@@ -11,7 +11,8 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import {
+  BOSDataTable, btnExport, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -52,8 +53,7 @@ export default function AuditTypeMaster() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -72,8 +72,8 @@ export default function AuditTypeMaster() {
         options: [{ value: 'All', label: 'ALL' }, { value: 'Fixed', label: 'Fixed' }, { value: 'Variable', label: 'Variable' }]
       },
       { id: 'createdUser', label: 'CREATED USER', type: 'text' },
-      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' }
-    ];
+      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -121,7 +121,22 @@ export default function AuditTypeMaster() {
       fetchAuditTypes();
     } catch (error) {
       console.error('Failed to delete audit type:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'Failed to delete audit type.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        } else if (error.response.data.message) {
+          errorMsg = error.response.data.message;
+        }
+      }
+      dispatch(openSnackbar({
+        open: true,
+        message: errorMsg,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 
@@ -147,6 +162,8 @@ export default function AuditTypeMaster() {
 
   const filteredRows = useMemo(() => {
     const filtered = rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters?.status || 'ACTIVE';
       const rowStatusTrimmed = row.status ? row.status.trim() : '';
       const matchesStatus = statusFilter === 'All' || rowStatusTrimmed === statusFilter;
@@ -190,7 +207,7 @@ export default function AuditTypeMaster() {
   }, [rows, globalQuery, globalFilters]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconListCheck size={24} />
@@ -198,27 +215,16 @@ export default function AuditTypeMaster() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchAuditTypes} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Type_Details"
-            columns={[
-              { header: 'Audit Type', key: 'auditType' },
-              { header: 'Standard', key: 'standard' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchAuditTypes}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          
+          exportFilename="Audit_Type_Details"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

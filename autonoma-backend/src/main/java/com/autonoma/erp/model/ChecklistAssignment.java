@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Entity
 @Table(name = "QMS_CHECKLIST_ASSIGNMENT")
@@ -33,6 +34,7 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     @Column(name = "ASSIGNED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(timezone = "Asia/Kolkata")
     private Date assignedDate;
 
     @ManyToOne
@@ -44,6 +46,7 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     @Column(name = "CHECKLIST_DATE")
     @Temporal(TemporalType.DATE)
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "Asia/Kolkata")
     private Date checklistDate;
 
     @Column(name = "CARRY_FORWARD")
@@ -63,13 +66,17 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     @Column(name = "VERIFIED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
+    @JsonFormat(timezone = "Asia/Kolkata")
     private Date verifiedDate;
 
     @Column(name = "COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String comments;
 
-    @Column(name = "FILE_PATHS", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "FILE_PATHS", length = 1000)
     private String filePaths;
+
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
     public Long getId() {
         return id;
@@ -197,6 +204,14 @@ public class ChecklistAssignment extends BaseAuditEntity {
 
     public void setFilePaths(String filePaths) {
         this.filePaths = filePaths;
+    }
+
+    public Boolean getIsActive() {
+        return isActive;
+    }
+
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
     }
 
     public List<String> getActualFiles() {

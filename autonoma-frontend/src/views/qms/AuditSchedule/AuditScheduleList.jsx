@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -25,6 +25,8 @@ const columns = [
   { id: 'auditor', label: 'Auditor', minWidth: 120 },
   { id: 'auditee', label: 'Auditee', minWidth: 120 },
   { id: 'status', label: 'Status', minWidth: 100 },
+  { id: 'rescheduleCount', label: 'Reschedule Count', minWidth: 120 },
+  { id: 'totalPoint', label: 'Total Point', minWidth: 100 },
   { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
   { id: 'createdDate', label: 'CREATED DATE', minWidth: 150 },
   { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
@@ -47,8 +49,7 @@ export default function AuditScheduleList() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -66,8 +67,8 @@ export default function AuditScheduleList() {
       { id: 'auditArea', label: 'Audit Area', type: 'text', placeholder: 'Filter by Area...' },
       { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Dept...' },
       { id: 'auditor', label: 'Auditor', type: 'text', placeholder: 'Filter by Auditor...' },
-      { id: 'auditee', label: 'Auditee', type: 'text', placeholder: 'Filter by Auditee...' }
-    ]));
+      { id: 'auditee', label: 'Auditee', type: 'text', placeholder: 'Filter by Auditee...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -123,13 +124,17 @@ export default function AuditScheduleList() {
       'Audit Type': r.auditType,
       'Audit Area': r.auditArea,
       'Auditee': r.auditee,
-      'Status': r.status
+      'Status': r.status,
+      'Reschedule Count': r.rescheduleCount !== undefined && r.rescheduleCount !== null ? r.rescheduleCount : 0,
+      'Total Point': r.totalPoint !== undefined && r.totalPoint !== null ? r.totalPoint : 0
     }));
     exportToExcel(exportData, 'Audit_Schedule_Details');
   };
 
   const filteredRows = useMemo(() => {
     const filtered = rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'OPEN';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       
@@ -168,6 +173,9 @@ export default function AuditScheduleList() {
   const renderCell = (col, row, idx) => {
     if (col.id === 'index') return idx + 1 + page * size;
     let val = row[col.id];
+    if (col.id === 'rescheduleCount' || col.id === 'totalPoint') {
+      return val !== undefined && val !== null ? val : 0;
+    }
     if (col.id === 'createdUser') {
       val = row.createdUser || row.createdBy;
     }
@@ -187,7 +195,7 @@ export default function AuditScheduleList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCalendarEvent size={24} />
@@ -195,29 +203,16 @@ export default function AuditScheduleList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchAuditSchedules} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Audit_Schedule_Details"
-            columns={[
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Audit Type', key: 'auditType' },
-              { header: 'Audit Area', key: 'auditArea' },
-              { header: 'Auditee', key: 'auditee' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Schedule', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchAuditSchedules}
+          onNew={handleOpenAdd}
+          newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          
+          exportFilename="Audit_Schedule_Details"
+          hasExportPermission={perms.export}
+         columns={columns} />
       }
     >
       <BOSDataTable

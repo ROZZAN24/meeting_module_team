@@ -4,9 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -22,62 +19,72 @@ public class QmsMomDetail extends BaseAuditEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "mom_id", nullable = false)
+    @JoinColumn(name = "MOM_ID", nullable = false)
     @lombok.ToString.Exclude
     @lombok.EqualsAndHashCode.Exclude
     private QmsMomMaster mom;
 
-    @Column(name = "discussed_point", columnDefinition = "NVARCHAR(MAX)", nullable = false)
+    @Column(name = "DISCUSSED_POINT", columnDefinition = "NVARCHAR(MAX)", nullable = false)
     private String discussedPoint;
 
     @JsonProperty("type")
-    @Column(name = "point_type")
+    @Column(name = "POINT_TYPE")
     private String pointType;
 
-    @Column(name = "material_list", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "MATERIAL_LIST", columnDefinition = "NVARCHAR(MAX)")
     private String materialList;
 
-    @Column(name = "process_type")
+    @Column(name = "PROCESS_TYPE")
     private String processType; // INFO / ACTION
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "assigned_by_id")
+    @JoinColumn(name = "ASSIGNED_BY_ID")
     private EmployeeMaster assignedBy;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "assigned_to_id")
+    @JoinColumn(name = "ASSIGNED_TO_ID")
     private EmployeeMaster assignedTo;
 
-    @Column(name = "target_date")
+    @Column(name = "TARGET_DATE")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate targetDate;
 
-    @Column(name = "review_date")
+    @Column(name = "REVIEW_DATE")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate reviewDate;
 
-    @Column(name = "attachment_required")
+    @Column(name = "ATTACHMENT_REQUIRED")
     private String attachmentRequired = "NO";
 
-    @Column(name = "status")
+    @Column(name = "STATUS")
     private String status = "OPEN";
 
-    @Column(name = "action_taken", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ACTION_TAKEN", columnDefinition = "NVARCHAR(MAX)")
     private String actionTaken;
 
-    @Column(name = "action_observation", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "ACTION_OBSERVATION", columnDefinition = "NVARCHAR(MAX)")
     private String actionObservation;
 
-    @Column(name = "cancel_remarks", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "CANCEL_REMARKS", columnDefinition = "NVARCHAR(MAX)")
     private String cancelRemarks;
 
-    @Column(name = "rev_no")
+    @Column(name = "REV_NO")
     private Integer revNo = 0;
 
-    @Column(name = "amendment_comments", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "AMENDMENT_COMMENTS", columnDefinition = "NVARCHAR(MAX)")
     private String amendmentComments;
 
+    @Column(name = "attachment_info", columnDefinition = "NVARCHAR(MAX)")
+    private String attachmentInfo;
 
+    @Column(name = "IS_ACTIVE")
+    private Boolean isActive = true;
 
+    public Boolean getIsActive() {
+        return isActive;
+    }
 
+    public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }

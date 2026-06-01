@@ -6,14 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSTextField,
-  BOSFormSection,
-  btnNew,
-  errorStyle
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, btnNew, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 
@@ -69,8 +62,7 @@ export default function InductionRoundMaster() {
 
   // Filter config
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -81,8 +73,8 @@ export default function InductionRoundMaster() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -195,27 +187,23 @@ export default function InductionRoundMaster() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconRotate2 size={24} />
           <Typography variant="h3">Induction Round Master</Typography>
         </Stack>
       }
-      secondary={
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchRows} color="primary" size="small" sx={{
-              border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1,
-              transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' }
-            }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          <Button variant="contained" color="primary" onClick={handleOpenAdd} sx={btnNew} startIcon={<IconPlus size={18} />}>
-            + New Round
-          </Button>
-        </Stack>
+            secondary={
+        <BOSTableToolbar
+          onRefresh={fetchRows}
+          onNew={handleOpenAdd}
+          newLabel="+ New Round"
+          hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Induction_Round_Master"
+          hasExportPermission={perms.export}
+        />
       }
     >
       <BOSDataTable
@@ -286,8 +274,8 @@ export default function InductionRoundMaster() {
               inputProps={{ min: 1 }}
             />
 
-            <BOSTextField
-              select
+            <BOSStatusField
+              isCreate={!formData.id}
               name="status"
               label="STATUS"
               value={formData.status}
@@ -299,9 +287,10 @@ export default function InductionRoundMaster() {
             >
               <MenuItem value="ACTIVE">Active</MenuItem>
               <MenuItem value="IN ACTIVE">Inactive</MenuItem>
-            </BOSTextField>
+            </BOSStatusField>
           </Stack>
         </BOSFormSection>
+        
       </BOSFormDialog>
 
       <ConfirmDeleteDialog

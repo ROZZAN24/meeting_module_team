@@ -3,7 +3,8 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid, Autocomplete, Text
 import { IconChartPie, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
+import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useSelector, useDispatch } from 'react-redux';
@@ -32,6 +33,9 @@ export default function SubSegmentMaster() {
   const [form, setForm] = useState(INITIAL);
   const [selectedId, setSelectedId] = useState(null);
   const [segments, setSegments] = useState([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteName, setDeleteName] = useState('');
 
   const fetchSegments = useCallback(async () => {
     try {
@@ -72,27 +76,34 @@ export default function SubSegmentMaster() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this sub-segment?')) return;
+  const handleDeleteClick = (row) => {
+    setDeleteId(row.id);
+    setDeleteName(row.subSegmentName);
+    setDeleteOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     try {
-      await axios.delete(`/api/sm/sub-segments/${id}`);
+      await axios.delete(`/api/sm/sub-segments/${deleteId}`);
       dispatch(openSnackbar({ open: true, message: 'Sub Segment deleted!', variant: 'alert', alert: { variant: 'filled' }, severity: 'success', close: false }));
+      setDeleteOpen(false);
+      setDeleteId(null);
+      setDeleteName('');
       fetchData();
     } catch (e) { console.error(e); }
   };
 
   
   useEffect(() => {
-    const config = [
-      { id: 'subSegmentCode', label: 'Sub Segment Code', type: 'text' },
-      { id: 'subSegmentName', label: 'Sub Segment Name', type: 'text' }
-    ];
+    const config = [{ id: 'subSegmentCode', label: 'Sub Segment Code', type: 'text' },
+      { id: 'subSegmentName', label: 'Sub Segment Name', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
 return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconChartPie size={24} />
@@ -105,14 +116,8 @@ return (
             {perms.export && <BOSExportButton
               data={rows}
               filename="Sub_Segment_Master"
-              columns={[
-                { header: 'Segment Name', key: 'segmentName' },
-                { header: 'Sub Segment Code', key: 'subSegmentCode' },
-                { header: 'Sub Segment Name', key: 'subSegmentName' },
-                { header: 'Sub Segment Description', key: 'subSegmentDescription' },
-                { header: 'Status', key: 'status' }
-              ]}
-            />}
+              
+             screenColumns={columns} />}
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => { setForm(INITIAL); setSelectedId(null); setShowForm(true); }} sx={btnSave}>
               Add New
             </Button>
@@ -124,7 +129,7 @@ return (
         columns={columns}
         rows={rows}
         onEditRow={(row) => { setForm(row); setSelectedId(row.id); setShowForm(true); }}
-        onDeleteRow={(row) => handleDelete(row.id)}
+        onDeleteRow={perms.delete ? handleDeleteClick : undefined}
       />
 
       <BOSFormDialog
@@ -151,16 +156,30 @@ return (
             <BOSTextField name="subSegmentName" label="Sub Segment Name" value={form.subSegmentName} onChange={h} required fullWidth />
           </Grid>
           <Grid item xs={12} sm={6}>
-            <BOSTextField name="status" label="Status" value={form.status} onChange={h} select fullWidth>
-              <MenuItem value="Active">Active</MenuItem>
-              <MenuItem value="Inactive">Inactive</MenuItem>
-            </BOSTextField>
+            <BOSStatusField
+              isCreate={!selectedId}
+              name="status"
+              label="Status"
+              value={form.status}
+              onChange={h}
+              fullWidth
+            />
           </Grid>
           <Grid item xs={12}>
             <BOSTextField name="subSegmentDescription" label="Sub Segment Description" value={form.subSegmentDescription} onChange={h} multiline rows={3} fullWidth />
           </Grid>
         </Grid>
+        
       </BOSFormDialog>
+
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Sub Segment"
+        message="Are you sure you want to delete this sub-segment?"
+        itemName={deleteName}
+      />
     </MainCard>
   );
 }

@@ -10,7 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew, getStatusChipSx } from 'ui-component/bos';
+import { BOSDataTable, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { isMobile } from 'react-device-detect';
@@ -26,20 +26,20 @@ const formatTime12h = (time24) => {
 
 const columns = [
   { id: 'index', label: '#', minWidth: 50, align: 'center' },
-  { id: 'scheduleNo', label: 'Schedule No', minWidth: 150, bold: true },
-  { id: 'revSourceScheduleNo', label: 'Amendment Schedule No', minWidth: 160 },
-  { id: 'scheduleDate', label: 'Schedule Date', minWidth: 110 },
-  { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 140 },
-  { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 160 },
-  { id: 'departmentNames', label: 'Department', minWidth: 160 },
-  { id: 'chairedByName', label: 'Chaired By', minWidth: 130 },
-  { id: 'hostByName', label: 'Host By', minWidth: 130 },
-  { id: 'participantsBy', label: 'Participants By', minWidth: 200 },
+  { id: 'scheduleNo', label: 'Schedule No', minWidth: 150, bold: true, align: 'center' },
+  { id: 'revSourceScheduleNo', label: 'Amendment Schedule No', minWidth: 160, align: 'center' },
+  { id: 'scheduleDate', label: 'Schedule Date', minWidth: 110, align: 'center' },
+  { id: 'meetingTypeName', label: 'Meeting Type', minWidth: 140, align: 'center' },
+  { id: 'meetingDateTime', label: 'Meeting Date/Time', minWidth: 160, align: 'center' },
+  { id: 'departmentNames', label: 'Department', minWidth: 160, align: 'center' },
+  { id: 'chairedByName', label: 'Chaired By', minWidth: 130, align: 'center' },
+  { id: 'hostByName', label: 'Host By', minWidth: 130, align: 'center' },
+  { id: 'participantsBy', label: 'Participants By', minWidth: 200, align: 'center' },
+  { id: 'createdUser', label: 'CREATED USER', minWidth: 110, align: 'center' },
+  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140, align: 'center' },
+  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 110, align: 'center' },
+  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140, align: 'center' },
   { id: 'review', label: 'Review', minWidth: 80, align: 'center' },
-  { id: 'createdUser', label: 'CREATED USER', minWidth: 110 },
-  { id: 'createdAt', label: 'CREATED DATE', minWidth: 140 },
-  { id: 'updatedUser', label: 'UPDATED USER', minWidth: 110 },
-  { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 140 },
   { id: 'status', label: 'Status', minWidth: 100, align: 'center' }
 ];
 
@@ -83,6 +83,8 @@ export default function MeetingScheduleList() {
         }).filter(Boolean).join(', '),
         createdUser: row.createdUser || row.createdBy || '-',
         updatedUser: row.updatedUser || row.updatedBy || '-',
+        createdAtRaw: row.createdAt || row.createdDate || null,
+        updatedAtRaw: row.updatedAt || row.updatedDate || null,
         createdAt: row.createdAt ? new Date(row.createdAt).toLocaleString('en-GB') : (row.createdDate ? new Date(row.createdDate).toLocaleString('en-GB') : '-'),
         updatedAt: row.updatedAt ? new Date(row.updatedAt).toLocaleString('en-GB') : (row.updatedDate ? new Date(row.updatedDate).toLocaleString('en-GB') : '-'),
         status: row.status || 'OPEN'
@@ -93,6 +95,8 @@ export default function MeetingScheduleList() {
   // ── FILTERED ROWS ──
   const filteredRows = useMemo(() => {
     return resolvedRows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters?.status || 'OPEN';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
@@ -109,8 +113,7 @@ export default function MeetingScheduleList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'dateType', label: 'Date Type', type: 'select', isStarred: true,
         options: [
           { value: 'meetingDate', label: 'Meeting Date' },
@@ -136,8 +139,8 @@ export default function MeetingScheduleList() {
           { value: 'CANCELLED', label: 'Cancelled' }
         ],
         defaultValue: 'OPEN'
-      }
-    ]));
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -230,18 +233,35 @@ export default function MeetingScheduleList() {
           }} 
         />
       );
-    } else if (col.id === 'createdAt') {
-      if (!row.createdAt) val = '-';
-      else {
-        const dt = new Date(row.createdAt);
-        const d = dt.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        const t = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-        val = (
-          <Box>
-            <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>{d}</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>{t}</Typography>
-          </Box>
-        );
+    } else if (col.id === 'createdAt' || col.id === 'updatedAt') {
+      const rawDateVal = col.id === 'createdAt' ? row.createdAtRaw : row.updatedAtRaw;
+      if (!rawDateVal) {
+        val = <Typography variant="body2" color="text.secondary">-</Typography>;
+      } else {
+        const dt = new Date(rawDateVal);
+        if (isNaN(dt.getTime())) {
+          val = <Typography variant="body2" color="text.secondary">-</Typography>;
+        } else {
+          // Format date as DD/MM/YYYY
+          const day = String(dt.getDate()).padStart(2, '0');
+          const month = String(dt.getMonth() + 1).padStart(2, '0');
+          const year = dt.getFullYear();
+          const d = `${day}/${month}/${year}`;
+          
+          // Format time as 12-hour style (e.g., 10:53 PM)
+          const t = dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+          
+          val = (
+            <Box>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {d}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.1 }}>
+                {t}
+              </Typography>
+            </Box>
+          );
+        }
       }
     } else if (col.id === 'index') {
       val = (
@@ -381,7 +401,7 @@ export default function MeetingScheduleList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
           <Box sx={{ p: 1, bgcolor: 'primary.light', borderRadius: 2, display: 'flex' }}>
@@ -391,48 +411,26 @@ export default function MeetingScheduleList() {
         </Stack>
       }
       secondary={
-        <Stack direction="row" spacing={2} alignItems="center">
-          <Tooltip title="Refresh">
-            <IconButton onClick={fetchData} color="primary" size="small" sx={{ border: '2px solid', borderColor: 'divider', borderRadius: '8px', p: 1, transition: 'all 0.2s', '&:hover': { bgcolor: 'primary.light', transform: 'scale(1.05)' } }}>
-              <IconRefresh size={20} />
-            </IconButton>
-          </Tooltip>
-          {perms.export && <BOSExportButton
-            data={filteredRows}
-            filename="Meeting_Schedule"
-            columns={[
-              { header: '#', key: 'index' },
-              { header: 'Schedule No', key: 'scheduleNo' },
-              { header: 'Amendment No', key: 'revSourceScheduleNo' },
-              { header: 'Meeting Type', key: 'meetingTypeName' },
-              { header: 'Meeting Date', key: 'meetingDateTime' },
-              { header: 'Status', key: 'status' },
-              { header: 'Chaired By', key: 'chairedByName' },
-              { header: 'Host By', key: 'hostByName' },
-              { header: 'Created User', key: 'createdUser' }
-            ]}
-          />}
-          <Tooltip title="Create Amendment">
-            <Button
-              variant="outlined"
-              color="warning"
-              size="medium"
-              onClick={() => {
-                if (resolvedRows.length > 0) handleAmendmentClick(resolvedRows[0]);
-                else dispatch(openSnackbar({ open: true, message: 'Please select a schedule to amend', variant: 'alert', severity: 'warning' }));
-              }}
-              sx={{ borderRadius: '12px', fontWeight: 700 }}
-              startIcon={<IconGitBranch size={18} />}
-            >
-              + Amendment
-            </Button>
-          </Tooltip>
-          {perms.write && <Tooltip title={shortcutTooltip('Create New Schedule', 'Ctrl + N')}>
-            <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
-              + New
-            </Button>
-          </Tooltip>}
-        </Stack>
+        <BOSTableToolbar
+          onRefresh={fetchData}
+          onNew={handleAdd}
+          newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
+          hasWritePermission={perms.write}
+          exportData={filteredRows}
+          
+          exportFilename="Meeting_Schedule"
+          hasExportPermission={perms.export}
+          onAmendment={() => {
+            if (resolvedRows.length > 0) handleAmendmentClick(resolvedRows[0]);
+            else dispatch(openSnackbar({ open: true, message: 'Please select a schedule to amend', variant: 'alert', severity: 'warning' }));
+          }}
+          amendmentLabel="+ Amendment"
+          amendmentColor="warning"
+          amendmentVariant="outlined"
+          amendmentIcon={<IconGitBranch size={18} />}
+          amendmentTooltip="Create Amendment"
+          amendmentSx={{ borderRadius: '12px', fontWeight: 700 }}
+         columns={columns} />
       }
     >
       <BOSDataTable
