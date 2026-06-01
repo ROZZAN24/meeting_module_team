@@ -1482,12 +1482,9 @@ export default function TaskDashboard() {
         });
 
         let stats = { total: tasksList.length, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0 };
-<<<<<<< HEAD
-        const today = new Date();
-=======
->>>>>>> c49f9ad50ae711169a9c589702bcbd963abd92c1
         today.setHours(0, 0, 0, 0);
         let overdueList = [];
+
 
         tasksList.forEach((t) => {
           const st = String(t._status).toLowerCase();
