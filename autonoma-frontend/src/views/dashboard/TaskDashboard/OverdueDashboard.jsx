@@ -1,6 +1,22 @@
+/* eslint-disable no-unused-vars */
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-  Box, Typography, Grid, Paper, Avatar, Chip, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress, Link, IconButton
+  Box,
+  Typography,
+  Grid,
+  Paper,
+  Avatar,
+  Chip,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  LinearProgress,
+  Link,
+  IconButton
 } from '@mui/material';
 import { styled, alpha } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
@@ -22,9 +38,7 @@ import DateRangeRoundedIcon from '@mui/icons-material/DateRangeRounded';
 
 const StyledCard = styled(Paper)(({ theme }) => ({
   borderRadius: '16px',
-  boxShadow: theme.palette.mode === 'dark'
-    ? '0 4px 20px 0 rgba(0,0,0,0.4)'
-    : '0 4px 20px 0 rgba(0,0,0,0.05)',
+  boxShadow: theme.palette.mode === 'dark' ? '0 4px 20px 0 rgba(0,0,0,0.4)' : '0 4px 20px 0 rgba(0,0,0,0.05)',
   border: `1px solid ${theme.palette.mode === 'dark' ? '#334155' : '#F1F5F9'}`,
   background: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
   height: '100%',
@@ -41,7 +55,7 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   alignItems: 'center',
   justifyContent: 'center',
   color: color,
-  background: bg,
+  background: bg
 }));
 
 export default function OverdueDashboard({ isDark, realTasks = [] }) {
@@ -63,15 +77,17 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
 
   // --- DERIVE REAL DATA ---
   const { overdueTasks } = useMemo(() => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const overdue = [];
 
-    realTasks.forEach(t => {
+    realTasks.forEach((t) => {
       const st = String(t._status).toLowerCase();
       const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
       if (isDone || !t._dueDate) return;
 
-      const dDate = new Date(t._dueDate); dDate.setHours(0, 0, 0, 0);
+      const dDate = new Date(t._dueDate);
+      dDate.setHours(0, 0, 0, 0);
 
       if (dDate.getTime() < today.getTime()) {
         const diffDays = Math.ceil(Math.abs(today - dDate) / (1000 * 60 * 60 * 24));
@@ -94,7 +110,10 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     return t._ticketId || t._id || `TCK-???`;
   };
 
-  let critCount = 0; let highCount = 0; let medCount = 0; let lowCount = 0;
+  let critCount = 0;
+  let highCount = 0;
+  let medCount = 0;
+  let lowCount = 0;
 
   let aging1to3 = 0;
   let aging4to7 = 0;
@@ -103,7 +122,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
 
   const userMap = {};
 
-  overdueTasks.forEach(t => {
+  overdueTasks.forEach((t) => {
     const pInfo = getPriorityInfo(t);
     if (pInfo.label === 'Critical') critCount++;
     else if (pInfo.label === 'High') highCount++;
@@ -112,10 +131,19 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
 
     const diff = t.diffDays;
     let ageGrp = 1; // 1: 1-3, 2: 4-7, 3: >7
-    if (diff >= 1 && diff <= 3) { aging1to3++; ageGrp = 1; }
-    else if (diff >= 4 && diff <= 7) { aging4to7++; ageGrp = 2; }
-    else if (diff >= 8 && diff <= 14) { aging8to14++; ageGrp = 3; }
-    else { aginggt14++; ageGrp = 3; } // group >7 in user table
+    if (diff >= 1 && diff <= 3) {
+      aging1to3++;
+      ageGrp = 1;
+    } else if (diff >= 4 && diff <= 7) {
+      aging4to7++;
+      ageGrp = 2;
+    } else if (diff >= 8 && diff <= 14) {
+      aging8to14++;
+      ageGrp = 3;
+    } else {
+      aginggt14++;
+      ageGrp = 3;
+    } // group >7 in user table
 
     const u = t._user || 'Unknown';
     if (!userMap[u]) userMap[u] = { name: u, total: 0, d1to3: 0, d4to7: 0, dgt7: 0, maxDays: 0 };
@@ -132,15 +160,63 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
   const empTableData = fullEmpTableData.slice(0, 5);
   const totalEmployees = Object.keys(userMap).length;
 
-  const critOverdueTasks = overdueTasks.filter(t => t.diffDays > 3).length;
+  const critOverdueTasks = overdueTasks.filter((t) => t.diffDays > 3).length;
 
   const topStats = [
-    { title: 'Total Overdue Tasks', value: overdueTasks.length, subtitle: 'All overdue tasks', icon: <AssignmentRoundedIcon fontSize="small" />, color: '#EF4444', bg: '#FEF2F2', line: '#EF4444' },
-    { title: 'Critical Overdue', value: critOverdueTasks, subtitle: '(> 3 Days Overdue)', icon: <ReportProblemRoundedIcon fontSize="small" />, color: '#991B1B', bg: '#FEF2F2', line: '#991B1B' },
-    { title: 'Overdue (1 - 3 Days)', value: aging1to3, subtitle: 'Short delay', icon: <AccessTimeRoundedIcon fontSize="small" />, color: '#F59E0B', bg: '#FFFBEB', line: '#F59E0B' },
-    { title: 'Overdue (4 - 7 Days)', value: aging4to7, subtitle: 'Moderate delay', icon: <DateRangeRoundedIcon fontSize="small" />, color: '#8B5CF6', bg: '#F5F3FF', line: '#8B5CF6' },
-    { title: 'Overdue (> 7 Days)', value: aging8to14 + aginggt14, subtitle: 'High delay', icon: <WarningRoundedIcon fontSize="small" />, color: '#EF4444', bg: '#FEF2F2', line: '#EF4444' },
-    { title: 'Employees with Overdue', value: totalEmployees, subtitle: 'Have overdue tasks', icon: <GroupRoundedIcon fontSize="small" />, color: '#3B82F6', bg: '#EFF6FF', line: '#3B82F6' }
+    {
+      title: 'Total Overdue Tasks',
+      value: overdueTasks.length,
+      subtitle: 'All overdue tasks',
+      icon: <AssignmentRoundedIcon fontSize="small" />,
+      color: '#EF4444',
+      bg: '#FEF2F2',
+      line: '#EF4444'
+    },
+    {
+      title: 'Critical Overdue',
+      value: critOverdueTasks,
+      subtitle: '(> 3 Days Overdue)',
+      icon: <ReportProblemRoundedIcon fontSize="small" />,
+      color: '#991B1B',
+      bg: '#FEF2F2',
+      line: '#991B1B'
+    },
+    {
+      title: 'Overdue (1 - 3 Days)',
+      value: aging1to3,
+      subtitle: 'Short delay',
+      icon: <AccessTimeRoundedIcon fontSize="small" />,
+      color: '#F59E0B',
+      bg: '#FFFBEB',
+      line: '#F59E0B'
+    },
+    {
+      title: 'Overdue (4 - 7 Days)',
+      value: aging4to7,
+      subtitle: 'Moderate delay',
+      icon: <DateRangeRoundedIcon fontSize="small" />,
+      color: '#8B5CF6',
+      bg: '#F5F3FF',
+      line: '#8B5CF6'
+    },
+    {
+      title: 'Overdue (> 7 Days)',
+      value: aging8to14 + aginggt14,
+      subtitle: 'High delay',
+      icon: <WarningRoundedIcon fontSize="small" />,
+      color: '#EF4444',
+      bg: '#FEF2F2',
+      line: '#EF4444'
+    },
+    {
+      title: 'Employees with Overdue',
+      value: totalEmployees,
+      subtitle: 'Have overdue tasks',
+      icon: <GroupRoundedIcon fontSize="small" />,
+      color: '#3B82F6',
+      bg: '#EFF6FF',
+      line: '#3B82F6'
+    }
   ];
 
   // Pie chart data
@@ -148,12 +224,12 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     { label: 'Critical', count: critCount, color: '#991B1B' },
     { label: 'High', count: highCount, color: '#EF4444' },
     { label: 'Medium', count: medCount, color: '#3B82F6' },
-    { label: 'Low', count: lowCount, color: '#10B981' },
+    { label: 'Low', count: lowCount, color: '#10B981' }
   ];
 
-  const pieSeries = allPriorities.map(p => p.count);
-  const pieLabels = allPriorities.map(p => p.label);
-  const pieColors = allPriorities.map(p => p.color);
+  const pieSeries = allPriorities.map((p) => p.count);
+  const pieLabels = allPriorities.map((p) => p.label);
+  const pieColors = allPriorities.map((p) => p.color);
 
   const pieOptions = {
     chart: { type: 'donut', fontFamily: "'Inter', sans-serif" },
@@ -161,7 +237,24 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     colors: pieColors,
     stroke: { width: 3, colors: [isDark ? '#1E293B' : '#FFFFFF'] },
     plotOptions: {
-      pie: { donut: { size: '75%', labels: { show: true, name: { show: true, color: textMuted }, value: { show: true, fontSize: '24px', fontWeight: 800, color: textColor }, total: { show: true, label: 'Overdue', formatter: () => overdueTasks.length.toString(), color: textMuted, fontSize: '12px', fontWeight: 600 } } } }
+      pie: {
+        donut: {
+          size: '75%',
+          labels: {
+            show: true,
+            name: { show: true, color: textMuted },
+            value: { show: true, fontSize: '24px', fontWeight: 800, color: textColor },
+            total: {
+              show: true,
+              label: 'Overdue',
+              formatter: () => overdueTasks.length.toString(),
+              color: textMuted,
+              fontSize: '12px',
+              fontWeight: 600
+            }
+          }
+        }
+      }
     },
     dataLabels: { enabled: false },
     legend: { show: false }
@@ -173,14 +266,23 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     { name: '4 - 7 Days', count: aging4to7, color: '#8B5CF6' },
     { name: '8 - 14 Days', count: aging8to14, color: '#EF4444' },
     { name: '> 14 Days', count: aginggt14, color: '#991B1B' }
-  ].map(item => ({ ...item, percent: overdueTasks.length > 0 ? Math.round((item.count / overdueTasks.length) * 100) : 0 }));
+  ].map((item) => ({ ...item, percent: overdueTasks.length > 0 ? Math.round((item.count / overdueTasks.length) * 100) : 0 }));
 
   // Pages Progress Data
   const pagesData = useMemo(() => {
     const counts = {};
-    overdueTasks.forEach(t => {
+    overdueTasks.forEach((t) => {
       const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const name = prefix === 'CL' ? 'Checklist' : prefix === 'MOM' ? 'MOM Actions' : prefix === 'TK' ? 'Ticket' : prefix === 'AUDIT' ? 'Audit Schedule' : prefix;
+      const name =
+        prefix === 'CL'
+          ? 'Checklist'
+          : prefix === 'MOM'
+            ? 'MOM Actions'
+            : prefix === 'TK'
+              ? 'Ticket'
+              : prefix === 'AUDIT'
+                ? 'Audit Schedule'
+                : prefix;
       if (!counts[name]) counts[name] = 0;
       counts[name]++;
     });
@@ -188,19 +290,21 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     const colors = ['#EF4444', '#F59E0B', '#8B5CF6', '#3B82F6', '#94A3B8'];
     const total = overdueTasks.length || 1;
 
-    return Object.keys(counts).map((k, i) => ({
-      name: k,
-      count: counts[k],
-      percent: Math.round((counts[k] / total) * 100),
-      color: colors[i % colors.length]
-    })).sort((a, b) => b.count - a.count);
+    return Object.keys(counts)
+      .map((k, i) => ({
+        name: k,
+        count: counts[k],
+        percent: Math.round((counts[k] / total) * 100),
+        color: colors[i % colors.length]
+      }))
+      .sort((a, b) => b.count - a.count);
   }, [overdueTasks]);
 
   // Trend Chart Data (Weekly, Monthly, Yearly)
   const trendPeriodConfig = useMemo(() => {
     const now = new Date();
 
-    const validTasks = realTasks.filter(t => t._dueDate && !['completed', 'closed'].includes(String(t._status).toLowerCase()));
+    const validTasks = realTasks.filter((t) => t._dueDate && !['completed', 'closed'].includes(String(t._status).toLowerCase()));
 
     // Weekly: last 7 days
     const weekLabels = [];
@@ -210,11 +314,15 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       const d = new Date(now);
       d.setDate(now.getDate() - i);
       weekLabels.push(dayNames[d.getDay()]);
-      weekCounts.push(validTasks.filter(t => {
-        const td = new Date(t._dueDate); td.setHours(0, 0, 0, 0);
-        const dd = new Date(d); dd.setHours(0, 0, 0, 0);
-        return td.getTime() < dd.getTime(); // Count tasks that were overdue on that day
-      }).length);
+      weekCounts.push(
+        validTasks.filter((t) => {
+          const td = new Date(t._dueDate);
+          td.setHours(0, 0, 0, 0);
+          const dd = new Date(d);
+          dd.setHours(0, 0, 0, 0);
+          return td.getTime() < dd.getTime(); // Count tasks that were overdue on that day
+        }).length
+      );
     }
 
     // Monthly: last 12 months
@@ -224,10 +332,12 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     for (let i = 11; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i + 1, 0); // last day of the month
       monthLabels.push(monthNames[d.getMonth()]);
-      monthCounts.push(validTasks.filter(t => {
-        const td = new Date(t._dueDate);
-        return td.getTime() < d.getTime();
-      }).length);
+      monthCounts.push(
+        validTasks.filter((t) => {
+          const td = new Date(t._dueDate);
+          return td.getTime() < d.getTime();
+        }).length
+      );
     }
 
     // Yearly: last 5 years + current
@@ -237,16 +347,18 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       const yr = now.getFullYear() - i;
       const d = new Date(yr, 11, 31); // Dec 31st of the year
       yearLabels.push(String(yr));
-      yearCounts.push(validTasks.filter(t => {
-        const td = new Date(t._dueDate);
-        return td.getTime() < d.getTime();
-      }).length);
+      yearCounts.push(
+        validTasks.filter((t) => {
+          const td = new Date(t._dueDate);
+          return td.getTime() < d.getTime();
+        }).length
+      );
     }
 
     return {
       weekly: { label: 'Overdue Trend (Daily)', categories: weekLabels, data: weekCounts },
       monthly: { label: 'Overdue Trend (Monthly)', categories: monthLabels, data: monthCounts },
-      yearly: { label: 'Overdue Trend (Yearly)', categories: yearLabels, data: yearCounts },
+      yearly: { label: 'Overdue Trend (Yearly)', categories: yearLabels, data: yearCounts }
     };
   }, [realTasks]);
 
@@ -258,20 +370,41 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.0, stops: [0, 100] } },
     stroke: { curve: 'straight', width: 3 },
     markers: { size: 5, colors: ['#fff'], strokeColors: '#EF4444', strokeWidth: 2, hover: { size: 7 } },
-    xaxis: { categories: activeTrend.categories, labels: { style: { colors: textMuted, fontSize: '11px', fontWeight: 600 } }, axisBorder: { show: false }, axisTicks: { show: false } },
+    xaxis: {
+      categories: activeTrend.categories,
+      labels: { style: { colors: textMuted, fontSize: '11px', fontWeight: 600 } },
+      axisBorder: { show: false },
+      axisTicks: { show: false }
+    },
     yaxis: { min: 0, tickAmount: 4, labels: { style: { colors: textMuted, fontSize: '11px', fontWeight: 600 } } },
-    grid: { borderColor: isDark ? '#334155' : '#F1F5F9', strokeDashArray: 4, xaxis: { lines: { show: true } }, yaxis: { lines: { show: true } } },
+    grid: {
+      borderColor: isDark ? '#334155' : '#F1F5F9',
+      strokeDashArray: 4,
+      xaxis: { lines: { show: true } },
+      yaxis: { lines: { show: true } }
+    },
     tooltip: { theme: isDark ? 'dark' : 'light' }
   };
   const trendSeries = [{ name: 'Overdue Tasks', type: 'area', data: activeTrend.data }];
 
-
   // --- FULL SCREENS ---
   if (activeView !== 'main') {
     return (
-      <Box sx={{ animation: 'fadeIn 0.3s ease-in-out', '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } } }}>
+      <Box
+        sx={{
+          animation: 'fadeIn 0.3s ease-in-out',
+          '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } }
+        }}
+      >
         <Stack direction="row" alignItems="center" gap={2} mb={3}>
-          <IconButton onClick={() => setActiveView('main')} sx={{ bgcolor: isDark ? alpha('#EF4444', 0.1) : '#FEF2F2', color: '#EF4444', '&:hover': { bgcolor: isDark ? alpha('#EF4444', 0.2) : '#FEE2E2' } }}>
+          <IconButton
+            onClick={() => setActiveView('main')}
+            sx={{
+              bgcolor: isDark ? alpha('#EF4444', 0.1) : '#FEF2F2',
+              color: '#EF4444',
+              '&:hover': { bgcolor: isDark ? alpha('#EF4444', 0.2) : '#FEE2E2' }
+            }}
+          >
             <ArrowBackRoundedIcon />
           </IconButton>
           <Typography variant="h5" fontWeight={800} color={textColor}>
@@ -280,41 +413,84 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
             {activeView === 'pages' && 'Overdue by Pages (Full Report)'}
             {activeView === 'tasks' && 'Over Due'}
           </Typography>
-          <Chip label="Press Esc to go back" size="small" sx={{ ml: 'auto', bgcolor: isDark ? '#334155' : '#F1F5F9', color: textMuted, fontWeight: 700, borderRadius: 2 }} />
+          <Chip
+            label="Press Esc to go back"
+            size="small"
+            sx={{ ml: 'auto', bgcolor: isDark ? '#334155' : '#F1F5F9', color: textMuted, fontWeight: 700, borderRadius: 2 }}
+          />
         </Stack>
 
         <StyledCard sx={{ p: 0, borderRadius: '16px', overflow: 'hidden' }}>
-
           {/* FULL LIST: EMPLOYEE */}
           {activeView === 'employee' && (
-            <TableContainer sx={{ maxHeight: '70vh', '& .MuiTableCell-root': { py: 2, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}>
+            <TableContainer
+              sx={{ maxHeight: '70vh', '& .MuiTableCell-root': { py: 2, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
+            >
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, pl: 3 }}>Employee Name</TableCell>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Total Overdue</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
+                      Total Overdue
+                    </TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>1-3 Days</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>4-7 Days</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>{'>'} 7 Days</TableCell>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center', pr: 3 }}>Max Overdue</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center', pr: 3 }}>
+                      Max Overdue
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {fullEmpTableData.length > 0 ? fullEmpTableData.map((row, idx) => (
-                    <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === fullEmpTableData.length - 1 ? 'none' : undefined } }}>
-                      <TableCell sx={{ pl: 3 }}>
-                        <Stack direction="row" alignItems="center" gap={1.5}>
-                          <Avatar sx={{ width: 32, height: 32, bgcolor: '#EF4444', fontSize: '14px', fontWeight: 800 }}>{row.name.charAt(0)}</Avatar>
-                          <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={textColor}>{row.name}</Typography>
-                        </Stack>
+                  {fullEmpTableData.length > 0 ? (
+                    fullEmpTableData.map((row, idx) => (
+                      <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === fullEmpTableData.length - 1 ? 'none' : undefined } }}>
+                        <TableCell sx={{ pl: 3 }}>
+                          <Stack direction="row" alignItems="center" gap={1.5}>
+                            <Avatar sx={{ width: 32, height: 32, bgcolor: '#EF4444', fontSize: '14px', fontWeight: 800 }}>
+                              {row.name.charAt(0)}
+                            </Avatar>
+                            <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={textColor}>
+                              {row.name}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={900} color="#EF4444" fontSize="0.9rem">
+                            {row.total}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={row.d1to3 > 0 ? '#F59E0B' : textColor}>
+                            {row.d1to3}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={row.d4to7 > 0 ? '#8B5CF6' : textColor}>
+                            {row.d4to7}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={row.dgt7 > 0 ? '#EF4444' : textColor}>
+                            {row.dgt7}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', pr: 3 }}>
+                          <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color="#EF4444">
+                            {row.maxDays} Days
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                        <Typography variant="body1" color="text.secondary" fontWeight={600}>
+                          No data found
+                        </Typography>
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={900} color="#EF4444" fontSize="0.9rem">{row.total}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={row.d1to3 > 0 ? '#F59E0B' : textColor}>{row.d1to3}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={row.d4to7 > 0 ? '#8B5CF6' : textColor}>{row.d4to7}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={row.dgt7 > 0 ? '#EF4444' : textColor}>{row.dgt7}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center', pr: 3 }}><Typography variant="body2" fontWeight={800} fontSize="0.9rem" color="#EF4444">{row.maxDays} Days</Typography></TableCell>
                     </TableRow>
-                  )) : (<TableRow><TableCell colSpan={6} align="center" sx={{ py: 6 }}><Typography variant="body1" color="text.secondary" fontWeight={600}>No data found</Typography></TableCell></TableRow>)}
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -326,9 +502,21 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
               <Stack spacing={4}>
                 {agingData.map((row, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" gap={3}>
-                    <Typography variant="body1" fontWeight={800} color={textColor} sx={{ width: 120 }}>{row.name}</Typography>
+                    <Typography variant="body1" fontWeight={800} color={textColor} sx={{ width: 120 }}>
+                      {row.name}
+                    </Typography>
                     <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                      <LinearProgress variant="determinate" value={row.percent} sx={{ width: '100%', height: 10, borderRadius: 5, bgcolor: alpha(row.color, 0.1), '& .MuiLinearProgress-bar': { bgcolor: row.color, borderRadius: 5 } }} />
+                      <LinearProgress
+                        variant="determinate"
+                        value={row.percent}
+                        sx={{
+                          width: '100%',
+                          height: 10,
+                          borderRadius: 5,
+                          bgcolor: alpha(row.color, 0.1),
+                          '& .MuiLinearProgress-bar': { bgcolor: row.color, borderRadius: 5 }
+                        }}
+                      />
                     </Box>
                     <Typography variant="h6" fontWeight={900} color={textColor} textAlign="right" sx={{ width: 100 }}>
                       {row.count} <span style={{ fontSize: '0.85rem', color: textMuted, fontWeight: 700 }}>({row.percent}%)</span>
@@ -341,7 +529,9 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
 
           {/* FULL LIST: TASKS */}
           {activeView === 'tasks' && (
-            <TableContainer sx={{ maxHeight: '70vh', '& .MuiTableCell-root': { py: 2, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}>
+            <TableContainer
+              sx={{ maxHeight: '70vh', '& .MuiTableCell-root': { py: 2, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
+            >
               <Table stickyHeader>
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
@@ -352,44 +542,94 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Created On</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Target Date</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Created By</TableCell>
-                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center', pr: 3 }}>Overdue By</TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center', pr: 3 }}>
+                      Overdue By
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {overdueTasks.length > 0 ? overdueTasks.sort((a, b) => b.diffDays - a.diffDays).map((t, idx) => {
-                    const pInfo = getPriorityInfo(t);
-                    return (
-                      <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === overdueTasks.length - 1 ? 'none' : undefined } }}>
-                        <TableCell sx={{ pl: 3 }}>
-                          <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color="#EF4444">{getTicketId(t)}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={textColor}>{t._title}</Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Stack direction="row" alignItems="center" gap={1.5}>
-                            <Avatar sx={{ width: 28, height: 28, bgcolor: '#EF4444', fontSize: '12px', fontWeight: 800 }}>{(t._user || 'U').charAt(0)}</Avatar>
-                            <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={textColor}>{t._user || 'Unknown'}</Typography>
-                          </Stack>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Chip label={pInfo.label} size="small" sx={{ height: 26, bgcolor: alpha(pInfo.color, 0.15), color: pInfo.color, fontWeight: 800, fontSize: '0.75rem' }} />
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>{t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')}</Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={textColor}>{t._dueDate ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>{t._createdBy || '-'}</Typography>
-                        </TableCell>
-                        <TableCell sx={{ textAlign: 'center', pr: 3 }}>
-                          <Typography variant="body2" fontWeight={900} fontSize="0.9rem" color="#EF4444">{t.diffDays} Days</Typography>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  }) : (<TableRow><TableCell colSpan={8} align="center" sx={{ py: 6 }}><Typography variant="body1" color="text.secondary" fontWeight={600}>No overdue tasks</Typography></TableCell></TableRow>)}
+                  {overdueTasks.length > 0 ? (
+                    overdueTasks
+                      .sort((a, b) => b.diffDays - a.diffDays)
+                      .map((t, idx) => {
+                        const pInfo = getPriorityInfo(t);
+                        return (
+                          <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === overdueTasks.length - 1 ? 'none' : undefined } }}>
+                            <TableCell sx={{ pl: 3 }}>
+                              <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color="#EF4444">
+                                {getTicketId(t)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={textColor}>
+                                {t._title}
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Stack direction="row" alignItems="center" gap={1.5}>
+                                <Avatar sx={{ width: 28, height: 28, bgcolor: '#EF4444', fontSize: '12px', fontWeight: 800 }}>
+                                  {(t._user || 'U').charAt(0)}
+                                </Avatar>
+                                <Typography variant="body2" fontWeight={700} fontSize="0.9rem" color={textColor}>
+                                  {t._user || 'Unknown'}
+                                </Typography>
+                              </Stack>
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              <Chip
+                                label={pInfo.label}
+                                size="small"
+                                sx={{
+                                  height: 26,
+                                  bgcolor: alpha(pInfo.color, 0.15),
+                                  color: pInfo.color,
+                                  fontWeight: 800,
+                                  fontSize: '0.75rem'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>
+                                {t._createdDate
+                                  ? new Date(t._createdDate).toLocaleDateString('en-GB', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric'
+                                    })
+                                  : t._rawDate
+                                    ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                    : '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={textColor}>
+                                {t._dueDate
+                                  ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                  : '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>
+                                {t._createdBy || '-'}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center', pr: 3 }}>
+                              <Typography variant="body2" fontWeight={900} fontSize="0.9rem" color="#EF4444">
+                                {t.diffDays} Days
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                        <Typography variant="body1" color="text.secondary" fontWeight={600}>
+                          No overdue tasks
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -401,16 +641,32 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
               <Stack spacing={4}>
                 {pagesData.map((row, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" gap={3}>
-                    <Typography variant="body1" fontWeight={800} color={textColor} sx={{ width: 180 }}>{row.name}</Typography>
+                    <Typography variant="body1" fontWeight={800} color={textColor} sx={{ width: 180 }}>
+                      {row.name}
+                    </Typography>
                     <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                      <LinearProgress variant="determinate" value={row.percent} sx={{ width: '100%', height: 10, borderRadius: 5, bgcolor: alpha(row.color, 0.1), '& .MuiLinearProgress-bar': { bgcolor: row.color, borderRadius: 5 } }} />
+                      <LinearProgress
+                        variant="determinate"
+                        value={row.percent}
+                        sx={{
+                          width: '100%',
+                          height: 10,
+                          borderRadius: 5,
+                          bgcolor: alpha(row.color, 0.1),
+                          '& .MuiLinearProgress-bar': { bgcolor: row.color, borderRadius: 5 }
+                        }}
+                      />
                     </Box>
                     <Typography variant="h6" fontWeight={900} color={textColor} textAlign="right" sx={{ width: 80 }}>
                       {row.count} <span style={{ fontSize: '0.85rem', color: textMuted, fontWeight: 700 }}>({row.percent}%)</span>
                     </Typography>
                   </Stack>
                 ))}
-                {pagesData.length === 0 && <Typography variant="body1" color="text.secondary" fontWeight={600} textAlign="center" py={4}>No data available</Typography>}
+                {pagesData.length === 0 && (
+                  <Typography variant="body1" color="text.secondary" fontWeight={600} textAlign="center" py={4}>
+                    No data available
+                  </Typography>
+                )}
               </Stack>
             </Box>
           )}
@@ -419,23 +675,31 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     );
   }
 
-
   // --- MAIN DASHBOARD SCREEN ---
   return (
-    <Box sx={{ animation: 'fadeIn 0.3s ease-in-out', '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } } }}>
-
+    <Box
+      sx={{
+        animation: 'fadeIn 0.3s ease-in-out',
+        '@keyframes fadeIn': { from: { opacity: 0, transform: 'translateY(10px)' }, to: { opacity: 1, transform: 'none' } }
+      }}
+    >
       {/* ROW 1: STAT CARDS */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' },
-        gap: 2,
-        mb: 2.5
-      }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' },
+          gap: 2,
+          mb: 2.5
+        }}
+      >
         {topStats.map((stat, idx) => (
-          <StyledCard key={idx} sx={{
-            p: 2,
-            borderBottom: stat.line !== 'transparent' ? `3px solid ${stat.line}` : undefined
-          }}>
+          <StyledCard
+            key={idx}
+            sx={{
+              p: 2,
+              borderBottom: stat.line !== 'transparent' ? `3px solid ${stat.line}` : undefined
+            }}
+          >
             <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
               <IconBox color={stat.color} bg={isDark ? alpha(stat.color, 0.2) : stat.bg} size={32}>
                 {stat.icon}
@@ -444,29 +708,38 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                 {stat.title}
               </Typography>
             </Stack>
-            <Typography variant="h4" fontWeight={900} color="text.primary" mb={0.25} textAlign="center">{stat.value}</Typography>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.65rem' }} textAlign="center">{stat.subtitle}</Typography>
+            <Typography variant="h4" fontWeight={900} color="text.primary" mb={0.25} textAlign="center">
+              {stat.value}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.65rem' }} textAlign="center">
+              {stat.subtitle}
+            </Typography>
           </StyledCard>
         ))}
       </Box>
 
       {/* ROW 2 */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: 'repeat(1, 1fr)', lg: 'repeat(3, 1fr)' },
-        gap: 2,
-        mb: 2.5,
-        alignItems: 'stretch'
-      }}>
-
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', lg: 'repeat(3, 1fr)' },
+          gap: 2,
+          mb: 2.5,
+          alignItems: 'stretch'
+        }}
+      >
         {/* Overdue by Employee */}
         <Box sx={{ gridColumn: { lg: 'span 1' } }}>
           <StyledCard sx={{ p: 2, position: 'relative' }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
               <GroupRoundedIcon fontSize="small" sx={{ color: '#EF4444' }} />
-              <Typography variant="subtitle2" fontWeight={800} color="text.primary">Overdue by Employee</Typography>
+              <Typography variant="subtitle2" fontWeight={800} color="text.primary">
+                Overdue by Employee
+              </Typography>
             </Stack>
-            <TableContainer sx={{ flex: 1, mb: 4, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}>
+            <TableContainer
+              sx={{ flex: 1, mb: 4, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
+            >
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
@@ -479,38 +752,94 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {empTableData.length > 0 ? empTableData.map((row, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell sx={{ px: 0.5 }}>
-                        <Stack direction="row" alignItems="center" gap={1}>
-                          <Avatar sx={{ width: 20, height: 20, bgcolor: '#EF4444', fontSize: '9px', fontWeight: 800 }}>{row.name.charAt(0)}</Avatar>
-                          <Typography variant="body2" fontWeight={700} fontSize="0.7rem" noWrap sx={{ maxWidth: 60 }}>{row.name}</Typography>
-                        </Stack>
+                  {empTableData.length > 0 ? (
+                    empTableData.map((row, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell sx={{ px: 0.5 }}>
+                          <Stack direction="row" alignItems="center" gap={1}>
+                            <Avatar sx={{ width: 20, height: 20, bgcolor: '#EF4444', fontSize: '9px', fontWeight: 800 }}>
+                              {row.name.charAt(0)}
+                            </Avatar>
+                            <Typography variant="body2" fontWeight={700} fontSize="0.7rem" noWrap sx={{ maxWidth: 60 }}>
+                              {row.name}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={800} color="#EF4444" fontSize="0.75rem">
+                            {row.total}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={row.d1to3 > 0 ? '#F59E0B' : textColor}>
+                            {row.d1to3}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={row.d4to7 > 0 ? '#8B5CF6' : textColor}>
+                            {row.d4to7}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={row.dgt7 > 0 ? '#EF4444' : textColor}>
+                            {row.dgt7}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
+                          <Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#EF4444">
+                            {row.maxDays}d
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center" sx={{ py: 3 }}>
+                        <Typography variant="caption">No data</Typography>
                       </TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={800} color="#EF4444" fontSize="0.75rem">{row.total}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={row.d1to3 > 0 ? '#F59E0B' : textColor}>{row.d1to3}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={row.d4to7 > 0 ? '#8B5CF6' : textColor}>{row.d4to7}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={row.dgt7 > 0 ? '#EF4444' : textColor}>{row.dgt7}</Typography></TableCell>
-                      <TableCell sx={{ textAlign: 'center' }}><Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#EF4444">{row.maxDays}d</Typography></TableCell>
                     </TableRow>
-                  )) : (
-                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 3 }}><Typography variant="caption">No data</Typography></TableCell></TableRow>
                   )}
                   {/* Totals Row */}
                   {empTableData.length > 0 && (
                     <TableRow sx={{ bgcolor: isDark ? alpha('#EF4444', 0.1) : '#FEF2F2' }}>
                       <TableCell sx={{ fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>Total</TableCell>
-                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>{overdueTasks.length}</TableCell>
-                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>{aging1to3}</TableCell>
-                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>{aging4to7}</TableCell>
-                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>{aging8to14 + aginggt14}</TableCell>
+                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>
+                        {overdueTasks.length}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>
+                        {aging1to3}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>
+                        {aging4to7}
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>
+                        {aging8to14 + aginggt14}
+                      </TableCell>
                       <TableCell sx={{ textAlign: 'center', fontWeight: 800, fontSize: '0.75rem', color: '#EF4444' }}>-</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
               </Table>
             </TableContainer>
-            <Link href="#" onClick={(e) => { e.preventDefault(); setActiveView('employee'); }} underline="hover" sx={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem', fontWeight: 700, color: '#EF4444' }}>
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveView('employee');
+              }}
+              underline="hover"
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#EF4444'
+              }}
+            >
               View all <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
             </Link>
           </StyledCard>
@@ -521,7 +850,9 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
           <StyledCard sx={{ p: 2 }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
               <ShowChartRoundedIcon fontSize="small" sx={{ color: '#8B5CF6' }} />
-              <Typography variant="subtitle2" fontWeight={800} color="text.primary">Overdue by Priority</Typography>
+              <Typography variant="subtitle2" fontWeight={800} color="text.primary">
+                Overdue by Priority
+              </Typography>
             </Stack>
             <Box flex={1} display="flex" alignItems="center" justifyContent="center">
               <Box width="100%" display="flex" alignItems="center">
@@ -534,10 +865,15 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                       <Stack key={i} direction="row" alignItems="center" justifyContent="space-between">
                         <Stack direction="row" alignItems="center" gap={1}>
                           <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: pieColors[i] }} />
-                          <Typography variant="caption" fontWeight={700} color={textColor}>{l}</Typography>
+                          <Typography variant="caption" fontWeight={700} color={textColor}>
+                            {l}
+                          </Typography>
                         </Stack>
                         <Typography variant="caption" fontWeight={800} color={textColor}>
-                          {pieSeries[i]} <span style={{ color: textMuted, fontSize: '10px' }}>({overdueTasks.length > 0 ? Math.round((pieSeries[i] / overdueTasks.length) * 100) : 0}%)</span>
+                          {pieSeries[i]}{' '}
+                          <span style={{ color: textMuted, fontSize: '10px' }}>
+                            ({overdueTasks.length > 0 ? Math.round((pieSeries[i] / overdueTasks.length) * 100) : 0}%)
+                          </span>
                         </Typography>
                       </Stack>
                     ))}
@@ -553,13 +889,17 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
           <StyledCard sx={{ p: 2, position: 'relative' }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={3}>
               <DateRangeRoundedIcon fontSize="small" sx={{ color: '#EF4444' }} />
-              <Typography variant="subtitle2" fontWeight={800} color="text.primary">Overdue by Aging (Days)</Typography>
+              <Typography variant="subtitle2" fontWeight={800} color="text.primary">
+                Overdue by Aging (Days)
+              </Typography>
             </Stack>
             {agingData.length > 0 ? (
               <Stack spacing={3.5} flex={1} mb={4}>
                 {agingData.map((row, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" gap={1.5}>
-                    <Typography variant="body2" fontWeight={700} fontSize="0.75rem" sx={{ flex: 1, minWidth: 80, color: textColor }} noWrap>{row.name}</Typography>
+                    <Typography variant="body2" fontWeight={700} fontSize="0.75rem" sx={{ flex: 1, minWidth: 80, color: textColor }} noWrap>
+                      {row.name}
+                    </Typography>
                     <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                       <LinearProgress
                         variant="determinate"
@@ -573,17 +913,45 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                         }}
                       />
                     </Box>
-                    <Typography variant="body2" fontWeight={800} fontSize="0.75rem" textAlign="right" sx={{ minWidth: 50, color: textColor }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={800}
+                      fontSize="0.75rem"
+                      textAlign="right"
+                      sx={{ minWidth: 50, color: textColor }}
+                    >
                       {row.count} <span style={{ fontSize: '0.65rem', color: textMuted }}>({row.percent}%)</span>
                     </Typography>
                   </Stack>
                 ))}
               </Stack>
             ) : (
-              <Box flex={1} display="flex" alignItems="center" justifyContent="center"><Typography variant="body2" color="text.secondary">No data available</Typography></Box>
+              <Box flex={1} display="flex" alignItems="center" justifyContent="center">
+                <Typography variant="body2" color="text.secondary">
+                  No data available
+                </Typography>
+              </Box>
             )}
 
-            <Link href="#" onClick={(e) => { e.preventDefault(); setActiveView('aging'); }} underline="hover" sx={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem', fontWeight: 700, color: '#EF4444' }}>
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveView('aging');
+              }}
+              underline="hover"
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#EF4444'
+              }}
+            >
               View all <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
             </Link>
           </StyledCard>
@@ -591,13 +959,15 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       </Box>
 
       {/* ROW 3 */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: 'repeat(1, 1fr)', lg: 'repeat(3, 1fr)' },
-        gap: 2,
-        mb: 2.5,
-        alignItems: 'stretch'
-      }}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(1, 1fr)', lg: 'repeat(3, 1fr)' },
+          gap: 2,
+          mb: 2.5,
+          alignItems: 'stretch'
+        }}
+      >
         {/* Overdue Trend */}
         <Box>
           <StyledCard sx={{ p: 2 }}>
@@ -605,15 +975,18 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
               <IconBox color="#EF4444" bg={isDark ? alpha('#EF4444', 0.2) : '#FEF2F2'} size={32}>
                 <ShowChartRoundedIcon fontSize="small" />
               </IconBox>
-              <Typography variant="subtitle2" fontWeight={800} sx={{ flex: 1 }}>{activeTrend.label}</Typography>
+              <Typography variant="subtitle2" fontWeight={800} sx={{ flex: 1 }}>
+                {activeTrend.label}
+              </Typography>
               {/* Period Toggle */}
               <Stack direction="row" sx={{ bgcolor: isDark ? '#0F172A' : '#F1F5F9', borderRadius: '8px', p: 0.4, gap: 0.4 }}>
-                {['weekly', 'monthly', 'yearly'].map(p => (
+                {['weekly', 'monthly', 'yearly'].map((p) => (
                   <Box
                     key={p}
                     onClick={() => setTrendPeriod(p)}
                     sx={{
-                      px: 1.5, py: 0.4,
+                      px: 1.5,
+                      py: 0.4,
                       borderRadius: '6px',
                       cursor: 'pointer',
                       fontWeight: 700,
@@ -634,9 +1007,21 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
               <ReactApexChart key={trendPeriod} options={trendOptions} series={trendSeries} type="area" height={220} />
             </Box>
             {overdueTasks.length > 0 && (
-              <Box sx={{ mt: 1, bgcolor: isDark ? alpha('#EF4444', 0.1) : '#FEF2F2', p: 1.5, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  mt: 1,
+                  bgcolor: isDark ? alpha('#EF4444', 0.1) : '#FEF2F2',
+                  p: 1.5,
+                  borderRadius: 2,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}
+              >
                 <ErrorOutlineRoundedIcon sx={{ fontSize: 16, color: '#EF4444' }} />
-                <Typography variant="body2" fontWeight={700} color="#EF4444">Overdue tasks need attention!</Typography>
+                <Typography variant="body2" fontWeight={700} color="#EF4444">
+                  Overdue tasks need attention!
+                </Typography>
               </Box>
             )}
           </StyledCard>
@@ -647,9 +1032,13 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
           <StyledCard sx={{ p: 2, position: 'relative' }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={2}>
               <FormatListBulletedRoundedIcon fontSize="small" sx={{ color: '#8B5CF6' }} />
-              <Typography variant="subtitle2" fontWeight={800}>Over Due</Typography>
+              <Typography variant="subtitle2" fontWeight={800}>
+                Over Due
+              </Typography>
             </Stack>
-            <TableContainer sx={{ flex: 1, mb: 4, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}>
+            <TableContainer
+              sx={{ flex: 1, mb: 4, '& .MuiTableCell-root': { py: 1.5, borderBottom: `1px solid ${isDark ? '#334155' : '#F1F5F9'}` } }}
+            >
               <Table size="small">
                 <TableHead>
                   <TableRow sx={{ '& th': { borderBottom: 'none', bgcolor: isDark ? alpha('#334155', 0.5) : '#F8FAFC' } }}>
@@ -663,27 +1052,94 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {overdueTasks.slice(0, 5).sort((a, b) => b.diffDays - a.diffDays).map((t, idx) => {
-                    const pInfo = getPriorityInfo(t);
-                    return (
-                      <TableRow key={idx}>
-                        <TableCell><Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#EF4444">{getTicketId(t)}</Typography></TableCell>
-                        <TableCell><Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={textColor} noWrap sx={{ maxWidth: 80 }}>{t._title}</Typography></TableCell>
-                        <TableCell><Typography variant="body2" fontWeight={600} fontSize="0.75rem" color={textMuted}>{t._user || 'Unknown'}</Typography></TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
-                          <Chip label={pInfo.label} size="small" sx={{ height: 22, bgcolor: alpha(pInfo.color, 0.15), color: pInfo.color, fontWeight: 800, fontSize: '0.65rem' }} />
-                        </TableCell>
-                        <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')}</Typography></TableCell>
-                        <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._dueDate ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</Typography></TableCell>
-                        <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._createdBy || '-'}</Typography></TableCell>
-                      </TableRow>
-                    )
-                  })}
-                  {overdueTasks.length === 0 && <TableRow><TableCell colSpan={7} align="center"><Typography variant="caption">No overdue tasks</Typography></TableCell></TableRow>}
+                  {overdueTasks
+                    .slice(0, 5)
+                    .sort((a, b) => b.diffDays - a.diffDays)
+                    .map((t, idx) => {
+                      const pInfo = getPriorityInfo(t);
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={800} fontSize="0.75rem" color="#EF4444">
+                              {getTicketId(t)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={700} fontSize="0.75rem" color={textColor} noWrap sx={{ maxWidth: 80 }}>
+                              {t._title}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={600} fontSize="0.75rem" color={textMuted}>
+                              {t._user || 'Unknown'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center' }}>
+                            <Chip
+                              label={pInfo.label}
+                              size="small"
+                              sx={{
+                                height: 22,
+                                bgcolor: alpha(pInfo.color, 0.15),
+                                color: pInfo.color,
+                                fontWeight: 800,
+                                fontSize: '0.65rem'
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>
+                              {t._createdDate
+                                ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : t._rawDate
+                                  ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                  : '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>
+                              {t._dueDate
+                                ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : '-'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>
+                              {t._createdBy || '-'}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  {overdueTasks.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        <Typography variant="caption">No overdue tasks</Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
-            <Link href="#" onClick={(e) => { e.preventDefault(); setActiveView('tasks'); }} underline="hover" sx={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem', fontWeight: 700, color: '#EF4444' }}>
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveView('tasks');
+              }}
+              underline="hover"
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#EF4444'
+              }}
+            >
               View all tasks <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
             </Link>
           </StyledCard>
@@ -694,13 +1150,23 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
           <StyledCard sx={{ p: 2, position: 'relative' }}>
             <Stack direction="row" alignItems="center" gap={1.5} mb={3}>
               <DashboardRoundedIcon fontSize="small" sx={{ color: '#10B981' }} />
-              <Typography variant="subtitle2" fontWeight={800}>Overdue by Pages</Typography>
+              <Typography variant="subtitle2" fontWeight={800}>
+                Overdue by Pages
+              </Typography>
             </Stack>
             {pagesData.length > 0 ? (
               <Stack spacing={3} flex={1} mb={4}>
                 {pagesData.slice(0, 5).map((row, idx) => (
                   <Stack key={idx} direction="row" alignItems="center" gap={1.5}>
-                    <Typography variant="body2" fontWeight={700} fontSize="0.75rem" sx={{ flex: 1, minWidth: 100, color: textColor }} noWrap>{row.name}</Typography>
+                    <Typography
+                      variant="body2"
+                      fontWeight={700}
+                      fontSize="0.75rem"
+                      sx={{ flex: 1, minWidth: 100, color: textColor }}
+                      noWrap
+                    >
+                      {row.name}
+                    </Typography>
                     <Box sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
                       <LinearProgress
                         variant="determinate"
@@ -714,22 +1180,49 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
                         }}
                       />
                     </Box>
-                    <Typography variant="body2" fontWeight={800} fontSize="0.75rem" textAlign="right" sx={{ minWidth: 50, color: textColor }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight={800}
+                      fontSize="0.75rem"
+                      textAlign="right"
+                      sx={{ minWidth: 50, color: textColor }}
+                    >
                       {row.count} <span style={{ fontSize: '0.65rem', color: textMuted }}>({row.percent}%)</span>
                     </Typography>
                   </Stack>
                 ))}
               </Stack>
             ) : (
-              <Box flex={1} display="flex" alignItems="center" justifyContent="center"><Typography variant="body2" color="text.secondary">No data available</Typography></Box>
+              <Box flex={1} display="flex" alignItems="center" justifyContent="center">
+                <Typography variant="body2" color="text.secondary">
+                  No data available
+                </Typography>
+              </Box>
             )}
-            <Link href="#" onClick={(e) => { e.preventDefault(); setActiveView('pages'); }} underline="hover" sx={{ position: 'absolute', bottom: 16, left: 16, display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.75rem', fontWeight: 700, color: '#EF4444' }}>
+            <Link
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveView('pages');
+              }}
+              underline="hover"
+              sx={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: '#EF4444'
+              }}
+            >
               View full report <ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />
             </Link>
           </StyledCard>
         </Box>
       </Box>
-
     </Box>
   );
 }
