@@ -240,6 +240,14 @@ export default function VerificationCriteria() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Verification_Criteria"
+          hasExportPermission={perms.export}
+          exportColumns={[
+            { header: 'Type', key: 'type' },
+            { header: 'Description', key: 'description' },
+            { header: 'Status', key: 'status' }
+          ]}
         />
       }
     >

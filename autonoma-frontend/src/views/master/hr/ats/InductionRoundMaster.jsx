@@ -200,6 +200,9 @@ export default function InductionRoundMaster() {
           onNew={handleOpenAdd}
           newLabel="+ New Round"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Induction_Round_Master"
+          hasExportPermission={perms.export}
         />
       }
     >

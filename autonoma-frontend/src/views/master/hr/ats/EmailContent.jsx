@@ -220,6 +220,9 @@ export default function EmailContent() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Email_Content"
+          hasExportPermission={perms.export}
         />
       }
     >

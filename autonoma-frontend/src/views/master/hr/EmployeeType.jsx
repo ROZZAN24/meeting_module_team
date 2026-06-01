@@ -204,6 +204,9 @@ export default function EmployeeType() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Employee_Type"
+          hasExportPermission={perms.export}
         />
       }
     >

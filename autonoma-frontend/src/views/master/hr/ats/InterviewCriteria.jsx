@@ -290,6 +290,9 @@ export default function InterviewCriteria() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Interview_Criteria"
+          hasExportPermission={perms.export}
         />
       }
     >
