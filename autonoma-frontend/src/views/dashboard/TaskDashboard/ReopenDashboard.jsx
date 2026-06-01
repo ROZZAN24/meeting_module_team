@@ -236,7 +236,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       const label = `Week ${6 - i}`;
       weekLabels.push(label);
       weekCounts.push(reopenedTasks.filter(t => {
-        const d = t._rawDate ? new Date(t._rawDate) : null;
+        const d = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
         return d && d >= weekStart && d <= weekEnd;
       }).length);
     }
@@ -250,7 +250,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       monthLabels.push(monthNames[d.getMonth()]);
       const yr = d.getFullYear(); const mo = d.getMonth();
       monthCounts.push(reopenedTasks.filter(t => {
-        const td = t._rawDate ? new Date(t._rawDate) : null;
+        const td = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
         return td && td.getFullYear() === yr && td.getMonth() === mo;
       }).length);
     }
@@ -262,7 +262,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       const yr = now.getFullYear() - i;
       yearLabels.push(String(yr));
       yearCounts.push(reopenedTasks.filter(t => {
-        const td = t._rawDate ? new Date(t._rawDate) : null;
+        const td = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
         return td && td.getFullYear() === yr;
       }).length);
     }
@@ -411,7 +411,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
                         <Chip label={pInfo.label} size="small" sx={{ height: 26, bgcolor: alpha(pInfo.color, 0.15), color: pInfo.color, fontWeight: 800, fontSize: '0.75rem' }} />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
-                        <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>{t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')}</Typography>
+                        <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>{t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'))}</Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={textColor}>{t._dueDate ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</Typography>
@@ -694,7 +694,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
                       <TableCell>
                         <Chip size="small" label={pInfo.label} sx={{ bgcolor: alpha(pInfo.color, 0.1), color: pInfo.color, fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
                       </TableCell>
-                      <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')}</Typography></TableCell>
+                      <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'))}</Typography></TableCell>
                       <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._dueDate ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</Typography></TableCell>
                       <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._createdBy || '-'}</Typography></TableCell>
                     </TableRow>

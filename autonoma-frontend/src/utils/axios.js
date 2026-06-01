@@ -66,7 +66,7 @@ axiosServices.interceptors.response.use(
 
     // Extract exact error message
     let errMsg = 'Service connection failed. Please try again later.';
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isLocalhost = window.location.hostname === 'localhost';
 
     if (!error.response) {
       errMsg = isLocalhost
@@ -87,9 +87,9 @@ axiosServices.interceptors.response.use(
 
       // Check if it's a proxy error from Vite dev server when backend is down
       const isProxyError = (status === 500 || status === 502 || status === 503 || status === 504) && (
-        !serverMsg || 
-        serverMsg.includes('ECONNREFUSED') || 
-        serverMsg.includes('proxy error') || 
+        !serverMsg ||
+        serverMsg.includes('ECONNREFUSED') ||
+        serverMsg.includes('proxy error') ||
         serverMsg.includes('Gateway') ||
         serverMsg.includes('Bad Gateway')
       );

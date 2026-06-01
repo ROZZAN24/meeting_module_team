@@ -257,10 +257,9 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     // Helper: pick best available date, fallback to now if invalid/missing
     const getDate = (t) => {
-      const d = t._rawDate || t._dueDate || t.updatedAt || t.createdAt;
+      const d = t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate || t._dueDate || t.updatedAt || t.createdAt;
       let parsed = d ? new Date(d) : new Date();
       if (isNaN(parsed.getTime())) parsed = new Date();
-      // If the task has a future date, cap it to 'now' so it shows up in current week/month graphs
       if (parsed > now) {
         parsed = now;
       }
@@ -683,7 +682,9 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
                           </TableCell>
                           <TableCell sx={{ textAlign: 'center' }}>
                             <Typography fontWeight={700} fontSize="0.85rem" color={textMuted}>
-                              {t._createdDate
+                              {t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate
+                                ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                                : t._createdDate
                                 ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                                 : t._rawDate
                                   ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })

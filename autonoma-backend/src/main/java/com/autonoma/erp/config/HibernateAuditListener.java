@@ -45,13 +45,27 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
 
     @Override
     public boolean onPreUpdate(PreUpdateEvent event) {
+        String[] propertyNames = event.getPersister().getPropertyNames();
+        Object[] state = event.getState();
+
+        // Deep fix: Skip updating audit fields if the record was newly created within the last second
+        java.util.Date createdDate = null;
+        for (int i = 0; i < propertyNames.length; i++) {
+            if (propertyNames[i].equalsIgnoreCase("createdDate") || propertyNames[i].equalsIgnoreCase("createdAt")) {
+                if (state[i] instanceof java.util.Date) {
+                    createdDate = (java.util.Date) state[i];
+                }
+                break;
+            }
+        }
+        if (createdDate != null && (new java.util.Date().getTime() - createdDate.getTime() < 1000)) {
+            return false;
+        }
+
         String currentUser = SecurityUtils.getCurrentUserEmployeeName();
         if (currentUser == null) {
             currentUser = "Admin"; // Fallback
         }
-
-        String[] propertyNames = event.getPersister().getPropertyNames();
-        Object[] state = event.getState();
 
         setValue(propertyNames, state, "updatedUser", currentUser);
         setValue(propertyNames, state, "updatedBy", currentUser);
