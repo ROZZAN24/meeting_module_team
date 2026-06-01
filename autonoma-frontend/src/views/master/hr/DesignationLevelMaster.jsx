@@ -7,7 +7,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationLevelDialog from './AddDesignationLevelDialog';
@@ -39,9 +39,8 @@ export default function DesignationLevelMaster() {
     const globalQuery = useSelector((state) => state.search.query);
 
     useEffect(() => {
-        dispatch(setFilterConfig([
-            { id: 'level', label: 'Level', type: 'text', placeholder: 'Search level...', isConstant: true }
-        ]));
+        dispatch(setFilterConfig([{ id: 'level', label: 'Level', type: 'text', placeholder: 'Search level...', isConstant: true },
+      ...getCommonDateFilters('createdDate', 'updatedAt')]));
         return () => dispatch(setFilterConfig(null));
     }, [dispatch]);
 
@@ -91,6 +90,8 @@ export default function DesignationLevelMaster() {
 
     const filteredRows = useMemo(() => {
         return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedAt')) return false;
+
             const matchesSearch = !globalQuery ||
                 (row.level && row.level.toLowerCase().includes(globalQuery.toLowerCase()));
             return matchesSearch;
@@ -132,15 +133,10 @@ export default function DesignationLevelMaster() {
                     newTooltip={shortcutTooltip('Create Designation Level', 'Ctrl + N')}
                     hasWritePermission={perms.write}
                     exportData={filteredRows}
-                    exportColumns={[
-                        { header: 'Level', key: 'level' },
-                        { header: 'Basic', key: 'basic' },
-                        { header: 'DA', key: 'da' },
-                        { header: 'HRA', key: 'hra' }
-                    ]}
+                    
                     exportFilename="Designation_Level"
                     hasExportPermission={perms.export}
-                />
+                 columns={columns} />
             }
         >
             <BOSDataTable

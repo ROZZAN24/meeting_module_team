@@ -1383,8 +1383,13 @@ export default function TaskDashboard() {
     if (!activeUserId) return;
     const fetchData = async () => {
       try {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const todayStr = `${yyyy}-${mm}-${dd}`;
         const [r1, r2, r3, r4, r5] = await Promise.allSettled([
-          axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0 } }),
+          axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),
@@ -1477,7 +1482,10 @@ export default function TaskDashboard() {
         });
 
         let stats = { total: tasksList.length, completed: 0, open: 0, inProgress: 0, toBeTested: 0, overdue: 0, dueToday: 0, reopened: 0 };
+<<<<<<< HEAD
         const today = new Date();
+=======
+>>>>>>> c49f9ad50ae711169a9c589702bcbd963abd92c1
         today.setHours(0, 0, 0, 0);
         let overdueList = [];
 

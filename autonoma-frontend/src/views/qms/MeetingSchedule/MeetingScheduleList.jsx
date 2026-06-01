@@ -10,12 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import {
-  BOSDataTable,
-  btnNew,
-  getStatusChipSx,
-  BOSTableToolbar
-} from 'ui-component/bos';
+import { BOSDataTable, btnNew, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { isMobile } from 'react-device-detect';
@@ -100,6 +95,8 @@ export default function MeetingScheduleList() {
   // ── FILTERED ROWS ──
   const filteredRows = useMemo(() => {
     return resolvedRows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters?.status || 'OPEN';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
 
@@ -116,8 +113,7 @@ export default function MeetingScheduleList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'dateType', label: 'Date Type', type: 'select', isStarred: true,
         options: [
           { value: 'meetingDate', label: 'Meeting Date' },
@@ -143,8 +139,8 @@ export default function MeetingScheduleList() {
           { value: 'CANCELLED', label: 'Cancelled' }
         ],
         defaultValue: 'OPEN'
-      }
-    ]));
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -405,7 +401,7 @@ export default function MeetingScheduleList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
           <Box sx={{ p: 1, bgcolor: 'primary.light', borderRadius: 2, display: 'flex' }}>
@@ -421,17 +417,7 @@ export default function MeetingScheduleList() {
           newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: '#', key: 'index' },
-            { header: 'Schedule No', key: 'scheduleNo' },
-            { header: 'Amendment No', key: 'revSourceScheduleNo' },
-            { header: 'Meeting Type', key: 'meetingTypeName' },
-            { header: 'Meeting Date', key: 'meetingDateTime' },
-            { header: 'Status', key: 'status' },
-            { header: 'Chaired By', key: 'chairedByName' },
-            { header: 'Host By', key: 'hostByName' },
-            { header: 'Created User', key: 'createdUser' }
-          ]}
+          
           exportFilename="Meeting_Schedule"
           hasExportPermission={perms.export}
           onAmendment={() => {
@@ -444,7 +430,7 @@ export default function MeetingScheduleList() {
           amendmentIcon={<IconGitBranch size={18} />}
           amendmentTooltip="Create Amendment"
           amendmentSx={{ borderRadius: '12px', fontWeight: 700 }}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

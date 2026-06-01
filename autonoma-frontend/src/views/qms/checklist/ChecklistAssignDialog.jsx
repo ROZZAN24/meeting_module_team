@@ -120,7 +120,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     .map(a => a.assignedTo);
 
   const visibleEmployeeOptions = employeeOptions.filter(opt => {
-    return !blockedEmployeeNames.includes(opt.value);
+    return !blockedEmployeeNames.includes(opt.value) || opt.value === formData.assignTo;
   });
 
   // Get assign types already assigned to ANY employee for this checklist
@@ -149,7 +149,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
       // or we can just fetch all and filter client side.
       // A better way is to add an endpoint or just fetch the checklist with assignments.
       // For now, we will fetch assignments and filter by seqNo
-      const res = await axios.get(`${API_PATHS.QMS.CHECKLIST}/assignments?size=100&searchBy=checklist.seqNo&searchValue=${initialData?.seqNo}`);
+      const res = await axios.get(`${API_PATHS.QMS.CHECKLIST}/assignments?size=100&searchBy=checklist.seqNo&searchValue=${initialData?.seqNo}&toDate=3000-01-01`);
       const list = res.data.content || [];
       setAssignments(list);
       setFormData({ assignTo: '', assignType: '', id: null });
@@ -372,6 +372,7 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
               onClickRow={(row) => setSelectedRowId(row.id)}
               selectedRowId={selectedRowId}
               showActions={false}
+              disableSearchFilter={true}
               renderCell={(col, row) => {
                 if (col.id === 'status') return <Chip label={row.status} size="small" sx={getStatusChipSx(row.status === 'ACTIVE' || row.status === 'Started' ? 'ACTIVE' : 'INACTIVE')} />;
                 if (col.id === 'checkingPoint' && row.checkingPoint && row.checkingPoint !== '-') {
@@ -382,9 +383,8 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
                         e.stopPropagation();
                         setSelectedRowId(row.id);
                         handleEditAssignment(row);
-                        setIsEditing(true);
                       }}
-                      sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                      sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                     >
                       {row.checkingPoint}
                     </Box>

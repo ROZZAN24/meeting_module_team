@@ -10,7 +10,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ReassignDialog from './ReassignDialog';
@@ -91,8 +91,7 @@ export default function MomList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'status', label: 'Status', type: 'select', isStarred: true,
         options: [
           { value: 'PENDING', label: 'Pending (Open / In Progress)' },
@@ -109,14 +108,16 @@ export default function MomList() {
         id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true,
         options: [{ value: 'YES', label: 'Yes' }, { value: 'NO', label: 'No' }],
         defaultValue: 'NO'
-      }
-    ]));
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
   // ── FILTERED ROWS (apply status + date filters) ──
   const filteredRows = useMemo(() => {
     return resolvedRows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       // Status Filter
       const statusFilter = globalFilters.status || 'PENDING';
       if (statusFilter !== 'All') {
@@ -293,7 +294,7 @@ export default function MomList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconFileText size={24} />
@@ -307,21 +308,13 @@ export default function MomList() {
           newTooltip={shortcutTooltip('Create New MOM', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Meeting Min No', key: 'momNo' },
-            { header: 'Type', key: 'meetingType' },
-            { header: 'Meeting Date', key: 'momDate' },
-            { header: 'Schedule No', key: 'scheduleNo' },
-            { header: 'Discussed Point', key: 'discussedPoint' },
-            { header: 'Process', key: 'processType' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Minutes_of_Meeting"
           hasExportPermission={perms.export}
           onReassign={perms.write ? handleReassignClick : null}
           reassignDisabled={!selectedRow}
           reassignTooltip="Reassign selected action"
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

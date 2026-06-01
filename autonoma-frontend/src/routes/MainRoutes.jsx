@@ -867,20 +867,16 @@ const MainRoutes = {
       element: <VerificationCriteria />
     },
     {
-      path: '/master/hr/ats/induction-assignment',
+      path: '/hra/ats/induction-assignment',
       element: <InductionAssignment />
     },
     {
-      path: '/master/hr/ats/induction-training',
+      path: '/hra/ats/induction-training',
       element: <InductionTraining />
     },
     {
-      path: '/master/hr/ats/induction-trainee',
+      path: '/hra/ats/induction-trainee',
       element: <InductionTrainee />
-    },
-    {
-      path: '/master/hr/ats/induction-round-master',
-      element: <InductionRoundMaster />
     },
     {
       path: '/utils/util-animation',
@@ -951,7 +947,7 @@ const MainRoutes = {
       element: <EmployeeType />
     },
     {
-      path: '/hra/ats',
+      path: '/master/hr/ats',
       element: <HraApplicationTrackingSystem />
     },
     {

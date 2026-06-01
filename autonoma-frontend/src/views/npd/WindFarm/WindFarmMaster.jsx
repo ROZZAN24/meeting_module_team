@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -48,10 +48,9 @@ export default function WindFarmMaster() {
   // Dispatch starred filter configuration matching CREATED DATE and Wind Farm Name
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
-      { id: 'windFarmName', label: 'Wind Farm Name', type: 'text', placeholder: 'Search wind farm name...', isStarred: true }
-    ];
+    const config = [{ id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+      { id: 'windFarmName', label: 'Wind Farm Name', type: 'text', placeholder: 'Search wind farm name...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       createdAtStart: today,
@@ -104,6 +103,8 @@ export default function WindFarmMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Created Date Range Filter
       const today = format(new Date(), 'yyyy-MM-dd');
       const startDate = globalFilters.createdAtStart || today;
@@ -129,7 +130,7 @@ export default function WindFarmMaster() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconRocket size={24} />
@@ -143,17 +144,10 @@ export default function WindFarmMaster() {
           newTooltip={shortcutTooltip('Create New Wind Farm', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Wind Farm Name', key: 'windFarmName' },
-            { header: 'City', key: 'city' },
-            { header: 'State', key: 'state' },
-            { header: 'Country', key: 'country' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdAt' }
-          ]}
+          
           exportFilename="Wind_Farm_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

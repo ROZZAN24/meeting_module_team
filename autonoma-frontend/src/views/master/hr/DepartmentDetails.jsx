@@ -11,7 +11,7 @@ import AddDepartmentDialog from './AddDepartmentDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| DEPARTMENT MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -70,8 +70,7 @@ export default function DepartmentDetails() {
   }, [fetchDepartments]);
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'ndaCertificate',
         label: 'NDA Required',
         type: 'select',
@@ -96,8 +95,8 @@ export default function DepartmentDetails() {
       },
       { id: 'sequenceNo', label: 'Org Sequence', type: 'text', placeholder: 'Sequence No...' },
       { id: 'createdDate', label: 'Created Date', type: 'date' },
-      { id: 'updatedDate', label: 'Updated Date', type: 'date' }
-    ];
+      { id: 'updatedDate', label: 'Updated Date', type: 'date' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -152,14 +151,10 @@ export default function DepartmentDetails() {
           newTooltip={shortcutTooltip('Create New Department', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={[
-            { header: 'Dept No', key: 'departmentNo' },
-            { header: 'Department Name', key: 'departmentName' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Department_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

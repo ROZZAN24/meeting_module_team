@@ -107,8 +107,18 @@ axiosServices.interceptors.response.use(
     // Log the error details to the console always
     console.error(`[API Error] ${error.config?.method?.toUpperCase()} ${error.config?.url} | Status: ${error.response?.status || 'Network Error'} | Error: ${errMsg}`, error);
 
-    // Only alert for non-auth errors, and skip auth-related endpoints where
-    // 403/400 are expected validation responses handled locally by the login form.
+    const isMockRoute = error.config?.url && (
+      error.config.url.includes('/api/posts/') ||
+      error.config.url.includes('/api/friends/') ||
+      error.config.url.includes('/api/followers/') ||
+      error.config.url.includes('/api/friend-request/') ||
+      error.config.url.includes('/api/gallery/') ||
+      error.config.url.includes('/api/details-card/') ||
+      error.config.url.includes('/api/simple-card/') ||
+      error.config.url.includes('/api/profile-card/') ||
+      error.config.url.includes('/api/user-list/')
+    );
+
     const isAuthEndpoint = error.config?.url && (
       error.config.url.includes('/check-credentials') ||
       error.config.url.includes('/account/login') ||
@@ -118,8 +128,7 @@ axiosServices.interceptors.response.use(
 
     const skipGlobalAlert = error.config?.skipGlobalAlert;
 
-    if (error.response?.status !== 401 && !isExpectedAuthError && !skipGlobalAlert) {
-      // Trigger a blocking browser alert with details
+    if (error.response?.status !== 401 && !isExpectedAuthError && !skipGlobalAlert && !isMockRoute) {
       if (window.showAlert) {
         window.showAlert(`Server / Database Error:\n${errMsg}`);
       } else {
