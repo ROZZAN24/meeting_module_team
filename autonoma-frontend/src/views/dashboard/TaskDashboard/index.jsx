@@ -205,6 +205,44 @@ const GlowingIcon = styled(Box)(({ color }) => ({
   marginBottom: '8px'
 }));
 
+const VerticalSummaryCard = styled(Paper)(({ theme, basecolor }) => ({
+  borderRadius: '24px',
+  background: theme.palette.mode === 'dark' ? '#1E293B' : '#FFFFFF',
+  border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)'}`,
+  boxShadow: '0 10px 30px rgba(0,0,0,0.05)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: '10px 10px',
+  position: 'relative',
+  overflow: 'hidden',
+  transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease',
+  cursor: 'pointer',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '4px',
+    background: `linear-gradient(90deg, ${alpha(basecolor, 0.8)} 0%, ${alpha(basecolor, 0.1)} 100%)`,
+  },
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    top: 0, left: 0, width: '40%', height: '40%',
+    background: `radial-gradient(circle at top left, ${alpha(basecolor, 0.12)} 0%, transparent 70%)`,
+    pointerEvents: 'none',
+  },
+  '&:hover': {
+    transform: 'translateY(-12px)',
+    boxShadow: `0 24px 48px ${alpha(basecolor, 0.18)}`,
+    '& .icon-box': {
+      animation: `${floatAnim} 2s ease-in-out infinite`
+    }
+  }
+}));
+
 // ── Workload View ─────────────────────────────────────────────────────────────
 const WorkloadView = ({ realWorkload, isDark }) => {
   const [viewAllOpen, setViewAllOpen] = useState(false);
@@ -682,25 +720,41 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
       <NotoEmoji hex="1f621" size={20} style={{ filter: 'none' }} />
     );
 
+  // Summary area chart options
+  const summaryAreaOptions = (color) => ({
+    chart: {
+      type: 'area',
+      sparkline: { enabled: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 800 },
+    },
+    stroke: { curve: 'smooth', width: 2 },
+    fill: {
+      type: 'gradient',
+      gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.0, stops: [0, 100] }
+    },
+    colors: [color],
+    tooltip: { fixed: { enabled: false }, x: { show: false }, y: { title: { formatter: () => '' } }, marker: { show: false } }
+  });
+
   // Summary cards config
   const summaryCards = [
-    { label: 'Total Assigned Hours', value: `${totalAssigned} Hrs`, sub: 'All Developers', svgIcon: <ClipboardSVG />, color: '#3B82F6' },
+    { label: 'Total Assigned Hours', value: `${totalAssigned} Hrs`, sub: 'All Developers', svgIcon: <NotoEmoji hex="1f4da" size={36} />, color: '#8B5CF6', chartData: [10, 25, 15, 30, 20, 35, 25] },
     {
       label: 'Total Completed Hours',
       value: `${totalCompleted} Hrs`,
       sub: 'All Developers',
-      svgIcon: <GreenTargetSVG />,
-      color: '#10B981'
+      svgIcon: <NotoEmoji hex="1f525" size={36} />,
+      color: '#10B981', chartData: [5, 15, 10, 25, 20, 30, 25]
     },
-    { label: 'Pending Hours', value: `${pendingHrs} Hrs`, sub: 'Remaining Work', svgIcon: <HourglassSVG />, color: '#F59E0B' },
-    { label: 'Total Developers', value: `${activeDev}`, sub: 'Active Developers', svgIcon: <PeopleSVG />, color: '#8B5CF6' },
-    { label: 'Avg Performance', value: `${avgPerf}%`, sub: 'Across all developers', svgIcon: <BarChartSVG />, color: '#0EA5E9' },
+    { label: 'Pending Hours', value: `${pendingHrs} Hrs`, sub: 'Remaining Work', svgIcon: <NotoEmoji hex="23f3" size={36} />, color: '#F59E0B', chartData: [35, 30, 32, 25, 28, 20, 18] },
+    { label: 'Total Developers', value: `${activeDev}`, sub: 'Active Developers', svgIcon: <NotoEmoji hex="1f4bb" size={36} />, color: '#8B5CF6', chartData: [5, 5, 5, 5, 5, 5, 5] },
+    { label: 'Avg Performance', value: `${avgPerf}%`, sub: 'Across all developers', svgIcon: <NotoEmoji hex="1f4c8" size={36} />, color: '#3B82F6', chartData: [60, 65, 62, 70, 68, 75, 78] },
     {
       label: 'Outstanding Performers',
       value: `${outstandingDevs.length}`,
       sub: 'Completed less than assigned',
-      svgIcon: <TrophySVG />,
-      color: '#EAB308'
+      svgIcon: <NotoEmoji hex="1f3c6" size={36} />,
+      color: '#EF4444', chartData: [1, 2, 1, 3, 2, 3, 3]
     }
   ];
 
@@ -837,41 +891,34 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
     <PageContainer>
       {/* ── TOP 6 SUMMARY CARDS ── */}
       <Box
-        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(3,1fr)', lg: 'repeat(6,1fr)' }, gap: 2, mb: 2.5 }}
+        sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(1,1fr)', sm: 'repeat(3,1fr)', lg: 'repeat(6,1fr)' }, gap: 3, mb: 3 }}
       >
         {summaryCards.map((c, i) => (
-          <Card
-            key={i}
-            sx={{ p: 2, bgcolor: alpha(c.color, 0.02), border: `1px solid ${alpha(c.color, 0.15)}`, display: 'flex', alignItems: 'center' }}
-          >
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%' }}>
-              <Box
-                sx={{
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 52,
-                  height: 52,
-                  borderRadius: 3,
-                  bgcolor: alpha(c.color, 0.1)
-                }}
-              >
-                {c.svgIcon}
-              </Box>
-              <Box sx={{ flexGrow: 1 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0.2}>
-                  {c.label}
+          <VerticalSummaryCard key={i} basecolor={c.color}>
+            <Box className="icon-box" sx={{ mb: 0.5, zIndex: 2, filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.1))' }}>
+              {c.svgIcon}
+            </Box>
+            <Typography variant="subtitle2" color="text.primary" fontWeight={800} align="center" mb={0.25} sx={{ zIndex: 2, fontSize: '0.8rem' }}>
+              {c.label}
+            </Typography>
+            <Box display="flex" alignItems="baseline" gap={0.5} zIndex={2} mb={0}>
+              <Typography variant="h4" fontWeight={900} color={c.color} sx={{ lineHeight: 1 }}>
+                {c.value.split(' ')[0]}
+              </Typography>
+              {c.value.split(' ')[1] && (
+                <Typography variant="subtitle2" fontWeight={800} color={c.color}>
+                  {c.value.split(' ')[1]}
                 </Typography>
-                <Typography variant="h5" fontWeight={900} color={c.color} lineHeight={1.2}>
-                  {c.value}
-                </Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                  {c.sub}
-                </Typography>
-              </Box>
-            </Stack>
-          </Card>
+              )}
+            </Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600} align="center" sx={{ zIndex: 2, minHeight: 'auto', mb: 1, fontSize: '0.65rem' }}>
+              {c.sub}
+            </Typography>
+            
+            <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 24, zIndex: 1, opacity: 0.8, pointerEvents: 'none' }}>
+              <ReactApexChart options={summaryAreaOptions(c.color)} series={[{ data: c.chartData }]} type="area" height="100%" width="100%" />
+            </Box>
+          </VerticalSummaryCard>
         ))}
       </Box>
 
@@ -880,10 +927,55 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
         {/* Performance by Developer Table */}
         <Grid item xs={12} lg={8}>
           <Card sx={{ height: '100%' }}>
-            <Box px={2.5} pt={2} pb={1.5} borderBottom={`1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`}>
-              <Typography variant="subtitle1" fontWeight={700}>
-                Performance by Developer
-              </Typography>
+            <Box
+              sx={{
+                px: 2.5,
+                pt: 2,
+                pb: 1.5,
+                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                position: 'relative',
+                overflow: 'hidden',
+                bgcolor: isDark ? '#1E293B' : '#F8FAFF',
+              }}
+            >
+              <Box sx={{ position: 'absolute', right: 50, top: -20, width: 100, height: 100, borderRadius: '50%', background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)' }} />
+              <Box sx={{ position: 'absolute', right: 150, bottom: -20, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 70%)' }} />
+              <Stack direction="row" alignItems="center" gap={2} zIndex={1}>
+                <Box
+                  sx={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: 3,
+                    background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 8px 16px rgba(99,102,241,0.25)'
+                  }}
+                >
+                  <TrendingUpRoundedIcon sx={{ color: '#fff', fontSize: 28 }} />
+                </Box>
+                <Box>
+                  <Typography variant="h5" fontWeight={800} color="text.primary" mb={0.5}>
+                    Performance by Developer
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Track and monitor developer productivity and performance
+                  </Typography>
+                </Box>
+              </Stack>
+              <Box sx={{ position: 'relative', width: 120, height: 60, zIndex: 1, display: { xs: 'none', sm: 'block' } }}>
+                <Box sx={{ position: 'absolute', bottom: 0, left: 10, width: 14, height: 25, borderRadius: '4px 4px 0 0', bgcolor: '#A78BFA' }} />
+                <Box sx={{ position: 'absolute', bottom: 0, left: 30, width: 14, height: 40, borderRadius: '4px 4px 0 0', bgcolor: '#8B5CF6' }} />
+                <Box sx={{ position: 'absolute', bottom: 0, left: 50, width: 14, height: 55, borderRadius: '4px 4px 0 0', bgcolor: '#6D28D9' }} />
+                <Box sx={{ position: 'absolute', bottom: 10, left: 75 }}>
+                  <NotoEmoji hex="1f3c6" size={28} />
+                </Box>
+                <TrendingUpRoundedIcon sx={{ position: 'absolute', top: 0, left: 40, color: '#6366F1', fontSize: 30, opacity: 0.8 }} />
+              </Box>
             </Box>
             <TableContainer>
               <Table size="small">
@@ -893,7 +985,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                       (h) => (
                         <TableCell
                           key={h}
-                          sx={{ fontWeight: 700, py: 1.2, fontSize: '12px', textAlign: h === 'Developer' ? 'left' : 'center' }}
+                          sx={{ fontWeight: 700, py: 0.8, fontSize: '11px', textAlign: h === 'Developer' ? 'left' : 'center' }}
                         >
                           {h}
                         </TableCell>
@@ -974,7 +1066,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                             }}
                           />
                         </TableCell>
-                        <TableCell sx={{ textAlign: 'center', py: 1, width: 120 }}>
+                        <TableCell sx={{ textAlign: 'center', py: 0.5, width: 120 }}>
                           <ReactApexChart options={sparkOpts} series={[{ data: dev.trend }]} type="line" height={36} width={100} />
                         </TableCell>
                       </TableRow>
@@ -1029,7 +1121,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
 
         {/* Status Summary Cards with 3D mascots */}
         <Grid item xs={12} lg={4}>
-          <Stack spacing={2} height="100%">
+          <Stack spacing={1} height="100%">
             {[
               { status: 'Outstanding', devs: outstandingDevs, desc: 'Completed less than assigned hours', SVG: GreenHappySVG },
               { status: 'Perfect', devs: perfectDevs, desc: 'Completed equal to assigned hours', SVG: BlueBullseyeSVG },
@@ -1038,62 +1130,84 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
               <Card
                 key={i}
                 sx={{
-                  p: 2.5,
+                  p: 1.25,
                   bgcolor: getPerfBg(grp.status),
                   border: `1.5px solid ${getPerfBorder(grp.status)}`,
                   flex: 1,
                   position: 'relative',
-                  overflow: 'visible'
+                  overflow: 'hidden'
                 }}
               >
-                <Stack direction="row" alignItems="center" spacing={3}>
-                  <Box sx={{ flexShrink: 0 }}>
-                    <grp.SVG />
-                  </Box>
-                  <Box flex={1}>
-                    <Box
-                      sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        px: 1.5,
-                        py: 0.4,
-                        borderRadius: 20,
-                        bgcolor: getPerfColor(grp.status),
-                        mb: 0.5
-                      }}
-                    >
-                      <Typography variant="caption" fontWeight={800} color="white">
-                        {grp.status}
-                      </Typography>
-                      {grp.status === 'Outstanding' && <Typography variant="caption">✨</Typography>}
+                {/* Dotted pattern top right */}
+                <Box sx={{ position: 'absolute', top: 16, right: 16, opacity: 0.4 }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="2" cy="2" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="10" cy="2" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="18" cy="2" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="2" cy="10" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="10" cy="10" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="18" cy="10" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="2" cy="18" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="10" cy="18" r="1.5" fill={getPerfColor(grp.status)} />
+                    <circle cx="18" cy="18" r="1.5" fill={getPerfColor(grp.status)} />
+                  </svg>
+                </Box>
+                
+                {/* Wave bottom right */}
+                <Box sx={{ position: 'absolute', bottom: -5, right: -5, opacity: 0.15, width: '65%' }}>
+                  <svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">
+                    <path fill={getPerfColor(grp.status)} d="M0,100 C50,100 80,40 200,60 L200,100 Z" />
+                    <path fill={getPerfColor(grp.status)} opacity="0.5" d="M0,100 C60,80 120,30 200,50 L200,100 Z" />
+                  </svg>
+                </Box>
+
+                <Box sx={{ position: 'relative', zIndex: 2 }}>
+                  <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+                    <Box sx={{ flexShrink: 0, p: 0.5, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.6)', boxShadow: `0 8px 16px ${alpha(getPerfColor(grp.status), 0.15)}` }}>
+                      <grp.SVG />
                     </Box>
-                    <Typography variant="caption" display="block" color="text.secondary" fontWeight={600} mb={1.5}>
-                      {grp.desc}
-                    </Typography>
-                    <Stack direction="row" spacing={3}>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                          Total Developers
+                    <Box>
+                      <Box
+                        sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          px: 1.5,
+                          py: 0.4,
+                          borderRadius: 20,
+                          bgcolor: getPerfColor(grp.status),
+                          mb: 1
+                        }}
+                      >
+                        <Typography variant="caption" fontWeight={800} color="white">
+                          {grp.status}
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color={getPerfColor(grp.status)}>
-                          {grp.devs.length}{' '}
-                          <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>
-                            ({activeDev > 0 ? Math.round((grp.devs.length / activeDev) * 100) : 0}%)
-                          </Typography>
-                        </Typography>
+                        {grp.status === 'Outstanding' && <Typography variant="caption">✨</Typography>}
                       </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                          Total Hours
-                        </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color={getPerfColor(grp.status)}>
-                          {grp.devs.reduce((s, d) => s + d.completedHrs, 0)} Hrs
-                        </Typography>
-                      </Box>
-                    </Stack>
+                      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.2, display: 'block' }}>
+                        {grp.desc}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Box sx={{ display: 'flex', borderTop: `1px dashed ${alpha(getPerfColor(grp.status), 0.3)}`, pt: 1 }}>
+                    <Box flex={1}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0}>
+                        Total Developers
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight={900} color={getPerfColor(grp.status)}>
+                        {grp.devs.length} <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>({activeDev > 0 ? Math.round((grp.devs.length / activeDev) * 100) : 0}%)</Typography>
+                      </Typography>
+                    </Box>
+                    <Box flex={1}>
+                      <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0}>
+                        Total Hours
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight={900} color={getPerfColor(grp.status)}>
+                        {grp.devs.reduce((s, d) => s + d.completedHrs, 0)} Hrs
+                      </Typography>
+                    </Box>
                   </Box>
-                </Stack>
+                </Box>
               </Card>
             ))}
           </Stack>
