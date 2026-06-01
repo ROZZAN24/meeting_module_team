@@ -89,6 +89,10 @@ public abstract class BaseAuditEntity {
         if (this.skipAuditUpdate) {
             return;
         }
+        // Deep fix: Skip updating audit fields if the record was newly created within the last second
+        if (this.createdDate != null && (new Date().getTime() - this.createdDate.getTime() < 1000)) {
+            return;
+        }
         this.updatedDate = new Date();
         this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
     }
