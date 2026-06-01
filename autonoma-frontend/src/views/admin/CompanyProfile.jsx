@@ -16,7 +16,7 @@ import {
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
-const API_BASE = (import.meta.env.VITE_APP_API_URL || 'http://127.0.0.1:8081').replace(/\/+$/, '');
+const API_BASE = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_API_URL || window.location.origin).replace(/\/+$/, '');
 
 // ─── Static Geo Data ────────────────────────────────────────────────────────
 const COUNTRIES = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Singapore', 'UAE'];
