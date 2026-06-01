@@ -18,6 +18,9 @@ public class InductionAssignmentService {
     @Autowired
     private InductionTrainingDetailRepository trainingDetailRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.EmployeeMasterRepository employeeMasterRepository;
+
     public List<InductionAssignment> getAll() {
         return repository.findAll();
     }
@@ -80,7 +83,16 @@ public class InductionAssignmentService {
             entity.setUpdatedBy(currentUser);
         }
 
-        return repository.save(entity);
+        InductionAssignment saved = repository.save(entity);
+
+        // Update employee's status to Active and inductionStatus to ACTIVE
+        employeeMasterRepository.findByEmpCode(entity.getEmpCode()).ifPresent(emp -> {
+            emp.setInductionStatus("ACTIVE");
+            emp.setStatus("Active");
+            employeeMasterRepository.save(emp);
+        });
+
+        return saved;
     }
 
     @Transactional
