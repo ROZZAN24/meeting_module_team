@@ -144,13 +144,19 @@ export default function InductionCriteria() {
       id: 'status',
       label: 'Status',
       required: true,
-      hide: true,
       minWidth: 100,
-      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
+      render: (row) => {
+        const isActive = row.status === 'ACTIVE';
+        return (
+          <Typography sx={{ color: isActive ? 'success.main' : 'error.main', fontWeight: 600 }}>
+            {isActive ? 'Active' : 'Inactive'}
+          </Typography>
+        );
+      }
     },
-    { id: 'createdBy', label: 'Created By', minWidth: 120 },
+    { id: 'createdUser', label: 'Created User', minWidth: 120 },
     { id: 'createdAt', label: 'Created Date', minWidth: 150 },
-    { id: 'updatedBy', label: 'Edited By', minWidth: 120 },
+    { id: 'updatedUser', label: 'Updated By', minWidth: 120 },
     { id: 'updatedAt', label: 'Edited Date', minWidth: 150 }
   ], [handlePreviewFile, departments]);
 
@@ -161,11 +167,11 @@ export default function InductionCriteria() {
         label: 'Status',
         type: 'select',
         options: [
-          { value: 'ALL', label: 'ALL' },
+          { value: 'All', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'IN ACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'All',
         isStarred: true
       },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
@@ -379,11 +385,12 @@ export default function InductionCriteria() {
   const confirmDelete = async () => {
     try {
       await axios.delete(`/api/hr/induction-master/${deleteTarget.id}`);
-      dispatch(openSnackbar({ open: true, message: 'Induction Criteria Inactivated Successfully', variant: 'alert', severity: 'success' }));
+      dispatch(openSnackbar({ open: true, message: 'Induction Criteria Deleted Successfully', variant: 'alert', severity: 'success' }));
       setDeleteDialogOpen(false);
       fetchRows();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete', variant: 'alert', severity: 'error' }));
+      const msg = error.response?.data?.message || error.response?.data || 'Failed to delete';
+      dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -657,8 +664,8 @@ export default function InductionCriteria() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
-        title="Inactivate Induction Criteria"
-        message="Are you sure you want to inactivate this induction criteria?"
+        title="Delete Induction Criteria"
+        message="Are you sure you want to delete this induction criteria?"
         itemName={deleteTarget?.inductionDetails}
       />
 
