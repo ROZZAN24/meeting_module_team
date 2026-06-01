@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { showAppAlert } from './alert';
 
 const axiosServices = axios.create({
   baseURL: import.meta.env.VITE_API_URL || window.location.origin
@@ -129,29 +130,7 @@ axiosServices.interceptors.response.use(
     const skipGlobalAlert = error.config?.skipGlobalAlert;
 
     if (error.response?.status !== 401 && !isExpectedAuthError && !skipGlobalAlert && !isMockRoute) {
-      if (window.showAlert) {
-        window.showAlert(`Server / Database Error:\n${errMsg}`);
-      } else {
-        alert(`Server / Database Error:\n${errMsg}`);
-      }
-      // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
-      import('../store').then(({ dispatch }) => {
-        import('../store/slices/snackbar').then(({ openSnackbar }) => {
-          try {
-            dispatch(
-              openSnackbar({
-                open: true,
-                message: errMsg,
-                variant: 'alert',
-                severity: 'error',
-                anchorOrigin: { vertical: 'top', horizontal: 'right' }
-              })
-            );
-          } catch (e) {
-            console.warn('Failed to dispatch snackbar action:', e);
-          }
-        }).catch(err => console.warn('Failed to load snackbar slice:', err));
-      }).catch(err => console.warn('Failed to load store dynamically:', err));
+      showAppAlert(errMsg, 'error');
     }
 
     return Promise.reject(errMsg);

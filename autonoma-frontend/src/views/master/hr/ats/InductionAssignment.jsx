@@ -184,7 +184,7 @@ const InductionAssignment = () => {
           { value: 'PENDING', label: 'PENDING' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'PENDING',
         isStarred: true
       },
       {
@@ -799,6 +799,7 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
+        showActions={false}
       />
 
       <BOSFormDialog

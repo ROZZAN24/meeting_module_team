@@ -48,7 +48,7 @@ export default function WindFarmMaster() {
   // Dispatch starred filter configuration matching CREATED DATE and Wind Farm Name
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [{ id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+    const config = [
       { id: 'windFarmName', label: 'Wind Farm Name', type: 'text', placeholder: 'Search wind farm name...', isStarred: true },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));

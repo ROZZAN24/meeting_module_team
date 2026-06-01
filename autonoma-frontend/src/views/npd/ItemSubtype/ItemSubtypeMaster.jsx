@@ -79,7 +79,6 @@ export default function ItemSubtypeMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'subType', label: 'Sub Type', type: 'text', placeholder: 'Search sub type...', isStarred: true },
       {
         id: 'typeId', label: 'Item Type', type: 'select',
