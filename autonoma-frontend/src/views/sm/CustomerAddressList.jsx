@@ -149,20 +149,8 @@ export default function CustomerAddressList() {
           <BOSExportButton
             data={filteredRows}
             filename="Customer_Addresses"
-            columns={[
-              { header: 'Customer Name (I)', key: 'invoiceName' },
-              { header: 'Shipment', key: 'shipment' },
-              { header: 'Address', key: 'address' },
-              { header: 'City', key: 'city' },
-              { header: 'District', key: 'district' },
-              { header: 'State', key: 'state' },
-              { header: 'Country', key: 'country' },
-              { header: 'Pincode', key: 'pincode' },
-              { header: 'Contact Name', key: 'contactName' },
-              { header: 'Contact No', key: 'contactNo' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />
+            
+           screenColumns={columns} />
           <Tooltip title={shortcutTooltip('Add New Address', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

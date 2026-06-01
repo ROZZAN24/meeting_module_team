@@ -162,18 +162,10 @@ export default function UomMaster() {
           newTooltip={shortcutTooltip('Create New UOM', 'Ctrl + N')}
           hasWritePermission={true}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'UOM Code', key: 'uomCode' },
-            { header: 'Description', key: 'uomDescription' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created User', key: 'createdUser' },
-            { header: 'Created Date', key: 'createdAt' },
-            { header: 'Updated User', key: 'updatedUser' },
-            { header: 'Updated Date', key: 'updatedAt' }
-          ]}
+          
           exportFilename="UOM_Master"
           hasExportPermission={true}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

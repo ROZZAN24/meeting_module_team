@@ -162,17 +162,10 @@ export default function OemMaster() {
           newTooltip={shortcutTooltip('Create New OEM', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'OEM Short Name', key: 'oemShortName' },
-            { header: 'OEM Prefix', key: 'oemPrefix' },
-            { header: 'OEM Description', key: 'oemDescription' },
-            { header: 'Origin Country', key: 'originCountry' },
-            { header: 'Status/Year', key: 'statusYear' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Product_OEM_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

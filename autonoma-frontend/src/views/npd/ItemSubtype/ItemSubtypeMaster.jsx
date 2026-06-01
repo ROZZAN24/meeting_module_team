@@ -198,17 +198,10 @@ export default function ItemSubtypeMaster() {
           newTooltip={shortcutTooltip('Create New Item Sub Type', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={mappedRows}
-          exportColumns={[
-            { header: 'Item Type', key: 'itemType' },
-            { header: 'Sub Type', key: 'subType' },
-            { header: 'Sub Item Prefix', key: 'subItemPrefix' },
-            { header: 'Is Auto Generate Code', key: 'isAutoGenerateCode' },
-            { header: 'Prefix Based', key: 'prefixBased' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Product_Item_Sub_Type_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

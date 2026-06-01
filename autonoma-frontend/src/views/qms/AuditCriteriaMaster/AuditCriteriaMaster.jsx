@@ -211,15 +211,10 @@ export default function AuditCriteriaMaster() {
           newTooltip={shortcutTooltip('Create New Criteria', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Audit Type', key: 'auditType' },
-            { header: 'Clause', key: 'clause' },
-            { header: 'Criteria', key: 'criteriaText' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Criteria_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

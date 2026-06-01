@@ -221,14 +221,10 @@ export default function AuditTypeMaster() {
           newTooltip={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Audit Type', key: 'auditType' },
-            { header: 'Standard', key: 'standard' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Type_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

@@ -146,12 +146,8 @@ export default function Freight() {
             <BOSExportButton
               data={rows}
               filename="Freight_Master"
-              columns={[
-                { header: 'Freight Type', key: 'freightType' },
-                { header: 'Description', key: 'description' },
-                { header: 'Status', key: 'status' }
-              ]}
-            />
+              
+             screenColumns={columns} />
           )}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
             Add New

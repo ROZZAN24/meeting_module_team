@@ -117,13 +117,8 @@ export default function SupplierList() {
           {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="Supplier_Master"
-            columns={[
-              { header: 'Code', key: 'supplierCode' },
-              { header: 'Supplier Name', key: 'supplierName' },
-              { header: 'GST No', key: 'gstNo' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Supplier', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

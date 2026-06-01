@@ -146,12 +146,8 @@ export default function DespatchMode() {
             <BOSExportButton
               data={rows}
               filename="Mode_of_Despatch"
-              columns={[
-                { header: 'Mode of Despatch', key: 'modeName' },
-                { header: 'Description', key: 'description' },
-                { header: 'Status', key: 'status' }
-              ]}
-            />
+              
+             screenColumns={columns} />
           )}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
             Add New

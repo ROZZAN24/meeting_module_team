@@ -210,13 +210,8 @@ export default function CustomerMasterList() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Customer_Master"
-            columns={[
-              { header: 'GSTIN Number', key: 'gstin' },
-              { header: 'Customer Name', key: 'customerName' },
-              { header: 'City', key: 'city' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Customer', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

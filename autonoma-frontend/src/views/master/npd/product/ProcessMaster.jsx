@@ -138,18 +138,10 @@ export default function ProcessMaster() {
           newTooltip={shortcutTooltip('Create New Process', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Process Name', key: 'processName' },
-            { header: 'Description', key: 'description' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created At', key: 'createdAt' },
-            { header: 'Updated By', key: 'updatedBy' },
-            { header: 'Updated At', key: 'updatedAt' }
-          ]}
+          
           exportFilename="Process_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

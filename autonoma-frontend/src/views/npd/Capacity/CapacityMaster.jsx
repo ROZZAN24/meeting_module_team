@@ -142,16 +142,10 @@ export default function CapacityMaster() {
           newTooltip={shortcutTooltip('Create New Capacity', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'UOM', key: 'uom' },
-            { header: 'Capacity', key: 'capacityVal' },
-            { header: 'Model Name', key: 'model.modelNo' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdAt' }
-          ]}
+          
           exportFilename="Product_Capacity_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

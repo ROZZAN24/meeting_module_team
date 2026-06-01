@@ -243,12 +243,8 @@ export default function VerificationCriteria() {
           exportData={resolvedRows}
           exportFilename="Verification_Criteria"
           hasExportPermission={perms.export}
-          exportColumns={[
-            { header: 'Type', key: 'type' },
-            { header: 'Description', key: 'description' },
-            { header: 'Status', key: 'status' }
-          ]}
-        />
+          
+         columns={columns} />
       }
     >
       <BOSDataTable

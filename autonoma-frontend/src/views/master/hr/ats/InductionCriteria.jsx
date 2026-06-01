@@ -404,10 +404,10 @@ export default function InductionCriteria() {
           newLabel="New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={columns.filter((c) => c.id !== 'index').map((c) => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Criteria"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

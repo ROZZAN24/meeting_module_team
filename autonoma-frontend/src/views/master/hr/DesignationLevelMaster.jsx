@@ -133,15 +133,10 @@ export default function DesignationLevelMaster() {
                     newTooltip={shortcutTooltip('Create Designation Level', 'Ctrl + N')}
                     hasWritePermission={perms.write}
                     exportData={filteredRows}
-                    exportColumns={[
-                        { header: 'Level', key: 'level' },
-                        { header: 'Basic', key: 'basic' },
-                        { header: 'DA', key: 'da' },
-                        { header: 'HRA', key: 'hra' }
-                    ]}
+                    
                     exportFilename="Designation_Level"
                     hasExportPermission={perms.export}
-                />
+                 columns={columns} />
             }
         >
             <BOSDataTable

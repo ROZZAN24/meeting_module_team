@@ -156,12 +156,8 @@ export default function DeliveryTerms() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Delivery_Terms"
-            columns={[
-              { header: 'Delivery Term', key: 'termName' },
-              { header: 'Description', key: 'description' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Term

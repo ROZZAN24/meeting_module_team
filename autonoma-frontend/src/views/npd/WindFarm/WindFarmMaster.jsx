@@ -144,17 +144,10 @@ export default function WindFarmMaster() {
           newTooltip={shortcutTooltip('Create New Wind Farm', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Wind Farm Name', key: 'windFarmName' },
-            { header: 'City', key: 'city' },
-            { header: 'State', key: 'state' },
-            { header: 'Country', key: 'country' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdAt' }
-          ]}
+          
           exportFilename="Wind_Farm_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

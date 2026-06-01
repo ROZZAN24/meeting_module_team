@@ -201,16 +201,10 @@ export default function CloseMomList() {
         <BOSTableToolbar
           onRefresh={fetchData}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Meeting Min No', key: '_momNo' },
-            { header: 'MOM Date', key: '_momDate' },
-            { header: 'Discussed Point', key: 'discussedPoint' },
-            { header: 'Target Date', key: 'targetDate' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Close_MOM"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

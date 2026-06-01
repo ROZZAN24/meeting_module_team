@@ -180,17 +180,10 @@ export default function OemMappingMaster() {
           newTooltip={shortcutTooltip('Create New Mapping', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Part No', key: 'partNo' },
-            { header: 'OEM Part No', key: 'oemPartNo' },
-            { header: 'OEM Description', key: 'oemDescription' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdAt' }
-          ]}
+          
           exportFilename="Product_OEM_Mapping"
           hasExportPermission={perms.export}
-        >
+         columns={columns}>
           <Tooltip title="Bulk OEM Upload">
             <Button
               variant="outlined"

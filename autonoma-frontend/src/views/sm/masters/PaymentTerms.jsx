@@ -159,12 +159,8 @@ export default function PaymentTerms() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Payment_Terms"
-            columns={[
-              { header: 'Payment Term', key: 'termName' },
-              { header: 'Description', key: 'description' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Term

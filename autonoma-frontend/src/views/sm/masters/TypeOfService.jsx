@@ -156,12 +156,8 @@ export default function TypeOfService() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Type_Of_Service"
-            columns={[
-              { header: 'Service Code', key: 'serviceCode' },
-              { header: 'Service Name', key: 'serviceName' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Service Type

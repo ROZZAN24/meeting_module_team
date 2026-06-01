@@ -200,18 +200,10 @@ export default function ItemTypeMaster() {
           newTooltip={shortcutTooltip('Create New Item Type', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={mappedRows}
-          exportColumns={[
-            { header: 'Item Group', key: 'groupName' },
-            { header: 'Item Type', key: 'itemType' },
-            { header: 'Group Prefix', key: 'groupPrefix' },
-            { header: 'Item Prefix', key: 'itemPrefix' },
-            { header: 'Is Auto Generate Code', key: 'isAutoGenerateCode' },
-            { header: 'Prefix Based', key: 'prefixBased' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Product_Item_Type_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

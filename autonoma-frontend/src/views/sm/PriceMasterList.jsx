@@ -162,15 +162,8 @@ export default function PriceMasterList() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="SM_PriceMasters"
-            columns={[
-              { header: 'Master No', key: 'masterNo' },
-              { header: 'Date', key: 'entryDate' },
-              { header: 'Customer', key: 'customerName' },
-              { header: 'Product', key: 'productName' },
-              { header: 'Unit Price', key: 'unitPrice' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Price Master', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

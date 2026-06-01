@@ -208,19 +208,8 @@ export default function EnquiryDashboard() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Enquiry_Dashboard"
-            columns={[
-              { header: 'WI No', key: 'wiNo' },
-              { header: 'Date & Time', key: 'dateTime' },
-              { header: 'Category', key: 'category' },
-              { header: 'Cust Code', key: 'custCode' },
-              { header: 'Cust Name', key: 'custName' },
-              { header: 'From', key: 'from' },
-              { header: 'Subject', key: 'subject' },
-              { header: 'Enquiry No', key: 'enquiryNo' },
-              { header: 'Quote No', key: 'quoteNo' },
-              { header: 'Mode', key: 'mode' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

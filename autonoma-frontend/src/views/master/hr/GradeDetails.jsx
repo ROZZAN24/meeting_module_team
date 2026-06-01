@@ -116,15 +116,10 @@ export default function GradeDetails() {
           newTooltip={shortcutTooltip('Create New Grade', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={[
-            { header: 'Grade Code', key: 'gradeCode' },
-            { header: 'Grade Name', key: 'gradeName' },
-            { header: 'Sequence No', key: 'sequenceNo' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Grade_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

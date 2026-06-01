@@ -166,23 +166,10 @@ export default function AuditReport() {
           newTooltip="Create New Observation"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={[
-            { header: 'Audit Type', key: 'auditType' },
-            { header: 'Schedule No', key: 'scheduleNo' },
-            { header: 'Schedule Date', key: 'scheduleDate' },
-            { header: 'Observation No', key: 'observationNo' },
-            { header: 'Observation Date', key: 'observationDate' },
-            { header: 'Status', key: 'status' },
-            { header: 'Audit Criteria', key: 'auditCriteria' },
-            { header: 'Observation Status', key: 'observationStatus' },
-            { header: 'Created User', key: 'createdUser' },
-            { header: 'Created Date', key: 'createdDate' },
-            { header: 'Updated User', key: 'updatedUser' },
-            { header: 'Updated Date', key: 'updatedDate' }
-          ]}
+          
           exportFilename="Audit_Summary_Report"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

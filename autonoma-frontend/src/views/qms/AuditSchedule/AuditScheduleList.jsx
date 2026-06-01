@@ -209,18 +209,10 @@ export default function AuditScheduleList() {
           newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Schedule No', key: 'scheduleNo' },
-            { header: 'Audit Type', key: 'auditType' },
-            { header: 'Audit Area', key: 'auditArea' },
-            { header: 'Auditee', key: 'auditee' },
-            { header: 'Status', key: 'status' },
-            { header: 'Reschedule Count', key: 'rescheduleCount' },
-            { header: 'Total Point', key: 'totalPoint' }
-          ]}
+          
           exportFilename="Audit_Schedule_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

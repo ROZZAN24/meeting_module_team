@@ -157,14 +157,10 @@ export default function ItemGroupMaster() {
           newTooltip={shortcutTooltip('Create New Item Group', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Product Item Group', key: 'groupName' },
-            { header: 'Group Description', key: 'description' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Product_Item_Group_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

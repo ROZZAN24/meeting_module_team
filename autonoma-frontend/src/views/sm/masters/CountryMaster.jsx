@@ -131,11 +131,8 @@ export default function CountryMaster() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Country_Master"
-            columns={[
-              { header: 'Country', key: 'country' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Country

@@ -147,14 +147,8 @@ return (
           {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="SM_Enquiries"
-            columns={[
-              { header: 'Enquiry No', key: 'enquiryNo' },
-              { header: 'Date', key: 'enquiryDate' },
-              { header: 'Customer', key: 'customerName' },
-              { header: 'Priority', key: 'priority' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

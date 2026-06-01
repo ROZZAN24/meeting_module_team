@@ -116,14 +116,8 @@ export default function QuotationList() {
           {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="SM_Quotations"
-            columns={[
-              { header: 'Quotation No', key: 'quotationNo' },
-              { header: 'Date', key: 'quotationDate' },
-              { header: 'Customer', key: 'customerName' },
-              { header: 'Amount', key: 'totalAmount' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Quotation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

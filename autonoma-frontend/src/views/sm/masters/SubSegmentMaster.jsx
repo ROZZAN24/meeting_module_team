@@ -116,14 +116,8 @@ return (
             {perms.export && <BOSExportButton
               data={rows}
               filename="Sub_Segment_Master"
-              columns={[
-                { header: 'Segment Name', key: 'segmentName' },
-                { header: 'Sub Segment Code', key: 'subSegmentCode' },
-                { header: 'Sub Segment Name', key: 'subSegmentName' },
-                { header: 'Sub Segment Description', key: 'subSegmentDescription' },
-                { header: 'Status', key: 'status' }
-              ]}
-            />}
+              
+             screenColumns={columns} />}
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => { setForm(INITIAL); setSelectedId(null); setShowForm(true); }} sx={btnSave}>
               Add New
             </Button>

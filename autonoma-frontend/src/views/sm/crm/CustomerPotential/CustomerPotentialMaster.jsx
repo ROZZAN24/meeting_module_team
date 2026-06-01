@@ -223,22 +223,8 @@ export default function CustomerPotentialMaster() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Customer_Potential_Master"
-            columns={[
-              { header: 'Customer Group Name', key: 'customerGroupName' },
-              { header: 'Customer Code', key: 'customerCode' },
-              { header: 'Customer Type', key: 'customerType' },
-              { header: 'Manufacturer OEM', key: 'manufacturerOem' },
-              { header: 'WTG Model', key: 'wtgModel' },
-              { header: 'Wind Turbine Power', key: 'windTurbinePower' },
-              { header: 'Wind Farm Name', key: 'windFarmName' },
-              { header: 'Area', key: 'area' },
-              { header: 'Pin Code', key: 'pincode' },
-              { header: 'State', key: 'state' },
-              { header: 'Country', key: 'country' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Customer Potential', 'Ctrl + N')}>
             <Button
               variant="contained"

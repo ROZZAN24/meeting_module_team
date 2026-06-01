@@ -324,15 +324,10 @@ export default function AuditNcrApproval() {
           onNew={handleOpenNew}
           hasWritePermission={perms.write}
           exportData={rows}
-          exportColumns={[
-            { header: 'NC No', key: 'ncrNo' },
-            { header: 'Department', key: 'departmentName' },
-            { header: 'Observation No', key: 'observationNo' },
-            { header: 'Status', key: 'ncrStatus' }
-          ]}
+          
           exportFilename="NC_Approval_Report"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenReview} renderCell={renderCell} customActions={(row) => (<Tooltip title="Review & Approve"><IconButton size="small" color="success" onClick={() => handleOpenReview(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}><IconEye size={18} /></IconButton></Tooltip>)} />

@@ -154,18 +154,10 @@ export default function ModelNameMaster() {
           newTooltip={shortcutTooltip('Create New Model Name', 'Ctrl + N')}
           hasWritePermission={true}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Model Name', key: 'modelName' },
-            { header: 'Description', key: 'description' },
-            { header: 'Status', key: 'status' },
-            { header: 'CREATED USER', key: 'createdUser' },
-            { header: 'CREATED DATE', key: 'createdAt' },
-            { header: 'UPDATED USER', key: 'updatedUser' },
-            { header: 'UPDATED DATE', key: 'updatedAt' }
-          ]}
+          
           exportFilename="Model_Name_Master"
           hasExportPermission={true}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

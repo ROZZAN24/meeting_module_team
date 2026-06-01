@@ -330,19 +330,13 @@ export default function AuditNcrClose() {
         <BOSTableToolbar
           onRefresh={fetchData}
           exportData={rows}
-          exportColumns={[
-            { header: 'OBSERVATION NO', key: 'observationNo' },
-            { header: 'OBSERVATION DATE', key: 'observationDate' },
-            { header: 'SCHEDULE NO', key: 'auditScheduleNo' },
-            { header: 'DEPARTMENT', key: 'departmentName' },
-            { header: 'APPROVAL STATUS', key: 'ncrStatus' }
-          ]}
+          
           exportFilename="NC_Closure_List"
           hasExportPermission={perms.export}
           onCloseNcr={perms.write ? () => selectedRecord && handleOpenClose(selectedRecord) : null}
           closeNcrDisabled={!selectedRecord}
           closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />

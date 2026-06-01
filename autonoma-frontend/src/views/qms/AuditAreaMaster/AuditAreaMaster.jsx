@@ -188,11 +188,7 @@ export default function AuditAreaMaster() {
           onColumnVisibilityChange={setVisibleColumnIds}
           requiredColumnIds={['index', 'type']}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Type', key: 'type' },
-            { header: 'Description', key: 'description' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Area_Details"
           hasExportPermission={perms.export}
         />

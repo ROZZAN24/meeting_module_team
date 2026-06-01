@@ -139,19 +139,10 @@ export default function DesignationMaster() {
           newTooltip={shortcutTooltip('Create New Designation', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={[
-            { header: 'Code', key: 'designationCode' },
-            { header: 'Name', key: 'designationName' },
-            { header: 'Level', key: 'subCategoryLevel' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdDate' },
-            { header: 'Updated By', key: 'updatedBy' },
-            { header: 'Updated Date', key: 'updatedDate' }
-          ]}
+          
           exportFilename="Designation_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

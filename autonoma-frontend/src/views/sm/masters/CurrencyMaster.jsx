@@ -122,13 +122,8 @@ return (
           {perms.export && <BOSExportButton
             data={rows}
             filename="Currency_Master"
-            columns={[
-              { header: 'Currency Code', key: 'currencyCode' },
-              { header: 'Currency Name', key: 'currencyName' },
-              { header: 'Symbol', key: 'symbol' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
             Add New
           </Button>

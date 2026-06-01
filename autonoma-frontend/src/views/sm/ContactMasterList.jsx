@@ -170,15 +170,8 @@ export default function ContactMasterList() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Contact_Master"
-            columns={[
-              { header: 'Type', key: 'type' },
-              { header: 'Sur Name', key: 'title' },
-              { header: 'Group Name', key: 'groupName' },
-              { header: 'Contact Name', key: 'contactName' },
-              { header: 'Contact Type', key: 'contactType' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Contact', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

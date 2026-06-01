@@ -176,16 +176,10 @@ export default function AuditObservationList() {
           newTooltip={shortcutTooltip('Create New Observation', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Observation No', key: 'observationNo' },
-            { header: 'Date', key: 'observationDate' },
-            { header: 'Schedule No', key: 'auditScheduleNo' },
-            { header: 'Dept Name', key: 'departmentName' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Observations"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

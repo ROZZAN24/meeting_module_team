@@ -154,13 +154,8 @@ export default function StateMaster() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="State_Master"
-            columns={[
-              { header: 'Country Name', key: 'countryName' },
-              { header: 'State Name', key: 'stateName' },
-              { header: 'State Code', key: 'stateCode' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New State

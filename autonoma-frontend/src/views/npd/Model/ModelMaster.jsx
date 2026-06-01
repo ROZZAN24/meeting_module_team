@@ -159,17 +159,10 @@ export default function ModelMaster() {
           newTooltip={shortcutTooltip('Create New Model', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'OEM Short Name', key: 'oem.oemShortName' },
-            { header: 'Model No', key: 'modelNo' },
-            { header: 'Rotor Diameter', key: 'rotorDiameter' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdAt' }
-          ]}
+          
           exportFilename="Product_Model_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

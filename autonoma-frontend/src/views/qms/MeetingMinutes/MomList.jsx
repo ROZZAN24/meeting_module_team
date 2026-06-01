@@ -308,21 +308,13 @@ export default function MomList() {
           newTooltip={shortcutTooltip('Create New MOM', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Meeting Min No', key: 'momNo' },
-            { header: 'Type', key: 'meetingType' },
-            { header: 'Meeting Date', key: 'momDate' },
-            { header: 'Schedule No', key: 'scheduleNo' },
-            { header: 'Discussed Point', key: 'discussedPoint' },
-            { header: 'Process', key: 'processType' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Minutes_of_Meeting"
           hasExportPermission={perms.export}
           onReassign={perms.write ? handleReassignClick : null}
           reassignDisabled={!selectedRow}
           reassignTooltip="Reassign selected action"
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

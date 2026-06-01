@@ -151,14 +151,10 @@ export default function DepartmentDetails() {
           newTooltip={shortcutTooltip('Create New Department', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={[
-            { header: 'Dept No', key: 'departmentNo' },
-            { header: 'Department Name', key: 'departmentName' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Department_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

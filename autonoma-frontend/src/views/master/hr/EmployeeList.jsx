@@ -328,12 +328,7 @@ export default function EmployeeList() {
           hasWritePermission={perms.write}
           columns={columns}
           exportData={resolvedRows}
-          exportColumns={[
-            { header: 'Emp Code', key: 'empCode' },
-            { header: 'Emp Name', key: 'employeeName' },
-            { header: 'Father Name', key: 'fatherHusbandName' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Employee_Master"
           hasExportPermission={perms.export}
           onMapManager={perms.write ? handleMapManagerOpen : null}
