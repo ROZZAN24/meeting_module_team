@@ -200,6 +200,7 @@ const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSession
 const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 const TicketManagement = Loadable(lazy(() => import('views/admin/TicketManagement')));
 const DataMigration = Loadable(lazy(() => import('views/admin/DataMigration')));
+const OrganizationChart = Loadable(lazy(() => import('views/admin/OrganizationChart')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -903,6 +904,10 @@ const MainRoutes = {
     {
       path: '/dashboard/user-task-queue',
       element: <UserTaskQueue />
+    },
+    {
+      path: '/admin/organization-chart',
+      element: <PageGuard pageCode={PAGE_CODES.AD1190}><OrganizationChart /></PageGuard>
     },
     {
       path: '/dashboard/task-dashboard',
