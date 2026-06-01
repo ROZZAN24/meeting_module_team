@@ -11,7 +11,7 @@ import AddEnquiryDialog from './AddEnquiryDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { useSelector, useDispatch } from 'react-redux';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -100,15 +100,14 @@ export default function EnquiryList() {
 
   
   useEffect(() => {
-    const config = [
-      { id: 'enquiryNo', label: 'Enquiry No', type: 'text' },
+    const config = [{ id: 'enquiryNo', label: 'Enquiry No', type: 'text' },
       { id: 'enquiryDate', label: 'Date', type: 'text' },
       { id: 'customerName', label: 'Customer', type: 'text' },
       { id: 'contactPerson', label: 'Contact', type: 'text' },
       { id: 'subject', label: 'Subject', type: 'text' },
       { id: 'source', label: 'Source', type: 'text' },
-      { id: 'priority', label: 'Priority', type: 'text' }
-    ];
+      { id: 'priority', label: 'Priority', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -128,7 +127,7 @@ export default function EnquiryList() {
     ).map((r, i) => ({ ...r, index: i + 1 }));
   }, [rows, globalQuery, resolvedRows]);
 return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconMail size={24} />
@@ -148,14 +147,8 @@ return (
           {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="SM_Enquiries"
-            columns={[
-              { header: 'Enquiry No', key: 'enquiryNo' },
-              { header: 'Date', key: 'enquiryDate' },
-              { header: 'Customer', key: 'customerName' },
-              { header: 'Priority', key: 'priority' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Enquiry', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

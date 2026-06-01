@@ -219,6 +219,11 @@ export default function Breadcrumbs({
           <ItemIcon style={{ ...iconSX, ...(themeDirection === ThemeDirection.RTL && { marginLeft: 6, marginRight: 0 }) }} />
         )}
         <FormattedMessage id={itemTitle} />
+        {item?.pageCode && (
+          <Box component="span" sx={{ ml: 0.75, color: 'text.secondary', fontWeight: 500, fontSize: '0.9em' }}>
+            ({item.pageCode})
+          </Box>
+        )}
       </Typography>
     );
 

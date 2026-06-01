@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, btnNew, errorStyle, BOSStatusField, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, btnNew, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 
@@ -62,8 +62,7 @@ export default function InductionRoundMaster() {
 
   // Filter config
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -74,8 +73,8 @@ export default function InductionRoundMaster() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -188,7 +187,7 @@ export default function InductionRoundMaster() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconRotate2 size={24} />
@@ -201,6 +200,9 @@ export default function InductionRoundMaster() {
           onNew={handleOpenAdd}
           newLabel="+ New Round"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Induction_Round_Master"
+          hasExportPermission={perms.export}
         />
       }
     >

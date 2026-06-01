@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useMemo, useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Paper, Avatar, Chip, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, LinearProgress, Link, useTheme, IconButton
@@ -17,6 +18,7 @@ import FormatListBulletedRoundedIcon from '@mui/icons-material/FormatListBullete
 import DescriptionRoundedIcon from '@mui/icons-material/DescriptionRounded';
 import ArrowForwardRoundedIcon from '@mui/icons-material/ArrowForwardRounded';
 import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 
 const StyledCard = styled(Paper)(({ theme }) => ({
   borderRadius: '16px',
@@ -31,6 +33,83 @@ const StyledCard = styled(Paper)(({ theme }) => ({
   flexDirection: 'column'
 }));
 
+const LabCard = styled(Paper)(({ theme, statcolor }) => ({
+  borderRadius: '24px',
+  position: 'relative',
+  overflow: 'hidden',
+  // Premium dark glassmorphism universally
+  background: `linear-gradient(180deg, ${alpha(statcolor, 0.1)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  backgroundColor: '#060B14',
+  backdropFilter: 'blur(16px)',
+  border: `1px solid ${alpha(statcolor, 0.15)}`,
+  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(statcolor, 0.2)}`,
+  height: '138px',
+  display: 'flex',
+  flexDirection: 'column',
+  padding: '16px',
+  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+  cursor: 'pointer',
+
+  // Ambient backlight glow
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: '-50%', left: '-50%', width: '200%', height: '200%',
+    background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.25)} 0%, transparent 60%)`,
+    transition: 'all 0.5s ease',
+    zIndex: 0,
+    pointerEvents: 'none',
+    opacity: 0.4
+  },
+
+  // Elegant pulse border
+  '& .pulse-ring': {
+    position: 'absolute', inset: 0, borderRadius: '24px',
+    boxShadow: `inset 0 0 0 1px ${alpha(statcolor, 0.5)}`,
+    transition: 'all 0.5s ease', zIndex: 1, pointerEvents: 'none',
+    opacity: 0
+  },
+
+  '& .hover-emoji': {
+    position: 'absolute', right: 24, top: 24, fontSize: '2rem',
+    opacity: 0, transform: 'scale(0.8)',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
+    filter: `drop-shadow(0px 0px 15px ${statcolor})`
+  },
+
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.2, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(statcolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '24px 24px',
+    transition: 'opacity 0.5s ease'
+  },
+
+  '&:hover': {
+    transform: 'translateY(-6px)',
+    boxShadow: `0 20px 40px -10px ${alpha(statcolor, 0.6)}, inset 0 1px 3px 0 ${alpha(statcolor, 0.9)}`,
+    border: `1px solid ${alpha(statcolor, 0.5)}`,
+
+    '&::before': {
+      opacity: 1,
+      animation: 'pulseGlow 2.5s ease-in-out infinite alternate',
+    },
+
+    '& .pulse-ring': {
+      opacity: 1,
+      boxShadow: `inset 0 0 0 2px ${statcolor}`,
+      filter: `drop-shadow(0 0 10px ${statcolor})`,
+      animation: 'pulseRing 2.5s ease-in-out infinite alternate',
+    },
+
+    '& .particles': {
+      opacity: 0.8,
+    },
+
+    '& .hover-emoji': {
+      opacity: 1, transform: 'scale(1.1)',
+    },
+  },
+}));
 const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   width: size,
   height: size,
@@ -157,7 +236,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       const label = `Week ${6 - i}`;
       weekLabels.push(label);
       weekCounts.push(reopenedTasks.filter(t => {
-        const d = t._rawDate ? new Date(t._rawDate) : null;
+        const d = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
         return d && d >= weekStart && d <= weekEnd;
       }).length);
     }
@@ -171,7 +250,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       monthLabels.push(monthNames[d.getMonth()]);
       const yr = d.getFullYear(); const mo = d.getMonth();
       monthCounts.push(reopenedTasks.filter(t => {
-        const td = t._rawDate ? new Date(t._rawDate) : null;
+        const td = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
         return td && td.getFullYear() === yr && td.getMonth() === mo;
       }).length);
     }
@@ -183,7 +262,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       const yr = now.getFullYear() - i;
       yearLabels.push(String(yr));
       yearCounts.push(reopenedTasks.filter(t => {
-        const td = t._rawDate ? new Date(t._rawDate) : null;
+        const td = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
         return td && td.getFullYear() === yr;
       }).length);
     }
@@ -332,7 +411,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
                         <Chip label={pInfo.label} size="small" sx={{ height: 26, bgcolor: alpha(pInfo.color, 0.15), color: pInfo.color, fontWeight: 800, fontSize: '0.75rem' }} />
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
-                        <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>{t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')}</Typography>
+                        <Typography variant="body2" fontWeight={700} fontSize="0.85rem" color={textMuted}>{t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'))}</Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={textColor}>{t._dueDate ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</Typography>
@@ -373,31 +452,34 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
   return (
     <Box>
       {/* ROW 1: STAT CARDS */}
-      <Box sx={{
-        display: 'grid',
-        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
-        gap: 2,
-        mb: 2.5
-      }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' }, gap: 1.5, mb: 1.5 }}>
         {topStats.map((stat, idx) => (
-          <StyledCard key={idx} sx={{
-            p: 2,
-            borderBottom: `3px solid ${stat.color}`
-          }}>
-            <Stack direction="row" alignItems="center" gap={1.5} mb={1.5}>
-              <IconBox color={stat.color} bg={isDark ? alpha(stat.color, 0.2) : stat.bg} size={38}>
-                {stat.icon}
-              </IconBox>
-              <Box>
-                <Typography variant="body2" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.75rem', lineHeight: 1.2 }}>
-                  {stat.title === 'Critical Reopen' ? 'Critical Reopen' : stat.title}
-                  {stat.title === 'Critical Reopen' && <Typography display="block" variant="caption" color="text.secondary" sx={{ fontSize: '0.6rem' }}>(&gt; 3 Times)</Typography>}
-                </Typography>
-              </Box>
-            </Stack>
-            <Typography variant="h4" fontWeight={900} color="text.primary" mb={0.25}>{stat.value}</Typography>
-            <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.7rem' }}>{stat.subtitle}</Typography>
-          </StyledCard>
+          <LabCard key={idx} statcolor={stat.color}>
+            <Box className="pulse-ring" />
+            <Box className="particles" />
+            <Box className="hover-emoji">{stat.emoji}</Box>
+
+            <IconButton size="small" sx={{ position: 'absolute', top: 12, right: 12, color: alpha('#fff', 0.4), '&:hover': { color: '#fff' } }}>
+              <MoreVertRoundedIcon fontSize="small" />
+            </IconButton>
+
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" flex={1} zIndex={2} position="relative" sx={{ textAlign: 'center' }}>
+              {React.cloneElement(stat.icon, { sx: { fontSize: '2rem', color: stat.color, filter: `drop-shadow(0 0 8px ${stat.color})`, mb: 1 } })}
+
+              <Typography variant="body2" fontWeight={800} sx={{ fontSize: '0.75rem', color: '#CBD5E1', mb: 0.5, letterSpacing: '1px', textAlign: 'center', textTransform: 'uppercase' }}>
+                {stat.title}
+                {stat.title === 'Critical Reopen' && <span style={{ display: 'block', fontSize: '0.6rem', color: '#EF4444' }}>(&gt; 3 Times)</span>}
+              </Typography>
+
+              <Typography className="kpi-number" variant="h3" fontWeight={900} sx={{ color: '#FFFFFF', mb: 0.25, fontSize: '2.2rem', fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.1 }}>
+                {stat.value}
+              </Typography>
+
+              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem', color: alpha(stat.color, 0.8), textAlign: 'center', lineHeight: 1.1 }}>
+                {stat.subtitle}
+              </Typography>
+            </Box>
+          </LabCard>
         ))}
       </Box>
 
@@ -612,7 +694,7 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
                       <TableCell>
                         <Chip size="small" label={pInfo.label} sx={{ bgcolor: alpha(pInfo.color, 0.1), color: pInfo.color, fontWeight: 700, fontSize: '0.65rem', height: 20 }} />
                       </TableCell>
-                      <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-')}</Typography></TableCell>
+                      <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._createdDate ? new Date(t._createdDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : (t._rawDate ? new Date(t._rawDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'))}</Typography></TableCell>
                       <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._dueDate ? new Date(t._dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</Typography></TableCell>
                       <TableCell><Typography fontWeight={700} fontSize="0.7rem" color={textMuted}>{t._createdBy || '-'}</Typography></TableCell>
                     </TableRow>

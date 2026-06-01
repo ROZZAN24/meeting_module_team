@@ -8,7 +8,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import useKeyboardShortcuts from 'hooks/useKeyboardShortcuts';
 import useLookups from 'hooks/useLookups';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import CloseMomDialog from './CloseMomDialog';
@@ -47,8 +47,7 @@ export default function CloseMomList() {
 
   // ── GLOBAL FILTER CONFIG ──
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'filterType', label: 'Type', type: 'select', isStarred: true,
         options: [
           { value: 'Mine', label: 'Mine' },
@@ -82,8 +81,8 @@ export default function CloseMomList() {
         ],
         defaultValue: 'momNo'
       },
-      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true }
-    ]));
+      { id: 'searchText', label: 'Search', type: 'text', placeholder: 'Search...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -125,6 +124,8 @@ export default function CloseMomList() {
   // ── FILTERING ──
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       const statusFilter = globalFilters.status || 'All';
       if (statusFilter !== 'All' && (row.status || '') !== statusFilter) return false;
 
@@ -189,7 +190,7 @@ export default function CloseMomList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCircleCheck size={24} />
@@ -200,16 +201,10 @@ export default function CloseMomList() {
         <BOSTableToolbar
           onRefresh={fetchData}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Meeting Min No', key: '_momNo' },
-            { header: 'MOM Date', key: '_momDate' },
-            { header: 'Discussed Point', key: 'discussedPoint' },
-            { header: 'Target Date', key: 'targetDate' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Close_MOM"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

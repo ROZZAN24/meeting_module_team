@@ -28,7 +28,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { setFilterConfig, setTableConfig } from 'store/slices/search';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
-import { BOSTableToolbar } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 
 import { IconAdjustmentsHorizontal, IconChevronDown, IconChevronUp, IconCheck, IconFileDownload, IconX } from '@tabler/icons-react';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -154,8 +154,7 @@ const exportColumns = [
   { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
-const filterConfig = [
-  {
+const filterConfig = [{
     id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
@@ -209,8 +208,8 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
-  }
-];
+  },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 function FilterSection({ title, open, onToggle, children }) {
   return (
@@ -378,6 +377,8 @@ export default function CloseCheckListRenewal() {
         // Additional client-side filter: exclude any remaining finalized statuses
         const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed', 'Pending for Verified', 'Pending for Accepted'];
         const filteredRows = response.data.content.filter((r) => {
+      if (!matchCommonDateFilters(r, globalFilters, 'createdDate', 'updatedDate')) return false;
+
           const statusName = typeof r.status === 'object' ? r.status?.name : r.status;
           return !finalizedStatuses.includes(statusName);
         });
@@ -478,12 +479,12 @@ export default function CloseCheckListRenewal() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Close_Checklist"
           hasExportPermission={perms.export}
           onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
           completeTaskDisabled={!selectedRowId}
-        />
+         columns={columns} />
       }
     >
       {activeCount > 0 && (
@@ -570,7 +571,7 @@ export default function CloseCheckListRenewal() {
                         <Box
                           component="span"
                           onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                          sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                          sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                         >
                           {row.checklist.checkingPoint}
                         </Box>

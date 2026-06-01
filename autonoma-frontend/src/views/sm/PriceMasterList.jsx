@@ -12,7 +12,7 @@ import AddPriceMasterDialog from './AddPriceMasterDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| SM - PRICE MASTER LIST (BOS SOP COMPLIANT) ||============================== //
@@ -51,8 +51,7 @@ export default function PriceMasterList() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -62,8 +61,8 @@ export default function PriceMasterList() {
         ],
         defaultValue: 'All'
       },
-      { id: 'customerName', label: 'Customer', type: 'text', placeholder: 'Search by Customer...' }
-    ];
+      { id: 'customerName', label: 'Customer', type: 'text', placeholder: 'Search by Customer...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -126,6 +125,8 @@ export default function PriceMasterList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const nameFilter = globalFilters.customerName || '';
@@ -141,7 +142,7 @@ export default function PriceMasterList() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconFileDollar size={24} />
@@ -161,15 +162,8 @@ export default function PriceMasterList() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="SM_PriceMasters"
-            columns={[
-              { header: 'Master No', key: 'masterNo' },
-              { header: 'Date', key: 'entryDate' },
-              { header: 'Customer', key: 'customerName' },
-              { header: 'Product', key: 'productName' },
-              { header: 'Unit Price', key: 'unitPrice' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Price Master', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

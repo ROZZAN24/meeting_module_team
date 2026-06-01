@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload, BOSFilePreview, errorStyle, BOSStatusField, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFormSection, BOSFileUpload, BOSFilePreview, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -23,7 +23,6 @@ const INITIAL_STATE = {
   answer: '',
   departmentCodes: [], // Will be joined as string for API
   levelCodes: [],      // Will be joined as string for API
-  inductionRound: '',
   attachmentRequired: 'NO',
   status: 'ACTIVE',
   inductionAttachment: []
@@ -40,7 +39,6 @@ const LEVEL_OPTIONS = [
 ];
 
 const VALIDATION_RULES = [
-  { field: 'inductionRound', label: 'Induction Round', required: true },
   { field: 'inductionDetails', label: 'Induction Details', required: true, maxLength: 1000 },
   { field: 'answer', label: 'Answer', required: true, maxLength: 2000 },
   { field: 'departmentCodes', label: 'Department', required: true, validate: (val) => (!val || val.length === 0 ? 'At least one department is required' : null) },
@@ -57,7 +55,6 @@ export default function InductionCriteria() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [nextSequence, setNextSequence] = useState(null);
   const [formData, setFormData] = useState(INITIAL_STATE);
-  const [roundOptions, setRoundOptions] = useState(FALLBACK_ROUND_OPTIONS);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -98,7 +95,6 @@ export default function InductionCriteria() {
     { id: 'answer', label: 'Answer', required: true, minWidth: 200 },
     { id: 'departmentCodes', label: 'Department', minWidth: 150 },
     { id: 'levelCodes', label: 'Level', minWidth: 120 },
-    { id: 'inductionRound', label: 'Round', minWidth: 120 },
     { id: 'attachmentRequired', label: 'Attach Req.', minWidth: 100 },
     {
       id: 'inductionAttachment',
@@ -132,20 +128,34 @@ export default function InductionCriteria() {
       id: 'status',
       label: 'Status',
       required: true,
-      hide: true,
       minWidth: 100,
-      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
+      render: (row) => {
+        const label = row.status === 'ACTIVE' ? 'Active' : 'Inactive';
+        const bg = row.status === 'ACTIVE' ? '#E8F5E9' : '#FFEBEE';
+        const text = row.status === 'ACTIVE' ? '#2E7D32' : '#C62828';
+        return (
+          <Chip
+            label={label}
+            size="small"
+            sx={{
+              fontWeight: 700,
+              bgcolor: bg,
+              color: text,
+              borderRadius: '4px'
+            }}
+          />
+        );
+      }
     },
-    { id: 'createdBy', label: 'Created By', minWidth: 120 },
-    { id: 'createdAt', label: 'Created Date', minWidth: 150 },
-    { id: 'updatedBy', label: 'Edited By', minWidth: 120 },
-    { id: 'updatedAt', label: 'Edited Date', minWidth: 150 }
+    { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
+    { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+    { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
+    { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
   ], [handlePreviewFile]);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -156,8 +166,8 @@ export default function InductionCriteria() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -187,20 +197,7 @@ export default function InductionCriteria() {
     }
   }, [fetchRows, perms.loading]);
 
-  // Fetch dynamic round options from master table
-  useEffect(() => {
-    const fetchRounds = async () => {
-      try {
-        const { data } = await axios.get('/api/hr/induction-round/active');
-        if (data && data.length > 0) {
-          setRoundOptions(data.map(r => r.roundName));
-        }
-      } catch (err) {
-        console.error('Failed to fetch induction rounds, using defaults:', err);
-      }
-    };
-    fetchRounds();
-  }, []);
+  // No inductionRound needed
 
   const handleOpenAdd = async () => {
     setFormData(INITIAL_STATE);
@@ -215,21 +212,22 @@ export default function InductionCriteria() {
   };
 
   const handleOpenEdit = (row) => {
-    // Map codes back to IDs for the dropdown state
-    const deptCodes = row.departmentCodes ? row.departmentCodes.split(',').filter(Boolean) : [];
+    // Find the original raw row to get raw serial codes instead of resolved department names
+    const originalRow = rows.find(r => r.id === row.id) || row;
+    const deptCodes = originalRow.departmentCodes ? originalRow.departmentCodes.split(',').filter(Boolean) : [];
     const deptIds = deptCodes.map(
       (code) => departments.find((d) => d.departmentNo === code)?.id?.toString() || code
     );
     const order = LEVEL_OPTIONS.map(l => l.code);
-    const rawLevels = row.levelCodes ? row.levelCodes.split(',').filter(Boolean) : [];
+    const rawLevels = originalRow.levelCodes ? originalRow.levelCodes.split(',').filter(Boolean) : [];
     const sortedLevels = [...rawLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
     setFormData({
-      ...row,
+      ...originalRow,
       departmentCodes: deptIds,
       levelCodes: sortedLevels,
-      inductionAttachment: row.inductionAttachment
-        ? row.inductionAttachment.split(',').filter(Boolean).map((path) => ({
+      inductionAttachment: originalRow.inductionAttachment
+        ? originalRow.inductionAttachment.split(',').filter(Boolean).map((path) => ({
             id: path,
             serverFileName: path,
             fileName: path.split('/').pop(),
@@ -366,7 +364,7 @@ export default function InductionCriteria() {
   const confirmDelete = async () => {
     try {
       await axios.delete(`/api/hr/induction-master/${deleteTarget.id}`);
-      dispatch(openSnackbar({ open: true, message: 'Induction Criteria Inactivated Successfully', variant: 'alert', severity: 'success' }));
+      dispatch(openSnackbar({ open: true, message: 'Induction Criteria Deleted Successfully', variant: 'alert', severity: 'success' }));
       setDeleteDialogOpen(false);
       fetchRows();
     } catch (error) {
@@ -375,23 +373,37 @@ export default function InductionCriteria() {
   };
 
   const resolvedRows = useMemo(() => {
-    return rows.map((r, i) => ({
-      ...r,
-      index: i + 1,
-      serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
-      createdUser: r.createdUser || r.createdBy || '-',
-      updatedUser: r.updatedUser || r.updatedBy || '-',
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
-    }));
-  }, [rows]);
+    return rows.map((r, i) => {
+      // Resolve comma-separated department serial codes (e.g. "DEPT-01") to actual department names
+      const deptNames = r.departmentCodes
+        ? r.departmentCodes
+            .split(',')
+            .map((code) => {
+              const match = departments.find((d) => d.departmentNo === code.trim());
+              return match ? match.departmentName : code;
+            })
+            .join(', ')
+        : '-';
+
+      return {
+        ...r,
+        index: i + 1,
+        serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+        departmentCodes: deptNames, // Render friendly department names in table row
+        createdUser: r.createdUser || r.createdBy || '-',
+        updatedUser: r.updatedUser || r.updatedBy || '-',
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
+        updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
+      };
+    });
+  }, [rows, departments]);
 
   if (perms.loading) {
     return null;
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardCheck size={24} />
@@ -405,10 +417,10 @@ export default function InductionCriteria() {
           newLabel="New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
-          exportColumns={columns.filter((c) => c.id !== 'index').map((c) => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Criteria"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable
@@ -458,24 +470,7 @@ export default function InductionCriteria() {
                 }}
               />
             </Box>
-            <Box sx={{ flex: 1 }}>
-              <BOSTextField
-                select
-                name="inductionRound"
-                label="INDUCTION ROUND"
-                value={formData.inductionRound}
-                onChange={handleInputChange}
-                required
-                error={!!errors.inductionRound}
-                helperText={errors.inductionRound}
-                sx={errorStyle(!!errors.inductionRound)}
-              >
-                <MenuItem value="">-Select-</MenuItem>
-                {roundOptions.map((r) => (
-                  <MenuItem key={r} value={r}>{r}</MenuItem>
-                ))}
-              </BOSTextField>
-            </Box>
+            {/* Induction round field removed */}
             <Box sx={{ flex: 1 }}>
               <BOSStatusField
                 isCreate={!formData.id}
@@ -644,8 +639,8 @@ export default function InductionCriteria() {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
-        title="Inactivate Induction Criteria"
-        message="Are you sure you want to inactivate this induction criteria?"
+        title="Delete Induction Criteria"
+        message="Are you sure you want to delete this induction criteria?"
         itemName={deleteTarget?.inductionDetails}
       />
 

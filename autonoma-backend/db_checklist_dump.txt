@@ -478,7 +478,7 @@ Row:
   carry_forward_status = NO
   STATUS = 1
   TASK_STATUS = 0
-  VERIFY_STATUS = 1
+  VERIFY_STATUS = 0
 Row:
   id = 20009
   seq_no = CK-013

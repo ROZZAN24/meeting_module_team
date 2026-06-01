@@ -9,7 +9,7 @@ import { format } from 'date-fns';
 import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -45,8 +45,7 @@ export default function AuditObservationList() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       {
@@ -81,8 +80,8 @@ export default function AuditObservationList() {
           { value: 'auditScheduleNo', label: 'Schedule No' }
         ],
         defaultValue: 'observationNo'
-      }
-    ]));
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -130,6 +129,8 @@ export default function AuditObservationList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const matchesSearch = !globalQuery || 
@@ -161,7 +162,7 @@ export default function AuditObservationList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconFileText size={24} />
@@ -175,16 +176,10 @@ export default function AuditObservationList() {
           newTooltip={shortcutTooltip('Create New Observation', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Observation No', key: 'observationNo' },
-            { header: 'Date', key: 'observationDate' },
-            { header: 'Schedule No', key: 'auditScheduleNo' },
-            { header: 'Dept Name', key: 'departmentName' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Observations"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

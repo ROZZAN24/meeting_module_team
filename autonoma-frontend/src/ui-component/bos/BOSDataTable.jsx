@@ -48,7 +48,8 @@ export default function BOSDataTable({
   onRowMouseEnter,
   onRowMouseLeave,
   onRowMouseMove,
-  disableSearchFilter = false
+  disableSearchFilter = false,
+  disableTableConfig = false
 }) {
   const rows = data || rowsProp || [];
   console.log('[BOSDataTable] Rendering with rows:', rows.length);
@@ -77,18 +78,20 @@ export default function BOSDataTable({
           options: c.options
         }))
       );
-      if (lastConfigRef.current !== serialized) {
+      if (!disableTableConfig && lastConfigRef.current !== serialized) {
         lastConfigRef.current = serialized;
         dispatch(setTableConfig(columnsWithData));
       }
     }
-  }, [columns, rows, dispatch]);
+  }, [columns, rows, dispatch, disableTableConfig]);
 
   useEffect(() => {
     return () => {
-      dispatch(setTableConfig(null));
+      if (!disableTableConfig) {
+        dispatch(setTableConfig(null));
+      }
     };
-  }, [dispatch]);
+  }, [dispatch, disableTableConfig]);
   const theme = useTheme();
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === 'dark';
@@ -225,29 +228,30 @@ export default function BOSDataTable({
         // Process active date range filters together
         for (const baseKey of activeDateKeys) {
           const col = columns.find(c => c.id === baseKey);
-          if (!col) continue;
+          const colId = col ? col.id : baseKey;
 
           const startVal = globalFilters[`${baseKey}Start`];
           const endVal = globalFilters[`${baseKey}End`];
           const considerVal = globalFilters[`${baseKey}Consider`] || 'Yes';
 
           if (!startVal && !endVal) continue;
+          if (considerVal === 'No') continue;
 
-          let cellVal = resolveNestedValue(col.id, row);
+          let cellVal = resolveNestedValue(colId, row);
           if (cellVal === undefined || cellVal === null || cellVal === '') {
-            const snakeCaseId = col.id.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+            const snakeCaseId = colId.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
             cellVal = row[snakeCaseId];
             if (cellVal === undefined || cellVal === null || cellVal === '') {
-              if (col.id === 'createdDate') cellVal = row['createdAt'] || row['created_at'];
-              if (col.id === 'updatedDate') cellVal = row['updatedAt'] || row['updated_at'];
-              if (col.id === 'createdUser') cellVal = row['createdBy'] || row['created_by'] || row['created_user'];
-              if (col.id === 'updatedUser') cellVal = row['updatedBy'] || row['updated_by'] || row['updated_user'];
-              if (col.id === 'createdBy') cellVal = row['createdUser'] || row['created_by'] || row['created_user'];
-              if (col.id === 'updatedBy') cellVal = row['updatedUser'] || row['updated_by'] || row['updated_user'];
+              if (colId === 'createdDate' || colId === 'createdAt') cellVal = row['createdAt'] || row['created_at'];
+              if (colId === 'updatedDate' || colId === 'updatedAt') cellVal = row['updatedAt'] || row['updated_at'];
+              if (colId === 'createdUser') cellVal = row['createdBy'] || row['created_by'] || row['created_user'];
+              if (colId === 'updatedUser') cellVal = row['updatedBy'] || row['updated_by'] || row['updated_user'];
+              if (colId === 'createdBy') cellVal = row['createdUser'] || row['created_by'] || row['created_user'];
+              if (colId === 'updatedBy') cellVal = row['updatedUser'] || row['updated_by'] || row['updated_user'];
             }
           }
 
-          if (!cellVal) return false;
+          if (!cellVal || cellVal === '-') return false;
 
           try {
             const cellDate = new Date(cellVal);
@@ -269,11 +273,7 @@ export default function BOSDataTable({
               inBetween = false;
             }
 
-            if (considerVal === 'Yes') {
-              if (!inBetween) return false;
-            } else {
-              if (inBetween) return false;
-            }
+            if (!inBetween) return false;
           } catch {
             return false;
           }
@@ -431,7 +431,7 @@ export default function BOSDataTable({
   const activeSelectedId = selectedRowId !== undefined && selectedRowId !== null ? selectedRowId : localSelectedId;
 
   const { 
-    height = 'calc(100vh - 185px)', 
+    height = 'calc(100vh - 215px)', 
     maxHeight, 
     minHeight, 
     ...restSx 
@@ -665,5 +665,6 @@ BOSDataTable.propTypes = {
   renderCell: PropTypes.func,
   footerActions: PropTypes.node,
   id: PropTypes.string,
-  disableSearchFilter: PropTypes.bool
+  disableSearchFilter: PropTypes.bool,
+  disableTableConfig: PropTypes.bool
 };

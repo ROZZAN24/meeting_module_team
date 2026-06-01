@@ -40,6 +40,30 @@ export default function BOSExportButton({
   sx = {}
 }) {
   const theme = useTheme();
+
+  const normalizedColumns = useMemo(() => {
+    if (!columns) return [];
+    return columns.map(c => {
+      if (!c) return null;
+      return {
+        ...c,
+        key: c.key || c.id,
+        header: c.header || c.label || c.id || c.key
+      };
+    }).filter(Boolean);
+  }, [columns]);
+
+  const normalizedScreenColumns = useMemo(() => {
+    if (!screenColumns) return [];
+    return screenColumns.map(c => {
+      if (!c) return null;
+      return {
+        ...c,
+        key: c.key || c.id,
+        header: c.header || c.label || c.id || c.key
+      };
+    }).filter(Boolean);
+  }, [screenColumns]);
   const { user } = useAuth();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(0); // 0: Excel, 1: PDF
@@ -98,11 +122,10 @@ export default function BOSExportButton({
     };
   }, [isResizing]);
 
-  // Master list of all available columns across screen and curated export columns
   const allAvailableCols = useMemo(() => {
     const seen = new Set();
     const list = [];
-    const source = [...(screenColumns || []), ...(columns || [])];
+    const source = [...(normalizedScreenColumns || []), ...(normalizedColumns || [])];
     source.forEach(col => {
       if (col && col.key && !seen.has(col.key)) {
         seen.add(col.key);
@@ -110,24 +133,24 @@ export default function BOSExportButton({
       }
     });
     return list;
-  }, [screenColumns, columns]);
+  }, [normalizedScreenColumns, normalizedColumns]);
 
   // Synchronize/initialize checkboxes when dialog opens
   useEffect(() => {
     if (previewOpen) {
       // Default PDF: curated columns if defined and not empty, else all screen columns
-      const initialPdf = (columns && columns.length > 0) ? columns : (screenColumns || []);
+      const initialPdf = (normalizedColumns && normalizedColumns.length > 0) ? normalizedColumns : (normalizedScreenColumns || []);
       setSelectedPdfColKeys(initialPdf.map(c => c.key));
 
       // Default Excel: screen columns if defined and not empty, else all columns
-      const initialExcel = (screenColumns && screenColumns.length > 0) ? screenColumns : (columns || []);
+      const initialExcel = (normalizedScreenColumns && normalizedScreenColumns.length > 0) ? normalizedScreenColumns : (normalizedColumns || []);
       setSelectedExcelColKeys(initialExcel.map(c => c.key));
 
       setOrientationOverride(null);
       setSettingsCollapsed(false);
       setShowPdfHeader(true);
     }
-  }, [previewOpen, columns, screenColumns]);
+  }, [previewOpen, normalizedColumns, normalizedScreenColumns]);
 
   const excelColumns = useMemo(() => {
     return allAvailableCols.filter(col => selectedExcelColKeys.includes(col.key));
@@ -145,7 +168,7 @@ export default function BOSExportButton({
   };
 
   const prepareData = (colsList) => {
-    const activeCols = colsList || columns;
+    const activeCols = colsList || normalizedColumns;
     if (!activeCols || activeCols.length === 0) return data;
     return data.map(row => {
       const mappedRow = {};
@@ -295,7 +318,11 @@ export default function BOSExportButton({
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
     uploadAndLogExport('Excel');
-    exportToExcel(prepareData(excelColumns), getFormattedFilename(), { userName: user?.id || user?.username || user?.email || 'SYSTEM' });
+    exportToExcel(prepareData(excelColumns), getFormattedFilename(), { 
+      userName: user?.id || user?.username || user?.email || 'SYSTEM',
+      companyName: companyProfile.companyName || 'AUTONOMA',
+      shortName: companyProfile.shortName || 'Business Operating System'
+    });
     handleClosePreview();
   };
 
@@ -758,6 +785,7 @@ export default function BOSExportButton({
                           onSizeChange={setSizePerPage}
                           showActions={false}
                           disableSearchFilter={true}
+                          disableTableConfig={true}
                           sx={{
                             '& th': {
                               bgcolor: '#f8f9fa !important',

@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -74,8 +74,7 @@ export default function EmailContent() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -86,8 +85,8 @@ export default function EmailContent() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -208,7 +207,7 @@ export default function EmailContent() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconMail size={24} />
@@ -221,6 +220,9 @@ export default function EmailContent() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Email_Content"
+          hasExportPermission={perms.export}
         />
       }
     >

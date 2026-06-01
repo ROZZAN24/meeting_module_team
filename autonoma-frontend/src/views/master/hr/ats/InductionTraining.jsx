@@ -6,52 +6,15 @@ import useAuth from 'hooks/useAuth';
 
 // MUI & Icons
 import {
-  Box,
-  Typography,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Button,
-  Chip,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  TextField,
-  Radio,
-  FormControlLabel,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions
+  Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Radio, FormControlLabel, Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
 import {
-  IconRefresh,
-  IconPlayerPlay,
-  IconCheck,
-  IconClipboardCheck,
-  IconInfoCircle,
-  IconCloudUpload,
-  IconTrash,
-  IconX
+  IconRefresh, IconPlayerPlay, IconCheck, IconClipboardCheck, IconInfoCircle, IconCloudUpload, IconTrash, IconX
 } from '@tabler/icons-react';
 
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSFileUpload,
-  btnCancel,
-  btnSave,
-  BOSTableToolbar
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSFileUpload, btnCancel, btnSave, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import BOSMovableDialog from 'ui-component/bos/BOSMovableDialog';
 import { openSnackbar } from 'store/slices/snackbar';
 import { setFilterConfig } from 'store/slices/search';
@@ -156,8 +119,7 @@ export default function InductionTraining() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -166,10 +128,10 @@ export default function InductionTraining() {
           { value: 'PENDING', label: 'PENDING' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'PENDING',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -612,7 +574,7 @@ export default function InductionTraining() {
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardCheck size={24} />
@@ -623,10 +585,10 @@ export default function InductionTraining() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           exportData={resolvedRows}
-          exportColumns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Training"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

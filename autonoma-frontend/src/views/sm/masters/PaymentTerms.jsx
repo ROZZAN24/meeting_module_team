@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, MenuItem
+  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem
 } from '@mui/material';
 import { IconCreditCard, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -130,10 +129,9 @@ export default function PaymentTerms() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'termName', label: 'Payment Term', type: 'text' },
-      { id: 'description', label: 'Payment Term Description', type: 'text' }
-    ];
+    const config = [{ id: 'termName', label: 'Payment Term', type: 'text' },
+      { id: 'description', label: 'Payment Term Description', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -149,7 +147,7 @@ export default function PaymentTerms() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCreditCard size={24} />
@@ -161,12 +159,8 @@ export default function PaymentTerms() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Payment_Terms"
-            columns={[
-              { header: 'Payment Term', key: 'termName' },
-              { header: 'Description', key: 'description' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Term

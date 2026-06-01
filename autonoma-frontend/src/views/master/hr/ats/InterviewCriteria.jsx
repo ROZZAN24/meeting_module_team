@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFileUpload, errorStyle, BOSStatusField, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFileUpload, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -93,8 +93,7 @@ export default function InterviewCriteria() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -105,8 +104,8 @@ export default function InterviewCriteria() {
         ],
         defaultValue: 'ALL',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -278,7 +277,7 @@ export default function InterviewCriteria() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardCheck size={24} />
@@ -291,6 +290,9 @@ export default function InterviewCriteria() {
           onNew={handleOpenAdd}
           newLabel="New"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Interview_Criteria"
+          hasExportPermission={perms.export}
         />
       }
     >

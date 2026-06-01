@@ -99,7 +99,7 @@ export const btnNew = {
   fontWeight: 600,
   boxShadow: 2,
   transition: 'all 0.2s',
-  '&:hover': { transform: 'translateY(-2px)', boxShadow: 4 }
+  '&:hover': { boxShadow: 4 }
 };
 
 // ─── DIALOG STYLE TOKENS (SOP #11) ─────────────────────────

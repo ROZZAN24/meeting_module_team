@@ -10,19 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSTextField,
-  BOSPersonnelCard,
-  BOSActionSection,
-  useBOSForm,
-  btnExport,
-  btnNew,
-  btnSave,
-  getStatusChipSx,
-  BOSTableToolbar
-} from 'ui-component/bos';
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, BOSActionSection, useBOSForm, btnExport, btnNew, btnSave, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| AUDIT NCR / OFI CLOSURE (REFACTORED WITH PATTERNS) ||============================== //
@@ -203,13 +191,12 @@ export default function AuditNcrClose() {
   };
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       { id: 'observationStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' }
-    ]));
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' },
+      ...getCommonDateFilters('createdDate', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -337,25 +324,19 @@ export default function AuditNcrClose() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconCircleCheck size={24} /><Typography variant="h3">Close NC / OFI Findings</Typography></Stack>}
       secondary={
         <BOSTableToolbar
           onRefresh={fetchData}
           exportData={rows}
-          exportColumns={[
-            { header: 'OBSERVATION NO', key: 'observationNo' },
-            { header: 'OBSERVATION DATE', key: 'observationDate' },
-            { header: 'SCHEDULE NO', key: 'auditScheduleNo' },
-            { header: 'DEPARTMENT', key: 'departmentName' },
-            { header: 'APPROVAL STATUS', key: 'ncrStatus' }
-          ]}
+          
           exportFilename="NC_Closure_List"
           hasExportPermission={perms.export}
           onCloseNcr={perms.write ? () => selectedRecord && handleOpenClose(selectedRecord) : null}
           closeNcrDisabled={!selectedRecord}
           closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />

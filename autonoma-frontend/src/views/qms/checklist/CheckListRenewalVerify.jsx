@@ -19,7 +19,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ExecutionVerifyDialog from './ExecutionVerifyDialog';
 import useAuth from 'hooks/useAuth';
 import useLookups from 'hooks/useLookups';
-import { BOSTableToolbar } from 'ui-component/bos';
+import { BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -127,8 +127,7 @@ const exportColumns = [
   { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
 ];
 
-const filterConfig = [
-  {
+const filterConfig = [{
     id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
@@ -191,8 +190,8 @@ const filterConfig = [
       { value: 'YES', label: 'YES' },
       { value: 'NO', label: 'NO' }
     ]
-  }
-];
+  },
+  ...getCommonDateFilters('createdDate', 'updatedDate')];
 
 // Local Filter drawer helper functions removed (filtering managed globally)
 
@@ -473,10 +472,10 @@ export default function CheckListRenewalVerify() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Checklist_Renewal_Verify"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
 
@@ -548,13 +547,17 @@ export default function CheckListRenewalVerify() {
                       <Box
                         component="span"
                         onClick={(e) => { e.stopPropagation(); setSelectedRowId(row.id); setDialogOpen(true); }}
-                        sx={{ color: 'primary.main', textDecoration: 'underline', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
+                        sx={{ color: 'primary.main', textDecoration: 'none', cursor: 'pointer', fontWeight: 500, '&:hover': { color: 'primary.dark' } }}
                       >
                         {row.checklist.checkingPoint}
                       </Box>
                     ) : '-'}
                   </TableCell>
-                  <TableCell>{row.checklist?.description}</TableCell>
+                  <TableCell>
+                    {row.checklist?.description?.length > 50 
+                      ? `${row.checklist.description.substring(0, 50)}...` 
+                      : row.checklist?.description || '-'}
+                  </TableCell>
                   <TableCell>{row.checklist?.category}</TableCell>
                   <TableCell>{row.checklist?.frequency}</TableCell>
                   <TableCell>{(row.checklist?.departments || []).map(d => d.departmentName).join(', ')}</TableCell>

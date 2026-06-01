@@ -766,13 +766,13 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
                 onChange: e => {
                   const val = e.target.value;
                   if (val.includes('Select All')) {
-                    if (department.length === departmentsList.length) {
-                      setDepartment([]);
-                    } else {
-                      setDepartment(departmentsList);
-                    }
+                    setDepartment(prev => prev.length === departmentsList.length ? [] : departmentsList);
                   } else {
-                    setDepartment(typeof val === 'string' ? val.split(',') : val);
+                    setDepartment(prev => {
+                      const next = typeof val === 'string' ? val.split(',') : val;
+                      if (prev.length === next.length && prev.every((v, i) => v === next[i])) return prev;
+                      return next;
+                    });
                   }
                 }
               }}
@@ -808,7 +808,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
             )}
           </Box>
 
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 3 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: (category !== 'RENEWAL' && frequency === 'CUSTOM') ? '1fr 1fr 1fr' : '1fr 1fr' }, gap: 3 }}>
             {category !== 'RENEWAL' && (
               <BOSAutocomplete
                 label="Frequency"
@@ -821,43 +821,39 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               />
             )}
 
-            {category !== 'RENEWAL' && (frequency === 'WEEKLY' || frequency === 'CUSTOM') && (
-              <Box sx={{ p: 2.5, border: '1px dashed', borderColor: 'primary.light', borderRadius: 2, bgcolor: 'background.paper', display: 'flex', gap: 2.5, alignItems: 'center' }}>
-                {frequency === 'WEEKLY' && (
-                  <BOSAutocomplete
-                    label="Week Day"
-                    value={weekDays}
-                    options={WEEK_DAYS}
-                    onChange={val => setWeekDays(val)}
-                    required
-                    disabled={isViewOnly}
-                    sx={{ minWidth: 200 }}
-                    autoHighlight
-                  />
-                )}
-                {frequency === 'CUSTOM' && (
-                  <Box sx={{ display: 'flex', gap: 2.5, alignItems: 'center', width: '100%' }}>
-                    <BOSTextField
-                      label="Repeat Every"
-                      type="number"
-                      placeholder="e.g. 2"
-                      value={repeatEveryValue}
-                      onChange={e => setRepeatEveryValue(e.target.value)}
-                      required
-                      disabled={isViewOnly}
-                    />
-                    <BOSAutocomplete
-                      label="Unit"
-                      value={repeatEveryUnit}
-                      options={['DAYS','WEEKS','MONTHS','YEARS']}
-                      onChange={val => setRepeatEveryUnit(val)}
-                      required
-                      disabled={isViewOnly}
-                      autoHighlight
-                    />
-                  </Box>
-                )}
-              </Box>
+            {category !== 'RENEWAL' && frequency === 'WEEKLY' && (
+              <BOSAutocomplete
+                label="Week Day"
+                value={weekDays}
+                options={WEEK_DAYS}
+                onChange={val => setWeekDays(val)}
+                required
+                disabled={isViewOnly}
+                autoHighlight
+              />
+            )}
+
+            {category !== 'RENEWAL' && frequency === 'CUSTOM' && (
+              <>
+                <BOSTextField
+                  label="Repeat Every"
+                  type="number"
+                  placeholder="e.g. 2"
+                  value={repeatEveryValue}
+                  onChange={e => setRepeatEveryValue(e.target.value)}
+                  required
+                  disabled={isViewOnly}
+                />
+                <BOSAutocomplete
+                  label="Schedule"
+                  value={repeatEveryUnit}
+                  options={['DAYS','WEEKS','MONTHS','YEARS']}
+                  onChange={val => setRepeatEveryUnit(val)}
+                  required
+                  disabled={isViewOnly}
+                  autoHighlight
+                />
+              </>
             )}
           </Box>
 
@@ -906,17 +902,7 @@ export default function AddCheckListDialog({ open, handleClose, onSave, initialD
               />
             )}
 
-            {initialData && (
-              <BOSAutocomplete
-                label="Status"
-                value={status}
-                options={['Active', 'Inactive', 'Pending', 'Not Assigned', 'Rejected']}
-                onChange={val => setStatus(val)}
-                required
-                disabled={isViewOnly}
-                autoHighlight
-              />
-            )}
+
           </Box>
 
           {isAmendment && (

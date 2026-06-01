@@ -302,7 +302,7 @@ public class ChecklistService {
             existing.setUpdatedDate(new Date());
             existing.setUpdatedBy(checklist.getUpdatedBy() != null && !checklist.getUpdatedBy().isEmpty() 
                     ? checklist.getUpdatedBy() 
-                    : com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+                    : existing.getCreatedBy());
 
             // Re-sync departments safely via the managed list of the existing entity to avoid Hibernate state desync
             if (existing.getDepartments() != null) {
@@ -451,9 +451,16 @@ public class ChecklistService {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("checklistDate"), fromDate));
             }
 
-            if (toDate != null) {
-                predicates.add(cb.lessThanOrEqualTo(root.get("checklistDate"), toDate));
+            Date effectiveToDate = toDate;
+            if (effectiveToDate == null) {
+                java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 23);
+                cal.set(java.util.Calendar.MINUTE, 59);
+                cal.set(java.util.Calendar.SECOND, 59);
+                cal.set(java.util.Calendar.MILLISECOND, 999);
+                effectiveToDate = cal.getTime();
             }
+            predicates.add(cb.lessThanOrEqualTo(root.get("checklistDate"), effectiveToDate));
 
             if (category != null && !category.equals("All")) {
                 if (masterJoin == null) {
@@ -465,16 +472,43 @@ public class ChecklistService {
             if (searchValue != null && !searchValue.isEmpty()) {
                 String searchTerm = "%" + searchValue.toLowerCase() + "%";
                 if (searchBy != null && !searchBy.isEmpty()) {
+                    Expression<String> expression;
                     if (searchBy.contains(".")) {
                         String[] parts = searchBy.split("\\.");
-                        Path<Object> p = root.get(parts[0]);
-                        for (int i = 1; i < parts.length; i++) {
-                            p = p.get(parts[i]);
+                        if ("checklist".equals(parts[0])) {
+                            Join<ChecklistAssignment, MasterChecklist> cJoin = (masterJoin != null) ? masterJoin : root.join("checklist");
+                            expression = cJoin.get(parts[1]);
+                        } else if ("status".equals(parts[0])) {
+                            Join<ChecklistAssignment, StatusMaster> sJoin = root.join("status");
+                            expression = sJoin.get(parts[1]);
+                        } else {
+                            Path<Object> p = root.get(parts[0]);
+                            for (int i = 1; i < parts.length; i++) {
+                                p = p.get(parts[i]);
+                            }
+                            if (String.class.equals(p.getJavaType())) {
+                                expression = (Expression<String>) (Expression<?>) p;
+                            } else {
+                                expression = p.as(String.class);
+                            }
                         }
-                        predicates.add(cb.like(cb.lower(p.as(String.class)), searchTerm));
                     } else {
-                        predicates.add(cb.like(cb.lower(root.get(searchBy).as(String.class)), searchTerm));
+                        if (java.util.Arrays.asList("seqNo", "checkingPoint", "category", "frequency").contains(searchBy)) {
+                            Join<ChecklistAssignment, MasterChecklist> cJoin = (masterJoin != null) ? masterJoin : root.join("checklist");
+                            expression = cJoin.get(searchBy);
+                        } else if ("status".equals(searchBy)) {
+                            Join<ChecklistAssignment, StatusMaster> sJoin = root.join("status");
+                            expression = sJoin.get("name");
+                        } else {
+                            Path<Object> p = root.get(searchBy);
+                            if (String.class.equals(p.getJavaType())) {
+                                expression = (Expression<String>) (Expression<?>) p;
+                            } else {
+                                expression = p.as(String.class);
+                            }
+                        }
                     }
+                    predicates.add(cb.like(cb.lower(expression), searchTerm));
                 } else {
                     List<Predicate> orPredicates = new ArrayList<>();
                     orPredicates.add(cb.like(cb.lower(root.get("assignedTo")), searchTerm));
@@ -508,7 +542,18 @@ public class ChecklistService {
     @Transactional
     public ChecklistAssignment assignTask(Long id, Long checklistId, String assignedTo, String assignedBy,
             String assignType) {
-        return assignTask(id, checklistId, assignedTo, assignedBy, assignType, new Date());
+        MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
+        Date targetDate = new Date();
+        if (checklist.getEffectiveFrom() != null) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+            String todayStr = sdf.format(targetDate);
+            String effectiveStr = sdf.format(checklist.getEffectiveFrom());
+            if (effectiveStr.compareTo(todayStr) > 0) {
+                targetDate = checklist.getEffectiveFrom();
+            }
+        }
+        return assignTask(id, checklistId, assignedTo, assignedBy, assignType, targetDate);
     }
 
     @Transactional
@@ -613,6 +658,8 @@ public class ChecklistService {
         MasterChecklist checklist = assignment.getChecklist();
         deleteFromFrequencyTable(checklist.getId(), assignment.getAssignedTo(), assignment.getChecklistDate(), checklist.getFrequency());
 
+        assignRepo.delete(assignment);
+
         // Recalculate assigned users
         java.util.List<ChecklistAssignment> allAssignments = assignRepo.findByChecklistId(checklist.getId());
         String allAssignedTo = allAssignments.stream()
@@ -644,6 +691,7 @@ public class ChecklistService {
                         || "Started".equalsIgnoreCase(assignment.getStatus().getName()))) {
 
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
 
             java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
@@ -684,12 +732,13 @@ public class ChecklistService {
                 oldRejected.setUpdatedBy(verifiedBy);
                 oldRejected.setUpdatedAt(new Date());
                 
-                // Save A to active table and frequency table
-                assignRepo.save(oldRejected);
-                saveToFrequencyTable(oldRejected);
+                // Save A to assignRepo and frequency table
+                ChecklistAssignment savedOldRejected = assignRepo.save(oldRejected);
+                saveToFrequencyTable(savedOldRejected);
 
                 // Delete B (the again-created helper assignment) entirely
                 deleteFromFrequencyTable(assignment.getChecklist().getId(), assignment.getAssignedTo(), assignment.getChecklistDate(), assignment.getChecklist().getFrequency());
+                assignRepo.delete(assignment);
 
                 // Return a dummy verification object
                 ChecklistVerification dummy = new ChecklistVerification();
@@ -740,9 +789,9 @@ public class ChecklistService {
             assignment.setComments(remarks);
         }
 
-        // Save active details in active table and frequency table
-        assignRepo.save(assignment);
-        saveToFrequencyTable(assignment);
+        // Save active/closed details directly in the respective frequency table
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        saveToFrequencyTable(savedAssignment);
 
         // Create a dummy verification object to return (deprecation safety)
         ChecklistVerification dummyVerification = new ChecklistVerification();
@@ -756,6 +805,7 @@ public class ChecklistService {
         if ("Rejected".equalsIgnoreCase(finalStatusName)) {
             boolean alreadyExists = false;
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
 
             java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
@@ -778,7 +828,8 @@ public class ChecklistService {
                 next.setCarryForwardStatus("NO");
                 next.setCarryForwardCount(0);
                 statusRepo.findByName("Pending").ifPresent(next::setStatus);
-                saveToFrequencyTable(next);
+                ChecklistAssignment savedNext = assignRepo.save(next);
+                saveToFrequencyTable(savedNext);
             }
         }
 
@@ -789,6 +840,7 @@ public class ChecklistService {
         // ERASE ON VERIFY WORKFLOW:
         if (isFinalized) {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
             String dateStr = assignment.getChecklistDate() != null ? sdf.format(assignment.getChecklistDate()) : "";
 
             java.util.List<ChecklistAssignment> allAssigned = assignRepo.findByChecklistId(master.getId());
@@ -806,6 +858,7 @@ public class ChecklistService {
                     for (ChecklistAssignment rej : rejectedList) {
                         deleteFromFrequencyTable(rej.getChecklist().getId(), rej.getAssignedTo(), rej.getChecklistDate(), rej.getChecklist().getFrequency());
                     }
+                    assignRepo.deleteAll(rejectedList);
                 }
 
                 // 2. Delete the again-created checklist (which is Pending/Started)
@@ -817,6 +870,7 @@ public class ChecklistService {
                     for (ChecklistAssignment pend : pendingList) {
                         deleteFromFrequencyTable(pend.getChecklist().getId(), pend.getAssignedTo(), pend.getChecklistDate(), pend.getChecklist().getFrequency());
                     }
+                    assignRepo.deleteAll(pendingList);
                 }
             }
         }
@@ -834,7 +888,7 @@ public class ChecklistService {
         String freq = master.getFrequency().toUpperCase();
         Date currentDate = current.getChecklistDate() != null ? current.getChecklistDate() : new Date();
 
-        java.util.Calendar cal = java.util.Calendar.getInstance();
+        java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
         cal.setTime(currentDate);
 
         switch (freq) {
@@ -875,15 +929,15 @@ public class ChecklistService {
         next.setChecklistDate(nextDate);
         statusRepo.findByName("Pending").ifPresent(next::setStatus);
 
-        ChecklistAssignment saved = assignRepo.save(next);
-        saveToFrequencyTable(saved);
+        ChecklistAssignment savedNext = assignRepo.save(next);
+        saveToFrequencyTable(savedNext);
     }
 
     @Transactional
     public ChecklistAssignment saveAssignment(ChecklistAssignment assignment) {
-        ChecklistAssignment saved = assignRepo.save(assignment);
-        saveToFrequencyTable(saved);
-        return saved;
+        ChecklistAssignment savedAssignment = assignRepo.save(assignment);
+        saveToFrequencyTable(savedAssignment);
+        return savedAssignment;
     }
 
     @Transactional

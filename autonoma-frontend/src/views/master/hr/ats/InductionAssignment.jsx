@@ -5,45 +5,16 @@ import { useTheme } from '@mui/material/styles';
 
 // MUI & Icons
 import {
-  Box,
-  Typography,
-  Stack,
-  Tooltip,
-  IconButton,
-  MenuItem,
-  Button,
-  Chip,
-  Divider,
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Paper
+  Box, Typography, Stack, Tooltip, IconButton, MenuItem, Button, Chip, Divider, TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Paper
 } from '@mui/material';
 import {
-  IconRefresh,
-  IconPlus,
-  IconCalendarEvent,
-  IconEdit,
-  IconUserPlus,
-  IconCloudUpload,
-  IconTrash
+  IconRefresh, IconPlus, IconCalendarEvent, IconEdit, IconUserPlus, IconCloudUpload, IconTrash
 } from '@tabler/icons-react';
 
 // BOS Components
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSTextField,
-  btnNew,
-  errorStyle,
-  BOSTableToolbar
-} from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, btnNew, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { openSnackbar } from 'store/slices/snackbar';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
@@ -204,8 +175,7 @@ const InductionAssignment = () => {
 
   // Dispatch starred filter configuration matching Status and Search By
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -214,7 +184,7 @@ const InductionAssignment = () => {
           { value: 'PENDING', label: 'PENDING' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'PENDING',
         isStarred: true
       },
       {
@@ -230,8 +200,8 @@ const InductionAssignment = () => {
         ],
         defaultValue: 'empCode',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -786,6 +756,8 @@ const InductionAssignment = () => {
 
   const resolvedRows = useMemo(() => {
     return rows.filter(row => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusVal = globalFilters.status || 'ALL';
       const matchesStatus = statusVal === 'ALL' || row.inductionStatus === statusVal;
 
@@ -809,16 +781,16 @@ const InductionAssignment = () => {
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title="Employee Induction Summary"
       secondary={
         <BOSTableToolbar
           onRefresh={fetchRows}
           exportData={resolvedRows}
-          exportColumns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Summary"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable
@@ -827,6 +799,7 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
+        showActions={false}
       />
 
       <BOSFormDialog
