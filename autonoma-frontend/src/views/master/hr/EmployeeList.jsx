@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, Button, Stack, Tooltip, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  Grid, Autocomplete, TextField, Box, Avatar
+  Typography, Button, Stack, Tooltip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Autocomplete, TextField, Box, Avatar
 } from '@mui/material';
 import { IconFileDownload, IconRefresh, IconUsers, IconUser, IconUserCheck, IconShieldCheck } from '@tabler/icons-react';
 import axios from 'utils/axios';
@@ -15,7 +13,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSFormSection, getPhotoUrl, btnSave, btnCancel, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSFormSection, getPhotoUrl, btnSave, btnCancel, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import { useLookups } from 'hooks/useLookups';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
@@ -243,6 +241,8 @@ export default function EmployeeList() {
 
     // Filter out candidates/applicants whose code starts with "ATS-" or whose status is not "Active"
     const activeEmployees = rows.filter(r => {
+      if (!matchCommonDateFilters(r, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const code = r.oldEmpCode || r.empCode || '';
       return !code.startsWith('ATS-') && (r.status === 'Active' || !r.status);
     });

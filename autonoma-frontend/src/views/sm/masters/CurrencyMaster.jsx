@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Tooltip, Grid, Dialog, D
 import { IconCoins, IconDeviceFloppy, IconPlus, IconTrash, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel, BOSStatusField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, btnSave, btnDelete, btnCancel, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -91,11 +91,10 @@ export default function CurrencyMaster() {
 
   
   useEffect(() => {
-    const config = [
-      { id: 'currencyCode', label: 'Currency Code', type: 'text' },
+    const config = [{ id: 'currencyCode', label: 'Currency Code', type: 'text' },
       { id: 'currencyName', label: 'Currency Name', type: 'text' },
-      { id: 'symbol', label: 'Symbol', type: 'text' }
-    ];
+      { id: 'symbol', label: 'Symbol', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

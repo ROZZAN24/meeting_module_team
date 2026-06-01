@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid } from '@mui/materi
 import { IconChartBar, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel, BOSStatusField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -86,10 +86,9 @@ export default function SegmentMaster() {
 
   
   useEffect(() => {
-    const config = [
-      { id: 'segmentCode', label: 'Segment Code', type: 'text' },
-      { id: 'segmentName', label: 'Segment Name', type: 'text' }
-    ];
+    const config = [{ id: 'segmentCode', label: 'Segment Code', type: 'text' },
+      { id: 'segmentName', label: 'Segment Name', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

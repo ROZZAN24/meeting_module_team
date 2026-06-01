@@ -7,7 +7,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import { exportToExcel } from 'utils/excelExport';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import AddDesignationDialog from './AddDesignationDialog';
@@ -64,8 +64,7 @@ export default function DesignationMaster() {
   }, [fetchDesignations]);
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'appearInCompetency',
         label: 'Competency Tracking',
         type: 'select',
@@ -91,8 +90,8 @@ export default function DesignationMaster() {
       { id: 'experience', label: 'Experience', type: 'text', placeholder: 'Search by Experience...' },
       { id: 'qualification', label: 'Min Qualification', type: 'text', placeholder: 'Search by Qualification...' },
       { id: 'createdDate', label: 'Created Date', type: 'date' },
-      { id: 'updatedDate', label: 'Updated Date', type: 'date' }
-    ];
+      { id: 'updatedDate', label: 'Updated Date', type: 'date' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));

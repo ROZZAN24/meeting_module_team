@@ -9,7 +9,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 
 // ==============================|| MODEL NAME MASTER (BOS SOP COMPLIANT) ||============================== //
@@ -43,8 +43,7 @@ export default function ModelNameMaster() {
 
   // Dispatch starred filter configuration matching Model Name and Status
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'modelNameContains',
         label: 'Model Name Contains',
         type: 'text',
@@ -62,8 +61,8 @@ export default function ModelNameMaster() {
         ],
         defaultValue: 'ACTIVE',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -112,6 +111,8 @@ export default function ModelNameMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;

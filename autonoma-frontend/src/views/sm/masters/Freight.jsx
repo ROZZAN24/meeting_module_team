@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid, Dialog, DialogTitl
 import { IconTractor, IconPlus, IconX, IconDeviceFloppy } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, BOSStatusField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -116,10 +116,9 @@ export default function Freight() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'freightType', label: 'Freight Type', type: 'text' },
-      { id: 'description', label: 'Description', type: 'text' }
-    ];
+    const config = [{ id: 'freightType', label: 'Freight Type', type: 'text' },
+      { id: 'description', label: 'Description', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

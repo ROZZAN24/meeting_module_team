@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid, Autocomplete, Text
 import { IconChartPie, IconDeviceFloppy, IconPlus, IconX } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel, BOSStatusField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSFormDialog, btnSave, btnDelete, btnCancel, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -95,10 +95,9 @@ export default function SubSegmentMaster() {
 
   
   useEffect(() => {
-    const config = [
-      { id: 'subSegmentCode', label: 'Sub Segment Code', type: 'text' },
-      { id: 'subSegmentName', label: 'Sub Segment Name', type: 'text' }
-    ];
+    const config = [{ id: 'subSegmentCode', label: 'Sub Segment Code', type: 'text' },
+      { id: 'subSegmentName', label: 'Sub Segment Name', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

@@ -9,11 +9,7 @@ import { useDispatch } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable,
-  getStatusChipSx,
-  btnNew,
-  BOSTableToolbar
-} from 'ui-component/bos';
+  BOSDataTable, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useLookups from 'hooks/useLookups';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -78,11 +74,10 @@ export default function AuditReport() {
   }, [rows, auditSchedules]);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true, defaultValue: format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', isStarred: true, defaultValue: format(new Date().setMonth(new Date().getMonth() - 1), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', isStarred: true, defaultValue: format(new Date(), 'yyyy-MM-dd') },
-      { id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' }
-    ]));
+      { id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 

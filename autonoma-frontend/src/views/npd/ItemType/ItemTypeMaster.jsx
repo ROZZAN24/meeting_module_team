@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -68,8 +68,7 @@ export default function ItemTypeMaster() {
     ];
 
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -87,8 +86,8 @@ export default function ItemTypeMaster() {
         id: 'groupId', label: 'Item Group', type: 'select',
         options: groupOptions,
         defaultValue: 'All'
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       status: 'ACTIVE',
@@ -143,6 +142,8 @@ export default function ItemTypeMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;

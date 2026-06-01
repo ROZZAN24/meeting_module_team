@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, MenuItem
+  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem
 } from '@mui/material';
 import { IconTruckDelivery, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -127,10 +126,9 @@ export default function DeliveryTerms() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'termName', label: 'Delivery Term', type: 'text' },
-      { id: 'description', label: 'Delivery Term Description', type: 'text' }
-    ];
+    const config = [{ id: 'termName', label: 'Delivery Term', type: 'text' },
+      { id: 'description', label: 'Delivery Term Description', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

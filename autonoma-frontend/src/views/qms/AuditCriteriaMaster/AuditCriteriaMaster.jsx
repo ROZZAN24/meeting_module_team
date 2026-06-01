@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { Chip } from '@mui/material';
@@ -51,8 +51,7 @@ export default function AuditCriteriaMaster() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -67,8 +66,8 @@ export default function AuditCriteriaMaster() {
       { id: 'criteriaText', label: 'Criteria', type: 'text', placeholder: 'Filter by Criteria...' },
       { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Department...' },
       { id: 'createdUser', label: 'CREATED USER', type: 'text' },
-      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' }
-    ];
+      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -144,6 +143,8 @@ export default function AuditCriteriaMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const auditTypeFilter = globalFilters.auditType || '';

@@ -15,7 +15,7 @@ import AddCustomerDetailsDialog from './AddCustomerDetailsDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 
 // ==============================|| SM - CUSTOMER MASTER (BOS SOP COMPLIANT) ||============================== //
 
@@ -75,11 +75,10 @@ export default function CustomerMasterList() {
   const theme = useTheme();
 
   useEffect(() => {
-    const config = [
-      { id: 'customerName', label: 'Customer Name', type: 'text', placeholder: 'Search by Name...' },
+    const config = [{ id: 'customerName', label: 'Customer Name', type: 'text', placeholder: 'Search by Name...' },
       { id: 'gstin', label: 'GSTIN', type: 'text', placeholder: 'Search by GSTIN...' },
-      { id: 'invoiceName', label: 'Invoice Name', type: 'text', placeholder: 'Search by Invoice Name...' }
-    ];
+      { id: 'invoiceName', label: 'Invoice Name', type: 'text', placeholder: 'Search by Invoice Name...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -167,6 +166,8 @@ export default function CustomerMasterList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const nameFilter = (globalFilters.customerName || '').toLowerCase();
       const gstinFilter = (globalFilters.gstin || '').toLowerCase();
       const invoiceFilter = (globalFilters.invoiceName || '').toLowerCase();

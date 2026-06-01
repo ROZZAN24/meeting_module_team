@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -49,8 +49,7 @@ export default function AuditScheduleList() {
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      {
+    dispatch(setFilterConfig([{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -68,8 +67,8 @@ export default function AuditScheduleList() {
       { id: 'auditArea', label: 'Audit Area', type: 'text', placeholder: 'Filter by Area...' },
       { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Dept...' },
       { id: 'auditor', label: 'Auditor', type: 'text', placeholder: 'Filter by Auditor...' },
-      { id: 'auditee', label: 'Auditee', type: 'text', placeholder: 'Filter by Auditee...' }
-    ]));
+      { id: 'auditee', label: 'Auditee', type: 'text', placeholder: 'Filter by Auditee...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -134,6 +133,8 @@ export default function AuditScheduleList() {
 
   const filteredRows = useMemo(() => {
     const filtered = rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'OPEN';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       

@@ -10,19 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSTextField,
-  BOSPersonnelCard,
-  BOSActionSection,
-  useBOSForm,
-  btnExport,
-  btnNew,
-  btnSave,
-  getStatusChipSx,
-  BOSTableToolbar
-} from 'ui-component/bos';
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, BOSActionSection, useBOSForm, btnExport, btnNew, btnSave, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| AUDIT NCR / OFI CLOSURE (REFACTORED WITH PATTERNS) ||============================== //
@@ -203,13 +191,12 @@ export default function AuditNcrClose() {
   };
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       { id: 'observationStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' }
-    ]));
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' },
+      ...getCommonDateFilters('createdDate', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 

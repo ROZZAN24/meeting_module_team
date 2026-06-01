@@ -9,7 +9,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import { format } from 'date-fns';
 
 import MainCard from 'ui-component/cards/MainCard';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import WorkItemMasterDialog from './WorkItemMasterDialog';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
@@ -56,8 +56,7 @@ export default function EnquiryDashboard() {
 
   // Configure global search filters
   useEffect(() => {
-    const config = [
-      { id: 'wiNo', label: 'Work Item No', type: 'text', placeholder: 'Search by WI No...' },
+    const config = [{ id: 'wiNo', label: 'Work Item No', type: 'text', placeholder: 'Search by WI No...' },
       { id: 'custName', label: 'Customer Name', type: 'text', placeholder: 'Search by Customer...' },
       { id: 'category', label: 'Category', type: 'select', options: [
           { value: 'All', label: 'All' },
@@ -72,8 +71,8 @@ export default function EnquiryDashboard() {
           { value: 'Completed', label: 'Completed' }
         ],
         defaultValue: 'Workitem Pending'
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -160,6 +159,8 @@ export default function EnquiryDashboard() {
         updatedDateTime: '-'
       }))
       .filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedDate')) return false;
+
         const q = (globalQuery || '').toLowerCase();
         const wiFilter = (globalFilters.wiNo || '').toLowerCase();
         const custFilter = (globalFilters.custName || '').toLowerCase();

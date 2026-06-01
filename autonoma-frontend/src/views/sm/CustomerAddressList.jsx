@@ -8,7 +8,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import AddCustomerDetailsDialog from './AddCustomerDetailsDialog';
 
 // ==============================|| SM - CUSTOMER ADDRESS LIST ||============================== //
@@ -49,11 +49,10 @@ export default function CustomerAddressList() {
   const theme = useTheme();
 
   useEffect(() => {
-    const config = [
-      { id: 'invoiceName', label: 'Customer Name', type: 'text', placeholder: 'Search by Name...' },
+    const config = [{ id: 'invoiceName', label: 'Customer Name', type: 'text', placeholder: 'Search by Name...' },
       { id: 'address', label: 'Address', type: 'text', placeholder: 'Search by Address...' },
-      { id: 'city', label: 'City', type: 'text', placeholder: 'Search by City...' }
-    ];
+      { id: 'city', label: 'City', type: 'text', placeholder: 'Search by City...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -106,6 +105,8 @@ export default function CustomerAddressList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const nameFilter = (globalFilters.invoiceName || '').toLowerCase();
       const addressFilter = (globalFilters.address || '').toLowerCase();
       const cityFilter = (globalFilters.city || '').toLowerCase();

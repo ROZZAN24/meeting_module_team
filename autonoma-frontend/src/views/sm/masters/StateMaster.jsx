@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, MenuItem
+  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem
 } from '@mui/material';
 import { IconMapPin, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -123,11 +122,10 @@ export default function StateMaster() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'stateName', label: 'State Name', type: 'text' },
+    const config = [{ id: 'stateName', label: 'State Name', type: 'text' },
       { id: 'stateCode', label: 'State Code', type: 'text' },
-      { id: 'countryName', label: 'Country Name', type: 'text' }
-    ];
+      { id: 'countryName', label: 'Country Name', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

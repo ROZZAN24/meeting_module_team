@@ -10,7 +10,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -48,8 +48,7 @@ export default function AuditAreaMaster() {
   const tableColumns = useMemo(() => columns.filter(col => visibleColumnIds.includes(col.id)), [visibleColumnIds]);
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -68,8 +67,8 @@ export default function AuditAreaMaster() {
         ],
         defaultValue: 'All',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -142,6 +141,8 @@ export default function AuditAreaMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const typeFilter = globalFilters.type || 'All';

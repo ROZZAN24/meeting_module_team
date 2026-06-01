@@ -11,7 +11,7 @@ import AddEnquiryDialog from './AddEnquiryDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { useSelector, useDispatch } from 'react-redux';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -100,15 +100,14 @@ export default function EnquiryList() {
 
   
   useEffect(() => {
-    const config = [
-      { id: 'enquiryNo', label: 'Enquiry No', type: 'text' },
+    const config = [{ id: 'enquiryNo', label: 'Enquiry No', type: 'text' },
       { id: 'enquiryDate', label: 'Date', type: 'text' },
       { id: 'customerName', label: 'Customer', type: 'text' },
       { id: 'contactPerson', label: 'Contact', type: 'text' },
       { id: 'subject', label: 'Subject', type: 'text' },
       { id: 'source', label: 'Source', type: 'text' },
-      { id: 'priority', label: 'Priority', type: 'text' }
-    ];
+      { id: 'priority', label: 'Priority', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);

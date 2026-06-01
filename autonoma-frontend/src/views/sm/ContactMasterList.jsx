@@ -12,7 +12,7 @@ import AddContactDialog from './AddContactDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 
 // ==============================|| SM - CONTACT MASTER ||============================== //
 
@@ -55,11 +55,10 @@ export default function ContactMasterList() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      { id: 'contactName', label: 'Contact Name', type: 'text', placeholder: 'Search by Name...' },
+    const config = [{ id: 'contactName', label: 'Contact Name', type: 'text', placeholder: 'Search by Name...' },
       { id: 'groupName', label: 'Group Name', type: 'text', placeholder: 'Search by Group...' },
-      { id: 'emailId', label: 'Email', type: 'text', placeholder: 'Search by Email...' }
-    ];
+      { id: 'emailId', label: 'Email', type: 'text', placeholder: 'Search by Email...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -127,6 +126,8 @@ export default function ContactMasterList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const nameFilter = (globalFilters.contactName || '').toLowerCase();
       const groupFilter = (globalFilters.groupName || '').toLowerCase();
       const emailFilter = (globalFilters.emailId || '').toLowerCase();

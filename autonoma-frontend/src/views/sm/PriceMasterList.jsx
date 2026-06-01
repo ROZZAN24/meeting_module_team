@@ -12,7 +12,7 @@ import AddPriceMasterDialog from './AddPriceMasterDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| SM - PRICE MASTER LIST (BOS SOP COMPLIANT) ||============================== //
@@ -51,8 +51,7 @@ export default function PriceMasterList() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -62,8 +61,8 @@ export default function PriceMasterList() {
         ],
         defaultValue: 'All'
       },
-      { id: 'customerName', label: 'Customer', type: 'text', placeholder: 'Search by Customer...' }
-    ];
+      { id: 'customerName', label: 'Customer', type: 'text', placeholder: 'Search by Customer...' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -126,6 +125,8 @@ export default function PriceMasterList() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const nameFilter = globalFilters.customerName || '';
