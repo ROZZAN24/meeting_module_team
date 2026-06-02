@@ -39,7 +39,7 @@ public class AuditAreaController {
     }
 
     @PostMapping
-    @RequirePagePermission(pageCode = "M1120", action = "write")
+    @RequirePagePermission(pageCode = "M1110", action = "write")
     @Operation(summary = "Create Audit Area", description = "Creates a new audit area")
     public ResponseEntity<?> createAuditArea(@RequestBody AuditArea auditArea) {
         log.info("Saving audit area: {}", auditArea);
@@ -53,7 +53,7 @@ public class AuditAreaController {
     }
 
     @PutMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1120", action = "write")
+    @RequirePagePermission(pageCode = "M1110", action = "write")
     @Operation(summary = "Update Audit Area", description = "Updates an existing audit area")
     public ResponseEntity<?> updateAuditArea(@PathVariable Long id, @RequestBody AuditArea auditArea) {
         log.info("Updating audit area with id: {}, data: {}", id, auditArea);
@@ -75,7 +75,7 @@ public class AuditAreaController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1120", action = "delete")
+    @RequirePagePermission(pageCode = "M1110", action = "delete")
     @Operation(summary = "Delete Audit Area", description = "Deletes an audit area by its ID")
     public ResponseEntity<?> deleteAuditArea(@PathVariable Long id) {
         AuditArea existing = auditAreaRepository.findById(id).orElse(null);
