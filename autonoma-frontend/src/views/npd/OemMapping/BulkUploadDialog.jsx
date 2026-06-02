@@ -95,22 +95,58 @@ export default function BulkUploadDialog({ open, handleClose }) {
         });
       }
 
-      // Check for duplicate part numbers in the parsed rows (case-insensitive)
-      const filePartNos = new Set();
-      const duplicatePartNos = [];
+      // Check for duplicate data in fields "Part No", "OEM Part No", and "OEM Description" (case-insensitive)
+      const partNos = new Set();
+      const oemPartNos = new Set();
+      const oemDescriptions = new Set();
+
+      let hasPartNoDup = false;
+      let hasOemPartNoDup = false;
+      let hasOemDescDup = false;
+
       for (const row of rowsToSave) {
-        const key = row.partNo.toLowerCase();
-        if (filePartNos.has(key)) {
-          if (!duplicatePartNos.includes(row.partNo)) {
-            duplicatePartNos.push(row.partNo);
+        if (row.partNo) {
+          const key = row.partNo.toLowerCase();
+          if (partNos.has(key)) {
+            hasPartNoDup = true;
+          } else {
+            partNos.add(key);
           }
-        } else {
-          filePartNos.add(key);
+        }
+        if (row.oemPartNo) {
+          const key = row.oemPartNo.toLowerCase();
+          if (oemPartNos.has(key)) {
+            hasOemPartNoDup = true;
+          } else {
+            oemPartNos.add(key);
+          }
+        }
+        if (row.oemDescription) {
+          const key = row.oemDescription.toLowerCase();
+          if (oemDescriptions.has(key)) {
+            hasOemDescDup = true;
+          } else {
+            oemDescriptions.add(key);
+          }
         }
       }
 
-      if (duplicatePartNos.length > 0) {
-        setErrorMsg(`Duplicate Part No(s) found in the file: ${duplicatePartNos.join(', ')}. Please remove duplicate rows and try again.`);
+      const duplicateFields = [];
+      if (hasPartNoDup) duplicateFields.push('Part No');
+      if (hasOemPartNoDup) duplicateFields.push('OEM Part No');
+      if (hasOemDescDup) duplicateFields.push('OEM Description');
+
+      if (duplicateFields.length > 0) {
+        const msg = `Duplicate data found in ${duplicateFields.join(', ')}`;
+        dispatch(openSnackbar({
+          open: true,
+          message: msg,
+          variant: 'alert',
+          alert: { variant: 'filled' },
+          severity: 'error',
+          close: false
+        }));
+        setErrorMsg(msg);
         setParsedData([]);
       } else if (rowsToSave.length === 0) {
         setErrorMsg('No valid rows found in the sheet. Please make sure Part No and OEM Part No are not empty.');

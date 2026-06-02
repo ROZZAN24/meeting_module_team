@@ -11,7 +11,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { Chip } from '@mui/material';
@@ -51,8 +51,7 @@ export default function AuditCriteriaMaster() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -67,8 +66,8 @@ export default function AuditCriteriaMaster() {
       { id: 'criteriaText', label: 'Criteria', type: 'text', placeholder: 'Filter by Criteria...' },
       { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Department...' },
       { id: 'createdUser', label: 'CREATED USER', type: 'text' },
-      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' }
-    ];
+      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -117,7 +116,15 @@ export default function AuditCriteriaMaster() {
       fetchAuditCriteria();
     } catch (error) {
       console.error('Failed to delete audit criteria:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'Failed to delete.';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
+        errorMsg = error.response.data.message || (typeof error.response.data === 'string' ? error.response.data : errorMsg);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 
@@ -144,6 +151,8 @@ export default function AuditCriteriaMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters.status || 'ACTIVE';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       const auditTypeFilter = globalFilters.auditType || '';
@@ -196,7 +205,7 @@ export default function AuditCriteriaMaster() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconChecks size={24} />
@@ -210,15 +219,10 @@ export default function AuditCriteriaMaster() {
           newTooltip={shortcutTooltip('Create New Criteria', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Audit Type', key: 'auditType' },
-            { header: 'Clause', key: 'clause' },
-            { header: 'Criteria', key: 'criteriaText' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Criteria_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

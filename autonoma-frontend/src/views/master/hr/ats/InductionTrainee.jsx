@@ -211,7 +211,7 @@ export default function InductionTrainee() {
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUserCheck size={24} />
@@ -222,10 +222,10 @@ export default function InductionTrainee() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           exportData={resolvedRows}
-          exportColumns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Trainee"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

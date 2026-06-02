@@ -27,14 +27,18 @@ public class SecurityUtils {
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 Object principal = auth.getPrincipal();
                 if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-                    return ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    System.out.println("[SecurityUtils] Auth principal (UserDetails) -> " + username);
+                    return username;
                 } else {
+                    System.out.println("[SecurityUtils] Auth principal (String) -> " + auth.getName());
                     return auth.getName();
                 }
             }
         } catch (Exception e) {
             // Log error
         }
+        System.out.println("[SecurityUtils] No authenticated user found");
         return null;
     }
 
@@ -46,8 +50,12 @@ public class SecurityUtils {
             return;
         }
 
+        // Only return if we have a fully resolved name in the cache that is NOT equal to the fallback principalId itself
         if (employeeNameCache.containsKey(principalId)) {
-            return;
+            String cached = employeeNameCache.get(principalId);
+            if (cached != null && !cached.equalsIgnoreCase(principalId)) {
+                return;
+            }
         }
 
         try {
@@ -101,7 +109,11 @@ public class SecurityUtils {
             // Ignore resolution errors
         }
 
-        employeeNameCache.put(principalId, principalId);
+        // Only cache the fallback if we have a valid tenant context (meaning the tenant database was actually queried)
+        String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+        if (currentTenant != null && !currentTenant.equalsIgnoreCase("AUTONOMA") && !currentTenant.isEmpty()) {
+            employeeNameCache.put(principalId, principalId);
+        }
     }
 
     public static String getCurrentUserEmployeeName() {
@@ -109,15 +121,23 @@ public class SecurityUtils {
         if (principalId == null) {
             return null;
         }
-        return employeeNameCache.getOrDefault(principalId, principalId);
+        String cached = employeeNameCache.get(principalId);
+        if (cached == null || cached.equalsIgnoreCase(principalId)) {
+            resolveAndCacheEmployeeName(principalId);
+            cached = employeeNameCache.get(principalId);
+        }
+        return cached != null ? cached : principalId;
     }
 
     public static String getCurrentUserDisplayName() {
-        String name = getCurrentUserEmployeeName();
+        String empName = getCurrentUserEmployeeName();
+        if (empName == null) {
+            empName = getCurrentUserId();
+        }
         // Normalize "Administrator" / "Admin istrator" to "Admin" for display consistency
-        if (name != null && ("Administrator".equalsIgnoreCase(name) || "Admin istrator".equalsIgnoreCase(name))) {
+        if (empName != null && ("Administrator".equalsIgnoreCase(empName) || "Admin istrator".equalsIgnoreCase(empName))) {
             return "Admin";
         }
-        return name;
+        return empName;
     }
 }

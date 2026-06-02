@@ -105,8 +105,8 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260527_V1.0__Alter_bos_pages_page_id_to_identity.sql",
         "20260527_V53.0__Drop_Deprecated_Checklist_Tables.sql",
         "20260526_V38.0__Create_NPD_Process.sql",
-        // Support ticket page rename skip on H2
-        "20260528_V56.0__Rename_Support_Ticket_To_Task_Management.sql",
+        // Convert text to nvarchar skip on H2
+        "20260527_V55.1__Convert_All_Text_To_Nvarchar.sql",
         // New v_next consolidation scripts
         "V001__Master_Module.sql",
         "V002__User_Module.sql",

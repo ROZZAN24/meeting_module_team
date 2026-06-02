@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, getStatusChipSx, BOSTableToolbar, BOSExportButton, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import { BOSDataTable, getStatusChipSx, BOSTableToolbar, BOSExportButton, getCommonDateFilters, matchCommonDateFilters, btnNew } from 'ui-component/bos';
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
@@ -161,7 +161,7 @@ export default function AttendanceList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClock size={24} />
@@ -178,38 +178,8 @@ export default function AttendanceList() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Meeting_User_Attendance"
-            columns={[
-              { header: 'Meeting Sch No', key: r => r.schedule?.scheduleNo || '' },
-              { header: 'Participant', key: r => r.employee?.employeeName || '' },
-              { header: 'In Time', key: r => {
-                if (!r.inTime) return '-';
-                let time24 = r.inTime;
-                if (Array.isArray(time24)) {
-                  const [hh, mm] = time24;
-                  time24 = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-                }
-                const [h, m] = time24.split(':');
-                const hour = parseInt(h, 10);
-                const ampm = hour >= 12 ? 'PM' : 'AM';
-                const h12 = hour % 12 || 12;
-                return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
-              }},
-              { header: 'Out Time', key: r => {
-                if (!r.outTime) return '-';
-                let time24 = r.outTime;
-                if (Array.isArray(time24)) {
-                  const [hh, mm] = time24;
-                  time24 = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
-                }
-                const [h, m] = time24.split(':');
-                const hour = parseInt(h, 10);
-                const ampm = hour >= 12 ? 'PM' : 'AM';
-                const h12 = hour % 12 || 12;
-                return `${h12.toString().padStart(2, '0')}:${m} ${ampm}`;
-              }},
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Mark Attendance', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleAdd} sx={btnNew}>
               + New

@@ -942,24 +942,6 @@ export default function UserTaskQueue() {
               />
             )}
 
-            {/* Refresh / Countdown Pill */}
-            <Tooltip title={`Auto-refresh`} placement="top" arrow>
-              <Box sx={{
-                display: 'flex', alignItems: 'center', gap: 1,
-                background: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
-                borderRadius: 20, px: 2, py: 0.75,
-                border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid #E2E8F0',
-                color: isDark ? '#E2E8F0' : '#475569',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                '&:hover': { background: isDark ? 'rgba(255,255,255,0.06)' : '#F1F5F9', borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#CBD5E1' }
-              }} onClick={() => fetchData(false)}>
-                <RefreshRoundedIcon sx={{ fontSize: 16, animation: refreshing ? `${spin} 1s linear infinite` : 'none', color: 'inherit' }} />
-                <Typography sx={{ fontSize: '0.75rem', fontWeight: 600, color: 'inherit' }}>
-                  {countdown}s
-                </Typography>
-              </Box>
-            </Tooltip>
           </Stack>
         </Stack>
       </HeroBanner>

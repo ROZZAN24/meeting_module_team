@@ -8,16 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSTextField,
-  BOSPersonnelCard,
-  useBOSForm,
-  getStatusChipSx,
-  btnNew,
-  BOSTableToolbar
-} from 'ui-component/bos';
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { getFileDownloadUrl, getFileViewUrl } from 'utils/upload-helper';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -53,6 +44,7 @@ export default function AuditNcrApproval() {
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedFinding, setSelectedFinding] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(null);
   const [ncrAttachments, setNcrAttachments] = useState([]);
 
   const { formData, handleFormChange, updateForm, resetForm } = useBOSForm({ remarks: '' });
@@ -120,19 +112,19 @@ export default function AuditNcrApproval() {
   };
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
-      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING APPROVAL' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'REJECTED', label: 'REJECTED' }], defaultValue: 'WAITING_APPROVAL' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' }
-    ]));
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'REJECTED', label: 'REJECTED' }], defaultValue: 'WAITING_APPROVAL' },
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' },
+      ...getCommonDateFilters('createdDate', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
+    setSelectedRecord(null);
     try {
       const [fRes, eRes, cRes] = await Promise.all([
         axios.get('/api/qms/audit/observation/ncr/findings', { params: { ...globalFilters, query: globalQuery } }),
@@ -198,6 +190,7 @@ export default function AuditNcrApproval() {
     setDialogOpen(false);
     setIsNewMode(false);
     setSelectedFinding(null);
+    setSelectedRecord(null);
     resetForm();
     setNcrAttachments([]);
   };
@@ -217,7 +210,17 @@ export default function AuditNcrApproval() {
       dispatch(openSnackbar({ open: true, message: `NC / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
       handleCloseDialog();
       fetchData();
-    } catch (e) { dispatch(openSnackbar({ open: true, message: 'Process failed', severity: 'error' })); }
+    } catch (e) {
+      let errorMsg = 'Process failed';
+      if (typeof e === 'string') {
+        errorMsg = e;
+      } else if (e.response?.data) {
+        errorMsg = e.response.data.message || (typeof e.response.data === 'string' ? e.response.data : errorMsg);
+      } else if (e.message) {
+        errorMsg = e.message;
+      }
+      dispatch(openSnackbar({ open: true, message: errorMsg, severity: 'error' }));
+    }
   };
 
   const renderCell = (col, row, idx) => {
@@ -326,26 +329,50 @@ export default function AuditNcrApproval() {
   );
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconChecks size={24} /><Typography variant="h3">NC / OFI Approval & CAPA Management</Typography></Stack>}
       secondary={
         <BOSTableToolbar
           onRefresh={fetchData}
-          onNew={handleOpenNew}
+          onCloseNcr={perms.write ? () => selectedRecord && handleOpenReview(selectedRecord) : null}
+          closeNcrDisabled={!selectedRecord}
+          closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
+          closeNcrLabel="Close NCE / OFI"
           hasWritePermission={perms.write}
           exportData={rows}
-          exportColumns={[
-            { header: 'NC No', key: 'ncrNo' },
-            { header: 'Department', key: 'departmentName' },
-            { header: 'Observation No', key: 'observationNo' },
-            { header: 'Status', key: 'ncrStatus' }
-          ]}
           exportFilename="NC_Approval_Report"
           hasExportPermission={perms.export}
+          columns={columns}
         />
       }
     >
-      <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenReview} renderCell={renderCell} customActions={(row) => (<Tooltip title="Review & Approve"><IconButton size="small" color="success" onClick={() => handleOpenReview(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}><IconEye size={18} /></IconButton></Tooltip>)} />
+      <BOSDataTable 
+        columns={columns} 
+        rows={rows.slice(page * size, page * size + size)} 
+        page={page} 
+        size={size} 
+        totalCount={rows.length} 
+        loading={loading} 
+        onPageChange={setPage} 
+        onSizeChange={setSize} 
+        onDoubleClickRow={handleOpenReview} 
+        renderCell={renderCell} 
+        selectedRowId={selectedRecord?.id}
+        onClickRow={(row) => setSelectedRecord(row)}
+        customActions={(row) => (
+          <Tooltip title="Review & Approve">
+            <IconButton 
+              size="small" 
+              color="success" 
+              onClick={() => handleOpenReview(row)} 
+              disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} 
+              sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}
+            >
+              <IconEye size={18} />
+            </IconButton>
+          </Tooltip>
+        )} 
+      />
 
       <BOSFormDialog open={dialogOpen} onClose={handleCloseDialog} title="NCR / OFI Approval" maxWidth="lg" hideFooter={true}>
         <Stack spacing={3} sx={{ width: '100%' }}>

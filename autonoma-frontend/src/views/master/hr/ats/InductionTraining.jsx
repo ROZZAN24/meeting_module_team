@@ -128,7 +128,7 @@ export default function InductionTraining() {
           { value: 'PENDING', label: 'PENDING' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'PENDING',
         isStarred: true
       },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
@@ -574,7 +574,7 @@ export default function InductionTraining() {
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconClipboardCheck size={24} />
@@ -585,10 +585,10 @@ export default function InductionTraining() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           exportData={resolvedRows}
-          exportColumns={columns.filter(c => c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Training"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

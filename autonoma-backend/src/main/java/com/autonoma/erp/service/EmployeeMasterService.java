@@ -82,12 +82,10 @@ public class EmployeeMasterService {
         if (employee.getCreatedAt() == null) {
             employee.setCreatedAt(new Date());
         }
-        employee.setUpdatedAt(new Date());
         
         if (employee.getCreatedBy() == null) {
             employee.setCreatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         }
-        employee.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
         
         // Auto-generate empCode if missing
         if (employee.getEmpCode() == null || employee.getEmpCode().trim().isEmpty()) {
@@ -243,8 +241,10 @@ public class EmployeeMasterService {
         if (detail.getPassportIssueCity() != null) existing.setPassportIssueCity(detail.getPassportIssueCity());
         if (detail.getLicenseExpiryDate() != null) existing.setLicenseExpiryDate(detail.getLicenseExpiryDate());
 
-        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-        existing.setUpdatedDate(new Date());
+        if (existing.getId() != null) {
+            existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            existing.setUpdatedDate(new Date());
+        }
         return personalRepo.save(existing);
     }
 
@@ -272,8 +272,10 @@ public class EmployeeMasterService {
         if (contact.getMobile() != null) existing.setMobile(contact.getMobile());
         if (contact.getAlternateMobile() != null) existing.setAlternateMobile(contact.getAlternateMobile());
 
-        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-        existing.setUpdatedDate(new Date());
+        if (existing.getId() != null) {
+            existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            existing.setUpdatedDate(new Date());
+        }
         return contactRepo.save(existing);
     }
 
@@ -339,8 +341,10 @@ public class EmployeeMasterService {
         if (profile.getPerformanceLinkedIncentive() != null) existing.setPerformanceLinkedIncentive(profile.getPerformanceLinkedIncentive());
         if (profile.getHealthInsurance() != null) existing.setHealthInsurance(profile.getHealthInsurance());
 
-        existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-        existing.setUpdatedDate(new Date());
+        if (existing.getId() != null) {
+            existing.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
+            existing.setUpdatedDate(new Date());
+        }
         return jobProfileRepo.save(existing);
     }
 

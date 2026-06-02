@@ -420,10 +420,10 @@ export default function CheckListRenewalReport() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Checklist_Report"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       {activeCount > 0 && (

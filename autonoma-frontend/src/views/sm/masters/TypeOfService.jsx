@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { 
-  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, 
-  DialogActions, MenuItem
+  Typography, Stack, Button, Dialog, DialogTitle, DialogContent, DialogActions, MenuItem
 } from '@mui/material';
 import { IconSettings, IconPlus } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { useSelector, useDispatch } from 'react-redux';
@@ -127,10 +126,9 @@ export default function TypeOfService() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'serviceCode', label: 'Service Code', type: 'text' },
-      { id: 'serviceName', label: 'Service Name', type: 'text' }
-    ];
+    const config = [{ id: 'serviceCode', label: 'Service Code', type: 'text' },
+      { id: 'serviceName', label: 'Service Name', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -146,7 +144,7 @@ export default function TypeOfService() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconSettings size={24} />
@@ -158,12 +156,8 @@ export default function TypeOfService() {
           {perms.export && <BOSExportButton
             data={rows}
             filename="Type_Of_Service"
-            columns={[
-              { header: 'Service Code', key: 'serviceCode' },
-              { header: 'Service Name', key: 'serviceName' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && (
             <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => handleOpen()}>
               New Service Type

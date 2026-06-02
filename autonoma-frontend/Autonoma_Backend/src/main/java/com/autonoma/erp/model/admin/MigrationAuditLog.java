@@ -40,8 +40,11 @@ public class MigrationAuditLog {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         if (migratedAt == null) {
             migratedAt = new Date();
         }
-    }
+        }
 }

@@ -536,12 +536,12 @@ export default function CloseCheckListRenewal() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Close_Checklist"
           hasExportPermission={perms.export}
           onCompleteTask={canEditSelected ? () => setDialogOpen(true) : null}
           completeTaskDisabled={!selectedRowId}
-        />
+         columns={columns} />
       }
     >
       {activeCount > 0 && (

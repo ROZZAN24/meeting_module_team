@@ -336,10 +336,10 @@ export default function CheckListVerify() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Checklist_Verify"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       {/* ── Cursor-following 'Double tap' label ── */}

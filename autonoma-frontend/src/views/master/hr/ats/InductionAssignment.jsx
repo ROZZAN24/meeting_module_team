@@ -184,7 +184,7 @@ const InductionAssignment = () => {
           { value: 'PENDING', label: 'PENDING' },
           { value: 'COMPLETED', label: 'COMPLETED' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'PENDING',
         isStarred: true
       },
       {
@@ -781,16 +781,16 @@ const InductionAssignment = () => {
   }
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title="Employee Induction Summary"
       secondary={
         <BOSTableToolbar
           onRefresh={fetchRows}
           exportData={resolvedRows}
-          exportColumns={columns.filter(c => c.id !== 'actions' && c.id !== 'index').map(c => ({ header: c.label, key: c.id }))}
+          
           exportFilename="Induction_Summary"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable
@@ -799,6 +799,7 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
+        showActions={false}
       />
 
       <BOSFormDialog

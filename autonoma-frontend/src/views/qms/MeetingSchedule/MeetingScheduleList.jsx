@@ -401,7 +401,7 @@ export default function MeetingScheduleList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
           <Box sx={{ p: 1, bgcolor: 'primary.light', borderRadius: 2, display: 'flex' }}>
@@ -417,17 +417,7 @@ export default function MeetingScheduleList() {
           newTooltip={shortcutTooltip('Create New Schedule', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: '#', key: 'index' },
-            { header: 'Schedule No', key: 'scheduleNo' },
-            { header: 'Amendment No', key: 'revSourceScheduleNo' },
-            { header: 'Meeting Type', key: 'meetingTypeName' },
-            { header: 'Meeting Date', key: 'meetingDateTime' },
-            { header: 'Status', key: 'status' },
-            { header: 'Chaired By', key: 'chairedByName' },
-            { header: 'Host By', key: 'hostByName' },
-            { header: 'Created User', key: 'createdUser' }
-          ]}
+          
           exportFilename="Meeting_Schedule"
           hasExportPermission={perms.export}
           onAmendment={() => {
@@ -440,7 +430,7 @@ export default function MeetingScheduleList() {
           amendmentIcon={<IconGitBranch size={18} />}
           amendmentTooltip="Create Amendment"
           amendmentSx={{ borderRadius: '12px', fontWeight: 700 }}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

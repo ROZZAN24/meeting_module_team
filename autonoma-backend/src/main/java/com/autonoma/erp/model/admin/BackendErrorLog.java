@@ -58,8 +58,11 @@ public class BackendErrorLog {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         if (timestamp == null) {
             timestamp = new Date();
         }
-    }
+        }
 }

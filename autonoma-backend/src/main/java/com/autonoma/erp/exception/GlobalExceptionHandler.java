@@ -44,6 +44,28 @@ public class GlobalExceptionHandler {
         }
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public Object handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex, WebRequest request) {
+        String path = "";
+        if (request instanceof ServletWebRequest) {
+            jakarta.servlet.http.HttpServletRequest servletReq = ((ServletWebRequest) request).getRequest();
+            path = servletReq.getRequestURI();
+        } else {
+            path = request.getDescription(false);
+        }
+
+        if (path != null && !path.startsWith("/api/")) {
+            return new org.springframework.web.servlet.ModelAndView("forward:/index.html");
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "Not Found");
+        body.put("details", ex.getMessage());
+        body.put("path", path);
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         logException(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -101,7 +123,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "Cannot delete or modify this record because it is currently in use by other related modules (Foreign Key Constraint Violation).");
+        body.put("message", "SQL Error: " + ex.getMessage() + " | Cause: " + (ex.getCause() != null ? ex.getCause().getMessage() : ""));
         body.put("details", ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }

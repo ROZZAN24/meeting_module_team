@@ -187,7 +187,7 @@ export default function InductionRoundMaster() {
   }, [rows]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconRotate2 size={24} />
@@ -200,6 +200,9 @@ export default function InductionRoundMaster() {
           onNew={handleOpenAdd}
           newLabel="+ New Round"
           hasWritePermission={perms.write}
+          exportData={resolvedRows}
+          exportFilename="Induction_Round_Master"
+          hasExportPermission={perms.export}
         />
       }
     >

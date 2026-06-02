@@ -9,7 +9,7 @@ import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -51,8 +51,7 @@ export default function CustomerPotentialMaster() {
 
   // Starred filter configuration for Customer Potential
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'groupContains',
         label: 'Group Name Contains',
         type: 'text',
@@ -65,8 +64,8 @@ export default function CustomerPotentialMaster() {
         type: 'text',
         defaultValue: '',
         isStarred: true
-      }
-    ];
+      },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -150,6 +149,8 @@ export default function CustomerPotentialMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Group Name contains filter
       const groupFilter = globalFilters.groupContains || '';
       const matchesGroup =
@@ -193,7 +194,7 @@ export default function CustomerPotentialMaster() {
   );
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCoins size={24} />
@@ -222,22 +223,8 @@ export default function CustomerPotentialMaster() {
           {perms.export && <BOSExportButton
             data={filteredRows}
             filename="Customer_Potential_Master"
-            columns={[
-              { header: 'Customer Group Name', key: 'customerGroupName' },
-              { header: 'Customer Code', key: 'customerCode' },
-              { header: 'Customer Type', key: 'customerType' },
-              { header: 'Manufacturer OEM', key: 'manufacturerOem' },
-              { header: 'WTG Model', key: 'wtgModel' },
-              { header: 'Wind Turbine Power', key: 'windTurbinePower' },
-              { header: 'Wind Farm Name', key: 'windFarmName' },
-              { header: 'Area', key: 'area' },
-              { header: 'Pin Code', key: 'pincode' },
-              { header: 'State', key: 'state' },
-              { header: 'Country', key: 'country' },
-              { header: 'Created By', key: 'createdBy' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Customer Potential', 'Ctrl + N')}>
             <Button
               variant="contained"

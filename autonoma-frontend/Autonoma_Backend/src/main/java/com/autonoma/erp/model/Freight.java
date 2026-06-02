@@ -21,13 +21,13 @@ public class Freight {
     @Column(name = "status", length = 50, nullable = false)
     private String status = "Active";
 
-    @Column(name = "created_by", length = 255)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_date")
     private LocalDateTime createdDate;
 
-    @Column(name = "updated_by", length = 255)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_date")

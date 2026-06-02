@@ -76,141 +76,167 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
     }
   };
 
+  const listItemButton = (
+    <ListItemButton
+      component={Link}
+      to={item.url}
+      target={itemTarget}
+      disabled={item.disabled}
+      disableRipple={!drawerOpen}
+      sx={{
+        zIndex: 1201,
+        borderRadius: `${borderRadius}px`,
+        mb: 0.5,
+        ...(drawerOpen && level !== 1 && { ml: `${level * 18}px` }),
+        ...(!drawerOpen && { pl: 1.25 }),
+        ...((!drawerOpen || level !== 1) && {
+          py: level === 1 ? 0 : 1,
+          '&:hover': { bgcolor: 'transparent' },
+          '&.Mui-selected': {
+            '&:hover': { bgcolor: 'transparent' },
+            bgcolor: 'transparent'
+          }
+        })
+      }}
+      selected={isSelected}
+      onClick={() => itemHandler()}
+    >
+      <ButtonBase aria-label="theme-icon" sx={{ borderRadius: `${borderRadius}px` }} disableRipple={drawerOpen}>
+        <ListItemIcon
+          sx={{
+            minWidth: level === 1 ? 36 : 18,
+            color: isSelected ? 'secondary.main' : 'text.primary',
+            ...(!drawerOpen &&
+              level === 1 && {
+                borderRadius: `${borderRadius}px`,
+                width: 46,
+                height: 46,
+                alignItems: 'center',
+                justifyContent: 'center',
+                '&:hover': { bgcolor: 'secondary.light' },
+                ...(isSelected && {
+                  bgcolor: 'secondary.light',
+                  '&:hover': { bgcolor: 'secondary.light' }
+                })
+              }),
+
+            // dark overrides
+            ...theme.applyStyles('dark', {
+              color: isSelected && drawerOpen ? 'text.primary' : 'text.primary',
+
+              ...(!drawerOpen &&
+                level === 1 && {
+                  '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25) },
+                  ...(isSelected && {
+                    bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25),
+                    '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.3) }
+                  })
+                })
+            })
+          }}
+        >
+          {itemIcon}
+        </ListItemIcon>
+      </ButtonBase>
+
+      {(drawerOpen || (!drawerOpen && level !== 1)) && (
+        <Tooltip
+          title={
+            <span>
+              <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+            </span>
+          }
+          disableHoverListener={false}
+        >
+          <ListItemText
+            primary={
+              <Typography
+                ref={ref}
+                noWrap
+                variant={isSelected ? 'h5' : 'body1'}
+                sx={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: 200,
+                  color: 'inherit',
+                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
+                  '.MuiListItemButton-root:hover &': {
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    whiteSpace: 'normal',
+                    width: 'auto',
+                    wordBreak: 'break-word'
+                  }
+                }}
+              >
+                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+              </Typography>
+            }
+            secondary={
+              item.caption && (
+                <Typography
+                  variant="caption"
+                  component="span"
+                  gutterBottom
+                  sx={{
+                    display: 'block',
+                    fontSize: '0.6875rem',
+                    fontWeight: 500,
+                    color: 'text.secondary',
+                    textTransform: 'capitalize',
+                    lineHeight: 1.66
+                  }}
+                >
+                  <FormattedMessage id={item.caption} />
+                </Typography>
+              )
+            }
+          />
+        </Tooltip>
+      )}
+
+      {(drawerOpen && item.chip) && (
+        <Chip
+          color={item.chip?.color}
+          variant={item.chip?.variant}
+          size={item.chip?.size}
+          label={item.chip?.label}
+          avatar={
+            item.chip?.avatar ? (
+              <Avatar>{item.chip?.avatar}</Avatar>
+            ) : undefined
+          }
+        />
+      )}
+    </ListItemButton>
+  );
+
   return (
     <>
       {!isHorizontal ? (
-        <ListItemButton
-          component={Link}
-          to={item.url}
-          target={itemTarget}
-          disabled={item.disabled}
-          disableRipple={!drawerOpen}
-          sx={{
-            zIndex: 1201,
-            borderRadius: `${borderRadius}px`,
-            mb: 0.5,
-            ...(drawerOpen && level !== 1 && { ml: `${level * 18}px` }),
-            ...(!drawerOpen && { pl: 1.25 }),
-            ...((!drawerOpen || level !== 1) && {
-              py: level === 1 ? 0 : 1,
-              '&:hover': { bgcolor: 'transparent' },
-              '&.Mui-selected': {
-                '&:hover': { bgcolor: 'transparent' },
-                bgcolor: 'transparent'
-              }
-            })
-          }}
-          selected={isSelected}
-          onClick={() => itemHandler()}
-        >
-          <ButtonBase aria-label="theme-icon" sx={{ borderRadius: `${borderRadius}px` }} disableRipple={drawerOpen}>
-            <ListItemIcon
-              sx={{
-                minWidth: level === 1 ? 36 : 18,
-                color: isSelected ? 'secondary.main' : 'text.primary',
-                ...(!drawerOpen &&
-                  level === 1 && {
-                    borderRadius: `${borderRadius}px`,
-                    width: 46,
-                    height: 46,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    '&:hover': { bgcolor: 'secondary.light' },
-                    ...(isSelected && {
-                      bgcolor: 'secondary.light',
-                      '&:hover': { bgcolor: 'secondary.light' }
-                    })
-                  }),
-
-                // dark overrides
-                ...theme.applyStyles('dark', {
-                  color: isSelected && drawerOpen ? 'text.primary' : 'text.primary',
-
-                  ...(!drawerOpen &&
-                    level === 1 && {
-                      '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25) },
-                      ...(isSelected && {
-                        bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.25),
-                        '&:hover': { bgcolor: withAlpha(theme.vars.palette.secondary.main, 0.3) }
-                      })
-                    })
-                })
-              }}
-            >
-              {itemIcon}
-            </ListItemIcon>
-          </ButtonBase>
-
-          {(drawerOpen || (!drawerOpen && level !== 1)) && (
-            <Tooltip
-              title={
-                <span>
-                  <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
-                </span>
-              }
-              disableHoverListener={false}
-            >
-              <ListItemText
-                primary={
-                  <Typography
-                    ref={ref}
-                    noWrap
-                    variant={isSelected ? 'h5' : 'body1'}
-                    sx={{
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      width: 200,
-                      color: 'inherit',
-                      ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
-                      '.MuiListItemButton-root:hover &': {
-                        overflow: 'visible',
-                        textOverflow: 'clip',
-                        whiteSpace: 'normal',
-                        width: 'auto',
-                        wordBreak: 'break-word'
-                      }
-                    }}
-                  >
-                    <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
-                  </Typography>
+        !drawerOpen && level === 1 ? (
+          <Tooltip
+            title={
+              <span>
+                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+              </span>
+            }
+            placement="right"
+            disableInteractive
+            arrow
+            slotProps={{
+              popper: {
+                sx: {
+                  zIndex: 2500
                 }
-                secondary={
-                  item.caption && (
-                    <Typography
-                      variant="caption"
-                      component="span"
-                      gutterBottom
-                      sx={{
-                        display: 'block',
-                        fontSize: '0.6875rem',
-                        fontWeight: 500,
-                        color: 'text.secondary',
-                        textTransform: 'capitalize',
-                        lineHeight: 1.66
-                      }}
-                    >
-                      <FormattedMessage id={item.caption} />
-                    </Typography>
-                  )
-                }
-              />
-            </Tooltip>
-          )}
-
-          {(drawerOpen && item.chip) && (
-            <Chip
-              color={item.chip?.color}
-              variant={item.chip?.variant}
-              size={item.chip?.size}
-              label={item.chip?.label}
-              avatar={
-                item.chip?.avatar ? (
-                  <Avatar>{item.chip?.avatar}</Avatar>
-                ) : undefined
               }
-            />
-          )}
-        </ListItemButton>
+            }}
+          >
+            {listItemButton}
+          </Tooltip>
+        ) : (
+          listItemButton
+        )
       ) : item.pageCode ? (
         <Tooltip
           title={
