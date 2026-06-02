@@ -870,10 +870,9 @@ export default function ApplicantProfile() {
         </Stack>
       }
     >
-      <Grid container spacing={3} sx={{ width: '100%' }}>
+      <Stack spacing={3} sx={{ width: '100%' }}>
         {/* ── TOP SECTION: Main Registry Form ── */}
-        <Grid item xs={12} sx={{ width: '100%' }}>
-          <Card variant="outlined" sx={{ width: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
+        <Card variant="outlined" sx={{ width: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
                 <IconUser size={20} /> BASIC REGISTRATION DETAILS
@@ -1111,10 +1110,9 @@ export default function ApplicantProfile() {
               </GridContainer>
             </CardContent>
           </Card>
-        </Grid>
-
+        
         {/* ── BOTTOM TABS FOR SUB-SECTIONS ── */}
-        <Grid item xs={12}>
+        <Box sx={{ width: '100%' }}>
           <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
             <Tabs
               value={activeTab}
@@ -1136,7 +1134,7 @@ export default function ApplicantProfile() {
             </Tabs>
           </Box>
 
-          <Box sx={{ minHeight: '300px', p: 1 }}>
+          <Box sx={{ minHeight: '300px', p: 1, width: '100%' }}>
             {/* 1. PERSONAL DETAILS */}
             {activeTab === 0 && (
               <GridContainer>
@@ -1326,14 +1324,14 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600, minWidth: 250 }}>Company Name</TableCell>
-                        <TableCell sx={{ fontWeight: 600, minWidth: 200 }}>Location</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Experience (Years)</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>File Attachment</TableCell>
-                        <TableCell align="center">
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, minWidth: 250, width: '30%' }}>Company Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, minWidth: 200, width: '20%' }}>Location</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '12%' }}>From Date</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '12%' }}>To Date</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Experience (Years)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '16%' }}>File Attachment</TableCell>
+                        <TableCell align="center" sx={{ width: '5%' }}>
                           <IconButton color="primary" size="small" onClick={handleAddExperienceRow}>
                             <IconPlus size={18} />
                           </IconButton>
@@ -1427,14 +1425,14 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Education</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Institution Name</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Year of Passing</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>% / Grade</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Documents</TableCell>
-                        <TableCell align="center">
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '25%' }}>Education</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>Institution Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Year of Passing</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>% / Grade</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '15%' }}>Documents</TableCell>
+                        <TableCell align="center" sx={{ width: '5%' }}>
                           <IconButton color="primary" size="small" onClick={handleAddEducationRow}>
                             <IconPlus size={18} />
                           </IconButton>
@@ -1768,11 +1766,11 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Seq No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Doc Name</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>DOC No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>File</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Seq No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '25%' }}>Doc Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>DOC No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>File</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1939,10 +1937,10 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Activity Details</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>File Name</TableCell>
-                        <TableCell align="center">
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '60%' }}>Activity Details</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>File Name</TableCell>
+                        <TableCell align="center" sx={{ width: '5%' }}>
                           <IconButton color="primary" size="small" onClick={handleAddSkillRow}>
                             <IconPlus size={18} />
                           </IconButton>
@@ -1989,8 +1987,8 @@ export default function ApplicantProfile() {
               </Box>
             )}
           </Box>
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
     </MainCard>
   );
 }
