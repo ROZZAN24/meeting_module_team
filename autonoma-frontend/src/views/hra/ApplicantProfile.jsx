@@ -1810,16 +1810,16 @@ export default function ApplicantProfile() {
                   group: 'I. PERSONAL & FAMILY DETAILS',
                   fields: [
                     { name: 'q1_native', label: '1. Native Place' },
-                    { name: 'q2_presentAddress', label: '2. Present Address' },
-                    { name: 'q3_permanentAddress', label: '3. Permanent Address' },
+                    { name: 'q2_presentAddress', label: '2. Present Address', lg: 12 },
+                    { name: 'q3_permanentAddress', label: '3. Permanent Address', lg: 12 },
                     { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
                     { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
                     { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
                     { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
                     { name: 'q8_children', label: '8. Children' },
                     { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
-                    { name: 'q10_relativesDetails', label: '10. Relative or friends details' },
-                    { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations' }
+                    { name: 'q10_relativesDetails', label: '10. Relative or friends details', lg: 12 },
+                    { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations', lg: 12 }
                   ]
                 },
                 {
@@ -1835,10 +1835,10 @@ export default function ApplicantProfile() {
                 {
                   group: 'III. PERSONAL GOALS & REFLECTION',
                   fields: [
-                    { name: 'q17_positivePoints', label: '17. Brief about positive points' },
-                    { name: 'q18_negativePoints', label: '18. Brief about negative points' },
-                    { name: 'q19_lifeGoals', label: "19. What's your life goals?" },
-                    { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas' }
+                    { name: 'q17_positivePoints', label: '17. Brief about positive points', lg: 12 },
+                    { name: 'q18_negativePoints', label: '18. Brief about negative points', lg: 12 },
+                    { name: 'q19_lifeGoals', label: "19. What's your life goals?", lg: 12 },
+                    { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas', lg: 12 }
                   ]
                 },
                 {
@@ -1861,9 +1861,9 @@ export default function ApplicantProfile() {
                   fields: [
                     { name: 'q31_prevLocation', label: '31. Previous/current company location' },
                     { name: 'q32_prevShift', label: '32. Previously worked shift' },
-                    { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job' },
+                    { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job', lg: 12 },
                     { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
-                    { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details' },
+                    { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details', lg: 12 },
                     { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
                     { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
                   ]
@@ -1871,8 +1871,8 @@ export default function ApplicantProfile() {
                 {
                   group: 'VI. BEHAVIORAL & WORK RATINGS',
                   fields: [
-                    { name: 'q38_handleMistake', label: '38. How you handle mistakes' },
-                    { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences' },
+                    { name: 'q38_handleMistake', label: '38. How you handle mistakes', lg: 12 },
+                    { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences', lg: 12 },
                     { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
                     { name: 'payslip', label: 'PAY SLIP', type: 'file' }
                   ]
@@ -1886,9 +1886,9 @@ export default function ApplicantProfile() {
                       <Typography variant="h5" color="primary" sx={{ mb: 2.5, fontWeight: 700, borderBottom: '1.5px solid', borderColor: 'primary.light', pb: 1 }}>
                         {g.group}
                       </Typography>
-                      <Grid container spacing={2.5}>
+                      <GridContainer>
                         {g.fields.map(f => (
-                          <Grid item xs={12} key={f.name}>
+                          <R key={f.name} lg={f.lg}>
                             {f.type === 'file' ? (
                               <Box>
                                 <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
@@ -1921,9 +1921,9 @@ export default function ApplicantProfile() {
                                 onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
                               />
                             )}
-                          </Grid>
+                          </R>
                         ))}
-                      </Grid>
+                      </GridContainer>
                     </Card>
                   ))}
                 </Stack>
