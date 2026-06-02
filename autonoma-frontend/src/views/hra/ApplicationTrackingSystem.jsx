@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
+import {
+  Typography, Button, Stack, Tooltip, IconButton, MenuItem, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
@@ -234,6 +235,29 @@ export default function ApplicationTrackingSystem() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
+  // Call Letter Dialog State
+  const [callLetterDialogOpen, setCallLetterDialogOpen] = useState(false);
+  const [callLetterData, setCallLetterData] = useState({
+    interviewDate: '',
+    interviewTime: '',
+    to: '',
+    cc: 'admin@nutech.com'
+  });
+  const [callLetterErrors, setCallLetterErrors] = useState({});
+
+  // Assign Interview Dialog State
+  const [interviewDialogOpen, setInterviewDialogOpen] = useState(false);
+  const [interviewData, setInterviewData] = useState({
+    screeningLevel: '',
+    interviewDate: '',
+    interviewTime: '',
+    round: '',
+    startTime: '',
+    endTime: '',
+    interviewPerson: ''
+  });
+  const [interviewErrors, setInterviewErrors] = useState({});
+
   // Form states inside the Dialog
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [personalData, setPersonalData] = useState(INITIAL_PERSONAL_STATE);
@@ -276,21 +300,21 @@ export default function ApplicationTrackingSystem() {
   // Update default filters
   useEffect(() => {
     const config = [{
-        id: 'status',
-        label: 'Status',
-        type: 'select',
-        options: [
-          { value: 'ALL', label: 'ALL' },
-          { value: 'APPLIED', label: 'APPLIED' },
-          { value: 'INTERVIEWING', label: 'INTERVIEWING' },
-          { value: 'OFFERED', label: 'OFFERED' },
-          { value: 'ON-ROLL', label: 'ON-ROLL' },
-          { value: 'REJECTED', label: 'REJECTED' }
-        ],
-        defaultValue: 'ALL',
-        isStarred: true
-      },
-      ...getCommonDateFilters('createdAt', 'updatedAt')];
+      id: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'ALL', label: 'ALL' },
+        { value: 'APPLIED', label: 'APPLIED' },
+        { value: 'INTERVIEWING', label: 'INTERVIEWING' },
+        { value: 'OFFERED', label: 'OFFERED' },
+        { value: 'ON-ROLL', label: 'ON-ROLL' },
+        { value: 'REJECTED', label: 'REJECTED' }
+      ],
+      defaultValue: 'ALL',
+      isStarred: true
+    },
+    ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     return () => {
       dispatch(setFilterConfig(null));
@@ -582,8 +606,260 @@ export default function ApplicationTrackingSystem() {
     }
   };
 
-  const handleSendCallLetter = () => handleBulkAction('CALL', 'Call letters successfully processed for selected candidates!');
-  const handleAssignInterview = () => handleBulkAction('INTERVIEW', 'Interviews assigned successfully.');
+  const handleSendCallLetter = () => {
+    if (selectedIds.length !== 1) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Select exactly one applicant to send a call letter.',
+        variant: 'alert',
+        severity: 'warning'
+      }));
+      return;
+    }
+    const target = rows.find(r => r.id === selectedIds[0]);
+    if (target) {
+      setCallLetterData({
+        interviewDate: '',
+        interviewTime: '',
+        to: target.emailId || '',
+        cc: 'admin@nutech.com'
+      });
+      setCallLetterErrors({});
+      setCallLetterDialogOpen(true);
+    }
+  };
+
+  const handleCloseCallLetterDialog = () => {
+    setCallLetterDialogOpen(false);
+  };
+
+  const handleClearCallLetterFields = () => {
+    setCallLetterData(prev => ({
+      ...prev,
+      interviewDate: '',
+      interviewTime: '',
+      to: '',
+      cc: 'admin@nutech.com'
+    }));
+    setCallLetterErrors({});
+  };
+
+  const handleSendCallLetterSubmit = async () => {
+    const errs = {};
+    const todayStr = getTodayDateString();
+
+    if (!callLetterData.interviewDate) {
+      errs.interviewDate = 'Interview date is required.';
+    } else if (callLetterData.interviewDate < todayStr) {
+      errs.interviewDate = 'Only today or future dates can be selected.';
+    }
+
+    if (!callLetterData.interviewTime) {
+      errs.interviewTime = 'Interview time is required.';
+    } else {
+      if (callLetterData.interviewTime >= '17:00') {
+        errs.interviewTime = 'Interview must be scheduled before 17:00 (5:00 PM).';
+      }
+
+      if (callLetterData.interviewDate === todayStr) {
+        const now = new Date();
+        const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        if (callLetterData.interviewTime <= currentHHMM) {
+          errs.interviewTime = 'Interview time must be in the future.';
+        }
+      }
+    }
+
+    if (!callLetterData.to) {
+      errs.to = 'To email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.to)) {
+      errs.to = 'Invalid email address.';
+    }
+
+    if (!callLetterData.cc) {
+      errs.cc = 'CC email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.cc)) {
+      errs.cc = 'Invalid email address.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setCallLetterErrors(errs);
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Please resolve the validation errors.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post('/api/hra/applicants/bulk-action', {
+        ids: selectedIds,
+        action: 'CALL'
+      });
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Call letter sent successfully!',
+        variant: 'alert',
+        severity: 'success'
+      }));
+      setCallLetterDialogOpen(false);
+      setSelectedIds([]);
+      fetchApplicants();
+    } catch (e) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Failed to send call letter. Please try again.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+  const handleAssignInterview = () => {
+    if (selectedIds.length !== 1) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Select exactly one applicant to assign an interview.',
+        variant: 'alert',
+        severity: 'warning'
+      }));
+      return;
+    }
+    const target = rows.find(r => r.id === selectedIds[0]);
+    if (target) {
+      setInterviewData({
+        screeningLevel: '',
+        interviewDate: '',
+        interviewTime: '',
+        round: '',
+        startTime: '',
+        endTime: '',
+        interviewPerson: ''
+      });
+      setInterviewErrors({});
+      setInterviewDialogOpen(true);
+    }
+  };
+
+  const handleCloseInterviewDialog = () => {
+    setInterviewDialogOpen(false);
+  };
+
+  const handleClearInterviewFields = () => {
+    setInterviewData({
+      screeningLevel: '',
+      interviewDate: '',
+      interviewTime: '',
+      round: '',
+      startTime: '',
+      endTime: '',
+      interviewPerson: ''
+    });
+    setInterviewErrors({});
+  };
+
+  const handleAssignInterviewSubmit = async () => {
+    const errs = {};
+    const todayStr = getTodayDateString();
+
+    if (!interviewData.screeningLevel) {
+      errs.screeningLevel = 'Screening level is required.';
+    }
+
+    if (!interviewData.interviewDate) {
+      errs.interviewDate = 'Interview date is required.';
+    } else if (interviewData.interviewDate < todayStr) {
+      errs.interviewDate = 'Only today or future dates can be selected.';
+    }
+
+    if (!interviewData.interviewTime) {
+      errs.interviewTime = 'Interview time is required.';
+    } else if (interviewData.interviewDate === todayStr) {
+      const now = new Date();
+      const currentHHMM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      if (interviewData.interviewTime <= currentHHMM) {
+        errs.interviewTime = 'Interview time must be in the future.';
+      }
+    }
+
+    if (!interviewData.round) {
+      errs.round = 'Round is required.';
+    }
+
+    if (!interviewData.startTime) {
+      errs.startTime = 'Start time is required.';
+    }
+
+    if (!interviewData.endTime) {
+      errs.endTime = 'End time is required.';
+    } else if (interviewData.startTime && interviewData.endTime <= interviewData.startTime) {
+      errs.endTime = 'End time must be after start time.';
+    }
+
+    if (!interviewData.interviewPerson) {
+      errs.interviewPerson = 'Interview person is required.';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setInterviewErrors(errs);
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Please resolve the validation errors.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.post('/api/hra/applicants/bulk-action', {
+        ids: selectedIds,
+        action: 'INTERVIEW'
+      });
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Interview assigned successfully!',
+        variant: 'alert',
+        severity: 'success'
+      }));
+      setInterviewDialogOpen(false);
+      setSelectedIds([]);
+      fetchApplicants();
+    } catch (e) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Failed to assign interview. Please try again.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSelectedApplicantDetails = () => {
+    if (selectedIds.length !== 1) return { name: '', department: '-', position: '-', level: '-', screenLevel: '-' };
+    const applicant = rows.find(r => r.id === selectedIds[0]);
+    if (!applicant) return { name: '', department: '-', position: '-', level: '-', screenLevel: '-' };
+
+    const dept = departments.find(d => d.id.toString() === applicant.department || d.departmentName === applicant.department);
+    const desig = designations.find(d => d.id.toString() === applicant.positionLookFor || d.designationName === applicant.positionLookFor);
+
+    return {
+      name: `${applicant.firstName || ''} ${applicant.lastName || ''}`.trim(),
+      department: dept ? dept.departmentName : applicant.department || '-',
+      position: desig ? desig.designationName : applicant.positionLookFor || '-',
+      level: applicant.level || '-',
+      screenLevel: applicant.screenLevel || '-'
+    };
+  };
+
+  const selectedDetails = getSelectedApplicantDetails();
   const handleIssueOffer = () => handleBulkAction('OFFER', 'Offer letters generated and sent successfully.');
   const handlePushOnRoll = () => handleBulkAction('PUSH-ON-ROLL', 'Selected candidates successfully integrated and pushed ON-ROLL!');
 
@@ -692,6 +968,22 @@ export default function ApplicationTrackingSystem() {
     } else if (formData.refMode === 'EMPLOYEE') {
       dynamicRules.push({ field: 'refComments', label: 'Emp Name', required: true });
     }
+
+    const age = Number(formData.age);
+    if (isNaN(age) || age < 18 || age > 58) {
+      setErrors(prev => ({
+        ...prev,
+        birthDate: 'Age must be between 18 and 58 years.'
+      }));
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Applicant age must be between 18 and 58 years.',
+        variant: 'alert',
+        severity: 'error'
+      }));
+      return;
+    }
+
     if (!validate(formData, dynamicRules)) {
       dispatch(openSnackbar({ open: true, message: 'Please fix validation errors in the main form.', variant: 'alert', severity: 'error' }));
       return;
@@ -966,18 +1258,6 @@ export default function ApplicationTrackingSystem() {
 
   // Setup grid columns
   const tableColumns = useMemo(() => [
-    {
-      id: 'select',
-      label: '',
-      minWidth: 50,
-      render: (row) => (
-        <Checkbox
-          checked={selectedIds.includes(row.id)}
-          onChange={() => handleSelectRow(row.id)}
-          size="small"
-        />
-      )
-    },
     { id: 'index', label: 'Sl.no', minWidth: 60 },
     { id: 'enRolledNo', label: 'Enrolled No', minWidth: 120, bold: true, color: 'primary.main' },
     { id: 'firstName', label: 'First Name', minWidth: 120 },
@@ -1119,21 +1399,13 @@ export default function ApplicationTrackingSystem() {
         </BOSTableToolbar>
       }
     >
-      <Box sx={{ mb: 2 }}>
-        {/* Bulk select checkbox info */}
-        <FormControlLabel
-          control={
-            <Checkbox
-              indeterminate={selectedIds.length > 0 && selectedIds.length < rows.length}
-              checked={selectedIds.length === rows.length && rows.length > 0}
-              onChange={(e) => handleSelectAll(e.target.checked)}
-              size="small"
-            />
-          }
-          label={`Select All Candidates (${selectedIds.length} selected)`}
-          sx={{ ml: 1 }}
-        />
-      </Box>
+      {selectedIds.length > 0 && (
+        <Box sx={{ mb: 1, px: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            {selectedIds.length} candidate{selectedIds.length > 1 ? 's' : ''} selected
+          </Typography>
+        </Box>
+      )}
 
       {/* Main Grid Table */}
       <BOSDataTable
@@ -1147,6 +1419,8 @@ export default function ApplicationTrackingSystem() {
         onDoubleClickRow={handleOpenEdit}
         onEditRow={handleOpenEdit}
         onDeleteRow={handleDeleteRow}
+        onClickRow={(row) => handleSelectRow(row.id)}
+        selectedRowId={selectedIds}
       />
 
 
@@ -1497,7 +1771,7 @@ export default function ApplicationTrackingSystem() {
                       name="birthDate"
                       value={formData.birthDate}
                       disabled
-                      onChange={() => {}}
+                      onChange={() => { }}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -2316,6 +2590,340 @@ export default function ApplicationTrackingSystem() {
         message="Are you sure you want to completely remove this candidate application?"
         itemName={`${deleteTarget?.firstName} ${deleteTarget?.lastName}`}
       />
+
+      {/* Interview Availability Call Letter Dialog */}
+      <BOSFormDialog
+        open={callLetterDialogOpen}
+        onClose={handleCloseCallLetterDialog}
+        onClear={handleClearCallLetterFields}
+        title="Interview Availability"
+        maxWidth="sm"
+        secondaryActions={
+          <Button
+            onClick={handleSendCallLetterSubmit}
+            variant="contained"
+            sx={{
+              bgcolor: 'success.main',
+              color: '#fff',
+              '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+              borderRadius: '24px',
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
+            }}
+            startIcon={<IconMail size={20} />}
+          >
+            sent
+          </Button>
+        }
+      >
+        <Grid container spacing={2.5}>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              type="date"
+              label="Interview date:"
+              name="interviewDate"
+              value={callLetterData.interviewDate}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, interviewDate: e.target.value }));
+                if (callLetterErrors.interviewDate) {
+                  setCallLetterErrors(prev => ({ ...prev, interviewDate: '' }));
+                }
+              }}
+              inputProps={{
+                min: getTodayDateString()
+              }}
+              error={!!callLetterErrors.interviewDate}
+              helperText={callLetterErrors.interviewDate}
+              sx={errorStyle(!!callLetterErrors.interviewDate)}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              type="time"
+              label="Interview time (24h):"
+              name="interviewTime"
+              value={callLetterData.interviewTime}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, interviewTime: e.target.value }));
+                if (callLetterErrors.interviewTime) {
+                  setCallLetterErrors(prev => ({ ...prev, interviewTime: '' }));
+                }
+              }}
+              error={!!callLetterErrors.interviewTime}
+              helperText={callLetterErrors.interviewTime}
+              sx={errorStyle(!!callLetterErrors.interviewTime)}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="To:"
+              name="to"
+              value={callLetterData.to}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, to: e.target.value }));
+                if (callLetterErrors.to) {
+                  setCallLetterErrors(prev => ({ ...prev, to: '' }));
+                }
+              }}
+              error={!!callLetterErrors.to}
+              helperText={callLetterErrors.to}
+              sx={errorStyle(!!callLetterErrors.to)}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="CC:"
+              name="cc"
+              value={callLetterData.cc}
+              onChange={(e) => {
+                setCallLetterData(prev => ({ ...prev, cc: e.target.value }));
+                if (callLetterErrors.cc) {
+                  setCallLetterErrors(prev => ({ ...prev, cc: '' }));
+                }
+              }}
+              error={!!callLetterErrors.cc}
+              helperText={callLetterErrors.cc}
+              sx={errorStyle(!!callLetterErrors.cc)}
+            />
+          </Grid>
+        </Grid>
+      </BOSFormDialog>
+
+      {/* Assign Interview Dialog */}
+      <BOSFormDialog
+        open={interviewDialogOpen}
+        onClose={handleCloseInterviewDialog}
+        onClear={handleClearInterviewFields}
+        title={`Assign Interview Process(${selectedDetails.name})`}
+        maxWidth="md"
+        secondaryActions={
+          <Button
+            onClick={handleAssignInterviewSubmit}
+            variant="contained"
+            sx={{
+              bgcolor: 'success.main',
+              color: '#fff',
+              '&:hover': { bgcolor: 'success.dark', transform: 'translateY(-2px)', boxShadow: 6 },
+              borderRadius: '24px',
+              textTransform: 'none',
+              px: 4,
+              py: 1,
+              fontWeight: 700,
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 14px 0 rgba(0,0,0,0.1)'
+            }}
+            startIcon={<IconCheck size={20} />}
+          >
+            Save
+          </Button>
+        }
+      >
+        {/* Applicant details displayed at the top */}
+        <Box sx={{ p: 2, bgcolor: 'rgba(33, 150, 243, 0.04)', borderRadius: '12px', mb: 1, border: '1px solid', borderColor: 'primary.light' }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>DEPARTMENT</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.department}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>POSITION</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.position}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>LEVEL</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.level}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={3}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>SCREEN LEVEL</Typography>
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main' }}>{selectedDetails.screenLevel}</Typography>
+            </Grid>
+          </Grid>
+        </Box>
+
+        <Grid container spacing={2.5}>
+          {/* Screening Level dropdown */}
+          <Grid item xs={12} sm={6}>
+            <BOSTextField
+              select
+              required
+              fullWidth
+              label="Screening level:"
+              name="screeningLevel"
+              value={interviewData.screeningLevel}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, screeningLevel: e.target.value }));
+                if (interviewErrors.screeningLevel) {
+                  setInterviewErrors(prev => ({ ...prev, screeningLevel: '' }));
+                }
+              }}
+              error={!!interviewErrors.screeningLevel}
+              helperText={interviewErrors.screeningLevel}
+              sx={errorStyle(!!interviewErrors.screeningLevel)}
+            >
+              <MenuItem value="">-select-</MenuItem>
+              <MenuItem value="1">1</MenuItem>
+              <MenuItem value="2">2</MenuItem>
+              <MenuItem value="3">3</MenuItem>
+              <MenuItem value="4">4</MenuItem>
+            </BOSTextField>
+          </Grid>
+
+          {/* Round dropdown */}
+          <Grid item xs={12} sm={6}>
+            <BOSTextField
+              select
+              required
+              fullWidth
+              label="Round:"
+              name="round"
+              value={interviewData.round}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, round: e.target.value }));
+                if (interviewErrors.round) {
+                  setInterviewErrors(prev => ({ ...prev, round: '' }));
+                }
+              }}
+              error={!!interviewErrors.round}
+              helperText={interviewErrors.round}
+              sx={errorStyle(!!interviewErrors.round)}
+            >
+              <MenuItem value="">-select-</MenuItem>
+              <MenuItem value="TECHNICAL">TECHNICAL</MenuItem>
+              <MenuItem value="HR">HR</MenuItem>
+              <MenuItem value="MANAGEMENT">MANAGEMENT</MenuItem>
+              <MenuItem value="SPECIAL ROUND">SPECIAL ROUND</MenuItem>
+            </BOSTextField>
+          </Grid>
+
+          {/* Date */}
+          <Grid item xs={12} sm={6}>
+            <BOSTextField
+              required
+              fullWidth
+              type="date"
+              label="Interview Date:"
+              name="interviewDate"
+              value={interviewData.interviewDate}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, interviewDate: e.target.value }));
+                if (interviewErrors.interviewDate) {
+                  setInterviewErrors(prev => ({ ...prev, interviewDate: '' }));
+                }
+              }}
+              inputProps={{ min: getTodayDateString() }}
+              error={!!interviewErrors.interviewDate}
+              helperText={interviewErrors.interviewDate}
+              sx={errorStyle(!!interviewErrors.interviewDate)}
+            />
+          </Grid>
+
+          {/* Time */}
+          <Grid item xs={12} sm={6}>
+            <BOSTextField
+              required
+              fullWidth
+              type="time"
+              label="Interview Time (24hr):"
+              name="interviewTime"
+              value={interviewData.interviewTime}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, interviewTime: e.target.value }));
+                if (interviewErrors.interviewTime) {
+                  setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
+                }
+              }}
+              inputProps={{ step: 60 }}
+              error={!!interviewErrors.interviewTime}
+              helperText={interviewErrors.interviewTime}
+              sx={errorStyle(!!interviewErrors.interviewTime)}
+            />
+          </Grid>
+
+          {/* Start Time */}
+          <Grid item xs={12} sm={6}>
+            <BOSTextField
+              required
+              fullWidth
+              type="time"
+              label="Start Time (24hr):"
+              name="startTime"
+              value={interviewData.startTime}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, startTime: e.target.value }));
+                if (interviewErrors.startTime) {
+                  setInterviewErrors(prev => ({ ...prev, startTime: '' }));
+                }
+              }}
+              inputProps={{ step: 60 }}
+              error={!!interviewErrors.startTime}
+              helperText={interviewErrors.startTime}
+              sx={errorStyle(!!interviewErrors.startTime)}
+            />
+          </Grid>
+
+          {/* End Time */}
+          <Grid item xs={12} sm={6}>
+            <BOSTextField
+              required
+              fullWidth
+              type="time"
+              label="End Time (24hr):"
+              name="endTime"
+              value={interviewData.endTime}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, endTime: e.target.value }));
+                if (interviewErrors.endTime) {
+                  setInterviewErrors(prev => ({ ...prev, endTime: '' }));
+                }
+              }}
+              inputProps={{ step: 60 }}
+              error={!!interviewErrors.endTime}
+              helperText={interviewErrors.endTime}
+              sx={errorStyle(!!interviewErrors.endTime)}
+            />
+          </Grid>
+
+          {/* Interview Person dropdown */}
+          <Grid item xs={12}>
+            <BOSTextField
+              select
+              required
+              fullWidth
+              label="Interview Person:"
+              name="interviewPerson"
+              value={interviewData.interviewPerson}
+              onChange={(e) => {
+                setInterviewData(prev => ({ ...prev, interviewPerson: e.target.value }));
+                if (interviewErrors.interviewPerson) {
+                  setInterviewErrors(prev => ({ ...prev, interviewPerson: '' }));
+                }
+              }}
+              error={!!interviewErrors.interviewPerson}
+              helperText={interviewErrors.interviewPerson}
+              sx={errorStyle(!!interviewErrors.interviewPerson)}
+            >
+              <MenuItem value="">-select-</MenuItem>
+              {employees.map(emp => {
+                const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode;
+                const valueStr = `${emp.empCode} - ${fullName}`;
+                return (
+                  <MenuItem key={emp.id} value={valueStr}>
+                    {valueStr}
+                  </MenuItem>
+                );
+              })}
+            </BOSTextField>
+          </Grid>
+        </Grid>
+      </BOSFormDialog>
     </MainCard>
   );
 }
