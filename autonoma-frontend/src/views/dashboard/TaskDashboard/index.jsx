@@ -1263,21 +1263,14 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
               zIndex: 1,
               '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
             }}>
+              {/* Header badge style */}
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0}>
-                <Stack direction="row" alignItems="center" gap={1.5}>
-                  <Box sx={{ width: 40, height: 40, borderRadius: 3, background: 'linear-gradient(135deg, #FFF4ED 0%, #FFEDD5 100%)', color: '#EA580C', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5)' }}>
-                    <Typography sx={{ fontSize: '1.2rem' }}>🏁</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={900} fontStyle="italic" color="#0F172A" mb={0} sx={{ letterSpacing: 0 }}>PERFORMANCE TREND</Typography>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.65rem' }}>Trend across all developers</Typography>
-                  </Box>
-                </Stack>
-                <Box sx={{ position: 'absolute', top: -10, right: -10, width: 80, height: 80, borderRadius: '50%', background: 'radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(255,255,255,0) 70%)', zIndex: 0 }} />
-                <Box sx={{ width: 40, height: 40, borderRadius: '12px', background: 'linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 10px rgba(79,70,229,0.15)', zIndex: 1 }}>
-                  <Typography sx={{ fontSize: '1.2rem', animation: 'floatObj 4s ease-in-out infinite', filter: 'drop-shadow(0 4px 6px rgba(59,130,246,0.3))' }}>📈</Typography>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(99,102,241,0.15)', boxShadow: '0 2px 8px rgba(99,102,241,0.08)' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>💠</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>PERFORMANCE</Typography>
                 </Box>
               </Stack>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Trend across all developers</Typography>
 
               <Box mt={0} sx={{ position: 'relative', zIndex: 2, mx: -1, '& .apexcharts-series path': { filter: 'drop-shadow(0px 4px 4px rgba(0,0,0,0.1))' } }}>
                 <ReactApexChart
@@ -1339,13 +1332,11 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
               zIndex: 1,
               '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
             }}>
-              <Stack direction="row" alignItems="center" gap={1.5} mb={0}>
-                <Box sx={{ width: 40, height: 40, borderRadius: 3, background: 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5)' }}>
-                  <Typography sx={{ fontSize: '1.2rem' }}>🏆</Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" fontWeight={900} fontStyle="italic" color="#0F172A" mb={0} sx={{ letterSpacing: 0.5 }}>TOP PERFORMER</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.65rem' }}>Outstanding performance</Typography>
+              {/* Crown badge header */}
+              <Stack direction="row" alignItems="center" justifyContent="center" mb={0}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.6, borderRadius: '20px', background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 4px 12px rgba(245,158,11,0.3)', color: '#fff' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>👑</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} sx={{ letterSpacing: 1, color: '#fff' }}>TOP PERFORMER</Typography>
                 </Box>
               </Stack>
 
@@ -1362,8 +1353,8 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                     <Chip label="#1" sx={{ background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', color: '#fff', fontWeight: 900, height: 20, fontSize: '0.65rem', borderRadius: 1, boxShadow: '0 2px 4px rgba(245,158,11,0.3)' }} />
                   </Stack>
                   <Stack direction="row" alignItems="center" gap={1} mb={1}>
-                    <Typography sx={{ fontSize: '2rem', fontWeight: 900, lineHeight: 1, color: '#0F172A', textShadow: '0 2px 5px rgba(0,0,0,0.05)' }}>{topPerformers.length > 0 ? topPerformers[0].performance : 100}%</Typography>
-                    <Chip icon={<Typography sx={{ fontSize: '10px' }}>★</Typography>} label="OUTSTANDING" sx={{ bgcolor: 'rgba(16,185,129,0.1)', color: '#10B981', fontWeight: 800, height: 20, fontSize: '0.6rem', borderRadius: 1 }} />
+                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 900, lineHeight: 1, color: '#F59E0B', textShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>{topPerformers.length > 0 ? topPerformers[0].performance : 100}%</Typography>
+                    <Chip icon={<Typography sx={{ fontSize: '10px', color: '#fff' }}>★</Typography>} label="OUTSTANDING" sx={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', color: '#fff', fontWeight: 800, height: 22, fontSize: '0.6rem', borderRadius: 1, boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }} />
                   </Stack>
 
                   <Stack direction="row" gap={1.5} justifyContent="space-between" width="100%">
@@ -1408,17 +1399,14 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
               zIndex: 1,
               '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
             }}>
+              {/* Efficiency badge header */}
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0}>
-                <Stack direction="row" alignItems="center" gap={1.5}>
-                  <Box sx={{ width: 40, height: 40, borderRadius: 3, background: 'linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%)', color: '#F43F5E', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5)' }}>
-                    <Typography sx={{ fontSize: '1.2rem' }}>⚡</Typography>
-                  </Box>
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={900} fontStyle="italic" color="#0F172A" mb={0} sx={{ letterSpacing: 0 }}>EFFICIENCY</Typography>
-                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.65rem' }}>Assigned vs Completed</Typography>
-                  </Box>
-                </Stack>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(16,185,129,0.15)', boxShadow: '0 2px 8px rgba(16,185,129,0.08)' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>⚡</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>EFFICIENCY</Typography>
+                </Box>
               </Stack>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Assigned vs Completed</Typography>
 
               <Stack direction="row" justifyContent="space-between" mt={1} gap={1} px={0} sx={{ flex: 1, pt: 1 }}>
                 {/* Less - Green */}
@@ -1426,11 +1414,11 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <Typography variant="h4" fontWeight={900} color="#10B981" sx={{ lineHeight: 1, mb: 1 }}>{outstandingDevs.length}</Typography>
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', width: '100%' }}>
                     <Box sx={{ width: '100%', borderBottom: '3px dashed #CBD5E1', position: 'absolute', top: '70%', zIndex: 0 }} />
-                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(16,185,129,0.4)) hue-rotate(-50deg)', animation: 'driveFast 0.8s ease-in-out infinite', zIndex: 1 }}>🏎️💨</Typography>
+                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(16,185,129,0.4)) hue-rotate(-50deg)', animation: 'driveFast 0.8s ease-in-out infinite', zIndex: 1 }}>🏎️</Typography>
                   </Box>
                   <Box sx={{ width: '100%', mt: 1 }}>
-                    <Chip label="LESS" sx={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', color: '#fff', height: 22, fontSize: '0.65rem', fontWeight: 900, borderRadius: 1.5, width: '80%', mb: 0.5, boxShadow: '0 2px 5px rgba(16,185,129,0.3)' }} />
-                    <Typography variant="caption" fontWeight={800} color="#10B981" display="block">{activeDev > 0 ? Math.round((outstandingDevs.length / activeDev) * 100) : 0}%</Typography>
+                    <Chip label="LESS TIME" sx={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', color: '#fff', height: 22, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1.5, width: '90%', mb: 0.5, boxShadow: '0 2px 5px rgba(16,185,129,0.3)' }} />
+                    <Typography variant="caption" fontWeight={700} color="#64748B" display="block" sx={{ fontSize: '0.6rem' }}>{activeDev > 0 ? Math.round((outstandingDevs.length / activeDev) * 100) : 0}% of Team</Typography>
                   </Box>
                 </Box>
 
@@ -1442,8 +1430,8 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                     <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(59,130,246,0.4)) hue-rotate(180deg)', animation: 'driveMedium 1.2s ease-in-out infinite', zIndex: 1 }}>🏎️</Typography>
                   </Box>
                   <Box sx={{ width: '100%', mt: 1 }}>
-                    <Chip label="EQUAL" sx={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)', color: '#fff', height: 22, fontSize: '0.65rem', fontWeight: 900, borderRadius: 1.5, width: '80%', mb: 0.5, boxShadow: '0 2px 5px rgba(59,130,246,0.3)' }} />
-                    <Typography variant="caption" fontWeight={800} color="#3B82F6" display="block">{activeDev > 0 ? Math.round((perfectDevs.length / activeDev) * 100) : 0}%</Typography>
+                    <Chip label="ON TIME" sx={{ background: 'linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%)', color: '#fff', height: 22, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1.5, width: '90%', mb: 0.5, boxShadow: '0 2px 5px rgba(59,130,246,0.3)' }} />
+                    <Typography variant="caption" fontWeight={700} color="#64748B" display="block" sx={{ fontSize: '0.6rem' }}>{activeDev > 0 ? Math.round((perfectDevs.length / activeDev) * 100) : 0}% of Team</Typography>
                   </Box>
                 </Box>
 
@@ -1452,11 +1440,11 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <Typography variant="h4" fontWeight={900} color="#EF4444" sx={{ lineHeight: 1, mb: 1 }}>{lowDevs.length}</Typography>
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', width: '100%' }}>
                     <Box sx={{ width: '100%', borderBottom: '3px dashed #CBD5E1', position: 'absolute', top: '70%', zIndex: 0 }} />
-                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(239,68,68,0.4)) hue-rotate(0deg)', animation: 'breakdown 0.4s ease-in-out infinite', zIndex: 1 }}>🏎️💥</Typography>
+                    <Typography sx={{ fontSize: '4.5rem', filter: 'drop-shadow(0 15px 15px rgba(239,68,68,0.4))', animation: 'breakdown 0.6s ease-in-out infinite', zIndex: 1 }}>🏎️</Typography>
                   </Box>
                   <Box sx={{ width: '100%', mt: 1 }}>
-                    <Chip label="MORE" sx={{ background: 'linear-gradient(135deg, #F87171 0%, #EF4444 100%)', color: '#fff', height: 22, fontSize: '0.65rem', fontWeight: 900, borderRadius: 1.5, width: '80%', mb: 0.5, boxShadow: '0 2px 5px rgba(239,68,68,0.3)' }} />
-                    <Typography variant="caption" fontWeight={800} color="#EF4444" display="block">{activeDev > 0 ? Math.round((lowDevs.length / activeDev) * 100) : 0}%</Typography>
+                    <Chip label="MORE TIME" sx={{ background: 'linear-gradient(135deg, #F87171 0%, #EF4444 100%)', color: '#fff', height: 22, fontSize: '0.6rem', fontWeight: 900, borderRadius: 1.5, width: '90%', mb: 0.5, boxShadow: '0 2px 5px rgba(239,68,68,0.3)' }} />
+                    <Typography variant="caption" fontWeight={700} color="#64748B" display="block" sx={{ fontSize: '0.6rem' }}>{activeDev > 0 ? Math.round((lowDevs.length / activeDev) * 100) : 0}% of Team</Typography>
                   </Box>
                 </Box>
               </Stack>
@@ -1483,15 +1471,14 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
               zIndex: 1,
               '&:hover': { transform: 'translateY(-6px)', boxShadow: '0 20px 50px rgba(0,0,0,0.1)' }
             }}>
-              <Stack direction="row" alignItems="center" gap={1.5} mb={0}>
-                <Box sx={{ width: 40, height: 40, borderRadius: 3, background: 'linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%)', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5)' }}>
-                  <Typography sx={{ fontSize: '1.2rem' }}>🎯</Typography>
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" fontWeight={900} fontStyle="italic" color="#0F172A" mb={0} sx={{ letterSpacing: 0 }}>TEAM QUALITY</Typography>
-                  <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.65rem' }}>Team performance score</Typography>
+              {/* Quality badge header */}
+              <Stack direction="row" alignItems="flex-start" mb={0}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(139,92,246,0.15)', boxShadow: '0 2px 8px rgba(139,92,246,0.08)' }}>
+                  <Typography sx={{ fontSize: '1rem' }}>🎯</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>QUALITY</Typography>
                 </Box>
               </Stack>
+              <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Team performance score</Typography>
 
               <Stack direction="column" alignItems="center" mt={0} gap={1} sx={{ flex: 1, justifyContent: 'center' }}>
                 {/* Radial Gauge */}
@@ -1516,7 +1503,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                         fill: { type: 'gradient', gradient: { shade: 'dark', type: 'horizontal', gradientToColors: ['#A855F7'], stops: [0, 100] } },
                         colors: ['#6366F1'],
                         stroke: { lineCap: 'round', curve: 'smooth' },
-                        labels: ['QUALITY']
+                        labels: ['SCORE']
                       }}
                       series={[Number(avgPerf) || 0]}
                       type="radialBar"
@@ -1525,30 +1512,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   </Box>
                 </Box>
 
-                {/* Right metrics */}
-                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, width: '100%', mt: -1 }}>
-                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid rgba(16,185,129,0.1)', borderRadius: '12px', p: 1, background: 'linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(255,255,255,0) 100%)', position: 'relative', overflow: 'hidden' }}>
-                    <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
-                      <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: '#10B981', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CheckCircleRoundedIcon sx={{ fontSize: '10px' }} /></Box>
-                      <Typography variant="caption" fontWeight={800} color="#0F172A" sx={{ display: 'block', lineHeight: 1.2, fontSize: '0.65rem' }}>Outstanding</Typography>
-                    </Stack>
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <Typography variant="subtitle2" fontWeight={900} color="#10B981">{outstandingDevs.length}</Typography>
-                      <Typography variant="caption" fontWeight={700} color="#10B981" sx={{ fontSize: '0.6rem' }}>▲ {activeDev > 0 ? Math.round((outstandingDevs.length / activeDev) * 100) : 0}%</Typography>
-                    </Stack>
-                  </Box>
 
-                  <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', border: '1px solid rgba(59,130,246,0.1)', borderRadius: '12px', p: 1, background: 'linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(255,255,255,0) 100%)', position: 'relative', overflow: 'hidden' }}>
-                    <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
-                      <Box sx={{ width: 16, height: 16, borderRadius: '50%', bgcolor: '#3B82F6', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrackChangesRoundedIcon sx={{ fontSize: '10px' }} /></Box>
-                      <Typography variant="caption" fontWeight={800} color="#0F172A" sx={{ display: 'block', lineHeight: 1.2, fontSize: '0.65rem' }}>Perfect</Typography>
-                    </Stack>
-                    <Stack direction="row" alignItems="center" gap={1}>
-                      <Typography variant="subtitle2" fontWeight={900} color="#3B82F6">{perfectDevs.length}</Typography>
-                      <Typography variant="caption" fontWeight={700} color="#3B82F6" sx={{ fontSize: '0.6rem' }}>▲ {activeDev > 0 ? Math.round((perfectDevs.length / activeDev) * 100) : 0}%</Typography>
-                    </Stack>
-                  </Box>
-                </Box>
               </Stack>
             </Card>
           </Box>
