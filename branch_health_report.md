@@ -1,20 +1,20 @@
 # Autonoma ERP Development & Team Audit Report
-Generated at: 2026-06-01 10:34:28 | Target: TIS Modules & Developer Branches
+Generated at: 2026-06-01 14:40:11 | Target: TIS Modules & Developer Branches
 
 ## 1. Branch Health & Integration Status
 This section shows status for all active developer branches relative to the main branch.
 | Branch | Commits Ahead | Commits Behind | Last Committer | Last Commit Date | Status |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| `Audit-Darshan` | 0 | 32 | Balam | 2026-05-31 | 🔄 Stale (Pull Main) |
-| `CompleteDb_Migration---Eashwara-Prasadh` | 0 | 134 | EashcodeX | 2026-05-29 | 🔄 Stale (Pull Main) |
-| `HRA_ATS-Module` | 0 | 223 | 06naveena | 2026-05-28 | 🔄 Stale (Pull Main) |
-| `Induction-Maheshwaran` | 3 | 6 | MaheshWaranCSE | 2026-06-01 | ⚠️ CONFLICTS |
-| `Induction-Narmadha` | 0 | 158 | Narmadha-125 | 2026-05-29 | 🔄 Stale (Pull Main) |
-| `NPD-module` | 5 | 134 | 06naveena | 2026-05-30 | ⚠️ CONFLICTS |
-| `audit` | 0 | 137 | Darshan | 2026-05-29 | 🔄 Stale (Pull Main) |
-| `checklist---Viswanth` | 0 | 7 | Viswanth5 | 2026-06-01 | 💤 Idle (Fully Merged) |
-| `checklist---prasanna` | 0 | 49 | Prasannavenkatesh.B | 2026-05-31 | 🔄 Stale (Pull Main) |
-| `meeting-module` | 0 | 76 | ROZZAN24 | 2026-05-30 | 🔄 Stale (Pull Main) |
+| `Audit-Darshan` | 0 | 39 | Balam | 2026-05-31 | 🔄 Stale (Pull Main) |
+| `CompleteDb_Migration---Eashwara-Prasadh` | 0 | 141 | EashcodeX | 2026-05-29 | 🔄 Stale (Pull Main) |
+| `HRA_ATS-Module` | 0 | 230 | 06naveena | 2026-05-28 | 🔄 Stale (Pull Main) |
+| `Induction-Maheshwaran` | 3 | 13 | MaheshWaranCSE | 2026-06-01 | ⚠️ CONFLICTS |
+| `Induction-Narmadha` | 0 | 165 | Narmadha-125 | 2026-05-29 | 🔄 Stale (Pull Main) |
+| `NPD-module` | 6 | 141 | Hariharan | 2026-06-01 | ⚠️ CONFLICTS |
+| `audit` | 0 | 144 | Darshan | 2026-05-29 | 🔄 Stale (Pull Main) |
+| `checklist---Viswanth` | 0 | 14 | Viswanth5 | 2026-06-01 | 💤 Idle (Fully Merged) |
+| `checklist---prasanna` | 0 | 56 | Prasannavenkatesh.B | 2026-05-31 | 🔄 Stale (Pull Main) |
+| `meeting-module` | 0 | 83 | ROZZAN24 | 2026-05-30 | 🔄 Stale (Pull Main) |
 
 ### Detailed Branch Analysis
 #### ⚠️ Branch: `Induction-Maheshwaran` (Conflicts Detected)
@@ -22,14 +22,17 @@ This section shows status for all active developer branches relative to the main
 - **Conflicting Files:**
   - `changed in both`
   - `changed in both`
+  - `changed in both`
+  - `changed in both`
 
 #### ⚠️ Branch: `NPD-module` (Conflicts Detected)
-- **Last Commit:** feat(npd): set default Status filter to ACTIVE on OEM mapping master page
+- **Last Commit:** style: improve ATS dashboard header and visibility of Assign Interview button
 - **Conflicting Files:**
+  - `changed in both`
   - `changed in both`
 
 ## 2. Codebase Standards Compliance Violations
-Found **791** violations across JPA Entities, SQL Migrations, and React views.
+Found **789** violations across JPA Entities, SQL Migrations, and React views.
 
 ### A. Database Migration Scripts Violations
 | File | Path | Violation Type | Description |
@@ -720,7 +723,6 @@ Found **791** violations across JPA Entities, SQL Migrations, and React views.
 | `TableBasic.jsx` | [TableBasic.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/forms/tables/TableBasic.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `TableDense.jsx` | [TableDense.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/forms/tables/TableDense.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `TableEnhanced.jsx` | [TableEnhanced.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/forms/tables/TableEnhanced.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
-| `AddMenuItem.jsx` | [AddMenuItem.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/forms/data-grid/ColumnMenu/AddMenuItem.jsx) | UI Alert | Native browser alert() used. Use dispatch(openSnackbar(...)) for standard UI messages. |
 | `index.jsx` | [index.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/forms/data-grid/DataGridBasic/index.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `ConfirmationSave.jsx` | [ConfirmationSave.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/forms/data-grid/InlineEditing/ConfirmationSave.jsx) | UI Standard | Raw Material UI <Dialog> used directly. Replace with BOSFormDialog for form error shake animations. |
 | `index.jsx` | [index.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/widget/Chart/index.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
@@ -747,7 +749,6 @@ Found **791** violations across JPA Entities, SQL Migrations, and React views.
 | `OverdueDashboard.jsx` | [OverdueDashboard.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/TaskDashboard/OverdueDashboard.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `ReopenDashboard.jsx` | [ReopenDashboard.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/TaskDashboard/ReopenDashboard.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `index.jsx` | [index.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/TaskDashboard/index.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
-| `index.jsx` | [index.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/TaskDashboard/index.jsx) | UI Standard | Raw Material UI <Dialog> used directly. Replace with BOSFormDialog for form error shake animations. |
 | `InProgressDashboard.jsx` | [InProgressDashboard.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/TaskDashboard/InProgressDashboard.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `DueTodayDashboard.jsx` | [DueTodayDashboard.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/TaskDashboard/DueTodayDashboard.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
 | `LatestCustomerTableCard.jsx` | [LatestCustomerTableCard.jsx](file:////Users/eash/Desktop/ERP 1.11.56 AM/autonoma-frontend/src/views/dashboard/Analytics/LatestCustomerTableCard.jsx) | UI Standard | Raw HTML <table> or custom Table element used instead of standard BOSDataTable. |
