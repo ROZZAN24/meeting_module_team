@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Object> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, WebRequest request) {
         Map<String, Object> body = new HashMap<>();
         body.put("timestamp", LocalDateTime.now());
-        body.put("message", "Cannot delete or modify this record because it is currently in use by other related modules (Foreign Key Constraint Violation).");
+        body.put("message", "SQL Error: " + ex.getMessage() + " | Cause: " + (ex.getCause() != null ? ex.getCause().getMessage() : ""));
         body.put("details", ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }

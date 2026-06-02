@@ -76,16 +76,26 @@ public abstract class BaseAuditEntity {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdUser = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedUser = null;
+
         if (this.createdDate == null) {
             this.createdDate = new Date();
         }
         if (this.createdUser == null) {
             this.createdUser = SecurityUtils.getCurrentUserDisplayName();
         }
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedUser = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdUser != null && this.createdUser.trim().isEmpty()) { this.createdUser = null; }
+
         if (this.skipAuditUpdate) {
             return;
         }
@@ -95,5 +105,5 @@ public abstract class BaseAuditEntity {
         }
         this.updatedDate = new Date();
         this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
-    }
+        }
 }

@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "ticket_reopen_history")
+@Table(name = "TICKET_REOPEN_HISTORY")
 @Data
 @Builder
 @NoArgsConstructor
@@ -41,6 +41,9 @@ public class SupportTicketReopenHistory {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         this.reopenedAt = new Date();
-    }
+        }
 }

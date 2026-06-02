@@ -29,16 +29,16 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
 
     @Override
     public boolean onPreInsert(PreInsertEvent event) {
-        String currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        String currentUser = SecurityUtils.getCurrentUserId();
         if (currentUser == null) {
-            currentUser = "Admin"; // Fallback to Admin for default data/migrations if session is missing
+            currentUser = "admin"; // Fallback to Admin for default data/migrations if session is missing
         }
 
         String[] propertyNames = event.getPersister().getPropertyNames();
         Object[] state = event.getState();
 
-        setValue(propertyNames, state, "createdUser", currentUser);
-        setValue(propertyNames, state, "createdBy", currentUser);
+        setValue(propertyNames, state, "createdUser", currentUser, event.getEntity());
+        setValue(propertyNames, state, "createdBy", currentUser, event.getEntity());
 
         return false; // do not veto insert
     }
@@ -62,21 +62,57 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
             return false;
         }
 
-        String currentUser = SecurityUtils.getCurrentUserEmployeeName();
+        String currentUser = SecurityUtils.getCurrentUserId();
         if (currentUser == null) {
-            currentUser = "Admin"; // Fallback
+            currentUser = "admin"; // Fallback
         }
 
-        setValue(propertyNames, state, "updatedUser", currentUser);
-        setValue(propertyNames, state, "updatedBy", currentUser);
+        setValue(propertyNames, state, "updatedUser", currentUser, event.getEntity());
+        setValue(propertyNames, state, "updatedBy", currentUser, event.getEntity());
+        
+        java.util.Date now = new java.util.Date();
+        setValue(propertyNames, state, "updatedDate", now, event.getEntity());
+        setValue(propertyNames, state, "updatedAt", now, event.getEntity());
 
         return false; // do not veto update
     }
 
-    private void setValue(String[] propertyNames, Object[] state, String propertyName, Object value) {
+    private void setValue(String[] propertyNames, Object[] state, String propertyName, Object value, Object entity) {
         for (int i = 0; i < propertyNames.length; i++) {
             if (propertyNames[i].equalsIgnoreCase(propertyName)) {
+                System.out.println("[AuditListener] Setting " + propertyName + " to " + value + " on " + entity.getClass().getSimpleName());
                 state[i] = value;
+                try {
+                    // Also update the entity object itself using reflection
+                    String setterName = "set" + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+                    java.lang.reflect.Method setter = null;
+                    for (java.lang.reflect.Method method : entity.getClass().getMethods()) {
+                        if (method.getName().equalsIgnoreCase(setterName) && method.getParameterCount() == 1) {
+                            setter = method;
+                            break;
+                        }
+                    }
+                    if (setter != null) {
+                        setter.invoke(entity, value);
+                    } else {
+                        // Try field directly if setter is missing (e.g. some lombok setups)
+                        java.lang.reflect.Field field = null;
+                        Class<?> current = entity.getClass();
+                        while (current != null && field == null) {
+                            try {
+                                field = current.getDeclaredField(propertyName);
+                            } catch (NoSuchFieldException e) {
+                                current = current.getSuperclass();
+                            }
+                        }
+                        if (field != null) {
+                            field.setAccessible(true);
+                            field.set(entity, value);
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("[AuditListener] Reflection error setting " + propertyName + ": " + e.getMessage());
+                }
                 break;
             }
         }
