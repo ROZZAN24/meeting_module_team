@@ -191,14 +191,20 @@ export default function EmailContent() {
   };
 
   const resolvedRows = useMemo(() => {
-    return rows.map((r, i) => ({
-      ...r,
-      index: i + 1,
-      createdUser: r.createdUser || r.createdBy || '-',
-      updatedUser: r.updatedUser || r.updatedBy || '-',
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
-    }));
+    return rows.map((r, i) => {
+      let cUser = r.createdUser || r.createdBy || '-';
+      if (cUser === 'Admin istrator' || cUser === 'Administrator') cUser = 'Admin';
+      let uUser = r.updatedUser || r.updatedBy || '-';
+      if (uUser === 'Admin istrator' || uUser === 'Administrator') uUser = 'Admin';
+      return {
+        ...r,
+        index: i + 1,
+        createdUser: cUser,
+        updatedUser: uUser,
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
+        updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
+      };
+    });
   }, [rows]);
 
   return (
