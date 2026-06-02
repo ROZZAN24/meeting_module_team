@@ -858,15 +858,15 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
 
   // Summary cards config
   const summaryCards = [
-    { label: 'Total Assigned Hours', value: `${totalAssigned} Hrs`, sub: 'All Developers', svgIcon: <NotoEmoji hex="1f4da" size={36} />, color: '#8B5CF6', chartData: [10, 25, 15, 30, 20, 35, 25] },
+    { label: 'Total Assigned Hours', value: `${totalAssigned.toFixed(2)}`, sub: 'All Developers', svgIcon: <NotoEmoji hex="1f4da" size={36} />, color: '#8B5CF6', chartData: [10, 25, 15, 30, 20, 35, 25] },
     {
       label: 'Total Completed Hours',
-      value: `${totalCompleted} Hrs`,
+      value: `${totalCompleted.toFixed(2)}`,
       sub: 'All Developers',
       svgIcon: <NotoEmoji hex="1f525" size={36} />,
       color: '#10B981', chartData: [5, 15, 10, 25, 20, 30, 25]
     },
-    { label: 'Pending Hours', value: `${pendingHrs} Hrs`, sub: 'Remaining Work', svgIcon: <NotoEmoji hex="23f3" size={36} />, color: '#F59E0B', chartData: [35, 30, 32, 25, 28, 20, 18] },
+      { label: 'Pending Hours', value: `${pendingHrs.toFixed(2)}`, sub: 'Remaining Work', svgIcon: <NotoEmoji hex="23f3" size={36} />, color: '#F59E0B', chartData: [35, 30, 32, 25, 28, 20, 18] },
     { label: 'Total Developers', value: `${activeDev}`, sub: 'Active Developers', svgIcon: <NotoEmoji hex="1f4bb" size={36} />, color: '#8B5CF6', chartData: [5, 5, 5, 5, 5, 5, 5] },
     { label: 'Avg Performance', value: `${avgPerf}%`, sub: 'Across all developers', svgIcon: <NotoEmoji hex="1f4c8" size={36} />, color: '#3B82F6', chartData: [60, 65, 62, 70, 68, 75, 78] },
     {
@@ -1728,7 +1728,7 @@ export default function TaskDashboard() {
 
         Object.values(empLookup).forEach((name) => {
           if (!workloadMap[name]) workloadMap[name] = { user: name, hours: 0, tasks: 0 };
-          if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0 };
+          if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
         });
 
         const getName = (u) => {
@@ -1835,11 +1835,22 @@ export default function TaskDashboard() {
           const isDevDone = isDone || isToBeTested;
           const hrs = t._hrs ? (parseDurationToMinutes(t._hrs) / 60) || 8 : 8;
           const uName = t._user || 'Unknown';
-          if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0 };
+          if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
           devHoursMap[uName].assignedHrs += hrs;
           devHoursMap[uName].takenHrs += t._takenHrs || 0;
           devHoursMap[uName].reworkHrs += t._reworkHrs || 0;
           if (isDevDone) devHoursMap[uName].completedHrs += hrs;
+          
+          if (!isDevDone && t._dueDate) {
+            const dueDate = new Date(t._dueDate);
+            dueDate.setHours(18, 0, 0, 0); // Assuming EOD is 6 PM
+            const now = new Date();
+            if (now > dueDate) {
+               const delayMs = calculateWorkingMs(dueDate, now);
+               console.log("Delay calc:", { uName, id: t._id, dueDate: dueDate.toString(), now: now.toString(), delayMs });
+               devHoursMap[uName].delayHrs += (delayMs / (1000 * 60 * 60));
+            }
+          }
           if (!isDevDone) {
             if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
             workloadMap[uName].tasks += 1;
@@ -1889,12 +1900,8 @@ export default function TaskDashboard() {
             let assignedHrs = d.assignedHrs || 0;
             let takenHrs = d.takenHrs || 0;
             let reworkHrs = d.reworkHrs || 0;
+            let delayHrs = d.delayHrs || 0;
             
-            const takenPlusRework = takenHrs + reworkHrs;
-            
-            let delayHrs = 0;
-            if (takenPlusRework > assignedHrs) { delayHrs = (takenPlusRework - assignedHrs) * 2; }
-
             const completedHrs = takenHrs + reworkHrs + delayHrs;
 
             // Performance
