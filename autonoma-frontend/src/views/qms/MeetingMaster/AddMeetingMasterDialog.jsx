@@ -254,7 +254,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         disableCloseOnSelect
         limitTags={3}
         options={employeeOptions}
-        getOptionLabel={(option) => option.empCode === 'ALL' ? option.employeeName : `${option.employeeName} (${option.empCode})`}
+        getOptionLabel={(option) => option.employeeName}
         value={filteredEmployees.filter(emp => form.employeeName?.some(val => val.split(' - ')[0] === emp.empCode))}
         sx={compactAutocompleteSx}
         onChange={(e, newValue, reason, details) => {
@@ -282,7 +282,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
           return (
             <MenuItem {...props}>
               <Checkbox checked={selected} size="small" />
-              <Typography variant="body2">{`${option.employeeName} (${option.empCode})`}</Typography>
+              <Typography variant="body2">{option.employeeName}</Typography>
             </MenuItem>
           );
         }}

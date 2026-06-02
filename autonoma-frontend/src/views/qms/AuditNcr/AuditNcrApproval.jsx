@@ -116,7 +116,7 @@ export default function AuditNcrApproval() {
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
-      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'REJECTED', label: 'REJECTED' }], defaultValue: 'WAITING_APPROVAL' },
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }], defaultValue: 'WAITING_APPROVAL' },
       { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' },
       ...getCommonDateFilters('createdDate', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
@@ -197,8 +197,8 @@ export default function AuditNcrApproval() {
 
   const handleProcessApproval = async (status) => {
     if (!selectedFinding) return;
-    if (status === 'REJECTED' && !formData.remarks) {
-      setErrors({ remarks: 'Remarks are mandatory for rejection' });
+    if (!formData.remarks || !formData.remarks.trim()) {
+      setErrors({ remarks: 'Comments are mandatory' });
       return;
     }
     
@@ -227,7 +227,8 @@ export default function AuditNcrApproval() {
     if (col.id === 'index') return idx + 1 + page * size;
     if (col.id === 'ncrStatus') {
         const status = row.ncrStatus || 'OPEN';
-        return <Chip label={status.replace('_', ' ')} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
+        const displayLabel = status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : status.replace('_', ' ');
+        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
     }
     const val = row[col.id];
     if (['observationDate', 'targetDate', 'createdDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
@@ -336,8 +337,8 @@ export default function AuditNcrApproval() {
           onRefresh={fetchData}
           onCloseNcr={perms.write ? () => selectedRecord && handleOpenReview(selectedRecord) : null}
           closeNcrDisabled={!selectedRecord}
-          closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
-          closeNcrLabel="Close NCE / OFI"
+          closeNcrTooltip={selectedRecord ? "Close Selected NC / OFI" : "Select a record first to close"}
+          closeNcrLabel="Close NC / OFI"
           hasWritePermission={perms.write}
           exportData={rows}
           exportFilename="NC_Approval_Report"
@@ -374,7 +375,7 @@ export default function AuditNcrApproval() {
         )} 
       />
 
-      <BOSFormDialog open={dialogOpen} onClose={handleCloseDialog} title="NCR / OFI Approval" maxWidth="lg" hideFooter={true}>
+      <BOSFormDialog open={dialogOpen} onClose={handleCloseDialog} title="NC / OFI Approval" maxWidth="lg" hideFooter={true}>
         <Stack spacing={3} sx={{ width: '100%' }}>
           
           {/* ═══════════════ PREMIUM HEADER BAR ═══════════════ */}
@@ -392,7 +393,7 @@ export default function AuditNcrApproval() {
           }}>
             <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" alignItems="center">
               <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
-                NCR No : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.ncrNo || selectedFinding?.ncrOfiNo || '-'}</Box>
+                NC No : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.ncrNo || selectedFinding?.ncrOfiNo || '-'}</Box>
               </Typography>
               <Typography variant="subtitle2" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 600 }}>
                 Date : <Box component="span" sx={{ color: '#ffffff', fontWeight: 800 }}>{selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy')}</Box>
@@ -528,7 +529,7 @@ export default function AuditNcrApproval() {
               </Box>
 
               <BOSTextField 
-                label="NCR/OFI Observation" 
+                label="Comments *" 
                 value={formData.remarks || ''} 
                 name="remarks"
                 onChange={handleFormChange}
@@ -547,7 +548,7 @@ export default function AuditNcrApproval() {
                 <Stack spacing={3}>
                   <BOSPersonnelCard 
                     title="AUDITEE" 
-                    name={selectedFinding?.auditee} 
+                    name={selectedFinding?.auditee && selectedFinding.auditee.includes(' - ') ? selectedFinding.auditee.split(' - ')[0].trim() : selectedFinding?.auditee} 
                     empCode={getEmployeeDetails(selectedFinding?.auditee).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditee).departmentName}
                     photo={getEmployeeDetails(selectedFinding?.auditee).employeePhotoUpload}
@@ -556,7 +557,7 @@ export default function AuditNcrApproval() {
                   />
                   <BOSPersonnelCard 
                     title="AUDITOR" 
-                    name={selectedFinding?.auditor} 
+                    name={selectedFinding?.auditor && selectedFinding.auditor.includes(' - ') ? selectedFinding.auditor.split(' - ')[0].trim() : selectedFinding?.auditor} 
                     empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                     department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
                     photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}

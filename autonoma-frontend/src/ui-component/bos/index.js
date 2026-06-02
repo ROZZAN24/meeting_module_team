@@ -10,6 +10,7 @@ export { default as BOSTextField } from './BOSTextField';
 export { default as BOSStatusField } from './BOSStatusField';
 export { default as BOSAutocomplete } from './BOSAutocomplete';
 export { default as BOSDatePicker } from './BOSDatePicker';
+export { default as BOSTimePicker } from './BOSTimePicker';
 export * from './BOSFileGallery';
 export { default as BOSFileUpload } from './BOSFileUpload';
 export { default as BOSFilePreview } from './BOSFilePreview';

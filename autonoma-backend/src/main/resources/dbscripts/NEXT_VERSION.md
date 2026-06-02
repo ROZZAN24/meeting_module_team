@@ -17,8 +17,8 @@ Before creating a new database migration script, you **MUST** claim a version nu
 
 ## 🔢 Current Status
 
-* **Last Claimed Version:** `V63`
-* **Next Available Version:** `V64`
+* **Last Claimed Version:** `V64`
+* **Next Available Version:** `V65`
 
 ---
 
@@ -27,7 +27,7 @@ Before creating a new database migration script, you **MUST** claim a version nu
 | Version | Developer | Date claimed | PR / Feature Description | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **V63** | System baseline | 2026-05-31 | Last legacy incremental script added | ✅ Merged |
-| **V64** | *Available* | - | | |
+| **V64** | Darshan / TIS | 2026-06-02 | Add Frequency to Audit Schedule | ✅ Active |
 | **V65** | *Available* | - | | |
 | **V66** | *Available* | - | | |
 
