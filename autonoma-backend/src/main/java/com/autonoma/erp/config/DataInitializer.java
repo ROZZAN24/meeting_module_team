@@ -256,7 +256,7 @@ public class DataInitializer implements CommandLineRunner {
         // Use the new reversible encoder
         admin.setPassword(passwordEncoder.encode("admin123"));
         admin.setStatus(1);
-        admin.setIsBosAdmin(1); // Set as Super User
+        admin.setUserLevel(AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN); // Set as Super User
         userRepository.save(admin);
         System.out.println("Admin password initialized/updated with reversible encryption and superuser privileges.");
 

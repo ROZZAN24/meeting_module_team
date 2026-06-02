@@ -36,7 +36,7 @@ export default function usePagePermissions(pageCode) {
 
   return useMemo(() => {
     // If the user is a BOS admin (SuperUser), grant all permissions unconditionally
-    if (user?.isBosAdmin === 1) {
+    if (user?.userLevel === 5) {
       return {
         loading: false,
         enabled: true,
