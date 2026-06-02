@@ -275,18 +275,31 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit criteria:', error);
-      const errorMsg = error.response?.data?.message || error.response?.data || 'An error occurred while saving.';
+      let errorMsg = 'An error occurred while saving.';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
+        errorMsg = error.response.data.message || (typeof error.response.data === 'string' ? error.response.data : errorMsg);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
       if (typeof errorMsg === 'string') {
         if (errorMsg.toLowerCase().includes('seq no')) {
           setErrors({ seqNo: errorMsg });
         } else if (errorMsg.toLowerCase().includes('clause') || errorMsg.toLowerCase().includes('same')) {
           setErrors({ clause: errorMsg });
-        } else {
-          dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
         }
-      } else {
-        dispatch(openSnackbar({ open: true, message: 'Duplicate value or error occurred.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
       }
+
+      dispatch(openSnackbar({
+        open: true,
+        message: typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 

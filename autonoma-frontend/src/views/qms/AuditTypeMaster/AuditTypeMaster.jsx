@@ -122,12 +122,16 @@ export default function AuditTypeMaster() {
     } catch (error) {
       console.error('Failed to delete audit type:', error);
       let errorMsg = 'Failed to delete audit type.';
-      if (error.response?.data) {
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
         if (typeof error.response.data === 'string') {
           errorMsg = error.response.data;
         } else if (error.response.data.message) {
           errorMsg = error.response.data.message;
         }
+      } else if (error.message) {
+        errorMsg = error.message;
       }
       dispatch(openSnackbar({
         open: true,

@@ -191,12 +191,15 @@ export default function AuditNcrClose() {
   };
 
   useEffect(() => {
-    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([
+      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
-      { id: 'observationStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+      { id: 'observationStatus', label: 'Obr Type', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'OPEN', label: 'OPEN' }, { value: 'WAITING_APPROVAL', label: 'PENDING' }, { value: 'REJECTED', label: 'REJECTED' }, { value: 'REWORK', label: 'REWORK' }], defaultValue: 'All' },
       { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' },
-      ...getCommonDateFilters('createdDate', 'updatedAt')]));
+      ...getCommonDateFilters('createdDate', 'updatedAt')
+    ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
