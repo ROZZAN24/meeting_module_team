@@ -213,7 +213,7 @@ const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
     ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
     : `repeat(${columns}, 1fr)`;
   return (
-    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5 }}>
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5, width: '100%' }}>
       {children}
     </Box>
   );
@@ -224,7 +224,7 @@ const R = ({ children, lg }) => {
   if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
   if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
   if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
-  return <Box sx={{ gridColumn }}>{children}</Box>;
+  return <Box sx={{ gridColumn, width: '100%' }}>{children}</Box>;
 };
 
 
@@ -870,10 +870,10 @@ export default function ApplicantProfile() {
         </Stack>
       }
     >
-      <Grid container spacing={3}>
+      <Grid container spacing={3} sx={{ width: '100%' }}>
         {/* ── TOP SECTION: Main Registry Form ── */}
-        <Grid item xs={12}>
-          <Card variant="outlined" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
+        <Grid item xs={12} sx={{ width: '100%' }}>
+          <Card variant="outlined" sx={{ width: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
                 <IconUser size={20} /> BASIC REGISTRATION DETAILS
