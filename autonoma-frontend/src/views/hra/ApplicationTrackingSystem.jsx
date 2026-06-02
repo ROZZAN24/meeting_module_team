@@ -9,7 +9,18 @@ import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, BOSDatePicker, BOSFileUpload, errorStyle, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import {
+  BOSDataTable,
+  BOSFormDialog,
+  BOSTextField,
+  BOSDatePicker,
+  BOSFileUpload,
+  errorStyle,
+  btnNew,
+  BOSTableToolbar,
+  getCommonDateFilters,
+  matchCommonDateFilters
+} from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
@@ -1065,14 +1076,47 @@ export default function ApplicationTrackingSystem() {
           <Typography variant="h3">Application Tracking System</Typography>
         </Stack>
       }
-            secondary={
+      secondary={
         <BOSTableToolbar
           onRefresh={fetchApplicants}
           onNew={handleOpenAdd}
           newLabel="New"
           newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
           hasWritePermission={perms.write}
-        />
+        >
+          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Call Letter
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={handleAssignInterview}
+            startIcon={<IconCalendar size={18} />}
+            sx={{
+              borderRadius: '24px',
+              textTransform: 'none',
+              color: 'orange.dark',
+              borderColor: 'orange.main',
+              '&:hover': {
+                borderColor: 'orange.dark',
+                bgcolor: 'orange.light'
+              }
+            }}
+          >
+            Assign Interview
+          </Button>
+          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Offer Letter
+          </Button>
+          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
+            Push To On-Roll
+          </Button>
+          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Cancel Selection
+          </Button>
+          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+            Edit Candidate
+          </Button>
+        </BOSTableToolbar>
       }
     >
       <Box sx={{ mb: 2 }}>
@@ -1105,29 +1149,6 @@ export default function ApplicationTrackingSystem() {
         onDeleteRow={handleDeleteRow}
       />
 
-      {/* Bottom Footer Actions */}
-      <Paper elevation={0} sx={{ p: 2, mt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'grey.50', borderRadius: '12px' }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end">
-          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Call Letter
-          </Button>
-          <Button variant="outlined" color="warning" onClick={handleAssignInterview} startIcon={<IconCalendar size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Assign Interview
-          </Button>
-          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Offer Letter
-          </Button>
-          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
-            Push To On-Roll
-          </Button>
-          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Cancel Selection
-          </Button>
-          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
-            Edit Candidate
-          </Button>
-        </Stack>
-      </Paper>
 
       {/* Candidate Registration and Detailed Dialog */}
       <BOSFormDialog

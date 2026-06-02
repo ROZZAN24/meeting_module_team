@@ -16,6 +16,8 @@ import { CSVExport } from 'views/forms/tables/TableExports';
 // assets
 import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 
+import { showAppAlert } from 'utils/alert';
+
 function CustomUserItem(props) {
   const { myCustomHandler, myCustomValue } = props;
   return (
@@ -42,7 +44,7 @@ function CustomColumnMenu(props) {
           displayOrder: 15,
           // pass additional props
           myCustomValue: 'Do custom action',
-          myCustomHandler: () => alert('Custom handler fired')
+          myCustomHandler: () => showAppAlert('Custom handler fired', 'info')
         }
       }}
     />

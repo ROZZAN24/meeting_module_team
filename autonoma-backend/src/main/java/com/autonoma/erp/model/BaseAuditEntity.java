@@ -80,7 +80,8 @@ public abstract class BaseAuditEntity {
             this.createdDate = new Date();
         }
         if (this.createdUser == null) {
-            this.createdUser = SecurityUtils.getCurrentUserDisplayName();
+            String userId = SecurityUtils.getCurrentUserId();
+            this.createdUser = (userId != null) ? userId : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName() : "System");
         }
     }
 
@@ -94,6 +95,7 @@ public abstract class BaseAuditEntity {
             return;
         }
         this.updatedDate = new Date();
-        this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
+        String userId = SecurityUtils.getCurrentUserId();
+        this.updatedUser = (userId != null) ? userId : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName() : "System");
     }
 }
