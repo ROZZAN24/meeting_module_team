@@ -208,6 +208,26 @@ const VALIDATION_RULES = [
   { field: 'birthDate', label: 'Birth Date', required: true }
 ];
 
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object' 
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5 }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn }}>{children}</Box>;
+};
+
+
 export default function ApplicantProfile() {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -858,8 +878,8 @@ export default function ApplicantProfile() {
               <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
                 <IconUser size={20} /> BASIC REGISTRATION DETAILS
               </Typography>
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6} md={3}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     required
                     label="Enrolled NO"
@@ -871,16 +891,16 @@ export default function ApplicantProfile() {
                     helperText={errors.enRolledNo}
                     sx={errorStyle(!!errors.enRolledNo)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSDatePicker
                     label="Applicant Date"
                     name="applicantDate"
                     value={formData.applicantDate}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     required
@@ -900,8 +920,8 @@ export default function ApplicantProfile() {
                     <MenuItem value="HR Executive">HR Executive</MenuItem>
                     <MenuItem value="Quality Auditor">Quality Auditor</MenuItem>
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     required
@@ -918,9 +938,9 @@ export default function ApplicantProfile() {
                       <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
+                </R>
 
-                <Grid item xs={12} sm={6} md={3}>
+                <R>
                   <BOSTextField
                     select
                     label="Title"
@@ -932,8 +952,8 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     required
                     label="First Name"
@@ -944,8 +964,8 @@ export default function ApplicantProfile() {
                     helperText={errors.firstName}
                     sx={errorStyle(!!errors.firstName)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     required
                     label="Last Name"
@@ -956,8 +976,8 @@ export default function ApplicantProfile() {
                     helperText={errors.lastName}
                     sx={errorStyle(!!errors.lastName)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSDatePicker
                     required
                     label="Birth Date"
@@ -967,8 +987,8 @@ export default function ApplicantProfile() {
                     error={!!errors.birthDate}
                     helperText={errors.birthDate}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Age"
                     name="age"
@@ -976,9 +996,9 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
+                </R>
 
-                <Grid item xs={12} sm={6} md={3}>
+                <R>
                   <BOSTextField
                     required
                     label="Mobile No"
@@ -990,8 +1010,8 @@ export default function ApplicantProfile() {
                     helperText={errors.mobileNo}
                     sx={errorStyle(!!errors.mobileNo)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     required
                     label="Email ID"
@@ -1003,8 +1023,8 @@ export default function ApplicantProfile() {
                     helperText={errors.emailId}
                     sx={errorStyle(!!errors.emailId)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <Stack spacing={1}>
                     <BOSTextField
                       required
@@ -1030,9 +1050,9 @@ export default function ApplicantProfile() {
                       sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem', fontWeight: 600 } }}
                     />
                   </Stack>
-                </Grid>
+                </R>
 
-                <Grid item xs={12} sm={6} md={3}>
+                <R>
                   <BOSTextField
                     select
                     label="Ref Mode"
@@ -1045,10 +1065,10 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
+                </R>
 
                 {formData.refMode === 'EMPLOYEE' && (
-                  <Grid item xs={12} sm={6} md={9}>
+                  <R lg={8}>
                     <BOSTextField
                       select
                       required
@@ -1071,11 +1091,11 @@ export default function ApplicantProfile() {
                         );
                       })}
                     </BOSTextField>
-                  </Grid>
+                  </R>
                 )}
 
                 {formData.refMode && formData.refMode !== 'EMPLOYEE' && (
-                  <Grid item xs={12} sm={6} md={9}>
+                  <R lg={8}>
                     <BOSTextField
                       required={formData.refMode === 'OTHERS'}
                       label="Ref Comments"
@@ -1086,9 +1106,9 @@ export default function ApplicantProfile() {
                       helperText={errors.refComments}
                       sx={errorStyle(!!errors.refComments)}
                     />
-                  </Grid>
+                  </R>
                 )}
-              </Grid>
+              </GridContainer>
             </CardContent>
           </Card>
         </Grid>
@@ -1119,8 +1139,8 @@ export default function ApplicantProfile() {
           <Box sx={{ minHeight: '300px', p: 1 }}>
             {/* 1. PERSONAL DETAILS */}
             {activeTab === 0 && (
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6} md={3}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     label="Enrolled NO"
                     name="enRollNo"
@@ -1128,8 +1148,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Gender"
@@ -1143,8 +1163,8 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Marital Status"
@@ -1157,8 +1177,8 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSDatePicker
                     label="Birth Date"
                     name="birthDate"
@@ -1166,16 +1186,16 @@ export default function ApplicantProfile() {
                     disabled
                     onChange={() => {}}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="PAN No"
                     name="panNo"
                     value={personalData.panNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Religion"
@@ -1188,84 +1208,84 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Nationality"
                     name="nationality"
                     value={personalData.nationality}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Office Phone No"
                     name="officePhoneNo"
                     value={personalData.officePhoneNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Phone No"
                     name="phoneNo"
                     value={personalData.phoneNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Mobile No"
                     name="mobileNo"
                     value={personalData.mobileNo || formData.mobileNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Email Id"
                     name="emailId"
                     value={personalData.emailId || formData.emailId}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <Divider sx={{ my: 1 }} />
                   <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 600 }}>PERMANENT ADDRESS</Typography>
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 1"
                     name="permAdd1"
                     value={personalData.permAdd1}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 2"
                     name="permAdd2"
                     value={personalData.permAdd2}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="City"
                     name="city"
                     value={personalData.city}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="State"
                     name="state"
                     value={personalData.state}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -1277,8 +1297,8 @@ export default function ApplicantProfile() {
                     label="Personal Address as above"
                     sx={{ fontWeight: 'bold' }}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Personal Add1"
                     name="persAdd1"
@@ -1286,8 +1306,8 @@ export default function ApplicantProfile() {
                     onChange={handlePersonalChange}
                     disabled={personalData.sameAsPermanent}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Personal Add2"
                     name="persAdd2"
@@ -1295,8 +1315,8 @@ export default function ApplicantProfile() {
                     onChange={handlePersonalChange}
                     disabled={personalData.sameAsPermanent}
                   />
-                </Grid>
-              </Grid>
+                </R>
+              </GridContainer>
             )}
 
             {/* 2. EXPERIENCE DETAILS */}
@@ -1621,8 +1641,8 @@ export default function ApplicantProfile() {
 
             {/* 5. EVALUATION DETAILS */}
             {activeTab === 4 && (
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     label="Enrolled No"
                     name="enRolledNo"
@@ -1630,16 +1650,16 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSDatePicker
                     label="Interview Date"
                     name="interviewDate"
                     value={evaluationData.interviewDate}
                     onChange={(e) => setEvaluationData(prev => ({ ...prev, interviewDate: e.target.value }))}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Interview Status"
@@ -1651,24 +1671,24 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Technical Interviewed By"
                     name="technicalInterviewedBy"
                     value={evaluationData.technicalInterviewedBy}
                     onChange={(e) => setEvaluationData(prev => ({ ...prev, technicalInterviewedBy: e.target.value }))}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="HR Interviewed By"
                     name="hrInterviewedBy"
                     value={evaluationData.hrInterviewedBy}
                     onChange={(e) => setEvaluationData(prev => ({ ...prev, hrInterviewedBy: e.target.value }))}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Comments"
                     name="comments"
@@ -1677,14 +1697,14 @@ export default function ApplicantProfile() {
                     multiline
                     rows={3}
                   />
-                </Grid>
-              </Grid>
+                </R>
+              </GridContainer>
             )}
 
             {/* 6. CONTACT DETAILS */}
             {activeTab === 5 && (
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     label="Enrolled No"
                     name="enRolledNo"
@@ -1692,8 +1712,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Phone No"
                     name="phoneNo"
@@ -1701,8 +1721,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Mobile No"
                     name="mobileNo"
@@ -1710,8 +1730,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="City"
                     name="city"
@@ -1719,8 +1739,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 1"
                     name="address1"
@@ -1728,8 +1748,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 2"
                     name="address2"
@@ -1737,8 +1757,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-              </Grid>
+                </R>
+              </GridContainer>
             )}
 
             {/* 7. KYC DETAILS */}
