@@ -1875,10 +1875,10 @@ export default function TaskDashboard() {
 
         const workloadArr = Object.values(workloadMap)
           .map((w) => {
-            const days = Math.round((w.hours / 8) * 10) / 10;
-            let percent = Math.min(100, Math.round((w.tasks / 8) * 100));
-            if (w.tasks === 0) percent = 0;
-            else if (percent === 0) percent = 10;
+            const days = Math.round(w.hours / 8);
+            let percent = Math.min(100, Math.round((w.hours / 40) * 100));
+            if (w.hours === 0) percent = 0;
+            else if (percent === 0) percent = 1;
             let color = '#10B981', status = 'Healthy';
             if (days < 5) {
               color = '#EF4444';
