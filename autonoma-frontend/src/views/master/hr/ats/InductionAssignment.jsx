@@ -975,6 +975,14 @@ const InductionAssignment = () => {
                     <MenuItem value="">-Select-</MenuItem>
                     {employees
                       .filter(emp => {
+                        // Special override for Maheshwaran and Eashwar
+                        if (emp.empCode === 'EMP-001') {
+                          return level.inductionRound === 'HR';
+                        }
+                        if (emp.empCode === 'EMP-002') {
+                          return level.inductionRound === 'QMS';
+                        }
+
                         if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
                         if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
                         const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;

@@ -85,9 +85,9 @@ public class InductionAssignmentService {
 
         InductionAssignment saved = repository.save(entity);
 
-        // Update employee's status to Active and inductionStatus to ACTIVE
+        // Update employee's status to Active and inductionStatus to PENDING
         employeeMasterRepository.findByEmpCode(entity.getEmpCode()).ifPresent(emp -> {
-            emp.setInductionStatus("ACTIVE");
+            emp.setInductionStatus("PENDING");
             emp.setStatus("Active");
             employeeMasterRepository.save(emp);
         });

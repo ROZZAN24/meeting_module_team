@@ -612,7 +612,7 @@ export const hra = {
   children: [
     {
       id: 'hra-ats-collapse',
-      title: 'ATS',
+      title: 'Induction',
       type: 'collapse',
       icon: icons.IconSearch,
       children: [
