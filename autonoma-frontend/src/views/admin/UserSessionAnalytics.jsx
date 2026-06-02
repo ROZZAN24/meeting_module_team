@@ -94,7 +94,7 @@ const UserSessionAnalytics = () => {
   const theme = useTheme();
   const { user } = useAuth();
   const perms = usePagePermissions(PAGE_CODES.AD_SESSION_ANALYTICS);
-  const isSuperUser = user?.isBosAdmin === 1;
+  const isSuperUser = user?.userLevel === 5;
 
   const [loading, setLoading] = useState(true);
   const [rawData, setRawData] = useState([]);

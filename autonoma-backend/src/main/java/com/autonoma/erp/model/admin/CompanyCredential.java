@@ -88,6 +88,9 @@ public class CompanyCredential {
     @Column(name = "IS_ACTIVE")
     private Boolean isActive = true;
 
+    @Column(name = "INPUT_CASE_STYLE", columnDefinition = "NVARCHAR(50)")
+    private String inputCaseStyle;
+
     @PrePersist
     protected void onCreate() {
         String currentUserId = null;
@@ -285,5 +288,13 @@ public class CompanyCredential {
 
     public void setRestoreEnableDays(Integer restoreEnableDays) {
         this.restoreEnableDays = restoreEnableDays;
+    }
+
+    public String getInputCaseStyle() {
+        return inputCaseStyle;
+    }
+
+    public void setInputCaseStyle(String inputCaseStyle) {
+        this.inputCaseStyle = inputCaseStyle;
     }
 }

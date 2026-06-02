@@ -86,7 +86,7 @@ export default function AttendanceList() {
     return rows.filter((row) => {
       if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
 
-      if (user?.isBosAdmin !== 1 && row.employee?.id !== user?.empId) {
+      if (user?.userLevel !== 5 && row.employee?.id !== user?.empId) {
         return false;
       }
       const searchText = globalFilters.searchText || '';

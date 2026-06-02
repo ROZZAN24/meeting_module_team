@@ -225,7 +225,7 @@ const UserOverview = () => {
         if (result.status === 'fulfilled') {
           mappings[u.userId] = result.value.data;
         } else {
-          mappings[u.userId] = { mappedDivisionIds: [], isBosAdmin: 0 };
+          mappings[u.userId] = { mappedDivisionIds: [], userLevel: 0 };
         }
       });
       setUserMappingsMap(mappings);
@@ -282,15 +282,20 @@ const UserOverview = () => {
   };
 
   const handleEdit = async (user) => {
+    const mapping = userMappingsMap[user.userId];
+    if (currentUser?.userLevel !== 5 && mapping?.userLevel === 5) {
+      dispatch(openSnackbar({ open: true, message: 'Admins cannot modify Boss Admins', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     try {
       const res = await axios.get(`/api/users/${user.userId}/mappings`);
       setEditingUser({
         ...user,
-        isBosAdmin: res.data.isBosAdmin || 0,
+        userLevel: res.data.userLevel || 0,
         mappedDivisionIds: res.data.mappedDivisionIds || []
       });
     } catch (err) {
-      setEditingUser({ ...user, isBosAdmin: user.isBosAdmin || 0, mappedDivisionIds: [] });
+      setEditingUser({ ...user, userLevel: user.userLevel || 0, mappedDivisionIds: [] });
     }
     setOpen(true);
     fetchEmployees();
@@ -300,6 +305,11 @@ const UserOverview = () => {
   const handleClickShowPassword = () => setShowPassword(!showPassword);
 
   const handleDelete = async (id) => {
+    const mapping = userMappingsMap[id];
+    if (currentUser?.userLevel !== 5 && mapping?.userLevel === 5) {
+      dispatch(openSnackbar({ open: true, message: 'Admins cannot delete Boss Admins', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         await axios.delete(`/api/users/${id}`);
@@ -455,8 +465,11 @@ const UserOverview = () => {
               render: (row) => {
                 const mapping = userMappingsMap[row.userId];
                 if (!mapping) return <Typography variant="caption" color="text.disabled">—</Typography>;
-                if (mapping.isBosAdmin === 1) return (
+                if (mapping.userLevel === 5) return (
                   <Chip label="BOS Admin" size="small" sx={{ bgcolor: '#ede7f6', color: '#673ab7', fontWeight: 800, fontSize: '0.65rem', borderRadius: '6px' }} />
+                );
+                if (mapping.userLevel === 1) return (
+                  <Chip label="Admin User" size="small" sx={{ bgcolor: '#e3f2fd', color: '#1565c0', fontWeight: 800, fontSize: '0.65rem', borderRadius: '6px' }} />
                 );
                 const divIds = mapping.mappedDivisionIds || [];
                 if (divIds.length === 0) return <Typography variant="caption" color="text.disabled">No divisions</Typography>;
@@ -562,7 +575,7 @@ const UserOverview = () => {
             password: '', // Leave blank to avoid showing hash
             status: editingUser?.status ?? 1,
             imgName: editingUser?.imgName || '',
-            isBosAdmin: editingUser?.isBosAdmin ?? 0,
+            userLevel: editingUser?.userLevel ?? 0,
             mappedDivisionIds: editingUser?.mappedDivisionIds || [],
             faceImage: editingUser?.faceImage || '',
             faceDescriptor: editingUser?.faceDescriptor || '',
@@ -606,7 +619,7 @@ const UserOverview = () => {
 
               await axios.post(`/api/users/${savedUserId}/mappings`, {
                 mappedDivisionIds: values.mappedDivisionIds,
-                isBosAdmin: values.isBosAdmin
+                userLevel: values.userLevel
               });
 
               if (editingUser?.userId === currentUser?.id || values.userId === currentUser?.id) {
@@ -726,9 +739,9 @@ const UserOverview = () => {
                               </TextField>
                             </Grid>
                             <Grid item xs={12} sm={6}>
-                              <TextField select fullWidth label="BOS Admin Privilege" name="isBosAdmin" value={values.isBosAdmin} onChange={handleChange} onBlur={handleBlur}>
-                                <MenuItem value={1}>YES</MenuItem>
-                                <MenuItem value={0}>NO</MenuItem>
+                              <TextField select fullWidth label="User Access Level" name="userLevel" value={values.userLevel} onChange={handleChange} onBlur={handleBlur}>
+                                <MenuItem value={0}>Normal User (0)</MenuItem>
+                                <MenuItem value={1}>Admin User (1)</MenuItem>
                               </TextField>
                             </Grid>
                             <Grid item xs={12} sm={6}>

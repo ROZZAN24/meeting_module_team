@@ -635,10 +635,10 @@ export default function UserTaskQueue() {
         setActiveUserId(uid);
         setInitialized(true);
         const roles = String(user.roles || user.role || '').toLowerCase();
-        if (roles.includes('admin') || roles.includes('super') || user.isSuperUser || user.isBosAdmin === 1) {
+        if (roles.includes('admin') || roles.includes('super') || user.isSuperUser || user.userLevel === 5) {
           setIsSuperUser(true);
         }
-        if (user.isBosAdmin === 1) {
+        if (user.userLevel === 5) {
           setIsBosSuper(true);
           axios.get('/api/users/all').then(res => setAllUsers(res.data || [])).catch(e => console.error(e));
         }

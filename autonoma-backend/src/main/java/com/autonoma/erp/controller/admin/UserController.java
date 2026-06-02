@@ -43,6 +43,13 @@ public class UserController {
         return "SYSTEM";
     }
 
+    private boolean isCurrentUserBossAdmin() {
+        String userId = getCurrentUserId();
+        return userRepository.findById(userId)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
+                .orElse(false);
+    }
+
     @GetMapping("/all")
     public ResponseEntity<List<UserCredential>> getAllUsers() {
         List<UserCredential> users = userRepository.findAll();
@@ -77,31 +84,40 @@ public class UserController {
 
     @RequirePagePermission(pageCode = "AD1130", action = "write")
     public ResponseEntity<?> updateUser(@PathVariable String id, @RequestBody UserCredential userDetails) {
-        return userRepository.findById(id).map(user -> {
-            // Delete old image if it's being replaced
-            if (userDetails.getImgName() != null && !userDetails.getImgName().equals(user.getImgName())) {
-                fileService.deleteFile(user.getImgName());
+        UserCredential user = userRepository.findById(id).orElse(null);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        
+        if (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
+            if (!isCurrentUserBossAdmin()) {
+                return ResponseEntity.status(403).body("Admins cannot modify Boss Admins");
             }
+        }
 
-            user.setEmpId(userDetails.getEmpId());
-            user.setStatus(userDetails.getStatus());
-            user.setImgName(userDetails.getImgName());
-            user.setFaceImage(userDetails.getFaceImage());
-            user.setAuthMethod(userDetails.getAuthMethod());
-            user.setFaceDescriptor(userDetails.getFaceDescriptor());
-            user.setAutoLogoutOnFaceAbsence(userDetails.getAutoLogoutOnFaceAbsence());
+        // Delete old image if it's being replaced
+        if (userDetails.getImgName() != null && !userDetails.getImgName().equals(user.getImgName())) {
+            fileService.deleteFile(user.getImgName());
+        }
 
-            if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
-                // Prevent double-encoding if the frontend sends back the existing encrypted hash
-                if (!userDetails.getPassword().equals(user.getPassword())) {
-                    user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
-                }
+        user.setEmpId(userDetails.getEmpId());
+        user.setStatus(userDetails.getStatus());
+        user.setImgName(userDetails.getImgName());
+        user.setFaceImage(userDetails.getFaceImage());
+        user.setAuthMethod(userDetails.getAuthMethod());
+        user.setFaceDescriptor(userDetails.getFaceDescriptor());
+        user.setAutoLogoutOnFaceAbsence(userDetails.getAutoLogoutOnFaceAbsence());
+
+        if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+            // Prevent double-encoding if the frontend sends back the existing encrypted hash
+            if (!userDetails.getPassword().equals(user.getPassword())) {
+                user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
             }
+        }
 
-            user.setUpdatedBy(getCurrentUserId());
-            user.setUpdatedDate(new Date());
-            return ResponseEntity.ok(userRepository.save(user));
-        }).orElse(ResponseEntity.notFound().build());
+        user.setUpdatedBy(getCurrentUserId());
+        user.setUpdatedDate(new Date());
+        return ResponseEntity.ok(userRepository.save(user));
     }
 
     @PostMapping(value = "/upload-profile-pic", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -155,6 +171,12 @@ public class UserController {
 
     @RequirePagePermission(pageCode = "AD1130", action = "delete")
     public ResponseEntity<?> deleteUser(@PathVariable String id) {
+        UserCredential targetUser = userRepository.findById(id).orElse(null);
+        if (targetUser != null && targetUser.getUserLevel() != null && targetUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
+            if (!isCurrentUserBossAdmin()) {
+                return ResponseEntity.status(403).body("Admins cannot delete Boss Admins");
+            }
+        }
         userRepository.deleteById(id);
         return ResponseEntity.ok().build();
     }
@@ -179,19 +201,19 @@ public class UserController {
                 .collect(java.util.stream.Collectors.toList());
 
         UserCredential user = userRepository.findById(userId).orElse(null);
-        Integer isBosAdmin = (user != null && user.getIsBosAdmin() != null) ? user.getIsBosAdmin() : 0;
+        Integer userLevel = (user != null && user.getUserLevel() != null) ? user.getUserLevel() : 0;
 
         Map<String, Object> result = new HashMap<>();
         result.put("mappedDivisionIds", divIds);
         result.put("mappedCompanyIds", compIds);
-        result.put("isBosAdmin", isBosAdmin);
+        result.put("userLevel", userLevel);
 
         return ResponseEntity.ok(result);
     }
 
     public static class UserMappingPayload {
         private java.util.List<Long> mappedDivisionIds;
-        private Integer isBosAdmin;
+        private Integer userLevel;
 
         public java.util.List<Long> getMappedDivisionIds() {
             return mappedDivisionIds;
@@ -201,12 +223,12 @@ public class UserController {
             this.mappedDivisionIds = mappedDivisionIds;
         }
 
-        public Integer getIsBosAdmin() {
-            return isBosAdmin;
+        public Integer getUserLevel() {
+            return userLevel;
         }
 
-        public void setIsBosAdmin(Integer isBosAdmin) {
-            this.isBosAdmin = isBosAdmin;
+        public void setUserLevel(Integer userLevel) {
+            this.userLevel = userLevel;
         }
     }
 
@@ -220,13 +242,25 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
 
-        user.setIsBosAdmin(payload.getIsBosAdmin() != null ? payload.getIsBosAdmin() : 0);
+        if (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
+            if (!isCurrentUserBossAdmin()) {
+                return ResponseEntity.status(403).body("Admins cannot modify Boss Admins");
+            }
+        }
+
+        if (payload.getUserLevel() != null && payload.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN) {
+            if (!isCurrentUserBossAdmin()) {
+                return ResponseEntity.status(403).body("Admins cannot grant Boss Admin privileges");
+            }
+        }
+
+        user.setUserLevel(payload.getUserLevel() != null ? payload.getUserLevel() : 0);
         userRepository.save(user);
 
         userDivisionMappingRepository.deleteByUserId(userId);
         userCompanyMappingRepository.deleteByUserId(userId);
 
-        if (payload.getIsBosAdmin() == null || payload.getIsBosAdmin() == 0) {
+        if (payload.getUserLevel() == null || payload.getUserLevel() == 0) {
             if (payload.getMappedDivisionIds() != null && !payload.getMappedDivisionIds().isEmpty()) {
                 java.util.Set<Long> companyIds = new java.util.HashSet<>();
 
