@@ -19,7 +19,8 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
     public void registerListeners() {
         try {
             SessionFactoryImpl sessionFactory = entityManagerFactory.unwrap(SessionFactoryImpl.class);
-            EventListenerRegistry registry = sessionFactory.getServiceRegistry().getService(EventListenerRegistry.class);
+            EventListenerRegistry registry = sessionFactory.getServiceRegistry()
+                    .getService(EventListenerRegistry.class);
             registry.getEventListenerGroup(EventType.PRE_INSERT).appendListener(this);
             registry.getEventListenerGroup(EventType.PRE_UPDATE).appendListener(this);
         } catch (Exception e) {
@@ -48,7 +49,8 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
         String[] propertyNames = event.getPersister().getPropertyNames();
         Object[] state = event.getState();
 
-        // Deep fix: Skip updating audit fields if the record was newly created within the last second
+        // Deep fix: Skip updating audit fields if the record was newly created within
+        // the last second
         java.util.Date createdDate = null;
         for (int i = 0; i < propertyNames.length; i++) {
             if (propertyNames[i].equalsIgnoreCase("createdDate") || propertyNames[i].equalsIgnoreCase("createdAt")) {
@@ -69,7 +71,7 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
 
         setValue(propertyNames, state, "updatedUser", currentUser, event.getEntity());
         setValue(propertyNames, state, "updatedBy", currentUser, event.getEntity());
-        
+
         java.util.Date now = new java.util.Date();
         setValue(propertyNames, state, "updatedDate", now, event.getEntity());
         setValue(propertyNames, state, "updatedAt", now, event.getEntity());
@@ -80,7 +82,8 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
     private void setValue(String[] propertyNames, Object[] state, String propertyName, Object value, Object entity) {
         for (int i = 0; i < propertyNames.length; i++) {
             if (propertyNames[i].equalsIgnoreCase(propertyName)) {
-                System.out.println("[AuditListener] Setting " + propertyName + " to " + value + " on " + entity.getClass().getSimpleName());
+                System.out.println("[AuditListener] Setting " + propertyName + " to " + value + " on "
+                        + entity.getClass().getSimpleName());
                 state[i] = value;
                 try {
                     // Also update the entity object itself using reflection
@@ -111,7 +114,8 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("[AuditListener] Reflection error setting " + propertyName + ": " + e.getMessage());
+                    System.err.println(
+                            "[AuditListener] Reflection error setting " + propertyName + ": " + e.getMessage());
                 }
                 break;
             }

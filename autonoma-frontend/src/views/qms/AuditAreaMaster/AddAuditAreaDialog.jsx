@@ -6,7 +6,7 @@ import { IconSettings } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
-import { BOSFormDialog, BOSFormSection, BOSTextField } from 'ui-component/bos';
+import { BOSFormDialog, BOSFormSection, BOSTextField, BOSStatusField } from 'ui-component/bos';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { API_PATHS } from 'utils/api-constants';
@@ -83,8 +83,12 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
     } catch (error) {
       console.error('Failed to save audit area:', error);
       let errMsg = 'Failed to save audit area.';
-      if (error.response && error.response.data) {
+      if (typeof error === 'string') {
+        errMsg = error;
+      } else if (error.response && error.response.data) {
         errMsg = typeof error.response.data === 'string' ? error.response.data : (error.response.data.message || errMsg);
+      } else if (error.message) {
+        errMsg = error.message;
       }
       if (errMsg.toLowerCase().includes('already exists') || errMsg.toLowerCase().includes('duplicate')) {
         setErrors({ description: errMsg });
@@ -151,17 +155,15 @@ const AddAuditAreaDialog = ({ open, handleClose, initialData, readOnly = false }
             helperText={errors.description}
           />
 
-          <BOSTextField
-            select
+          <BOSStatusField
+            isCreate={!initialData}
+            type="string-upper"
             name="status"
             label="Status"
             value={formData.status}
             onChange={handleChange}
             disabled={isViewOnly}
-          >
-            <MenuItem value="ACTIVE">ACTIVE</MenuItem>
-            <MenuItem value="INACTIVE">INACTIVE</MenuItem>
-          </BOSTextField>
+          />
         </BOSFormSection>
       </BOSFormDialog>
 

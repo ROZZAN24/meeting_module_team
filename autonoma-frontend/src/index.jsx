@@ -10,6 +10,7 @@ import { store, persister } from 'store';
 import * as serviceWorker from 'serviceWorker';
 import reportWebVitals from 'reportWebVitals';
 import { ConfigProvider } from 'contexts/ConfigContext';
+import { showAppAlert } from 'utils/alert';
 
 // style + assets
 import 'assets/scss/style.scss';
@@ -53,7 +54,12 @@ window.showAlert = function (msg) {
   }
   lastAlertedMsg = msg;
   lastAlertedTime = now;
-  alert(msg);
+  try {
+    showAppAlert(msg, 'error');
+  } catch (e) {
+    console.error('Failed to show app alert:', e);
+    alert(msg);
+  }
 };
 
 window.onerror = function (message, source, lineno, colno, error) {
