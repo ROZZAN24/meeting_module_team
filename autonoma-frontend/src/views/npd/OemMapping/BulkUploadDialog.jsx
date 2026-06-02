@@ -226,6 +226,11 @@ export default function BulkUploadDialog({ open, handleClose }) {
 
       <DialogContent sx={{ p: 3 }}>
         <Grid container spacing={2.5}>
+          {errorMsg && (
+            <Grid item xs={12}>
+              <Alert severity="error">{errorMsg}</Alert>
+            </Grid>
+          )}
 
           <Grid item xs={12}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>

@@ -25,7 +25,7 @@ public class CommChannel {
     @Column(name = "department_id")
     private Long departmentId;
 
-    @Column(name = "created_by", updatable = false)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_at", updatable = false)

@@ -12,7 +12,7 @@ public class AuditCriteria extends BaseAuditEntity {
     @Column(name = "SEQ_NO", columnDefinition = "NVARCHAR(50)")
     private String seqNo;
 
-    @Column(name = "AUDIT_TYPE", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AUDIT_TYPE", columnDefinition = "NVARCHAR(MAX)")
     private String auditType;
 
     @Column(name = "CLAUSE", columnDefinition = "NVARCHAR(255)")
@@ -21,7 +21,7 @@ public class AuditCriteria extends BaseAuditEntity {
     @Column(name = "CRITERIA_TEXT", columnDefinition = "NVARCHAR(MAX)")
     private String criteriaText;
     
-    @Column(name = "DEPARTMENT", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "DEPARTMENT", columnDefinition = "NVARCHAR(MAX)")
     private String department;
 
     @Column(name = "ATTACHMENT_REQUIRED", columnDefinition = "NVARCHAR(20)")

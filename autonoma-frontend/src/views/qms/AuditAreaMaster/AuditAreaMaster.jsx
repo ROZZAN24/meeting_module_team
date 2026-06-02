@@ -107,7 +107,9 @@ export default function AuditAreaMaster() {
     } catch (error) {
       console.error('Failed to delete audit area:', error);
       let errorMsg = 'Failed to delete audit area.';
-      if (error.response?.data) {
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
         if (typeof error.response.data === 'string') {
           errorMsg = error.response.data;
         } else if (error.response.data.message) {

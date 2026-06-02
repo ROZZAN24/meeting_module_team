@@ -27,14 +27,18 @@ public class SecurityUtils {
             if (auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal())) {
                 Object principal = auth.getPrincipal();
                 if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-                    return ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    String username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                    System.out.println("[SecurityUtils] Auth principal (UserDetails) -> " + username);
+                    return username;
                 } else {
+                    System.out.println("[SecurityUtils] Auth principal (String) -> " + auth.getName());
                     return auth.getName();
                 }
             }
         } catch (Exception e) {
             // Log error
         }
+        System.out.println("[SecurityUtils] No authenticated user found");
         return null;
     }
 

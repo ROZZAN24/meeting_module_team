@@ -22,7 +22,7 @@ public class UserDivisionMapping {
     @Column(name = "division_id", nullable = false)
     private Long divisionId;
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_at")
@@ -31,6 +31,10 @@ public class UserDivisionMapping {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+
         createdAt = new Date();
-    }
+        }
 }

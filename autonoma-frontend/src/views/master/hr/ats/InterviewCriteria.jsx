@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, MenuItem } from '@mui/material';
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox, ListItemText } from '@mui/material';
 import { IconClipboardCheck, IconRefresh, IconPlus } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
@@ -9,7 +9,7 @@ import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import { BOSDataTable, BOSFormDialog, BOSTextField, BOSFileUpload, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
 import { useLookups } from 'hooks/useLookups';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| INTERVIEW CRITERIA MASTER ||============================== //
@@ -18,8 +18,8 @@ const INITIAL_STATE = {
   id: null,
   criteriaDetails: '',
   answer: '',
-  departmentCodes: '', // Maps to department ID string in UI state
-  levelCodes: '',      // Maps to designation level rowId string in UI state
+  departmentCodes: [], // Maps to department ID strings in UI state
+  levelCodes: [],      // Maps to designation level rowId strings in UI state
   interviewRound: '',
   attachmentRequired: 'NO',
   status: 'ACTIVE',
@@ -31,8 +31,9 @@ const ROUND_OPTIONS = ['TECHNICAL', 'HR', 'MANAGEMENT', 'SPECIAL ROUND'];
 const VALIDATION_RULES = [
   { field: 'interviewRound', label: 'Interview Round', required: true },
   { field: 'criteriaDetails', label: 'Criteria Details', required: true, maxLength: 300 },
-  { field: 'departmentCodes', label: 'Department', required: true },
-  { field: 'levelCodes', label: 'Level', required: true },
+  { field: 'answer', label: 'Answer', required: true, maxLength: 2000 },
+  { field: 'departmentCodes', label: 'Department', required: true, validate: (val) => (!val || val.length === 0 ? 'At least one department is required' : null) },
+  { field: 'levelCodes', label: 'Level', required: true, validate: (val) => (!val || val.length === 0 ? 'At least one level is required' : null) },
   { field: 'status', label: 'Status', required: true }
 ];
 
@@ -55,24 +56,16 @@ export default function InterviewCriteria() {
   // Dynamic columns definition using useMemo to display department name and level instead of codes
   const columns = useMemo(() => [
     { id: 'index', label: 'Sl.No', minWidth: 60 },
-    { id: 'serialNo', label: 'Serial No', bold: true, color: 'primary.main', minWidth: 100 },
     { id: 'criteriaDetails', label: 'Criteria', required: true, bold: true, minWidth: 250 },
-    {
-      id: 'departmentCodes',
-      label: 'Department',
-      minWidth: 150,
-      render: (row) => {
-        const dept = departments.find((d) => d.departmentNo === row.departmentCodes);
-        return dept ? dept.departmentName : (row.departmentCodes || '-');
-      }
-    },
+    { id: 'answer', label: 'Answer', required: true, minWidth: 250 },
+    { id: 'departmentCodes', label: 'Department', minWidth: 150 },
     {
       id: 'levelCodes',
       label: 'Level',
       minWidth: 120,
       render: (row) => {
-        const lvl = levels.find((l) => l.level === row.levelCodes);
-        return lvl ? lvl.level : (row.levelCodes || '-');
+        if (!row.levelCodes) return '-';
+        return row.levelCodes.split(',').map(c => c.trim()).join(', ');
       }
     },
     { id: 'interviewRound', label: 'Round', minWidth: 120 },
@@ -93,7 +86,15 @@ export default function InterviewCriteria() {
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [{
+    const config = [
+      {
+        id: 'criteriaDetails',
+        label: 'Criteria',
+        type: 'text',
+        isStarred: true,
+        isRequired: true
+      },
+      {
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -102,11 +103,37 @@ export default function InterviewCriteria() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'ACTIVE',
         isStarred: true
       },
-      ...getCommonDateFilters('createdAt', 'updatedAt')];
+      {
+        id: 'createdAt',
+        label: 'CREATED DATE',
+        type: 'dateRange',
+        isStarred: true
+      },
+      {
+        id: 'updatedAt',
+        label: 'UPDATED DATE',
+        type: 'dateRange',
+        isStarred: false
+      }
+    ];
+
     dispatch(setFilterConfig(config));
+
+    // Get current local date in YYYY-MM-DD format
+    // Adjusting for local timezone offset to avoid UTC date mismatch issues
+    const tzOffset = new Date().getTimezoneOffset() * 60000;
+    const todayStr = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: todayStr,
+      createdAtEnd: todayStr,
+      createdAtConsider: 'Yes'
+    }));
+
     return () => {
       dispatch(setFilterConfig(null));
     };
@@ -152,21 +179,27 @@ export default function InterviewCriteria() {
   };
 
   const handleOpenEdit = (row) => {
+    const originalRow = rows.find(r => r.id === row.id) || row;
+
     // Map department code back to department database ID string
-    const matchedDept = departments.find(d => d.departmentNo === row.departmentCodes);
-    const deptIdVal = matchedDept ? matchedDept.id.toString() : (row.departmentCodes || '');
+    const rawDepts = originalRow.departmentCodes ? originalRow.departmentCodes.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const deptIdVals = rawDepts.map(
+      (code) => departments.find((d) => d.departmentNo === code)?.id?.toString() || code
+    );
 
     // Map designation level code back to level row_id string
-    const matchedLevel = levels.find(l => l.level === row.levelCodes);
-    const levelIdVal = matchedLevel ? matchedLevel.rowId.toString() : (row.levelCodes || '');
+    const rawLevels = originalRow.levelCodes ? originalRow.levelCodes.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const levelIdVals = rawLevels.map(
+      (lvlName) => levels.find((l) => l.level === lvlName)?.rowId?.toString() || lvlName
+    );
 
     setFormData({
-      ...row,
-      departmentCodes: deptIdVal,
-      levelCodes: levelIdVal,
-      interviewAttachment: row.interviewAttachment ? {
-        serverFileName: row.interviewAttachment,
-        fileName: row.interviewAttachment.split('/').pop(),
+      ...originalRow,
+      departmentCodes: deptIdVals,
+      levelCodes: levelIdVals,
+      interviewAttachment: originalRow.interviewAttachment ? {
+        serverFileName: originalRow.interviewAttachment,
+        fileName: originalRow.interviewAttachment.split('/').pop(),
         isServer: true
       } : null
     });
@@ -178,6 +211,37 @@ export default function InterviewCriteria() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) clearErrors(name);
+  };
+
+  const handleDepartmentChange = (e) => {
+    const { value } = e.target;
+    if (value.includes('ALL')) {
+      if (formData.departmentCodes.length === departments.length) {
+        setFormData(prev => ({ ...prev, departmentCodes: [] }));
+      } else {
+        setFormData(prev => ({ ...prev, departmentCodes: departments.map(d => d.id.toString()) }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, departmentCodes: typeof value === 'string' ? value.split(',') : value }));
+    }
+    if (errors.departmentCodes) clearErrors('departmentCodes');
+  };
+
+  const handleLevelChange = (e) => {
+    const { value } = e.target;
+    if (value.includes('ALL')) {
+      if (formData.levelCodes.length === levels.length) {
+        setFormData(prev => ({ ...prev, levelCodes: [] }));
+      } else {
+        setFormData(prev => ({ ...prev, levelCodes: levels.map(l => l.rowId.toString()) }));
+      }
+    } else {
+      const selectedIds = typeof value === 'string' ? value.split(',') : value;
+      const order = levels.map(l => l.rowId.toString());
+      const sortedIds = [...selectedIds].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+      setFormData(prev => ({ ...prev, levelCodes: sortedIds }));
+    }
+    if (errors.levelCodes) clearErrors('levelCodes');
   };
 
   const handleSave = async () => {
@@ -196,14 +260,18 @@ export default function InterviewCriteria() {
     }
 
     try {
-      const selectedDeptObj = departments.find(d => d.id.toString() === formData.departmentCodes);
-      const selectedLevelObj = levels.find(l => l.rowId.toString() === formData.levelCodes);
+      const selectedDepts = formData.departmentCodes
+        .map(id => departments.find(d => d.id.toString() === id.toString())?.departmentNo || id)
+        .join(',');
+      const selectedLevels = formData.levelCodes
+        .map(rowId => levels.find(l => l.rowId.toString() === rowId.toString())?.level || rowId)
+        .join(',');
 
       const payload = {
         ...formData,
         answer: formData.answer || '-',
-        departmentCodes: selectedDeptObj ? selectedDeptObj.departmentNo : formData.departmentCodes,
-        levelCodes: selectedLevelObj ? selectedLevelObj.level : formData.levelCodes,
+        departmentCodes: selectedDepts,
+        levelCodes: selectedLevels,
         interviewAttachment: formData.interviewAttachment?.serverFileName || formData.interviewAttachment
       };
 
@@ -265,16 +333,29 @@ export default function InterviewCriteria() {
   };
 
   const resolvedRows = useMemo(() => {
-    return rows.map((r, i) => ({
-      ...r,
-      index: i + 1,
-      serialNo: r.id.toString(),
-      createdUser: r.createdUser || r.createdBy || '-',
-      updatedUser: r.updatedUser || r.updatedBy || '-',
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
-    }));
-  }, [rows]);
+    return rows.map((r, i) => {
+      const deptNames = r.departmentCodes
+        ? r.departmentCodes
+            .split(',')
+            .map((code) => {
+              const match = departments.find((d) => d.departmentNo === code.trim());
+              return match ? match.departmentName : code;
+            })
+            .join(', ')
+        : '-';
+
+      return {
+        ...r,
+        index: i + 1,
+        serialNo: r.id.toString(),
+        departmentCodes: deptNames,
+        createdUser: r.createdUser || r.createdBy || '-',
+        updatedUser: r.updatedUser || r.updatedBy || '-',
+        createdAt: r.createdAt || '-',
+        updatedAt: r.updatedAt || '-'
+      };
+    });
+  }, [rows, departments]);
 
   return (
     <MainCard fullWidth
@@ -358,20 +439,50 @@ export default function InterviewCriteria() {
           />
 
           <BOSTextField
+            name="answer"
+            label="ANSWER"
+            placeholder="Enter expected answer or guidelines (2000 characters max)..."
+            value={formData.answer}
+            onChange={handleInputChange}
+            multiline
+            rows={4}
+            required
+            fullWidth
+            inputProps={{ maxLength: 2000 }}
+            error={!!errors.answer}
+            helperText={errors.answer || `${formData.answer?.length || 0}/2000 characters`}
+            sx={errorStyle(!!errors.answer)}
+          />
+
+          <BOSTextField
             select
             name="departmentCodes"
             label="DEPARTMENT"
             value={formData.departmentCodes}
-            onChange={handleInputChange}
+            onChange={handleDepartmentChange}
+            SelectProps={{
+              multiple: true,
+              renderValue: (selected) => {
+                if (!selected || selected.length === 0) return <em>-Select-</em>;
+                if (selected.length === departments.length) return 'All Departments';
+                return selected.map(id => departments.find(d => d.id.toString() === id.toString())?.departmentName || id).join(', ');
+              }
+            }}
             required
-            helperText={errors.departmentCodes || "Select department"}
+            helperText={errors.departmentCodes || "Select departments"}
             error={!!errors.departmentCodes}
             sx={errorStyle(!!errors.departmentCodes)}
           >
-            <MenuItem value="">-Select-</MenuItem>
+            {departments.length > 0 && (
+              <MenuItem value="ALL">
+                <Checkbox checked={formData.departmentCodes.length === departments.length} indeterminate={formData.departmentCodes.length > 0 && formData.departmentCodes.length < departments.length} />
+                <ListItemText primary="Select All" sx={{ '& .MuiTypography-root': { fontWeight: 'bold' } }} />
+              </MenuItem>
+            )}
             {departments.map((d) => (
               <MenuItem key={d.id} value={d.id.toString()}>
-                {d.departmentName}
+                <Checkbox checked={formData.departmentCodes.includes(d.id.toString())} />
+                <ListItemText primary={d.departmentName} />
               </MenuItem>
             ))}
           </BOSTextField>
@@ -381,16 +492,30 @@ export default function InterviewCriteria() {
             name="levelCodes"
             label="LEVEL"
             value={formData.levelCodes}
-            onChange={handleInputChange}
+            onChange={handleLevelChange}
+            SelectProps={{
+              multiple: true,
+              renderValue: (selected) => {
+                if (!selected || selected.length === 0) return <em>-Select-</em>;
+                if (selected.length === levels.length) return 'All Levels';
+                return selected.map(id => levels.find(l => l.rowId.toString() === id.toString())?.level || id).join(', ');
+              }
+            }}
             required
-            helperText={errors.levelCodes || "Select designation level"}
+            helperText={errors.levelCodes || "Select designation levels"}
             error={!!errors.levelCodes}
             sx={errorStyle(!!errors.levelCodes)}
           >
-            <MenuItem value="">-Select-</MenuItem>
+            {levels.length > 0 && (
+              <MenuItem value="ALL">
+                <Checkbox checked={formData.levelCodes.length === levels.length} indeterminate={formData.levelCodes.length > 0 && formData.levelCodes.length < levels.length} />
+                <ListItemText primary="Select All" sx={{ '& .MuiTypography-root': { fontWeight: 'bold' } }} />
+              </MenuItem>
+            )}
             {levels.map((l) => (
               <MenuItem key={l.rowId} value={l.rowId.toString()}>
-                {l.level}
+                <Checkbox checked={formData.levelCodes.includes(l.rowId.toString())} />
+                <ListItemText primary={l.level} />
               </MenuItem>
             ))}
           </BOSTextField>

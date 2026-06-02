@@ -66,7 +66,7 @@ public class AuditTypeController {
     }
 
     @PostMapping
-    @RequirePagePermission(pageCode = "M1110", action = "write")
+    @RequirePagePermission(pageCode = "M1120", action = "write")
     @Operation(summary = "Create Audit Type", description = "Creates a new audit type configuration")
     public ResponseEntity<?> createAuditType(@RequestBody AuditType auditType) {
         log.info("Saving audit type: {}", auditType);
@@ -77,7 +77,7 @@ public class AuditTypeController {
     }
 
     @PutMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1110", action = "write")
+    @RequirePagePermission(pageCode = "M1120", action = "write")
     public ResponseEntity<?> updateAuditType(@PathVariable Long id, @RequestBody AuditType auditType) {
         log.info("Updating audit type with ID {}: {}", id, auditType);
         AuditType existing = auditTypeRepository.findById(id).orElse(null);
@@ -95,7 +95,7 @@ public class AuditTypeController {
     }
 
     @DeleteMapping("/{id}")
-    @RequirePagePermission(pageCode = "M1110", action = "delete")
+    @RequirePagePermission(pageCode = "M1120", action = "delete")
     public ResponseEntity<?> deleteAuditType(@PathVariable Long id) {
         log.info("Attempting to delete audit type with ID: {}", id);
         AuditType existing = auditTypeRepository.findById(id).orElse(null);

@@ -39,6 +39,9 @@ public class ProductItemSubtype extends BaseAuditEntity {
     @Override
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         super.onCreate();
         if (this.status == null) {
             this.status = "ACTIVE";
@@ -49,5 +52,5 @@ public class ProductItemSubtype extends BaseAuditEntity {
         if (this.prefixBased == null) {
             this.prefixBased = "SUB ITEM";
         }
-    }
+        }
 }
