@@ -1,0 +1,14 @@
+-- 20260602_V65.0__Alter_Audit_Criteria_Columns_To_NvarcharMax.sql
+-- Alter AUDIT_TYPE and DEPARTMENT columns in QMS_AUDIT_CRITERIA table to NVARCHAR(MAX) to prevent truncation errors when selecting multiple options.
+
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[QMS_AUDIT_CRITERIA]') AND name = 'AUDIT_TYPE')
+BEGIN
+    ALTER TABLE QMS_AUDIT_CRITERIA ALTER COLUMN AUDIT_TYPE NVARCHAR(MAX);
+END
+GO
+
+IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[QMS_AUDIT_CRITERIA]') AND name = 'DEPARTMENT')
+BEGIN
+    ALTER TABLE QMS_AUDIT_CRITERIA ALTER COLUMN DEPARTMENT NVARCHAR(MAX);
+END
+GO

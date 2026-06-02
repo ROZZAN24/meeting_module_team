@@ -335,7 +335,7 @@ export const masters = {
               type: 'item',
               url: '/master/qms/audit/area',
               icon: icons.IconMapPin,
-              pageCode: 'M1120'
+              pageCode: 'M1110'
             },
             {
               id: 'master-qms-audit-type',
@@ -343,7 +343,7 @@ export const masters = {
               type: 'item',
               url: '/master/qms/audit/type',
               icon: icons.IconNotes,
-              pageCode: 'M1110'
+              pageCode: 'M1120'
             },
             {
               id: 'master-qms-audit-criteria',
