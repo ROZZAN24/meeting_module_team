@@ -152,8 +152,16 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
   }, [realTasks]);
 
   const totalReopened = reopenedTasks.length;
-  const criticalReopen = Math.floor(totalReopened * 0.2);
-  const reworkCompleted = Math.floor(totalReopened * 0.3);
+  let criticalReopen = 0;
+  let reworkCompleted = 0;
+  
+  reopenedTasks.forEach(t => {
+    if ((t._reopenCount || 0) >= 3) criticalReopen++;
+    if (['completed', 'verified', 'approved', 'closed', 'resolved'].includes(String(t._status).toLowerCase())) {
+      reworkCompleted++;
+    }
+  });
+  
   const pendingRework = totalReopened - reworkCompleted;
 
   const topStats = [
@@ -166,23 +174,26 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
   const userMap = {};
   reopenedTasks.forEach(t => {
     const u = t._user || 'Unknown';
-    if (!userMap[u]) userMap[u] = { name: u, count: 0 };
+    if (!userMap[u]) userMap[u] = { name: u, count: 0, reworkHrs: 0, origHrs: 0, totalReopenCount: 0 };
     userMap[u].count += 1;
+    userMap[u].reworkHrs += (t._reworkHrs || 0);
+    userMap[u].origHrs += (parseInt(t._hrs, 10) || 8);
+    userMap[u].totalReopenCount += (t._reopenCount || 0);
   });
 
   const fullHealthData = Object.values(userMap).map(u => {
-    const hrs = u.count * 4;
-    const avg = u.count * 1;
+    const hrs = Math.round(u.reworkHrs);
+    const avg = u.count > 0 ? Math.round(u.reworkHrs / 8 / u.count) : 0;
     let status = 'Healthy'; let color = '#10B981';
-    if (u.count > 5) { status = 'Critical'; color = '#EF4444'; }
-    else if (u.count > 1) { status = 'Warning'; color = '#F59E0B'; }
+    if (u.count > 5 || u.totalReopenCount > 5) { status = 'Critical'; color = '#EF4444'; }
+    else if (u.count > 1 || u.totalReopenCount > 2) { status = 'Warning'; color = '#F59E0B'; }
     return { name: u.name, count: u.count, hrs: hrs + ' Hrs', avg: avg + ' Days', status, color };
   }).sort((a, b) => b.count - a.count);
   const healthData = fullHealthData.slice(0, 5);
 
   const fullTimeLossData = Object.values(userMap).map(u => {
-    const rework = u.count * 4;
-    const orig = u.count * 10;
+    const rework = Math.round(u.reworkHrs);
+    const orig = Math.round(u.origHrs);
     const loss = orig > 0 ? Math.round((rework / orig) * 100) : 0;
     let color = '#10B981';
     if (loss > 30) color = '#EF4444'; else if (loss > 15) color = '#F59E0B'; else color = '#3B82F6';
@@ -199,20 +210,13 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
     return { ticketId: getTicketId(t), name: t._title, emp: t._user, count: 1 };
   });
 
-  // ---- REAL Pages Data: derive from task source (_id prefix) ----
+  // ---- REAL Pages Data: group by _pageName ----
   const pagesData = useMemo(() => {
-    const moduleMap = {
-      'CL': { name: 'Checklist', color: '#3B82F6' },
-      'MOM': { name: 'MOM Actions', color: '#F59E0B' },
-      'TK': { name: 'Ticket', color: '#8B5CF6' },
-      'AUDIT': { name: 'Audit Schedule', color: '#EF4444' },
-    };
     const counts = {};
     reopenedTasks.forEach(t => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const mod = moduleMap[prefix] || { name: prefix || 'Other', color: '#94A3B8' };
-      if (!counts[mod.name]) counts[mod.name] = { name: mod.name, color: mod.color, count: 0 };
-      counts[mod.name].count += 1;
+      const name = t._pageName || 'Other';
+      if (!counts[name]) counts[name] = { name, color: '#3B82F6', count: 0 };
+      counts[name].count += 1;
     });
     const entries = Object.values(counts).sort((a, b) => b.count - a.count);
     const total = entries.reduce((s, e) => s + e.count, 0) || 1;
@@ -223,21 +227,18 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
   const trendPeriodConfig = useMemo(() => {
     const now = new Date();
 
-    // Weekly: last 6 weeks
+    // Weekly: last 7 days
     const weekLabels = [];
     const weekCounts = [];
-    for (let i = 5; i >= 0; i--) {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-      const label = `Week ${6 - i}`;
-      weekLabels.push(label);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      weekLabels.push(dayNames[d.getDay()]);
       weekCounts.push(reopenedTasks.filter(t => {
-        const d = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
-        return d && d >= weekStart && d <= weekEnd;
+        const td = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
+        if (!td) return false;
+        return td.getFullYear() === d.getFullYear() && td.getMonth() === d.getMonth() && td.getDate() === d.getDate();
       }).length);
     }
 

@@ -265,29 +265,21 @@ export default function CompletedDashboard({ isDark, realTasks = [] }) {
     else lowCount++;
   });
 
-  // Pages Data (instead of Module Data)
+  // Pages Data (grouped by _pageName)
   const pagesData = useMemo(() => {
-    const pageMap = {
-      CL: { name: 'Checklist', color: '#3B82F6' },
-      MOM: { name: 'MOM Actions', color: '#F59E0B' },
-      TK: { name: 'Ticket', color: '#8B5CF6' },
-      AUDIT: { name: 'Audit Schedule', color: '#EF4444' }
-    };
     const counts = {};
     completedTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const p = pageMap[prefix] || { name: prefix || 'Other', color: '#10B981' };
-      if (!counts[p.name]) counts[p.name] = { name: p.name, color: p.color, total: 0, thisWeek: 0, thisMonth: 0, totalOverall: 0 };
-      counts[p.name].total++;
+      const name = t._pageName || 'Other';
+      if (!counts[name]) counts[name] = { name, color: '#10B981', total: 0, thisWeek: 0, thisMonth: 0, totalOverall: 0 };
+      counts[name].total++;
       const d = getCompletedDate(t);
-      if (isThisWeek(d)) counts[p.name].thisWeek++;
-      if (isThisMonth(d)) counts[p.name].thisMonth++;
+      if (isThisWeek(d)) counts[name].thisWeek++;
+      if (isThisMonth(d)) counts[name].thisMonth++;
     });
     // Find overall total per page for completion rate
     realTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const p = pageMap[prefix] || { name: prefix || 'Other', color: '#10B981' };
-      if (counts[p.name]) counts[p.name].totalOverall++;
+      const name = t._pageName || 'Other';
+      if (counts[name]) counts[name].totalOverall++;
     });
 
     const entries = Object.values(counts).sort((a, b) => b.total - a.total);

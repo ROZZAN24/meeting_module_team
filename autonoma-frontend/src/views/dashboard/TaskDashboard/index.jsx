@@ -1701,18 +1701,26 @@ export default function TaskDashboard() {
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
-        const [r1, r2, r3, r4, r5] = await Promise.allSettled([
+        const [r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
           axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),
-          axios.get('/api/master/hr/employees')
+          axios.get('/api/master/hr/employees'),
+          axios.get('/api/bos-pages')
         ]);
         const cl = r1.status === 'fulfilled' ? r1.value.data?.content || r1.value.data || [] : [];
         const mom = r2.status === 'fulfilled' ? r2.value.data || [] : [];
         const tk = r3.status === 'fulfilled' ? r3.value.data || [] : [];
         const audit = r4.status === 'fulfilled' ? r4.value.data || [] : [];
         const employees = r5.status === 'fulfilled' ? r5.value.data || [] : [];
+        const bosPages = r6.status === 'fulfilled' ? r6.value.data || [] : [];
+
+        // Build pageId -> pageName lookup
+        const pageIdMap = {};
+        bosPages.forEach(p => {
+          if (p.pageId) pageIdMap[p.pageId] = p.pageName || 'Ticket';
+        });
 
         let empLookup = {};
         let workloadMap = {};
@@ -1766,6 +1774,7 @@ export default function TaskDashboard() {
           const name = getName(a.assignedToObj || a.employee || a.assignedTo);
           tasksList.push({
             _status: a.status?.name || a.status?.statusName || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.checklistDate || a.assignedDate,
             _title: a.checklist?.checkingPoint || `Checklist #${a.id}`,
             _id: a.checklistNo || `CL-${a.id}`,
@@ -1774,13 +1783,15 @@ export default function TaskDashboard() {
             _hrs: a.estimatedHours || a.plannedHours || 8,
             _pageName: a.pageName || a.moduleName || 'Checklist',
             _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
-            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
         mom.forEach((a) => {
           const name = getName(a.assignedTo);
           tasksList.push({
             _status: a.status || 'Open',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.targetDate,
             _title: a.discussedPoint || `MOM #${a.id}`,
             _id: a.momNo || a.actionId || `MOM-${a.id}`,
@@ -1789,28 +1800,34 @@ export default function TaskDashboard() {
             _hrs: a.estimatedHours || 8,
             _pageName: a.pageName || a.moduleName || 'MOM Actions',
             _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
-            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _reopenCount: a.reopenedCount || 0,
+            _createdBy: a.createdBy || 'System'
           });
         });
         tk.forEach((t) => {
           const name = getName(t.assignedTo);
           tasksList.push({
             _status: t.ticketStatus || 'Open',
+            _priority: t.priorityLevel || t.priority || 'Medium',
             _dueDate: t.dueDate || t.targetDate,
             _title: t.title || `Ticket ${t.ticketId || t.rowId}`,
             _id: t.ticketId || `TK-${t.rowId}`,
             _user: name,
             _rawDate: t.createdAt || t.createdDate || t.targetDate,
             _hrs: t.estimatedHours || t.assignedHours || 8,
-            _pageName: t.pageName || t.moduleName || t.pageCode || 'Ticket',
+            _pageName: t.pageName || t.moduleName || (t.pageId ? (pageIdMap[t.pageId] || 'Ticket') : null) || t.ticketType || 'Ticket',
             _takenHrs: parseDurationToMinutes(t.takenTime || '') / 60,
-            _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60,
+            _reopenCount: t.reopenedCount || 0,
+            _createdBy: t.createdBy || 'System'
           });
         });
         audit.forEach((a) => {
           const name = getName(a.auditee || a.auditor);
           tasksList.push({
             _status: a.status || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.auditDate || a.scheduleDate,
             _title: `Audit ${a.scheduleNo || ''}`,
             _id: a.scheduleNo || `AUDIT-${a.id}`,
@@ -1819,7 +1836,8 @@ export default function TaskDashboard() {
             _hrs: a.estimatedHours || 8,
             _pageName: a.pageName || a.moduleName || 'Audit Schedule',
             _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
-            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
 
