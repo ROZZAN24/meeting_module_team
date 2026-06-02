@@ -44,6 +44,28 @@ public class GlobalExceptionHandler {
         }
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public Object handleNoResourceFoundException(org.springframework.web.servlet.resource.NoResourceFoundException ex, WebRequest request) {
+        String path = "";
+        if (request instanceof ServletWebRequest) {
+            jakarta.servlet.http.HttpServletRequest servletReq = ((ServletWebRequest) request).getRequest();
+            path = servletReq.getRequestURI();
+        } else {
+            path = request.getDescription(false);
+        }
+
+        if (path != null && !path.startsWith("/api/")) {
+            return new org.springframework.web.servlet.ModelAndView("forward:/index.html");
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", "Not Found");
+        body.put("details", ex.getMessage());
+        body.put("path", path);
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         logException(ex, request, HttpStatus.INTERNAL_SERVER_ERROR);

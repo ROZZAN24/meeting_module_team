@@ -80,7 +80,8 @@ public abstract class BaseAuditEntity {
             this.createdDate = new Date();
         }
         if (this.createdUser == null) {
-            this.createdUser = SecurityUtils.getCurrentUserDisplayName();
+            String userId = SecurityUtils.getCurrentUserId();
+            this.createdUser = (userId != null) ? userId : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName() : "System");
         }
     }
 
@@ -89,7 +90,12 @@ public abstract class BaseAuditEntity {
         if (this.skipAuditUpdate) {
             return;
         }
+        // Deep fix: Skip updating audit fields if the record was newly created within the last second
+        if (this.createdDate != null && (new Date().getTime() - this.createdDate.getTime() < 1000)) {
+            return;
+        }
         this.updatedDate = new Date();
-        this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
+        String userId = SecurityUtils.getCurrentUserId();
+        this.updatedUser = (userId != null) ? userId : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName() : "System");
     }
 }

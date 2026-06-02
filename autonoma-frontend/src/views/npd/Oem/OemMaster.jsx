@@ -10,7 +10,7 @@ import { setFilterConfig, setFilters } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -50,8 +50,7 @@ export default function OemMaster() {
   // Dispatch starred filter configuration matching Status, Date range, and OEM Short Name
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -63,9 +62,8 @@ export default function OemMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
-      { id: 'oemShortName', label: 'OEM Short Name', type: 'text', placeholder: 'Search OEM short name...', isStarred: true }
-    ];
+      { id: 'oemShortName', label: 'OEM Short Name', type: 'text', placeholder: 'Search OEM short name...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       status: 'ACTIVE',
@@ -119,6 +117,8 @@ export default function OemMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
@@ -147,7 +147,7 @@ export default function OemMaster() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconBuilding size={24} />
@@ -161,17 +161,10 @@ export default function OemMaster() {
           newTooltip={shortcutTooltip('Create New OEM', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'OEM Short Name', key: 'oemShortName' },
-            { header: 'OEM Prefix', key: 'oemPrefix' },
-            { header: 'OEM Description', key: 'oemDescription' },
-            { header: 'Origin Country', key: 'originCountry' },
-            { header: 'Status/Year', key: 'statusYear' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Product_OEM_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

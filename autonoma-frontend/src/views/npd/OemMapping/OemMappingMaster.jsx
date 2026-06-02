@@ -11,7 +11,7 @@ import { setFilterConfig, setFilters, setQuery } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, btnNew, BOSTableToolbar } from 'ui-component/bos';
+import { BOSDataTable, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -50,8 +50,7 @@ export default function OemMappingMaster() {
   // Dispatch starred filter configuration matching Status, Date range, and Part No
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [
-      {
+    const config = [{
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -63,9 +62,8 @@ export default function OemMappingMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
-      { id: 'partNo', label: 'Part No', type: 'text', placeholder: 'Search part no...', isStarred: true }
-    ];
+      { id: 'partNo', label: 'Part No', type: 'text', placeholder: 'Search part no...', isStarred: true },
+      ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));
     dispatch(setFilters({
       status: 'ACTIVE',
@@ -98,7 +96,7 @@ export default function OemMappingMaster() {
     if (refresh === true) {
       dispatch(setQuery(''));
       dispatch(setFilters({
-        status: 'ALL',
+        status: 'ACTIVE',
         createdAtStart: '',
         createdAtEnd: ''
       }));
@@ -132,6 +130,8 @@ export default function OemMappingMaster() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdAt', 'updatedAt')) return false;
+
       // 1. Status Filter
       const statusFilter = globalFilters.status || 'ACTIVE';
       if (statusFilter !== 'ALL' && row.status !== statusFilter) return false;
@@ -165,7 +165,7 @@ export default function OemMappingMaster() {
   const paginatedRows = useMemo(() => filteredRows.slice(page * size, page * size + size), [filteredRows, page, size]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconSettings size={24} />
@@ -179,17 +179,10 @@ export default function OemMappingMaster() {
           newTooltip={shortcutTooltip('Create New Mapping', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Part No', key: 'partNo' },
-            { header: 'OEM Part No', key: 'oemPartNo' },
-            { header: 'OEM Description', key: 'oemDescription' },
-            { header: 'Status', key: 'status' },
-            { header: 'Created By', key: 'createdBy' },
-            { header: 'Created Date', key: 'createdAt' }
-          ]}
+          
           exportFilename="Product_OEM_Mapping"
           hasExportPermission={perms.export}
-        >
+         columns={columns}>
           <Tooltip title="Bulk OEM Upload">
             <Button
               variant="outlined"

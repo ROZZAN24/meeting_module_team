@@ -569,7 +569,7 @@ export default function MasterCheckList() {
           onColumnVisibilityChange={setVisibleColumnIds}
           requiredColumnIds={['index', 'seqNo', 'checkingPoint']}
           exportData={resolvedRows}
-          exportColumns={exportColumns}
+          
           exportFilename="Master_Check_List"
           hasExportPermission={perms.export}
           onAmendment={selectedRow ? () => handleAmendment(selectedRow) : null}

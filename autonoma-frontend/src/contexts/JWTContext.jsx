@@ -26,7 +26,7 @@ const initialState = {
   user: null
 };
 
-function setSessionContext(tenantId, divisionId, companyName, divisionName) {
+function setSessionContext(tenantId, divisionId, companyName, divisionName, userName) {
   if (tenantId) {
     sessionStorage.setItem('tenantId', tenantId);
   } else {
@@ -46,6 +46,11 @@ function setSessionContext(tenantId, divisionId, companyName, divisionName) {
     sessionStorage.setItem('divisionName', divisionName);
   } else {
     sessionStorage.removeItem('divisionName');
+  }
+  if (userName) {
+    sessionStorage.setItem('userName', userName);
+  } else {
+    sessionStorage.removeItem('userName');
   }
 }
 
@@ -71,7 +76,7 @@ function setSession(serviceToken) {
   } else {
     sessionStorage.removeItem('serviceToken');
     delete axios.defaults.headers.common.Authorization;
-    setSessionContext(null, null, null, null);
+    setSessionContext(null, null, null, null, null);
   }
 }
 
@@ -281,7 +286,7 @@ export function JWTProvider({ children }) {
           const response = await axios.get('/api/account/me');
           const { user } = response.data;
           // Ensure session context is initialized
-          setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
+          setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName, user.username || user.email || user.name);
           dispatch({
             type: LOGIN,
             payload: {
@@ -323,7 +328,8 @@ export function JWTProvider({ children }) {
       user.tenantId,
       user.divisionId,
       user.companyName,
-      user.divisionName
+      user.divisionName,
+      user.username || user.email || user.name
     );
     dispatch({
       type: LOGIN,
@@ -350,7 +356,8 @@ export function JWTProvider({ children }) {
       user.tenantId,
       user.divisionId,
       user.companyName,
-      user.divisionName
+      user.divisionName,
+      user.username || user.email || user.name
     );
     dispatch({
       type: LOGIN,
@@ -377,7 +384,7 @@ export function JWTProvider({ children }) {
         }
       });
       const { user } = response.data;
-      setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName);
+      setSessionContext(user.tenantId, user.divisionId, user.companyName, user.divisionName, user.username || user.email || user.name);
       dispatch({
         type: LOGIN,
         payload: {

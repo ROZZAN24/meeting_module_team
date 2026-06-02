@@ -8,16 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setFilterConfig } from 'store/slices/search';
 import { openSnackbar } from 'store/slices/snackbar';
 import {
-  BOSDataTable,
-  BOSFormDialog,
-  BOSFormSection,
-  BOSTextField,
-  BOSPersonnelCard,
-  useBOSForm,
-  getStatusChipSx,
-  btnNew,
-  BOSTableToolbar
-} from 'ui-component/bos';
+  BOSDataTable, BOSFormDialog, BOSFormSection, BOSTextField, BOSPersonnelCard, useBOSForm, getStatusChipSx, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { getFileDownloadUrl, getFileViewUrl } from 'utils/upload-helper';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -120,14 +111,13 @@ export default function AuditNcrApproval() {
   };
 
   useEffect(() => {
-    dispatch(setFilterConfig([
-      { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
+    dispatch(setFilterConfig([{ id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
       { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
       { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING APPROVAL' }, { value: 'CLOSED', label: 'CLOSED' }, { value: 'REJECTED', label: 'REJECTED' }], defaultValue: 'WAITING_APPROVAL' },
-      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' }
-    ]));
+      { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' },
+      ...getCommonDateFilters('createdDate', 'updatedAt')]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -326,7 +316,7 @@ export default function AuditNcrApproval() {
   );
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={<Stack direction="row" alignItems="center" spacing={1.5}><IconChecks size={24} /><Typography variant="h3">NC / OFI Approval & CAPA Management</Typography></Stack>}
       secondary={
         <BOSTableToolbar
@@ -334,15 +324,10 @@ export default function AuditNcrApproval() {
           onNew={handleOpenNew}
           hasWritePermission={perms.write}
           exportData={rows}
-          exportColumns={[
-            { header: 'NC No', key: 'ncrNo' },
-            { header: 'Department', key: 'departmentName' },
-            { header: 'Observation No', key: 'observationNo' },
-            { header: 'Status', key: 'ncrStatus' }
-          ]}
+          
           exportFilename="NC_Approval_Report"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenReview} renderCell={renderCell} customActions={(row) => (<Tooltip title="Review & Approve"><IconButton size="small" color="success" onClick={() => handleOpenReview(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'REJECTED'} sx={{ bgcolor: 'success.light', color: 'success.dark', '&:hover': { bgcolor: 'success.main', color: 'white' } }}><IconEye size={18} /></IconButton></Tooltip>)} />

@@ -190,7 +190,7 @@ export default function MomApprovalList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconShieldCheck size={24} />
@@ -201,16 +201,10 @@ export default function MomApprovalList() {
         <BOSTableToolbar
           onRefresh={fetchData}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Action No', key: '_momNo' },
-            { header: 'Discussed Point', key: 'discussedPoint' },
-            { header: 'Action Taken', key: 'actionTaken' },
-            { header: 'Target Date', key: 'targetDate' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="MOM_Approval"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

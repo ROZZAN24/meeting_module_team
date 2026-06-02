@@ -627,7 +627,7 @@ export const hra = {
           id: 'master-hr-ats-induction-assignment',
           title: 'Induction Pending',
           type: 'item',
-          url: '/master/hr/ats/induction-assignment',
+          url: '/hra/ats/induction-assignment',
           icon: icons.IconCalendarEvent,
           pageCode: 'M2150'
         },
@@ -635,7 +635,7 @@ export const hra = {
           id: 'master-hr-ats-induction-training',
           title: 'Induction Training',
           type: 'item',
-          url: '/master/hr/ats/induction-training',
+          url: '/hra/ats/induction-training',
           icon: icons.IconClipboardCheck,
           pageCode: 'M2160'
         },
@@ -643,7 +643,7 @@ export const hra = {
           id: 'master-hr-ats-induction-trainee',
           title: 'Induction Trainee',
           type: 'item',
-          url: '/master/hr/ats/induction-trainee',
+          url: '/hra/ats/induction-trainee',
           icon: icons.IconUserCheck,
           pageCode: 'M2170'
         }

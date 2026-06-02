@@ -199,7 +199,7 @@ export default function MeetingMasterList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconUsersGroup size={24} />
@@ -218,22 +218,10 @@ export default function MeetingMasterList() {
             updatedUser: row.updatedUser || row.updatedBy || '-',
             updatedAt: (row.updatedUser || row.updatedBy) ? row.updatedAt : null
           }))}
-          exportColumns={[
-            { header: '#', key: 'index' },
-            { header: 'Meeting Name', key: 'meetingName' },
-            { header: 'Meeting Description', key: 'meetingDescription' },
-            { header: 'Meeting Prefix', key: 'meetingPrefix' },
-            { header: 'Meeting Agenda', key: 'meetingAgenda' },
-            { header: 'Employee Name', key: 'employeeName' },
-            { header: 'Created User', key: 'createdUser' },
-            { header: 'Created Date', key: 'createdAt' },
-            { header: 'Updated User', key: 'updatedUser' },
-            { header: 'Updated Date', key: 'updatedAt' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Meeting_Master"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

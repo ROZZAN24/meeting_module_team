@@ -472,10 +472,10 @@ export default function CheckListRenewalVerify() {
       secondary={
         <BOSTableToolbar
           exportData={rows}
-          exportColumns={exportColumns}
+          
           exportFilename="Checklist_Renewal_Verify"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
 

@@ -12,11 +12,7 @@ import { openSnackbar } from 'store/slices/snackbar';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 import {
-  BOSDataTable,
-  btnExport,
-  btnNew,
-  BOSTableToolbar
-} from 'ui-component/bos';
+  BOSDataTable, btnExport, btnNew, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import { API_PATHS } from 'utils/api-constants';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -57,8 +53,7 @@ export default function AuditTypeMaster() {
   const [deleteTargetName, setDeleteTargetName] = useState('');
 
   useEffect(() => {
-    const config = [
-      {
+    const config = [{
         id: 'status', label: 'Status', type: 'select',
         options: [
           { value: 'All', label: 'ALL' },
@@ -77,8 +72,8 @@ export default function AuditTypeMaster() {
         options: [{ value: 'All', label: 'ALL' }, { value: 'Fixed', label: 'Fixed' }, { value: 'Variable', label: 'Variable' }]
       },
       { id: 'createdUser', label: 'CREATED USER', type: 'text' },
-      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' }
-    ];
+      { id: 'updatedUser', label: 'UPDATED USER', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -167,6 +162,8 @@ export default function AuditTypeMaster() {
 
   const filteredRows = useMemo(() => {
     const filtered = rows.filter((row) => {
+      if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
+
       const statusFilter = globalFilters?.status || 'ACTIVE';
       const rowStatusTrimmed = row.status ? row.status.trim() : '';
       const matchesStatus = statusFilter === 'All' || rowStatusTrimmed === statusFilter;
@@ -210,7 +207,7 @@ export default function AuditTypeMaster() {
   }, [rows, globalQuery, globalFilters]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconListCheck size={24} />
@@ -224,14 +221,10 @@ export default function AuditTypeMaster() {
           newTooltip={shortcutTooltip('Create New Audit Type', 'Ctrl + N')}
           hasWritePermission={perms.write}
           exportData={filteredRows}
-          exportColumns={[
-            { header: 'Audit Type', key: 'auditType' },
-            { header: 'Standard', key: 'standard' },
-            { header: 'Status', key: 'status' }
-          ]}
+          
           exportFilename="Audit_Type_Details"
           hasExportPermission={perms.export}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

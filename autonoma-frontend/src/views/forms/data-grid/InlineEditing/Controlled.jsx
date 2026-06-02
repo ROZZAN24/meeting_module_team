@@ -28,6 +28,22 @@ export default function StartEditButtonGrid() {
     setSelectedCellParams({ id, field });
   }, []);
 
+  const handleCellClick = React.useCallback((params, event) => {
+    setSelectedCellParams((prev) => {
+      if (prev && String(prev.id) === String(params.id) && prev.field === params.field) {
+        // Toggle selection off: deselect the cell
+        // Programmatically blur to remove the highlight outline
+        if (document.activeElement && typeof document.activeElement.blur === 'function') {
+          document.activeElement.blur();
+        }
+        return null;
+      }
+      // Move selection to the clicked cell
+      return { id: String(params.id), field: params.field };
+    });
+  }, []);
+
+
   const cellMode = React.useMemo(() => {
     if (!selectedCellParams) {
       return 'view';
@@ -125,6 +141,7 @@ export default function StartEditButtonGrid() {
           cellModesModel={cellModesModel}
           onCellEditStop={handleCellEditStop}
           onCellModesModelChange={(model) => setCellModesModel(model)}
+          onCellClick={handleCellClick}
           slotProps={{
             toolbar: {
               cellMode,

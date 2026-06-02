@@ -5,6 +5,8 @@ import MainLayout from 'layout/MainLayout';
 import ErrorBoundary from './ErrorBoundary';
 import Loadable from 'ui-component/Loadable';
 import AuthGuard from 'utils/route-guard/AuthGuard';
+import { PageGuard } from 'ui-component/bos';
+import { PAGE_CODES } from 'hooks/usePagePermissions';
 
 import { loader as productsLoader, productLoader } from 'api/products';
 
@@ -198,6 +200,7 @@ const UserSessionAnalytics = Loadable(lazy(() => import('views/admin/UserSession
 const FileTraceabilityHub = Loadable(lazy(() => import('views/admin/FileTraceabilityHub')));
 const TicketManagement = Loadable(lazy(() => import('views/admin/TicketManagement')));
 const DataMigration = Loadable(lazy(() => import('views/admin/DataMigration')));
+const OrganizationChart = Loadable(lazy(() => import('views/admin/OrganizationChart')));
 
 // qms checklist routing
 const QmsMasterCheckList = Loadable(lazy(() => import('views/qms/checklist/MasterCheckList')));
@@ -292,47 +295,47 @@ const MainRoutes = {
   children: [
     {
       path: '/admin/user-overview',
-      element: <AdminUserOverview />
+      element: <PageGuard pageCode={PAGE_CODES.AD_USER_CREDENTIALS}><AdminUserOverview /></PageGuard>
     },
     {
       path: '/admin/preference-master',
-      element: <AdminPreferenceMaster />
+      element: <PageGuard pageCode={PAGE_CODES.AD_APP_PREFERENCE}><AdminPreferenceMaster /></PageGuard>
     },
     {
       path: '/admin/prefix-credentials',
-      element: <AdminPrefixCredentials />
+      element: <PageGuard pageCode={PAGE_CODES.AD_PREFIX_CREDENTIALS}><AdminPrefixCredentials /></PageGuard>
     },
     {
       path: '/admin/user-credentials',
-      element: <AdminUserOverview />
+      element: <PageGuard pageCode={PAGE_CODES.AD_USER_CREDENTIALS}><AdminUserOverview /></PageGuard>
     },
     {
       path: '/admin/company-profile',
-      element: <AdminCompanyProfile />
+      element: <PageGuard pageCode={PAGE_CODES.AD_COMPANY_PROFILE}><AdminCompanyProfile /></PageGuard>
     },
     {
       path: '/admin/user-access',
-      element: <AdminUserAccess />
+      element: <PageGuard pageCode={PAGE_CODES.AD_USER_ACCESS}><AdminUserAccess /></PageGuard>
     },
     {
       path: '/admin/business-authorization',
-      element: <AdminBusinessAuthorization />
+      element: <PageGuard pageCode={PAGE_CODES.AD_BUSINESS_AUTH}><AdminBusinessAuthorization /></PageGuard>
     },
     {
       path: '/admin/session-monitoring',
-      element: <AdminSessionMonitoring />
+      element: <PageGuard pageCode={PAGE_CODES.AD_SESSION_MONITORING}><AdminSessionMonitoring /></PageGuard>
     },
     {
       path: '/admin/audit-trail',
-      element: <AuditTrailPage />
+      element: <PageGuard pageCode={PAGE_CODES.AD_AUDIT_TRAIL}><AuditTrailPage /></PageGuard>
     },
     {
       path: '/admin/session-analytics',
-      element: <UserSessionAnalytics />
+      element: <PageGuard pageCode={PAGE_CODES.AD_SESSION_ANALYTICS}><UserSessionAnalytics /></PageGuard>
     },
     {
       path: '/admin/file-traceability-hub',
-      element: <FileTraceabilityHub />
+      element: <PageGuard pageCode={PAGE_CODES.AD_FILE_TRACEABILITY}><FileTraceabilityHub /></PageGuard>
     },
     {
       path: '/admin/data-migration',
@@ -340,7 +343,7 @@ const MainRoutes = {
     },
     {
       path: '/admin/division',
-      element: <DivisionMaster />
+      element: <PageGuard pageCode={PAGE_CODES.AD_DIVISION}><DivisionMaster /></PageGuard>
     },
     {
       path: '/widget/statistics',
@@ -852,33 +855,32 @@ const MainRoutes = {
     },
     {
       path: '/master/hr/ats/induction-criteria',
-      element: <InductionCriteria />
+      element: <PageGuard pageCode={PAGE_CODES.ATS_INDUCTION_CRITERIA}><InductionCriteria /></PageGuard>
     },
     {
       path: '/master/hr/ats/interview-criteria',
-      element: <InterviewCriteria />
+      element: <PageGuard pageCode={PAGE_CODES.ATS_INTERVIEW_CRITERIA}><InterviewCriteria /></PageGuard>
     },
     {
       path: '/master/hr/ats/email-content',
-      element: <EmailContent />
+      element: <PageGuard pageCode={PAGE_CODES.ATS_EMAIL_CONTENT}><EmailContent /></PageGuard>
     },
     {
       path: '/master/hr/ats/verification',
-      element: <VerificationCriteria />
+      element: <PageGuard pageCode={PAGE_CODES.ATS_VERIFICATION}><VerificationCriteria /></PageGuard>
     },
     {
-      path: '/master/hr/ats/induction-assignment',
-      element: <InductionAssignment />
+      path: '/hra/ats/induction-assignment',
+      element: <PageGuard pageCode={PAGE_CODES.ATS_INDUCTION_PENDING}><InductionAssignment /></PageGuard>
     },
     {
-      path: '/master/hr/ats/induction-training',
-      element: <InductionTraining />
+      path: '/hra/ats/induction-training',
+      element: <PageGuard pageCode={PAGE_CODES.ATS_INDUCTION_TRAINING}><InductionTraining /></PageGuard>
     },
     {
-      path: '/master/hr/ats/induction-trainee',
-      element: <InductionTrainee />
+      path: '/hra/ats/induction-trainee',
+      element: <PageGuard pageCode={PAGE_CODES.ATS_INDUCTION_TRAINEE}><InductionTrainee /></PageGuard>
     },
-
     {
       path: '/utils/util-animation',
       element: <UtilsAnimation />
@@ -902,6 +904,10 @@ const MainRoutes = {
     {
       path: '/dashboard/user-task-queue',
       element: <UserTaskQueue />
+    },
+    {
+      path: '/admin/organization-chart',
+      element: <PageGuard pageCode={PAGE_CODES.AD1190}><OrganizationChart /></PageGuard>
     },
     {
       path: '/dashboard/task-dashboard',
@@ -941,83 +947,83 @@ const MainRoutes = {
     },
     {
       path: '/master/hr/department',
-      element: <MasterHrDepartment />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_DEPARTMENT}><MasterHrDepartment /></PageGuard>
     },
     {
       path: '/master/hr/employee-type',
-      element: <EmployeeType />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_TYPE}><EmployeeType /></PageGuard>
     },
     {
-      path: '/hra/ats',
-      element: <HraApplicationTrackingSystem />
+      path: '/master/hr/ats',
+      element: <PageGuard pageCode={PAGE_CODES.HRA_ATS}><HraApplicationTrackingSystem /></PageGuard>
     },
     {
       path: '/hr/employee/master',
-      element: <MasterHrEmployeeList />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_MASTER}><MasterHrEmployeeList /></PageGuard>
     },
     {
       path: '/hr/employee/master/create',
-      element: <MasterHrEmployee />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_MASTER}><MasterHrEmployee /></PageGuard>
     },
     {
       path: '/master/hr/designation',
-      element: <MasterHrDesignation />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_DESIGNATION}><MasterHrDesignation /></PageGuard>
     },
     {
       path: '/master/hr/grade',
-      element: <MasterHrGrade />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_GRADE}><MasterHrGrade /></PageGuard>
     },
     {
       path: '/master/hr/desg-level',
-      element: <MasterHrDesignationLevel />
+      element: <PageGuard pageCode={PAGE_CODES.EMP_LEVEL}><MasterHrDesignationLevel /></PageGuard>
     },
     {
       path: '/master/qms/audit/type',
-      element: <QmsAuditTypeMaster />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_TYPE}><QmsAuditTypeMaster /></PageGuard>
     },
     {
       path: '/master/qms/audit/area',
-      element: <QmsAuditAreaMaster />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_AREA}><QmsAuditAreaMaster /></PageGuard>
     },
     {
       path: '/master/qms/audit/criteria',
-      element: <QmsAuditCriteriaMaster />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_AUDIT_CRITERIA}><QmsAuditCriteriaMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-group',
-      element: <NpdItemGroupMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_ITEM_GROUP}><NpdItemGroupMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-type',
-      element: <NpdItemTypeMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_ITEM_TYPE}><NpdItemTypeMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-subtype',
-      element: <NpdItemSubtypeMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_ITEM_SUBTYPE}><NpdItemSubtypeMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-oem',
-      element: <NpdOemMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_OEM}><NpdOemMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-oem-mapping',
-      element: <NpdOemMappingMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_OEM_MAPPING}><NpdOemMappingMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-model',
-      element: <NpdModelMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_MODEL}><NpdModelMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-capacity',
-      element: <NpdCapacityMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_CAPACITY}><NpdCapacityMaster /></PageGuard>
     },
     {
       path: '/master/npd/product-process',
-      element: <NpdProcessMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_PROCESS}><NpdProcessMaster /></PageGuard>
     },
     {
       path: '/master/npd/wind-farm',
-      element: <NpdWindFarmMaster />
+      element: <PageGuard pageCode={PAGE_CODES.NPD_WIND_FARM}><NpdWindFarmMaster /></PageGuard>
     },
     {
       path: '/master/npd/model-name',
@@ -1029,7 +1035,7 @@ const MainRoutes = {
     },
     {
       path: '/master/qms/meeting/master',
-      element: <MeetingMaster />
+      element: <PageGuard pageCode={PAGE_CODES.QMS_MEETING}><MeetingMaster /></PageGuard>
     },
     {
       path: '/qms/meeting-schedule',

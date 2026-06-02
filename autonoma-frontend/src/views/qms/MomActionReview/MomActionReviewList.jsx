@@ -201,7 +201,7 @@ export default function MomActionReviewList() {
   };
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconListCheck size={24} />
@@ -212,17 +212,10 @@ export default function MomActionReviewList() {
         <BOSTableToolbar
           onRefresh={fetchData}
           exportData={filteredRows}
-          exportColumns={[
-            { header: '#', key: 'index' },
-            { header: 'MOM Number', key: 'momNo' },
-            { header: 'Discussed Point', key: 'discussedPoint' },
-            { header: 'Target Date', key: 'targetDate' },
-            { header: 'Assigned To', key: 'assignedTo' },
-            { header: 'Status', key: 'displayStatus' }
-          ]}
+          
           exportFilename="MOM_Actions_Summary"
           hasExportPermission={true}
-        />
+         columns={columns} />
       }
     >
       <BOSDataTable

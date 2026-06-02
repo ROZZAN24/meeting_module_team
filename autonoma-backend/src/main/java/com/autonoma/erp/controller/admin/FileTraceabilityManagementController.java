@@ -157,7 +157,7 @@ public class FileTraceabilityManagementController {
             }
 
             FileTraceabilityManagement traceLog = new FileTraceabilityManagement();
-            traceLog.setPageId(finalPageId != null ? finalPageId : 1);
+            traceLog.setPageId(finalPageId);
             
             traceLog.setPageName(finalPageName != null ? finalPageName : pageName);
             traceLog.setReportName(reportName);

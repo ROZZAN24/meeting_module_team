@@ -12,7 +12,7 @@ import AddQuotationDialog from './AddQuotationDialog';
 import { exportToExcel } from 'utils/excelExport';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
-import { BOSDataTable, BOSExportButton, btnExport, btnNew } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, btnExport, btnNew, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| SM - QUOTATION MANAGEMENT (BOS SOP COMPLIANT) ||============================== //
@@ -96,7 +96,7 @@ export default function QuotationList() {
   });
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconFileInvoice size={24} />
@@ -116,14 +116,8 @@ export default function QuotationList() {
           {perms.export && <BOSExportButton
             data={resolvedRows}
             filename="SM_Quotations"
-            columns={[
-              { header: 'Quotation No', key: 'quotationNo' },
-              { header: 'Date', key: 'quotationDate' },
-              { header: 'Customer', key: 'customerName' },
-              { header: 'Amount', key: 'totalAmount' },
-              { header: 'Status', key: 'status' }
-            ]}
-          />}
+            
+           screenColumns={columns} />}
           {perms.write && <Tooltip title={shortcutTooltip('Create New Quotation', 'Ctrl + N')}>
             <Button variant="contained" color="primary" size="medium" onClick={handleOpenAdd} sx={btnNew}>
               + New

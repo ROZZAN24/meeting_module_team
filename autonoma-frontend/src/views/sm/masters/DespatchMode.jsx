@@ -3,7 +3,7 @@ import { Typography, Stack, MenuItem, useTheme, Button, Grid, Dialog, DialogTitl
 import { IconPlaneTilt, IconPlus, IconX, IconDeviceFloppy } from '@tabler/icons-react';
 import MainCard from 'ui-component/cards/MainCard';
 import { setFilterConfig } from 'store/slices/search';
-import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, BOSStatusField } from 'ui-component/bos';
+import { BOSDataTable, BOSExportButton, BOSTextField, BOSAutocomplete, BOSStatusField, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';;
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
 import axios from 'utils/axios';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -116,10 +116,9 @@ export default function DespatchMode() {
   };
 
   useEffect(() => {
-    const config = [
-      { id: 'modeName', label: 'Mode of Despatch', type: 'text' },
-      { id: 'description', label: 'Description', type: 'text' }
-    ];
+    const config = [{ id: 'modeName', label: 'Mode of Despatch', type: 'text' },
+      { id: 'description', label: 'Description', type: 'text' },
+      ...getCommonDateFilters('createdDate', 'updatedDate')];
     dispatch(setFilterConfig(config));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
@@ -134,7 +133,7 @@ export default function DespatchMode() {
   }, [rows, globalQuery]);
 
   return (
-    <MainCard
+    <MainCard fullWidth
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconPlaneTilt size={24} />
@@ -147,12 +146,8 @@ export default function DespatchMode() {
             <BOSExportButton
               data={rows}
               filename="Mode_of_Despatch"
-              columns={[
-                { header: 'Mode of Despatch', key: 'modeName' },
-                { header: 'Description', key: 'description' },
-                { header: 'Status', key: 'status' }
-              ]}
-            />
+              
+             screenColumns={columns} />
           )}
           <Button variant="contained" startIcon={<IconPlus size={18} />} onClick={() => setShowForm(true)}>
             Add New

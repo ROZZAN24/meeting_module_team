@@ -127,31 +127,100 @@ export const exportToExcel = (data, fileName, headerInfo = {}) => {
 
   worksheet['!cols'] = colWidths;
 
-  // 8. Finalize, patch ZIP with <headerFooter>, and Save
+  // 8. Finalize and Save standard Excel workbook
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
   const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  
+
+  // 9. Dynamic System Metadata & Print Header/Footer configuration (visible ONLY when printed)
   let finalBuffer = excelBuffer;
   try {
+    const companyName = headerInfo.companyName || sessionStorage.getItem('companyName') || 'AUTONOMA';
+    const shortName = headerInfo.shortName || sessionStorage.getItem('divisionName') || 'Business Operating System';
+    const userName = headerInfo.userName || sessionStorage.getItem('userName') || 'SYSTEM';
+
+    const escapeXml = (unsafe) => {
+      return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    };
+
+    const escapedCompany = escapeXml(companyName);
+    const escapedShort = escapeXml(shortName);
+    const escapedUser = escapeXml(userName);
+
+    const headerFooterXml = `<headerFooter>` +
+      `<oddHeader>&amp;L${escapedCompany} (${escapedShort})&amp;RPrinted: ${timestamp} | User: ${escapedUser}</oddHeader>` +
+      `<oddFooter>&amp;CPage &amp;P of &amp;N</oddFooter>` +
+      `</headerFooter>`;
+
     const zip = fflate.unzipSync(new Uint8Array(excelBuffer));
     let patched = false;
+
     Object.keys(zip).forEach(path => {
       if (path.startsWith('xl/worksheets/sheet') && path.endsWith('.xml')) {
         let xml = fflate.strFromU8(zip[path]);
         if (!xml.includes('<headerFooter>')) {
-          const headerFooterXml = '<headerFooter><oddFooter>&amp;C&amp;P/&amp;N</oddFooter><evenFooter>&amp;C&amp;P/&amp;N</evenFooter><firstFooter>&amp;C&amp;P/&amp;N</firstFooter></headerFooter>';
-          xml = xml.replace('</worksheet>', `${headerFooterXml}</worksheet>`);
-          zip[path] = fflate.strToU8(xml);
-          patched = true;
+          // OpenXML schema sequence order: headerFooter must come before rowBreaks, colBreaks,
+          // customProperties, cellWatches, ignoredErrors, smartTags, drawing, drawingHF,
+          // picture, oleObjects, controls, webPublishItems, tableParts, and extLst.
+          const tags = [
+            '<rowBreaks',
+            '<colBreaks',
+            '<customProperties',
+            '<cellWatches',
+            '<ignoredErrors',
+            '<smartTags',
+            '<drawing',
+            '<drawingHF',
+            '<picture',
+            '<oleObjects',
+            '<controls',
+            '<webPublishItems',
+            '<tableParts',
+            '<extLst',
+            '</worksheet>'
+          ];
+          
+          let insertIdx = -1;
+          const sheetDataEndIdx = xml.indexOf('</sheetData>');
+          if (sheetDataEndIdx !== -1) {
+            // Search only after </sheetData> to avoid matching cell values containing tags
+            for (const tag of tags) {
+              const idx = xml.indexOf(tag, sheetDataEndIdx);
+              if (idx !== -1) {
+                insertIdx = idx;
+                break;
+              }
+            }
+          } else {
+            // Fallback search
+            for (const tag of tags) {
+              const idx = xml.indexOf(tag);
+              if (idx !== -1) {
+                insertIdx = idx;
+                break;
+              }
+            }
+          }
+
+          if (insertIdx !== -1) {
+            xml = xml.substring(0, insertIdx) + headerFooterXml + xml.substring(insertIdx);
+            zip[path] = fflate.strToU8(xml);
+            patched = true;
+          }
         }
       }
     });
+
     if (patched) {
       finalBuffer = fflate.zipSync(zip);
     }
   } catch (err) {
-    console.error('Failed to patch Excel zip headerFooter:', err);
+    console.error('Failed to inject dynamic print headerFooter:', err);
   }
 
   const dataBlob = new Blob([finalBuffer], { type: 'application/octet-stream' });
