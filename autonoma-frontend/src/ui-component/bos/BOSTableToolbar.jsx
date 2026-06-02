@@ -183,6 +183,9 @@ export default function BOSTableToolbar({
 
   return (
     <Stack direction="row" spacing={1.5} alignItems="center" sx={sx}>
+      {/* 12. Extra actions slot */}
+      {children}
+
       {/* 1. Refresh Button */}
       {onRefresh && (
         <Tooltip title="Refresh">
@@ -447,9 +450,6 @@ export default function BOSTableToolbar({
           </span>
         </Tooltip>
       )}
-
-      {/* 12. Extra actions slot */}
-      {children}
     </Stack>
   );
 }
