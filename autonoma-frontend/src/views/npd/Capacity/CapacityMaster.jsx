@@ -47,7 +47,7 @@ export default function CapacityMaster() {
   // Dispatch starred filter configuration matching CREATED DATE and UOM
   useEffect(() => {
     const today = format(new Date(), 'yyyy-MM-dd');
-    const config = [{ id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
+    const config = [
       { id: 'uom', label: 'UOM', type: 'text', placeholder: 'Search UOM...', isStarred: true },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));

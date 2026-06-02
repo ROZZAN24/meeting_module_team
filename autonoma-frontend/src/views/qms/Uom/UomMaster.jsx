@@ -57,7 +57,6 @@ export default function UomMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'uomCode', label: 'UOM NAME', type: 'text', placeholder: 'Search UOM Name...', isStarred: true },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));

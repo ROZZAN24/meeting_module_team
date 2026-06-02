@@ -58,7 +58,6 @@ export default function ItemGroupMaster() {
         ],
         defaultValue: 'ACTIVE'
       },
-      { id: 'createdAt', label: 'CREATED DATE', type: 'dateRange', isStarred: true },
       { id: 'groupName', label: 'Product Item Group', type: 'text', placeholder: 'Search product item group...', isStarred: true },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
     dispatch(setFilterConfig(config));

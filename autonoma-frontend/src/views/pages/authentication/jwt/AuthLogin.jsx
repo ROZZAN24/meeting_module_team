@@ -183,16 +183,16 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
         }
       }
 
-      // If exactly one company and one division, auto-login
-      if (matches.length === 1 && matches[0].divisions.length === 1) {
+      // If exactly one company and zero or one division, auto-login
+      if (matches.length === 1 && matches[0].divisions.length <= 1) {
         const tenantId = matches[0].company.dbSourceName;
-        const divisionId = matches[0].divisions[0].id;
+        const divisionId = matches[0].divisions.length === 1 ? matches[0].divisions[0].id : null;
 
         setIsLoggingIn(true);
         try {
           await login(values.email.trim(), values.password, {
             tenantId,
-            divisionId: Number(divisionId)
+            divisionId: divisionId ? Number(divisionId) : null
           });
           return;
         } catch (loginErr) {
@@ -302,16 +302,16 @@ export default function JWTLogin({ onFaceModeChange, ...others }) {
         }
       }
 
-      // If exactly one company and one division, auto-login
-      if (matches.length === 1 && matches[0].divisions.length === 1) {
+      // If exactly one company and zero or one division, auto-login
+      if (matches.length === 1 && matches[0].divisions.length <= 1) {
         const tenantId = matches[0].company.dbSourceName;
-        const divisionId = matches[0].divisions[0].id;
+        const divisionId = matches[0].divisions.length === 1 ? matches[0].divisions[0].id : null;
 
         setIsLoggingIn(true);
         try {
           await faceLogin(matchedUserId.trim(), faceImageBase64, {
             tenantId,
-            divisionId: Number(divisionId)
+            divisionId: divisionId ? Number(divisionId) : null
           }, faceDescriptor);
           return;
         } catch (loginErr) {

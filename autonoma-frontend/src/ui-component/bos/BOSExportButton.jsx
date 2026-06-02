@@ -318,7 +318,11 @@ export default function BOSExportButton({
   const handleExportExcel = () => {
     if (!data || data.length === 0) return;
     uploadAndLogExport('Excel');
-    exportToExcel(prepareData(excelColumns), getFormattedFilename(), { userName: user?.id || user?.username || user?.email || 'SYSTEM' });
+    exportToExcel(prepareData(excelColumns), getFormattedFilename(), { 
+      userName: user?.id || user?.username || user?.email || 'SYSTEM',
+      companyName: companyProfile.companyName || 'AUTONOMA',
+      shortName: companyProfile.shortName || 'Business Operating System'
+    });
     handleClosePreview();
   };
 

@@ -431,7 +431,7 @@ export default function BOSDataTable({
   const activeSelectedId = selectedRowId !== undefined && selectedRowId !== null ? selectedRowId : localSelectedId;
 
   const { 
-    height = 'calc(100vh - 185px)', 
+    height = 'calc(100vh - 215px)', 
     maxHeight, 
     minHeight, 
     ...restSx 

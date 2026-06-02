@@ -3,6 +3,7 @@
  */
 
 import axios from 'axios';
+import { showAppAlert } from './alert';
 
 const axiosServices = axios.create({
   baseURL: import.meta.env.VITE_API_URL || window.location.origin
@@ -65,7 +66,7 @@ axiosServices.interceptors.response.use(
 
     // Extract exact error message
     let errMsg = 'Service connection failed. Please try again later.';
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isLocalhost = window.location.hostname === 'localhost';
 
     if (!error.response) {
       errMsg = isLocalhost
@@ -86,9 +87,9 @@ axiosServices.interceptors.response.use(
 
       // Check if it's a proxy error from Vite dev server when backend is down
       const isProxyError = (status === 500 || status === 502 || status === 503 || status === 504) && (
-        !serverMsg || 
-        serverMsg.includes('ECONNREFUSED') || 
-        serverMsg.includes('proxy error') || 
+        !serverMsg ||
+        serverMsg.includes('ECONNREFUSED') ||
+        serverMsg.includes('proxy error') ||
         serverMsg.includes('Gateway') ||
         serverMsg.includes('Bad Gateway')
       );
@@ -129,29 +130,7 @@ axiosServices.interceptors.response.use(
     const skipGlobalAlert = error.config?.skipGlobalAlert;
 
     if (error.response?.status !== 401 && !isExpectedAuthError && !skipGlobalAlert && !isMockRoute) {
-      if (window.showAlert) {
-        window.showAlert(`Server / Database Error:\n${errMsg}`);
-      } else {
-        alert(`Server / Database Error:\n${errMsg}`);
-      }
-      // Dynamically load store to dispatch openSnackbar and avoid circular dependencies
-      import('../store').then(({ dispatch }) => {
-        import('../store/slices/snackbar').then(({ openSnackbar }) => {
-          try {
-            dispatch(
-              openSnackbar({
-                open: true,
-                message: errMsg,
-                variant: 'alert',
-                severity: 'error',
-                anchorOrigin: { vertical: 'top', horizontal: 'right' }
-              })
-            );
-          } catch (e) {
-            console.warn('Failed to dispatch snackbar action:', e);
-          }
-        }).catch(err => console.warn('Failed to load snackbar slice:', err));
-      }).catch(err => console.warn('Failed to load store dynamically:', err));
+      showAppAlert(errMsg, 'error');
     }
 
     return Promise.reject(errMsg);

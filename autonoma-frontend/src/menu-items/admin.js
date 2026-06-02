@@ -34,7 +34,7 @@ const admin = {
   children: [
     {
       id: 'admin-hub',
-      title: 'Admin Hub',
+      title: 'BOS(S)',
       type: 'collapse',
       icon: icons.IconCategory,
       children: [
@@ -109,12 +109,21 @@ const admin = {
           icon: icons.IconDatabaseExport,
           breadcrumbs: true,
           pageCode: 'AD1180'
+        },
+        {
+          id: 'organization-chart',
+          title: 'Organization Chart',
+          type: 'item',
+          url: '/admin/organization-chart',
+          icon: icons.IconUsers,
+          breadcrumbs: true,
+          pageCode: 'AD1190'
         }
       ]
     },
     {
       id: 'BOS(S)-Admin',
-      title: 'BOS(S) Admin',
+      title: 'Super BOS(S)',
       type: 'collapse',
       icon: icons.IconUserShield,
       children: [

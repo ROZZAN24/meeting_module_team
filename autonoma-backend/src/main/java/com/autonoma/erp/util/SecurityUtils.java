@@ -46,8 +46,12 @@ public class SecurityUtils {
             return;
         }
 
+        // Only return if we have a fully resolved name in the cache that is NOT equal to the fallback principalId itself
         if (employeeNameCache.containsKey(principalId)) {
-            return;
+            String cached = employeeNameCache.get(principalId);
+            if (cached != null && !cached.equalsIgnoreCase(principalId)) {
+                return;
+            }
         }
 
         try {
@@ -101,7 +105,11 @@ public class SecurityUtils {
             // Ignore resolution errors
         }
 
-        employeeNameCache.put(principalId, principalId);
+        // Only cache the fallback if we have a valid tenant context (meaning the tenant database was actually queried)
+        String currentTenant = com.autonoma.erp.config.TenantContextHolder.getTenantId();
+        if (currentTenant != null && !currentTenant.equalsIgnoreCase("AUTONOMA") && !currentTenant.isEmpty()) {
+            employeeNameCache.put(principalId, principalId);
+        }
     }
 
     public static String getCurrentUserEmployeeName() {
@@ -109,10 +117,16 @@ public class SecurityUtils {
         if (principalId == null) {
             return null;
         }
-        return employeeNameCache.getOrDefault(principalId, principalId);
+        String cached = employeeNameCache.get(principalId);
+        if (cached == null || cached.equalsIgnoreCase(principalId)) {
+            resolveAndCacheEmployeeName(principalId);
+            cached = employeeNameCache.get(principalId);
+        }
+        return cached != null ? cached : principalId;
     }
 
     public static String getCurrentUserDisplayName() {
-        return getCurrentUserEmployeeName();
+        String empName = getCurrentUserEmployeeName();
+        return empName != null ? empName : getCurrentUserId();
     }
 }
