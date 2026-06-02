@@ -24,8 +24,19 @@ const search = createSlice({
     setFilterConfig(state, action) {
       state.config = action.payload;
       // Reset filter values and query when a new page sets its config,
-      // so each page starts with a clean filter state
-      state.filters = {};
+      // so each page starts with a clean filter state, but initialize dateRange fields to today
+      const nextFilters = {};
+      if (Array.isArray(action.payload)) {
+        const d = new Date();
+        const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        action.payload.forEach((field) => {
+          if (field && field.type === 'dateRange') {
+            nextFilters[`${field.id}Start`] = today;
+            nextFilters[`${field.id}End`] = today;
+          }
+        });
+      }
+      state.filters = nextFilters;
       state.query = '';
     },
     resetFilters(state) {
