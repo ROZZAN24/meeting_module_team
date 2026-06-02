@@ -64,12 +64,7 @@ export default function EmailContent() {
     { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
     { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
     { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 },
-    {
-      id: 'status',
-      label: 'Status',
-      minWidth: 100,
-      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
-    }
+    { id: 'status', label: 'Status', minWidth: 100, status: true }
   ], []);
 
   // Dispatch starred filter configuration matching Status
@@ -218,7 +213,6 @@ export default function EmailContent() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Email_Content"
