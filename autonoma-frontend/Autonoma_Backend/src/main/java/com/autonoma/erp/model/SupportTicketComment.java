@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "ticket_comments")
+@Table(name = "TICKET_COMMENTS")
 @Data
 @Builder
 @NoArgsConstructor
@@ -40,6 +40,9 @@ public class SupportTicketComment {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         this.createdAt = new Date();
-    }
+        }
 }

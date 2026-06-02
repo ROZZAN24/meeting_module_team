@@ -37,6 +37,7 @@ export default function DesignationLevelMaster() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const globalQuery = useSelector((state) => state.search.query);
+    const globalFilters = useSelector((state) => state.search.filters);
 
     useEffect(() => {
         dispatch(setFilterConfig([{ id: 'level', label: 'Level', type: 'text', placeholder: 'Search level...', isConstant: true },

@@ -330,19 +330,19 @@ export const masters = {
           icon: icons.IconFileCheck,
           children: [
             {
-              id: 'master-qms-audit-type',
-              title: 'Audit Type',
-              type: 'item',
-              url: '/master/qms/audit/type',
-              icon: icons.IconNotes,
-              pageCode: 'M1110'
-            },
-            {
               id: 'master-qms-audit-area',
               title: 'Audit Area / Zone',
               type: 'item',
               url: '/master/qms/audit/area',
               icon: icons.IconMapPin,
+              pageCode: 'M1110'
+            },
+            {
+              id: 'master-qms-audit-type',
+              title: 'Audit Type',
+              type: 'item',
+              url: '/master/qms/audit/type',
+              icon: icons.IconNotes,
               pageCode: 'M1120'
             },
             {

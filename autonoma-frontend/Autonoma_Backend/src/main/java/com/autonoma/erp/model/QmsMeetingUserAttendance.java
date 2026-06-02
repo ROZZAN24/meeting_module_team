@@ -46,9 +46,9 @@ public class QmsMeetingUserAttendance {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 }

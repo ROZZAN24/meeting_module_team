@@ -472,7 +472,14 @@ export default function AddAuditSchedule() {
       }
       navigate('/qms/audit/schedule');
     } catch (error) {
-      const errorMsg = error.response?.data?.message || error.response?.data?.details || error.message || 'Error saving Audit Schedule.';
+      let errorMsg = 'Error saving Audit Schedule.';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
+        errorMsg = error.response.data.message || error.response.data.details || (typeof error.response.data === 'string' ? error.response.data : errorMsg);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
       dispatch(openSnackbar({ open: true, message: errorMsg, severity: 'error', variant: 'alert' }));
     }
   };
