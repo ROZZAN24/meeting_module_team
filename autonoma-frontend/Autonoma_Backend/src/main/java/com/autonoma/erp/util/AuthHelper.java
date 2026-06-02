@@ -46,14 +46,14 @@ public class AuthHelper {
     }
 
     /**
-     * Check if the current user is an admin (isBosAdmin = 1).
+     * Check if the current user is an admin (userLevel >= USER_LEVEL_ADMIN).
      */
     public boolean isAdmin(Principal principal) {
         if (principal == null)
             return false;
         String userId = principal.getName();
         return userRepo.findByUserId(userId)
-                .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
                 .orElse(false);
     }
 

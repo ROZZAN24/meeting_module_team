@@ -567,7 +567,7 @@ const PrefixCredentials = () => {
                                     <IconPencil size={16} />
                                   </IconButton>
                                 </Tooltip>
-                                {perms.delete && user?.isBosAdmin === 1 && (
+                                {perms.delete && user?.userLevel === 5 && (
                                   <Tooltip title="Delete" arrow>
                                     <IconButton
                                       size="small"

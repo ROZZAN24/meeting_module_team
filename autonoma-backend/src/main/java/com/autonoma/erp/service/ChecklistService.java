@@ -711,7 +711,7 @@ public class ChecklistService {
                 // Determine the target status for A
                 boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
                         userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
-                        .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                        .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
                         .orElse(false);
 
                 String nextStatusName;
@@ -757,7 +757,7 @@ public class ChecklistService {
         if ("Completed".equalsIgnoreCase(statusName)) {
             boolean isUserAdmin = com.autonoma.erp.util.SecurityUtils.getCurrentUserId() != null &&
                     userRepository.findByUserId(com.autonoma.erp.util.SecurityUtils.getCurrentUserId())
-                    .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                    .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN)
                     .orElse(false);
             
             if (!isUserAdmin) {

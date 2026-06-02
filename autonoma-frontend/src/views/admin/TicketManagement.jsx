@@ -3803,7 +3803,6 @@ export default function TicketManagement({ viewType }) {
       </MainCard>
 
       {/* ── DIALOG: CREATE SUPPORT TICKET ── */}
-      {/* ── DIALOG: CREATE SUPPORT TICKET ── */}
       <Dialog open={createOpen} onClose={() => setCreateOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
         <form onSubmit={validateAndSubmitTicket}>
           <DialogTitle sx={{
@@ -3837,7 +3836,7 @@ export default function TicketManagement({ viewType }) {
                 </Typography>
                 {/* Row 1: Title grows */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
-                  <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formTitle, 'Ticket Title', 90)}px` }}>
+                  <Box sx={{ flex: '3 1 auto', minWidth: '250px' }}>
                     <TextField
                       fullWidth
                       size="small"
@@ -3848,10 +3847,6 @@ export default function TicketManagement({ viewType }) {
                       onChange={(e) => setFormTitle(e.target.value)}
                     />
                   </Box>
-                </Box>
-
-                {/* Row 2: Priority + Source + Module + Screen — each auto-width */}
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start', mt: 2 }}>
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formPriority, 'Priority Level', 90)}px` }}>
                     <TextField
                       fullWidth
@@ -3962,23 +3957,8 @@ export default function TicketManagement({ viewType }) {
                   </Box>
                 </Box>
 
-              </Box>
-
-              {/* SECTION 2: REMOVED */}
-
-              {/* SECTION 3: WORKFLOW ASSIGNMENT */}
-              <Box sx={{
-                bgcolor: 'white',
-                p: 1.5,
-                borderRadius: '12px',
-                border: '1px solid #e2e8f0',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-              }}>
-                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#673ab7', display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Box sx={{ width: 4, height: 16, bgcolor: '#673ab7', borderRadius: 1 }} />
-                  Task Assignment & Verification
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
+                {/* Row 2: Assigned To, Verified By, Time, Target Date */}
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start', mt: 2 }}>
                   <Box sx={{ flex: '1 1 auto', minWidth: `${getFieldMinWidth(formDevName, 'Assigned To', 90)}px` }}>
                     <Autocomplete
                       size="small"
@@ -4268,7 +4248,7 @@ export default function TicketManagement({ viewType }) {
               <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#f59e0b', borderRadius: 1 }} />
-                  Details & Due Dates
+                  Details
                 </Typography>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ position: 'relative', mt: 1, width: '100%' }}>
@@ -4324,12 +4304,12 @@ export default function TicketManagement({ viewType }) {
                       overflow: 'hidden',
                       bgcolor: '#fafafa',
                       transition: 'border-color 0.3s ease',
-                      '& .ql-editor': { minHeight: '100px' }
+                      '& .ql-editor': { minHeight: '250px' }
                     }}>
                       <ReactQuillDemo
                         value={formDesc}
                         onChange={setFormDesc}
-                        editorMinHeight={100}
+                        editorMinHeight={250}
                         placeholder="Type or speak your description here..."
                       />
                     </Box>
