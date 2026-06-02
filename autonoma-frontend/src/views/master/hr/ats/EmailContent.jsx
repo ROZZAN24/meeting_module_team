@@ -261,11 +261,11 @@ export default function EmailContent() {
         fullWidth
         maxWidth="sm"
         onSave={handleSave}
-        onClear={() => {
+        onClear={formData.id ? () => {
           setFormData(INITIAL_STATE);
           setErrors({});
-        }}
-        secondaryActions={
+        } : undefined}
+        secondaryActions={formData.id ? (
           <Button
             variant="outlined"
             onClick={() => setDialogOpen(false)}
@@ -278,7 +278,7 @@ export default function EmailContent() {
           >
             Back
           </Button>
-        }
+        ) : undefined}
         hasId={!!formData.id}
         onDelete={() => {
           setDeleteTarget(formData);
