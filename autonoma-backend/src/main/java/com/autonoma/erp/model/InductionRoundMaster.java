@@ -29,14 +29,14 @@ public class InductionRoundMaster {
     @Column(name = "DISPLAY_ORDER")
     private Integer displayOrder;
 
-    @Column(name = "CREATED_BY", length = 100)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "UPDATED_DATE")
@@ -94,17 +94,27 @@ public class InductionRoundMaster {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         if (this.createdDate == null) {
             this.createdDate = new Date();
         }
         if (this.createdBy == null) {
             this.createdBy = SecurityUtils.getCurrentUserId();
         }
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         this.updatedDate = new Date();
         this.updatedBy = SecurityUtils.getCurrentUserId();
-    }
+        }
 }

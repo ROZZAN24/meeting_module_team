@@ -17,13 +17,13 @@ public class CountryMaster {
     @Column(name = "STATUS", length = 20)
     private String status;
 
-    @Column(name = "CREATED_BY", length = 100)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "CREATED_DATE")
     private java.time.LocalDateTime createdDate;
 
-    @Column(name = "UPDATED_BY", length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "UPDATED_DATE")
@@ -34,14 +34,24 @@ public class CountryMaster {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         createdDate = java.time.LocalDateTime.now();
         if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
         if (isActive == null) isActive = true;
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         updatedDate = java.time.LocalDateTime.now();
         if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
-    }
+        }
 }

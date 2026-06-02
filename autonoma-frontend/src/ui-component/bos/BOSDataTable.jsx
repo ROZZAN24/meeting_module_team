@@ -64,23 +64,27 @@ export default function BOSDataTable({
         if (col.id === 'index' || col.id === 'photo' || col.id === 'actions') return col;
         
         const uniqueValues = [...new Set(rows.map(r => resolveNestedValue(col.id, r)))]
-          .filter(v => v !== undefined && v !== null && v !== '')
+          .filter(v => v !== undefined && v !== null && v !== '' && typeof v !== 'object' && typeof v !== 'function')
           .map(v => ({ value: v, label: String(v) }));
 
         return { ...col, options: uniqueValues };
       });
 
-      // Serialize options safely to avoid redundant dispatches
-      const serialized = JSON.stringify(
-        columnsWithData.map(c => ({
+      // Only dispatch serializable metadata to Redux
+      const serializableConfig = columnsWithData
+        .filter(c => c.id !== 'index' && c.id !== 'photo' && c.id !== 'actions')
+        .map(c => ({
           id: c.id,
-          label: c.label,
-          options: c.options
-        }))
-      );
+          label: typeof c.label === 'string' ? c.label : String(c.id).toUpperCase(),
+          options: c.options || []
+        }));
+
+      // Serialize safely to avoid redundant dispatches
+      const serialized = JSON.stringify(serializableConfig);
+      
       if (!disableTableConfig && lastConfigRef.current !== serialized) {
         lastConfigRef.current = serialized;
-        dispatch(setTableConfig(columnsWithData));
+        dispatch(setTableConfig(serializableConfig));
       }
     }
   }, [columns, rows, dispatch, disableTableConfig]);

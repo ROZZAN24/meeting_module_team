@@ -44,6 +44,7 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 import { getUserImageUrl } from 'utils/upload-helper';
 import { showAppAlert } from 'utils/alert';
+import useAuth from 'hooks/useAuth';
 
 const userAccessSearchConfig = [
   { id: 'module', label: 'Module', type: 'text', placeholder: 'Search Module...' },
@@ -58,6 +59,7 @@ const UserAccess = () => {
   const isDark = theme.palette.mode === 'dark';
 
   const perms = usePagePermissions(PAGE_CODES.AD_USER_ACCESS);
+  const { user: currentUser } = useAuth();
 
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState('');
@@ -105,10 +107,14 @@ const UserAccess = () => {
 
   const handleUserChange = (e) => {
     const userId = e.target.value;
+    const u = users.find(user => user.userId === userId);
+    if (currentUser?.userLevel !== 5 && u?.userLevel === 5) {
+      dispatch(openSnackbar({ open: true, message: 'Admins cannot view or modify Boss Admin permissions', variant: 'alert', severity: 'warning' }));
+      return;
+    }
     setSelectedUser(userId);
     fetchAuthData(userId);
-    const u = users.find(user => user.userId === userId);
-    if (u?.isBosAdmin === 1) {
+    if (u?.userLevel === 5) {
       dispatch(openSnackbar({
         open: true,
         message: 'Global Administrator permissions are permanently locked to active to prevent console lockout.',
@@ -272,7 +278,7 @@ const UserAccess = () => {
           indeterminate={isSomeChecked(header.id)}
           disabled={!perms.write}
           onChange={(e) => {
-            if (selectedUserInfo?.isBosAdmin === 1) {
+            if (selectedUserInfo?.userLevel === 5) {
               showAdminLockedAlert();
               return;
             }
@@ -358,7 +364,7 @@ const UserAccess = () => {
             variant="contained"
             startIcon={<IconDeviceFloppy size={20} />}
             onClick={() => {
-              if (selectedUserInfo?.isBosAdmin === 1) {
+              if (selectedUserInfo?.userLevel === 5) {
                 showAdminLockedAlert();
                 return;
               }
@@ -404,7 +410,7 @@ const UserAccess = () => {
             variant="outlined"
             startIcon={<IconCopy size={18} />}
             onClick={() => {
-              if (selectedUserInfo?.isBosAdmin === 1) {
+              if (selectedUserInfo?.userLevel === 5) {
                 showAdminLockedAlert();
                 return;
               }
@@ -423,7 +429,7 @@ const UserAccess = () => {
       {/* ── TABLE SECTION ── */}
       <Fade in={Boolean(selectedUser)}>
         <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, gap: 1.5 }}>
-          {selectedUserInfo?.isBosAdmin === 1 && (
+          {selectedUserInfo?.userLevel === 5 && (
             <Box sx={{
               p: '12px 20px',
               borderRadius: '8px',
@@ -525,7 +531,7 @@ const UserAccess = () => {
                             indeterminate={isRowSomeChecked(row)}
                             disabled={!perms.write}
                             onChange={(e) => {
-                              if (selectedUserInfo?.isBosAdmin === 1) {
+                              if (selectedUserInfo?.userLevel === 5) {
                                 showAdminLockedAlert();
                                 return;
                               }
@@ -543,7 +549,7 @@ const UserAccess = () => {
                               checked={row[h.id] === 1}
                               disabled={!perms.write}
                               onChange={() => {
-                                if (selectedUserInfo?.isBosAdmin === 1) {
+                                if (selectedUserInfo?.userLevel === 5) {
                                   showAdminLockedAlert();
                                   return;
                                 }
@@ -567,7 +573,7 @@ const UserAccess = () => {
                           <Tooltip title="Save Permissions" arrow>
                             <IconButton 
                               onClick={() => {
-                                if (selectedUserInfo?.isBosAdmin === 1) {
+                                if (selectedUserInfo?.userLevel === 5) {
                                   showAdminLockedAlert();
                                   return;
                                 }

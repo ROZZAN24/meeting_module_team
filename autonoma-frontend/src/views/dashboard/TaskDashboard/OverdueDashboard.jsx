@@ -183,6 +183,21 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
     today.setHours(0, 0, 0, 0);
     const overdue = [];
 
+    const getWorkingDays = (start, end) => {
+      let days = 0;
+      let cur = new Date(start);
+      cur.setHours(0, 0, 0, 0);
+      const e = new Date(end);
+      e.setHours(0, 0, 0, 0);
+      while (cur < e) {
+        if (cur.getDay() !== 0) { // skip Sunday
+          days++;
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+      return days;
+    };
+
     realTasks.forEach((t) => {
       const st = String(t._status).toLowerCase();
       const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
@@ -192,8 +207,10 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
       dDate.setHours(0, 0, 0, 0);
 
       if (dDate.getTime() < today.getTime()) {
-        const diffDays = Math.ceil(Math.abs(today - dDate) / (1000 * 60 * 60 * 24));
-        overdue.push({ ...t, diffDays });
+        const diffDays = getWorkingDays(dDate, today);
+        if (diffDays > 0) {
+          overdue.push({ ...t, diffDays });
+        }
       }
     });
 
@@ -380,17 +397,7 @@ export default function OverdueDashboard({ isDark, realTasks = [] }) {
   const pagesData = useMemo(() => {
     const counts = {};
     overdueTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const name =
-        prefix === 'CL'
-          ? 'Checklist'
-          : prefix === 'MOM'
-            ? 'MOM Actions'
-            : prefix === 'TK'
-              ? 'Ticket'
-              : prefix === 'AUDIT'
-                ? 'Audit Schedule'
-                : prefix;
+      const name = t._pageName || 'Other';
       if (!counts[name]) counts[name] = 0;
       counts[name]++;
     });

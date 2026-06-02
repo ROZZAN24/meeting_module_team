@@ -60,7 +60,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
 
             const eligible = allSchedules.filter(s => {
               // If not super admin, only show schedules where the current user is a participant
-              if (user && user.isBosAdmin !== 1) {
+              if (user && user.userLevel !== 5) {
                 const isParticipant = s.participants?.some(p => Number(p.employee?.id) === Number(user?.empId));
                 if (!isParticipant) return false;
               }
@@ -126,7 +126,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
         setAttendanceStatus('PRESENT');
         setOutTime('');
         setOutTimeRaw('');
-        if (user && user.isBosAdmin !== 1) {
+        if (user && user.userLevel !== 5) {
           setAttendeeName(user.name || '');
         } else {
           setAttendeeName('');
@@ -228,7 +228,7 @@ const AttendanceEntryDialog = ({ open, item, onClose, onSave }) => {
             />
           )}
 
-          {isEdit || (user && user.isBosAdmin !== 1) ? (
+          {isEdit || (user && user.userLevel !== 5) ? (
             <BOSTextField
               label="Attendee Name"
               value={attendeeName}
