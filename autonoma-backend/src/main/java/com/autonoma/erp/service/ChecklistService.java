@@ -1023,8 +1023,8 @@ public class ChecklistService {
         checklist.setVerifyStatus(status);
         checklist.setVerifiedBy(verifiedBy);
         checklist.setVerifiedDate(new Date());
-        checklist.setUpdatedBy(verifiedBy);
-        checklist.setUpdatedDate(new Date());
+        checklist.setSkipAuditUpdate(true);
+        
         if ("Rejected".equals(status)) {
             checklist.setRejReason(remarks);
         } else if ("Verified".equals(status)) {

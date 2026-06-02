@@ -205,11 +205,11 @@ const columns = [
     }
   },
   { id: 'verifiedBy',   label: 'Verified By',     minWidth: 120 },
-  { id: 'verifiedDate', label: 'Verify Date & Time',   minWidth: 160 },
+  { id: 'verifiedDate', label: 'Verify Date & Time',   minWidth: 160, render: (row) => formatDateTime(row.verifiedDate) },
   { id: 'createdUser',  label: 'Created By',      minWidth: 120 },
-  { id: 'createdDate',  label: 'Created Date',     minWidth: 140 },
+  { id: 'createdDate',  label: 'Created Date & Time',  minWidth: 160, render: (row) => formatDateTime(row.createdDate) },
   { id: 'updatedUser',  label: 'Updated By',       minWidth: 120 },
-  { id: 'updatedDate',  label: 'Update Date & Time',    minWidth: 160 },
+  { id: 'updatedDate',  label: 'Update Date & Time',    minWidth: 160, render: (row) => formatDateTime(row.updatedDate) },
 ];
 
 // ── Export columns ──────────────────────────────────────────────────────────────
@@ -237,9 +237,9 @@ const exportColumns = [
   { header: 'Verified By',        key: 'verifiedBy' },
   { header: 'Verify Date & Time',      key: (r) => formatDateTime(r.verifiedDate) },
   { header: 'Created By',         key: 'createdUser' },
-  { header: 'Created Date',       key: (r) => formatDateTime(r.createdAt) },
+  { header: 'Created Date & Time',       key: (r) => formatDateTime(r.createdDate) },
   { header: 'Updated By',         key: 'updatedUser' },
-  { header: 'Update Date & Time',       key: (r) => formatDateTime(r.updatedAt) },
+  { header: 'Update Date & Time',       key: (r) => formatDateTime(r.updatedDate) },
 ];
 
 // ── Static filter options (department options are loaded dynamically) ────────────
