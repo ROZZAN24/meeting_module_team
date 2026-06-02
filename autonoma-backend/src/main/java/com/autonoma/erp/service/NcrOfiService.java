@@ -282,6 +282,8 @@ public class NcrOfiService {
     public void rejectNcr(Number observationDetailId, String remarks) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("REJECTED");
+            detail.setNcrStatus("REJECTED");
+            detail.setComments(remarks);
             observationDetailRepository.save(detail);
             
             ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
@@ -289,7 +291,6 @@ public class NcrOfiService {
                 master.setStatus("OPEN");
                 master.setUpdatedAt(new java.util.Date());
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());
-                // In a real app, we'd store remarks in a history or comments table
                 ncrOfiMasterRepository.save(master);
             });
         });
@@ -299,6 +300,8 @@ public class NcrOfiService {
     public void reworkNcr(Number observationDetailId, String remarks) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("REWORK");
+            detail.setNcrStatus("REWORK");
+            detail.setComments(remarks);
             observationDetailRepository.save(detail);
             
             ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {

@@ -116,7 +116,15 @@ export default function AuditCriteriaMaster() {
       fetchAuditCriteria();
     } catch (error) {
       console.error('Failed to delete audit criteria:', error);
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
+      let errorMsg = 'Failed to delete.';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
+        errorMsg = error.response.data.message || (typeof error.response.data === 'string' ? error.response.data : errorMsg);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+      dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
     }
   };
 

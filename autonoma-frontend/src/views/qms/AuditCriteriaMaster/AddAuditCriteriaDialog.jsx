@@ -275,18 +275,31 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
       handleClose(true);
     } catch (error) {
       console.error('Failed to save audit criteria:', error);
-      const errorMsg = error.response?.data?.message || error.response?.data || 'An error occurred while saving.';
+      let errorMsg = 'An error occurred while saving.';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
+        errorMsg = error.response.data.message || (typeof error.response.data === 'string' ? error.response.data : errorMsg);
+      } else if (error.message) {
+        errorMsg = error.message;
+      }
+
       if (typeof errorMsg === 'string') {
         if (errorMsg.toLowerCase().includes('seq no')) {
           setErrors({ seqNo: errorMsg });
         } else if (errorMsg.toLowerCase().includes('clause') || errorMsg.toLowerCase().includes('same')) {
           setErrors({ clause: errorMsg });
-        } else {
-          dispatch(openSnackbar({ open: true, message: errorMsg, variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
         }
-      } else {
-        dispatch(openSnackbar({ open: true, message: 'Duplicate value or error occurred.', variant: 'alert', alert: { variant: 'filled' }, severity: 'error', close: false }));
       }
+
+      dispatch(openSnackbar({
+        open: true,
+        message: typeof errorMsg === 'string' ? errorMsg : 'Duplicate value or error occurred.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 
@@ -328,11 +341,20 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
             <Autocomplete
               multiple
               disableCloseOnSelect
-              options={auditTypes}
+              options={auditTypes.length > 0 ? [{ isSelectAll: true, auditType: 'SELECT ALL' }, ...auditTypes] : []}
               getOptionLabel={(option) => option.auditType || ''}
               value={auditTypes.filter((t) => (formData.auditType || []).includes(t.auditType))}
               onChange={(event, newValue) => {
-                handleChange({ target: { name: 'auditType', value: newValue.map((v) => v.auditType) } });
+                const hasSelectAll = newValue.some(v => v.isSelectAll);
+                if (hasSelectAll) {
+                  if (formData.auditType.length === auditTypes.length) {
+                    handleChange({ target: { name: 'auditType', value: [] } });
+                  } else {
+                    handleChange({ target: { name: 'auditType', value: auditTypes.map((t) => t.auditType) } });
+                  }
+                } else {
+                  handleChange({ target: { name: 'auditType', value: newValue.map((v) => v.auditType) } });
+                }
               }}
               disabled={isViewOnly}
               renderInput={(params) => (
@@ -346,9 +368,18 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               )}
               renderOption={(props, option, { selected }) => {
                 const { key, ...optionProps } = props;
+                const isSelectAllOption = option.isSelectAll;
+                const isSelected = isSelectAllOption 
+                  ? (formData.auditType || []).length === auditTypes.length
+                  : selected;
                 return (
                   <li key={key} {...optionProps}>
-                    <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                    <Checkbox 
+                      size="small" 
+                      style={{ marginRight: 8 }} 
+                      checked={isSelected} 
+                      indeterminate={isSelectAllOption && (formData.auditType || []).length > 0 && (formData.auditType || []).length < auditTypes.length}
+                    />
                     {option.auditType}
                   </li>
                 );
@@ -414,12 +445,21 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
             <Autocomplete
               multiple
               disableCloseOnSelect
-              options={deptLookups}
+              options={deptLookups.length > 0 ? [{ isSelectAll: true, departmentName: 'SELECT ALL' }, ...deptLookups] : []}
               getOptionLabel={(option) => option.departmentName || ''}
               value={deptLookups.filter((d) => (formData.department || []).includes(d.departmentName))}
               onChange={(event, newValue) => {
-                const deptNames = newValue.map((v) => v.departmentName);
-                setFormData((prev) => ({ ...prev, department: deptNames }));
+                const hasSelectAll = newValue.some(v => v.isSelectAll);
+                if (hasSelectAll) {
+                  if (formData.department.length === deptLookups.length) {
+                    setFormData((prev) => ({ ...prev, department: [] }));
+                  } else {
+                    setFormData((prev) => ({ ...prev, department: deptLookups.map((d) => d.departmentName) }));
+                  }
+                } else {
+                  const deptNames = newValue.map((v) => v.departmentName);
+                  setFormData((prev) => ({ ...prev, department: deptNames }));
+                }
                 if (errors.department) {
                   setErrors((prev) => ({ ...prev, department: '' }));
                 }
@@ -436,9 +476,18 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
               )}
               renderOption={(props, option, { selected }) => {
                 const { key, ...optionProps } = props;
+                const isSelectAllOption = option.isSelectAll;
+                const isSelected = isSelectAllOption 
+                  ? (formData.department || []).length === deptLookups.length
+                  : selected;
                 return (
                   <li key={key} {...optionProps}>
-                    <Checkbox size="small" style={{ marginRight: 8 }} checked={selected} />
+                    <Checkbox 
+                      size="small" 
+                      style={{ marginRight: 8 }} 
+                      checked={isSelected} 
+                      indeterminate={isSelectAllOption && (formData.department || []).length > 0 && (formData.department || []).length < deptLookups.length}
+                    />
                     {option.departmentName}
                   </li>
                 );

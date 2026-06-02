@@ -141,7 +141,9 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
     } catch (error) {
       console.error('Failed to save audit type:', error);
       let errorMsg = 'An error occurred while saving.';
-      if (error.response?.data) {
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error.response?.data) {
         if (typeof error.response.data === 'string') {
           errorMsg = error.response.data;
         } else if (error.response.data.message) {
@@ -149,21 +151,24 @@ const AddAuditTypeDialog = ({ open, handleClose, initialData, readOnly = false }
         } else if (error.response.data.error) {
           errorMsg = error.response.data.error;
         }
+      } else if (error.message) {
+        errorMsg = error.message;
       }
-      if (errorMsg.includes('auditType')) {
-        setErrors({ auditType: 'Duplicate value! Please check.' });
-      } else if (errorMsg.includes('description')) {
-        setErrors({ description: 'Duplicate value! Please check.' });
-      } else {
-        dispatch(openSnackbar({
-          open: true,
-          message: errorMsg,
-          variant: 'alert',
-          alert: { variant: 'filled' },
-          severity: 'error',
-          close: false
-        }));
+
+      if (errorMsg.includes('auditType') || errorMsg.toLowerCase().includes('duplicate value on field audittype')) {
+        setErrors({ auditType: 'Duplicate Audit Type! Please check.' });
+      } else if (errorMsg.includes('description') || errorMsg.toLowerCase().includes('duplicate value on field description')) {
+        setErrors({ description: 'Duplicate Description! Please check.' });
       }
+
+      dispatch(openSnackbar({
+        open: true,
+        message: errorMsg,
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error',
+        close: false
+      }));
     }
   };
 
