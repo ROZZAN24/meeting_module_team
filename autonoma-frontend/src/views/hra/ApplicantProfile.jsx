@@ -208,6 +208,26 @@ const VALIDATION_RULES = [
   { field: 'birthDate', label: 'Birth Date', required: true }
 ];
 
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object' 
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5, width: '100%' }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn, width: '100%' }}>{children}</Box>;
+};
+
+
 export default function ApplicantProfile() {
   const theme = useTheme();
   const navigate = useNavigate();
@@ -850,16 +870,15 @@ export default function ApplicantProfile() {
         </Stack>
       }
     >
-      <Grid container spacing={3}>
+      <Stack spacing={3} sx={{ width: '100%' }}>
         {/* ── TOP SECTION: Main Registry Form ── */}
-        <Grid item xs={12}>
-          <Card variant="outlined" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
+        <Card variant="outlined" sx={{ width: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
                 <IconUser size={20} /> BASIC REGISTRATION DETAILS
               </Typography>
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6} md={3}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     required
                     label="Enrolled NO"
@@ -871,16 +890,16 @@ export default function ApplicantProfile() {
                     helperText={errors.enRolledNo}
                     sx={errorStyle(!!errors.enRolledNo)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSDatePicker
                     label="Applicant Date"
                     name="applicantDate"
                     value={formData.applicantDate}
                     onChange={handleInputChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     required
@@ -900,8 +919,8 @@ export default function ApplicantProfile() {
                     <MenuItem value="HR Executive">HR Executive</MenuItem>
                     <MenuItem value="Quality Auditor">Quality Auditor</MenuItem>
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     required
@@ -918,9 +937,9 @@ export default function ApplicantProfile() {
                       <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
+                </R>
 
-                <Grid item xs={12} sm={6} md={3}>
+                <R>
                   <BOSTextField
                     select
                     label="Title"
@@ -932,8 +951,8 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     required
                     label="First Name"
@@ -944,8 +963,8 @@ export default function ApplicantProfile() {
                     helperText={errors.firstName}
                     sx={errorStyle(!!errors.firstName)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     required
                     label="Last Name"
@@ -956,8 +975,8 @@ export default function ApplicantProfile() {
                     helperText={errors.lastName}
                     sx={errorStyle(!!errors.lastName)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSDatePicker
                     required
                     label="Birth Date"
@@ -967,8 +986,8 @@ export default function ApplicantProfile() {
                     error={!!errors.birthDate}
                     helperText={errors.birthDate}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Age"
                     name="age"
@@ -976,9 +995,9 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
+                </R>
 
-                <Grid item xs={12} sm={6} md={3}>
+                <R>
                   <BOSTextField
                     required
                     label="Mobile No"
@@ -990,8 +1009,8 @@ export default function ApplicantProfile() {
                     helperText={errors.mobileNo}
                     sx={errorStyle(!!errors.mobileNo)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     required
                     label="Email ID"
@@ -1003,8 +1022,8 @@ export default function ApplicantProfile() {
                     helperText={errors.emailId}
                     sx={errorStyle(!!errors.emailId)}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <Stack spacing={1}>
                     <BOSTextField
                       required
@@ -1030,9 +1049,9 @@ export default function ApplicantProfile() {
                       sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem', fontWeight: 600 } }}
                     />
                   </Stack>
-                </Grid>
+                </R>
 
-                <Grid item xs={12} sm={6} md={3}>
+                <R>
                   <BOSTextField
                     select
                     label="Ref Mode"
@@ -1045,10 +1064,10 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
+                </R>
 
                 {formData.refMode === 'EMPLOYEE' && (
-                  <Grid item xs={12} sm={6} md={9}>
+                  <R lg={8}>
                     <BOSTextField
                       select
                       required
@@ -1071,11 +1090,11 @@ export default function ApplicantProfile() {
                         );
                       })}
                     </BOSTextField>
-                  </Grid>
+                  </R>
                 )}
 
                 {formData.refMode && formData.refMode !== 'EMPLOYEE' && (
-                  <Grid item xs={12} sm={6} md={9}>
+                  <R lg={8}>
                     <BOSTextField
                       required={formData.refMode === 'OTHERS'}
                       label="Ref Comments"
@@ -1086,15 +1105,14 @@ export default function ApplicantProfile() {
                       helperText={errors.refComments}
                       sx={errorStyle(!!errors.refComments)}
                     />
-                  </Grid>
+                  </R>
                 )}
-              </Grid>
+              </GridContainer>
             </CardContent>
           </Card>
-        </Grid>
-
+        
         {/* ── BOTTOM TABS FOR SUB-SECTIONS ── */}
-        <Grid item xs={12}>
+        <Box sx={{ width: '100%' }}>
           <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
             <Tabs
               value={activeTab}
@@ -1116,11 +1134,11 @@ export default function ApplicantProfile() {
             </Tabs>
           </Box>
 
-          <Box sx={{ minHeight: '300px', p: 1 }}>
+          <Box sx={{ minHeight: '300px', p: 1, width: '100%' }}>
             {/* 1. PERSONAL DETAILS */}
             {activeTab === 0 && (
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6} md={3}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     label="Enrolled NO"
                     name="enRollNo"
@@ -1128,8 +1146,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Gender"
@@ -1143,8 +1161,8 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Marital Status"
@@ -1157,8 +1175,8 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSDatePicker
                     label="Birth Date"
                     name="birthDate"
@@ -1166,16 +1184,16 @@ export default function ApplicantProfile() {
                     disabled
                     onChange={() => {}}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="PAN No"
                     name="panNo"
                     value={personalData.panNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Religion"
@@ -1188,84 +1206,84 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Nationality"
                     name="nationality"
                     value={personalData.nationality}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Office Phone No"
                     name="officePhoneNo"
                     value={personalData.officePhoneNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Phone No"
                     name="phoneNo"
                     value={personalData.phoneNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Mobile No"
                     name="mobileNo"
                     value={personalData.mobileNo || formData.mobileNo}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Email Id"
                     name="emailId"
                     value={personalData.emailId || formData.emailId}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <Divider sx={{ my: 1 }} />
                   <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 600 }}>PERMANENT ADDRESS</Typography>
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 1"
                     name="permAdd1"
                     value={personalData.permAdd1}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 2"
                     name="permAdd2"
                     value={personalData.permAdd2}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="City"
                     name="city"
                     value={personalData.city}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6} md={3}>
+                </R>
+                <R>
                   <BOSTextField
                     label="State"
                     name="state"
                     value={personalData.state}
                     onChange={handlePersonalChange}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -1277,8 +1295,8 @@ export default function ApplicantProfile() {
                     label="Personal Address as above"
                     sx={{ fontWeight: 'bold' }}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Personal Add1"
                     name="persAdd1"
@@ -1286,8 +1304,8 @@ export default function ApplicantProfile() {
                     onChange={handlePersonalChange}
                     disabled={personalData.sameAsPermanent}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Personal Add2"
                     name="persAdd2"
@@ -1295,8 +1313,8 @@ export default function ApplicantProfile() {
                     onChange={handlePersonalChange}
                     disabled={personalData.sameAsPermanent}
                   />
-                </Grid>
-              </Grid>
+                </R>
+              </GridContainer>
             )}
 
             {/* 2. EXPERIENCE DETAILS */}
@@ -1306,14 +1324,14 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600, minWidth: 250 }}>Company Name</TableCell>
-                        <TableCell sx={{ fontWeight: 600, minWidth: 200 }}>Location</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>From Date</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>To Date</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Experience (Years)</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>File Attachment</TableCell>
-                        <TableCell align="center">
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, minWidth: 250, width: '30%' }}>Company Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, minWidth: 200, width: '20%' }}>Location</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '12%' }}>From Date</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '12%' }}>To Date</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Experience (Years)</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '16%' }}>File Attachment</TableCell>
+                        <TableCell align="center" sx={{ width: '5%' }}>
                           <IconButton color="primary" size="small" onClick={handleAddExperienceRow}>
                             <IconPlus size={18} />
                           </IconButton>
@@ -1407,14 +1425,14 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Education</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Institution Name</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Type</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Year of Passing</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>% / Grade</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Documents</TableCell>
-                        <TableCell align="center">
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '25%' }}>Education</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>Institution Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Year of Passing</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>% / Grade</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '15%' }}>Documents</TableCell>
+                        <TableCell align="center" sx={{ width: '5%' }}>
                           <IconButton color="primary" size="small" onClick={handleAddEducationRow}>
                             <IconPlus size={18} />
                           </IconButton>
@@ -1621,8 +1639,8 @@ export default function ApplicantProfile() {
 
             {/* 5. EVALUATION DETAILS */}
             {activeTab === 4 && (
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     label="Enrolled No"
                     name="enRolledNo"
@@ -1630,16 +1648,16 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSDatePicker
                     label="Interview Date"
                     name="interviewDate"
                     value={evaluationData.interviewDate}
                     onChange={(e) => setEvaluationData(prev => ({ ...prev, interviewDate: e.target.value }))}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     select
                     label="Interview Status"
@@ -1651,24 +1669,24 @@ export default function ApplicantProfile() {
                       <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                     ))}
                   </BOSTextField>
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Technical Interviewed By"
                     name="technicalInterviewedBy"
                     value={evaluationData.technicalInterviewedBy}
                     onChange={(e) => setEvaluationData(prev => ({ ...prev, technicalInterviewedBy: e.target.value }))}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="HR Interviewed By"
                     name="hrInterviewedBy"
                     value={evaluationData.hrInterviewedBy}
                     onChange={(e) => setEvaluationData(prev => ({ ...prev, hrInterviewedBy: e.target.value }))}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Comments"
                     name="comments"
@@ -1677,14 +1695,14 @@ export default function ApplicantProfile() {
                     multiline
                     rows={3}
                   />
-                </Grid>
-              </Grid>
+                </R>
+              </GridContainer>
             )}
 
             {/* 6. CONTACT DETAILS */}
             {activeTab === 5 && (
-              <Grid container spacing={2.5}>
-                <Grid item xs={12} sm={6}>
+              <GridContainer>
+                <R>
                   <BOSTextField
                     label="Enrolled No"
                     name="enRolledNo"
@@ -1692,8 +1710,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Phone No"
                     name="phoneNo"
@@ -1701,8 +1719,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="Mobile No"
                     name="mobileNo"
@@ -1710,8 +1728,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R>
                   <BOSTextField
                     label="City"
                     name="city"
@@ -1719,8 +1737,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 1"
                     name="address1"
@@ -1728,8 +1746,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-                <Grid item xs={12} sm={6}>
+                </R>
+                <R lg={12}>
                   <BOSTextField
                     label="Address line 2"
                     name="address2"
@@ -1737,8 +1755,8 @@ export default function ApplicantProfile() {
                     disabled
                     InputProps={{ readOnly: true }}
                   />
-                </Grid>
-              </Grid>
+                </R>
+              </GridContainer>
             )}
 
             {/* 7. KYC DETAILS */}
@@ -1748,11 +1766,11 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Seq No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Doc Name</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>DOC No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>File</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '10%' }}>Seq No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '25%' }}>Doc Name</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>DOC No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>File</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -1792,16 +1810,16 @@ export default function ApplicantProfile() {
                   group: 'I. PERSONAL & FAMILY DETAILS',
                   fields: [
                     { name: 'q1_native', label: '1. Native Place' },
-                    { name: 'q2_presentAddress', label: '2. Present Address' },
-                    { name: 'q3_permanentAddress', label: '3. Permanent Address' },
+                    { name: 'q2_presentAddress', label: '2. Present Address', lg: 12 },
+                    { name: 'q3_permanentAddress', label: '3. Permanent Address', lg: 12 },
                     { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
                     { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
                     { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
                     { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
                     { name: 'q8_children', label: '8. Children' },
                     { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
-                    { name: 'q10_relativesDetails', label: '10. Relative or friends details' },
-                    { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations' }
+                    { name: 'q10_relativesDetails', label: '10. Relative or friends details', lg: 12 },
+                    { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations', lg: 12 }
                   ]
                 },
                 {
@@ -1817,10 +1835,10 @@ export default function ApplicantProfile() {
                 {
                   group: 'III. PERSONAL GOALS & REFLECTION',
                   fields: [
-                    { name: 'q17_positivePoints', label: '17. Brief about positive points' },
-                    { name: 'q18_negativePoints', label: '18. Brief about negative points' },
-                    { name: 'q19_lifeGoals', label: "19. What's your life goals?" },
-                    { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas' }
+                    { name: 'q17_positivePoints', label: '17. Brief about positive points', lg: 12 },
+                    { name: 'q18_negativePoints', label: '18. Brief about negative points', lg: 12 },
+                    { name: 'q19_lifeGoals', label: "19. What's your life goals?", lg: 12 },
+                    { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas', lg: 12 }
                   ]
                 },
                 {
@@ -1843,9 +1861,9 @@ export default function ApplicantProfile() {
                   fields: [
                     { name: 'q31_prevLocation', label: '31. Previous/current company location' },
                     { name: 'q32_prevShift', label: '32. Previously worked shift' },
-                    { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job' },
+                    { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job', lg: 12 },
                     { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
-                    { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details' },
+                    { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details', lg: 12 },
                     { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
                     { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
                   ]
@@ -1853,8 +1871,8 @@ export default function ApplicantProfile() {
                 {
                   group: 'VI. BEHAVIORAL & WORK RATINGS',
                   fields: [
-                    { name: 'q38_handleMistake', label: '38. How you handle mistakes' },
-                    { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences' },
+                    { name: 'q38_handleMistake', label: '38. How you handle mistakes', lg: 12 },
+                    { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences', lg: 12 },
                     { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
                     { name: 'payslip', label: 'PAY SLIP', type: 'file' }
                   ]
@@ -1868,9 +1886,9 @@ export default function ApplicantProfile() {
                       <Typography variant="h5" color="primary" sx={{ mb: 2.5, fontWeight: 700, borderBottom: '1.5px solid', borderColor: 'primary.light', pb: 1 }}>
                         {g.group}
                       </Typography>
-                      <Grid container spacing={2.5}>
+                      <GridContainer>
                         {g.fields.map(f => (
-                          <Grid item xs={12} key={f.name}>
+                          <R key={f.name} lg={f.lg}>
                             {f.type === 'file' ? (
                               <Box>
                                 <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
@@ -1903,9 +1921,9 @@ export default function ApplicantProfile() {
                                 onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
                               />
                             )}
-                          </Grid>
+                          </R>
                         ))}
-                      </Grid>
+                      </GridContainer>
                     </Card>
                   ))}
                 </Stack>
@@ -1919,10 +1937,10 @@ export default function ApplicantProfile() {
                   <Table size="small">
                     <TableHead sx={{ bgcolor: 'primary.light' }}>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>Sl.No</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Activity Details</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>File Name</TableCell>
-                        <TableCell align="center">
+                        <TableCell sx={{ fontWeight: 600, width: '5%' }}>Sl.No</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '60%' }}>Activity Details</TableCell>
+                        <TableCell sx={{ fontWeight: 600, width: '30%' }}>File Name</TableCell>
+                        <TableCell align="center" sx={{ width: '5%' }}>
                           <IconButton color="primary" size="small" onClick={handleAddSkillRow}>
                             <IconPlus size={18} />
                           </IconButton>
@@ -1969,8 +1987,8 @@ export default function ApplicantProfile() {
               </Box>
             )}
           </Box>
-        </Grid>
-      </Grid>
+        </Box>
+      </Stack>
     </MainCard>
   );
 }
