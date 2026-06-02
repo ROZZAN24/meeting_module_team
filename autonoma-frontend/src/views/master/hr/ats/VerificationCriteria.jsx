@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Checkbox } from '@mui/material';
-import { IconShieldCheck, IconRefresh, IconPlus } from '@tabler/icons-react';
+import { Typography, Button, Stack, MenuItem, Chip } from '@mui/material';
+import { IconShieldCheck } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
 import MainCard from 'ui-component/cards/MainCard';
 import ConfirmDeleteDialog from 'ui-component/ConfirmDeleteDialog';
-import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getCommonDateFilters, matchCommonDateFilters } from 'ui-component/bos';
+import { BOSDataTable, BOSFormDialog, BOSTextField, errorStyle, BOSStatusField, BOSTableToolbar, getStatusChipSx } from 'ui-component/bos';
 import useBOSValidation from 'hooks/useBOSValidation';
-import { setFilterConfig } from 'store/slices/search';
+import { setFilterConfig, setFilters } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 // ==============================|| VERIFICATION CRITERIA MASTER ||============================== //
@@ -41,42 +41,11 @@ export default function VerificationCriteria() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_STATE);
-  const [selectedRows, setSelectedRows] = useState([]);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
 
   const perms = usePagePermissions(PAGE_CODES.ATS_VERIFICATION);
 
-  const handleSelectRow = useCallback((e, id) => {
-    e.stopPropagation();
-    if (e.target.checked) {
-      setSelectedRows(prev => [...prev, id]);
-    } else {
-      setSelectedRows(prev => prev.filter(item => item !== id));
-    }
-  }, []);
-
-  const handleSelectAll = useCallback((e) => {
-    if (e.target.checked) {
-      setSelectedRows(rows.map(r => r.id));
-    } else {
-      setSelectedRows([]);
-    }
-  }, [rows]);
-
   const columns = useMemo(() => [
-    {
-      id: 'checkbox',
-      label: 'Checkbox',
-      minWidth: 60,
-      render: (row) => (
-        <Checkbox
-          checked={selectedRows.includes(row.id)}
-          onChange={(e) => handleSelectRow(e, row.id)}
-          onClick={(e) => e.stopPropagation()}
-          size="small"
-        />
-      )
-    },
     { id: 'index', label: 'Sl.No', minWidth: 60 },
     { id: 'type', label: 'Type', bold: true, color: 'primary.main', minWidth: 150 },
     { id: 'description', label: 'Description', bold: true, minWidth: 300 },
@@ -84,17 +53,36 @@ export default function VerificationCriteria() {
       id: 'status',
       label: 'Status',
       minWidth: 100,
-      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
+      render: (row) => (
+        <Chip
+          label={row.status === 'ACTIVE' ? 'Active' : 'Inactive'}
+          size="small"
+          sx={getStatusChipSx(row.status)}
+        />
+      )
     },
     { id: 'createdUser', label: 'CREATED USER', minWidth: 120 },
-    { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
+    {
+      id: 'createdAt',
+      label: 'CREATED DATE',
+      minWidth: 180,
+      render: (row) => row.createdAt
+    },
     { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
-    { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 }
-  ], [selectedRows, handleSelectRow]);
+    {
+      id: 'updatedAt',
+      label: 'UPDATED DATE',
+      minWidth: 180,
+      render: (row) => row.updatedAt
+    }
+  ], []);
 
   // Dispatch starred filter configuration matching Status
   useEffect(() => {
-    const config = [{
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const config = [
+      {
         id: 'status',
         label: 'Status',
         type: 'select',
@@ -103,11 +91,21 @@ export default function VerificationCriteria() {
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'INACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'ACTIVE',
         isStarred: true
       },
-      ...getCommonDateFilters('createdAt', 'updatedAt')];
+      {
+        id: 'createdAt',
+        label: 'CREATED DATE',
+        type: 'dateRange',
+        isStarred: true
+      }
+    ];
     dispatch(setFilterConfig(config));
+    dispatch(setFilters({
+      status: 'ACTIVE',
+      createdAtStart: today
+    }));
     return () => {
       dispatch(setFilterConfig(null));
     };
@@ -211,19 +209,29 @@ export default function VerificationCriteria() {
       setDeleteDialogOpen(false);
       fetchRows();
     } catch (error) {
+      console.error('Failed to delete verification criteria:', error);
       dispatch(openSnackbar({ open: true, message: 'Failed to delete', variant: 'alert', severity: 'error' }));
     }
   };
 
   const resolvedRows = useMemo(() => {
-    return rows.map((r, i) => ({
-      ...r,
-      index: i + 1,
-      createdUser: r.createdUser || r.createdBy || '-',
-      updatedUser: r.updatedUser || r.updatedBy || '-',
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
-    }));
+    return rows.map((r, i) => {
+      const hasBeenUpdated = (() => {
+        if (!r.updatedAt || !r.createdAt) return false;
+        const createdTime = new Date(r.createdAt).getTime();
+        const updatedTime = new Date(r.updatedAt).getTime();
+        return Math.abs(updatedTime - createdTime) > 1000;
+      })();
+
+      return {
+        ...r,
+        index: i + 1,
+        createdUser: r.createdUser || r.createdBy || '-',
+        updatedUser: hasBeenUpdated ? (r.updatedUser || r.updatedBy || '-') : '-',
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
+        updatedAt: hasBeenUpdated ? new Date(r.updatedAt).toLocaleString() : '-'
+      };
+    });
   }, [rows]);
 
   return (

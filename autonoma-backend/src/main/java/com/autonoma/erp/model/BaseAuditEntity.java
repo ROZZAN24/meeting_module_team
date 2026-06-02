@@ -71,11 +71,20 @@ public abstract class BaseAuditEntity {
     @Transient
     private boolean skipAuditUpdate = false;
 
+    @Transient
+    private transient boolean isNew = true;
+
     public boolean isSkipAuditUpdate() { return skipAuditUpdate; }
     public void setSkipAuditUpdate(boolean skipAuditUpdate) { this.skipAuditUpdate = skipAuditUpdate; }
 
+    @PostLoad
+    protected void onPostLoad() {
+        this.isNew = false;
+    }
+
     @PrePersist
     protected void onCreate() {
+        this.isNew = true;
         if (this.createdDate == null) {
             this.createdDate = new Date();
         }
@@ -86,10 +95,18 @@ public abstract class BaseAuditEntity {
 
     @PreUpdate
     protected void onUpdate() {
+        if (this.isNew) {
+            return;
+        }
         if (this.skipAuditUpdate) {
             return;
         }
         this.updatedDate = new Date();
         this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
+    }
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public boolean isNewEntity() {
+        return this.isNew;
     }
 }

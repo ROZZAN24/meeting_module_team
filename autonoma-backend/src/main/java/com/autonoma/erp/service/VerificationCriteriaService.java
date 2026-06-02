@@ -35,6 +35,16 @@ public class VerificationCriteriaService {
             throw new RuntimeException("Status is mandatory.");
         }
 
+        String trimmedDesc = entity.getDescription().trim();
+        entity.setDescription(trimmedDesc);
+
+        Optional<VerificationCriteria> existingDesc = repository.findByDescriptionIgnoreCase(trimmedDesc);
+        if (existingDesc.isPresent()) {
+            if (entity.getId() == null || !existingDesc.get().getId().equals(entity.getId())) {
+                throw new RuntimeException("Verification Criteria with this description already exists.");
+            }
+        }
+
         if (entity.getId() == null) {
             entity.setCreatedAt(new Date());
             entity.setCreatedBy(currentUser);

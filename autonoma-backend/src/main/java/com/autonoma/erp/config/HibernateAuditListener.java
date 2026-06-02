@@ -45,6 +45,13 @@ public class HibernateAuditListener implements PreInsertEventListener, PreUpdate
 
     @Override
     public boolean onPreUpdate(PreUpdateEvent event) {
+        if (event.getEntity() instanceof com.autonoma.erp.model.BaseAuditEntity) {
+            com.autonoma.erp.model.BaseAuditEntity auditEntity = (com.autonoma.erp.model.BaseAuditEntity) event.getEntity();
+            if (auditEntity.isNewEntity()) {
+                return false;
+            }
+        }
+
         String currentUser = SecurityUtils.getCurrentUserEmployeeName();
         if (currentUser == null) {
             currentUser = "Admin"; // Fallback
