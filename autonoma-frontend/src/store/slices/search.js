@@ -19,9 +19,12 @@ const search = createSlice({
       state.query = action.payload;
     },
     setFilters(state, action) {
+      console.log('REDUX REDUCER - setFilters called with:', JSON.stringify(action.payload));
       state.filters = { ...state.filters, ...action.payload };
+      console.log('REDUX REDUCER - new state.filters is:', JSON.stringify(state.filters));
     },
     setFilterConfig(state, action) {
+      console.log('REDUX REDUCER - setFilterConfig called with:', JSON.stringify(action.payload));
       state.config = action.payload;
       // Reset filter values and query when a new page sets its config,
       // so each page starts with a clean filter state

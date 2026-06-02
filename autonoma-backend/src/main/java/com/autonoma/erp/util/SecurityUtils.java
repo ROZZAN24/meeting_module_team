@@ -113,6 +113,11 @@ public class SecurityUtils {
     }
 
     public static String getCurrentUserDisplayName() {
-        return getCurrentUserEmployeeName();
+        String name = getCurrentUserEmployeeName();
+        // Normalize "Administrator" / "Admin istrator" to "Admin" for display consistency
+        if (name != null && ("Administrator".equalsIgnoreCase(name) || "Admin istrator".equalsIgnoreCase(name))) {
+            return "Admin";
+        }
+        return name;
     }
 }

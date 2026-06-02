@@ -25,8 +25,8 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 const columns = [
   '#', 'Seq No', 'Checking Point', 'Category', 'Frequency', 'Department',
   'Effective From', 'Days', 'Expire Date', 'Stock Link',
-  'CREATED USER', 'CREATED DATE', 'UPDATED USER', 'UPDATED DATE',
-  'Verify Status', 'Verified By', 'Verified Date'
+  'Created By', 'Created Date', 'Updated By', 'Update Date & Time',
+  'Verify Status', 'Verified By', 'Verify Date & Time'
 ];
 
 const tableCols = [
@@ -39,13 +39,13 @@ const tableCols = [
   { id: 'days', label: 'Days' },
   { id: 'expireDate', label: 'Expire Date' },
   { id: 'stockLink', label: 'Stock Link' },
-  { id: 'createdUser', label: 'CREATED USER' },
-  { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedUser', label: 'UPDATED USER' },
-  { id: 'updatedDate', label: 'UPDATED DATE' },
+  { id: 'createdUser', label: 'Created By' },
+  { id: 'createdDate', label: 'Created Date' },
+  { id: 'updatedUser', label: 'Updated By' },
+  { id: 'updatedDate', label: 'Update Date & Time' },
   { id: 'verifyStatus', label: 'Verify Status' },
   { id: 'verifiedBy', label: 'Verified By' },
-  { id: 'verifiedDate', label: 'Verified Date' }
+  { id: 'verifiedDate', label: 'Verify Date & Time' }
 ];
 
 const formatDate = (dateVal) => {
@@ -86,13 +86,29 @@ const exportColumns = [
   { header: 'Days', key: 'reminderDays' },
   { header: 'Expire Date', key: (r) => formatDate(r.expiryDate) },
   { header: 'Stock Link', key: 'stockLink' },
-  { header: 'CREATED USER', key: (r) => r.createdUser || r.createdBy },
-  { header: 'CREATED DATE', key: (r) => formatDate(r.createdAt || r.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.updatedDate) },
+  { header: 'Created By', key: (r) => r.createdUser || r.createdBy },
+  { header: 'Created Date', key: (r) => formatDate(r.createdAt || r.createdDate) },
+  { header: 'Updated By', key: (r) => {
+    if (!r.updatedAt || !r.createdAt) return '';
+    const msDiff = Math.abs(new Date(r.updatedAt) - new Date(r.createdAt));
+    if (msDiff <= 60000) return '';
+    let upUser = r.updatedUser || r.updatedBy || '';
+    if (upUser === 'Admin istrator' || upUser === 'Administrator') upUser = 'Admin';
+    return upUser;
+  }},
+  { header: 'Update Date & Time', key: (r) => {
+    if (!r.updatedAt || !r.createdAt) return '';
+    const msDiff = Math.abs(new Date(r.updatedAt) - new Date(r.createdAt));
+    if (msDiff <= 60000) return '';
+    return formatDateTime(r.updatedAt || r.updatedDate);
+  }},
   { header: 'Verify Status', key: 'status' },
-  { header: 'Verified By', key: 'verifiedBy' },
-  { header: 'Verified Date', key: (r) => formatDate(r.verifiedDate) }
+  { header: 'Verified By', key: (r) => {
+    let vBy = r.verifiedBy || '';
+    if (vBy === 'Admin istrator' || vBy === 'Administrator') return 'Admin';
+    return vBy;
+  }},
+  { header: 'Verify Date & Time', key: (r) => formatDateTime(r.verifiedDate) }
 ];
 
 const getFilterConfig = (departments) => [{
@@ -111,6 +127,15 @@ const getFilterConfig = (departments) => [{
     ]
   },
   { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: departments.map(d => ({ value: d, label: d })) },
+  { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
+  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
+  {
+    id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'No', options: [
+      { value: 'All', label: 'All' },
+      { value: 'Yes', label: 'Yes' },
+      { value: 'No', label: 'No' }
+    ]
+  },
   {
     id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'Global Search' },
@@ -147,9 +172,11 @@ const formatDateTime = (dateVal) => {
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return '-';
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-    const hours = String(d.getHours()).padStart(2, '0');
+    let hours = d.getHours();
     const mins  = String(d.getMinutes()).padStart(2, '0');
-    return `${date} ${hours}:${mins}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${date} ${String(hours).padStart(2, '0')}:${mins} ${ampm}`;
   } catch {
     return '-';
   }
@@ -234,6 +261,7 @@ export default function CheckListVerify() {
       const category = globalFilters.category || 'All';
       const depts = globalFilters.departments || [];
       const searchBy = globalFilters.searchBy || 'All';
+      const considerDate = globalFilters.createdDateConsider || globalFilters.considerDate || 'No';
 
       const params = {
         page,
@@ -242,8 +270,30 @@ export default function CheckListVerify() {
         category: category !== 'All' ? category : undefined,
         department: depts.length > 0 ? depts[0] : undefined,
         searchValue: searchQuery || undefined,
-        searchBy: searchBy !== 'All' ? searchBy : undefined
+        searchBy: searchBy !== 'All' ? searchBy : undefined,
+        fromDate: globalFilters.createdDateStart || globalFilters.fromDate || undefined,
+        toDate: globalFilters.createdDateEnd || globalFilters.toDate || undefined,
+        considerDate: considerDate !== 'All' ? considerDate : undefined,
+        considerDateValue: (String(considerDate).trim().toUpperCase() === 'YES' && (globalFilters.createdDateConsiderValue || globalFilters.considerDateValue)) ? (globalFilters.createdDateConsiderValue || globalFilters.considerDateValue) : undefined
       };
+
+      // Validation: If Consider Date is Yes and outside From/To range, return no records
+      const checkConsiderVal = globalFilters.createdDateConsiderValue || globalFilters.considerDateValue;
+      if (String(considerDate).trim().toUpperCase() === 'YES' && checkConsiderVal) {
+        const considerVal = new Date(checkConsiderVal);
+        const fromVal = params.fromDate ? new Date(params.fromDate) : null;
+        const toVal = params.toDate ? new Date(params.toDate) : null;
+        let isInvalid = false;
+        if (fromVal && considerVal < fromVal) isInvalid = true;
+        if (toVal && considerVal > toVal) isInvalid = true;
+        if (isInvalid) {
+          setRows([]);
+          setTotalElements(0);
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await axios.get('/api/qms/checklist', { params });
       setRows(response.data.content);
       setTotalElements(response.data.totalElements);
@@ -402,11 +452,23 @@ export default function CheckListVerify() {
                   <TableCell>{row.stockLink}</TableCell>
                   <TableCell>{row.createdUser || row.createdBy || '-'}</TableCell>
                   <TableCell>{formatDate(row.createdAt || row.createdDate)}</TableCell>
-                  <TableCell>{row.updatedUser || row.updatedBy || '-'}</TableCell>
-                  <TableCell>{formatDateTime(row.updatedAt || row.updatedDate)}</TableCell>
+                  <TableCell>{(() => {
+                    if (!row.updatedAt || !row.createdAt) return '-';
+                    const msDiff = Math.abs(new Date(row.updatedAt) - new Date(row.createdAt));
+                    if (msDiff <= 60000) return '-';
+                    let upUser = row.updatedUser || row.updatedBy || '-';
+                    if (upUser === 'Admin istrator' || upUser === 'Administrator') upUser = 'Admin';
+                    return upUser;
+                  })()}</TableCell>
+                  <TableCell>{(() => {
+                    if (!row.updatedAt || !row.createdAt) return '-';
+                    const msDiff = Math.abs(new Date(row.updatedAt) - new Date(row.createdAt));
+                    if (msDiff <= 60000) return '-';
+                    return formatDateTime(row.updatedAt || row.updatedDate);
+                  })()}</TableCell>
                   <TableCell><StatusChip status={row.verifyStatus} /></TableCell>
-                  <TableCell>{row.verifiedBy}</TableCell>
-                  <TableCell>{formatDate(row.verifiedDate)}</TableCell>
+                  <TableCell>{row.verifiedBy === 'Admin istrator' || row.verifiedBy === 'Administrator' ? 'Admin' : (row.verifiedBy || '-')}</TableCell>
+                  <TableCell>{formatDateTime(row.verifiedDate)}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

@@ -1700,7 +1700,8 @@ export default function TicketManagement({ viewType }) {
     if (!selectedTicket) return;
 
     // Comments mandatory if status is changed
-    if (detailStatus !== selectedTicket.ticketStatus && (!detailResolution || !detailResolution.trim())) {
+    const isDevCompleting = currentViewType === 'raised-for-me' && detailStatus === 'To Be Tested';
+    if (detailStatus !== selectedTicket.ticketStatus && (!detailResolution || !detailResolution.trim()) && !isDevCompleting) {
       showSnackbar('Comments are mandatory for every status change', 'error');
       return;
     }

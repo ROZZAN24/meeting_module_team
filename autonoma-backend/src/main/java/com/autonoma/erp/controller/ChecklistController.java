@@ -45,12 +45,17 @@ public class ChecklistController {
             @RequestParam(required = false) String stockLink,
             @RequestParam(required = false) String photoRequired,
             @RequestParam(required = false) String carryForward,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date fromDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date toDate,
+            @RequestParam(required = false) String considerDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date considerDateValue,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
         return ResponseEntity.ok(checklistService.getAllChecklists(status, category, department, searchBy, searchValue, dualCheck, verifyStatus, 
-                seqNo, frequency, checkingPoint, description, stockLink, photoRequired, carryForward, pageable));
+                seqNo, frequency, checkingPoint, description, stockLink, photoRequired, carryForward,
+                fromDate, toDate, considerDate, considerDateValue, pageable));
     }
 
     @PostMapping
@@ -92,11 +97,13 @@ public class ChecklistController {
             @RequestParam(defaultValue = "false") boolean excludeCompleted,
             @RequestParam(defaultValue = "false") boolean excludePending,
             @RequestParam(required = false) String dualCheck,
+            @RequestParam(required = false) String considerDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date considerDateValue,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, taskType, currentUser, excludeCompleted, excludePending, dualCheck, pageable));
+        return ResponseEntity.ok(checklistService.getAssignments(status, assignedTo, fromDate, toDate, category, searchBy, searchValue, masterVerifyStatus, taskType, currentUser, excludeCompleted, excludePending, dualCheck, considerDate, considerDateValue, pageable));
     }
 
     @PostMapping("/assign")

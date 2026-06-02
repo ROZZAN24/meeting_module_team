@@ -643,19 +643,55 @@ export default function SearchSection() {
                                       }}
                                     />
                                   ) : field.type === 'select' ? (
-                                    <Select
-                                      fullWidth size="small"
-                                      variant="outlined"
-                                      value={filters[field.id] || field.defaultValue || 'All'}
-                                      onChange={(e) => handleFilterChange(field.id, e.target.value)}
-                                      sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
-                                    >
-                                      {field.options.map((opt) => (
-                                        <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>
-                                          {opt.label}
-                                        </MenuItem>
-                                      ))}
-                                    </Select>
+                                    <>
+                                      <Select
+                                        fullWidth size="small"
+                                        variant="outlined"
+                                        value={filters[field.id] || field.defaultValue || 'All'}
+                                        onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                        sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
+                                      >
+                                        {field.options.map((opt) => (
+                                          <MenuItem key={opt.value} value={opt.value} sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>
+                                            {opt.label}
+                                          </MenuItem>
+                                        ))}
+                                      </Select>
+                                      {field.id === 'considerDate' && (() => {
+                                        const currentVal = filters[field.id] !== undefined ? filters[field.id] : field.defaultValue;
+                                        const str = currentVal !== undefined && currentVal !== null ? String(currentVal).trim().toUpperCase() : '';
+                                        return str === 'YES' || str === 'YES?' || str === 'Y' || str === 'TRUE';
+                                      })() && (
+                                        <Stack spacing={1.2} sx={{ mt: 1.5 }}>
+                                          <TextField
+                                            type="date"
+                                            label="Consider Date"
+                                            fullWidth size="small"
+                                            variant="outlined"
+                                            value={filters['considerDateValue'] || ''}
+                                            onChange={(e) => handleFilterChange('considerDateValue', e.target.value)}
+                                            InputLabelProps={{ shrink: true }}
+                                            sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                          />
+                                          {filters['considerDateValue'] && (() => {
+                                            const considerVal = new Date(filters['considerDateValue']);
+                                            const fromVal = filters['fromDate'] ? new Date(filters['fromDate']) : null;
+                                            const toVal = filters['toDate'] ? new Date(filters['toDate']) : null;
+                                            let isInvalid = false;
+                                            if (fromVal && !isNaN(fromVal.getTime()) && considerVal < fromVal) isInvalid = true;
+                                            if (toVal && !isNaN(toVal.getTime()) && considerVal > toVal) isInvalid = true;
+                                            if (isInvalid) {
+                                              return (
+                                                <Typography variant="caption" color="error" sx={{ fontWeight: 600, pl: 0.5 }}>
+                                                  Consider Date must fall within Created Date From and Created Date To range
+                                                </Typography>
+                                              );
+                                            }
+                                            return null;
+                                          })()}
+                                        </Stack>
+                                      )}
+                                    </>
                                   ) : field.type === 'dateRange' ? (
                                     <Stack spacing={1.2}>
                                       <Stack direction="row" spacing={1} alignItems="center">
@@ -695,8 +731,42 @@ export default function SearchSection() {
                                           <MenuItem value="Yes" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>Yes</MenuItem>
                                           <MenuItem value="No" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>No</MenuItem>
                                         </Select>
-                                      </Stack>
-                                    </Stack>
+                                       </Stack>
+                                       {(() => {
+                                         const currentVal = filters[`${field.id}Consider`] !== undefined ? filters[`${field.id}Consider`] : 'Yes';
+                                         const str = currentVal !== undefined && currentVal !== null ? String(currentVal).trim().toUpperCase() : '';
+                                         return str === 'YES' || str === 'YES?' || str === 'Y' || str === 'TRUE';
+                                       })() && (
+                                         <Stack spacing={1.2} sx={{ mt: 1.5 }}>
+                                           <TextField
+                                             type="date"
+                                             label="Consider Date"
+                                             fullWidth size="small"
+                                             variant="outlined"
+                                             value={filters[`${field.id}ConsiderValue`] || ''}
+                                             onChange={(e) => handleFilterChange(`${field.id}ConsiderValue`, e.target.value)}
+                                             InputLabelProps={{ shrink: true }}
+                                             sx={{ '& .MuiOutlinedInput-root': { borderRadius: '10px', transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } } }}
+                                           />
+                                           {filters[`${field.id}ConsiderValue`] && (() => {
+                                             const considerVal = new Date(filters[`${field.id}ConsiderValue`]);
+                                             const fromVal = filters[`${field.id}Start`] ? new Date(filters[`${field.id}Start`]) : null;
+                                             const toVal = filters[`${field.id}End`] ? new Date(filters[`${field.id}End`]) : null;
+                                             let isInvalid = false;
+                                             if (fromVal && !isNaN(fromVal.getTime()) && considerVal < fromVal) isInvalid = true;
+                                             if (toVal && !isNaN(toVal.getTime()) && considerVal > toVal) isInvalid = true;
+                                             if (isInvalid) {
+                                               return (
+                                                 <Typography variant="caption" color="error" sx={{ fontWeight: 600, pl: 0.5 }}>
+                                                   Consider Date must fall within From and To date range
+                                                 </Typography>
+                                               );
+                                             }
+                                             return null;
+                                           })()}
+                                         </Stack>
+                                       )}
+                                     </Stack>
                                   ) : field.type === 'date' ? (
                                     <TextField
                                       type="date"

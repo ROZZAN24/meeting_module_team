@@ -89,9 +89,70 @@ public class ChecklistService {
     public Page<MasterChecklist> getAllChecklists(String status, String category, String department, String searchBy,
             String searchValue, String dualCheck, String verifyStatus,
             String seqNo, String frequency, String checkingPoint, String description,
-            String stockLink, String photoRequired, String carryForward, Pageable pageable) {
+            String stockLink, String photoRequired, String carryForward,
+            Date fromDate, Date toDate, String considerDate, Date considerDateValue,
+            Pageable pageable) {
         return masterRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+
+            // Date Range and Consider Date Filtering predicates
+            if ("Yes".equalsIgnoreCase(considerDate) && considerDateValue != null) {
+                java.util.Calendar calStart = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                calStart.setTime(considerDateValue);
+                calStart.set(java.util.Calendar.HOUR_OF_DAY, 0);
+                calStart.set(java.util.Calendar.MINUTE, 0);
+                calStart.set(java.util.Calendar.SECOND, 0);
+                calStart.set(java.util.Calendar.MILLISECOND, 0);
+                Date dayStart = calStart.getTime();
+
+                java.util.Calendar calEnd = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                calEnd.setTime(considerDateValue);
+                calEnd.set(java.util.Calendar.HOUR_OF_DAY, 23);
+                calEnd.set(java.util.Calendar.MINUTE, 59);
+                calEnd.set(java.util.Calendar.SECOND, 59);
+                calEnd.set(java.util.Calendar.MILLISECOND, 999);
+                Date dayEnd = calEnd.getTime();
+
+                Predicate createdOnDate = cb.between(root.get("createdDate"), dayStart, dayEnd);
+                Predicate updatedOnDate = cb.between(root.get("updatedDate"), dayStart, dayEnd);
+                predicates.add(cb.or(createdOnDate, updatedOnDate));
+            } else {
+                if (fromDate != null || toDate != null) {
+                    Date rangeStart = fromDate;
+                    if (rangeStart == null) {
+                        java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                        cal.set(1970, 0, 1, 0, 0, 0);
+                        rangeStart = cal.getTime();
+                    } else {
+                        java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                        cal.setTime(rangeStart);
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, 0);
+                        cal.set(java.util.Calendar.MINUTE, 0);
+                        cal.set(java.util.Calendar.SECOND, 0);
+                        cal.set(java.util.Calendar.MILLISECOND, 0);
+                        rangeStart = cal.getTime();
+                    }
+
+                    Date rangeEnd = toDate;
+                    if (rangeEnd == null) {
+                        java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                        cal.set(2099, 11, 31, 23, 59, 59);
+                        rangeEnd = cal.getTime();
+                    } else {
+                        java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                        cal.setTime(rangeEnd);
+                        cal.set(java.util.Calendar.HOUR_OF_DAY, 23);
+                        cal.set(java.util.Calendar.MINUTE, 59);
+                        cal.set(java.util.Calendar.SECOND, 59);
+                        cal.set(java.util.Calendar.MILLISECOND, 999);
+                        rangeEnd = cal.getTime();
+                    }
+
+                    Predicate createdInRange = cb.between(root.get("createdDate"), rangeStart, rangeEnd);
+                    Predicate updatedInRange = cb.between(root.get("updatedDate"), rangeStart, rangeEnd);
+                    predicates.add(cb.or(createdInRange, updatedInRange));
+                }
+            }
 
             if (dualCheck != null && !dualCheck.isEmpty() && !dualCheck.equals("All")) {
                 predicates.add(cb.equal(root.get("dualCheck"), dualCheck));
@@ -198,16 +259,13 @@ public class ChecklistService {
             }
         }
 
-        // SOP Rule 26: Duplicate Validation (Same Category + Same Checking Point + Same Department)
-        if (!isAmendment && departments != null && !departments.isEmpty()) {
+        // Duplicate Validation (Checking Point must be globally unique across all active/pending checklists)
+        if (!isAmendment && checklist.getCheckingPoint() != null && !checklist.getCheckingPoint().trim().isEmpty()) {
             List<MasterChecklist> duplicates = masterRepo.findDuplicates(
-                    checklist.getCategory(),
-                    checklist.getCheckingPoint(),
-                    departments,
+                    checklist.getCheckingPoint().trim(),
                     checklist.getId());
             if (!duplicates.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "A checklist with the same Category and Checking Point already exists for one or more selected departments.");
+                throw new IllegalArgumentException("Checking point should not be duplicated");
             }
         }
 
@@ -370,7 +428,8 @@ public class ChecklistService {
 
     public Page<ChecklistAssignment> getAssignments(String status, String assignedTo, Date fromDate, Date toDate,
             String category, String searchBy, String searchValue, String masterVerifyStatus, String taskType,
-            String currentUser, boolean excludeCompleted, boolean excludePending, String dualCheck, Pageable pageable) {
+            String currentUser, boolean excludeCompleted, boolean excludePending, String dualCheck,
+            String considerDate, Date considerDateValue, Pageable pageable) {
 
         return assignRepo.findAll((root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -448,7 +507,7 @@ public class ChecklistService {
             }
 
             if (fromDate != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("checklistDate"), fromDate));
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdDate"), fromDate));
             }
 
             Date effectiveToDate = toDate;
@@ -459,8 +518,20 @@ public class ChecklistService {
                 cal.set(java.util.Calendar.SECOND, 59);
                 cal.set(java.util.Calendar.MILLISECOND, 999);
                 effectiveToDate = cal.getTime();
+            } else {
+                java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("Asia/Kolkata"));
+                cal.setTime(effectiveToDate);
+                cal.set(java.util.Calendar.HOUR_OF_DAY, 23);
+                cal.set(java.util.Calendar.MINUTE, 59);
+                cal.set(java.util.Calendar.SECOND, 59);
+                cal.set(java.util.Calendar.MILLISECOND, 999);
+                effectiveToDate = cal.getTime();
             }
-            predicates.add(cb.lessThanOrEqualTo(root.get("checklistDate"), effectiveToDate));
+            predicates.add(cb.lessThanOrEqualTo(root.get("createdDate"), effectiveToDate));
+
+            if ("Yes".equalsIgnoreCase(considerDate) && considerDateValue != null) {
+                predicates.add(cb.equal(root.get("checklistDate"), considerDateValue));
+            }
 
             if (category != null && !category.equals("All")) {
                 if (masterJoin == null) {
@@ -682,6 +753,9 @@ public class ChecklistService {
     @Transactional
     public ChecklistVerification verifyTask(Long assignmentId, String verifiedBy, String statusName, String remarks,
             List<String> actualFiles) {
+        if (verifiedBy != null && ("Administrator".equalsIgnoreCase(verifiedBy) || "Admin istrator".equalsIgnoreCase(verifiedBy))) {
+            verifiedBy = "Admin";
+        }
         ChecklistAssignment assignment = assignRepo.findById(assignmentId).orElseThrow();
         MasterChecklist master = assignment.getChecklist();
 
@@ -942,6 +1016,9 @@ public class ChecklistService {
 
     @Transactional
     public MasterChecklist verifyMasterChecklist(Long checklistId, String verifiedBy, String status, String remarks) {
+        if (verifiedBy != null && ("Administrator".equalsIgnoreCase(verifiedBy) || "Admin istrator".equalsIgnoreCase(verifiedBy))) {
+            verifiedBy = "Admin";
+        }
         MasterChecklist checklist = masterRepo.findById(checklistId).orElseThrow();
         checklist.setVerifyStatus(status);
         checklist.setVerifiedBy(verifiedBy);

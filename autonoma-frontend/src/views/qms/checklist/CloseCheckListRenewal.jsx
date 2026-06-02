@@ -46,10 +46,10 @@ const columns = [
   'Next Renewal Date',
   'Assign To',
   'Verification Status',
-  'CREATED USER',
-  'CREATED DATE',
-  'UPDATED USER',
-  'UPDATED DATE'
+  'Created By',
+  'Created Date',
+  'Updated By',
+  'Update Date & Time'
 ];
 
 const STATUS_OPTIONS = [
@@ -69,8 +69,10 @@ const DEFAULT_FILTERS = {
   fromDate: '',
   toDate: '',
   considerDate: 'No',
+  considerDateValue: '',
   statuses: [],
   searchBy: 'All',
+  departments: [],
 
   // Add-on filter support
   seqNo: '',
@@ -102,10 +104,10 @@ const tableCols = [
   { id: 'verificationRequired', label: 'Verification Required' },
   { id: 'photoRequired', label: 'Photo Required' },
   { id: 'carryForward', label: 'Carry Forward' },
-  { id: 'createdUser', label: 'CREATED USER' },
-  { id: 'createdDate', label: 'CREATED DATE' },
-  { id: 'updatedUser', label: 'UPDATED USER' },
-  { id: 'updatedDate', label: 'UPDATED DATE' }
+  { id: 'createdUser', label: 'Created By' },
+  { id: 'createdDate', label: 'Created Date' },
+  { id: 'updatedUser', label: 'Updated By' },
+  { id: 'updatedDate', label: 'Update Date & Time' }
 ];
 
 const formatDate = (dateVal) => {
@@ -148,13 +150,29 @@ const exportColumns = [
   { header: 'Next Renewal Date', key: (r) => r.checklist?.nextDueDate || formatDate(r.checklist?.expiryDate) },
   { header: 'Assign To', key: (r) => r.assignedTo },
   { header: 'Verification Status', key: (r) => typeof r.status === 'object' ? r.status?.name : r.status },
-  { header: 'CREATED USER', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
-  { header: 'CREATED DATE', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
-  { header: 'UPDATED USER', key: (r) => r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy },
-  { header: 'UPDATED DATE', key: (r) => formatDateTime(r.updatedAt || r.checklist?.updatedAt) }
+  { header: 'Created By', key: (r) => r.checklist?.createdUser || r.checklist?.createdBy },
+  { header: 'Created Date', key: (r) => formatDate(r.checklist?.createdAt || r.checklist?.createdDate) },
+  { header: 'Updated By', key: (r) => {
+    const upAt = r.updatedAt || r.checklist?.updatedAt;
+    const crAt = r.createdAt || r.checklist?.createdAt;
+    if (!upAt || !crAt) return '';
+    const msDiff = Math.abs(new Date(upAt) - new Date(crAt));
+    if (msDiff <= 60000) return '';
+    let upUser = r.updatedUser || r.updatedBy || r.checklist?.updatedUser || r.checklist?.updatedBy || '';
+    if (upUser === 'Admin istrator' || upUser === 'Administrator') upUser = 'Admin';
+    return upUser;
+  }},
+  { header: 'Update Date & Time', key: (r) => {
+    const upAt = r.updatedAt || r.checklist?.updatedAt;
+    const crAt = r.createdAt || r.checklist?.createdAt;
+    if (!upAt || !crAt) return '';
+    const msDiff = Math.abs(new Date(upAt) - new Date(crAt));
+    if (msDiff <= 60000) return '';
+    return formatDateTime(upAt);
+  }}
 ];
 
-const filterConfig = [{
+const getFilterConfig = (departments) => [{
     id: 'taskType', label: 'Task Type', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'All' },
       { value: 'Mine', label: 'Mine' },
@@ -162,8 +180,8 @@ const filterConfig = [{
       { value: 'Company', label: 'Company' }
     ]
   },
-  { id: 'fromDate', label: 'From Date', type: 'date', isStarred: true },
-  { id: 'toDate', label: 'To Date', type: 'date', isStarred: true },
+  { id: 'fromDate', label: 'Created Date From', type: 'date', isStarred: true },
+  { id: 'toDate', label: 'Created Date To', type: 'date', isStarred: true },
   {
     id: 'considerDate', label: 'Consider Date?', type: 'select', isStarred: true, defaultValue: 'No', options: [
       { value: 'All', label: 'All' },
@@ -172,6 +190,7 @@ const filterConfig = [{
     ]
   },
   { id: 'statuses', label: 'Status', type: 'autocomplete', multiple: true, isStarred: true, options: STATUS_OPTIONS.map(s => ({ value: s, label: s })) },
+  { id: 'departments', label: 'Department', type: 'autocomplete', multiple: true, isStarred: true, options: departments.map(d => ({ value: d, label: d })) },
   {
     id: 'searchBy', label: 'Search by', type: 'select', isStarred: true, defaultValue: 'All', options: [
       { value: 'All', label: 'Global Search' },
@@ -229,9 +248,11 @@ const formatDateTime = (dateVal) => {
     const d = new Date(dateVal);
     if (isNaN(d.getTime())) return '-';
     const date = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-    const hours = String(d.getHours()).padStart(2, '0');
+    let hours = d.getHours();
     const mins  = String(d.getMinutes()).padStart(2, '0');
-    return `${date} ${hours}:${mins}`;
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    return `${date} ${String(hours).padStart(2, '0')}:${mins} ${ampm}`;
   } catch {
     return '-';
   }
@@ -302,15 +323,30 @@ export default function CloseCheckListRenewal() {
   const [openSections, setOpenSections] = useState({ taskType: true, date: true, status: true, searchBy: false });
   const toggleSection = (key) => setOpenSections((p) => ({ ...p, [key]: !p[key] }));
 
+  const [departmentsList, setDepartmentsList] = useState([]);
+
+  useEffect(() => {
+    axios.get('/api/master/hr/departments')
+      .then(res => {
+        const list = (res.data || [])
+          .filter(d => d.status?.toLowerCase() === 'active' || d.status === null)
+          .map(d => d.departmentName);
+        setDepartmentsList(list);
+      })
+      .catch(err => {
+        console.error("Failed to load departments from master", err);
+      });
+  }, []);
+
   // Configure global search bar filters on mount
   useEffect(() => {
-    dispatch(setFilterConfig(filterConfig));
+    dispatch(setFilterConfig(getFilterConfig(departmentsList)));
     dispatch(setTableConfig(tableCols));
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(setTableConfig(null));
     };
-  }, [dispatch]);
+  }, [dispatch, departmentsList]);
 
   // Sync global search filters with local filters
   useEffect(() => {
@@ -320,8 +356,8 @@ export default function CloseCheckListRenewal() {
         let hasChanges = false;
 
         const filterKeys = [
-          'taskType', 'fromDate', 'toDate', 'considerDate', 'statuses',
-          'searchBy', 'seqNo', 'checkingPoint', 'category',
+          'taskType', 'fromDate', 'toDate', 'considerDate', 'considerDateValue', 'statuses',
+          'searchBy', 'departments', 'seqNo', 'checkingPoint', 'category',
           'frequency', 'stockLink'
         ];
 
@@ -340,15 +376,19 @@ export default function CloseCheckListRenewal() {
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
     try {
+      const depts = filters.departments || [];
+      const considerDate = globalFilters.createdDateConsider || filters.considerDate || 'No';
       const params = {
         page,
         size,
         status: filters.statuses.length > 0 ? filters.statuses[0] : undefined,
-        fromDate: filters.fromDate || undefined,
-        toDate: filters.toDate || undefined,
-        considerDate: filters.considerDate !== 'All' ? filters.considerDate : undefined,
+        fromDate: globalFilters.createdDateStart || filters.fromDate || undefined,
+        toDate: globalFilters.createdDateEnd || filters.toDate || undefined,
+        considerDate: considerDate !== 'All' ? considerDate : undefined,
+        considerDateValue: (String(considerDate).trim().toUpperCase() === 'YES' && (globalFilters.createdDateConsiderValue || filters.considerDateValue)) ? (globalFilters.createdDateConsiderValue || filters.considerDateValue) : undefined,
         searchValue: searchQuery || undefined,
         searchBy: filters.searchBy !== 'All' ? filters.searchBy : undefined,
+        department: depts.length > 0 ? depts[0] : undefined,
 
         // Task Filtering
         taskType: filters.taskType !== 'All' ? filters.taskType : undefined,
@@ -373,6 +413,23 @@ export default function CloseCheckListRenewal() {
         params.toDate = `${yyyy}-${mm}-${dd}`;
       }
 
+      // Validation: If Consider Date is Yes and outside From/To range, return no records
+      const checkConsiderVal = globalFilters.createdDateConsiderValue || filters.considerDateValue;
+      if (String(considerDate).trim().toUpperCase() === 'YES' && checkConsiderVal) {
+        const considerVal = new Date(checkConsiderVal);
+        const fromVal = params.fromDate ? new Date(params.fromDate) : null;
+        const toVal = params.toDate ? new Date(params.toDate) : null;
+        let isInvalid = false;
+        if (fromVal && considerVal < fromVal) isInvalid = true;
+        if (toVal && considerVal > toVal) isInvalid = true;
+        if (isInvalid) {
+          setRows([]);
+          setTotalElements(0);
+          setLoading(false);
+          return;
+        }
+      }
+
       const response = await axios.get('/api/qms/checklist/assignments', { params });
         // Additional client-side filter: exclude any remaining finalized statuses
         const finalizedStatuses = ['Verified', 'Completed', 'Accepted', 'Attended', 'Rejected', 'Missed', 'Not Completed', 'Pending for Verified', 'Pending for Accepted'];
@@ -389,7 +446,7 @@ export default function CloseCheckListRenewal() {
     } finally {
       setLoading(false);
     }
-  }, [page, size, filters, searchQuery, user]);
+  }, [page, size, filters, searchQuery, user, globalFilters]);
 
   useEffect(() => {
     fetchAssignments();
@@ -618,8 +675,24 @@ export default function CloseCheckListRenewal() {
                     <TableCell><StatusChip status={row.status} /></TableCell>
                     <TableCell>{row.checklist?.createdUser || row.checklist?.createdBy || '-'}</TableCell>
                     <TableCell>{formatDate(row.checklist?.createdAt || row.checklist?.createdDate)}</TableCell>
-                    <TableCell>{row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-'}</TableCell>
-                    <TableCell>{formatDateTime(row.updatedAt || row.checklist?.updatedAt)}</TableCell>
+                    <TableCell>{(() => {
+                      const upAt = row.updatedAt || row.checklist?.updatedAt;
+                      const crAt = row.createdAt || row.checklist?.createdAt;
+                      if (!upAt || !crAt) return '-';
+                      const msDiff = Math.abs(new Date(upAt) - new Date(crAt));
+                      if (msDiff <= 60000) return '-';
+                      let upUser = row.updatedUser || row.updatedBy || row.checklist?.updatedUser || row.checklist?.updatedBy || '-';
+                      if (upUser === 'Admin istrator' || upUser === 'Administrator') upUser = 'Admin';
+                      return upUser;
+                    })()}</TableCell>
+                    <TableCell>{(() => {
+                      const upAt = row.updatedAt || row.checklist?.updatedAt;
+                      const crAt = row.createdAt || row.checklist?.createdAt;
+                      if (!upAt || !crAt) return '-';
+                      const msDiff = Math.abs(new Date(upAt) - new Date(crAt));
+                      if (msDiff <= 60000) return '-';
+                      return formatDateTime(upAt);
+                    })()}</TableCell>
                   </TableRow>
                 );
               })}
@@ -695,6 +768,32 @@ export default function CloseCheckListRenewal() {
             <FormControl><RadioGroup value={filters.considerDate} onChange={(e) => setFilter('considerDate', e.target.value)}>
               {['All', 'Yes', 'No'].map((v) => <FormControlLabel key={v} value={v} control={<Radio size="small" />} label={<Typography variant="body2">{v}</Typography>} />)}
             </RadioGroup></FormControl>
+            {filters.considerDate === 'Yes' && (
+              <Box sx={{ mt: 1.5 }}>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, mb: 0.5, display: 'block' }}>Consider Date</Typography>
+                  <TextField size="small" type="date" fullWidth value={filters.considerDateValue || ''} onChange={(e) => setFilter('considerDateValue', e.target.value)} InputLabelProps={{ shrink: true }} />
+                </Box>
+                {filters.considerDateValue && (
+                  (() => {
+                    const considerVal = new Date(filters.considerDateValue);
+                    const fromVal = filters.fromDate ? new Date(filters.fromDate) : null;
+                    const toVal = filters.toDate ? new Date(filters.toDate) : null;
+                    let isInvalid = false;
+                    if (fromVal && considerVal < fromVal) isInvalid = true;
+                    if (toVal && considerVal > toVal) isInvalid = true;
+                    if (isInvalid) {
+                      return (
+                        <Typography variant="caption" color="error" sx={{ fontWeight: 600, display: 'block', mt: 0.5 }}>
+                          Consider Date must fall within Created Date From and Created Date To range
+                        </Typography>
+                      );
+                    }
+                    return null;
+                  })()
+                )}
+              </Box>
+            )}
           </FilterSection>
           <Divider />
           <FilterSection title="Status" open={openSections.status} onToggle={() => toggleSection('status')}>
