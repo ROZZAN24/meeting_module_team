@@ -311,7 +311,40 @@ export default function SearchSection() {
   }, [searchConfig, tableConfig]);
 
   const handleAdvancedClick = () => {
+    const isOpening = !advancedAnchorEl;
     setAdvancedAnchorEl(advancedAnchorEl ? null : anchorRef.current);
+
+    if (isOpening) {
+      // Auto-populate today's date into all empty "From" date fields when the filter opens
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const todayStr = `${yyyy}-${mm}-${dd}`;
+
+      const updates = {};
+
+      // Standalone fromDate field
+      if (!filters['fromDate']) {
+        updates['fromDate'] = todayStr;
+      }
+
+      // dateRange fields (e.g. createdDate → createdDateStart)
+      if (Array.isArray(combinedConfig)) {
+        combinedConfig.forEach((field) => {
+          if (field && field.type === 'dateRange' && visibleFilterIds.includes(field.id)) {
+            const startKey = `${field.id}Start`;
+            if (!filters[startKey]) {
+              updates[startKey] = todayStr;
+            }
+          }
+        });
+      }
+
+      if (Object.keys(updates).length > 0) {
+        dispatch(setFilters(updates));
+      }
+    }
   };
 
   const handleAdvancedClose = () => {
@@ -650,7 +683,19 @@ export default function SearchSection() {
                                         fullWidth size="small"
                                         variant="outlined"
                                         value={filters[field.id] || field.defaultValue || 'All'}
-                                        onChange={(e) => handleFilterChange(field.id, e.target.value)}
+                                        onChange={(e) => {
+                                          const val = e.target.value;
+                                          handleFilterChange(field.id, val);
+                                          if (field.id === 'considerDate' && val === 'Yes') {
+                                            const today = new Date();
+                                            const yyyy = today.getFullYear();
+                                            const mm = String(today.getMonth() + 1).padStart(2, '0');
+                                            const dd = String(today.getDate()).padStart(2, '0');
+                                            const todayStr = `${yyyy}-${mm}-${dd}`;
+                                            handleFilterChange('considerDateValue', todayStr);
+                                            handleFilterChange('fromDate', todayStr);
+                                          }
+                                        }}
                                         sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
                                       >
                                         {field.options.map((opt) => (
@@ -669,7 +714,13 @@ export default function SearchSection() {
                                             label="Consider Date"
                                             name="considerDateValue"
                                             value={filters['considerDateValue'] || ''}
-                                            onChange={(e) => handleFilterChange('considerDateValue', e.target.value)}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              handleFilterChange('considerDateValue', val);
+                                              if (val) {
+                                                handleFilterChange('fromDate', val);
+                                              }
+                                            }}
                                           />
                                           {filters['considerDateValue'] && (() => {
                                             const considerVal = new Date(filters['considerDateValue']);
@@ -717,7 +768,19 @@ export default function SearchSection() {
                                               fullWidth size="small"
                                               variant="outlined"
                                               value={filters[`${field.id}Consider`] || 'Yes'}
-                                              onChange={(e) => handleFilterChange(`${field.id}Consider`, e.target.value)}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                handleFilterChange(`${field.id}Consider`, val);
+                                                if (val === 'Yes') {
+                                                  const today = new Date();
+                                                  const yyyy = today.getFullYear();
+                                                  const mm = String(today.getMonth() + 1).padStart(2, '0');
+                                                  const dd = String(today.getDate()).padStart(2, '0');
+                                                  const todayStr = `${yyyy}-${mm}-${dd}`;
+                                                  handleFilterChange(`${field.id}ConsiderValue`, todayStr);
+                                                  handleFilterChange(`${field.id}Start`, todayStr);
+                                                }
+                                              }}
                                               sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
                                             >
                                               <MenuItem value="Yes" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>Yes</MenuItem>
@@ -734,7 +797,13 @@ export default function SearchSection() {
                                                 label="Consider Date"
                                                 name={`${field.id}ConsiderValue`}
                                                 value={filters[`${field.id}ConsiderValue`] || ''}
-                                                onChange={(e) => handleFilterChange(`${field.id}ConsiderValue`, e.target.value)}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  handleFilterChange(`${field.id}ConsiderValue`, val);
+                                                  if (val) {
+                                                    handleFilterChange(`${field.id}Start`, val);
+                                                  }
+                                                }}
                                               />
                                               {filters[`${field.id}ConsiderValue`] && (() => {
                                                 const considerVal = new Date(filters[`${field.id}ConsiderValue`]);

@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository;
 public interface VerificationCriteriaRepository extends JpaRepository<VerificationCriteria, Long> {
     @Query("SELECT MAX(v.id) FROM VerificationCriteria v")
     Long findMaxId();
+
+    java.util.Optional<VerificationCriteria> findByDescriptionIgnoreCase(String description);
 }
