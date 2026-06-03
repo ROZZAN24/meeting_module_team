@@ -255,6 +255,9 @@ export default function AddAuditSchedule() {
     startTime: defaultStartTime,
     endTime: '05:00 PM',
     frequency: 'NONE',
+    weekDays: '',
+    repeatEveryValue: '',
+    repeatEveryUnit: 'DAYS',
     department: '',
     auditee: '',
     auditeeType: '',
@@ -402,6 +405,9 @@ export default function AddAuditSchedule() {
         ncrApprovedByType: data.ncrApprovedByType || '',
         criteriaMinCount: data.criteriaMinCount || 0,
         frequency: data.frequency || 'NONE',
+        weekDays: data.weekDays || '',
+        repeatEveryValue: data.repeatEveryValue !== null && data.repeatEveryValue !== undefined ? data.repeatEveryValue : '',
+        repeatEveryUnit: data.repeatEveryUnit || 'DAYS',
         itemCode: data.itemCode || '',
         customerName: extras.customerName || '',
         contactName: extras.contactName || '',
@@ -476,7 +482,17 @@ export default function AddAuditSchedule() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'frequency') {
+      setFormData((prev) => ({
+        ...prev,
+        frequency: value,
+        weekDays: value === 'WEEKLY' ? '' : prev.weekDays,
+        repeatEveryValue: value === 'CUSTOM' ? '' : prev.repeatEveryValue,
+        repeatEveryUnit: value === 'CUSTOM' ? 'DAYS' : prev.repeatEveryUnit
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSave = async () => {
@@ -492,6 +508,14 @@ export default function AddAuditSchedule() {
       { field: 'endTime', label: 'End Time', required: true },
       { field: 'frequency', label: 'Frequency', required: true }
     ];
+
+    if (formData.frequency === 'WEEKLY') {
+      rules.push({ field: 'weekDays', label: 'Week Days', required: true });
+    }
+    if (formData.frequency === 'CUSTOM') {
+      rules.push({ field: 'repeatEveryValue', label: 'Repeat Every', required: true, type: 'number' });
+      rules.push({ field: 'repeatEveryUnit', label: 'Schedule Unit', required: true });
+    }
 
     if (category === 'CUSTOMER_AUDIT') {
       rules.push({ field: 'customerName', label: 'Customer Name', required: true });
@@ -622,6 +646,9 @@ export default function AddAuditSchedule() {
       
       const payload = { 
         ...formData, 
+        repeatEveryValue: formData.frequency === 'CUSTOM' && formData.repeatEveryValue ? parseInt(formData.repeatEveryValue, 10) : null,
+        repeatEveryUnit: formData.frequency === 'CUSTOM' ? formData.repeatEveryUnit : null,
+        weekDays: formData.frequency === 'WEEKLY' ? formData.weekDays : null,
         auditeeDetails: JSON.stringify(extraDetails),
         criteriaList 
       };
@@ -662,6 +689,9 @@ export default function AddAuditSchedule() {
         startTime: defaultStartTime,
         endTime: '05:00 PM',
         frequency: 'NONE',
+        weekDays: '',
+        repeatEveryValue: '',
+        repeatEveryUnit: 'DAYS',
         department: '',
         auditee: '',
         auditeeType: '',
@@ -876,6 +906,7 @@ export default function AddAuditSchedule() {
                     fullWidth
                   >
                     <MenuItem value="OPEN">OPEN</MenuItem>
+                    <MenuItem value="WAITING_APPROVAL">PENDING FOR APPROVAL</MenuItem>
                     <MenuItem value="CLOSED">CLOSED</MenuItem>
                     <MenuItem value="CANCELLED">CANCELLED</MenuItem>
                   </BOSTextField>
@@ -883,7 +914,7 @@ export default function AddAuditSchedule() {
                   <BOSTextField
                     label="Status"
                     name="status"
-                    value={formData.status}
+                    value={formData.status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : formData.status}
                     inputProps={{ readOnly: true }}
                     fullWidth
                   />
@@ -962,10 +993,59 @@ export default function AddAuditSchedule() {
                 helperText={errors.frequency}
                 disabled={!canWrite}
               >
-                {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL'].map((f) => (
+                {['NONE', 'DAILY', 'WEEKLY', 'MONTHLY', 'QUARTERLY', 'BI-ANNUAL', 'ANNUAL', 'CUSTOM'].map((f) => (
                   <MenuItem key={f} value={f}>{f}</MenuItem>
                 ))}
               </BOSTextField>
+
+              {formData.frequency === 'WEEKLY' && (
+                <BOSTextField
+                  select
+                  required
+                  label="Week Days"
+                  name="weekDays"
+                  value={formData.weekDays || ''}
+                  onChange={handleChange}
+                  error={!!errors.weekDays}
+                  helperText={errors.weekDays}
+                  disabled={!canWrite}
+                >
+                  {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((d) => (
+                    <MenuItem key={d} value={d}>{d}</MenuItem>
+                  ))}
+                </BOSTextField>
+              )}
+
+              {formData.frequency === 'CUSTOM' && (
+                <>
+                  <BOSTextField
+                    required
+                    type="number"
+                    label="Repeat Every"
+                    name="repeatEveryValue"
+                    value={formData.repeatEveryValue || ''}
+                    onChange={handleChange}
+                    error={!!errors.repeatEveryValue}
+                    helperText={errors.repeatEveryValue}
+                    disabled={!canWrite}
+                  />
+                  <BOSTextField
+                    select
+                    required
+                    label="Schedule"
+                    name="repeatEveryUnit"
+                    value={formData.repeatEveryUnit || 'DAYS'}
+                    onChange={handleChange}
+                    error={!!errors.repeatEveryUnit}
+                    helperText={errors.repeatEveryUnit}
+                    disabled={!canWrite}
+                  >
+                    {['DAYS', 'WEEKS', 'MONTHS', 'YEARS'].map((u) => (
+                      <MenuItem key={u} value={u}>{u}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </>
+              )}
               <BOSTextField
                 select
                 required
@@ -1432,15 +1512,15 @@ export default function AddAuditSchedule() {
             <BOSDataTable
               columns={(category === 'SUPPLIER_ASSESSMENT') ? [
                 { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Agenda', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'criteriaDetails', label: 'Agenda', minWidth: 650 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 80 },
                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
               ] : [
                 { id: 'index', label: '#', minWidth: 50 },
                 { id: 'seqNo', label: 'Seq No', minWidth: 80 },
                 { id: 'clause', label: 'Clause', minWidth: 100 },
-                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 300 },
-                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 120 },
+                { id: 'criteriaDetails', label: 'Criteria Details', minWidth: 650 },
+                { id: 'attachmentReq', label: 'Attachment Req', minWidth: 80 },
                 { id: 'remarks', label: 'Remarks', minWidth: 150 }
               ]}
               rows={criteriaList}
@@ -1476,14 +1556,14 @@ export default function AddAuditSchedule() {
             columns={(category === 'SUPPLIER_ASSESSMENT') ? [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
-              { id: 'criteriaText', label: 'Agenda', minWidth: 400 },
-              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+              { id: 'criteriaText', label: 'Agenda', minWidth: 650 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 80 }
             ] : [
               { id: 'select', label: '', minWidth: 50 },
               { id: 'seqNo', label: 'Seq No', minWidth: 80 },
               { id: 'clause', label: 'Clause', minWidth: 100 },
-              { id: 'criteriaText', label: 'Criteria Details', minWidth: 400 },
-              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 120 }
+              { id: 'criteriaText', label: 'Criteria Details', minWidth: 650 },
+              { id: 'attachmentRequired', label: 'Attachment Req', minWidth: 80 }
             ]}
             rows={availableCriteria}
             page={0}

@@ -658,7 +658,7 @@ export default function SearchSection() {
                                           </MenuItem>
                                         ))}
                                       </Select>
-                                      {field.id === 'considerDate' && (() => {
+                                      {field.id === 'considerDate' && !field.hideDatePicker && (() => {
                                         const currentVal = filters[field.id] !== undefined ? filters[field.id] : field.defaultValue;
                                         const str = currentVal !== undefined && currentVal !== null ? String(currentVal).trim().toUpperCase() : '';
                                         return str === 'YES' || str === 'YES?' || str === 'Y' || str === 'TRUE';
@@ -706,55 +706,19 @@ export default function SearchSection() {
                                           onChange={(e) => handleFilterChange(`${field.id}End`, e.target.value)}
                                         />
                                       </Stack>
-                                      {field.id !== 'updatedAt' && field.id !== 'updatedDate' && (
-                                        <>
-                                          <Stack direction="row" spacing={1.5} alignItems="center">
-                                            <Typography variant="caption" color="text.primary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: '0.5px', opacity: 0.85, minWidth: 100 }}>
-                                              Consider Date?
-                                            </Typography>
-                                            <Select
-                                              fullWidth size="small"
-                                              variant="outlined"
-                                              value={filters[`${field.id}Consider`] || 'Yes'}
-                                              onChange={(e) => handleFilterChange(`${field.id}Consider`, e.target.value)}
-                                              sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
-                                            >
-                                              <MenuItem value="Yes" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>Yes</MenuItem>
-                                              <MenuItem value="No" sx={{ fontWeight: 500, borderRadius: '6px', my: 0.2, mx: 0.5 }}>No</MenuItem>
-                                            </Select>
-                                          </Stack>
-                                          {(() => {
-                                            const currentVal = filters[`${field.id}Consider`] !== undefined ? filters[`${field.id}Consider`] : 'Yes';
-                                            const str = currentVal !== undefined && currentVal !== null ? String(currentVal).trim().toUpperCase() : '';
-                                            return str === 'YES' || str === 'YES?' || str === 'Y' || str === 'TRUE';
-                                          })() && (
-                                            <Stack spacing={1.2} sx={{ mt: 1.5 }}>
-                                              <BOSDatePicker
-                                                label="Consider Date"
-                                                name={`${field.id}ConsiderValue`}
-                                                value={filters[`${field.id}ConsiderValue`] || ''}
-                                                onChange={(e) => handleFilterChange(`${field.id}ConsiderValue`, e.target.value)}
-                                              />
-                                              {filters[`${field.id}ConsiderValue`] && (() => {
-                                                const considerVal = new Date(filters[`${field.id}ConsiderValue`]);
-                                                const fromVal = filters[`${field.id}Start`] ? new Date(filters[`${field.id}Start`]) : null;
-                                                const toVal = filters[`${field.id}End`] ? new Date(filters[`${field.id}End`]) : null;
-                                                let isInvalid = false;
-                                                if (fromVal && !isNaN(fromVal.getTime()) && considerVal < fromVal) isInvalid = true;
-                                                if (toVal && !isNaN(toVal.getTime()) && considerVal > toVal) isInvalid = true;
-                                                if (isInvalid) {
-                                                  return (
-                                                    <Typography variant="caption" color="error" sx={{ fontWeight: 600, pl: 0.5 }}>
-                                                      Consider Date must fall within From and To date range
-                                                    </Typography>
-                                                  );
-                                                }
-                                                return null;
-                                              })()}
-                                            </Stack>
-                                          )}
-                                        </>
-                                      )}
+                                      <Stack spacing={0.5}>
+                                        <Typography variant="caption" sx={{ color: '#9AA0B0', fontWeight: 600 }}>Consider Date?</Typography>
+                                        <Select
+                                          fullWidth size="small"
+                                          variant="outlined"
+                                          value={filters[`${field.id}Consider`] || 'No'}
+                                          onChange={(e) => handleFilterChange(`${field.id}Consider`, e.target.value)}
+                                          sx={{ borderRadius: '10px', fontWeight: 500, transition: 'all 0.2s', '&:hover': { bgcolor: 'action.hover' } }}
+                                        >
+                                          <MenuItem value="Yes">Yes</MenuItem>
+                                          <MenuItem value="No">No</MenuItem>
+                                        </Select>
+                                      </Stack>
                                     </Stack>
                                   ) : field.type === 'date' ? (
                                     <BOSDatePicker

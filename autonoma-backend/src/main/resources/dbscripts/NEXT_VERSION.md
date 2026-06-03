@@ -17,8 +17,8 @@ Before creating a new database migration script, you **MUST** claim a version nu
 
 ## 🔢 Current Status
 
-* **Last Claimed Version:** `V76`
-* **Next Available Version:** `V77`
+* **Last Claimed Version:** `V77`
+* **Next Available Version:** `V78`
 
 ---
 
@@ -26,6 +26,7 @@ Before creating a new database migration script, you **MUST** claim a version nu
 
 | Version | Developer | Date claimed | PR / Feature Description | Status |
 | :--- | :--- | :--- | :--- | :--- |
+| **V77** | Antigravity | 2026-06-04 | Add WEEK_DAYS and Repeat fields to QMS_AUDIT_SCHEDULE | ✅ Merged |
 | **V63** | System baseline | 2026-05-31 | Last legacy incremental script added | ✅ Merged |
 | **V64** | Eashwara Prasadh | 2026-06-02 | Drop And Rename Tables (Baseline cleanup) | ✅ Merged |
 | **V65** | Darshan | 2026-06-02 | Add Frequency to Audit Schedule | ✅ Merged |

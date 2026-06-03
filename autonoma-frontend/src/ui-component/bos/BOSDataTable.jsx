@@ -236,7 +236,7 @@ export default function BOSDataTable({
 
           const startVal = globalFilters[`${baseKey}Start`];
           const endVal = globalFilters[`${baseKey}End`];
-          const considerVal = globalFilters[`${baseKey}Consider`] || 'Yes';
+          const considerVal = globalFilters[`${baseKey}Consider`] || 'No';
 
           if (!startVal && !endVal) continue;
           if (considerVal === 'No') continue;

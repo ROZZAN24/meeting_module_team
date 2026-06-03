@@ -57,6 +57,7 @@ export default function AuditScheduleList() {
         options: [
           { value: 'All', label: 'ALL' },
           { value: 'OPEN', label: 'OPEN' },
+          { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' },
           { value: 'CLOSED', label: 'CLOSED' },
           { value: 'CANCELLED', label: 'CANCELLED' }
         ],
@@ -194,7 +195,8 @@ export default function AuditScheduleList() {
     }
     if (col.id === 'status') {
       const statusText = typeof val === 'object' ? val?.name : val;
-      return <Chip label={statusText} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : 'INACTIVE')} />;
+      const displayLabel = statusText === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : statusText;
+      return <Chip label={displayLabel} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : (statusText === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
     if (col.id === 'auditDate' || col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
     if (col.id === 'auditee' || col.id === 'auditor') {
@@ -214,7 +216,7 @@ export default function AuditScheduleList() {
       title={
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <IconCalendarEvent size={24} />
-          <Typography variant="h3">Audit Schedule Master</Typography>
+          <Typography variant="h3">Audit Schedule</Typography>
         </Stack>
       }
       secondary={
