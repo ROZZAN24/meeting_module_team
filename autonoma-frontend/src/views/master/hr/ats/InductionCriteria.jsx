@@ -417,7 +417,7 @@ export default function InductionCriteria() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           

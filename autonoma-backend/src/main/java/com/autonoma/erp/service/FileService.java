@@ -33,78 +33,75 @@ public class FileService {
 
     /**
      * Resolves the root upload directory based on configuration.
-     * 1. Check Company Profile settings (directoryPath)
-     * 2. Check App Preferences (FILE_LOCATION)
-     * 3. Fallback to local 'uploads' directory
+     *
+     * Priority order:
+     *  1. Company Profile → directoryPath  (License & Configuration field)
+     *  2. App Preferences → FILE_LOCATION
+     *  3. OS-specific fallback (BOS_DOCUMENTS next to autonoma-backend on Mac/Linux, D:\BOS_DOCUMENTS on Windows)
      */
     public Path getRootPath() {
-        Path resolvedPath = null;
         String os = System.getProperty("os.name").toLowerCase();
+        Path resolvedPath = null;
 
-        // Priority 1: From Company Profile
+        // ── Priority 1: Company Profile directoryPath ──────────────────────
         try {
             List<CompanyCredential> companies = companyRepo.findAll();
             if (!companies.isEmpty()) {
                 String pathStr = companies.get(0).getDirectoryPath();
                 if (pathStr != null && !pathStr.trim().isEmpty()) {
-                    resolvedPath = Paths.get(pathStr.trim());
+                    resolvedPath = sanitizePath(pathStr.trim(), os);
                 }
             }
-        } catch (Exception e) {
-            // Log and fallback
-        }
+        } catch (Exception ignored) { }
 
-        // Priority 2: From App Preferences
+        // ── Priority 2: App Preferences FILE_LOCATION ──────────────────────
         if (resolvedPath == null) {
             try {
                 Optional<AppPreference> pref = prefRepo.findByPrefName("FILE_LOCATION");
                 if (pref.isPresent() && pref.get().getPrefValue() != null
                         && !pref.get().getPrefValue().trim().isEmpty()) {
-                    resolvedPath = Paths.get(pref.get().getPrefValue().trim());
+                    resolvedPath = sanitizePath(pref.get().getPrefValue().trim(), os);
                 }
-            } catch (Exception e) {
-                // Log and fallback
-            }
+            } catch (Exception ignored) { }
         }
 
-        // Standardize the document root path based on OS
-        if (os.contains("win")) {
-            if (resolvedPath == null || !resolvedPath.isAbsolute() || resolvedPath.toString().contains("BOS_DOCUMENTS")) {
+        // ── Priority 3: OS-specific fallback ───────────────────────────────
+        if (resolvedPath == null) {
+            if (os.contains("win")) {
                 resolvedPath = Paths.get("D:\\BOS_DOCUMENTS").toAbsolutePath();
-            } else {
-                // On Mac/Linux, we use a clean folder name without Windows drive letters
-                resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath();
-            }
-        } else {
-            // On Mac/Linux, ignore Windows paths completely and place BOS_DOCUMENTS inside the autonoma-backend folder
-            if (Files.exists(Paths.get("autonoma-backend"))) {
+            } else if (Files.exists(Paths.get("autonoma-backend"))) {
                 resolvedPath = Paths.get("autonoma-backend/BOS_DOCUMENTS").toAbsolutePath().normalize();
             } else {
                 resolvedPath = Paths.get("BOS_DOCUMENTS").toAbsolutePath().normalize();
             }
         }
 
-        // Ensure root directory exists
+        // ── Ensure directory exists ─────────────────────────────────────────
         try {
-            if (!Files.exists(resolvedPath)) {
-                Files.createDirectories(resolvedPath);
-            }
+            Files.createDirectories(resolvedPath);
         } catch (IOException e) {
-            if (os.contains("win")) {
-                resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
-            } else {
-                resolvedPath = Paths.get(System.getProperty("user.home"), "BOS_DOCUMENTS");
-                try {
-                    Files.createDirectories(resolvedPath);
-                } catch (IOException ex) {
-                    resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
-                }
-            }
-            // Fallback to a guaranteed temp dir if creation fails
             resolvedPath = Paths.get(System.getProperty("java.io.tmpdir"), "BOS_DOCUMENTS");
+            try { Files.createDirectories(resolvedPath); } catch (IOException ignored) { }
         }
 
         return resolvedPath;
+    }
+
+
+    /**
+     * Converts a configured path string into a usable absolute Path.
+     * Handles cross-platform scenarios: Windows paths used on Mac/Linux have
+     * their drive letter stripped so BOS_DOCUMENTS resolves correctly.
+     */
+    private Path sanitizePath(String pathStr, String os) {
+        if (!os.contains("win") && pathStr.matches("^[A-Za-z]:[/\\\\].*")) {
+            // Strip Windows drive letter (e.g. "D:\\BOS_DOCUMENTS" → "BOS_DOCUMENTS")
+            String stripped = pathStr.replaceFirst("^[A-Za-z]:[/\\\\]+", "");
+            stripped = stripped.replace("\\\\", "/").replace("\\", "/");
+            return Paths.get(stripped).toAbsolutePath().normalize();
+        }
+        pathStr = pathStr.replace("\\\\", java.io.File.separator).replace("\\", java.io.File.separator);
+        return Paths.get(pathStr).toAbsolutePath().normalize();
     }
 
     /**
@@ -133,13 +130,27 @@ public class FileService {
 
     /**
      * Resolves a file for viewing/downloading.
-     * 
-     * @param relativePath - The path including module (e.g. "QMS/uuid_name.pdf")
+     *
+     * Handles two path formats stored in DB:
+     *  - Relative (new):  "QMS/Checklist/uuid_file.pdf"  → resolved under getRootPath()
+     *  - Absolute (legacy): "D:\\BOS_DOCUMENTS\\Master\\QMS\\..." → used directly (sanitized for OS)
+     *
+     * @param relativePath - The path as stored in the DB
      */
     public Resource loadFile(String relativePath) throws MalformedURLException {
-        Path file = getRootPath().resolve(relativePath).normalize();
-        Resource resource = new UrlResource(file.toUri());
+        String os = System.getProperty("os.name").toLowerCase();
+        Path file;
 
+        // Detect legacy absolute paths (Windows-style absolute or Unix absolute)
+        boolean isAbsolute = relativePath.matches("^[A-Za-z]:[/\\\\].*") || relativePath.startsWith("/");
+        if (isAbsolute) {
+            // Sanitize and use directly — no root prefix
+            file = sanitizePath(relativePath, os);
+        } else {
+            file = getRootPath().resolve(relativePath).normalize();
+        }
+
+        Resource resource = new UrlResource(file.toUri());
         if (resource.exists() || resource.isReadable()) {
             return resource;
         }
@@ -165,9 +176,7 @@ public class FileService {
                     }
                 }
             }
-        } catch (Exception e) {
-            // Fallback to throw exception
-        }
+        } catch (Exception ignored) { }
 
         throw new RuntimeException("File not found: " + relativePath);
     }

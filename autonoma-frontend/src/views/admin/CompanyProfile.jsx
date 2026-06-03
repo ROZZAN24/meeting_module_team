@@ -68,7 +68,7 @@ const emptyForm = {
   companyName: '', shortName: '', address: '',
   city: '', state: '', stateCode: '', country: '', pincode: '',
   gstIn: '', dbSourceName: '', licRenewalDate: '', licExpiryDate: '',
-  logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS',
+  logoFileName: '', logInBgFileName: '', directoryPath: 'BOS_DOCUMENTS',
   licExpRemainderDays: 0,
   restoreEnableDays: 7,
   inputCaseStyle: 'UPPER_CASE',
@@ -192,7 +192,7 @@ const CompanyProfile = () => {
             licExpiryDate: rec.licExpiryDate ? rec.licExpiryDate.slice(0, 10) : '',
             logoFileName: rec.logoFileName || '',
             logInBgFileName: rec.logInBgFileName || '',
-            directoryPath: rec.directoryPath || 'D:\\BOS_DOCUMENTS',
+            directoryPath: rec.directoryPath || 'BOS_DOCUMENTS',
             licExpRemainderDays: rec.licExpRemainderDays || 0,
             restoreEnableDays: rec.restoreEnableDays || 0,
             inputCaseStyle: rec.inputCaseStyle || 'UPPER_CASE',
@@ -865,6 +865,7 @@ const CompanyProfile = () => {
                   <TextField
                     {...fieldProps('directoryPath', 'Document Path')}
                     disabled={!isSuperUser}
+                    helperText="Root folder where all uploaded files are stored"
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">

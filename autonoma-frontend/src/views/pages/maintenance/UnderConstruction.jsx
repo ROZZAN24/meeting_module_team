@@ -72,10 +72,10 @@ export default function UnderConstruction() {
               <CardMedia
                 component="img"
                 image={colorScheme === ThemeMode.DARK ? imageDarkBackground : imageBackground}
-                title="Slider 3 image"
+                title="Background Grid Graphic"
               />
-              <CardMediaParts src={imageParts} title="Slider 1 image" />
-              <CardMediaBuild src={image} title="Slider 2 image" />
+              <CardMediaParts src={imageParts} title="Decoration Parts Graphic" />
+              <CardMediaBuild src={image} title="Under Construction Main Graphic" />
             </CardMediaWrapper>
           </Grid>
           <Grid size={12}>

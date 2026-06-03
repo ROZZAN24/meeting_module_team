@@ -368,6 +368,14 @@ export const masters = {
               url: '/master/qms/meeting/master',
               icon: icons.IconCalendarEvent,
               pageCode: 'M1310'
+            },
+            {
+              id: 'master-qms-meeting-unnamed',
+              title: 'Unnamed Page',
+              type: 'item',
+              url: '/master/qms/meeting/unnamed',
+              icon: icons.IconHelp,
+              pageCode: 'M1320'
             }
           ]
         }
@@ -440,6 +448,14 @@ export const masters = {
               url: '/master/npd/product-capacity',
               icon: icons.IconAward,
               pageCode: 'M3170'
+            },
+            {
+              id: 'master-npd-product-process',
+              title: 'Product Process Master',
+              type: 'item',
+              url: '/master/npd/product-process',
+              icon: icons.IconRotate2,
+              pageCode: 'M3180'
             }
           ]
         },
@@ -456,7 +472,8 @@ export const masters = {
           title: 'UOM',
           type: 'item',
           url: '/master/npd/uom',
-          icon: icons.IconRuler2
+          icon: icons.IconRuler2,
+          pageCode: 'M5240'
         }
       ]
     },
@@ -941,14 +958,16 @@ export const erpSupport = {
           title: 'My Requests',
           type: 'item',
           url: '/support/ticket-by-me',
-          breadcrumbs: false
+          breadcrumbs: false,
+          pageCode: 'S1110'
         },
         {
           id: 'support-raised-for-me',
           title: 'Requests For Me',
           type: 'item',
           url: '/support/raised-for-me',
-          breadcrumbs: false
+          breadcrumbs: false,
+          pageCode: 'S1120'
         }
       ]
     }

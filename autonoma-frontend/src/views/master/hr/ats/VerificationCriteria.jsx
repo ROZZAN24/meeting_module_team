@@ -238,7 +238,7 @@ export default function VerificationCriteria() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Verification_Criteria"
