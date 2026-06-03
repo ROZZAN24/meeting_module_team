@@ -39,6 +39,7 @@ import {
   BOSDataTable,
   BOSFileUpload,
   BOSDatePicker,
+  BOSTimePicker,
   btnSave,
   btnClear,
   getStatusChipSx
@@ -60,7 +61,7 @@ const VALIDATION_RULES = [
   { field: 'auditScheduleNo', label: 'Schedule No', required: true }
 ];
 
-const OBS_STATUSES = ['COMPLIANCE', 'OFI', 'NCR', 'NO ENTRY'];
+const OBS_STATUSES = ['COMPLIANCE', 'OFI', 'NC', 'NO ENTRY'];
 
 const formatTime12 = (hour, minute) => {
   const ampm = hour >= 12 ? 'PM' : 'AM';
@@ -106,6 +107,7 @@ export default function AddAuditObservation() {
   const isEditing = Boolean(id);
   const perms = usePagePermissions(PAGE_CODES.QMS_AUDIT_OBSERVATION);
   const { errors, validate, clearErrors } = useBOSValidation();
+  const [showTableErrors, setShowTableErrors] = useState(false);
 
   const [formData, setFormData] = useState({
     observationNo: '',
@@ -169,38 +171,6 @@ export default function AddAuditObservation() {
     checkAuditorEligibility();
   }, [user]);
 
-  const [outTimeDialogOpen, setOutTimeDialogOpen] = useState(false);
-  const [selectedAttendanceId, setSelectedAttendanceId] = useState('');
-  const [selectedOutTime, setSelectedOutTime] = useState('05:00 PM');
-
-  const handleSaveOutTimeFromDialog = async () => {
-    if (!selectedOutTime) {
-      dispatch(openSnackbar({ open: true, message: 'Please select an out time.', severity: 'error', variant: 'alert' }));
-      return;
-    }
-    if (attendance.length === 0) {
-      dispatch(openSnackbar({ open: true, message: 'No employees to update out time for.', severity: 'warning', variant: 'alert' }));
-      return;
-    }
-
-    try {
-      await Promise.all(
-        attendance.map(row => {
-          const updatedRow = { ...row, outTime: selectedOutTime };
-          return axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
-        })
-      );
-      dispatch(openSnackbar({ open: true, message: 'Out Time saved for all employees!', severity: 'success', variant: 'alert' }));
-      setOutTimeDialogOpen(false);
-      setSelectedOutTime('05:00 PM');
-      if (formData.auditScheduleNo) {
-        fetchAttendance(formData.auditScheduleNo);
-      }
-    } catch (e) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to save Out Time for employees', severity: 'error', variant: 'alert' }));
-    }
-  };
-
   const isAuditorUser = useMemo(() => {
     if (!user) return false;
     if (!formData.auditor) return false;
@@ -228,6 +198,25 @@ export default function AddAuditObservation() {
     
     return false;
   }, [user, formData.auditor]);
+
+  const isRowAuditor = useCallback((row) => {
+    if (!formData.auditor || !row) return false;
+    const auditorStr = formData.auditor.trim().toLowerCase();
+    const rowEmpCode = (row.employeeCode || '').trim().toLowerCase();
+    const rowName = (row.name || '').trim().toLowerCase();
+    
+    if (auditorStr.includes(' - ')) {
+      const parts = auditorStr.split(' - ');
+      const namePart = parts[0]?.trim();
+      const codePart = parts[1]?.trim();
+      if (rowEmpCode && codePart && rowEmpCode === codePart) return true;
+      if (rowName && namePart && rowName === namePart) return true;
+    } else {
+      if (rowEmpCode && auditorStr === rowEmpCode) return true;
+      if (rowName && auditorStr === rowName) return true;
+    }
+    return false;
+  }, [formData.auditor]);
 
   const attendanceColumns = useMemo(() => [
     { id: 'name', label: 'Name', minWidth: 150 },
@@ -362,22 +351,20 @@ export default function AddAuditObservation() {
   };
 
   const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
+    const hasSummaryErrors = !validate(formData, VALIDATION_RULES);
     
     // SOP: Observation Transaction Validation (SOP 5.2.4) - only mandatory for NC and OFI
     const missingComments = details.some(d => 
       (d.observationStatus === 'NC' || d.observationStatus === 'NCR' || d.observationStatus === 'OFI') && 
       (!d.comments || d.comments.trim() === '')
     );
-    if (missingComments) {
-      dispatch(openSnackbar({ open: true, message: 'Comments are mandatory for NC and OFI findings.', severity: 'error', variant: 'alert' }));
-      return;
-    }
 
     // SOP: Mandatory Attachment Rule (SOP 5.1.4) - required for Compliance/OFI if marked
     const missingAttachments = details.some(d => d.attachmentReq === 'YES' && d.observationStatus !== 'NC' && d.observationStatus !== 'NCR' && !d.attachmentPath);
-    if (missingAttachments) {
-      dispatch(openSnackbar({ open: true, message: 'Evidence attachment is mandatory for rows marked as "Attachment Required".', severity: 'error', variant: 'alert' }));
+    
+    if (hasSummaryErrors || missingComments || missingAttachments) {
+      setShowTableErrors(true);
+      dispatch(openSnackbar({ open: true, message: 'Please correct the highlighted validation errors.', severity: 'error', variant: 'alert' }));
       return;
     }
 
@@ -411,7 +398,6 @@ export default function AddAuditObservation() {
       secondary={
         <Stack direction="row" spacing={2}>
           <Button variant="outlined" startIcon={<IconArrowLeft size={20} />} onClick={() => navigate('/qms/audit/observation')}>Back</Button>
-          {perms.write && <Button variant="contained" sx={btnClear} onClick={() => isEditing ? fetchObservation() : generateObservationNo()} startIcon={<IconEraser size={20} />}>Reset</Button>}
           {perms.write && <Button variant="contained" sx={btnSave} onClick={handleSave} startIcon={<IconCheck size={20} />}>Save</Button>}
         </Stack>
       }
@@ -434,33 +420,30 @@ export default function AddAuditObservation() {
               helperText={errors.observationDate}
               disabled={!perms.write}
             />
-            <BOSTextField select required label="Schedule No" name="auditScheduleNo" value={formData.auditScheduleNo || ''} onChange={handleScheduleChange} disabled={!perms.write}>
+            <BOSTextField
+              select
+              required
+              label="Schedule No"
+              name="auditScheduleNo"
+              value={formData.auditScheduleNo || ''}
+              onChange={handleScheduleChange}
+              disabled={!perms.write}
+              error={!!errors.auditScheduleNo}
+              helperText={errors.auditScheduleNo}
+            >
               {schedules.map(s => <MenuItem key={s.id} value={s.scheduleNo}>{s.scheduleNo}</MenuItem>)}
             </BOSTextField>
             <BOSTextField label="Audit Type" value={formData.auditType || ''} inputProps={{ readOnly: true }} />
             <BOSTextField label="Department" value={formData.departmentName || ''} inputProps={{ readOnly: true }} />
-            <BOSTextField label="Auditee" value={formData.auditee || ''} inputProps={{ readOnly: true }} />
-            <BOSTextField label="Auditor" value={formData.auditor || ''} inputProps={{ readOnly: true }} />
-            <BOSTextField label="NC Approved By" value={formData.ncrApprovedBy || ''} inputProps={{ readOnly: true }} />
+            <BOSTextField label="Auditee" value={formData.auditee && formData.auditee.includes(' - ') ? formData.auditee.split(' - ')[0].trim() : (formData.auditee || '')} inputProps={{ readOnly: true }} />
+            <BOSTextField label="Auditor" value={formData.auditor && formData.auditor.includes(' - ') ? formData.auditor.split(' - ')[0].trim() : (formData.auditor || '')} inputProps={{ readOnly: true }} />
+            <BOSTextField label="NC Approved By" value={formData.ncrApprovedBy && formData.ncrApprovedBy.includes(' - ') ? formData.ncrApprovedBy.split(' - ')[0].trim() : (formData.ncrApprovedBy || '')} inputProps={{ readOnly: true }} />
           </Box>
         </BOSFormSection>
 
         {/* Section 2: Attendance & Stats */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '3fr 1fr' }, gap: 3 }}>
           <BOSFormSection icon={<IconUsers size={20} color={theme.palette.secondary.main} />} title="Audit Attendance" sx={{ height: 'fit-content' }}>
-            {isAuditorUser && (
-              <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
-                <Button 
-                  variant="contained" 
-                  size="small" 
-                  startIcon={<IconPlus size={18} />}
-                  onClick={() => setOutTimeDialogOpen(true)}
-                  sx={{ borderRadius: '12px', textTransform: 'none' }}
-                >
-                  Add Out Time
-                </Button>
-              </Stack>
-            )}
             <BOSDataTable
               columns={attendanceColumns}
               rows={attendance}
@@ -468,65 +451,42 @@ export default function AddAuditObservation() {
               size={attendance.length || 5}
               loading={false}
               showActions={false}
-              onDoubleClickRow={(row) => {
-                if (isAuditorUser) {
-                  setEditingRowId(row.id);
-                }
-              }}
               sx={{ height: attendance.length > 0 ? '250px' : '135px' }}
               renderCell={(col, row) => {
+                if (col.id === 'name') {
+                  const isAud = isRowAuditor(row);
+                  return (
+                    <Typography sx={{ color: isAud ? 'error.main' : 'inherit', fontWeight: isAud ? 600 : 'inherit' }}>
+                      {row.name || '-'}
+                    </Typography>
+                  );
+                }
                 if (col.id === 'attendanceStatus') return <Chip label={row.attendanceStatus} size="small" sx={getStatusChipSx(row.attendanceStatus === 'PRESENT' ? 'ACTIVE' : 'INACTIVE')} />;
                 if (col.id === 'outTime') {
-                  if (isAuditorUser && editingRowId === row.id) {
-                    return (
-                      <BOSTextField
-                        select
-                        size="small"
-                        value={row.outTime || '05:00 PM'}
-                        onChange={async (e) => {
-                          const val = e.target.value;
-                          try {
-                            const updatedRow = { ...row, outTime: val };
-                            await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
-                            setEditingRowId(null);
-                            dispatch(openSnackbar({ open: true, message: `Out Time updated for ${row.name}!`, severity: 'success', variant: 'alert' }));
-                            if (formData.auditScheduleNo) {
-                              fetchAttendance(formData.auditScheduleNo);
-                            }
-                          } catch (err) {
-                            console.error(err);
-                            dispatch(openSnackbar({ open: true, message: 'Failed to update Out Time', severity: 'error', variant: 'alert' }));
-                          }
-                        }}
-                        onBlur={() => setEditingRowId(null)}
-                        autoFocus
-                        fullWidth
-                      >
-                        <MenuItem value="">-Select-</MenuItem>
-                        {TIME_OPTIONS.map((t) => (
-                          <MenuItem key={t} value={t} disabled={isTimeBefore(t, activeScheduleStartTime)}>{t}</MenuItem>
-                        ))}
-                      </BOSTextField>
-                    );
-                  }
+                  const cleanedOutTime = !row.outTime || row.outTime === 'undefined' || row.outTime === 'null' ? '' : row.outTime;
                   return (
-                    <Box
-                      onDoubleClick={() => {
-                        if (isAuditorUser) {
-                          setEditingRowId(row.id);
+                    <BOSTimePicker
+                      size="small"
+                      value={cleanedOutTime}
+                      disabled={!isAuditorUser}
+                      onChange={async (e) => {
+                        const val = e.target.value;
+                        try {
+                          const updatedRow = { ...row, outTime: val };
+                          await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
+                          dispatch(openSnackbar({ open: true, message: `Out Time updated for ${row.name}!`, severity: 'success', variant: 'alert' }));
+                          if (formData.auditScheduleNo) {
+                            fetchAttendance(formData.auditScheduleNo);
+                          }
+                        } catch (err) {
+                          console.error(err);
+                          dispatch(openSnackbar({ open: true, message: 'Failed to update Out Time', severity: 'error', variant: 'alert' }));
                         }
                       }}
-                      sx={{
-                        cursor: isAuditorUser ? 'pointer' : 'default',
-                        width: '100%',
-                        height: '100%',
-                        minHeight: '24px',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}
-                    >
-                      {row.outTime || '-'}
-                    </Box>
+                      minTime={activeScheduleStartTime}
+                      maxTime="09:00 PM"
+                      fullWidth
+                    />
                   );
                 }
                 return row[col.id] || '-';
@@ -627,7 +587,7 @@ export default function AddAuditObservation() {
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
-                        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>NC / NCR</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>NC</Typography>
                       </Stack>
                       <Chip label={formData.ncrCount} size="small" color="error" sx={{ fontWeight: 700, borderRadius: '6px', height: 20 }} />
                     </Box>
@@ -677,8 +637,9 @@ export default function AddAuditObservation() {
                       isServer: true
                     }] 
                   : [];
+                const isAttachmentMissing = showTableErrors && row.attachmentReq === 'YES' && row.observationStatus !== 'NC' && row.observationStatus !== 'NCR' && !row.attachmentPath;
                 return (
-                  <Box sx={{ minWidth: 140 }}>
+                  <Box sx={{ minWidth: 140, border: isAttachmentMissing ? '1px solid #f44336' : 'none', borderRadius: 2.5, p: isAttachmentMissing ? 0.5 : 0 }}>
                     <BOSFileUpload
                       files={attachmentFiles}
                       onChange={(files) => {
@@ -690,58 +651,34 @@ export default function AddAuditObservation() {
                       compact={true}
                       isEditing={perms.write}
                       disabled={!perms.write}
-                      label=""
-                      helperText=""
+                      label="Upload"
+                      helperText={isAttachmentMissing ? "Evidence required" : "Click to upload file"}
                     />
                   </Box>
                 );
               }
               if (col.id === 'comments') {
-                return <BOSTextField multiline size="small" value={row.comments} onChange={(e) => updateDetail(idx, 'comments', e.target.value)} placeholder="Enter findings..." disabled={!perms.write} fullWidth />;
+                const isNCOFI = row.observationStatus === 'NC' || row.observationStatus === 'NCR' || row.observationStatus === 'OFI';
+                const isCommentMissing = showTableErrors && isNCOFI && (!row.comments || row.comments.trim() === '');
+                return (
+                  <BOSTextField
+                    multiline
+                    size="small"
+                    value={row.comments || ''}
+                    onChange={(e) => updateDetail(idx, 'comments', e.target.value)}
+                    placeholder="Enter findings..."
+                    disabled={!perms.write}
+                    error={isCommentMissing}
+                    helperText={isCommentMissing ? 'Comments are mandatory for NC/OFI' : ''}
+                    fullWidth
+                  />
+                );
               }
               return row[col.id] || '-';
             }}
           />
         </BOSFormSection>
       </Stack>
-
-      <Dialog 
-        open={outTimeDialogOpen} 
-        onClose={() => {
-          setOutTimeDialogOpen(false);
-          setSelectedOutTime('05:00 PM');
-        }}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: '20px',
-            p: 1.5
-          }
-        }}
-      >
-        <DialogTitle sx={{ fontWeight: 700, fontSize: '1.25rem' }}>Add Attendance Out Time</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 1.5 }}>
-            <BOSTextField
-              select
-              label="Out Time"
-              value={selectedOutTime}
-              onChange={(e) => setSelectedOutTime(e.target.value)}
-              fullWidth
-            >
-              <MenuItem value="">-Select Time-</MenuItem>
-              {TIME_OPTIONS.map((t) => (
-                <MenuItem key={t} value={t} disabled={isTimeBefore(t, activeScheduleStartTime)}>{t}</MenuItem>
-              ))}
-            </BOSTextField>
-          </Stack>
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-           <Button onClick={() => { setOutTimeDialogOpen(false); setSelectedOutTime('05:00 PM'); }} color="grey">Cancel</Button>
-          <Button variant="contained" onClick={handleSaveOutTimeFromDialog} sx={btnSave}>Save</Button>
-        </DialogActions>
-      </Dialog>
 
     </MainCard>
   );

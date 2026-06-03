@@ -839,7 +839,7 @@ export const qms = {
         },
         {
           id: 'qms-audit-ncr-close',
-          title: 'Close NCR / OFI',
+          title: 'Close NC / OFI',
           type: 'item',
           url: '/qms/audit/ncr/close',
           icon: icons.IconFileCheck,
@@ -847,7 +847,7 @@ export const qms = {
         },
         {
           id: 'qms-audit-ncr-approval',
-          title: 'Audit NCR / OFI approval',
+          title: 'Audit NC / OFI approval',
           type: 'item',
           url: '/qms/audit/ncr/approval',
           icon: icons.IconShieldCheck,

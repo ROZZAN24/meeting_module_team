@@ -195,8 +195,8 @@ export default function AuditNcrClose() {
       { id: 'fromDate', label: 'From Date', type: 'date', defaultValue: format(new Date().setMonth(new Date().getMonth() - 6), 'yyyy-MM-dd') },
       { id: 'toDate', label: 'To Date', type: 'date', defaultValue: format(new Date(), 'yyyy-MM-dd') },
       { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No' },
-      { id: 'observationStatus', label: 'Obr Type', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
-      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'OPEN', label: 'OPEN' }, { value: 'WAITING_APPROVAL', label: 'PENDING' }, { value: 'REJECTED', label: 'REJECTED' }, { value: 'REWORK', label: 'REWORK' }], defaultValue: 'All' },
+      { id: 'observationStatus', label: 'Obr Type', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'OPEN', label: 'OPEN' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }, { value: 'REWORK', label: 'REWORK' }, { value: 'CLOSED', label: 'CLOSED' }], defaultValue: 'All' },
       { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'observationNo', label: 'Observation No' }, { value: 'ncrNo', label: 'NC No' }], defaultValue: 'observationNo' },
       ...getCommonDateFilters('createdDate', 'updatedAt')
     ]));
@@ -310,7 +310,8 @@ export default function AuditNcrClose() {
     if (col.id === 'observationStatus') return <Chip label={row.observationStatus} size="small" color={row.observationStatus === 'NC' || row.observationStatus === 'NCR' ? 'error' : 'warning'} />;
     if (col.id === 'ncrStatus') {
         const status = row.ncrStatus || 'OPEN';
-        return <Chip label={status.replace('_', ' ')} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
+        const displayLabel = status === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : status.replace('_', ' ');
+        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' ? 'INACTIVE' : 'PENDING'))} />;
     }
     if (col.id === 'delayDays') {
         if (!row.targetDate) return '0';
@@ -338,13 +339,13 @@ export default function AuditNcrClose() {
           hasExportPermission={perms.export}
           onCloseNcr={perms.write ? () => selectedRecord && handleOpenClose(selectedRecord) : null}
           closeNcrDisabled={!selectedRecord}
-          closeNcrTooltip={selectedRecord ? "Close Selected NCR / OFI" : "Select a record first to close"}
+          closeNcrTooltip={selectedRecord ? "Close Selected NC / OFI" : "Select a record first to close"}
          columns={columns} />
       }
     >
       <BOSDataTable columns={columns} rows={rows.slice(page * size, page * size + size)} page={page} size={size} totalCount={rows.length} loading={loading} onPageChange={setPage} onSizeChange={setSize} onDoubleClickRow={handleOpenClose} renderCell={renderCell} selectedRowId={selectedRecord?.id} onClickRow={(row) => setSelectedRecord(row)} customActions={(row) => (<Tooltip title="Submit for Closure"><IconButton size="small" color="primary" onClick={() => handleOpenClose(row)} disabled={row.ncrStatus === 'CLOSED' || row.ncrStatus === 'WAITING_APPROVAL'} sx={{ bgcolor: 'primary.light', color: 'primary.dark', '&:hover': { bgcolor: 'primary.main', color: 'white' } }}><IconCircleCheck size={18} /></IconButton></Tooltip>)} />
 
-      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="NCR / OFI Details" maxWidth="lg" hideFooter={true}>
+      <BOSFormDialog open={dialogOpen} onClose={() => setDialogOpen(false)} title="NC / OFI Details" maxWidth="lg" hideFooter={true}>
         <Stack spacing={3} sx={{ width: '100%' }}>
           {/* Custom Premium Metadata Header Bar */}
           <Box sx={{ 
@@ -363,7 +364,7 @@ export default function AuditNcrClose() {
           }}>
             <Stack direction="row" spacing={3} useFlexGap flexWrap="wrap" alignItems="center">
               <Typography variant="subtitle1" sx={{ color: '#0A2540', fontWeight: 600 }}>
-                NCR No : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.ncrNo || nextNcrNo || '-'}</Box>
+                NC No : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.ncrNo || nextNcrNo || '-'}</Box>
               </Typography>
               <Typography variant="subtitle1" sx={{ color: '#0A2540', fontWeight: 600 }}>
                 Date : <Box component="span" sx={{ color: 'primary.main', fontWeight: 800 }}>{selectedFinding?.observationDate ? format(new Date(selectedFinding.observationDate), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy')}</Box>
@@ -412,7 +413,7 @@ export default function AuditNcrClose() {
                 >
                   <MenuItem value=""><em>— Select Observation —</em></MenuItem>
                   {rows
-                    .filter(r => r.ncrStatus !== 'CLOSED' && r.ncrStatus !== 'WAITING_APPROVAL')
+                    .filter(r => r.ncrStatus !== 'CLOSED' && r.ncrStatus !== 'WAITING_APPROVAL' && r.observationStatus !== 'COMPLIANCE')
                     .map(r => (
                       <MenuItem key={r.id} value={r.id}>
                         {`${r.observationNo} (${r.observationStatus}) - ${r.criteriaDetails || ''}`.substring(0, 100)}
@@ -455,7 +456,7 @@ export default function AuditNcrClose() {
                 <Stack spacing={3}>
                   <BOSPersonnelCard 
                       title="Auditor" 
-                      name={selectedFinding?.auditor} 
+                      name={selectedFinding?.auditor && selectedFinding.auditor.includes(' - ') ? selectedFinding.auditor.split(' - ')[0].trim() : selectedFinding?.auditor} 
                       empCode={getEmployeeDetails(selectedFinding?.auditor).empCode}
                       department={getEmployeeDetails(selectedFinding?.auditor).departmentName}
                       photo={getEmployeeDetails(selectedFinding?.auditor).employeePhotoUpload}
@@ -464,7 +465,7 @@ export default function AuditNcrClose() {
                   />
                   <BOSPersonnelCard 
                       title="NCR Approved By" 
-                      name={selectedFinding?.ncrApprovedBy} 
+                      name={selectedFinding?.ncrApprovedBy && selectedFinding.ncrApprovedBy.includes(' - ') ? selectedFinding.ncrApprovedBy.split(' - ')[0].trim() : selectedFinding?.ncrApprovedBy} 
                       empCode={getEmployeeDetails(selectedFinding?.ncrApprovedBy).empCode}
                       department={getEmployeeDetails(selectedFinding?.ncrApprovedBy).departmentName}
                       photo={getEmployeeDetails(selectedFinding?.ncrApprovedBy).employeePhotoUpload}
