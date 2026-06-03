@@ -16,6 +16,7 @@ import {
   BOSTextField,
   BOSDatePicker,
   BOSFileUpload,
+  BOSTimePicker,
   errorStyle,
   btnNew,
   BOSTableToolbar,
@@ -2643,9 +2644,8 @@ export default function ApplicationTrackingSystem() {
             />
           </Grid>
           <Grid item xs={12}>
-            <BOSTextField
+            <BOSTimePicker
               required
-              type="time"
               label="Interview time (24h):"
               name="interviewTime"
               value={callLetterData.interviewTime}
@@ -2657,7 +2657,7 @@ export default function ApplicationTrackingSystem() {
               }}
               error={!!callLetterErrors.interviewTime}
               helperText={callLetterErrors.interviewTime}
-              sx={errorStyle(!!callLetterErrors.interviewTime)}
+              fullWidth
             />
           </Grid>
           <Grid item xs={12}>
@@ -2827,10 +2827,9 @@ export default function ApplicationTrackingSystem() {
 
           {/* Time */}
           <Grid item xs={12} sm={6}>
-            <BOSTextField
+            <BOSTimePicker
               required
               fullWidth
-              type="time"
               label="Interview Time (24hr):"
               name="interviewTime"
               value={interviewData.interviewTime}
@@ -2840,19 +2839,16 @@ export default function ApplicationTrackingSystem() {
                   setInterviewErrors(prev => ({ ...prev, interviewTime: '' }));
                 }
               }}
-              inputProps={{ step: 60 }}
               error={!!interviewErrors.interviewTime}
               helperText={interviewErrors.interviewTime}
-              sx={errorStyle(!!interviewErrors.interviewTime)}
             />
           </Grid>
 
           {/* Start Time */}
           <Grid item xs={12} sm={6}>
-            <BOSTextField
+            <BOSTimePicker
               required
               fullWidth
-              type="time"
               label="Start Time (24hr):"
               name="startTime"
               value={interviewData.startTime}
@@ -2862,19 +2858,16 @@ export default function ApplicationTrackingSystem() {
                   setInterviewErrors(prev => ({ ...prev, startTime: '' }));
                 }
               }}
-              inputProps={{ step: 60 }}
               error={!!interviewErrors.startTime}
               helperText={interviewErrors.startTime}
-              sx={errorStyle(!!interviewErrors.startTime)}
             />
           </Grid>
 
           {/* End Time */}
           <Grid item xs={12} sm={6}>
-            <BOSTextField
+            <BOSTimePicker
               required
               fullWidth
-              type="time"
               label="End Time (24hr):"
               name="endTime"
               value={interviewData.endTime}
@@ -2884,10 +2877,8 @@ export default function ApplicationTrackingSystem() {
                   setInterviewErrors(prev => ({ ...prev, endTime: '' }));
                 }
               }}
-              inputProps={{ step: 60 }}
               error={!!interviewErrors.endTime}
               helperText={interviewErrors.endTime}
-              sx={errorStyle(!!interviewErrors.endTime)}
             />
           </Grid>
 

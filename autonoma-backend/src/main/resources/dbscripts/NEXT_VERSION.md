@@ -17,8 +17,8 @@ Before creating a new database migration script, you **MUST** claim a version nu
 
 ## 🔢 Current Status
 
-* **Last Claimed Version:** `V64`
-* **Next Available Version:** `V65`
+* **Last Claimed Version:** `V75`
+* **Next Available Version:** `V76`
 
 ---
 
@@ -27,8 +27,17 @@ Before creating a new database migration script, you **MUST** claim a version nu
 | Version | Developer | Date claimed | PR / Feature Description | Status |
 | :--- | :--- | :--- | :--- | :--- |
 | **V63** | System baseline | 2026-05-31 | Last legacy incremental script added | ✅ Merged |
-| **V64** | Darshan / TIS | 2026-06-02 | Add Frequency to Audit Schedule | ✅ Active |
-| **V65** | *Available* | - | | |
-| **V66** | *Available* | - | | |
+| **V64** | Eashwara Prasadh | 2026-06-02 | Drop And Rename Tables (Baseline cleanup) | ✅ Merged |
+| **V65** | Darshan | 2026-06-02 | Add Frequency to Audit Schedule | ✅ Merged |
+| **V66** | Darshan | 2026-06-02 | Alter Audit Criteria Columns To NVARCHAR(MAX) | ✅ Merged |
+| **V67** | Darshan | 2026-06-02 | Swap Audit Area And Type Page Codes | ✅ Merged |
+| **V68** | Eashwara Prasadh | 2026-06-02 | Cleanup Created By audit columns | ✅ Merged |
+| **V69** | Eashwara Prasadh | 2026-06-02 | Cleanup Updated By audit columns | ✅ Merged |
+| **V70** | Eashwara Prasadh | 2026-06-02 | Rename IsBosAdmin To UserLevel | ✅ Merged |
+| **V71** | Eashwara Prasadh | 2026-06-02 | Add Tenant Id To User Credential | ✅ Merged |
+| **V72** | Eashwara Prasadh | 2026-06-02 | Seed Organization Chart Page | ✅ Merged |
+| **V73** | Eashwara Prasadh | 2026-06-02 | Add Input Case Style To Company | ✅ Merged |
+| **V74** | Naveena / TIS | 2026-06-02 | Add L6/L7 Designation Levels | ✅ Merged |
+| **V75** | Naveena / TIS | 2026-06-02 | Add Requested Departments | ✅ Merged |
 
 *Junior developers: If you are unsure, ask the Main Branch In-Charge before claiming a version.*
