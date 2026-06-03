@@ -487,7 +487,9 @@ export default function BOSDataTable({
             ) : (
               paginatedRows.map((row, idx) => {
                 const rowId = row.id !== undefined && row.id !== null ? row.id : `row-idx-${idx}`;
-                const isSelected = activeSelectedId === rowId || activeSelectedId === row.id;
+                const isSelected = Array.isArray(activeSelectedId)
+                  ? activeSelectedId.includes(row.id) || activeSelectedId.includes(rowId)
+                  : activeSelectedId === rowId || activeSelectedId === row.id;
                 
                 const rowSx = {
                   cursor: 'pointer',

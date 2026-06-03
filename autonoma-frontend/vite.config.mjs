@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   const API_URL = env.VITE_APP_BASE_NAME || '/';
   const PORT = 3000;
+  const BACKEND_URL = process.env.VITE_BACKEND_URL || env.VITE_BACKEND_URL || 'http://127.0.0.1:8081';
 
   return {
     server: {
@@ -20,7 +21,7 @@ export default defineConfig(({ mode }) => {
       },
       proxy: {
         '/api': {
-          target: 'http://127.0.0.1:8081',
+          target: BACKEND_URL,
           changeOrigin: true,
           secure: false
         }
