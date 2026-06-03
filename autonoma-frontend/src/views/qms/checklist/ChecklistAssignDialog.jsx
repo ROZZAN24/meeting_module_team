@@ -221,11 +221,11 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     { id: 'assignTo',      label: 'Assign To',      minWidth: 120 },
     { id: 'assignType',    label: 'Assign Type',    minWidth: 100 },
     { id: 'assignDate',    label: 'Assign Date',    minWidth: 110 },
-    { id: 'createdUser',   label: 'Created User',   minWidth: 120 },
-    { id: 'createdDate',   label: 'Created Date',   minWidth: 140 },
-    { id: 'updatedUser',   label: 'Updated User',   minWidth: 120 },
-    { id: 'updatedDate',   label: 'Updated Date',   minWidth: 140 },
-    { id: 'status',        label: 'Status',         minWidth: 100 }
+    { id: 'createdUser',   label: 'Created By',     minWidth: 120 },
+    { id: 'createdDate',   label: 'Created Date',    minWidth: 140 },
+    { id: 'updatedUser',   label: 'Updated By',      minWidth: 120 },
+    { id: 'updatedDate',   label: 'Update Date & Time',   minWidth: 160 },
+    { id: 'status',        label: 'Task Status',     minWidth: 100 }
   ];
 
   const fmtDate = (d) => {
@@ -233,26 +233,45 @@ export default function ChecklistAssignDialog({ open, onClose, checklistId, init
     try {
       const dt = new Date(d);
       if (isNaN(dt.getTime())) return '-';
-      return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+      let hours = dt.getHours();
+      const mins = String(dt.getMinutes()).padStart(2,'0');
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12 || 12;
+      return `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}/${dt.getFullYear()} ${String(hours).padStart(2,'0')}:${mins} ${ampm}`;
     } catch { return '-'; }
   };
 
-  const rows = assignments.map(a => ({
-    id:            a.id,
-    seqNo:         a.checklist?.seqNo || '-',
-    checkingPoint: a.checklist?.checkingPoint || '-',
-    frequency:     a.checklist?.frequency || '-',
-    level:         a.checklist?.levelIds || '-',
-    department:    (a.checklist?.departments || []).map(d => d.departmentName).join(', ') || '-',
-    assignTo:      a.assignedTo || '-',
-    assignType:    a.assignType || 'PRIMARY',
-    assignDate:    a.assignedDate ? new Date(a.assignedDate).toLocaleDateString('en-GB') : '-',
-    createdUser:   a.createdUser  || a.createdBy  || a.assignedBy || '-',
-    createdDate:   fmtDate(a.createdDate  || a.createdAt),
-    updatedUser:   a.updatedUser  || a.updatedBy  || '-',
-    updatedDate:   fmtDate(a.updatedDate  || a.updatedAt),
-    status:        a.status?.name || 'ACTIVE'
-  }));
+  const rows = assignments.map(a => {
+    let isUpdated = false;
+    if (a.updatedAt && a.createdAt) {
+      const msDiff = Math.abs(new Date(a.updatedAt) - new Date(a.createdAt));
+      if (msDiff > 60000 || (a.updatedBy && a.createdBy && a.updatedBy !== a.createdBy)) {
+        isUpdated = true;
+      }
+    }
+
+    let upUser = isUpdated ? (a.updatedUser || a.updatedBy || '-') : '-';
+    if (upUser === 'Admin istrator' || upUser === 'Administrator') upUser = 'Admin';
+
+    let upDate = isUpdated ? fmtDate(a.updatedDate || a.updatedAt) : '-';
+
+    return {
+      id:            a.id,
+      seqNo:         a.checklist?.seqNo || '-',
+      checkingPoint: a.checklist?.checkingPoint || '-',
+      frequency:     a.checklist?.frequency || '-',
+      level:         a.checklist?.levelIds || '-',
+      department:    (a.checklist?.departments || []).map(d => d.departmentName).join(', ') || '-',
+      assignTo:      a.assignedTo || '-',
+      assignType:    a.assignType || 'PRIMARY',
+      assignDate:    a.assignedDate ? new Date(a.assignedDate).toLocaleDateString('en-GB') : '-',
+      createdUser:   a.createdUser  || a.createdBy  || a.assignedBy || '-',
+      createdDate:   fmtDate(a.createdDate  || a.createdAt),
+      updatedUser:   upUser,
+      updatedDate:   upDate,
+      status:        a.status?.name || 'ACTIVE'
+    };
+  });
 
   const handleEditAssignment = (row) => {
     setFormData({

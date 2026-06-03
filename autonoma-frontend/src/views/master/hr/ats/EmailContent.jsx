@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, MenuItem } from '@mui/material';
-import { IconMail, IconRefresh, IconPlus } from '@tabler/icons-react';
+import { Typography, Button, Stack, Tooltip, IconButton, MenuItem, Dialog, DialogTitle, DialogContent, DialogActions, Box } from '@mui/material';
+import { IconMail, IconRefresh, IconPlus, IconAlertTriangle } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch } from 'react-redux';
 import { openSnackbar } from 'store/slices/snackbar';
@@ -51,6 +51,7 @@ export default function EmailContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_STATE);
   const { errors, validate, clearErrors, setErrors } = useBOSValidation();
+  const [warningDialogOpen, setWarningDialogOpen] = useState(false);
 
   const perms = usePagePermissions(PAGE_CODES.ATS_EMAIL_CONTENT);
 
@@ -64,12 +65,7 @@ export default function EmailContent() {
     { id: 'createdAt', label: 'CREATED DATE', minWidth: 150 },
     { id: 'updatedUser', label: 'UPDATED USER', minWidth: 120 },
     { id: 'updatedAt', label: 'UPDATED DATE', minWidth: 150 },
-    {
-      id: 'status',
-      label: 'Status',
-      minWidth: 100,
-      render: (row) => (row.status === 'ACTIVE' ? 'Active' : 'Inactive')
-    }
+    { id: 'status', label: 'Status', minWidth: 100, status: true }
   ], []);
 
   // Dispatch starred filter configuration matching Status
@@ -130,9 +126,7 @@ export default function EmailContent() {
     if (errors[name]) clearErrors(name);
   };
 
-  const handleSave = async () => {
-    if (!validate(formData, VALIDATION_RULES)) return;
-
+  const executeSave = async () => {
     try {
       const payload = {
         ...formData
@@ -179,6 +173,26 @@ export default function EmailContent() {
     }
   };
 
+  const handleSave = async () => {
+    if (!validate(formData, VALIDATION_RULES)) return;
+
+    const isCurrentActive = formData.status === 'ACTIVE';
+    if (isCurrentActive) {
+      const hasDuplicate = rows.some(r => 
+        r.type?.trim().toLowerCase() === formData.type?.trim().toLowerCase() && 
+        (r.status === 'ACTIVE' || r.isActive === true) && 
+        (!formData.id || r.id !== formData.id)
+      );
+
+      if (hasDuplicate) {
+        setWarningDialogOpen(true);
+        return;
+      }
+    }
+
+    await executeSave();
+  };
+
   const handleDelete = (row) => {
     setDeleteTarget(row);
     setDeleteDialogOpen(true);
@@ -196,14 +210,20 @@ export default function EmailContent() {
   };
 
   const resolvedRows = useMemo(() => {
-    return rows.map((r, i) => ({
-      ...r,
-      index: i + 1,
-      createdUser: r.createdUser || r.createdBy || '-',
-      updatedUser: r.updatedUser || r.updatedBy || '-',
-      createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
-      updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
-    }));
+    return rows.map((r, i) => {
+      let cUser = r.createdUser || r.createdBy || '-';
+      if (cUser === 'Admin istrator' || cUser === 'Administrator') cUser = 'Admin';
+      let uUser = r.updatedUser || r.updatedBy || '-';
+      if (uUser === 'Admin istrator' || uUser === 'Administrator') uUser = 'Admin';
+      return {
+        ...r,
+        index: i + 1,
+        createdUser: cUser,
+        updatedUser: uUser,
+        createdAt: r.createdAt ? new Date(r.createdAt).toLocaleString() : '-',
+        updatedAt: r.updatedAt ? new Date(r.updatedAt).toLocaleString() : '-'
+      };
+    });
   }, [rows]);
 
   return (
@@ -218,7 +238,6 @@ export default function EmailContent() {
         <BOSTableToolbar
           onRefresh={fetchRows}
           onNew={handleOpenAdd}
-          newLabel="New"
           hasWritePermission={perms.write}
           exportData={resolvedRows}
           exportFilename="Email_Content"
@@ -242,11 +261,11 @@ export default function EmailContent() {
         fullWidth
         maxWidth="sm"
         onSave={handleSave}
-        onClear={() => {
+        onClear={formData.id ? () => {
           setFormData(INITIAL_STATE);
           setErrors({});
-        }}
-        secondaryActions={
+        } : undefined}
+        secondaryActions={formData.id ? (
           <Button
             variant="outlined"
             onClick={() => setDialogOpen(false)}
@@ -259,7 +278,7 @@ export default function EmailContent() {
           >
             Back
           </Button>
-        }
+        ) : undefined}
         hasId={!!formData.id}
         onDelete={() => {
           setDeleteTarget(formData);
@@ -350,6 +369,81 @@ export default function EmailContent() {
         message="Are you sure you want to completely remove this email content?"
         itemName={deleteTarget?.type}
       />
+
+      <Dialog
+        open={warningDialogOpen}
+        onClose={() => setWarningDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '20px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle
+          component="div"
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            bgcolor: 'warning.light',
+            borderBottom: '1px solid',
+            borderColor: 'warning.main',
+            py: 2,
+            px: 3
+          }}
+        >
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: '12px',
+              bgcolor: 'warning.lighter',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <IconAlertTriangle size={22} color="#b78103" />
+          </Box>
+          <Typography variant="h5" fontWeight={600} color="#b78103">
+            Duplicate Record Warning
+          </Typography>
+        </DialogTitle>
+
+        <DialogContent sx={{ py: 3, px: 3 }}>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+            Warning: An active record with this email type <strong>{formData.type}</strong> already exists.
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+            Saving this record as active will automatically mark the previous active record as inactive. Do you want to proceed?
+          </Typography>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider', gap: 1 }}>
+          <Button
+            variant="outlined"
+            onClick={() => setWarningDialogOpen(false)}
+            sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, color: 'text.secondary', borderColor: 'divider' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={() => {
+              setWarningDialogOpen(false);
+              executeSave();
+            }}
+            sx={{ borderRadius: '12px', textTransform: 'none', fontWeight: 600, bgcolor: '#f57c00', '&:hover': { bgcolor: '#e65100' } }}
+          >
+            Proceed
+          </Button>
+        </DialogActions>
+      </Dialog>
     </MainCard>
   );
 }

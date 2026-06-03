@@ -2783,137 +2783,137 @@ export default function TicketManagement({ viewType }) {
               <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
 
                 <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative' }}>
-                      {/* Scrollable form area */}
-                      <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
-                        <Stack spacing={2}>
-                          {/* COMMENTS */}
-                          <Box sx={{ mb: 2 }}>
-                            <TextField
-                              error={commentError}
-                              helperText={commentError ? "Comments are mandatory for status changes" : ""}
-                              fullWidth multiline rows={8} size="small"
-                              label="Comments"
-                              required
-                              placeholder="Required — provide update or reason for status change..."
-                              value={detailResolution}
-                              onChange={(e) => {
-                                setDetailResolution(e.target.value);
-                                if (e.target.value.trim()) setCommentError(false);
-                              }}
-                              sx={{
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: '12px',
-                                  bgcolor: '#f8fafc',
-                                  transition: 'all 0.2s',
-                                  '& fieldset': { borderColor: '#e2e8f0' },
-                                  '&:hover fieldset': { borderColor: '#cbd5e1' },
-                                  '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
-                                  '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' }
-                                }
-                              }}
-                            />
-                          </Box>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, position: 'relative' }}>
+                    {/* Scrollable form area */}
+                    <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+                      <Stack spacing={2}>
+                        {/* COMMENTS */}
+                        <Box sx={{ mb: 2 }}>
+                          <TextField
+                            error={commentError}
+                            helperText={commentError ? "Comments are mandatory for status changes" : ""}
+                            fullWidth multiline rows={8} size="small"
+                            label="Comments"
+                            required
+                            placeholder="Required — provide update or reason for status change..."
+                            value={detailResolution}
+                            onChange={(e) => {
+                              setDetailResolution(e.target.value);
+                              if (e.target.value.trim()) setCommentError(false);
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: '12px',
+                                bgcolor: '#f8fafc',
+                                transition: 'all 0.2s',
+                                '& fieldset': { borderColor: '#e2e8f0' },
+                                '&:hover fieldset': { borderColor: '#cbd5e1' },
+                                '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
+                                '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' }
+                              }
+                            }}
+                          />
+                        </Box>
 
-                          {/* FILES & ATTACHMENTS */}
-                          <Box sx={{ mt: 1, p: 2, border: '1px solid #eef2f6', borderRadius: '8px' }}>
-                            <Stack spacing={2} sx={{ mb: 2 }}>
-                                  {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').length > 0 && (
-                                    <>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 1 }}>General Attachments</Typography>
-                                      {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').map((file) => {
-                                        const isVoice = file.fileType === 'Voice Recording' ||
-                                          /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
-                                        return (
-                                          <Box key={file.id} sx={{ p: 1, px: 1.5, border: '1px solid #eef2f6', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#f8fafc' }}>
-                                            <Box sx={{ flexGrow: isVoice ? 0 : 1, minWidth: isVoice ? '150px' : 'auto', maxWidth: isVoice ? '200px' : '100%', overflow: 'hidden' }}>
-                                              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.fileName}</Typography>
-                                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
-                                              </Typography>
-                                            </Box>
-                                            {isVoice && (
-                                              <Box sx={{ flexGrow: 1, minWidth: '150px' }}>
-                                                <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '32px' }} />
-                                              </Box>
-                                            )}
-                                            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                                                {!isVoice && (
-                                                  <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
-                                                    Preview
-                                                  </Button>
-                                                )}
-                                                <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
-                                                  Download
-                                                </Button>
-                                            </Box>
-                                          </Box>
-                                        );
-                                      })}
-                                    </>
-                                  )}
+                        {/* FILES & ATTACHMENTS */}
+                        <Box sx={{ mt: 1, p: 2, border: '1px solid #eef2f6', borderRadius: '8px' }}>
+                          <Stack spacing={2} sx={{ mb: 2 }}>
+                            {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').length > 0 && (
+                              <>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 1 }}>General Attachments</Typography>
+                                {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').map((file) => {
+                                  const isVoice = file.fileType === 'Voice Recording' ||
+                                    /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
+                                  return (
+                                    <Box key={file.id} sx={{ p: 1, px: 1.5, border: '1px solid #eef2f6', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#f8fafc' }}>
+                                      <Box sx={{ flexGrow: isVoice ? 0 : 1, minWidth: isVoice ? '150px' : 'auto', maxWidth: isVoice ? '200px' : '100%', overflow: 'hidden' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.fileName}</Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
+                                        </Typography>
+                                      </Box>
+                                      {isVoice && (
+                                        <Box sx={{ flexGrow: 1, minWidth: '150px' }}>
+                                          <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '32px' }} />
+                                        </Box>
+                                      )}
+                                      <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                                        {!isVoice && (
+                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                            Preview
+                                          </Button>
+                                        )}
+                                        <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
+                                          Download
+                                        </Button>
+                                      </Box>
+                                    </Box>
+                                  );
+                                })}
+                              </>
+                            )}
 
-                                  {ticketAttachments.filter(f => f.fileType === 'Additional Requirement Attachment' || f.fileType === 'Additional Requirement Voice').length > 0 && (
-                                    <>
-                                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 2 }}>Additional Requirement</Typography>
-                                      {ticketAttachments.filter(f => f.fileType === 'Additional Requirement Attachment' || f.fileType === 'Additional Requirement Voice').map((file) => {
-                                        const isVoice = file.fileType === 'Additional Requirement Voice' ||
-                                          /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
-                                        return (
-                                          <Box key={file.id} sx={{ p: 1, px: 1.5, border: '1px solid #eef2f6', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#f8fafc' }}>
-                                            <Box sx={{ flexGrow: isVoice ? 0 : 1, minWidth: isVoice ? '150px' : 'auto', maxWidth: isVoice ? '200px' : '100%', overflow: 'hidden' }}>
-                                              <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.fileName}</Typography>
-                                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                                By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
-                                              </Typography>
-                                            </Box>
-                                            {isVoice && (
-                                              <Box sx={{ flexGrow: 1, minWidth: '150px' }}>
-                                                <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '32px' }} />
-                                              </Box>
-                                            )}
-                                            <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
-                                                {!isVoice && (
-                                                  <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
-                                                    Preview
-                                                  </Button>
-                                                )}
-                                                <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
-                                                  Download
-                                                </Button>
-                                            </Box>
-                                          </Box>
-                                        );
-                                      })}
-                                    </>
-                                  )}
-                                </Stack>
-                                <Divider sx={{ my: 2 }} />
-                                <Button component="label" variant="contained" fullWidth startIcon={<CloudUploadIcon />}>
-                                  Upload File
-                                  <input type="file" hidden onChange={async (e) => {
-                                    const file = e.target.files[0];
-                                    if (file) {
-                                      const fd = new FormData();
-                                      fd.append('file', file);
-                                      fd.append('module', 'Support');
-                                      const r = await axios.post('/api/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                                      handleAddDirectAttachment(r.data);
-                                    }
-                                  }} />
-                                </Button>
-                          </Box>
+                            {ticketAttachments.filter(f => f.fileType === 'Additional Requirement Attachment' || f.fileType === 'Additional Requirement Voice').length > 0 && (
+                              <>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 2 }}>Additional Requirement</Typography>
+                                {ticketAttachments.filter(f => f.fileType === 'Additional Requirement Attachment' || f.fileType === 'Additional Requirement Voice').map((file) => {
+                                  const isVoice = file.fileType === 'Additional Requirement Voice' ||
+                                    /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
+                                  return (
+                                    <Box key={file.id} sx={{ p: 1, px: 1.5, border: '1px solid #eef2f6', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: 2, bgcolor: '#f8fafc' }}>
+                                      <Box sx={{ flexGrow: isVoice ? 0 : 1, minWidth: isVoice ? '150px' : 'auto', maxWidth: isVoice ? '200px' : '100%', overflow: 'hidden' }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{file.fileName}</Typography>
+                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          By {file.uploadedBy} on {format(new Date(file.uploadedAt), 'dd/MM/yyyy')}
+                                        </Typography>
+                                      </Box>
+                                      {isVoice && (
+                                        <Box sx={{ flexGrow: 1, minWidth: '150px' }}>
+                                          <audio controls src={`/api/files/view?path=${encodeURIComponent(file.filePath)}`} style={{ width: '100%', height: '32px' }} />
+                                        </Box>
+                                      )}
+                                      <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
+                                        {!isVoice && (
+                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                            Preview
+                                          </Button>
+                                        )}
+                                        <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/download?path=${encodeURIComponent(file.filePath)}`)}>
+                                          Download
+                                        </Button>
+                                      </Box>
+                                    </Box>
+                                  );
+                                })}
+                              </>
+                            )}
+                          </Stack>
+                          <Divider sx={{ my: 2 }} />
+                          <Button component="label" variant="contained" fullWidth startIcon={<CloudUploadIcon />}>
+                            Upload File
+                            <input type="file" hidden onChange={async (e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const fd = new FormData();
+                                fd.append('file', file);
+                                fd.append('module', 'Support');
+                                const r = await axios.post('/api/files/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                                handleAddDirectAttachment(r.data);
+                              }
+                            }} />
+                          </Button>
+                        </Box>
 
-                          {/* CLOSED NOTICE */}
-                          {selectedTicket.ticketStatus === 'Closed' && (
-                            <Alert severity="info">This ticket is permanently closed and cannot be edited.</Alert>
-                          )}
+                        {/* CLOSED NOTICE */}
+                        {selectedTicket.ticketStatus === 'Closed' && (
+                          <Alert severity="info">This ticket is permanently closed and cannot be edited.</Alert>
+                        )}
 
-                        </Stack>
+                      </Stack>
 
 
-                      </Box>
                     </Box>
+                  </Box>
 
                   {/* placeholder to close original tab 0 box — replaced above */}
                   {false && (

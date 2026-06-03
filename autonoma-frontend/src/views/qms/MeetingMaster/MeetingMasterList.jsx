@@ -14,6 +14,22 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useAuth from 'hooks/useAuth';
 import AddMeetingMasterDialog from './AddMeetingMasterDialog';
 
+const formatEmployeeNames = (val) => {
+  if (!val || val === '-') return '-';
+  return val.split(',').map(item => {
+    const trimmed = item.trim();
+    if (trimmed.includes(' - ')) {
+      const parts = trimmed.split(' - ');
+      const isCode = (str) => /^[A-Z0-9_-]+$/i.test(str) || str.includes('EMP-') || str.includes('ADMIN_');
+      if (isCode(parts[0].trim())) {
+        return parts[1] ? parts[1].trim() : parts[0].trim();
+      }
+      return parts[0].trim();
+    }
+    return trimmed;
+  }).join(', ');
+};
+
 const columns = [
   { id: 'index', label: '#', minWidth: 50 },
   { id: 'meetingName', label: 'Meeting Name', minWidth: 150, bold: true },
@@ -195,6 +211,9 @@ export default function MeetingMasterList() {
       }
       return '-';
     }
+    if (col.id === 'employeeName') {
+      return formatEmployeeNames(row[col.id]);
+    }
     return row[col.id] || '-';
   };
 
@@ -214,6 +233,7 @@ export default function MeetingMasterList() {
           hasWritePermission={perms.write}
           exportData={filteredRows.map(row => ({
             ...row,
+            employeeName: formatEmployeeNames(row.employeeName),
             createdUser: row.createdUser || row.createdBy || '-',
             updatedUser: row.updatedUser || row.updatedBy || '-',
             updatedAt: (row.updatedUser || row.updatedBy) ? row.updatedAt : null

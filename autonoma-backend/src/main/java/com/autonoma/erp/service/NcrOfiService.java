@@ -281,13 +281,13 @@ public class NcrOfiService {
     @Transactional
     public void rejectNcr(Number observationDetailId, String remarks) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
-            detail.setApprovalStatus("REJECTED");
-            detail.setNcrStatus("REJECTED");
+            detail.setApprovalStatus("UNRESOLVED");
+            detail.setNcrStatus("UNRESOLVED");
             detail.setComments(remarks);
             observationDetailRepository.save(detail);
             
             ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {
-                master.setApprovalStatus("REJECTED");
+                master.setApprovalStatus("UNRESOLVED");
                 master.setStatus("OPEN");
                 master.setUpdatedAt(new java.util.Date());
                 master.setUpdatedBy(com.autonoma.erp.util.SecurityUtils.getCurrentUserId());

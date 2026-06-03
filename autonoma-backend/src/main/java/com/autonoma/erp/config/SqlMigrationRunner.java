@@ -107,6 +107,18 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260526_V38.0__Create_NPD_Process.sql",
         // Convert text to nvarchar skip on H2
         "20260527_V55.1__Convert_All_Text_To_Nvarchar.sql",
+        // Cleanup and department migration scripts skip on H2
+        "20260602_V64.0__Drop_And_Rename_Tables.sql",
+        "20260602_V66.0__Alter_Audit_Criteria_Columns_To_NvarcharMax__TIS.sql",
+        "20260602_V67.0__Swap_Audit_Area_And_Type_Page_Codes__TIS.sql",
+        "20260602_V68.0__Cleanup_Created_By.sql",
+        "20260602_V69.0__Cleanup_Updated_By.sql",
+        "20260602_V70.0__Rename_IsBosAdmin_To_UserLevel.sql",
+        "20260602_V71.0__Add_Tenant_Id_To_User_Credential.sql",
+        "20260602_V72.0__Seed_Organization_Chart_Page.sql",
+        "20260602_V73.0__Add_Input_Case_Style_To_Company.sql",
+        "20260602_V74.0__Add_L6_L7_Designation_Levels__TIS.sql",
+        "20260602_V75.0__Add_Requested_Departments__TIS.sql",
         // New v_next consolidation scripts
         "V001__Master_Module.sql",
         "V002__User_Module.sql",
@@ -345,6 +357,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         ensureDesignationColumns(targetJdbcTemplate);
         ensureTicketTraceabilityColumns(targetJdbcTemplate);
         ensureAtsColumns(targetJdbcTemplate);
+        ensureH2CompatibilityColumns(targetJdbcTemplate);
 
         System.out.println("======================================");
         System.out.println("SQL MIGRATION COMPLETED FOR DYNAMIC TEMPLATE");
@@ -1507,7 +1520,6 @@ public class SqlMigrationRunner implements CommandLineRunner {
     }
 
     private void ensureTicketTraceabilityColumns(JdbcTemplate targetJdbcTemplate) {
-        String tableName = "ticket_Tracability_center";
         try {
             boolean isH2 = false;
             try {
@@ -1519,6 +1531,27 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 // Ignore
             }
 
+            // H2 self-healing: Rename legacy table to match JPA entity mapping spelling
+            if (isH2) {
+                try {
+                    Integer oldTableCount = targetJdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = 'TICKET_TRACABILITY_CENTER'",
+                        Integer.class
+                    );
+                    Integer newTableCount = targetJdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = 'TICKET_TRACEABILITY_CENTER'",
+                        Integer.class
+                    );
+                    if (oldTableCount != null && oldTableCount > 0 && (newTableCount == null || newTableCount == 0)) {
+                        targetJdbcTemplate.execute("ALTER TABLE TICKET_TRACABILITY_CENTER RENAME TO TICKET_TRACEABILITY_CENTER");
+                        System.out.println("[Self-Healing] H2: Renamed table TICKET_TRACABILITY_CENTER to TICKET_TRACEABILITY_CENTER");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error renaming H2 ticket traceability table: " + e.getMessage());
+                }
+            }
+
+            String tableName = "TICKET_TRACEABILITY_CENTER";
             // Check if table exists
             Integer tableCount = targetJdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
@@ -1526,8 +1559,17 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 tableName.toUpperCase()
             );
             if (tableCount == null || tableCount == 0) {
-                return;
+                tableName = "ticket_Tracability_center";
+                tableCount = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                    Integer.class,
+                    tableName.toUpperCase()
+                );
+                if (tableCount == null || tableCount == 0) {
+                    return;
+                }
             }
+            final String finalTableName = tableName;
 
             // Columns to ensure and their definitions for H2 / SQL Server
             String[][] cols = {
@@ -1537,7 +1579,9 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 {"developer_name", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
                 {"developer_email", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
                 {"developer_mobile_no", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"},
-                {"assigned_hours", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"}
+                {"assigned_hours", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"},
+                {"verified_by", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"additional_requirement", "CLOB NULL", "NVARCHAR(MAX) NULL"}
             };
 
             for (String[] colDef : cols) {
@@ -1548,14 +1592,14 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 Integer count = targetJdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ? AND UPPER(COLUMN_NAME) = ?",
                     Integer.class,
-                    tableName.toUpperCase(),
+                    finalTableName.toUpperCase(),
                     colName.toUpperCase()
                 );
 
                 if (count == null || count == 0) {
                     String type = isH2 ? h2Type : sqlServerType;
-                    System.out.println("[Self-Healing] Adding missing column " + colName + " to table " + tableName);
-                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD " + colName + " " + type);
+                    System.out.println("[Self-Healing] Adding missing column " + colName + " to table " + finalTableName);
+                    targetJdbcTemplate.execute("ALTER TABLE " + finalTableName + " ADD " + colName + " " + type);
                 }
             }
         } catch (Exception e) {
@@ -2143,6 +2187,65 @@ public class SqlMigrationRunner implements CommandLineRunner {
             }
         } catch (Exception e) {
             System.out.println("Error adding FK " + constraintName + ": " + e.getMessage());
+        }
+    }
+
+    private void ensureH2CompatibilityColumns(JdbcTemplate targetJdbcTemplate) {
+        // 1. Ensure columns in AD_USER_CREDENTIAL
+        try {
+            String tableName = "ad_user_credential";
+            Integer tableCount = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                Integer.class,
+                tableName.toUpperCase()
+            );
+            if (tableCount != null && tableCount > 0) {
+                List<String> columns = targetJdbcTemplate.queryForList(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ?",
+                    String.class,
+                    tableName.toUpperCase()
+                );
+                
+                if (columns.stream().noneMatch(c -> c.equalsIgnoreCase("TENANT_ID"))) {
+                    targetJdbcTemplate.execute("ALTER TABLE ad_user_credential ADD TENANT_ID VARCHAR(50) DEFAULT 'AUTONOMA'");
+                    System.out.println("[Self-Healing] H2: Added column TENANT_ID to ad_user_credential");
+                }
+                
+                if (columns.stream().noneMatch(c -> c.equalsIgnoreCase("USER_LEVEL"))) {
+                    targetJdbcTemplate.execute("ALTER TABLE ad_user_credential ADD USER_LEVEL INT DEFAULT 0");
+                    System.out.println("[Self-Healing] H2: Added column USER_LEVEL to ad_user_credential");
+                    
+                    if (columns.stream().anyMatch(c -> c.equalsIgnoreCase("IS_BOS_ADMIN"))) {
+                        targetJdbcTemplate.execute("UPDATE ad_user_credential SET USER_LEVEL = 5 WHERE IS_BOS_ADMIN = 1");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error ensuring H2 user credential compatibility columns: " + e.getMessage());
+        }
+
+        // 2. Ensure columns in AD_COMPANY_CREDENTIAL
+        try {
+            String tableName = "ad_company_credential";
+            Integer tableCount = targetJdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                Integer.class,
+                tableName.toUpperCase()
+            );
+            if (tableCount != null && tableCount > 0) {
+                List<String> columns = targetJdbcTemplate.queryForList(
+                    "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ?",
+                    String.class,
+                    tableName.toUpperCase()
+                );
+                
+                if (columns.stream().noneMatch(c -> c.equalsIgnoreCase("INPUT_CASE_STYLE"))) {
+                    targetJdbcTemplate.execute("ALTER TABLE ad_company_credential ADD INPUT_CASE_STYLE VARCHAR(50) DEFAULT 'UPPER_CASE'");
+                    System.out.println("[Self-Healing] H2: Added column INPUT_CASE_STYLE to ad_company_credential");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Error ensuring H2 company credential compatibility columns: " + e.getMessage());
         }
     }
 

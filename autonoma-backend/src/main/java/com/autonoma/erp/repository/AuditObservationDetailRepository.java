@@ -10,7 +10,7 @@ import java.util.List;
 public interface AuditObservationDetailRepository extends JpaRepository<AuditObservationDetail, Long> {
     @Query("SELECT ad FROM AuditObservationDetail ad " +
            "JOIN FETCH ad.auditObservation ao " +
-           "WHERE ad.approvalStatus != 'CLOSED' " +
+           "WHERE ad.observationStatus IN ('NC', 'NCR', 'OFI') " +
            "AND (:observationStatus IS NULL OR :observationStatus = 'All' OR ad.observationStatus = :observationStatus OR (:observationStatus = 'NC' AND ad.observationStatus = 'NCR')) " +
            "AND (:ncrStatus IS NULL OR :ncrStatus = 'All' OR ad.ncrStatus = :ncrStatus) " +
            "AND (:ncrApprovedBy IS NULL OR :ncrApprovedBy = 'All' OR ao.ncrApprovedBy = :ncrApprovedBy) " +

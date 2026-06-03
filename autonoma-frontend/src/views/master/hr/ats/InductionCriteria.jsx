@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Typography, Button, Stack, Tooltip, IconButton, Grid, MenuItem, Box, Checkbox, ListItemText } from '@mui/material';
+import { Typography, Button, Stack, Tooltip, IconButton, Grid, MenuItem, Box, Checkbox, ListItemText, Chip } from '@mui/material';
 import { IconClipboardCheck, IconRefresh, IconPlus, IconDeviceFloppy, IconEraser, IconEye } from '@tabler/icons-react';
 import axios from 'utils/axios';
 import { useDispatch, useSelector } from 'react-redux';
@@ -160,11 +160,11 @@ export default function InductionCriteria() {
         label: 'Status',
         type: 'select',
         options: [
-          { value: 'ALL', label: 'ALL' },
+          { value: 'All', label: 'ALL' },
           { value: 'ACTIVE', label: 'ACTIVE' },
           { value: 'IN ACTIVE', label: 'INACTIVE' }
         ],
-        defaultValue: 'ALL',
+        defaultValue: 'All',
         isStarred: true
       },
       ...getCommonDateFilters('createdAt', 'updatedAt')];
@@ -273,17 +273,19 @@ export default function InductionCriteria() {
 
   const handleLevelChange = (e) => {
     const { value } = e.target;
+    let newLevels = [];
     if (value.includes('ALL')) {
       if (formData.levelCodes.length === levelOptions.length) {
-        setFormData(prev => ({ ...prev, levelCodes: [] }));
+        newLevels = [];
       } else {
-        setFormData(prev => ({ ...prev, levelCodes: levelOptions.map(l => l.code) }));
+        newLevels = levelOptions.map(l => l.code);
       }
-      const rawCodes = typeof value === 'string' ? value.split(',') : value;
-      const order = LEVEL_OPTIONS.map(l => l.code);
-      const sortedCodes = [...rawCodes].sort((a, b) => order.indexOf(a) - order.indexOf(b));
-      setFormData((prev) => ({ ...prev, levelCodes: sortedCodes }));
+    } else {
+      newLevels = value;
     }
+    const order = LEVEL_OPTIONS.map(l => l.code);
+    const sortedLevels = [...newLevels].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    setFormData(prev => ({ ...prev, levelCodes: sortedLevels }));
     if (errors.levelCodes) clearErrors('levelCodes');
   };
 
@@ -368,7 +370,8 @@ export default function InductionCriteria() {
       setDeleteDialogOpen(false);
       fetchRows();
     } catch (error) {
-      dispatch(openSnackbar({ open: true, message: 'Failed to delete', variant: 'alert', severity: 'error' }));
+      const msg = error.response?.data?.message || error.response?.data || 'Failed to delete';
+      dispatch(openSnackbar({ open: true, message: msg, variant: 'alert', severity: 'error' }));
     }
   };
 
@@ -388,7 +391,7 @@ export default function InductionCriteria() {
       return {
         ...r,
         index: i + 1,
-        serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+        serialNo: r.id ? `IND-${r.id.toString().padStart(3, '0')}` : '-',
         departmentCodes: deptNames, // Render friendly department names in table row
         createdUser: r.createdUser || r.createdBy || '-',
         updatedUser: r.updatedUser || r.updatedBy || '-',
@@ -455,7 +458,11 @@ export default function InductionCriteria() {
               <BOSTextField
                 name="id"
                 label="SERIAL NO"
-                value={formData.id ? `IND-${formData.id.toString().padStart(3, '0')}` : (nextSequence ? `IND-${nextSequence.toString().padStart(3, '0')}` : 'IND-001')}
+                value={
+                  formData.id
+                    ? `IND-${formData.id.toString().padStart(3, '0')}`
+                    : `IND-${(nextSequence ? nextSequence : 1).toString().padStart(3, '0')}`
+                }
                 disabled
                 InputProps={{
                   readOnly: true,

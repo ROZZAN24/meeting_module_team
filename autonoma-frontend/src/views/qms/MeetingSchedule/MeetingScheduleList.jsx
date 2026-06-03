@@ -79,7 +79,7 @@ export default function MeetingScheduleList() {
         hostByName: row.hostBy?.employeeName || '-',
         participantsBy: (row.participants || []).map(pr => {
           const e = pr.employee;
-          return e ? `${e.employeeName} - ${e.empCode}` : '';
+          return e ? e.employeeName : '';
         }).filter(Boolean).join(', '),
         createdUser: row.createdUser || row.createdBy || '-',
         updatedUser: row.updatedUser || row.updatedBy || '-',

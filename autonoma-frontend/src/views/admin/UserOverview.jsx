@@ -742,6 +742,9 @@ const UserOverview = () => {
                               <TextField select fullWidth label="User Access Level" name="userLevel" value={values.userLevel} onChange={handleChange} onBlur={handleBlur}>
                                 <MenuItem value={0}>Normal User (0)</MenuItem>
                                 <MenuItem value={1}>Admin User (1)</MenuItem>
+                                {(currentUser?.userLevel === 5 || values.userLevel === 5) && (
+                                  <MenuItem value={5}>Boss Admin (5)</MenuItem>
+                                )}
                               </TextField>
                             </Grid>
                             <Grid item xs={12} sm={6}>
