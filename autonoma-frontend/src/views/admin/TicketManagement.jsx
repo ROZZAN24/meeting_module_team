@@ -1,50 +1,9 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 // material-ui
-import {
-  Box,
-  Grid,
-  Typography,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Stack,
-  Button,
-  useTheme,
-  Tooltip,
-  Snackbar,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Divider,
-  TextField,
-  MenuItem,
-  CircularProgress,
-  Card,
-  InputLabel,
-  CardContent,
-  Avatar,
-  Autocomplete,
-  TablePagination,
-  InputBase,
-  Select,
-  FormControl,
-  OutlinedInput,
-  InputAdornment,
-  Fab,
-  Tabs,
-  Tab,
-  Collapse
-} from '@mui/material';
+import { Box, Grid, Typography, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack, Button, useTheme, Tooltip, Snackbar, Alert, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Divider, MenuItem, CircularProgress, Card, InputLabel, CardContent, Avatar, Autocomplete, TablePagination, InputBase, Select, FormControl, OutlinedInput, InputAdornment, Fab, Tabs, Tab, Collapse } from '@mui/material';
 import { alpha, styled } from '@mui/material/styles';
 
 // third-party
