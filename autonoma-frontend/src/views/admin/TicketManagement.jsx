@@ -671,7 +671,7 @@ export default function TicketManagement({ viewType }) {
         label: 'Status',
         type: 'select',
         options: [
-          { value: 'All', label: 'All Statuses' },
+          { value: 'All', label: 'All' },
           { value: 'Open', label: 'Open' },
           { value: 'In Progress', label: 'In Progress' },
           { value: 'To Be Tested', label: 'To Be Tested' },
@@ -687,7 +687,7 @@ export default function TicketManagement({ viewType }) {
         label: 'Priority',
         type: 'select',
         options: [
-          { value: 'All', label: 'All Priorities' },
+          { value: 'All', label: 'All' },
           { value: 'Low', label: 'Low' },
           { value: 'Medium', label: 'Medium' },
           { value: 'High', label: 'High' },
@@ -2154,13 +2154,13 @@ export default function TicketManagement({ viewType }) {
 
       let baseMatches = matchesSearch && matchesId && matchesType && matchesStatus && matchesPriority && matchesDept && matchesAssigned && matchesDate;
 
-      // Hide closed and completed tickets in 'raised-by-me' view unless actively searched for
-      if (currentViewType === 'raised-by-me' && !hasActiveFilters && (t.ticketStatus === 'Closed' || t.ticketStatus === 'Completed')) {
+      // Hide completed tickets in 'raised-by-me' view unless actively searched for
+      if (currentViewType === 'raised-by-me' && !hasActiveFilters && t.ticketStatus === 'Completed') {
         return false;
       }
 
-      // Hide To Be Tested tickets in 'raised-for-me' view unless actively searched for
-      if (currentViewType === 'raised-for-me' && !hasActiveFilters && t.ticketStatus === 'To Be Tested') {
+      // Hide To Be Tested and Completed tickets in 'raised-for-me' view unless actively searched for
+      if (currentViewType === 'raised-for-me' && !hasActiveFilters && (t.ticketStatus === 'To Be Tested' || t.ticketStatus === 'Completed')) {
         return false;
       }
 
