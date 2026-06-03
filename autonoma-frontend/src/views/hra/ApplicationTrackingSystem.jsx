@@ -1380,7 +1380,7 @@ export default function ApplicationTrackingSystem() {
         <BOSTableToolbar
           onRefresh={fetchApplicants}
           onNew={handleOpenAdd}
-          newLabel="New"
+          newLabel="+ New"
           newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
           hasWritePermission={perms.write}
         >
