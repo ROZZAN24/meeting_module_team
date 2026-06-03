@@ -89,7 +89,6 @@ export default function InductionCriteria() {
   const perms = usePagePermissions(PAGE_CODES.ATS_INDUCTION_CRITERIA);
 
   const columns = useMemo(() => [
-    { id: 'index', label: 'Sl.No', minWidth: 60 },
     { id: 'serialNo', label: 'Serial No', bold: true, color: 'primary.main', minWidth: 100 },
     { id: 'inductionDetails', label: 'Induction Details', required: true, bold: true, minWidth: 250 },
     { id: 'answer', label: 'Answer', required: true, minWidth: 200 },
@@ -391,7 +390,7 @@ export default function InductionCriteria() {
       return {
         ...r,
         index: i + 1,
-        serialNo: r.id ? `IND-${r.id.toString().padStart(3, '0')}` : '-',
+        serialNo: r.id ? r.id.toString() : '-',
         departmentCodes: deptNames, // Render friendly department names in table row
         createdUser: r.createdUser || r.createdBy || '-',
         updatedUser: r.updatedUser || r.updatedBy || '-',
@@ -460,8 +459,10 @@ export default function InductionCriteria() {
                 label="SERIAL NO"
                 value={
                   formData.id
-                    ? `IND-${formData.id.toString().padStart(3, '0')}`
-                    : `IND-${(nextSequence ? nextSequence : 1).toString().padStart(3, '0')}`
+                    ? formData.id.toString()
+                    : nextSequence
+                    ? nextSequence.toString()
+                    : '1'
                 }
                 disabled
                 InputProps={{
