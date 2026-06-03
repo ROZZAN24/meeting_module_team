@@ -107,6 +107,18 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260526_V38.0__Create_NPD_Process.sql",
         // Convert text to nvarchar skip on H2
         "20260527_V55.1__Convert_All_Text_To_Nvarchar.sql",
+        // Cleanup and department migration scripts skip on H2
+        "20260602_V64.0__Drop_And_Rename_Tables.sql",
+        "20260602_V65.0__Add_L6_L7_Designation_Levels__TIS.sql",
+        "20260602_V65.0__Alter_Audit_Criteria_Columns_To_NvarcharMax__TIS.sql",
+        "20260602_V65.0__Cleanup_Created_By.sql",
+        "20260602_V66.0__Add_Requested_Departments__TIS.sql",
+        "20260602_V66.0__Cleanup_Updated_By.sql",
+        "20260602_V66.0__Swap_Audit_Area_And_Type_Page_Codes__TIS.sql",
+        "20260602_V67.0__Rename_IsBosAdmin_To_UserLevel.sql",
+        "20260602_V68.0__Add_Tenant_Id_To_User_Credential.sql",
+        "20260602_V69.0__Seed_Organization_Chart_Page.sql",
+        "20260602_V70.0__Add_Input_Case_Style_To_Company.sql",
         // New v_next consolidation scripts
         "V001__Master_Module.sql",
         "V002__User_Module.sql",
