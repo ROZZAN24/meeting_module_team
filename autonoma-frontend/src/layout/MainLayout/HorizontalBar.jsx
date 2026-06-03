@@ -20,13 +20,14 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 
-import MenuList from './MenuList';
+import MenuList, { filterMenuByPermissions } from './MenuList';
 import NavCollapse from './MenuList/NavCollapse';
 import NavItem from './MenuList/NavItem';
 import menuItem from 'menu-items';
 import useConfig from 'hooks/useConfig';
 import { useRibbon } from 'contexts/RibbonContext';
 import SpeedDialConfigModal from './SpeedDialConfigModal';
+import { useSelector } from 'store';
 
 import { IconChevronDown, IconChevronUp, IconChevronLeft, IconChevronRight, IconSettings } from '@tabler/icons-react';
 
@@ -626,7 +627,16 @@ export default function HorizontalBar() {
   const { pathname } = useLocation();
   const { ribbonOpen, setRibbonOpen } = useRibbon();
 
-  const groups = menuItem.items;
+  const permStatus = useSelector((state) => state.permissions.status);
+  const permMap = useSelector((state) => state.permissions.map);
+
+  const groups = useMemo(() => {
+    let currentItems = [...menuItem.items];
+    if (permStatus === 'loaded') {
+      currentItems = filterMenuByPermissions(currentItems, permMap);
+    }
+    return currentItems;
+  }, [permStatus, permMap]);
 
   // Speed Dial Customization State
   const [speedDialPreferences, setSpeedDialPreferences] = useState({});

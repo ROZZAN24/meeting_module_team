@@ -44,6 +44,10 @@ public class SupportTicketReopenHistory {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
 
+        if (this.reopenedBy == null) {
+            this.reopenedBy = currentUserId != null ? currentUserId : "System";
+        }
+
         this.reopenedAt = new Date();
         }
 }

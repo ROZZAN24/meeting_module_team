@@ -61,9 +61,9 @@ export default function AuditCriteriaMaster() {
         defaultValue: 'ACTIVE',
         isStarred: true
       },
-      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Filter by Type...', isStarred: true },
-      { id: 'clause', label: 'Clause', type: 'text', placeholder: 'Filter by Clause...', isStarred: true },
-      { id: 'criteriaText', label: 'Criteria', type: 'text', placeholder: 'Filter by Criteria...' },
+      { id: 'auditType', label: 'Audit Type', type: 'text', placeholder: 'Filter by Type...' },
+      { id: 'clause', label: 'Clause', type: 'text', placeholder: 'Filter by Clause...' },
+      { id: 'criteriaText', label: 'Criteria', type: 'text', placeholder: 'Filter by Criteria...', isStarred: true },
       { id: 'department', label: 'Department', type: 'text', placeholder: 'Filter by Department...' },
       { id: 'createdUser', label: 'CREATED USER', type: 'text' },
       { id: 'updatedUser', label: 'UPDATED USER', type: 'text' },

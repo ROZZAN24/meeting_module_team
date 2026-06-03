@@ -143,28 +143,33 @@ public abstract class BaseAuditEntity {
 
     @PreUpdate
     protected void onUpdate() {
+        if (this.skipAuditUpdate) {
+            return;
+        }
+        
+        // Deep fix: Skip updating audit fields if the record was newly created within
+        // the last 5 seconds to prevent post-creation updates (e.g. wiring) from dirtifying update fields.
+        if (this.createdDate != null && (new Date().getTime() - this.createdDate.getTime() < 5000)) {
+            return;
+        }
+        
+        this.updatedDate = new Date();
+        
         String currentUserId = null;
         try {
             currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         } catch (Exception e) {
         }
-        this.updatedUser = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        
+        if (currentUserId != null && !currentUserId.trim().isEmpty()) {
+            this.updatedUser = currentUserId;
+        } else {
+            String displayName = SecurityUtils.getCurrentUserDisplayName();
+            this.updatedUser = (displayName != null) ? displayName : "System";
+        }
+
         if (this.createdUser != null && this.createdUser.trim().isEmpty()) {
             this.createdUser = null;
         }
-
-        if (this.skipAuditUpdate) {
-            return;
-        }
-        // Deep fix: Skip updating audit fields if the record was newly created within
-        // the last second
-        if (this.createdDate != null && (new Date().getTime() - this.createdDate.getTime() < 1000)) {
-            return;
-        }
-        this.updatedDate = new Date();
-        String userId = SecurityUtils.getCurrentUserId();
-        this.updatedUser = (userId != null) ? userId
-                : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName()
-                        : "System");
     }
 }

@@ -13,5 +13,36 @@ services:
     volumes:
       - mssql_data:/var/opt/mssql
 
+  backend:
+    build:
+      context: ./autonoma-backend
+      dockerfile: Dockerfile
+    container_name: autonoma-backend
+    ports:
+      - "8081:8081"
+    depends_on:
+      - sqlserver
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:sqlserver://sqlserver:1433;databaseName=AUTONOMA;trustServerCertificate=true;sendStringParametersAsUnicode=true;responseBuffering=adaptive
+      - SPRING_DATASOURCE_USERNAME=nutech
+      - SPRING_DATASOURCE_PASSWORD=nutech@2026
+
+  frontend:
+    build:
+      context: ./autonoma-frontend
+      dockerfile: Dockerfile
+    container_name: autonoma-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - VITE_BACKEND_URL=http://backend:8081
+
 volumes:
   mssql_data:
+
+networks:
+  default:
+    name: autonoma-network
+    external: true

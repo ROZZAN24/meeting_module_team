@@ -809,7 +809,7 @@ export default function AddMeetingSchedule() {
                         fullWidth
                         disabled={form.departments.length === 0}
                         options={filteredEmployees}
-                        getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+                        getOptionLabel={(option) => option.employeeName || ''}
                         value={selectedEmp}
                         onChange={(e, val) => {
                           setForm(p => ({ ...p, [person.field]: val }));
@@ -843,7 +843,7 @@ export default function AddMeetingSchedule() {
                 form.departments.map(d => String(d.id)).includes(String(e.departmentId)) &&
                 !form.participants.some(p => p.id === e.id || p.empCode === e.empCode)
               )}
-              getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+              getOptionLabel={(option) => option.employeeName || ''}
               value={form.participants}
               onChange={(e, val) => {
                 setForm(p => ({ ...p, participants: val }));

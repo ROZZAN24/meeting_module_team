@@ -29,6 +29,18 @@ public class AuditObservationController {
     @Autowired
     private com.autonoma.erp.service.NcrOfiService ncrOfiService;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditScheduleRepository auditScheduleRepository;
+
+    private void closeAuditSchedule(String scheduleNo) {
+        if (scheduleNo != null && !scheduleNo.trim().isEmpty()) {
+            auditScheduleRepository.findByScheduleNo(scheduleNo).ifPresent(schedule -> {
+                schedule.setStatus("CLOSED");
+                auditScheduleRepository.save(schedule);
+            });
+        }
+    }
+
     @PostMapping("/ncr/submit")
     @RequirePagePermission(pageCode = "QM1240", action = "write")
     @Operation(summary = "Submit NCR Closure", description = "Saves corrective actions and updates finding status")
@@ -133,7 +145,9 @@ public class AuditObservationController {
             }
         }
         
-        return auditObservationRepository.save(observation);
+        AuditObservation saved = auditObservationRepository.save(observation);
+        closeAuditSchedule(observation.getAuditScheduleNo());
+        return saved;
     }
 
     @PutMapping("/{id}")
@@ -166,7 +180,9 @@ public class AuditObservationController {
                         }
                     }
 
-                    return ResponseEntity.ok(auditObservationRepository.save(observation));
+                    AuditObservation saved = auditObservationRepository.save(observation);
+                    closeAuditSchedule(details.getAuditScheduleNo());
+                    return ResponseEntity.ok(saved);
                 }).orElse(ResponseEntity.notFound().build());
     }
     

@@ -18,12 +18,24 @@ public class AuditScheduleService {
     @Autowired
     private AuditScheduleRepository repository;
 
+    @Autowired
+    private com.autonoma.erp.repository.AuditAttendanceRepository auditAttendanceRepository;
+
     public List<AuditSchedule> getAllAuditSchedules() {
-        return repository.findAll().stream().filter(a -> !a.isDeleted()).toList();
+        List<AuditSchedule> list = repository.findAll().stream().filter(a -> !a.isDeleted()).toList();
+        for (AuditSchedule schedule : list) {
+            boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(schedule.getScheduleNo()).isEmpty();
+            schedule.setHasAttendance(exists);
+        }
+        return list;
     }
 
     public Optional<AuditSchedule> getAuditScheduleById(Long id) {
-        return repository.findById(id);
+        return repository.findById(id).map(schedule -> {
+            boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(schedule.getScheduleNo()).isEmpty();
+            schedule.setHasAttendance(exists);
+            return schedule;
+        });
     }
 
     public AuditSchedule createAuditSchedule(AuditSchedule auditSchedule) {
@@ -43,6 +55,12 @@ public class AuditScheduleService {
     public AuditSchedule updateAuditSchedule(Long id, AuditSchedule updatedAuditSchedule) {
         validateEmployeeAvailability(updatedAuditSchedule, id);
         return repository.findById(id).map(existing -> {
+            // Check if there is any attendance put for this schedule
+            boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(existing.getScheduleNo()).isEmpty();
+            if (exists) {
+                throw new RuntimeException("Cannot reschedule or edit this audit schedule because employee attendance has already been recorded.");
+            }
+
             // Increment reschedule count if the audit date is changed
             if (existing.getAuditDate() != null && updatedAuditSchedule.getAuditDate() != null 
                     && !existing.getAuditDate().equals(updatedAuditSchedule.getAuditDate())) {
@@ -95,6 +113,22 @@ public class AuditScheduleService {
 
         String auditeeCode = extractEmployeeCode(schedule.getAuditee());
         String auditorCode = extractEmployeeCode(schedule.getAuditor());
+        String ncrCode = extractEmployeeCode(schedule.getNcrApprovedBy());
+
+        List<String> employeeCodes = new java.util.ArrayList<>();
+        if (auditeeCode != null && !auditeeCode.trim().isEmpty()) {
+            employeeCodes.add(auditeeCode.trim().toLowerCase());
+        }
+        if (auditorCode != null && !auditorCode.trim().isEmpty()) {
+            employeeCodes.add(auditorCode.trim().toLowerCase());
+        }
+        if (ncrCode != null && !ncrCode.trim().isEmpty()) {
+            employeeCodes.add(ncrCode.trim().toLowerCase());
+        }
+
+        if (employeeCodes.isEmpty()) {
+            return;
+        }
 
         List<AuditSchedule> activeSchedules = repository.findAll().stream()
             .filter(a -> !a.isDeleted() && "OPEN".equalsIgnoreCase(a.getStatus()))
@@ -102,31 +136,96 @@ public class AuditScheduleService {
             .toList();
 
         for (AuditSchedule active : activeSchedules) {
-            String activeAuditeeCode = extractEmployeeCode(active.getAuditee());
-            String activeAuditorCode = extractEmployeeCode(active.getAuditor());
-
-            if (auditeeCode != null) {
-                if (auditeeCode.equalsIgnoreCase(activeAuditeeCode)) {
-                    throw new RuntimeException("Validation Error: Auditee " + schedule.getAuditee() + " is already assigned to open Audit " + active.getScheduleNo());
-                }
-                if (auditeeCode.equalsIgnoreCase(activeAuditorCode)) {
-                    throw new RuntimeException("Validation Error: Auditee " + schedule.getAuditee() + " is already assigned as Auditor to open Audit " + active.getScheduleNo());
-                }
+            // Check if same date
+            if (!isSameDate(schedule.getAuditDate(), active.getAuditDate())) {
+                continue;
             }
 
-            if (auditorCode != null) {
-                if (auditorCode.equalsIgnoreCase(activeAuditeeCode)) {
-                    throw new RuntimeException("Validation Error: Auditor " + schedule.getAuditor() + " is already assigned as Auditee to open Audit " + active.getScheduleNo());
-                }
-                if (auditorCode.equalsIgnoreCase(activeAuditorCode)) {
-                    throw new RuntimeException("Validation Error: Auditor " + schedule.getAuditor() + " is already assigned to open Audit " + active.getScheduleNo());
+            // Check if overlapping time
+            if (!isTimeOverlapping(schedule.getStartTime(), schedule.getEndTime(), active.getStartTime(), active.getEndTime())) {
+                continue;
+            }
+
+            String activeAuditee = extractEmployeeCode(active.getAuditee());
+            String activeAuditor = extractEmployeeCode(active.getAuditor());
+            String activeNcr = extractEmployeeCode(active.getNcrApprovedBy());
+
+            List<String> activeEmployeeCodes = new java.util.ArrayList<>();
+            if (activeAuditee != null && !activeAuditee.trim().isEmpty()) {
+                activeEmployeeCodes.add(activeAuditee.trim().toLowerCase());
+            }
+            if (activeAuditor != null && !activeAuditor.trim().isEmpty()) {
+                activeEmployeeCodes.add(activeAuditor.trim().toLowerCase());
+            }
+            if (activeNcr != null && !activeNcr.trim().isEmpty()) {
+                activeEmployeeCodes.add(activeNcr.trim().toLowerCase());
+            }
+
+            for (String code : employeeCodes) {
+                if (activeEmployeeCodes.contains(code)) {
+                    String empName = "";
+                    if (code.equalsIgnoreCase(auditeeCode)) {
+                        empName = schedule.getAuditee();
+                    } else if (code.equalsIgnoreCase(auditorCode)) {
+                        empName = schedule.getAuditor();
+                    } else if (code.equalsIgnoreCase(ncrCode)) {
+                        empName = schedule.getNcrApprovedBy();
+                    }
+
+                    if (empName != null && empName.contains(" - ")) {
+                        empName = empName.split(" - ")[0].trim();
+                    }
+
+                    throw new RuntimeException("Validation Error: Employee \"" + empName + "\" is already allocated to Audit " + active.getScheduleNo() + " at the same time (" + active.getStartTime() + " - " + active.getEndTime() + ").");
                 }
             }
         }
     }
 
+    private boolean isSameDate(java.util.Date d1, java.util.Date d2) {
+        if (d1 == null || d2 == null) return false;
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(d1).equals(sdf.format(d2));
+    }
+
+    private int convertTimeToMinutes(String timeStr) {
+        if (timeStr == null || timeStr.trim().isEmpty()) {
+            return 0;
+        }
+        try {
+            String[] parts = timeStr.trim().split("\\s+");
+            if (parts.length < 2) return 0;
+            String[] timeParts = parts[0].split(":");
+            int hours = Integer.parseInt(timeParts[0]);
+            int minutes = timeParts.length > 1 ? Integer.parseInt(timeParts[1]) : 0;
+            String ampm = parts[1].toUpperCase();
+
+            if ("PM".equals(ampm) && hours != 12) {
+                hours += 12;
+            } else if ("AM".equals(ampm) && hours == 12) {
+                hours = 0;
+            }
+            return hours * 60 + minutes;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private boolean isTimeOverlapping(String start1, String end1, String start2, String end2) {
+        int s1 = convertTimeToMinutes(start1);
+        int e1 = convertTimeToMinutes(end1);
+        int s2 = convertTimeToMinutes(start2);
+        int e2 = convertTimeToMinutes(end2);
+        return s1 < e2 && s2 < e1;
+    }
+
     public void deleteAuditSchedule(Long id) {
         repository.findById(id).ifPresent(existing -> {
+            // Check if there is any attendance put for this schedule
+            boolean exists = !auditAttendanceRepository.findByAuditScheduleNo(existing.getScheduleNo()).isEmpty();
+            if (exists) {
+                throw new RuntimeException("Cannot delete this audit schedule because employee attendance has already been recorded.");
+            }
             existing.setDeleted(true);
             repository.save(existing);
         });

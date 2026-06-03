@@ -155,7 +155,7 @@ const ReassignDialog = ({ open, onClose, item, onConfirm }) => {
             <Autocomplete
               fullWidth
               options={employees}
-              getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+              getOptionLabel={(option) => option.employeeName || ''}
               value={assignBy}
               onChange={(e, val) => setAssignBy(val)}
               renderInput={(params) => <BOSTextField {...params} label="Assign By *" />}
@@ -163,7 +163,7 @@ const ReassignDialog = ({ open, onClose, item, onConfirm }) => {
             <Autocomplete
               fullWidth
               options={employees}
-              getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
+              getOptionLabel={(option) => option.employeeName || ''}
               value={assignTo}
               onChange={(e, val) => setAssignTo(val)}
               renderInput={(params) => <BOSTextField {...params} label="Assign To *" />}

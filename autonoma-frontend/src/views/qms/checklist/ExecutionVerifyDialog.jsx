@@ -53,6 +53,36 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
   const [rejectComment, setRejectComment] = useState('');
 
   useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (!open || !data) return;
+      if (rejectOpen) return; // Let reject dialog handle its own events
+
+      // Enter for Verify
+      if (e.key === 'Enter' && !e.shiftKey) {
+        if (document.activeElement.tagName === 'TEXTAREA') {
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            if (onVerify) onVerify(verifyRemarks);
+          }
+          return;
+        }
+        e.preventDefault();
+        if (onVerify) onVerify(verifyRemarks);
+      } 
+      // Alt+R for Reject
+      else if (e.altKey && e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        if (onReject) {
+          setRejectComment('');
+          setRejectOpen(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, data, onVerify, onReject, verifyRemarks, rejectOpen]);
+
+  useEffect(() => {
     if (data) {
       const isAss = !!data.checklist;
       let currentStatus = '';
@@ -190,7 +220,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               startIcon={<IconBan size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
-              Reject
+              Reject (Alt+R)
             </Button>
             {onNotAccept && (
               <Button
@@ -209,7 +239,7 @@ const ExecutionVerifyDialog = ({ open, handleClose, data, onVerify, onReject, on
               startIcon={<IconChecks size={20} />}
               sx={{ borderRadius: '8px', fontWeight: 600 }}
             >
-              Verify
+              Verify (Enter)
             </Button>
           </Stack>
         )

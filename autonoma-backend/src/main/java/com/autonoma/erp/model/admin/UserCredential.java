@@ -82,8 +82,11 @@ public class UserCredential {
         String currentUserId = null;
         try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
         this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
-        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
-
+        
+        if (this.createdBy == null || this.createdBy.trim().isEmpty()) {
+            this.createdBy = "System";
+        }
+        
         updatedDate = new Date();
         if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
         }

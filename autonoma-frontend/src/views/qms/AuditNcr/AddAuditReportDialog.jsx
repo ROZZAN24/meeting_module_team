@@ -250,19 +250,19 @@ export default function AddAuditReportDialog({ open, onClose, initialData }) {
             />
             <BOSTextField
               label="Auditee"
-              value={formData.auditee}
+              value={formData.auditee && formData.auditee.includes(' - ') ? formData.auditee.split(' - ')[0].trim() : (formData.auditee || '')}
               inputProps={{ readOnly: true }}
               helperText="Auto-filled from schedule"
             />
             <BOSTextField
               label="Auditor"
-              value={formData.auditor}
+              value={formData.auditor && formData.auditor.includes(' - ') ? formData.auditor.split(' - ')[0].trim() : (formData.auditor || '')}
               inputProps={{ readOnly: true }}
               helperText="Auto-filled from schedule"
             />
             <BOSTextField
               label="NC Approved By"
-              value={formData.ncrApprovedBy}
+              value={formData.ncrApprovedBy && formData.ncrApprovedBy.includes(' - ') ? formData.ncrApprovedBy.split(' - ')[0].trim() : (formData.ncrApprovedBy || '')}
               inputProps={{ readOnly: true }}
               helperText="Auto-filled from schedule"
             />

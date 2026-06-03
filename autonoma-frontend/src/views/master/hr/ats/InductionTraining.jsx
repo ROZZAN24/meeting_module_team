@@ -622,21 +622,31 @@ export default function InductionTraining() {
         title="Induction Process"
         fullWidth
         maxWidth="xl"
-        onSave={perms.write ? handleSaveProgress : null}
+        onSave={null}
         isViewOnly={!perms.write}
         saveLabel="Save"
         saveLoading={saving}
         secondaryActions={
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleCompleteTraining}
-            disabled={saving || completedCount < totalCount}
-            startIcon={<IconCheck size={18} />}
-            sx={{ fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
-          >
-            Complete Training ({completedCount}/{totalCount})
-          </Button>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="contained"
+              sx={btnCancel}
+              onClick={() => setDialogOpen(false)}
+              startIcon={<IconX size={18} />}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleCompleteTraining}
+              disabled={saving || completedCount < totalCount}
+              startIcon={<IconCheck size={18} />}
+              sx={{ fontWeight: 700, borderRadius: '8px', textTransform: 'none' }}
+            >
+              Complete Training ({completedCount}/{totalCount})
+            </Button>
+          </Stack>
         }
       >
         {selectedAssignment && (

@@ -32,7 +32,7 @@ For comprehensive system documentation, architecture guidelines, coding conventi
    npm install
    npm run dev
    ```
-   *The UI portal will be available at `http://localhost:3001`.*
+   *The UI portal will be available at `http://localhost:3000`.*
 
 ---
 

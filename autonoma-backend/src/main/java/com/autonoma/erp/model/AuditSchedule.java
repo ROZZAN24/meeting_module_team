@@ -35,6 +35,9 @@ public class AuditSchedule extends BaseAuditEntity {
     @Column(name = "AUDIT_AREA", columnDefinition = "NVARCHAR(255)")
     private String auditArea;
 
+    @Column(name = "FREQUENCY", columnDefinition = "NVARCHAR(50)")
+    private String frequency = "NONE";
+
     @Column(name = "IS_DELETED", nullable = false)
     private boolean isDeleted = false;
 
@@ -96,6 +99,12 @@ public class AuditSchedule extends BaseAuditEntity {
     @Transient
     private Integer totalPoint;
 
+    @Transient
+    private boolean hasAttendance = false;
+
+    public boolean isHasAttendance() { return hasAttendance; }
+    public void setHasAttendance(boolean hasAttendance) { this.hasAttendance = hasAttendance; }
+
     public Integer getRescheduleCount() { return rescheduleCount != null ? rescheduleCount : 0; }
     public void setRescheduleCount(Integer rescheduleCount) { this.rescheduleCount = rescheduleCount; }
 
@@ -152,4 +161,6 @@ public class AuditSchedule extends BaseAuditEntity {
     public void setCriteriaList(List<AuditScheduleCriteria> criteriaList) { this.criteriaList = criteriaList; }
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+    public String getFrequency() { return frequency; }
+    public void setFrequency(String frequency) { this.frequency = frequency; }
 }
