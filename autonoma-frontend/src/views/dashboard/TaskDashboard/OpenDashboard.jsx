@@ -262,11 +262,12 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
     if (pInfo.label === 'Critical' || pInfo.label === 'High') critHighCount++;
 
     const u = t._user || 'Unassigned';
-    if (!userMap[u]) userMap[u] = { name: u, total: 0, high: 0, medium: 0, low: 0, totalWait: 0 };
+    if (!userMap[u]) userMap[u] = { name: u, total: 0, critical: 0, high: 0, medium: 0, low: 0, totalWait: 0 };
     userMap[u].total++;
     userMap[u].totalWait += diffDays;
 
-    if (pInfo.label === 'Critical' || pInfo.label === 'High') userMap[u].high++;
+    if (pInfo.label === 'Critical') userMap[u].critical++;
+    else if (pInfo.label === 'High') userMap[u].high++;
     else if (pInfo.label === 'Medium') userMap[u].medium++;
     else userMap[u].low++;
   });
@@ -607,7 +608,10 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                       Total Open Tasks
                     </TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
-                      High / Critical
+                      Critical
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>
+                      High
                     </TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Medium</TableCell>
                     <TableCell sx={{ fontWeight: 800, fontSize: '0.85rem', color: textMuted, textAlign: 'center' }}>Low</TableCell>
@@ -630,6 +634,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography variant="body2" fontWeight={900} fontSize="0.9rem" color={textColor}>
                           {row.total}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Typography variant="body2" fontWeight={800} fontSize="0.9rem" color={row.critical > 0 ? '#991B1B' : textMuted}>
+                          {row.critical}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>
@@ -791,6 +800,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>Open Tasks</TableCell>
                     <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>
                       <Box display="inline-flex" alignItems="center" gap={0.5}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#991B1B' }} /> Critical
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: 700, fontSize: '0.65rem', color: textMuted, textAlign: 'center' }}>
+                      <Box display="inline-flex" alignItems="center" gap={0.5}>
                         <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#EF4444' }} /> High
                       </Box>
                     </TableCell>
@@ -823,6 +837,11 @@ export default function OpenDashboard({ isDark, realTasks = [] }) {
                       <TableCell sx={{ textAlign: 'center' }}>
                         <Typography fontWeight={800} fontSize="0.75rem" color={textColor}>
                           {row.total}
+                        </Typography>
+                      </TableCell>
+                      <TableCell sx={{ textAlign: 'center' }}>
+                        <Typography fontWeight={700} fontSize="0.75rem" color={row.critical > 0 ? '#991B1B' : textMuted}>
+                          {row.critical}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ textAlign: 'center' }}>

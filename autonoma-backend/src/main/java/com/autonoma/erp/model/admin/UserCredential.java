@@ -41,11 +41,14 @@ public class UserCredential {
     @Column(name = "STATUS")
     private Integer status;
 
+    @Column(name = "TENANT_ID", length = 50)
+    private String tenantId;
+
+    @Column(name = "USER_LEVEL")
+    private Integer userLevel = 0;
+
     @Column(name = "IMG_NAME", columnDefinition = "NVARCHAR(255)")
     private String imgName;
-
-    @Column(name = "IS_BOS_ADMIN")
-    private Integer isBosAdmin;
 
     @Column(name = "FACE_IMAGE", columnDefinition = "NVARCHAR(MAX)")
     private String faceImage;
@@ -160,12 +163,12 @@ public class UserCredential {
         this.imgName = imgName;
     }
 
-    public Integer getIsBosAdmin() {
-        return isBosAdmin;
+    public Integer getUserLevel() {
+        return userLevel;
     }
 
-    public void setIsBosAdmin(Integer isBosAdmin) {
-        this.isBosAdmin = isBosAdmin;
+    public void setUserLevel(Integer userLevel) {
+        this.userLevel = userLevel;
     }
 
     public String getFaceImage() {

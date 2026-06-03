@@ -414,7 +414,7 @@ export default function CheckListRenewalVerify() {
         return fullName === assigneeName.toLowerCase().trim();
       });
 
-      const isAdmin = user?.isBosAdmin === 1 || user?.id?.toLowerCase() === 'admin';
+      const isAdmin = user?.userLevel === 5 || user?.id?.toLowerCase() === 'admin';
 
       if (!assignee) {
         if (!isAdmin) {

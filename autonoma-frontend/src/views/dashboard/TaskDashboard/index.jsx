@@ -255,40 +255,101 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
+
 const NeonMetricCard = styled(Paper)(({ theme, basecolor }) => ({
-  borderRadius: '16px',
+  borderRadius: '24px',
   position: 'relative',
   overflow: 'hidden',
-  background: `linear-gradient(135deg, ${alpha(basecolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  background: `linear-gradient(180deg, ${alpha(basecolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
   backgroundColor: '#060B14',
-  backdropFilter: 'blur(20px)',
+  backdropFilter: 'blur(16px)',
   border: `1px solid ${alpha(basecolor, 0.2)}`,
   boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(basecolor, 0.3)}`,
   display: 'flex',
   flexDirection: 'column',
-  padding: '12px 16px',
-  height: '100px',
-  minHeight: '90px',
+  padding: '16px',
+  height: '138px',
   width: '100%',
-  transition: 'all 0.3s ease-in-out',
+  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
   cursor: 'pointer',
   '&::before': {
     content: '""',
     position: 'absolute',
-    top: '-30%', left: '-30%', width: '160%', height: '160%',
-    background: `radial-gradient(circle at 30% 30%, ${alpha(basecolor, 0.2)} 0%, transparent 60%)`,
+    top: '-50%', left: '-50%', width: '200%', height: '200%',
+    background: `radial-gradient(circle at 50% 50%, ${alpha(basecolor, 0.15)} 0%, transparent 60%)`,
+    transition: 'all 0.5s ease',
     pointerEvents: 'none',
     zIndex: 0
   },
-  '& .particles': {
-    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.3, pointerEvents: 'none',
-    backgroundImage: `radial-gradient(${alpha(basecolor, 0.4)} 1px, transparent 1px)`,
-    backgroundSize: '24px 24px',
+  '& .rotating-border': {
+    position: 'absolute', inset: 0, borderRadius: '24px', padding: '2px',
+    background: `conic-gradient(from 0deg, transparent 70%, ${basecolor} 100%)`,
+    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+    WebkitMaskComposite: 'xor',
+    maskComposite: 'exclude',
+    opacity: 0, zIndex: 1, pointerEvents: 'none',
+    transition: 'opacity 0.5s',
+  },
+  '& .shimmer': {
+    position: 'absolute', top: 0, left: '-150%', width: '100%', height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha('#ffffff', 0.15)}, transparent)`,
+    transform: 'skewX(-20deg)', transition: 'none', zIndex: 3, pointerEvents: 'none'
+  },
+  '& .hover-emoji': {
+    position: 'absolute', right: 24, top: 24, fontSize: '2rem',
+    opacity: 0, transform: 'translateY(15px) scale(0.8)',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
+    filter: `drop-shadow(0px 0px 15px ${basecolor})`
   },
   '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: `0 12px 40px -10px ${alpha(basecolor, 0.6)}, inset 0 1px 3px 0 ${alpha(basecolor, 0.6)}`,
-    border: `1px solid ${alpha(basecolor, 0.6)}`
+    transform: 'translateY(-8px) scale(1.03)',
+    boxShadow: `0 25px 50px -12px ${alpha(basecolor, 0.7)}, inset 0 1px 3px 0 ${alpha(basecolor, 0.9)}`,
+    border: `1px solid transparent`,
+    '&::before': {
+      background: `radial-gradient(circle at 50% 50%, ${alpha(basecolor, 0.35)} 0%, transparent 70%)`,
+    },
+    '& .rotating-border': {
+      opacity: 1,
+      animation: 'spin-border 3s linear infinite',
+    },
+    '& .shimmer': {
+      animation: 'sweep 2s ease-in-out',
+    },
+    '& .hover-emoji': {
+      opacity: 1, transform: 'translateY(-5px) scale(1.2)',
+      animation: 'float 3s ease-in-out infinite'
+    },
+    '& .hud-corner': {
+      borderColor: basecolor,
+      width: '18px', height: '18px',
+      filter: `drop-shadow(0 0 8px ${basecolor})`
+    },
+    '& .metric-icon-box': {
+      transform: 'scale(1.1)',
+      boxShadow: `0 0 25px ${alpha(basecolor, 0.6)}`
+    }
+  },
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.15, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(basecolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '20px 20px',
+  },
+  '& .hud-corner': {
+    position: 'absolute',
+    width: '12px', height: '12px',
+    borderColor: alpha(basecolor, 0.4),
+    borderStyle: 'solid',
+    borderWidth: 0,
+    zIndex: 1,
+    transition: 'all 0.4s ease',
+  },
+  '& .hud-tl': { top: '12px', left: '12px', borderTopWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-tr': { top: '12px', right: '12px', borderTopWidth: '2px', borderRightWidth: '2px' },
+  '& .hud-bl': { bottom: '12px', left: '12px', borderBottomWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-br': { bottom: '12px', right: '12px', borderBottomWidth: '2px', borderRightWidth: '2px' },
+  '& .metric-icon-box': {
+    transition: 'all 0.3s ease',
   }
 }));
 
@@ -577,51 +638,91 @@ const WorkloadView = ({ realWorkload, isDark }) => {
             c: '#8B5CF6',
             label: 'All Employees',
             n: realWorkload.length,
-            icon: <AssignmentRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <AssignmentRoundedIcon fontSize="small" />,
             data: [40, 60, 45, 80, 50, 90],
-            trend: '+5%'
+            trend: '+5%',
+            hoverEmoji: '📋'
           },
           {
             c: '#EF4444',
             label: 'Critical',
             n: criticalCount,
-            icon: <NotificationsActiveRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <NotificationsActiveRoundedIcon fontSize="small" />,
             data: [10, 25, 15, 40, 20, 50],
-            trend: '+25%'
+            trend: '+25%',
+            hoverEmoji: '🚨'
           },
           {
             c: '#3B82F6',
             label: 'Normal',
             n: normalCount,
-            icon: <ThumbUpAltRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <ThumbUpAltRoundedIcon fontSize="small" />,
             data: [20, 10, 30, 15, 40, 25],
-            trend: '+12%'
+            trend: '+12%',
+            hoverEmoji: '👍'
           },
           {
             c: '#10B981',
             label: 'Healthy',
             n: healthyCount,
-            icon: <MonitorHeartRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <MonitorHeartRoundedIcon fontSize="small" />,
             data: [30, 40, 20, 50, 30, 60],
-            trend: '+40%'
+            trend: '+40%',
+            hoverEmoji: '📈'
           }
         ].map((s, i) => (
           <NeonMetricCard key={i} basecolor={s.c}>
+            <Box className="hud-corner hud-tl" />
+            <Box className="hud-corner hud-tr" />
+            <Box className="hud-corner hud-bl" />
+            <Box className="hud-corner hud-br" />
             <Box className="particles" />
-            <Box display="flex" alignItems="center" gap={1} zIndex={2} mb={0.5}>
-              <GlowingIcon color={s.c} sx={{ width: 24, height: 24 }}>{React.cloneElement(s.icon, { sx: { fontSize: 14 } })}</GlowingIcon>
-              <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.8rem' }}>
+            <Box className="rotating-border" />
+            <Box className="shimmer" />
+
+            <Typography className="hover-emoji">{s.hoverEmoji}</Typography>
+
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              zIndex={2}
+              position="relative"
+              sx={{ textAlign: 'center' }}
+            >
+              <Box
+                className="metric-icon-box"
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `radial-gradient(circle, ${alpha(s.c, 0.4)} 0%, ${alpha(s.c, 0.05)} 70%)`,
+                  boxShadow: `0 0 20px ${alpha(s.c, 0.6)}, inset 0 0 15px ${alpha(s.c, 0.5)}`,
+                  border: `1px solid ${alpha(s.c, 0.6)}`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                  animation: 'floatIcon 4s ease-in-out infinite',
+                }}
+              >
+                {s.icon}
+              </Box>
+              <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.85rem', mb: 1, letterSpacing: '0.5px' }}>
                 {s.label}
               </Typography>
+              <Typography variant="h3" fontWeight={900} sx={{ lineHeight: 1, color: '#fff', textShadow: `0 0 20px ${alpha(s.c, 0.9)}, 0 0 10px ${s.c}`, mb: 0.5, fontFamily: "'Inter', sans-serif" }}>
+                {s.n}
+              </Typography>
+              <Typography variant="caption" sx={{ color: s.c, fontWeight: 800, fontSize: '0.7rem', opacity: 0.9 }}>
+                {s.trend} <span style={{ color: alpha('#fff', 0.5), fontWeight: 500 }}>vs last 7 days</span>
+              </Typography>
             </Box>
-            <Typography variant="h4" fontWeight={900} sx={{ lineHeight: 1, mb: 0.5, color: '#fff', zIndex: 2, textShadow: `0 0 15px ${alpha(s.c, 0.8)}` }}>
-              {s.n}
-            </Typography>
-            <Stack direction="row" alignItems="center" gap={1} zIndex={2}>
-              <Typography variant="caption" sx={{ color: s.c, fontWeight: 800, fontSize: '0.65rem' }}>{s.trend}</Typography>
-              <Typography variant="caption" color={alpha('#fff', 0.5)} sx={{ fontSize: '0.6rem' }}>vs last 7 days</Typography>
-            </Stack>
-            <Box sx={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 35, zIndex: 1, opacity: 0.5, pointerEvents: 'none' }}>
+            <Box sx={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 35, zIndex: 1, opacity: 0.3, pointerEvents: 'none' }}>
               <ReactApexChart options={sparklineOptions(s.c)} series={[{ data: s.data }]} type="line" height="100%" width="100%" />
             </Box>
           </NeonMetricCard>
@@ -816,6 +917,10 @@ const formatHHMM = (hours = 0) => {
 
 // ── Performance Overview ──────────────────────────────────────────────────────
 const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
+  const [devSortCol, setDevSortCol] = useState('performance');
+  const [devSortDir, setDevSortDir] = useState('desc');
+  const [showDevViewAll, setShowDevViewAll] = useState(false);
+
   const totalAssigned = devStats.reduce((s, d) => s + d.assignedHrs, 0);
   const totalCompleted = devStats.reduce((s, d) => s + d.completedHrs, 0);
   const totalTaken = devStats.reduce((s, d) => s + (d.takenHrs || 0), 0);
@@ -1105,6 +1210,23 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                     </Typography>
                   </Box>
                 </Stack>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowDevViewAll(true)}
+                  endIcon={<TrendingUpRoundedIcon />}
+                  sx={{
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+                    color: textColor,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    zIndex: 2,
+                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }
+                  }}
+                >
+                  View all
+                </Button>
                 <Box sx={{ position: 'relative', width: 120, height: 60, zIndex: 1, display: { xs: 'none', sm: 'block' } }}>
                   <Box sx={{ position: 'absolute', bottom: 0, left: 10, width: 14, height: 25, borderRadius: '4px 4px 0 0', bgcolor: '#A78BFA' }} />
                   <Box sx={{ position: 'absolute', bottom: 0, left: 30, width: 14, height: 40, borderRadius: '4px 4px 0 0', bgcolor: '#8B5CF6' }} />
@@ -1119,13 +1241,42 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                 <Table size="small" sx={{ height: '100%' }}>
                   <TableHead>
                     <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' }}>
-                      {['Developer', 'Assigned Hrs', 'Taken Time', 'Rework Time', 'Delay Hrs', 'Completed Hrs', 'Performance %', 'Status', 'Trend'].map(
+                      {[
+                        { key: 'user', label: 'Developer' },
+                        { key: 'assignedHrs', label: 'Assigned Hrs' },
+                        { key: 'takenHrs', label: 'Taken Time' },
+                        { key: 'reworkHrs', label: 'Rework Time' },
+                        { key: 'delayHrs', label: 'Delay Hrs' },
+                        { key: 'completedHrs', label: 'Completed Hrs' },
+                        { key: 'performance', label: 'Performance %' },
+                        { key: 'perfStatus', label: 'Status' },
+                        { key: null, label: 'Trend' }
+                      ].map(
                         (h) => (
                           <TableCell
-                            key={h}
-                            sx={{ fontWeight: 700, py: 0.5, fontSize: '11px', textAlign: h === 'Developer' ? 'left' : 'center' }}
+                            key={h.label}
+                            onClick={() => {
+                              if (!h.key) return;
+                              if (devSortCol === h.key) setDevSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                              else {
+                                setDevSortCol(h.key);
+                                setDevSortDir('asc');
+                              }
+                            }}
+                            sx={{
+                              fontWeight: 700, py: 0.5, fontSize: '11px',
+                              textAlign: h.label === 'Developer' ? 'left' : 'center',
+                              cursor: h.key ? 'pointer' : 'default',
+                              userSelect: 'none',
+                              '&:hover': h.key ? { color: '#6366F1' } : {}
+                            }}
                           >
-                            {h}
+                            {h.label}
+                            {h.key && (
+                              <Box component="span" sx={{ fontSize: '10px', ml: 0.3, color: devSortCol === h.key ? '#6366F1' : 'inherit' }}>
+                                {devSortCol === h.key ? (devSortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                              </Box>
+                            )}
                           </TableCell>
                         )
                       )}
@@ -1139,7 +1290,14 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                         </TableCell>
                       </TableRow>
                     )}
-                    {devStats.map((dev, idx) => {
+                    {([...devStats].sort((a, b) => {
+                      const col = devSortCol;
+                      const aVal = typeof a[col] === 'string' ? a[col].toLowerCase() : (a[col] || 0);
+                      const bVal = typeof b[col] === 'string' ? b[col].toLowerCase() : (b[col] || 0);
+                      if (aVal < bVal) return devSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return devSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    })).slice(0, 5).map((dev, idx) => {
                       const sparkOpts = {
                         chart: { type: 'line', sparkline: { enabled: true } },
                         stroke: { curve: 'smooth', width: 2 },
@@ -1661,6 +1819,133 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
 
       </Box>
 
+      {/* ── View All Developer Performance - Full Page Screen ── */}
+      <Dialog fullScreen open={showDevViewAll} onClose={() => setShowDevViewAll(false)} PaperProps={{ sx: { bgcolor: isDark ? '#0F172A' : '#F8FAFF' } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+          <Box sx={{
+            px: 4, py: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+            bgcolor: isDark ? '#0F172A' : '#fff', flexShrink: 0, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+          }}>
+            <Stack direction="row" alignItems="center" gap={2}>
+              <Box sx={{ width: 40, height: 40, borderRadius: 2, background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrendingUpRoundedIcon sx={{ color: '#fff', fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={800} color="text.primary" sx={{ fontSize: '1.1rem' }}>
+                  All Developer Performance
+                </Typography>
+                <Typography variant="caption" color="text.secondary">Comprehensive developer productivity report</Typography>
+              </Box>
+            </Stack>
+            <IconButton onClick={() => setShowDevViewAll(false)} sx={{ color: textMuted, border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`, borderRadius: 2, p: 0.7, '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' } }}>
+              <Typography fontWeight={700} fontSize="1.2rem" lineHeight={1}>✕</Typography>
+            </IconButton>
+          </Box>
+
+          <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
+            <Card sx={{ borderRadius: 3, boxShadow: '0 10px 30px -5px rgba(0,0,0,0.05)', overflow: 'hidden', border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'transparent'}` }}>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: isDark ? '#1E293B' : '#F8FAFC' }}>
+                      {[
+                        { key: 'user', label: 'Developer', icon: '👤' },
+                        { key: 'assignedHrs', label: 'Assigned Hrs', icon: '📋' },
+                        { key: 'takenHrs', label: 'Taken Time', icon: '⏱' },
+                        { key: 'reworkHrs', label: 'Rework Time', icon: '🔄' },
+                        { key: 'delayHrs', label: 'Delay Hrs', icon: '⚠' },
+                        { key: 'completedHrs', label: 'Completed Hrs', icon: '✅' },
+                        { key: 'performance', label: 'Performance %', icon: '📊' },
+                        { key: 'perfStatus', label: 'Status', icon: '🏷' },
+                        { key: null, label: 'Trend', icon: '' }
+                      ].map(({ key, label, icon }) => (
+                        <TableCell
+                          key={label}
+                          onClick={() => {
+                            if (!key) return;
+                            if (devSortCol === key) setDevSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setDevSortCol(key); setDevSortDir('asc'); }
+                          }}
+                          sx={{
+                            fontWeight: 700, fontSize: '13px',
+                            color: isDark ? 'rgba(255,255,255,0.7)' : '#64748B',
+                            textAlign: label === 'Developer' ? 'left' : 'center',
+                            cursor: key ? 'pointer' : 'default',
+                            userSelect: 'none', whiteSpace: 'nowrap',
+                            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+                            py: 2,
+                            '&:hover': key ? { color: '#6366F1' } : {}
+                          }}
+                        >
+                          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                            {icon && <Box component="span" sx={{ mr: 0.3, opacity: 0.7 }}>{icon}</Box>}
+                            {label}
+                            {key && (
+                              <Box component="span" sx={{ fontSize: '10px', ml: 0.3, color: devSortCol === key ? '#6366F1' : 'inherit' }}>
+                                {devSortCol === key ? (devSortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                              </Box>
+                            )}
+                          </Box>
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {[...devStats].sort((a, b) => {
+                      const col = devSortCol;
+                      const aVal = typeof a[col] === 'string' ? a[col].toLowerCase() : (a[col] || 0);
+                      const bVal = typeof b[col] === 'string' ? b[col].toLowerCase() : (b[col] || 0);
+                      if (aVal < bVal) return devSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return devSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    }).map((dev, idx) => {
+                      const sparkOpts = {
+                        chart: { type: 'line', sparkline: { enabled: true } },
+                        stroke: { curve: 'smooth', width: 2.5 },
+                        colors: [getPerfColor(dev.perfStatus)],
+                        tooltip: { fixed: { enabled: false } }
+                      };
+                      return (
+                        <TableRow key={idx} hover sx={{
+                          '&:last-child td': { border: 0 },
+                          '&:hover': { bgcolor: isDark ? 'rgba(99,102,241,0.04)' : '#F8FAFF' },
+                          transition: 'background 0.15s'
+                        }}>
+                          <TableCell sx={{ py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <Stack direction="row" alignItems="center" gap={1.5}>
+                              <Avatar sx={{ width: 40, height: 40, bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length], fontSize: '15px', fontWeight: 700, boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                                {dev.user.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ fontSize: '14px' }}>{dev.user}</Typography>
+                                <Typography variant="caption" color="text.secondary" fontWeight={500}>Developer</Typography>
+                              </Box>
+                            </Stack>
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.assignedHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.takenHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: dev.reworkHrs > 0 ? '#EF4444' : textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.reworkHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: dev.delayHrs > 0 ? '#F59E0B' : '#10B981', py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.delayHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px', color: isDark ? '#fff' : '#1E293B' }}>{formatHHMM(dev.completedHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, color: getPerfColor(dev.perfStatus), py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '14px' }}>{dev.performance.toFixed(2)}%</TableCell>
+                          <TableCell sx={{ textAlign: 'center', py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <Chip size="small" label={dev.perfStatus} icon={getPerfIcon(dev.perfStatus)}
+                              sx={{ bgcolor: getPerfBg(dev.perfStatus), color: getPerfColor(dev.perfStatus), fontWeight: 800, fontSize: '12px', border: `1px solid ${getPerfBorder(dev.perfStatus)}`, '& .MuiChip-icon': { fontSize: 16 } }} />
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', width: 100, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <ReactApexChart options={sparkOpts} series={[{ data: dev.trend }]} type="line" height={32} width={85} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          </Box>
+        </Box>
+      </Dialog>
     </PageContainer>
   );
 };
@@ -1701,18 +1986,26 @@ export default function TaskDashboard() {
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
-        const [r1, r2, r3, r4, r5] = await Promise.allSettled([
+        const [r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
           axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),
-          axios.get('/api/master/hr/employees')
+          axios.get('/api/master/hr/employees'),
+          axios.get('/api/bos-pages')
         ]);
         const cl = r1.status === 'fulfilled' ? r1.value.data?.content || r1.value.data || [] : [];
         const mom = r2.status === 'fulfilled' ? r2.value.data || [] : [];
         const tk = r3.status === 'fulfilled' ? r3.value.data || [] : [];
         const audit = r4.status === 'fulfilled' ? r4.value.data || [] : [];
         const employees = r5.status === 'fulfilled' ? r5.value.data || [] : [];
+        const bosPages = r6.status === 'fulfilled' ? r6.value.data || [] : [];
+
+        // Build pageId -> pageName lookup
+        const pageIdMap = {};
+        bosPages.forEach(p => {
+          if (p.pageId) pageIdMap[p.pageId] = p.pageName || 'Ticket';
+        });
 
         let empLookup = {};
         let workloadMap = {};
@@ -1766,6 +2059,7 @@ export default function TaskDashboard() {
           const name = getName(a.assignedToObj || a.employee || a.assignedTo);
           tasksList.push({
             _status: a.status?.name || a.status?.statusName || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.checklistDate || a.assignedDate,
             _title: a.checklist?.checkingPoint || `Checklist #${a.id}`,
             _id: a.checklistNo || `CL-${a.id}`,
@@ -1774,13 +2068,15 @@ export default function TaskDashboard() {
             _hrs: a.estimatedHours || a.plannedHours || 8,
             _pageName: a.pageName || a.moduleName || 'Checklist',
             _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
-            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
         mom.forEach((a) => {
           const name = getName(a.assignedTo);
           tasksList.push({
             _status: a.status || 'Open',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.targetDate,
             _title: a.discussedPoint || `MOM #${a.id}`,
             _id: a.momNo || a.actionId || `MOM-${a.id}`,
@@ -1789,28 +2085,34 @@ export default function TaskDashboard() {
             _hrs: a.estimatedHours || 8,
             _pageName: a.pageName || a.moduleName || 'MOM Actions',
             _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
-            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _reopenCount: a.reopenedCount || 0,
+            _createdBy: a.createdBy || 'System'
           });
         });
         tk.forEach((t) => {
           const name = getName(t.assignedTo);
           tasksList.push({
             _status: t.ticketStatus || 'Open',
+            _priority: t.priorityLevel || t.priority || 'Medium',
             _dueDate: t.dueDate || t.targetDate,
             _title: t.title || `Ticket ${t.ticketId || t.rowId}`,
             _id: t.ticketId || `TK-${t.rowId}`,
             _user: name,
             _rawDate: t.createdAt || t.createdDate || t.targetDate,
             _hrs: t.estimatedHours || t.assignedHours || 8,
-            _pageName: t.pageName || t.moduleName || t.pageCode || 'Ticket',
+            _pageName: t.pageName || t.moduleName || (t.pageId ? (pageIdMap[t.pageId] || 'Ticket') : null) || t.ticketType || 'Ticket',
             _takenHrs: parseDurationToMinutes(t.takenTime || '') / 60,
-            _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60,
+            _reopenCount: t.reopenedCount || 0,
+            _createdBy: t.createdBy || 'System'
           });
         });
         audit.forEach((a) => {
           const name = getName(a.auditee || a.auditor);
           tasksList.push({
             _status: a.status || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.auditDate || a.scheduleDate,
             _title: `Audit ${a.scheduleNo || ''}`,
             _id: a.scheduleNo || `AUDIT-${a.id}`,
@@ -1819,7 +2121,8 @@ export default function TaskDashboard() {
             _hrs: a.estimatedHours || 8,
             _pageName: a.pageName || a.moduleName || 'Audit Schedule',
             _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
-            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
 
@@ -2000,7 +2303,14 @@ export default function TaskDashboard() {
   };
 
   return (
-    <PageContainer>
+    <PageContainer
+      sx={{
+        '@keyframes spin-border': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+        '@keyframes sweep': { '0%': { left: '-150%' }, '50%': { left: '150%' }, '100%': { left: '-150%' } },
+        '@keyframes float': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-10px)' }, '100%': { transform: 'translateY(0px)' } },
+        '@keyframes floatIcon': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-5px)' }, '100%': { transform: 'translateY(0px)' } },
+      }}
+    >
       {/* ── TOP STAT PILLS ── */}
       <Box
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(4,1fr)', lg: 'repeat(9,1fr)' }, gap: 1.5, mb: 2.5 }}

@@ -228,23 +228,16 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
 
   const getTicketId = (t) => t._ticketId || t._id || 'TCK-???';
 
-  // Pages data (derived from _id prefix, like ReopenDashboard)
+  // Pages data (derived from _pageName)
   const pagesData = useMemo(() => {
-    const moduleMap = {
-      CL: { name: 'Checklist', color: '#3B82F6' },
-      MOM: { name: 'MOM Actions', color: '#F59E0B' },
-      TK: { name: 'Ticket', color: '#8B5CF6' },
-      AUDIT: { name: 'Audit Schedule', color: '#EF4444' }
-    };
     const counts = {};
     testTasks.forEach((t) => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const mod = moduleMap[prefix] || { name: prefix || 'Other', color: '#94A3B8' };
-      if (!counts[mod.name]) counts[mod.name] = { name: mod.name, color: mod.color, total: 0, waiting: 0, inTesting: 0, completed: 0 };
-      counts[mod.name].total++;
-      if (t._testStatus === 'Waiting') counts[mod.name].waiting++;
-      if (t._testStatus === 'In Testing') counts[mod.name].inTesting++;
-      if (t._testStatus === 'Completed') counts[mod.name].completed++;
+      const name = t._pageName || 'Other';
+      if (!counts[name]) counts[name] = { name, color: '#8B5CF6', total: 0, waiting: 0, inTesting: 0, completed: 0 };
+      counts[name].total++;
+      if (t._testStatus === 'Waiting') counts[name].waiting++;
+      if (t._testStatus === 'In Testing') counts[name].inTesting++;
+      if (t._testStatus === 'Completed') counts[name].completed++;
     });
     const entries = Object.values(counts).sort((a, b) => b.total - a.total);
     const total = entries.reduce((s, e) => s + e.total, 0) || 1;

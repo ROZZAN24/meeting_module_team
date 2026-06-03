@@ -141,7 +141,7 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
         String(user.name || '').toLowerCase() === String(item.assignedBy?.employeeName || '').toLowerCase() ||
         String(user.id || '').toLowerCase() === String(item.assignedBy?.employeeName || '').toLowerCase())
   );
-  const isAdmin = Boolean(user && (user.isBosAdmin === 1 || user.id?.toLowerCase() === 'admin'));
+  const isAdmin = Boolean(user && (user.userLevel === 5 || user.id?.toLowerCase() === 'admin'));
   const showApprovalActions = Boolean(isAssignedByMe || isAdmin);
 
   return (

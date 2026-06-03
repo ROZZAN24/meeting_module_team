@@ -224,9 +224,9 @@ export function JWTProvider({ children }) {
         const response = await axios.get('/api/account/license-status');
         setLicenseStatus(response.data);
 
-        console.log('License check:', response.data, 'User Admin:', state.user?.isBosAdmin);
+        console.log('License check:', response.data, 'User Admin:', state.user?.userLevel);
 
-        if (response.data.isExpired && state.isLoggedIn && state.user && state.user.isBosAdmin !== 1) {
+        if (response.data.isExpired && state.isLoggedIn && state.user && state.user.userLevel !== 5) {
           if (logoutCountdown === null) {
             console.log('LICENSE EXPIRED: Starting 45s countdown...');
             setLogoutCountdown(45);
@@ -242,7 +242,7 @@ export function JWTProvider({ children }) {
     checkLicense();
     const interval = setInterval(checkLicense, 60000); // check every 1 min
     return () => clearInterval(interval);
-  }, [state.isLoggedIn, state.user?.isBosAdmin, logoutCountdown === null]);
+  }, [state.isLoggedIn, state.user?.userLevel, logoutCountdown === null]);
 
   // --- SESSION WATCHDOG ---
   // Periodically update 'lastActiveTime' in localStorage. If the browser is closed entirely,
