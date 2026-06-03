@@ -391,7 +391,7 @@ export default function InductionCriteria() {
       return {
         ...r,
         index: i + 1,
-        serialNo: `IND-${r.id.toString().padStart(3, '0')}`,
+        serialNo: r.id ? `IND-${r.id.toString().padStart(3, '0')}` : '-',
         departmentCodes: deptNames, // Render friendly department names in table row
         createdUser: r.createdUser || r.createdBy || '-',
         updatedUser: r.updatedUser || r.updatedBy || '-',
@@ -458,7 +458,11 @@ export default function InductionCriteria() {
               <BOSTextField
                 name="id"
                 label="SERIAL NO"
-                value={formData.id ? formData.id.toString() : (nextSequence ? nextSequence.toString() : '1')}
+                value={
+                  formData.id
+                    ? `IND-${formData.id.toString().padStart(3, '0')}`
+                    : `IND-${(nextSequence ? nextSequence : 1).toString().padStart(3, '0')}`
+                }
                 disabled
                 InputProps={{
                   readOnly: true,
