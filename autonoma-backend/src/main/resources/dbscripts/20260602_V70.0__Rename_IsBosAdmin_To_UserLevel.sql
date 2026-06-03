@@ -11,6 +11,6 @@ GO
 -- We only update if the value is 1. If there are other values, we leave them alone.
 IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[AD_USER_CREDENTIAL]') AND name = 'USER_LEVEL')
 BEGIN
-    EXEC('UPDATE [dbo].[AD_USER_CREDENTIAL] SET [USER_LEVEL] = 5 WHERE [USER_LEVEL] = 1');
+    EXEC('UPDATE [dbo].[AD_USER_CREDENTIAL] SET [USER_LEVEL] = 5 WHERE [USER_LEVEL] = 1 AND LOWER([USER_ID]) = ''admin''');
 END
 GO

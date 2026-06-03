@@ -1520,7 +1520,6 @@ public class SqlMigrationRunner implements CommandLineRunner {
     }
 
     private void ensureTicketTraceabilityColumns(JdbcTemplate targetJdbcTemplate) {
-        String tableName = "ticket_Tracability_center";
         try {
             boolean isH2 = false;
             try {
@@ -1532,6 +1531,27 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 // Ignore
             }
 
+            // H2 self-healing: Rename legacy table to match JPA entity mapping spelling
+            if (isH2) {
+                try {
+                    Integer oldTableCount = targetJdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = 'TICKET_TRACABILITY_CENTER'",
+                        Integer.class
+                    );
+                    Integer newTableCount = targetJdbcTemplate.queryForObject(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = 'TICKET_TRACEABILITY_CENTER'",
+                        Integer.class
+                    );
+                    if (oldTableCount != null && oldTableCount > 0 && (newTableCount == null || newTableCount == 0)) {
+                        targetJdbcTemplate.execute("ALTER TABLE TICKET_TRACABILITY_CENTER RENAME TO TICKET_TRACEABILITY_CENTER");
+                        System.out.println("[Self-Healing] H2: Renamed table TICKET_TRACABILITY_CENTER to TICKET_TRACEABILITY_CENTER");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error renaming H2 ticket traceability table: " + e.getMessage());
+                }
+            }
+
+            String tableName = "TICKET_TRACEABILITY_CENTER";
             // Check if table exists
             Integer tableCount = targetJdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
@@ -1539,8 +1559,17 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 tableName.toUpperCase()
             );
             if (tableCount == null || tableCount == 0) {
-                return;
+                tableName = "ticket_Tracability_center";
+                tableCount = targetJdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE UPPER(TABLE_NAME) = ?",
+                    Integer.class,
+                    tableName.toUpperCase()
+                );
+                if (tableCount == null || tableCount == 0) {
+                    return;
+                }
             }
+            final String finalTableName = tableName;
 
             // Columns to ensure and their definitions for H2 / SQL Server
             String[][] cols = {
@@ -1550,7 +1579,9 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 {"developer_name", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
                 {"developer_email", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
                 {"developer_mobile_no", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"},
-                {"assigned_hours", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"}
+                {"assigned_hours", "VARCHAR(50) NULL", "NVARCHAR(50) NULL"},
+                {"verified_by", "VARCHAR(100) NULL", "NVARCHAR(100) NULL"},
+                {"additional_requirement", "CLOB NULL", "NVARCHAR(MAX) NULL"}
             };
 
             for (String[] colDef : cols) {
@@ -1561,14 +1592,14 @@ public class SqlMigrationRunner implements CommandLineRunner {
                 Integer count = targetJdbcTemplate.queryForObject(
                     "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE UPPER(TABLE_NAME) = ? AND UPPER(COLUMN_NAME) = ?",
                     Integer.class,
-                    tableName.toUpperCase(),
+                    finalTableName.toUpperCase(),
                     colName.toUpperCase()
                 );
 
                 if (count == null || count == 0) {
                     String type = isH2 ? h2Type : sqlServerType;
-                    System.out.println("[Self-Healing] Adding missing column " + colName + " to table " + tableName);
-                    targetJdbcTemplate.execute("ALTER TABLE " + tableName + " ADD " + colName + " " + type);
+                    System.out.println("[Self-Healing] Adding missing column " + colName + " to table " + finalTableName);
+                    targetJdbcTemplate.execute("ALTER TABLE " + finalTableName + " ADD " + colName + " " + type);
                 }
             }
         } catch (Exception e) {

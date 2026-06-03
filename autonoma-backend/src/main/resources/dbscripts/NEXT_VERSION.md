@@ -17,8 +17,8 @@ Before creating a new database migration script, you **MUST** claim a version nu
 
 ## 🔢 Current Status
 
-* **Last Claimed Version:** `V75`
-* **Next Available Version:** `V76`
+* **Last Claimed Version:** `V76`
+* **Next Available Version:** `V77`
 
 ---
 
@@ -39,5 +39,6 @@ Before creating a new database migration script, you **MUST** claim a version nu
 | **V73** | Eashwara Prasadh | 2026-06-02 | Add Input Case Style To Company | ✅ Merged |
 | **V74** | Naveena / TIS | 2026-06-02 | Add L6/L7 Designation Levels | ✅ Merged |
 | **V75** | Naveena / TIS | 2026-06-02 | Add Requested Departments | ✅ Merged |
+| **V76** | Antigravity | 2026-06-03 | Revert non-Admin users mistakenly promoted to level 5 | ✅ Merged |
 
 *Junior developers: If you are unsure, ask the Main Branch In-Charge before claiming a version.*
