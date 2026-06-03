@@ -33,81 +33,77 @@ const StyledCard = styled(Paper)(({ theme }) => ({
   flexDirection: 'column'
 }));
 
-const LabCard = styled(Paper)(({ theme, statcolor }) => ({
+const NeonCard = styled(Paper)(({ theme, statcolor }) => ({
   borderRadius: '24px',
   position: 'relative',
   overflow: 'hidden',
-  // Premium dark glassmorphism universally
-  background: `linear-gradient(180deg, ${alpha(statcolor, 0.1)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  background: `linear-gradient(180deg, ${alpha(statcolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
   backgroundColor: '#060B14',
   backdropFilter: 'blur(16px)',
-  border: `1px solid ${alpha(statcolor, 0.15)}`,
-  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(statcolor, 0.2)}`,
+  border: `1px solid ${alpha(statcolor, 0.2)}`,
+  boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(statcolor, 0.3)}`,
   height: '138px',
   display: 'flex',
   flexDirection: 'column',
   padding: '16px',
   transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
   cursor: 'pointer',
-
-  // Ambient backlight glow
   '&::before': {
     content: '""',
     position: 'absolute',
     top: '-50%', left: '-50%', width: '200%', height: '200%',
-    background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.25)} 0%, transparent 60%)`,
+    background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.15)} 0%, transparent 60%)`,
     transition: 'all 0.5s ease',
-    zIndex: 0,
     pointerEvents: 'none',
-    opacity: 0.4
+    zIndex: 0
   },
-
-  // Elegant pulse border
-  '& .pulse-ring': {
-    position: 'absolute', inset: 0, borderRadius: '24px',
-    boxShadow: `inset 0 0 0 1px ${alpha(statcolor, 0.5)}`,
-    transition: 'all 0.5s ease', zIndex: 1, pointerEvents: 'none',
-    opacity: 0
+  '& .rotating-border': {
+    position: 'absolute', inset: 0, borderRadius: '24px', padding: '2px',
+    background: `conic-gradient(from 0deg, transparent 70%, ${statcolor} 100%)`,
+    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+    WebkitMaskComposite: 'xor',
+    maskComposite: 'exclude',
+    opacity: 0, zIndex: 1, pointerEvents: 'none',
+    transition: 'opacity 0.5s',
   },
-
+  '& .shimmer': {
+    position: 'absolute', top: 0, left: '-150%', width: '100%', height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha('#ffffff', 0.15)}, transparent)`,
+    transform: 'skewX(-20deg)', transition: 'none', zIndex: 3, pointerEvents: 'none'
+  },
   '& .hover-emoji': {
     position: 'absolute', right: 24, top: 24, fontSize: '2rem',
-    opacity: 0, transform: 'scale(0.8)',
+    opacity: 0, transform: 'translateY(15px) scale(0.8)',
     transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
     filter: `drop-shadow(0px 0px 15px ${statcolor})`
   },
-
-  '& .particles': {
-    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.2, pointerEvents: 'none',
-    backgroundImage: `radial-gradient(${alpha(statcolor, 0.4)} 1px, transparent 1px)`,
-    backgroundSize: '24px 24px',
-    transition: 'opacity 0.5s ease'
-  },
-
   '&:hover': {
-    transform: 'translateY(-6px)',
-    boxShadow: `0 20px 40px -10px ${alpha(statcolor, 0.6)}, inset 0 1px 3px 0 ${alpha(statcolor, 0.9)}`,
-    border: `1px solid ${alpha(statcolor, 0.5)}`,
-
+    transform: 'translateY(-8px) scale(1.03)',
+    boxShadow: `0 25px 50px -12px ${alpha(statcolor, 0.7)}, inset 0 1px 3px 0 ${alpha(statcolor, 0.9)}`,
+    border: `1px solid transparent`,
     '&::before': {
+      background: `radial-gradient(circle at 50% 50%, ${alpha(statcolor, 0.35)} 0%, transparent 70%)`,
+    },
+    '& .rotating-border': {
       opacity: 1,
-      animation: 'pulseGlow 2.5s ease-in-out infinite alternate',
+      animation: 'spin-border 3s linear infinite',
     },
-
-    '& .pulse-ring': {
-      opacity: 1,
-      boxShadow: `inset 0 0 0 2px ${statcolor}`,
-      filter: `drop-shadow(0 0 10px ${statcolor})`,
-      animation: 'pulseRing 2.5s ease-in-out infinite alternate',
+    '& .shimmer': {
+      animation: 'sweep 2s ease-in-out',
     },
-
-    '& .particles': {
-      opacity: 0.8,
-    },
-
     '& .hover-emoji': {
-      opacity: 1, transform: 'scale(1.1)',
+      opacity: 1, transform: 'translateY(-5px) scale(1.2)',
+      animation: 'float 3s ease-in-out infinite'
     },
+    '& .hud-corner': {
+      borderColor: statcolor,
+      width: '18px', height: '18px',
+      filter: `drop-shadow(0 0 8px ${statcolor})`
+    },
+    '& .metric-icon-box': {
+      transform: 'scale(1.1)',
+      boxShadow: `0 0 25px ${alpha(statcolor, 0.6)}`
+    }
   },
 }));
 const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
@@ -152,37 +148,48 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
   }, [realTasks]);
 
   const totalReopened = reopenedTasks.length;
-  const criticalReopen = Math.floor(totalReopened * 0.2);
-  const reworkCompleted = Math.floor(totalReopened * 0.3);
+  let criticalReopen = 0;
+  let reworkCompleted = 0;
+  
+  reopenedTasks.forEach(t => {
+    if ((t._reopenCount || 0) >= 3) criticalReopen++;
+    if (['completed', 'verified', 'approved', 'closed', 'resolved'].includes(String(t._status).toLowerCase())) {
+      reworkCompleted++;
+    }
+  });
+  
   const pendingRework = totalReopened - reworkCompleted;
 
   const topStats = [
-    { title: 'Total Reopened Tasks', value: totalReopened, subtitle: 'All time', icon: <AssignmentRoundedIcon fontSize="small" />, color: '#3B82F6', bg: '#EFF6FF' },
-    { title: 'Critical Reopen', value: criticalReopen, subtitle: 'Needs attention', icon: <ErrorOutlineRoundedIcon fontSize="small" />, color: '#EF4444', bg: '#FEF2F2' },
-    { title: 'Pending Rework', value: pendingRework, subtitle: 'In progress', icon: <HistoryRoundedIcon fontSize="small" />, color: '#F59E0B', bg: '#FFFBEB' },
-    { title: 'Rework Completed', value: reworkCompleted, subtitle: 'Resolved', icon: <CheckCircleOutlineRoundedIcon fontSize="small" />, color: '#10B981', bg: '#F0FDF4' }
+    { title: 'Total Reopened Tasks', value: totalReopened, subtitle: 'All time', icon: <AssignmentRoundedIcon fontSize="small" />, color: '#3B82F6', hoverEmoji: '📋' },
+    { title: 'Critical Reopen', value: criticalReopen, subtitle: 'Needs attention', icon: <ErrorOutlineRoundedIcon fontSize="small" />, color: '#EF4444', hoverEmoji: '🚨' },
+    { title: 'Pending Rework', value: pendingRework, subtitle: 'In progress', icon: <HistoryRoundedIcon fontSize="small" />, color: '#F59E0B', hoverEmoji: '⏳' },
+    { title: 'Rework Completed', value: reworkCompleted, subtitle: 'Resolved', icon: <CheckCircleOutlineRoundedIcon fontSize="small" />, color: '#10B981', hoverEmoji: '✅' }
   ];
 
   const userMap = {};
   reopenedTasks.forEach(t => {
     const u = t._user || 'Unknown';
-    if (!userMap[u]) userMap[u] = { name: u, count: 0 };
+    if (!userMap[u]) userMap[u] = { name: u, count: 0, reworkHrs: 0, origHrs: 0, totalReopenCount: 0 };
     userMap[u].count += 1;
+    userMap[u].reworkHrs += (t._reworkHrs || 0);
+    userMap[u].origHrs += (parseInt(t._hrs, 10) || 8);
+    userMap[u].totalReopenCount += (t._reopenCount || 0);
   });
 
   const fullHealthData = Object.values(userMap).map(u => {
-    const hrs = u.count * 4;
-    const avg = u.count * 1;
+    const hrs = Math.round(u.reworkHrs);
+    const avg = u.count > 0 ? Math.round(u.reworkHrs / 8 / u.count) : 0;
     let status = 'Healthy'; let color = '#10B981';
-    if (u.count > 5) { status = 'Critical'; color = '#EF4444'; }
-    else if (u.count > 1) { status = 'Warning'; color = '#F59E0B'; }
+    if (u.count > 5 || u.totalReopenCount > 5) { status = 'Critical'; color = '#EF4444'; }
+    else if (u.count > 1 || u.totalReopenCount > 2) { status = 'Warning'; color = '#F59E0B'; }
     return { name: u.name, count: u.count, hrs: hrs + ' Hrs', avg: avg + ' Days', status, color };
   }).sort((a, b) => b.count - a.count);
   const healthData = fullHealthData.slice(0, 5);
 
   const fullTimeLossData = Object.values(userMap).map(u => {
-    const rework = u.count * 4;
-    const orig = u.count * 10;
+    const rework = Math.round(u.reworkHrs);
+    const orig = Math.round(u.origHrs);
     const loss = orig > 0 ? Math.round((rework / orig) * 100) : 0;
     let color = '#10B981';
     if (loss > 30) color = '#EF4444'; else if (loss > 15) color = '#F59E0B'; else color = '#3B82F6';
@@ -199,20 +206,13 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
     return { ticketId: getTicketId(t), name: t._title, emp: t._user, count: 1 };
   });
 
-  // ---- REAL Pages Data: derive from task source (_id prefix) ----
+  // ---- REAL Pages Data: group by _pageName ----
   const pagesData = useMemo(() => {
-    const moduleMap = {
-      'CL': { name: 'Checklist', color: '#3B82F6' },
-      'MOM': { name: 'MOM Actions', color: '#F59E0B' },
-      'TK': { name: 'Ticket', color: '#8B5CF6' },
-      'AUDIT': { name: 'Audit Schedule', color: '#EF4444' },
-    };
     const counts = {};
     reopenedTasks.forEach(t => {
-      const prefix = String(t._id || '').split('-')[0] || 'OTHER';
-      const mod = moduleMap[prefix] || { name: prefix || 'Other', color: '#94A3B8' };
-      if (!counts[mod.name]) counts[mod.name] = { name: mod.name, color: mod.color, count: 0 };
-      counts[mod.name].count += 1;
+      const name = t._pageName || 'Other';
+      if (!counts[name]) counts[name] = { name, color: '#3B82F6', count: 0 };
+      counts[name].count += 1;
     });
     const entries = Object.values(counts).sort((a, b) => b.count - a.count);
     const total = entries.reduce((s, e) => s + e.count, 0) || 1;
@@ -223,21 +223,18 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
   const trendPeriodConfig = useMemo(() => {
     const now = new Date();
 
-    // Weekly: last 6 weeks
+    // Weekly: last 7 days
     const weekLabels = [];
     const weekCounts = [];
-    for (let i = 5; i >= 0; i--) {
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - (i * 7) - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekStart.getDate() + 6);
-      weekEnd.setHours(23, 59, 59, 999);
-      const label = `Week ${6 - i}`;
-      weekLabels.push(label);
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      weekLabels.push(dayNames[d.getDay()]);
       weekCounts.push(reopenedTasks.filter(t => {
-        const d = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
-        return d && d >= weekStart && d <= weekEnd;
+        const td = (t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) ? new Date(t._reopenDate || t._reopenedDate || t.reopenDate || t.reopenedDate || t._rawDate) : null;
+        if (!td) return false;
+        return td.getFullYear() === d.getFullYear() && td.getMonth() === d.getMonth() && td.getDate() === d.getDate();
       }).length);
     }
 
@@ -450,36 +447,75 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
 
   // --- MAIN DASHBOARD SCREEN ---
   return (
-    <Box>
+    <Box sx={{
+      '@keyframes spin-border': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+      '@keyframes sweep': { '0%': { left: '-150%' }, '50%': { left: '150%' }, '100%': { left: '-150%' } },
+      '@keyframes float': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-10px)' }, '100%': { transform: 'translateY(0px)' } },
+      '@keyframes floatIcon': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-5px)' }, '100%': { transform: 'translateY(0px)' } },
+    }}>
       {/* ROW 1: STAT CARDS */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' }, gap: 1.5, mb: 1.5 }}>
         {topStats.map((stat, idx) => (
-          <LabCard key={idx} statcolor={stat.color}>
-            <Box className="pulse-ring" />
+          <NeonCard key={idx} statcolor={stat.color}>
+            <Box className="hud-corner hud-tl" />
+            <Box className="hud-corner hud-tr" />
+            <Box className="hud-corner hud-bl" />
+            <Box className="hud-corner hud-br" />
             <Box className="particles" />
-            <Box className="hover-emoji">{stat.emoji}</Box>
+            <Box className="rotating-border" />
+            <Box className="shimmer" />
 
-            <IconButton size="small" sx={{ position: 'absolute', top: 12, right: 12, color: alpha('#fff', 0.4), '&:hover': { color: '#fff' } }}>
+            <Typography className="hover-emoji">{stat.hoverEmoji}</Typography>
+
+            <IconButton size="small" sx={{ position: 'absolute', top: 12, right: 12, color: alpha('#fff', 0.4), '&:hover': { color: '#fff' }, zIndex: 10 }}>
               <MoreVertRoundedIcon fontSize="small" />
             </IconButton>
 
-            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" flex={1} zIndex={2} position="relative" sx={{ textAlign: 'center' }}>
-              {React.cloneElement(stat.icon, { sx: { fontSize: '2rem', color: stat.color, filter: `drop-shadow(0 0 8px ${stat.color})`, mb: 1 } })}
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              zIndex={2}
+              position="relative"
+              sx={{ textAlign: 'center' }}
+            >
+              <Box
+                className="metric-icon-box"
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `radial-gradient(circle, ${alpha(stat.color, 0.4)} 0%, ${alpha(stat.color, 0.05)} 70%)`,
+                  boxShadow: `0 0 20px ${alpha(stat.color, 0.6)}, inset 0 0 15px ${alpha(stat.color, 0.5)}`,
+                  border: `1px solid ${alpha(stat.color, 0.6)}`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                  animation: 'floatIcon 4s ease-in-out infinite',
+                }}
+              >
+                {React.cloneElement(stat.icon, { sx: { fontSize: 20 } })}
+              </Box>
 
-              <Typography variant="body2" fontWeight={800} sx={{ fontSize: '0.75rem', color: '#CBD5E1', mb: 0.5, letterSpacing: '1px', textAlign: 'center', textTransform: 'uppercase' }}>
+              <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.85rem', mb: 1, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
                 {stat.title}
-                {stat.title === 'Critical Reopen' && <span style={{ display: 'block', fontSize: '0.6rem', color: '#EF4444' }}>(&gt; 3 Times)</span>}
+                {stat.title === 'Critical Reopen' && <span style={{ display: 'block', fontSize: '0.6rem', color: '#EF4444', marginTop: '4px' }}>(&gt; 3 Times)</span>}
               </Typography>
 
-              <Typography className="kpi-number" variant="h3" fontWeight={900} sx={{ color: '#FFFFFF', mb: 0.25, fontSize: '2.2rem', fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.1 }}>
+              <Typography variant="h3" fontWeight={900} sx={{ lineHeight: 1, color: '#fff', textShadow: `0 0 20px ${alpha(stat.color, 0.9)}, 0 0 10px ${stat.color}`, mb: 0.5, fontFamily: "'Inter', sans-serif" }}>
                 {stat.value}
               </Typography>
 
-              <Typography variant="caption" fontWeight={600} sx={{ fontSize: '0.65rem', color: alpha(stat.color, 0.8), textAlign: 'center', lineHeight: 1.1 }}>
+              <Typography variant="caption" sx={{ color: stat.color, fontWeight: 800, fontSize: '0.7rem', opacity: 0.9 }}>
                 {stat.subtitle}
               </Typography>
             </Box>
-          </LabCard>
+          </NeonCard>
         ))}
       </Box>
 

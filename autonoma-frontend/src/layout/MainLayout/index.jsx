@@ -122,7 +122,7 @@ function MainLayoutInner() {
 
   // Anti-screenshot, printing, and context-menu protection
   useEffect(() => {
-    const isSuperUser = user?.isBosAdmin === 1;
+    const isSuperUser = user?.userLevel === 5;
 
     const handleKeyDown = (e) => {
       if (e.key === 'PrintScreen' && !isSuperUser) {

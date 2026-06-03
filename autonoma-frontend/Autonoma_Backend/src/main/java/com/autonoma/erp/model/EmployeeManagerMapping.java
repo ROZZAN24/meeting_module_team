@@ -32,14 +32,14 @@ public class EmployeeManagerMapping {
     @Column(name = "hr_id")
     private Long hrId;
 
-    @Column(name = "created_by", length = 100)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")
@@ -51,12 +51,22 @@ public class EmployeeManagerMapping {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         createdAt = new Date();
         if (status == null) status = "Active";
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         updatedAt = new Date();
-    }
+        }
 }

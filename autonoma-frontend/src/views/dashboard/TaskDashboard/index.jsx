@@ -26,6 +26,107 @@ import {
 import { styled, alpha, keyframes } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 import axios from 'utils/axios';
+
+/**
+ * Calculates Delay Hours for a task based on its history of status changes.
+ * 
+ * Rules:
+ * 1. Starts when current date/time exceeds Target Date.
+ * 2. Stops when status goes to "To Be Tested".
+ * 3. Starts again if reopened, from the Reopen Date/Time.
+ * 4. Stops again when status goes back to "To Be Tested".
+ * 5. Cycles accumulate.
+ * 6. Sundays and Holidays are excluded from the delay hours calculation.
+ * 
+ * NOTE: This function requires an audit history array of the task.
+ * Currently, it serves as the planned logic since the backend API does not return history.
+ */
+// eslint-disable-next-line no-unused-vars
+export const calculateDelayHours = (targetDateStr, statusHistory, holidays = []) => {
+  if (!targetDateStr || !statusHistory || statusHistory.length === 0) return 0;
+  
+  let totalDelayMs = 0;
+  const targetDate = new Date(targetDateStr);
+  const now = new Date();
+  
+  if (now <= targetDate) return 0; // No delay yet
+
+  // Sort history chronologically
+  const history = [...statusHistory].sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  let currentDelayStart = targetDate;
+  let isDelaying = true; // Initially delaying if past target date
+
+  for (const log of history) {
+    const logDate = new Date(log.date);
+    if (logDate < targetDate) continue; // Ignore logs before target date
+    
+    const status = String(log.status).toLowerCase();
+    
+    if (['to be tested', 'completed', 'closed'].includes(status)) {
+      if (isDelaying) {
+        // Stop delay clock
+        totalDelayMs += calculateWorkingMs(currentDelayStart, logDate, holidays);
+        isDelaying = false;
+      }
+    } else if (['reopened', 're-opened', 'in progress'].includes(status)) {
+      if (!isDelaying) {
+        // Start delay clock again
+        currentDelayStart = logDate;
+        isDelaying = true;
+      }
+    }
+  }
+
+  // If currently still delaying (e.g. not moved to To Be Tested again)
+  if (isDelaying) {
+    totalDelayMs += calculateWorkingMs(currentDelayStart, now, holidays);
+  }
+
+  // Convert to hours
+  return Math.round(totalDelayMs / (1000 * 60 * 60));
+};
+
+/** Helper to calculate ms between two dates excluding Sundays and Holidays */
+const calculateWorkingMs = (start, end, holidays = []) => {
+  if (start >= end) return 0;
+  
+  const holidaySet = new Set(holidays.map((h) => h.dateStr));
+  let totalMs = 0;
+  let current = new Date(start);
+
+  while (current < end) {
+    const yyyy = current.getFullYear();
+    const mm = String(current.getMonth() + 1).padStart(2, '0');
+    const dd = String(current.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}-${mm}-${dd}`;
+    
+    const isSunday = current.getDay() === 0;
+    const isHoliday = holidaySet.has(dateStr);
+    
+    // 9 AM to 6 PM mapping
+    const workStart = new Date(current);
+    workStart.setHours(9, 0, 0, 0);
+    
+    const workEnd = new Date(current);
+    workEnd.setHours(18, 0, 0, 0);
+    
+    if (!isSunday && !isHoliday) {
+      const overlapStart = new Date(Math.max(current.getTime(), workStart.getTime()));
+      const intervalEnd = new Date(Math.min(end.getTime(), workEnd.getTime()));
+      
+      if (overlapStart < intervalEnd) {
+        totalMs += (intervalEnd.getTime() - overlapStart.getTime());
+      }
+    }
+    
+    // Move to next day 00:00:00
+    current.setDate(current.getDate() + 1);
+    current.setHours(0, 0, 0, 0);
+  }
+  
+  return totalMs;
+};
 import useAuth from 'hooks/useAuth';
 
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
@@ -154,40 +255,101 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+const glowPulse = keyframes`0%{opacity:0.5}50%{opacity:1}100%{opacity:0.5}`;
+
 const NeonMetricCard = styled(Paper)(({ theme, basecolor }) => ({
-  borderRadius: '16px',
+  borderRadius: '24px',
   position: 'relative',
   overflow: 'hidden',
-  background: `linear-gradient(135deg, ${alpha(basecolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
+  background: `linear-gradient(180deg, ${alpha(basecolor, 0.15)} 0%, ${alpha('#060B14', 0.95)} 100%)`,
   backgroundColor: '#060B14',
-  backdropFilter: 'blur(20px)',
+  backdropFilter: 'blur(16px)',
   border: `1px solid ${alpha(basecolor, 0.2)}`,
   boxShadow: `0 8px 32px 0 rgba(0,0,0,0.5), inset 0 1px 2px 0 ${alpha(basecolor, 0.3)}`,
   display: 'flex',
   flexDirection: 'column',
-  padding: '12px 16px',
-  height: '100px',
-  minHeight: '90px',
+  padding: '16px',
+  height: '138px',
   width: '100%',
-  transition: 'all 0.3s ease-in-out',
+  transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
   cursor: 'pointer',
   '&::before': {
     content: '""',
     position: 'absolute',
-    top: '-30%', left: '-30%', width: '160%', height: '160%',
-    background: `radial-gradient(circle at 30% 30%, ${alpha(basecolor, 0.2)} 0%, transparent 60%)`,
+    top: '-50%', left: '-50%', width: '200%', height: '200%',
+    background: `radial-gradient(circle at 50% 50%, ${alpha(basecolor, 0.15)} 0%, transparent 60%)`,
+    transition: 'all 0.5s ease',
     pointerEvents: 'none',
     zIndex: 0
   },
-  '& .particles': {
-    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.3, pointerEvents: 'none',
-    backgroundImage: `radial-gradient(${alpha(basecolor, 0.4)} 1px, transparent 1px)`,
-    backgroundSize: '24px 24px',
+  '& .rotating-border': {
+    position: 'absolute', inset: 0, borderRadius: '24px', padding: '2px',
+    background: `conic-gradient(from 0deg, transparent 70%, ${basecolor} 100%)`,
+    WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+    WebkitMaskComposite: 'xor',
+    maskComposite: 'exclude',
+    opacity: 0, zIndex: 1, pointerEvents: 'none',
+    transition: 'opacity 0.5s',
+  },
+  '& .shimmer': {
+    position: 'absolute', top: 0, left: '-150%', width: '100%', height: '100%',
+    background: `linear-gradient(90deg, transparent, ${alpha('#ffffff', 0.15)}, transparent)`,
+    transform: 'skewX(-20deg)', transition: 'none', zIndex: 3, pointerEvents: 'none'
+  },
+  '& .hover-emoji': {
+    position: 'absolute', right: 24, top: 24, fontSize: '2rem',
+    opacity: 0, transform: 'translateY(15px) scale(0.8)',
+    transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)', zIndex: 4, pointerEvents: 'none',
+    filter: `drop-shadow(0px 0px 15px ${basecolor})`
   },
   '&:hover': {
-    transform: 'translateY(-5px)',
-    boxShadow: `0 12px 40px -10px ${alpha(basecolor, 0.6)}, inset 0 1px 3px 0 ${alpha(basecolor, 0.6)}`,
-    border: `1px solid ${alpha(basecolor, 0.6)}`
+    transform: 'translateY(-8px) scale(1.03)',
+    boxShadow: `0 25px 50px -12px ${alpha(basecolor, 0.7)}, inset 0 1px 3px 0 ${alpha(basecolor, 0.9)}`,
+    border: `1px solid transparent`,
+    '&::before': {
+      background: `radial-gradient(circle at 50% 50%, ${alpha(basecolor, 0.35)} 0%, transparent 70%)`,
+    },
+    '& .rotating-border': {
+      opacity: 1,
+      animation: 'spin-border 3s linear infinite',
+    },
+    '& .shimmer': {
+      animation: 'sweep 2s ease-in-out',
+    },
+    '& .hover-emoji': {
+      opacity: 1, transform: 'translateY(-5px) scale(1.2)',
+      animation: 'float 3s ease-in-out infinite'
+    },
+    '& .hud-corner': {
+      borderColor: basecolor,
+      width: '18px', height: '18px',
+      filter: `drop-shadow(0 0 8px ${basecolor})`
+    },
+    '& .metric-icon-box': {
+      transform: 'scale(1.1)',
+      boxShadow: `0 0 25px ${alpha(basecolor, 0.6)}`
+    }
+  },
+  '& .particles': {
+    position: 'absolute', inset: 0, zIndex: 0, opacity: 0.15, pointerEvents: 'none',
+    backgroundImage: `radial-gradient(${alpha(basecolor, 0.4)} 1px, transparent 1px)`,
+    backgroundSize: '20px 20px',
+  },
+  '& .hud-corner': {
+    position: 'absolute',
+    width: '12px', height: '12px',
+    borderColor: alpha(basecolor, 0.4),
+    borderStyle: 'solid',
+    borderWidth: 0,
+    zIndex: 1,
+    transition: 'all 0.4s ease',
+  },
+  '& .hud-tl': { top: '12px', left: '12px', borderTopWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-tr': { top: '12px', right: '12px', borderTopWidth: '2px', borderRightWidth: '2px' },
+  '& .hud-bl': { bottom: '12px', left: '12px', borderBottomWidth: '2px', borderLeftWidth: '2px' },
+  '& .hud-br': { bottom: '12px', right: '12px', borderBottomWidth: '2px', borderRightWidth: '2px' },
+  '& .metric-icon-box': {
+    transition: 'all 0.3s ease',
   }
 }));
 
@@ -476,51 +638,91 @@ const WorkloadView = ({ realWorkload, isDark }) => {
             c: '#8B5CF6',
             label: 'All Employees',
             n: realWorkload.length,
-            icon: <AssignmentRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <AssignmentRoundedIcon fontSize="small" />,
             data: [40, 60, 45, 80, 50, 90],
-            trend: '+5%'
+            trend: '+5%',
+            hoverEmoji: '📋'
           },
           {
             c: '#EF4444',
             label: 'Critical',
             n: criticalCount,
-            icon: <NotificationsActiveRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <NotificationsActiveRoundedIcon fontSize="small" />,
             data: [10, 25, 15, 40, 20, 50],
-            trend: '+25%'
+            trend: '+25%',
+            hoverEmoji: '🚨'
           },
           {
             c: '#3B82F6',
             label: 'Normal',
             n: normalCount,
-            icon: <ThumbUpAltRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <ThumbUpAltRoundedIcon fontSize="small" />,
             data: [20, 10, 30, 15, 40, 25],
-            trend: '+12%'
+            trend: '+12%',
+            hoverEmoji: '👍'
           },
           {
             c: '#10B981',
             label: 'Healthy',
             n: healthyCount,
-            icon: <MonitorHeartRoundedIcon sx={{ fontSize: 18 }} />,
+            icon: <MonitorHeartRoundedIcon fontSize="small" />,
             data: [30, 40, 20, 50, 30, 60],
-            trend: '+40%'
+            trend: '+40%',
+            hoverEmoji: '📈'
           }
         ].map((s, i) => (
           <NeonMetricCard key={i} basecolor={s.c}>
+            <Box className="hud-corner hud-tl" />
+            <Box className="hud-corner hud-tr" />
+            <Box className="hud-corner hud-bl" />
+            <Box className="hud-corner hud-br" />
             <Box className="particles" />
-            <Box display="flex" alignItems="center" gap={1} zIndex={2} mb={0.5}>
-              <GlowingIcon color={s.c} sx={{ width: 24, height: 24 }}>{React.cloneElement(s.icon, { sx: { fontSize: 14 } })}</GlowingIcon>
-              <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.8rem' }}>
+            <Box className="rotating-border" />
+            <Box className="shimmer" />
+
+            <Typography className="hover-emoji">{s.hoverEmoji}</Typography>
+
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              flex={1}
+              zIndex={2}
+              position="relative"
+              sx={{ textAlign: 'center' }}
+            >
+              <Box
+                className="metric-icon-box"
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: `radial-gradient(circle, ${alpha(s.c, 0.4)} 0%, ${alpha(s.c, 0.05)} 70%)`,
+                  boxShadow: `0 0 20px ${alpha(s.c, 0.6)}, inset 0 0 15px ${alpha(s.c, 0.5)}`,
+                  border: `1px solid ${alpha(s.c, 0.6)}`,
+                  color: '#fff',
+                  backdropFilter: 'blur(8px)',
+                  animation: 'floatIcon 4s ease-in-out infinite',
+                }}
+              >
+                {s.icon}
+              </Box>
+              <Typography variant="subtitle2" color="#fff" fontWeight={800} sx={{ lineHeight: 1, fontSize: '0.85rem', mb: 1, letterSpacing: '0.5px' }}>
                 {s.label}
               </Typography>
+              <Typography variant="h3" fontWeight={900} sx={{ lineHeight: 1, color: '#fff', textShadow: `0 0 20px ${alpha(s.c, 0.9)}, 0 0 10px ${s.c}`, mb: 0.5, fontFamily: "'Inter', sans-serif" }}>
+                {s.n}
+              </Typography>
+              <Typography variant="caption" sx={{ color: s.c, fontWeight: 800, fontSize: '0.7rem', opacity: 0.9 }}>
+                {s.trend} <span style={{ color: alpha('#fff', 0.5), fontWeight: 500 }}>vs last 7 days</span>
+              </Typography>
             </Box>
-            <Typography variant="h4" fontWeight={900} sx={{ lineHeight: 1, mb: 0.5, color: '#fff', zIndex: 2, textShadow: `0 0 15px ${alpha(s.c, 0.8)}` }}>
-              {s.n}
-            </Typography>
-            <Stack direction="row" alignItems="center" gap={1} zIndex={2}>
-              <Typography variant="caption" sx={{ color: s.c, fontWeight: 800, fontSize: '0.65rem' }}>{s.trend}</Typography>
-              <Typography variant="caption" color={alpha('#fff', 0.5)} sx={{ fontSize: '0.6rem' }}>vs last 7 days</Typography>
-            </Stack>
-            <Box sx={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 35, zIndex: 1, opacity: 0.5, pointerEvents: 'none' }}>
+            <Box sx={{ position: 'absolute', bottom: -10, left: 0, right: 0, height: 35, zIndex: 1, opacity: 0.3, pointerEvents: 'none' }}>
               <ReactApexChart options={sparklineOptions(s.c)} series={[{ data: s.data }]} type="line" height="100%" width="100%" />
             </Box>
           </NeonMetricCard>
@@ -700,10 +902,30 @@ const WorkloadView = ({ realWorkload, isDark }) => {
   );
 };
 
+// Helper to format decimal hours into HH:mm format
+const formatHHMM = (hours = 0) => {
+  const isNegative = hours < 0;
+  const absHours = Math.abs(hours);
+  const h = Math.floor(absHours);
+  const m = Math.round((absHours - h) * 60);
+  let mm = m;
+  let hh = h;
+  if (mm === 60) { hh += 1; mm = 0; }
+  const sign = isNegative ? '-' : '';
+  return `${sign}${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+};
+
 // ── Performance Overview ──────────────────────────────────────────────────────
 const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
+  const [devSortCol, setDevSortCol] = useState('performance');
+  const [devSortDir, setDevSortDir] = useState('desc');
+  const [showDevViewAll, setShowDevViewAll] = useState(false);
+
   const totalAssigned = devStats.reduce((s, d) => s + d.assignedHrs, 0);
   const totalCompleted = devStats.reduce((s, d) => s + d.completedHrs, 0);
+  const totalTaken = devStats.reduce((s, d) => s + (d.takenHrs || 0), 0);
+  const totalRework = devStats.reduce((s, d) => s + (d.reworkHrs || 0), 0);
+  const totalDelay = devStats.reduce((s, d) => s + (d.delayHrs || 0), 0);
   const pendingHrs = Math.max(0, totalAssigned - totalCompleted);
   const activeDev = devStats.length;
   const avgPerf = devStats.length > 0 ? (devStats.reduce((s, d) => s + d.performance, 0) / devStats.length).toFixed(2) : '0.00';
@@ -741,15 +963,15 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
 
   // Summary cards config
   const summaryCards = [
-    { label: 'Total Assigned Hours', value: `${totalAssigned} Hrs`, sub: 'All Developers', svgIcon: <NotoEmoji hex="1f4da" size={36} />, color: '#8B5CF6', chartData: [10, 25, 15, 30, 20, 35, 25] },
+    { label: 'Total Assigned Hours', value: `${totalAssigned.toFixed(2)}`, sub: 'All Developers', svgIcon: <NotoEmoji hex="1f4da" size={36} />, color: '#8B5CF6', chartData: [10, 25, 15, 30, 20, 35, 25] },
     {
       label: 'Total Completed Hours',
-      value: `${totalCompleted} Hrs`,
+      value: `${totalCompleted.toFixed(2)}`,
       sub: 'All Developers',
       svgIcon: <NotoEmoji hex="1f525" size={36} />,
       color: '#10B981', chartData: [5, 15, 10, 25, 20, 30, 25]
     },
-    { label: 'Pending Hours', value: `${pendingHrs} Hrs`, sub: 'Remaining Work', svgIcon: <NotoEmoji hex="23f3" size={36} />, color: '#F59E0B', chartData: [35, 30, 32, 25, 28, 20, 18] },
+      { label: 'Pending Hours', value: `${pendingHrs.toFixed(2)}`, sub: 'Remaining Work', svgIcon: <NotoEmoji hex="23f3" size={36} />, color: '#F59E0B', chartData: [35, 30, 32, 25, 28, 20, 18] },
     { label: 'Total Developers', value: `${activeDev}`, sub: 'Active Developers', svgIcon: <NotoEmoji hex="1f4bb" size={36} />, color: '#8B5CF6', chartData: [5, 5, 5, 5, 5, 5, 5] },
     { label: 'Avg Performance', value: `${avgPerf}%`, sub: 'Across all developers', svgIcon: <NotoEmoji hex="1f4c8" size={36} />, color: '#3B82F6', chartData: [60, 65, 62, 70, 68, 75, 78] },
     {
@@ -808,11 +1030,24 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
     },
     tooltip: { y: { formatter: (v) => `${v}%` } }
   };
-  const trendSeries = [
-    { name: 'Outstanding', data: [94, 96, 95, 97, 95, 96, 95] },
-    { name: 'Perfect', data: [100, 100, 100, 100, 100, 100, 100] },
-    { name: 'Low', data: [106, 108, 105, 110, 107, 109, 110] }
-  ];
+  const outAvg = outstandingDevs.length > 0 ? (outstandingDevs.reduce((s, d) => s + d.performance, 0) / outstandingDevs.length) : null;
+  const perfAvg = perfectDevs.length > 0 ? (perfectDevs.reduce((s, d) => s + d.performance, 0) / perfectDevs.length) : null;
+  const lowAvg = lowDevs.length > 0 ? (lowDevs.reduce((s, d) => s + d.performance, 0) / lowDevs.length) : null;
+
+  const trendSeries = [];
+  const trendColors = [];
+  if (outAvg !== null) {
+    trendSeries.push({ name: 'Outstanding', data: genTrend(outAvg) });
+    trendColors.push('#10B981');
+  }
+  if (perfAvg !== null) {
+    trendSeries.push({ name: 'Perfect', data: genTrend(perfAvg) });
+    trendColors.push('#3B82F6');
+  }
+  if (lowAvg !== null) {
+    trendSeries.push({ name: 'Low', data: genTrend(lowAvg) });
+    trendColors.push('#F59E0B');
+  }
 
   // Time of day bar chart
   const todOptions = {
@@ -934,7 +1169,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, gap: 2, mb: 2.5, alignItems: 'stretch' }}>
           {/* Performance by Developer Table */}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Card sx={{ height: '100%' }}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <Box
                 sx={{
                   px: 2.5,
@@ -975,6 +1210,23 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                     </Typography>
                   </Box>
                 </Stack>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => setShowDevViewAll(true)}
+                  endIcon={<TrendingUpRoundedIcon />}
+                  sx={{
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#E2E8F0',
+                    color: textColor,
+                    textTransform: 'none',
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    zIndex: 2,
+                    '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' }
+                  }}
+                >
+                  View all
+                </Button>
                 <Box sx={{ position: 'relative', width: 120, height: 60, zIndex: 1, display: { xs: 'none', sm: 'block' } }}>
                   <Box sx={{ position: 'absolute', bottom: 0, left: 10, width: 14, height: 25, borderRadius: '4px 4px 0 0', bgcolor: '#A78BFA' }} />
                   <Box sx={{ position: 'absolute', bottom: 0, left: 30, width: 14, height: 40, borderRadius: '4px 4px 0 0', bgcolor: '#8B5CF6' }} />
@@ -985,17 +1237,46 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <TrendingUpRoundedIcon sx={{ position: 'absolute', top: 0, left: 40, color: '#6366F1', fontSize: 30, opacity: 0.8 }} />
                 </Box>
               </Box>
-              <TableContainer>
-                <Table size="small">
+              <TableContainer sx={{ flexGrow: 1 }}>
+                <Table size="small" sx={{ height: '100%' }}>
                   <TableHead>
                     <TableRow sx={{ bgcolor: isDark ? 'rgba(255,255,255,0.03)' : '#F8FAFC' }}>
-                      {['Developer', 'Assigned Hours', 'Completed Hours', 'Variance', 'Performance', 'Status', 'Trend (Last 7 Days)'].map(
+                      {[
+                        { key: 'user', label: 'Developer' },
+                        { key: 'assignedHrs', label: 'Assigned Hrs' },
+                        { key: 'takenHrs', label: 'Taken Time' },
+                        { key: 'reworkHrs', label: 'Rework Time' },
+                        { key: 'delayHrs', label: 'Delay Hrs' },
+                        { key: 'completedHrs', label: 'Completed Hrs' },
+                        { key: 'performance', label: 'Performance %' },
+                        { key: 'perfStatus', label: 'Status' },
+                        { key: null, label: 'Trend' }
+                      ].map(
                         (h) => (
                           <TableCell
-                            key={h}
-                            sx={{ fontWeight: 700, py: 0.5, fontSize: '11px', textAlign: h === 'Developer' ? 'left' : 'center' }}
+                            key={h.label}
+                            onClick={() => {
+                              if (!h.key) return;
+                              if (devSortCol === h.key) setDevSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+                              else {
+                                setDevSortCol(h.key);
+                                setDevSortDir('asc');
+                              }
+                            }}
+                            sx={{
+                              fontWeight: 700, py: 0.5, fontSize: '11px',
+                              textAlign: h.label === 'Developer' ? 'left' : 'center',
+                              cursor: h.key ? 'pointer' : 'default',
+                              userSelect: 'none',
+                              '&:hover': h.key ? { color: '#6366F1' } : {}
+                            }}
                           >
-                            {h}
+                            {h.label}
+                            {h.key && (
+                              <Box component="span" sx={{ fontSize: '10px', ml: 0.3, color: devSortCol === h.key ? '#6366F1' : 'inherit' }}>
+                                {devSortCol === h.key ? (devSortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                              </Box>
+                            )}
                           </TableCell>
                         )
                       )}
@@ -1004,15 +1285,19 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                   <TableBody>
                     {devStats.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} sx={{ textAlign: 'center', py: 4, color: textMuted }}>
+                        <TableCell colSpan={9} sx={{ textAlign: 'center', py: 4, color: textMuted }}>
                           No data available.
                         </TableCell>
                       </TableRow>
                     )}
-                    {devStats.map((dev, idx) => {
-                      const varNum = dev.completedHrs - dev.assignedHrs;
-                      const varStr = varNum === 0 ? '0 Hrs' : `${varNum > 0 ? '+' : ''}${varNum} Hrs`;
-                      const varColor = varNum < 0 ? '#10B981' : varNum === 0 ? '#3B82F6' : '#F59E0B';
+                    {([...devStats].sort((a, b) => {
+                      const col = devSortCol;
+                      const aVal = typeof a[col] === 'string' ? a[col].toLowerCase() : (a[col] || 0);
+                      const bVal = typeof b[col] === 'string' ? b[col].toLowerCase() : (b[col] || 0);
+                      if (aVal < bVal) return devSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return devSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    })).slice(0, 5).map((dev, idx) => {
                       const sparkOpts = {
                         chart: { type: 'line', sparkline: { enabled: true } },
                         stroke: { curve: 'smooth', width: 2 },
@@ -1039,25 +1324,23 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                               </Typography>
                             </Stack>
                           </TableCell>
-                          <TableCell sx={{ textAlign: 'center', py: 0.5 }}>
-                            <Typography variant="body2" fontWeight={600}>
-                              {dev.assignedHrs} Hrs
-                            </Typography>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textMuted, textAlign: 'center' }}>
+                            {formatHHMM(dev.assignedHrs)}
                           </TableCell>
-                          <TableCell sx={{ textAlign: 'center', py: 0.5 }}>
-                            <Typography variant="body2" fontWeight={600}>
-                              {dev.completedHrs} Hrs
-                            </Typography>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textMuted, textAlign: 'center' }}>
+                            {formatHHMM(dev.takenHrs)}
                           </TableCell>
-                          <TableCell sx={{ textAlign: 'center', py: 0.5 }}>
-                            <Typography variant="body2" fontWeight={700} color={varColor}>
-                              {varStr}
-                            </Typography>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: dev.reworkHrs > 0 ? '#EF4444' : textMuted, textAlign: 'center' }}>
+                            {formatHHMM(dev.reworkHrs)}
                           </TableCell>
-                          <TableCell sx={{ textAlign: 'center', py: 0.5 }}>
-                            <Typography variant="body2" fontWeight={700} color={getPerfColor(dev.perfStatus)}>
-                              {dev.performance}%
-                            </Typography>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: dev.delayHrs > 0 ? '#F59E0B' : '#10B981', textAlign: 'center' }}>
+                            {formatHHMM(dev.delayHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 700, color: textColor, textAlign: 'center' }}>
+                            {formatHHMM(dev.completedHrs)}
+                          </TableCell>
+                          <TableCell sx={{ py: 0.5, fontWeight: 800, color: getPerfColor(dev.perfStatus), textAlign: 'center' }}>
+                            {dev.performance.toFixed(2)}%
                           </TableCell>
                           <TableCell sx={{ textAlign: 'center', py: 0.5 }}>
                             <Chip
@@ -1080,6 +1363,12 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                         </TableRow>
                       );
                     })}
+                    {/* Spacer row to push total to bottom */}
+                    {devStats.length > 0 && (
+                      <TableRow sx={{ height: '100%', border: 0 }}>
+                        <TableCell colSpan={9} sx={{ border: 0, p: 0 }} />
+                      </TableRow>
+                    )}
                     {/* Total Row */}
                     {devStats.length > 0 && (
                       <TableRow sx={{ bgcolor: isDark ? 'rgba(59,130,246,0.08)' : '#EFF6FF' }}>
@@ -1090,18 +1379,27 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center', py: 1 }}>
                           <Typography variant="body2" fontWeight={800} color="#3B82F6">
-                            {totalAssigned} Hrs
+                            {formatHHMM(totalAssigned)}
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center', py: 1 }}>
                           <Typography variant="body2" fontWeight={800} color="#3B82F6">
-                            {totalCompleted} Hrs
+                            {formatHHMM(totalTaken)}
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center', py: 1 }}>
-                          <Typography variant="body2" fontWeight={800} color={totalCompleted - totalAssigned >= 0 ? '#F59E0B' : '#10B981'}>
-                            {totalCompleted - totalAssigned >= 0 ? '+' : ''}
-                            {totalCompleted - totalAssigned} Hrs
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalRework)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalDelay)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center', py: 1 }}>
+                          <Typography variant="body2" fontWeight={800} color="#3B82F6">
+                            {formatHHMM(totalCompleted)}
                           </Typography>
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center', py: 1 }}>
@@ -1216,10 +1514,10 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                       </Box>
                       <Box flex={1}>
                         <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" mb={0} sx={{ fontSize: '0.6rem' }}>
-                          Total Hours
+                          Total Consumed
                         </Typography>
                         <Typography variant="subtitle2" fontWeight={900} color={getPerfColor(grp.status)}>
-                          {grp.devs.reduce((s, d) => s + d.completedHrs, 0)} Hrs
+                          {formatHHMM(grp.devs.reduce((s, d) => s + d.completedHrs, 0))}
                         </Typography>
                       </Box>
                     </Box>
@@ -1279,9 +1577,9 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                     chart: { type: 'line', toolbar: { show: false }, foreColor: '#64748B', fontFamily: "'Inter',sans-serif", background: 'transparent' },
                     grid: { borderColor: '#F8FAFC', strokeDashArray: 0, position: 'back', xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } }, padding: { top: -10, bottom: -10, left: 10, right: 10 } },
                     tooltip: { theme: 'light' },
-                    colors: ['#10B981', '#3B82F6', '#F59E0B'],
+                    colors: trendColors.length > 0 ? trendColors : ['#10B981'],
                     stroke: { curve: 'smooth', width: 3 },
-                    markers: { size: 4, colors: ['#fff'], strokeColors: ['#10B981', '#3B82F6', '#F59E0B'], strokeWidth: 2, hover: { size: 6 } },
+                    markers: { size: 4, colors: ['#fff'], strokeColors: trendColors.length > 0 ? trendColors : ['#10B981'], strokeWidth: 2, hover: { size: 6 } },
                     legend: { show: false },
                     xaxis: { ...trendOptions.xaxis, labels: { style: { colors: '#94A3B8', fontSize: '9px', fontWeight: 600 } } },
                     yaxis: { ...trendOptions.yaxis, labels: { show: false } }
@@ -1296,17 +1594,17 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                 <Box flex={1} sx={{ bgcolor: 'rgba(16,185,129,0.05)', p: 1, borderRadius: '12px', border: '1px solid rgba(16,185,129,0.1)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#10B981', mb: 0.5 }} />
                   <Typography variant="caption" sx={{ color: '#10B981', fontSize: '0.6rem', display: 'block', fontWeight: 800, textTransform: 'uppercase' }}>Outstanding</Typography>
-                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>108.4%</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>{outstandingDevs.length > 0 ? (outstandingDevs.reduce((s, d) => s + d.performance, 0) / outstandingDevs.length).toFixed(2) : '0.00'}%</Typography>
                 </Box>
                 <Box flex={1} sx={{ bgcolor: 'rgba(59,130,246,0.05)', p: 1, borderRadius: '12px', border: '1px solid rgba(59,130,246,0.1)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#3B82F6', mb: 0.5 }} />
                   <Typography variant="caption" sx={{ color: '#3B82F6', fontSize: '0.6rem', display: 'block', fontWeight: 800, textTransform: 'uppercase' }}>Perfect</Typography>
-                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>97.6%</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>{perfectDevs.length > 0 ? (perfectDevs.reduce((s, d) => s + d.performance, 0) / perfectDevs.length).toFixed(2) : '0.00'}%</Typography>
                 </Box>
                 <Box flex={1} sx={{ bgcolor: 'rgba(245,158,11,0.05)', p: 1, borderRadius: '12px', border: '1px solid rgba(245,158,11,0.1)', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#F59E0B', mb: 0.5 }} />
                   <Typography variant="caption" sx={{ color: '#F59E0B', fontSize: '0.6rem', display: 'block', fontWeight: 800, textTransform: 'uppercase' }}>Low</Typography>
-                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>76.3%</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1, mt: 0.2 }}>{lowDevs.length > 0 ? (lowDevs.reduce((s, d) => s + d.performance, 0) / lowDevs.length).toFixed(2) : '0.00'}%</Typography>
                 </Box>
               </Stack>
             </Card>
@@ -1353,7 +1651,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                     <Chip label="#1" sx={{ background: 'linear-gradient(135deg, #FDE68A 0%, #F59E0B 100%)', color: '#fff', fontWeight: 900, height: 20, fontSize: '0.65rem', borderRadius: 1, boxShadow: '0 2px 4px rgba(245,158,11,0.3)' }} />
                   </Stack>
                   <Stack direction="row" alignItems="center" gap={1} mb={1}>
-                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 900, lineHeight: 1, color: '#F59E0B', textShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>{topPerformers.length > 0 ? topPerformers[0].performance : 100}%</Typography>
+                    <Typography sx={{ fontSize: '2.2rem', fontWeight: 900, lineHeight: 1, color: '#F59E0B', textShadow: '0 2px 8px rgba(245,158,11,0.2)' }}>{topPerformers.length > 0 ? topPerformers[0].performance.toFixed(2) : '100.00'}%</Typography>
                     <Chip icon={<Typography sx={{ fontSize: '10px', color: '#fff' }}>★</Typography>} label="OUTSTANDING" sx={{ background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', color: '#fff', fontWeight: 800, height: 22, fontSize: '0.6rem', borderRadius: 1, boxShadow: '0 2px 6px rgba(16,185,129,0.3)' }} />
                   </Stack>
 
@@ -1362,14 +1660,14 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
                       <Box sx={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 2px 4px rgba(139,92,246,0.3)' }}><EventAvailableRoundedIcon sx={{ fontSize: 14 }} /></Box>
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.55rem', display: 'block', lineHeight: 1, fontWeight: 700, textTransform: 'uppercase' }}>Assigned</Typography>
-                        <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>{topPerformers.length > 0 ? topPerformers[0].assignedHrs : 8} Hrs</Typography>
+                        <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>{topPerformers.length > 0 ? formatHHMM(topPerformers[0].assignedHrs) : '08:00'}</Typography>
                       </Box>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1, p: 1, borderRadius: '12px', background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)' }}>
                       <Box sx={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', boxShadow: '0 2px 4px rgba(16,185,129,0.3)' }}><CheckCircleRoundedIcon sx={{ fontSize: 14 }} /></Box>
                       <Box sx={{ textAlign: 'left' }}>
                         <Typography variant="caption" sx={{ color: '#64748B', fontSize: '0.55rem', display: 'block', lineHeight: 1, fontWeight: 700, textTransform: 'uppercase' }}>Completed</Typography>
-                        <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>{topPerformers.length > 0 ? topPerformers[0].completedHrs : 8} Hrs</Typography>
+                        <Typography variant="subtitle2" fontWeight={900} color="#0F172A" sx={{ lineHeight: 1.2 }}>{topPerformers.length > 0 ? formatHHMM(topPerformers[0].completedHrs) : '08:00'}</Typography>
                       </Box>
                     </Box>
                   </Stack>
@@ -1403,7 +1701,7 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
               <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={0}>
                 <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, px: 1.5, py: 0.5, borderRadius: '20px', background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(16,185,129,0.15)', boxShadow: '0 2px 8px rgba(16,185,129,0.08)' }}>
                   <Typography sx={{ fontSize: '1rem' }}>⚡</Typography>
-                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>EFFICIENCY</Typography>
+                  <Typography variant="subtitle2" fontWeight={900} color="#1E293B" sx={{ letterSpacing: 0.5 }}>PERFORMANCE</Typography>
                 </Box>
               </Stack>
               <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '0.65rem', pl: 0.5 }}>Assigned vs Completed</Typography>
@@ -1521,6 +1819,133 @@ const PerformanceOverview = ({ devStats, isDark, textColor, textMuted }) => {
 
       </Box>
 
+      {/* ── View All Developer Performance - Full Page Screen ── */}
+      <Dialog fullScreen open={showDevViewAll} onClose={() => setShowDevViewAll(false)} PaperProps={{ sx: { bgcolor: isDark ? '#0F172A' : '#F8FAFF' } }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+          <Box sx={{
+            px: 4, py: 2.5, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+            bgcolor: isDark ? '#0F172A' : '#fff', flexShrink: 0, boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+          }}>
+            <Stack direction="row" alignItems="center" gap={2}>
+              <Box sx={{ width: 40, height: 40, borderRadius: 2, background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <TrendingUpRoundedIcon sx={{ color: '#fff', fontSize: 22 }} />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={800} color="text.primary" sx={{ fontSize: '1.1rem' }}>
+                  All Developer Performance
+                </Typography>
+                <Typography variant="caption" color="text.secondary">Comprehensive developer productivity report</Typography>
+              </Box>
+            </Stack>
+            <IconButton onClick={() => setShowDevViewAll(false)} sx={{ color: textMuted, border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : '#E2E8F0'}`, borderRadius: 2, p: 0.7, '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.05)' : '#F1F5F9' } }}>
+              <Typography fontWeight={700} fontSize="1.2rem" lineHeight={1}>✕</Typography>
+            </IconButton>
+          </Box>
+
+          <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 3 }}>
+            <Card sx={{ borderRadius: 3, boxShadow: '0 10px 30px -5px rgba(0,0,0,0.05)', overflow: 'hidden', border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : 'transparent'}` }}>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: isDark ? '#1E293B' : '#F8FAFC' }}>
+                      {[
+                        { key: 'user', label: 'Developer', icon: '👤' },
+                        { key: 'assignedHrs', label: 'Assigned Hrs', icon: '📋' },
+                        { key: 'takenHrs', label: 'Taken Time', icon: '⏱' },
+                        { key: 'reworkHrs', label: 'Rework Time', icon: '🔄' },
+                        { key: 'delayHrs', label: 'Delay Hrs', icon: '⚠' },
+                        { key: 'completedHrs', label: 'Completed Hrs', icon: '✅' },
+                        { key: 'performance', label: 'Performance %', icon: '📊' },
+                        { key: 'perfStatus', label: 'Status', icon: '🏷' },
+                        { key: null, label: 'Trend', icon: '' }
+                      ].map(({ key, label, icon }) => (
+                        <TableCell
+                          key={label}
+                          onClick={() => {
+                            if (!key) return;
+                            if (devSortCol === key) setDevSortDir(d => d === 'asc' ? 'desc' : 'asc');
+                            else { setDevSortCol(key); setDevSortDir('asc'); }
+                          }}
+                          sx={{
+                            fontWeight: 700, fontSize: '13px',
+                            color: isDark ? 'rgba(255,255,255,0.7)' : '#64748B',
+                            textAlign: label === 'Developer' ? 'left' : 'center',
+                            cursor: key ? 'pointer' : 'default',
+                            userSelect: 'none', whiteSpace: 'nowrap',
+                            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : '#E2E8F0'}`,
+                            py: 2,
+                            '&:hover': key ? { color: '#6366F1' } : {}
+                          }}
+                        >
+                          <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                            {icon && <Box component="span" sx={{ mr: 0.3, opacity: 0.7 }}>{icon}</Box>}
+                            {label}
+                            {key && (
+                              <Box component="span" sx={{ fontSize: '10px', ml: 0.3, color: devSortCol === key ? '#6366F1' : 'inherit' }}>
+                                {devSortCol === key ? (devSortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                              </Box>
+                            )}
+                          </Box>
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {[...devStats].sort((a, b) => {
+                      const col = devSortCol;
+                      const aVal = typeof a[col] === 'string' ? a[col].toLowerCase() : (a[col] || 0);
+                      const bVal = typeof b[col] === 'string' ? b[col].toLowerCase() : (b[col] || 0);
+                      if (aVal < bVal) return devSortDir === 'asc' ? -1 : 1;
+                      if (aVal > bVal) return devSortDir === 'asc' ? 1 : -1;
+                      return 0;
+                    }).map((dev, idx) => {
+                      const sparkOpts = {
+                        chart: { type: 'line', sparkline: { enabled: true } },
+                        stroke: { curve: 'smooth', width: 2.5 },
+                        colors: [getPerfColor(dev.perfStatus)],
+                        tooltip: { fixed: { enabled: false } }
+                      };
+                      return (
+                        <TableRow key={idx} hover sx={{
+                          '&:last-child td': { border: 0 },
+                          '&:hover': { bgcolor: isDark ? 'rgba(99,102,241,0.04)' : '#F8FAFF' },
+                          transition: 'background 0.15s'
+                        }}>
+                          <TableCell sx={{ py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <Stack direction="row" alignItems="center" gap={1.5}>
+                              <Avatar sx={{ width: 40, height: 40, bgcolor: AVATAR_COLORS[idx % AVATAR_COLORS.length], fontSize: '15px', fontWeight: 700, boxShadow: '0 2px 5px rgba(0,0,0,0.1)' }}>
+                                {dev.user.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Box>
+                                <Typography variant="body2" fontWeight={700} color="text.primary" sx={{ fontSize: '14px' }}>{dev.user}</Typography>
+                                <Typography variant="caption" color="text.secondary" fontWeight={500}>Developer</Typography>
+                              </Box>
+                            </Stack>
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.assignedHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.takenHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: dev.reworkHrs > 0 ? '#EF4444' : textMuted, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.reworkHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 700, color: dev.delayHrs > 0 ? '#F59E0B' : '#10B981', py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px' }}>{formatHHMM(dev.delayHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '13px', color: isDark ? '#fff' : '#1E293B' }}>{formatHHMM(dev.completedHrs)}</TableCell>
+                          <TableCell sx={{ textAlign: 'center', fontWeight: 800, color: getPerfColor(dev.perfStatus), py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}`, fontSize: '14px' }}>{dev.performance.toFixed(2)}%</TableCell>
+                          <TableCell sx={{ textAlign: 'center', py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <Chip size="small" label={dev.perfStatus} icon={getPerfIcon(dev.perfStatus)}
+                              sx={{ bgcolor: getPerfBg(dev.perfStatus), color: getPerfColor(dev.perfStatus), fontWeight: 800, fontSize: '12px', border: `1px solid ${getPerfBorder(dev.perfStatus)}`, '& .MuiChip-icon': { fontSize: 16 } }} />
+                          </TableCell>
+                          <TableCell sx={{ textAlign: 'center', width: 100, py: 2, borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : '#F1F5F9'}` }}>
+                            <ReactApexChart options={sparkOpts} series={[{ data: dev.trend }]} type="line" height={32} width={85} />
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          </Box>
+        </Box>
+      </Dialog>
     </PageContainer>
   );
 };
@@ -1561,18 +1986,26 @@ export default function TaskDashboard() {
         const mm = String(today.getMonth() + 1).padStart(2, '0');
         const dd = String(today.getDate()).padStart(2, '0');
         const todayStr = `${yyyy}-${mm}-${dd}`;
-        const [r1, r2, r3, r4, r5] = await Promise.allSettled([
+        const [r1, r2, r3, r4, r5, r6] = await Promise.allSettled([
           axios.get('/api/qms/checklist/assignments', { params: { size: 200, page: 0, toDate: todayStr } }),
           axios.get('/api/qms/moms/actions'),
           axios.get('/api/tickets'),
           axios.get('/api/qms/audit-schedules'),
-          axios.get('/api/master/hr/employees')
+          axios.get('/api/master/hr/employees'),
+          axios.get('/api/bos-pages')
         ]);
         const cl = r1.status === 'fulfilled' ? r1.value.data?.content || r1.value.data || [] : [];
         const mom = r2.status === 'fulfilled' ? r2.value.data || [] : [];
         const tk = r3.status === 'fulfilled' ? r3.value.data || [] : [];
         const audit = r4.status === 'fulfilled' ? r4.value.data || [] : [];
         const employees = r5.status === 'fulfilled' ? r5.value.data || [] : [];
+        const bosPages = r6.status === 'fulfilled' ? r6.value.data || [] : [];
+
+        // Build pageId -> pageName lookup
+        const pageIdMap = {};
+        bosPages.forEach(p => {
+          if (p.pageId) pageIdMap[p.pageId] = p.pageName || 'Ticket';
+        });
 
         let empLookup = {};
         let workloadMap = {};
@@ -1588,7 +2021,7 @@ export default function TaskDashboard() {
 
         Object.values(empLookup).forEach((name) => {
           if (!workloadMap[name]) workloadMap[name] = { user: name, hours: 0, tasks: 0 };
-          if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0 };
+          if (!devHoursMap[name]) devHoursMap[name] = { user: name, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
         });
 
         const getName = (u) => {
@@ -1600,57 +2033,96 @@ export default function TaskDashboard() {
           return empLookup[u] || u;
         };
 
+        const parseDurationToMinutes = (str) => {
+          if (!str) return 0;
+          const clean = String(str).toLowerCase().replace(/\s+/g, '');
+          if (clean.includes(':')) {
+            const parts = clean.split(':');
+            return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+          }
+          const dayMatch = clean.match(/([\d.]+)\s*d/);
+          const hrMatch = clean.match(/([\d.]+)\s*h/);
+          const minMatch = clean.match(/([\d.]+)\s*m/);
+          let totalMins = 0;
+          if (dayMatch) totalMins += parseFloat(dayMatch[1]) * 24 * 60;
+          if (hrMatch) totalMins += parseFloat(hrMatch[1]) * 60;
+          if (minMatch) totalMins += parseFloat(minMatch[1]);
+          if (!dayMatch && !hrMatch && !minMatch) {
+            const num = parseFloat(clean);
+            if (!isNaN(num)) totalMins += num * 60;
+          }
+          return totalMins;
+        };
+
         let tasksList = [];
         cl.forEach((a) => {
           const name = getName(a.assignedToObj || a.employee || a.assignedTo);
           tasksList.push({
             _status: a.status?.name || a.status?.statusName || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.checklistDate || a.assignedDate,
             _title: a.checklist?.checkingPoint || `Checklist #${a.id}`,
             _id: a.checklistNo || `CL-${a.id}`,
             _user: name,
             _rawDate: a.createdAt || a.createdDate || a.assignedDate || a.checklistDate,
             _hrs: a.estimatedHours || a.plannedHours || 8,
-            _pageName: a.pageName || a.moduleName || 'Checklist'
+            _pageName: a.pageName || a.moduleName || 'Checklist',
+            _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
         mom.forEach((a) => {
           const name = getName(a.assignedTo);
           tasksList.push({
             _status: a.status || 'Open',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.targetDate,
             _title: a.discussedPoint || `MOM #${a.id}`,
             _id: a.momNo || a.actionId || `MOM-${a.id}`,
             _user: name,
             _rawDate: a.createdAt || a.createdDate || a.targetDate,
             _hrs: a.estimatedHours || 8,
-            _pageName: a.pageName || a.moduleName || 'MOM Actions'
+            _pageName: a.pageName || a.moduleName || 'MOM Actions',
+            _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _reopenCount: a.reopenedCount || 0,
+            _createdBy: a.createdBy || 'System'
           });
         });
         tk.forEach((t) => {
           const name = getName(t.assignedTo);
           tasksList.push({
             _status: t.ticketStatus || 'Open',
+            _priority: t.priorityLevel || t.priority || 'Medium',
             _dueDate: t.dueDate || t.targetDate,
             _title: t.title || `Ticket ${t.ticketId || t.rowId}`,
             _id: t.ticketId || `TK-${t.rowId}`,
             _user: name,
             _rawDate: t.createdAt || t.createdDate || t.targetDate,
-            _hrs: t.estimatedHours || 8,
-            _pageName: t.pageName || t.moduleName || t.pageCode || 'Ticket'
+            _hrs: t.estimatedHours || t.assignedHours || 8,
+            _pageName: t.pageName || t.moduleName || (t.pageId ? (pageIdMap[t.pageId] || 'Ticket') : null) || t.ticketType || 'Ticket',
+            _takenHrs: parseDurationToMinutes(t.takenTime || '') / 60,
+            _reworkHrs: parseDurationToMinutes(t.reworkTime || '') / 60,
+            _reopenCount: t.reopenedCount || 0,
+            _createdBy: t.createdBy || 'System'
           });
         });
         audit.forEach((a) => {
           const name = getName(a.auditee || a.auditor);
           tasksList.push({
             _status: a.status || 'Pending',
+            _priority: a.priorityLevel || a.priority || 'Medium',
             _dueDate: a.auditDate || a.scheduleDate,
             _title: `Audit ${a.scheduleNo || ''}`,
             _id: a.scheduleNo || `AUDIT-${a.id}`,
             _user: name,
             _rawDate: a.createdAt || a.createdDate || a.auditDate || a.scheduleDate,
             _hrs: a.estimatedHours || 8,
-            _pageName: a.pageName || a.moduleName || 'Audit Schedule'
+            _pageName: a.pageName || a.moduleName || 'Audit Schedule',
+            _takenHrs: parseDurationToMinutes(a.takenTime || a.actualHours || '') / 60,
+            _reworkHrs: parseDurationToMinutes(a.reworkTime || '') / 60,
+            _createdBy: a.createdBy || 'System'
           });
         });
 
@@ -1664,11 +2136,24 @@ export default function TaskDashboard() {
           const isDone = ['completed', 'verified', 'approved', 'closed', 'resolved'].includes(st);
           const isToBeTested = ['to be tested', 'testing', 'ready for testing'].includes(st);
           const isDevDone = isDone || isToBeTested;
-          const hrs = t._hrs || 8;
+          const hrs = t._hrs ? (parseDurationToMinutes(t._hrs) / 60) || 8 : 8;
           const uName = t._user || 'Unknown';
-          if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0 };
+          if (!devHoursMap[uName]) devHoursMap[uName] = { user: uName, assignedHrs: 0, completedHrs: 0, takenHrs: 0, reworkHrs: 0, delayHrs: 0 };
           devHoursMap[uName].assignedHrs += hrs;
+          devHoursMap[uName].takenHrs += t._takenHrs || 0;
+          devHoursMap[uName].reworkHrs += t._reworkHrs || 0;
           if (isDevDone) devHoursMap[uName].completedHrs += hrs;
+          
+          if (!isDevDone && t._dueDate) {
+            const dueDate = new Date(t._dueDate);
+            dueDate.setHours(18, 0, 0, 0); // Assuming EOD is 6 PM
+            const now = new Date();
+            if (now > dueDate) {
+               const delayMs = calculateWorkingMs(dueDate, now);
+               console.log("Delay calc:", { uName, id: t._id, dueDate: dueDate.toString(), now: now.toString(), delayMs });
+               devHoursMap[uName].delayHrs += (delayMs / (1000 * 60 * 60));
+            }
+          }
           if (!isDevDone) {
             if (!workloadMap[uName]) workloadMap[uName] = { user: uName, hours: 0, tasks: 0 };
             workloadMap[uName].tasks += 1;
@@ -1693,10 +2178,10 @@ export default function TaskDashboard() {
 
         const workloadArr = Object.values(workloadMap)
           .map((w) => {
-            const days = Math.round((w.hours / 8) * 10) / 10;
-            let percent = Math.min(100, Math.round((w.tasks / 8) * 100));
-            if (w.tasks === 0) percent = 0;
-            else if (percent === 0) percent = 10;
+            const days = Math.round(w.hours / 8);
+            let percent = Math.min(100, Math.round((w.hours / 40) * 100));
+            if (w.hours === 0) percent = 0;
+            else if (percent === 0) percent = 1;
             let color = '#10B981', status = 'Healthy';
             if (days < 5) {
               color = '#EF4444';
@@ -1715,13 +2200,35 @@ export default function TaskDashboard() {
         const devStatsArr = Object.values(devHoursMap)
           .filter((d) => d.assignedHrs > 0)
           .map((d) => {
-            const mv = Math.floor(Math.random() * 5) - 2;
-            const completedHrs = Math.max(0, d.completedHrs > 0 ? d.completedHrs + mv : Math.round(d.assignedHrs * 0.95));
-            const performance = d.assignedHrs > 0 ? parseFloat(((completedHrs / d.assignedHrs) * 100).toFixed(1)) : 100;
+            let assignedHrs = d.assignedHrs || 0;
+            let takenHrs = d.takenHrs || 0;
+            let reworkHrs = d.reworkHrs || 0;
+            let delayHrs = d.delayHrs || 0;
+            
+            const completedHrs = takenHrs + reworkHrs + delayHrs;
+
+            // Performance
+            const performance = completedHrs > 0 ? (assignedHrs / completedHrs) * 100 : 100;
+            
+            // Status
             let perfStatus = 'Outstanding';
-            if (performance >= 99.9 && performance <= 100.1) perfStatus = 'Perfect';
-            else if (performance > 100.1) perfStatus = 'Low';
-            return { user: d.user, assignedHrs: d.assignedHrs, completedHrs, performance, perfStatus, trend: genTrend(performance) };
+            if (completedHrs === assignedHrs) perfStatus = 'Perfect';
+            else if (completedHrs > assignedHrs) perfStatus = 'Low';
+            
+            // Trend (Last 7 Days)
+            const trend = genTrend(performance);
+
+            return { 
+              user: d.user, 
+              assignedHrs, 
+              takenHrs,
+              reworkHrs,
+              completedHrs, 
+              delayHrs,
+              performance,
+              perfStatus, 
+              trend 
+            };
           });
 
         setRealData(stats);
@@ -1796,7 +2303,14 @@ export default function TaskDashboard() {
   };
 
   return (
-    <PageContainer>
+    <PageContainer
+      sx={{
+        '@keyframes spin-border': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } },
+        '@keyframes sweep': { '0%': { left: '-150%' }, '50%': { left: '150%' }, '100%': { left: '-150%' } },
+        '@keyframes float': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-10px)' }, '100%': { transform: 'translateY(0px)' } },
+        '@keyframes floatIcon': { '0%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(-5px)' }, '100%': { transform: 'translateY(0px)' } },
+      }}
+    >
       {/* ── TOP STAT PILLS ── */}
       <Box
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', sm: 'repeat(4,1fr)', lg: 'repeat(9,1fr)' }, gap: 1.5, mb: 2.5 }}

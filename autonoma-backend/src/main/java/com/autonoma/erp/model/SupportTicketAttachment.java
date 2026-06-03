@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import java.util.Date;
 
 @Entity
-@Table(name = "ticket_attachments")
+@Table(name = "TICKET_ATTACHMENTS")
 @Data
 @Builder
 @NoArgsConstructor
@@ -43,6 +43,9 @@ public class SupportTicketAttachment {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+
         this.uploadedAt = new Date();
-    }
+        }
 }

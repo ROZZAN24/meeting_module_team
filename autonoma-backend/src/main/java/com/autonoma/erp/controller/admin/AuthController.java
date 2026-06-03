@@ -125,7 +125,7 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(user.getUserId());
 
-            boolean isSuperUser = (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+            boolean isSuperUser = (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
 
             if (isSuperUser) {
                 // Super Users get everything regardless of mappings
@@ -227,7 +227,7 @@ public class AuthController {
                 .findByUserId(userId);
 
         com.autonoma.erp.model.admin.UserCredential user = userRepository.findByUserId(userId).orElse(null);
-        boolean isSuperUser = (user != null && user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+        boolean isSuperUser = (user != null && user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
 
         if (isSuperUser) {
             // Super Users get everything regardless of mappings
@@ -309,7 +309,7 @@ public class AuthController {
                         java.util.Date now = new java.util.Date();
                         if (now.after(config.getLicExpiryDate())) {
                             // Expired - only allow IS_BOS_ADMIN=1
-                            if (user.getIsBosAdmin() == null || user.getIsBosAdmin() != 1) {
+                            if (user.getUserLevel() == null || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_ADMIN) {
                                 Map<String, String> error = new HashMap<>();
                                 error.put("message", "System License Expired. Please contact support.");
                                 return ResponseEntity.status(403).body(error);
@@ -364,7 +364,7 @@ public class AuthController {
                 userMap.put("name", empName);
                 userMap.put("role", "ADMIN");
                 userMap.put("imgName", user.getImgName());
-                userMap.put("isBosAdmin", user.getIsBosAdmin());
+                userMap.put("userLevel", user.getUserLevel());
                 userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
                 userMap.put("faceDescriptor", user.getFaceDescriptor());
 
@@ -417,7 +417,7 @@ public class AuthController {
                         userMap.put("name", empName);
                         userMap.put("role", "ADMIN");
                         userMap.put("imgName", user.getImgName());
-                        userMap.put("isBosAdmin", user.getIsBosAdmin());
+                        userMap.put("userLevel", user.getUserLevel());
                         userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
                         userMap.put("faceDescriptor", user.getFaceDescriptor());
 
@@ -636,7 +636,7 @@ public class AuthController {
             java.util.List<com.autonoma.erp.model.admin.UserDivisionMapping> divMappings = userDivisionMappingRepository
                     .findByUserId(matchedUser.getUserId());
 
-            boolean isSuperUser = (matchedUser.getIsBosAdmin() != null && matchedUser.getIsBosAdmin() == 1);
+            boolean isSuperUser = (matchedUser.getUserLevel() != null && matchedUser.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
 
             if (isSuperUser) {
                 java.util.List<com.autonoma.erp.model.admin.CompanyCredential> allCompanies = companyCredentialRepository
@@ -814,7 +814,7 @@ public class AuthController {
                 if (config.getLicExpiryDate() != null) {
                     java.util.Date now = new java.util.Date();
                     if (now.after(config.getLicExpiryDate())) {
-                        if (user.getIsBosAdmin() == null || user.getIsBosAdmin() != 1) {
+                        if (user.getUserLevel() == null || user.getUserLevel() < AppUtil.AppConstants.USER_LEVEL_ADMIN) {
                             Map<String, String> error = new HashMap<>();
                             error.put("message", "System License Expired. Please contact support.");
                             return ResponseEntity.status(403).body(error);
@@ -865,7 +865,7 @@ public class AuthController {
             userMap.put("name", empName);
             userMap.put("role", "ADMIN");
             userMap.put("imgName", user.getImgName());
-            userMap.put("isBosAdmin", user.getIsBosAdmin());
+            userMap.put("userLevel", user.getUserLevel());
             userMap.put("autoLogoutOnFaceAbsence", user.getAutoLogoutOnFaceAbsence());
             userMap.put("faceDescriptor", user.getFaceDescriptor());
 

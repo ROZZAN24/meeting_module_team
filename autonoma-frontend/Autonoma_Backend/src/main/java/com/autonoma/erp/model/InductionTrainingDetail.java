@@ -57,14 +57,14 @@ public class InductionTrainingDetail {
     private String attachmentRequired;
 
     // === Audit ===
-    @Column(name = "created_by", length = 100)
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
-    @Column(name = "updated_by", length = 100)
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")

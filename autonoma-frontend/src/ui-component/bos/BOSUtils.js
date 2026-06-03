@@ -74,8 +74,7 @@ export const resolveNestedValue = (keyPath, obj) => {
  * Common date range filter configuration for global filter system.
  */
 export const getCommonDateFilters = (createdAtId = 'createdAt', updatedAtId = 'updatedAt') => [
-  { id: createdAtId, label: 'CREATED DATE', type: 'dateRange', isStarred: true },
-  { id: updatedAtId, label: 'UPDATED DATE', type: 'dateRange', isStarred: true }
+  { id: createdAtId, label: 'CREATED DATE', type: 'dateRange', isStarred: true }
 ];
 
 /**

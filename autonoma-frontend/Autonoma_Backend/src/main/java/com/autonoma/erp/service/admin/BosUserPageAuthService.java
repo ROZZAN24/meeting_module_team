@@ -35,7 +35,7 @@ public class BosUserPageAuthService {
                 .collect(Collectors.toMap(BosUserPageAuth::getPageId, a -> a));
 
         boolean isBosAdmin = userRepository.findByUserId(userId)
-                .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
                 .orElse(false);
 
         List<BosUserPageAuth> result = new ArrayList<>();
@@ -99,7 +99,7 @@ public class BosUserPageAuthService {
      */
     public boolean hasPermission(String userId, String pageCode, String action) {
         boolean isBosAdmin = userRepository.findByUserId(userId)
-                .map(u -> u.getIsBosAdmin() != null && u.getIsBosAdmin() == 1)
+                .map(u -> u.getUserLevel() != null && u.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_BOS_ADMIN)
                 .orElse(false);
         if (isBosAdmin) {
             return true;

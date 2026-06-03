@@ -191,7 +191,7 @@ export default function InductionTraining() {
       // Start training for any PENDING or RESCHEDULE assignments that this trainer is authorized for
       const startPromises = row.assignments
         .filter(a => a.currentStatus === 'PENDING' || a.currentStatus === 'RESCHEDULE')
-        .filter(a => user?.isBosAdmin === 1 || a.trainerEmpCode === user?.empCode)
+        .filter(a => user?.userLevel === 5 || a.trainerEmpCode === user?.empCode)
         .map(a => axios.post(`/api/hr/induction-training/${a.id}/start`));
       
       if (startPromises.length > 0) {
@@ -316,7 +316,7 @@ export default function InductionTraining() {
       // Filter details that this user is authorized to edit
       const authorizedDetails = trainingDetails.filter(d => {
         const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
-        return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+        return user?.userLevel === 5 || (assignment && assignment.trainerEmpCode === user?.empCode);
       });
 
       // Find modified details by comparing trainingDetails with initialDetails
@@ -427,7 +427,7 @@ export default function InductionTraining() {
       // Filter details that this user is authorized to edit
       const authorizedDetails = trainingDetails.filter(d => {
         const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
-        return user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+        return user?.userLevel === 5 || (assignment && assignment.trainerEmpCode === user?.empCode);
       });
 
       // 1. Validation before saving:
@@ -497,7 +497,7 @@ export default function InductionTraining() {
     const unique = [];
     trainingDetails.forEach(d => {
       const assignment = selectedAssignment?.assignments?.find(a => String(a.id) === String(d.assignmentId));
-      const isAuthorized = user?.isBosAdmin === 1 || (assignment && assignment.trainerEmpCode === user?.empCode);
+      const isAuthorized = user?.userLevel === 5 || (assignment && assignment.trainerEmpCode === user?.empCode);
       if (!isAuthorized) return;
 
       if (d.inductionMasterId) {

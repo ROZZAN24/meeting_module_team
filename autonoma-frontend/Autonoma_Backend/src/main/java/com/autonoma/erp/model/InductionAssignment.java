@@ -72,14 +72,14 @@ public class InductionAssignment {
     private Date trainingCompletedAt;
 
 
-    @Column(name = "created_by")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
 
-    @Column(name = "updated_by")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")

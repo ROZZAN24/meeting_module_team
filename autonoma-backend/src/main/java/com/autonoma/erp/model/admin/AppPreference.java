@@ -29,14 +29,14 @@ public class AppPreference {
     @Column(name = "pref_type", columnDefinition = "NVARCHAR(100)")
     private String prefType;
 
-    @Column(name = "created_by", nullable = false, columnDefinition = "NVARCHAR(100)", updatable = false)
+    @Column(name = "CREATED_BY", nullable = false, length = 50, updatable = false)
     private String createdBy;
 
     @Column(name = "created_at", updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "updated_by", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "updated_at")

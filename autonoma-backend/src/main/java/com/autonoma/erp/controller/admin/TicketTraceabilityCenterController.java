@@ -64,19 +64,19 @@ public class TicketTraceabilityCenterController {
         Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
         if (userOpt.isPresent()) {
             UserCredential user = userOpt.get();
-            return (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1) || user.getEmpId() != null;
+            return (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN) || user.getEmpId() != null;
         }
         return false;
     }
 
-    private boolean isBosAdmin() {
+    private boolean isUserSuperAdmin() {
         String userId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
         if (userId == null)
             return false;
         Optional<UserCredential> userOpt = userRepository.findByUserId(userId);
         if (userOpt.isPresent()) {
             UserCredential user = userOpt.get();
-            return (user.getIsBosAdmin() != null && user.getIsBosAdmin() == 1);
+            return (user.getUserLevel() != null && user.getUserLevel() >= AppUtil.AppConstants.USER_LEVEL_ADMIN);
         }
         return false;
     }
@@ -91,7 +91,7 @@ public class TicketTraceabilityCenterController {
     public List<TicketTraceabilityCenter> getAllTickets() {
         log.info("Fetching tickets");
         List<TicketTraceabilityCenter> allTickets = ticketRepository.findAllByOrderByCreatedAtDesc();
-        boolean isAdmin = isBosAdmin();
+        boolean isAdmin = isUserSuperAdmin();
         String currentUserId = getCurrentUser();
         String currentUserEmail = currentUserId;
         String currentUserName = currentUserId;
@@ -141,7 +141,7 @@ public class TicketTraceabilityCenterController {
         }
 
         TicketTraceabilityCenter ticket = ticketOpt.get();
-        boolean isAdmin = isBosAdmin();
+        boolean isAdmin = isUserSuperAdmin();
         String currentUserId = getCurrentUser();
         String currentUserEmail = currentUserId;
         String currentUserName = currentUserId;
@@ -262,7 +262,7 @@ public class TicketTraceabilityCenterController {
             }
 
             TicketTraceabilityCenter existingTicket = ticketOpt.get();
-            boolean isAdmin = isBosAdmin();
+            boolean isAdmin = isUserSuperAdmin();
         String currentUserId = getCurrentUser();
         String currentUserEmail = currentUserId;
         String currentUserName = currentUserId;
@@ -506,7 +506,7 @@ public class TicketTraceabilityCenterController {
             if (ticketOpt.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
-            if (!isBosAdmin()) {
+            if (!isUserSuperAdmin()) {
                 return ResponseEntity.status(403).build();
             }
             ticketRepository.deleteById(rowId);

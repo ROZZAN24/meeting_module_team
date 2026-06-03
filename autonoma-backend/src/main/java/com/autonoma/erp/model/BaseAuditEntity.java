@@ -22,30 +22,66 @@ public abstract class BaseAuditEntity {
     private Date updatedDate;
 
     // Explicit Getters and Setters
-    public String getCreatedUser() { return createdUser; }
-    public void setCreatedUser(String createdUser) { this.createdUser = createdUser; }
+    public String getCreatedUser() {
+        return createdUser;
+    }
 
-    public Date getCreatedDate() { return createdDate; }
-    public void setCreatedDate(Date createdDate) { this.createdDate = createdDate; }
+    public void setCreatedUser(String createdUser) {
+        this.createdUser = createdUser;
+    }
 
-    public String getUpdatedUser() { return updatedUser; }
-    public void setUpdatedUser(String updatedUser) { this.updatedUser = updatedUser; }
+    public Date getCreatedDate() {
+        return createdDate;
+    }
 
-    public Date getUpdatedDate() { return updatedDate; }
-    public void setUpdatedDate(Date updatedDate) { this.updatedDate = updatedDate; }
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    public String getUpdatedUser() {
+        return updatedUser;
+    }
+
+    public void setUpdatedUser(String updatedUser) {
+        this.updatedUser = updatedUser;
+    }
+
+    public Date getUpdatedDate() {
+        return updatedDate;
+    }
+
+    public void setUpdatedDate(Date updatedDate) {
+        this.updatedDate = updatedDate;
+    }
 
     // Backward compatibility aliases
     @com.fasterxml.jackson.annotation.JsonProperty("createdBy")
-    public String getCreatedBy() { return getCreatedUser(); }
-    public void setCreatedBy(String createdBy) { setCreatedUser(createdBy); }
+    public String getCreatedBy() {
+        return getCreatedUser();
+    }
+
+    public void setCreatedBy(String createdBy) {
+        setCreatedUser(createdBy);
+    }
 
     @com.fasterxml.jackson.annotation.JsonProperty("updatedBy")
-    public String getUpdatedBy() { return getUpdatedUser(); }
-    public void setUpdatedBy(String updatedBy) { setUpdatedUser(updatedBy); }
+    public String getUpdatedBy() {
+        return getUpdatedUser();
+    }
+
+    public void setUpdatedBy(String updatedBy) {
+        setUpdatedUser(updatedBy);
+    }
 
     @com.fasterxml.jackson.annotation.JsonProperty("createdAt")
-    public Date getCreatedAt() { return getCreatedDate(); }
-    public void setCreatedAt(Date createdAt) { setCreatedDate(createdAt); }
+    public Date getCreatedAt() {
+        return getCreatedDate();
+    }
+
+    public void setCreatedAt(Date createdAt) {
+        setCreatedDate(createdAt);
+    }
+
     @com.fasterxml.jackson.annotation.JsonIgnore
     public void setCreatedAt(java.time.LocalDateTime createdAt) {
         if (createdAt != null) {
@@ -56,8 +92,14 @@ public abstract class BaseAuditEntity {
     }
 
     @com.fasterxml.jackson.annotation.JsonProperty("updatedAt")
-    public Date getUpdatedAt() { return getUpdatedDate(); }
-    public void setUpdatedAt(Date updatedAt) { setUpdatedDate(updatedAt); }
+    public Date getUpdatedAt() {
+        return getUpdatedDate();
+    }
+
+    public void setUpdatedAt(Date updatedAt) {
+        setUpdatedDate(updatedAt);
+    }
+
     @com.fasterxml.jackson.annotation.JsonIgnore
     public void setUpdatedAt(java.time.LocalDateTime updatedAt) {
         if (updatedAt != null) {
@@ -67,35 +109,62 @@ public abstract class BaseAuditEntity {
         }
     }
 
-
     @Transient
     private boolean skipAuditUpdate = false;
 
-    public boolean isSkipAuditUpdate() { return skipAuditUpdate; }
-    public void setSkipAuditUpdate(boolean skipAuditUpdate) { this.skipAuditUpdate = skipAuditUpdate; }
+    public boolean isSkipAuditUpdate() {
+        return skipAuditUpdate;
+    }
+
+    public void setSkipAuditUpdate(boolean skipAuditUpdate) {
+        this.skipAuditUpdate = skipAuditUpdate;
+    }
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try {
+            currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        } catch (Exception e) {
+        }
+        this.createdUser = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedUser = null;
+
         if (this.createdDate == null) {
             this.createdDate = new Date();
         }
         if (this.createdUser == null) {
             String userId = SecurityUtils.getCurrentUserId();
-            this.createdUser = (userId != null) ? userId : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName() : "System");
+            this.createdUser = (userId != null) ? userId
+                    : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName()
+                            : "System");
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try {
+            currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+        } catch (Exception e) {
+        }
+        this.updatedUser = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdUser != null && this.createdUser.trim().isEmpty()) {
+            this.createdUser = null;
+        }
+
         if (this.skipAuditUpdate) {
             return;
         }
-        // Deep fix: Skip updating audit fields if the record was newly created within the last second
+        // Deep fix: Skip updating audit fields if the record was newly created within
+        // the last second
         if (this.createdDate != null && (new Date().getTime() - this.createdDate.getTime() < 1000)) {
             return;
         }
         this.updatedDate = new Date();
         String userId = SecurityUtils.getCurrentUserId();
-        this.updatedUser = (userId != null) ? userId : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName() : "System");
+        this.updatedUser = (userId != null) ? userId
+                : (SecurityUtils.getCurrentUserDisplayName() != null ? SecurityUtils.getCurrentUserDisplayName()
+                        : "System");
     }
 }

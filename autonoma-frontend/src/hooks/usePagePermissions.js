@@ -36,7 +36,7 @@ export default function usePagePermissions(pageCode) {
 
   return useMemo(() => {
     // If the user is a BOS admin (SuperUser), grant all permissions unconditionally
-    if (user?.isBosAdmin === 1) {
+    if (user?.userLevel === 5) {
       return {
         loading: false,
         enabled: true,
@@ -149,8 +149,8 @@ export const PAGE_CODES = {
 
   // ── Masters > QMS ──
   QMS_CHECKLIST: 'M1210',
-  QMS_AUDIT_TYPE: 'M1110',
-  QMS_AUDIT_AREA: 'M1120',
+  QMS_AUDIT_TYPE: 'M1120',
+  QMS_AUDIT_AREA: 'M1110',
   QMS_AUDIT_CRITERIA: 'M1130',
   QMS_MEETING: 'M1310',
 

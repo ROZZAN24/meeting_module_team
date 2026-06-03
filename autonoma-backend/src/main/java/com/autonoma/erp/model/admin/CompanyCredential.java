@@ -65,14 +65,14 @@ public class CompanyCredential {
     @Column(name = "DIRECTORY_PATH", columnDefinition = "NVARCHAR(1000)")
     private String directoryPath;
 
-    @Column(name = "CREATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "CREATED_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date createdDate;
 
-    @Column(name = "UPDATED_BY", columnDefinition = "NVARCHAR(100)")
+    @Column(name = "UPDATED_BY", length = 50)
     private String updatedBy;
 
     @Column(name = "UPDATED_DATE")
@@ -88,18 +88,31 @@ public class CompanyCredential {
     @Column(name = "IS_ACTIVE")
     private Boolean isActive = true;
 
+    @Column(name = "INPUT_CASE_STYLE", columnDefinition = "NVARCHAR(50)")
+    private String inputCaseStyle;
+
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        this.updatedBy = null;
+
         createdDate = new Date();
         if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
         if (isActive == null) isActive = true;
-    }
+        }
 
     @PreUpdate
     protected void onUpdate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.updatedBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+        if (this.createdBy != null && this.createdBy.trim().isEmpty()) { this.createdBy = null; }
+
         updatedDate = new Date();
         if (updatedBy == null || updatedBy.isEmpty()) updatedBy = "Admin";
-    }
+        }
 
     public Long getId() {
         return id;
@@ -275,5 +288,13 @@ public class CompanyCredential {
 
     public void setRestoreEnableDays(Integer restoreEnableDays) {
         this.restoreEnableDays = restoreEnableDays;
+    }
+
+    public String getInputCaseStyle() {
+        return inputCaseStyle;
+    }
+
+    public void setInputCaseStyle(String inputCaseStyle) {
+        this.inputCaseStyle = inputCaseStyle;
     }
 }

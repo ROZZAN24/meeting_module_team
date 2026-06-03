@@ -22,7 +22,7 @@ public class UserCompanyMapping {
     @Column(name = "COMPANY_ID", nullable = false)
     private Long companyId;
 
-    @Column(name = "CREATED_BY")
+    @Column(name = "CREATED_BY", nullable = false, length = 50)
     private String createdBy;
 
     @Column(name = "CREATED_DATE")
@@ -31,7 +31,11 @@ public class UserCompanyMapping {
 
     @PrePersist
     protected void onCreate() {
+        String currentUserId = null;
+        try { currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId(); } catch (Exception e) {}
+        this.createdBy = (currentUserId != null && !currentUserId.trim().isEmpty()) ? currentUserId : "admin";
+
         createdAt = new Date();
         if (createdBy == null || createdBy.isEmpty()) createdBy = "Admin";
-    }
+        }
 }
