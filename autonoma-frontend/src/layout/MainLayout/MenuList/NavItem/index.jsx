@@ -140,59 +140,50 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
       </ButtonBase>
 
       {(drawerOpen || (!drawerOpen && level !== 1)) && (
-        <Tooltip
-          title={
-            <span>
-              <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
-            </span>
+        <ListItemText
+          primary={
+            <Typography
+              ref={ref}
+              noWrap
+              variant={isSelected ? 'h5' : 'body1'}
+              sx={{
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: 200,
+                color: 'inherit',
+                ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
+                '.MuiListItemButton-root:hover &': {
+                  overflow: 'visible',
+                  textOverflow: 'clip',
+                  whiteSpace: 'normal',
+                  width: 'auto',
+                  wordBreak: 'break-word'
+                }
+              }}
+            >
+              <FormattedMessage id={item.title} />
+            </Typography>
           }
-          disableHoverListener={false}
-        >
-          <ListItemText
-            primary={
+          secondary={
+            item.caption && (
               <Typography
-                ref={ref}
-                noWrap
-                variant={isSelected ? 'h5' : 'body1'}
+                variant="caption"
+                component="span"
+                gutterBottom
                 sx={{
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  width: 200,
-                  color: 'inherit',
-                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
-                  '.MuiListItemButton-root:hover &': {
-                    overflow: 'visible',
-                    textOverflow: 'clip',
-                    whiteSpace: 'normal',
-                    width: 'auto',
-                    wordBreak: 'break-word'
-                  }
+                  display: 'block',
+                  fontSize: '0.6875rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  textTransform: 'capitalize',
+                  lineHeight: 1.66
                 }}
               >
-                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+                <FormattedMessage id={item.caption} />
               </Typography>
-            }
-            secondary={
-              item.caption && (
-                <Typography
-                  variant="caption"
-                  component="span"
-                  gutterBottom
-                  sx={{
-                    display: 'block',
-                    fontSize: '0.6875rem',
-                    fontWeight: 500,
-                    color: 'text.secondary',
-                    textTransform: 'capitalize',
-                    lineHeight: 1.66
-                  }}
-                >
-                  <FormattedMessage id={item.caption} />
-                </Typography>
-              )
-            }
-          />
-        </Tooltip>
+            )
+          }
+        />
       )}
 
       {(drawerOpen && item.chip) && (
@@ -214,29 +205,25 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
   return (
     <>
       {!isHorizontal ? (
-        !drawerOpen && level === 1 ? (
-          <Tooltip
-            title={
-              <span>
-                <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
-              </span>
-            }
-            placement="right"
-            disableInteractive
-            arrow
-            slotProps={{
-              popper: {
-                sx: {
-                  zIndex: 2500
-                }
+        <Tooltip
+          title={
+            <span>
+              <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+            </span>
+          }
+          placement="right"
+          disableInteractive
+          arrow
+          slotProps={{
+            popper: {
+              sx: {
+                zIndex: 2500
               }
-            }}
-          >
-            {listItemButton}
-          </Tooltip>
-        ) : (
-          listItemButton
-        )
+            }
+          }}
+        >
+          {listItemButton}
+        </Tooltip>
       ) : item.pageCode ? (
         <Tooltip
           title={
@@ -285,7 +272,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
               sx={{ mb: 0.25 }}
               primary={
                 <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                  <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+                  <FormattedMessage id={item.title} />
                 </Typography>
               }
               secondary={
@@ -371,7 +358,7 @@ export default function NavItem({ item, level, isParents = false, setSelectedID 
               sx={{ mb: 0.25 }}
               primary={
                 <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ color: 'inherit' }}>
-                  <FormattedMessage id={item.title} /> {item.pageCode ? `(${item.pageCode})` : ''}
+                  <FormattedMessage id={item.title} />
                 </Typography>
               }
               secondary={

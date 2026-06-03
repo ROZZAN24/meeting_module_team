@@ -232,7 +232,7 @@ const CloseMomDialog = ({ open, onClose, item, onSave }) => {
             <BOSFileUpload
               files={attachments}
               onChange={setAttachments}
-              module="QMS"
+              module="QUALITY_MANAGEMENT_SYSTEMS_MEETING_CLOSE_MOM"
               multiple={true}
               disabled={!isEditable}
             />
