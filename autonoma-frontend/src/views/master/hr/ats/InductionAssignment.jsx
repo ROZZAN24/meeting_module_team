@@ -71,7 +71,7 @@ const INITIAL_STATE = {
 };
 
 const FALLBACK_ROUND_OPTIONS = ['HR', 'QMS', 'DEPARTMENT', 'MANAGEMENT'];
-const LEVEL_OPTIONS = ['L1', 'L2', 'L3', 'L4'];
+const LEVEL_OPTIONS = ['Level 1', 'Level 2', 'Level 3', 'Level 4'];
 const STATUS_OPTIONS = ['PENDING', 'RESCHEDULE', 'TRAINING GIVEN', 'COMPLETED', 'REJECTED'];
 
 const TIME_OPTIONS = [
@@ -774,7 +774,7 @@ const InductionAssignment = () => {
       createdDate: r.createdDate || r.createdAt ? new Date(r.createdDate || r.createdAt).toLocaleString('en-GB') : '-',
       updatedDate: r.updatedDate || r.updatedAt ? new Date(r.updatedDate || r.updatedAt).toLocaleString('en-GB') : '-'
     }));
-  }, [rows, globalFilters.status, globalFilters.searchBy, globalQuery]);
+  }, [rows, globalFilters, globalQuery]);
 
   if (perms.loading) {
     return null;
@@ -799,6 +799,7 @@ const InductionAssignment = () => {
         loading={loading}
         onDoubleClickRow={handleAssign}
         onEditRow={handleAssign}
+        disableSearchFilter={true}
         showActions={false}
       />
 
@@ -975,6 +976,14 @@ const InductionAssignment = () => {
                     <MenuItem value="">-Select-</MenuItem>
                     {employees
                       .filter(emp => {
+                        // Special override for Maheshwaran and Eashwar
+                        if (emp.empCode === 'EMP-001') {
+                          return level.inductionRound === 'HR';
+                        }
+                        if (emp.empCode === 'EMP-002') {
+                          return level.inductionRound === 'QMS';
+                        }
+
                         if (emp.isInductionEligible?.toUpperCase() !== 'YES') return false;
                         if (emp.inductionStatus?.toUpperCase() !== 'COMPLETED') return false;
                         const empDept = typeof emp.department === 'object' ? emp.department?.departmentName : emp.department;

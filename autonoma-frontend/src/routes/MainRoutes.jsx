@@ -222,7 +222,7 @@ const VerificationCriteria = Loadable(lazy(() => import('views/master/hr/ats/Ver
 const InductionAssignment = Loadable(lazy(() => import('views/master/hr/ats/InductionAssignment')));
 const InductionTraining = Loadable(lazy(() => import('views/master/hr/ats/InductionTraining')));
 const InductionTrainee = Loadable(lazy(() => import('views/master/hr/ats/InductionTrainee')));
-const InductionRoundMaster = Loadable(lazy(() => import('views/master/hr/ats/InductionRoundMaster')));
+
 const HraApplicationTrackingSystem = Loadable(lazy(() => import('views/hra/ApplicationTrackingSystem')));
 const HraApplicantProfile = Loadable(lazy(() => import('views/hra/ApplicantProfile')));
 const QmsAuditTypeMaster = Loadable(lazy(() => import('views/qms/AuditTypeMaster/AuditTypeMaster')));
