@@ -1,5 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import PropTypes from 'prop-types';
-import { TextField, useTheme } from '@mui/material';
+import { useTheme } from '@mui/material';
 import { useColorScheme } from '@mui/material/styles';
 import { getInputStyles } from './BOSStyles';
 

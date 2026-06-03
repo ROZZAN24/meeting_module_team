@@ -237,7 +237,7 @@ public class DataInitializer implements CommandLineRunner {
         com.autonoma.erp.model.EmployeeMaster adminEmp = null;
         java.util.List<com.autonoma.erp.model.EmployeeMaster> emps = employeeMasterRepository.findAll();
         for (com.autonoma.erp.model.EmployeeMaster e : emps) {
-            if ("ADMIN_EMP".equals(e.getEmpCode())) {
+            if ("ADMIN_EMP".equalsIgnoreCase(e.getEmpCode())) {
                 adminEmp = e;
                 break;
             }

@@ -1,18 +1,16 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Box, Grid, Typography, TextField, Button, Divider, Snackbar, Alert,
-  CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl,
-  InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete,
-  InputAdornment, IconButton,
-  Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItemIcon, ListItemText, ListItemButton
-} from '@mui/material';
+import { Box, Grid, Typography, Button, Divider, Snackbar, Alert, CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl, InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete, InputAdornment, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItemIcon, ListItemText, ListItemButton } from '@mui/material';
 import {
   IconBuilding, IconUpload, IconDeviceFloppy, IconRefresh,
   IconPhoto, IconLogin, IconCheck, IconAlertCircle, IconFolderOpen,
   IconChevronRight, IconArrowLeft, IconFolder, IconDeviceFloppy as IconDrive,
-  IconUser, IconCalendar
+  IconUser, IconCalendar,
+  IconSettings2,
+  IconLicense,
+  IconBrandUnity
 } from '@tabler/icons-react';
+import { useTheme, alpha } from '@mui/material/styles';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
@@ -71,7 +69,7 @@ const emptyForm = {
   logoFileName: '', logInBgFileName: '', directoryPath: 'D:\\BOS_DOCUMENTS',
   licExpRemainderDays: 0,
   restoreEnableDays: 7,
-  inputCaseStyle: 'UPPER_CASE',
+  inputCaseStyle: 'CUSTOM',
   createdBy: '',
   createdDate: '',
   updatedBy: '',
@@ -148,14 +146,21 @@ function ImageUploadCard({ label, icon: Icon, field, preview, onUpload, uploadin
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const CompanyProfile = () => {
+  const theme = useTheme();
+
+  console.log("CompanyProfile layout version: 6-3-3 active");
+
   const { user } = useAuth();
   const isSuperUser = user?.userLevel === 5;
 
   const perms = usePagePermissions(PAGE_CODES.AD_COMPANY_PROFILE);
 
   const [form, setForm] = useState(emptyForm);
+  const [originalCaseStyle, setOriginalCaseStyle] = useState('UPPER_CASE');
   const [recordId, setRecordId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [casePromptOpen, setCasePromptOpen] = useState(false);
+  const [databaseUpdating, setDatabaseUpdating] = useState(false);
   const [uploading, setUploading] = useState({ logo: false, bg: false });
   const [snack, setSnack] = useState({ open: false, msg: '', severity: 'success' });
   const [errors, setErrors] = useState({});
@@ -201,6 +206,7 @@ const CompanyProfile = () => {
             updatedBy: rec.updatedBy || '',
             updatedDate: rec.updatedDate || ''
           });
+          setOriginalCaseStyle(rec.inputCaseStyle || 'UPPER_CASE');
         }
       })
       .catch(() => {/* silently ignore on first load */ });
@@ -337,8 +343,18 @@ const CompanyProfile = () => {
   };
 
   // ── Save / Update ──
-  const handleSave = async () => {
+  const handleSaveClick = () => {
     if (!validate()) return;
+    
+    // Intercept if case style changed (skip dialog if changing to CUSTOM)
+    if (form.inputCaseStyle !== originalCaseStyle && form.inputCaseStyle !== 'CUSTOM') {
+      setCasePromptOpen(true);
+    } else {
+      executeSave(false);
+    }
+  };
+
+  const executeSave = async (updateExistingDb) => {
     setLoading(true);
     try {
       const token = sessionStorage.getItem('serviceToken') || '';
@@ -376,9 +392,28 @@ const CompanyProfile = () => {
       if (!res.ok) throw new Error(await res.text());
       const saved = await res.json();
       setRecordId(saved.id);
-      showSnack(recordId ? 'Company profile updated successfully!' : 'Company profile saved successfully!', 'success');
+      setOriginalCaseStyle(form.inputCaseStyle);
+      window.localStorage.setItem('inputCaseStyle', form.inputCaseStyle);
+
+      if (updateExistingDb) {
+        setDatabaseUpdating(true);
+        try {
+          const dbRes = await fetch(`${API_BASE}/api/company-profile/update-database-case-style?style=${form.inputCaseStyle}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (!dbRes.ok) throw new Error('Failed to update existing database records');
+          showSnack('Saved successfully and all existing database records have been transformed!', 'success');
+        } catch (e) {
+          showSnack('Profile saved, but failed to update existing database records.', 'warning');
+        } finally {
+          setDatabaseUpdating(false);
+        }
+      } else {
+        showSnack('Saved successfully!', 'success');
+      }
     } catch (err) {
-      showSnack('Error: ' + err.message, 'error');
+      showSnack(err.message || 'Failed to save', 'error');
     } finally {
       setLoading(false);
     }
@@ -436,7 +471,8 @@ const CompanyProfile = () => {
     <Autocomplete
       fullWidth
       size="small"
-      sx={{ minWidth: 200,
+      sx={{
+        minWidth: 200,
         '& .MuiOutlinedInput-root': { padding: '2px !important' },
         '& .MuiAutocomplete-input': { padding: '4px 8px !important', fontSize: '0.85rem' },
         '& .MuiInputLabel-root': { fontSize: '0.85rem' }
@@ -591,9 +627,7 @@ const CompanyProfile = () => {
       {/* ── Page Header ── */}
       <Box sx={{
         position: 'relative',
-        background: 'linear-gradient(-45deg, #0f172a, #1e293b, #312e81, #1e1b4b)',
-        backgroundSize: '400% 400%',
-        animation: 'gradientBG 10s ease infinite',
+        background: 'linear-gradient(135deg, #0f172a, #312e81)',
         borderRadius: '16px',
         p: { xs: 1.5, md: 2 },
         mb: 2,
@@ -604,65 +638,36 @@ const CompanyProfile = () => {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        {/* Animated decorative shapes */}
+        {/* Decorative shapes (static) */}
         <Box sx={{
           position: 'absolute', top: -30, right: -30, width: 150, height: 150,
           borderRadius: '50%', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05))',
-          backdropFilter: 'blur(10px)',
-          animation: 'pulseSoft 4s ease-in-out infinite'
+          backdropFilter: 'blur(10px)'
         }} />
         <Box sx={{
           position: 'absolute', bottom: -40, right: 100, width: 120, height: 120,
           borderRadius: '50%', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0))',
-          backdropFilter: 'blur(15px)',
-          animation: 'pulseSoft 6s ease-in-out infinite reverse'
+          backdropFilter: 'blur(15px)'
         }} />
-        <style>
-          {`
-            @keyframes gradientBG {
-              0% { background-position: 0% 50%; }
-              50% { background-position: 100% 50%; }
-              100% { background-position: 0% 50%; }
-            }
-            @keyframes pulseSoft {
-              0% { transform: scale(1) translateY(0) rotate(0deg); }
-              50% { transform: scale(1.1) translateY(-10px) rotate(5deg); }
-              100% { transform: scale(1) translateY(0) rotate(0deg); }
-            }
-            @keyframes bounceEmoji {
-              0%, 100% { transform: translateY(0); }
-              50% { transform: translateY(-5px); }
-            }
-            @keyframes spinIcon {
-              0% { transform: rotate(0deg); }
-              10% { transform: rotate(15deg); }
-              20% { transform: rotate(-10deg); }
-              30% { transform: rotate(5deg); }
-              40% { transform: rotate(0deg); }
-              100% { transform: rotate(0deg); }
-            }
-          `}
-        </style>
 
         <Stack direction="row" alignItems="center" spacing={2} sx={{ position: 'relative', zIndex: 1, width: '100%' }}>
           {/* Logo / Icon Container */}
-          <Box sx={{ 
-            p: 1.5, 
-            borderRadius: '12px', 
+          <Box sx={{
+            p: 1.5,
+            borderRadius: '12px',
             background: 'rgba(255, 255, 255, 0.25)',
             backdropFilter: 'blur(12px)',
             border: '2px solid rgba(255, 255, 255, 0.4)',
             boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
             display: 'flex',
-            color: '#fff',
-            animation: 'spinIcon 4s ease-in-out infinite'
+            color: '#fff'
           }}>
             <IconBuilding size={26} stroke={2} />
           </Box>
-          
+
           <Box sx={{ flexGrow: 1 }}>
-            <Typography variant="h5" fontWeight={900} sx={{ 
-              lineHeight: 1.2, 
+            <Typography variant="h5" fontWeight={900} sx={{
+              lineHeight: 1.2,
               color: '#fff',
               textShadow: '0 2px 8px rgba(0,0,0,0.2)',
               letterSpacing: '-0.01em',
@@ -670,17 +675,17 @@ const CompanyProfile = () => {
               alignItems: 'center',
               gap: 1
             }}>
-              Company Profile 
-              <Box component="span" sx={{ display: 'inline-block', fontSize: '1.5rem', animation: 'bounceEmoji 2s infinite ease-in-out' }}>
+              Company Profile
+              <Box component="span" sx={{ display: 'inline-block', fontSize: '1.5rem' }}>
                 🚀
               </Box>
             </Typography>
-            
+
             {form.companyName ? (
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.2 }}>
-                <Typography variant="body2" sx={{ 
-                  color: 'rgba(255,255,255,0.95)', 
-                  fontWeight: 700, 
+                <Typography variant="body2" sx={{
+                  color: 'rgba(255,255,255,0.95)',
+                  fontWeight: 700,
                   letterSpacing: '0.01em',
                   display: 'flex',
                   alignItems: 'center',
@@ -701,9 +706,9 @@ const CompanyProfile = () => {
           {perms.write && (
             <Button
               variant="contained"
-              startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}
-              onClick={handleSave}
-              disabled={loading || !perms.write}
+              startIcon={loading || databaseUpdating ? <CircularProgress size={16} color="inherit" /> : <IconDeviceFloppy size={18} />}
+              onClick={handleSaveClick}
+              disabled={loading || databaseUpdating || !perms.write}
               sx={{
                 borderRadius: '20px', textTransform: 'none', fontWeight: 700, px: 3,
                 background: 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))',
@@ -743,7 +748,7 @@ const CompanyProfile = () => {
       {/* ── Main Profile Content ── */}
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: '100%', flexWrap: 'nowrap' }}>
         {/* Left Column - Branding & Identity */}
-        <Box sx={{ width: { xs: '100%', md: '25%' }, flexShrink: 0 }}>
+        <Box sx={{ width: { xs: '100%', md: '20%' }, flexShrink: 0 }}>
           <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2, height: '100%' }}>
             {sectionTitle('Branding & Identity', IconPhoto)}
             <Stack spacing={2}>
@@ -775,93 +780,38 @@ const CompanyProfile = () => {
                 />
               </Box>
 
-              <Box>
-                <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
-                  Preferences
-                </Typography>
-                <DropdownField
-                  name="inputCaseStyle"
-                  label="Default Input Case Style"
-                  options={['UPPER_CASE', 'PROPER_CASE', 'LOWER_CASE', 'CUSTOM']}
-                  fullWidth
-                />
-              </Box>
+
             </Stack>
           </Paper>
         </Box>
 
         {/* Right Column - Details, Audit & Config */}
-        <Box sx={{ width: { xs: '100%', md: '75%' }, flexGrow: 1, minWidth: 0 }}>
-          <Stack spacing={2}>
-            
-            {/* Top Row of Right Column: Company Details & System Audit */}
-            <Grid container spacing={2}>
-              {/* Company Details */}
-              <Grid item xs={12} md={8}>
-                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: { xs: 1.5, md: 2 }, height: '100%' }}>
-                  {sectionTitle('Company Details', IconBuilding)}
-                  
-                  <Grid container spacing={1.5} mb={1.5}>
-                    <Grid item xs={12} md={3}>
-                      <TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} />
-                    </Grid>
-                    <Grid item xs={12} md={6}>
-                      <TextField {...fieldProps('companyName', 'Company Name *')} />
-                    </Grid>
-                    <Grid item xs={12} md={3}>
-                      <TextField {...fieldProps('shortName', 'Short Name')} />
-                    </Grid>
-                  </Grid>
-
-                  <Grid container spacing={1.5} mb={1.5}>
-                    <Grid item xs={12}>
-                      <TextField {...fieldProps('address', 'Address')} multiline rows={2} fullWidth inputProps={{ maxLength: 500 }} />
-                    </Grid>
-                  </Grid>
-
-                  <Grid container spacing={1.5}>
-                    <Grid item xs={12} md={4}>
-                      <DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} fullWidth />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} fullWidth />
-                    </Grid>
-                    
-                    <Grid item xs={12} md={4}>
-                      <TextField {...fieldProps('stateCode', 'State Code')} InputProps={{ readOnly: true }} sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2, bgcolor: 'action.hover' } }} />
-                    </Grid>
-                    <Grid item xs={12} md={4}>
-                      <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 10 }} />
-                    </Grid>
-                  </Grid>
-                </Paper>
-              </Grid>
-
-              {/* System Audit */}
-              <Grid item xs={12} md={4}>
-                <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2, bgcolor: 'rgba(0,0,0,0.01)', height: '100%' }}>
-                  {sectionTitle('System Audit', IconAlertCircle)}
-                  <Stack spacing={1.5}>
-                    <TextField label="Created By" value={form.createdBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser size={16} /></InputAdornment> }} />
-                    <TextField label="Created Date" value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar size={16} /></InputAdornment> }} />
-                    <TextField label="Updated By" value={form.updatedBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser size={16} /></InputAdornment> }} />
-                    <TextField label="Updated Date" value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar size={16} /></InputAdornment> }} />
-                  </Stack>
-                </Paper>
-              </Grid>
+        <Box sx={{ width: { xs: '100%', md: '80%' }, flexGrow: 1, minWidth: 0 }}>
+          <Grid container spacing={3}>
+            {/* Left Column: Company Details */}
+            <Grid item xs={12} sx={{ flexBasis: { xs: '100%', md: '50%' }, maxWidth: { xs: '100%', md: '50%' } }}>
+              <Paper elevation={0} sx={{ border: '1px solid', borderColor: alpha(theme.palette.divider, 0.6), borderRadius: 4, p: { xs: 2, md: 3 }, boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`, height: '100%' }}>
+                {sectionTitle('Company Details', IconBuilding)}
+                <Stack spacing={2.5}>
+                  <TextField {...fieldProps('companyName', 'Company Name*')} />
+                  <TextField {...fieldProps('shortName', 'Short Name')} />
+                  <TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} />
+                  <TextField {...fieldProps('address', 'Address')} multiline rows={4} fullWidth inputProps={{ maxLength: 500 }} />
+                  <DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth />
+                  <DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} fullWidth />
+                  <DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} fullWidth />
+                  <TextField {...fieldProps('stateCode', 'State Code')} inputProps={{ maxLength: 2 }} />
+                  <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 6 }} />
+                </Stack>
+              </Paper>
             </Grid>
 
-            {/* Bottom Row of Right Column: License & Configuration */}
-            <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: { xs: 1.5, md: 2 } }}>
-              {sectionTitle('License & Configuration', IconAlertCircle)}
-              <Grid container spacing={1.5}>
-                <Grid item xs={12} md={2}>
+            {/* Center Column: License & Configuration */}
+            <Grid item xs={12} sx={{ flexBasis: { xs: '100%', md: '25%' }, maxWidth: { xs: '100%', md: '25%' } }}>
+              <Paper elevation={0} sx={{ border: '1px solid', borderColor: alpha(theme.palette.divider, 0.6), borderRadius: 4, p: { xs: 2, md: 3 }, boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`, height: '100%' }}>
+                {sectionTitle('License & Configuration', IconLicense)}
+                <Stack spacing={2.5}>
                   <TextField {...fieldProps('dbSourceName', 'DB Source Name')} inputProps={{ maxLength: 10 }} disabled={!isSuperUser} />
-                </Grid>
-                <Grid item xs={12} md={3}>
                   <TextField
                     {...fieldProps('directoryPath', 'Document Path')}
                     disabled={!isSuperUser}
@@ -875,26 +825,83 @@ const CompanyProfile = () => {
                       )
                     }}
                   />
-                </Grid>
-                <Grid item xs={12} md={2}>
                   <TextField {...fieldProps('licRenewalDate', 'Renewal Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} />
-                </Grid>
-                <Grid item xs={12} md={2}>
                   <TextField {...fieldProps('licExpiryDate', 'Expiry Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} />
-                </Grid>
-                <Grid item xs={12} md={1.5}>
                   <TextField {...fieldProps('licExpRemainderDays', 'Exp Remainder Days')} type="number" disabled={!isSuperUser} />
-                </Grid>
-                <Grid item xs={12} md={1.5}>
-                  <TextField {...fieldProps('restoreEnableDays', 'Restore Enable Days')} type="number" disabled={!isSuperUser} helperText="Grace period" />
-                </Grid>
-              </Grid>
-            </Paper>
 
-          </Stack>
+
+                  <Box>
+                    {sectionTitle('Preferences', IconSettings2)}
+                    <Stack spacing={2.5}>
+                      <DropdownField
+                        name="inputCaseStyle"
+                        label="Default Input Case Style"
+                        options={['UPPER_CASE', 'PROPER_CASE', 'LOWER_CASE', 'CUSTOM']}
+                        fullWidth
+                      />
+                      <TextField {...fieldProps('restoreEnableDays', 'Restore Enable Days')} type="number" disabled={!isSuperUser} helperText="Grace period" />
+                    </Stack>
+                  </Box>
+                </Stack>
+              </Paper>
+            </Grid>
+
+            {/* Right Column: System Audit */}
+            <Grid item xs={12} sx={{ flexBasis: { xs: '100%', md: '20%' }, maxWidth: { xs: '100%', md: '20%' } }}>
+              <Paper elevation={0} sx={{ border: '1px dashed', borderColor: alpha(theme.palette.divider, 0.8), borderRadius: 4, p: { xs: 2, md: 3 }, bgcolor: alpha(theme.palette.primary.main, 0.02), height: '100%', boxShadow: `inset 0 4px 20px ${alpha(theme.palette.primary.main, 0.02)}` }}>
+                {sectionTitle('System Audit', IconBrandUnity)}
+                <Stack spacing={2.5}>
+                  <TextField label="Created By" value={form.createdBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser size={16} /></InputAdornment> }} />
+                  <TextField label="Created Date" value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar size={16} /></InputAdornment> }} />
+                  <TextField label="Updated By" value={form.updatedBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser size={16} /></InputAdornment> }} />
+                  <TextField label="Updated Date" value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar size={16} /></InputAdornment> }} />
+                </Stack>
+              </Paper>
+            </Grid>
+          </Grid>
         </Box>
       </Stack>
-      
+
+      {/* Database Case Style Update Confirmation Dialog */}
+      <Dialog open={casePromptOpen} onClose={() => !databaseUpdating && setCasePromptOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Update Global Case Style</DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body1" mb={2}>
+            You have changed the <strong>Default Input Case Style</strong> from {originalCaseStyle} to {form.inputCaseStyle}.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            How would you like this change to be applied?
+          </Typography>
+          <Box mt={2} pl={2} borderLeft="3px solid" borderColor="warning.main">
+            <Typography variant="body2" mb={1}>
+              <strong>Apply to future data only:</strong> The new case style will only affect new inputs. Existing data in the database will remain unchanged.
+            </Typography>
+            <Typography variant="body2" color="error.main">
+              <strong>Update existing database:</strong> This will retroactively update ALL text across the entire database to match the new case style. This operation may take several minutes.
+            </Typography>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setCasePromptOpen(false)} disabled={databaseUpdating || loading}>Cancel</Button>
+          <Button 
+            variant="outlined" 
+            onClick={() => { setCasePromptOpen(false); executeSave(false); }}
+            disabled={databaseUpdating || loading}
+          >
+            Future Data Only
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            onClick={() => { setCasePromptOpen(false); executeSave(true); }}
+            disabled={databaseUpdating || loading}
+            startIcon={databaseUpdating || loading ? <CircularProgress size={20} color="inherit" /> : null}
+          >
+            {databaseUpdating ? 'Updating Database...' : 'Update Existing Database'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <FolderBrowserDialog />
 
       {/* ── Snackbar ── */}

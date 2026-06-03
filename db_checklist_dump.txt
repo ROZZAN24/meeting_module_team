@@ -4,10 +4,10 @@ Row:
   assign_date = null
   assign_to = null
   category = CHECK LIST
-  checking_point = Light Off
-  CREATED_USER = Admin
+  checking_point = LIGHT OFF
+  CREATED_USER = ADMIN
   CREATED_DATE = 2026-05-26 14:12:35.833
-  description = Conference room
+  description = CONFERENCE ROOM
   effective_from = 2026-05-26
   expiry_date = null
   frequency = DAILY
@@ -21,7 +21,7 @@ Row:
   reminder_days = null
   seq_no = CK-001
   stock_link = NO
-  UPDATED_USER = Karthick
+  UPDATED_USER = KARTHICK
   UPDATED_DATE = null
   verification_required = null
   verified_by = null
@@ -44,10 +44,10 @@ Row:
   assign_date = null
   assign_to = null
   category = CHECK LIST
-  checking_point = Test
-  CREATED_USER = Admin
+  checking_point = TEST
+  CREATED_USER = ADMIN
   CREATED_DATE = 2026-05-27 16:39:45.588
-  description = TestTestTest
+  description = TESTTESTTEST
   effective_from = 2026-05-27
   expiry_date = null
   frequency = DAILY
@@ -61,7 +61,7 @@ Row:
   reminder_days = null
   seq_no = CK-002
   stock_link = NO
-  UPDATED_USER = Karthick
+  UPDATED_USER = KARTHICK
   UPDATED_DATE = 2026-05-27 16:39:45.588
   verification_required = null
   verified_by = null

@@ -1,17 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Box,
-  Typography,
-  Button,
-  IconButton,
-  TextField,
-  MenuItem,
-  Select,
-  Stack
-} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, Box, Typography, Button, IconButton, MenuItem, Select, Stack } from '@mui/material';
 import { IconX, IconMailForward } from '@tabler/icons-react';
 import { getDialogStyles, btnCancel, btnEdit } from 'ui-component/bos/BOSStyles';
 import { useColorScheme } from '@mui/material/styles';

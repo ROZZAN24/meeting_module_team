@@ -1,3 +1,4 @@
+import TextField from 'ui-component/CustomTextField';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 
@@ -10,7 +11,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Grid from '@mui/material/Grid';
 import MenuItem from '@mui/material/MenuItem';
 import Rating from '@mui/material/Rating';
-import TextField from '@mui/material/TextField';
+
 import Typography from '@mui/material/Typography';
 
 // project imports

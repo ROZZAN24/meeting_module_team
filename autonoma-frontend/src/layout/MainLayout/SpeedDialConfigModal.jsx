@@ -12,8 +12,10 @@ import Paper from '@mui/material/Paper';
 import { alpha, useTheme } from '@mui/material/styles';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
+import Checkbox from '@mui/material/Checkbox';
+import Tooltip from '@mui/material/Tooltip';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { IconX, IconGripVertical, IconSearch } from '@tabler/icons-react';
+import { IconX, IconGripVertical, IconSearch, IconChevronRight, IconChevronLeft } from '@tabler/icons-react';
 
 // ──────────────────────────────────────────────────────────────────────
 // Helper functions
@@ -39,7 +41,7 @@ const moveBetween = (source, destination, droppableSource, droppableDestination)
 // ──────────────────────────────────────────────────────────────────────
 // DraggableItem — MUST be top-level, not nested inside another component
 // ──────────────────────────────────────────────────────────────────────
-function DraggableItem({ item, index }) {
+function DraggableItem({ item, index, selected, onToggle }) {
   const theme = useTheme();
   const Icon = item.icon;
   return (
@@ -50,28 +52,44 @@ function DraggableItem({ item, index }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           elevation={snapshot.isDragging ? 4 : 0}
+          onClick={() => onToggle && onToggle(item.id)}
           sx={{
             display: 'flex',
             alignItems: 'center',
             gap: 1.5,
             p: 1.5,
-            mb: 1,
-            borderRadius: '8px',
+            mb: 1.5,
+            borderRadius: '12px',
             border: '1px solid',
-            borderColor: snapshot.isDragging ? theme.palette.primary.main : theme.palette.divider,
+            borderColor: snapshot.isDragging 
+              ? theme.palette.primary.main 
+              : (selected ? theme.palette.primary.main : alpha(theme.palette.divider, 0.6)),
             bgcolor: snapshot.isDragging
-              ? alpha(theme.palette.primary.main, 0.06)
-              : theme.palette.background.paper,
-            cursor: 'grab',
+              ? alpha(theme.palette.primary.main, 0.12)
+              : selected ? alpha(theme.palette.primary.main, 0.06) : theme.palette.background.paper,
+            cursor: 'pointer',
             userSelect: 'none',
-            transition: 'border-color 0.15s, background-color 0.15s',
+            boxShadow: selected ? `0 4px 12px ${alpha(theme.palette.primary.main, 0.15)}` : `0 2px 6px ${alpha(theme.palette.common.black, 0.03)}`,
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: snapshot.isDragging ? 'scale(1.02)' : 'none',
             '&:hover': {
-              borderColor: alpha(theme.palette.primary.main, 0.4),
-              bgcolor: alpha(theme.palette.primary.main, 0.03)
+              borderColor: selected ? theme.palette.primary.main : alpha(theme.palette.primary.main, 0.4),
+              bgcolor: selected ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.primary.main, 0.02),
+              transform: snapshot.isDragging ? 'scale(1.02)' : 'translateY(-2px)',
+              boxShadow: selected ? `0 6px 16px ${alpha(theme.palette.primary.main, 0.2)}` : `0 4px 12px ${alpha(theme.palette.common.black, 0.06)}`
             }
           }}
         >
           <IconGripVertical size={18} color={theme.palette.text.disabled} />
+          {onToggle && (
+            <Checkbox 
+              checked={selected || false} 
+              onChange={() => onToggle(item.id)} 
+              onClick={(e) => e.stopPropagation()} 
+              size="small" 
+              sx={{ p: 0 }} 
+            />
+          )}
           {Icon && <Icon size={20} stroke={1.5} color={theme.palette.text.secondary} />}
           <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', flexGrow: 1 }}>
             {item.title}
@@ -84,7 +102,9 @@ function DraggableItem({ item, index }) {
 
 DraggableItem.propTypes = {
   item: PropTypes.object.isRequired,
-  index: PropTypes.number.isRequired
+  index: PropTypes.number.isRequired,
+  selected: PropTypes.bool,
+  onToggle: PropTypes.func
 };
 
 // ──────────────────────────────────────────────────────────────────────
@@ -96,6 +116,8 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
   const [speedDialItems, setSpeedDialItems] = useState([]);
   const [availableFilter, setAvailableFilter] = useState('');
   const [speedDialFilter, setSpeedDialFilter] = useState('');
+  const [selectedAvailable, setSelectedAvailable] = useState([]);
+  const [selectedSpeedDial, setSelectedSpeedDial] = useState([]);
 
   const filteredAvailable = availableItems.filter(item => item.title.toLowerCase().includes(availableFilter.toLowerCase()));
   const filteredSpeedDial = speedDialItems.filter(item => item.title.toLowerCase().includes(speedDialFilter.toLowerCase()));
@@ -113,7 +135,74 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
 
     setSpeedDialItems(speedDial);
     setAvailableItems(available);
+    setSelectedAvailable([]);
+    setSelectedSpeedDial([]);
   }, [open, moduleGroup, currentSpeedDialIds]);
+
+  const handleToggleAvailable = (id) => {
+    setSelectedAvailable(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(item => item !== id);
+      } else {
+        if (speedDialItems.length + prev.length >= 6) {
+          alert("You can only have a maximum of 6 items in the Speed Dial.");
+          return prev;
+        }
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleToggleSpeedDial = (id) => {
+    setSelectedSpeedDial(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleMoveToSpeedDial = () => {
+    const itemsToMove = availableItems.filter(item => selectedAvailable.includes(item.id));
+    if (speedDialItems.length + itemsToMove.length > 6) {
+      alert(`You can only add up to 6 items to the Speed Dial. (Currently: ${speedDialItems.length}, Selected: ${itemsToMove.length})`);
+      return;
+    }
+    setSpeedDialItems(prev => [...prev, ...itemsToMove]);
+    setAvailableItems(prev => prev.filter(item => !selectedAvailable.includes(item.id)));
+    setSelectedAvailable([]);
+  };
+
+  const handleMoveToAvailable = () => {
+    const itemsToMove = speedDialItems.filter(item => selectedSpeedDial.includes(item.id));
+    setAvailableItems(prev => [...prev, ...itemsToMove]);
+    setSpeedDialItems(prev => prev.filter(item => !selectedSpeedDial.includes(item.id)));
+    setSelectedSpeedDial([]);
+  };
+
+  const handleSelectAllAvailable = (e) => {
+    if (e.target.checked) {
+      const remainingSlots = 6 - speedDialItems.length;
+      if (remainingSlots <= 0) {
+        alert("Speed Dial is already full (maximum 6 items).");
+        return;
+      }
+      const itemsToSelect = filteredAvailable.map(item => item.id);
+      if (itemsToSelect.length > remainingSlots) {
+        alert(`You can only select up to ${remainingSlots} more items.`);
+        setSelectedAvailable(itemsToSelect.slice(0, remainingSlots));
+      } else {
+        setSelectedAvailable(itemsToSelect);
+      }
+    } else {
+      setSelectedAvailable([]);
+    }
+  };
+
+  const handleSelectAllSpeedDial = (e) => {
+    if (e.target.checked) {
+      setSelectedSpeedDial(filteredSpeedDial.map(item => item.id));
+    } else {
+      setSelectedSpeedDial([]);
+    }
+  };
 
   const onDragEnd = (result) => {
     const { source, destination } = result;
@@ -144,6 +233,11 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
       newSourceList.splice(originalDestIndex, 0, draggedItem);
       source.droppableId === 'speedDial' ? setSpeedDialItems(newSourceList) : setAvailableItems(newSourceList);
     } else {
+      if (destination.droppableId === 'speedDial' && speedDialItems.length >= 6) {
+        alert("You can only add up to 6 items to the Speed Dial.");
+        return;
+      }
+
       let originalDestIndex = destList.length;
       if (destination.index < destListFiltered.length) {
         const targetItem = destListFiltered[destination.index];
@@ -182,36 +276,55 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
       fullWidth
       PaperProps={{ sx: { borderRadius: '14px', overflow: 'hidden' } }}
     >
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', pb: 1 }}>
+      <DialogTitle sx={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        pb: 2,
+        pt: 3,
+        px: 4,
+        background: `linear-gradient(to right, ${alpha(theme.palette.primary.main, 0.04)}, transparent)`
+      }}>
         <Box>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5, color: theme.palette.text.primary }}>
             Customize Speed Dial
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {moduleGroup.title} — drag items to rearrange or move between lists
+          <Typography variant="body2" sx={{ color: theme.palette.text.secondary, fontWeight: 500 }}>
+            {moduleGroup.title} — drag items to rearrange or use checkboxes to move multiple
           </Typography>
         </Box>
         <IconButton
           onClick={onClose}
-          size="small"
           sx={{
             color: 'text.secondary',
-            '&:hover': { color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.08) }
+            bgcolor: alpha(theme.palette.text.secondary, 0.05),
+            '&:hover': { color: 'error.main', bgcolor: alpha(theme.palette.error.main, 0.1), transform: 'rotate(90deg)' },
+            transition: 'all 0.3s'
           }}
         >
-          <IconX size={18} />
+          <IconX size={20} />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent dividers sx={{ p: 3 }}>
+      <DialogContent dividers sx={{ p: 4, bgcolor: alpha(theme.palette.background.default, 0.4) }}>
         <DragDropContext onDragEnd={onDragEnd}>
-          <Box sx={{ display: 'flex', gap: 3, height: 380 }}>
+          <Box sx={{ display: 'flex', gap: 3, height: 420 }}>
 
             {/* ── Available ── */}
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="overline" sx={{ mb: 1, fontWeight: 700, color: 'text.secondary', letterSpacing: 1 }}>
-                Available Menus ({filteredAvailable.length})
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Checkbox 
+                  size="small" 
+                  checked={filteredAvailable.length > 0 && selectedAvailable.length === filteredAvailable.length}
+                  indeterminate={selectedAvailable.length > 0 && selectedAvailable.length < filteredAvailable.length}
+                  onChange={handleSelectAllAvailable}
+                  sx={{ p: 0.5, mr: 1 }}
+                />
+                <Typography variant="overline" sx={{ fontWeight: 700, color: 'text.secondary', letterSpacing: 1 }}>
+                  Available Menus ({filteredAvailable.length})
+                  {selectedAvailable.length > 0 && <span style={{ color: theme.palette.primary.main, textTransform: 'none', fontWeight: 600 }}> • {selectedAvailable.length} selected</span>}
+                </Typography>
+              </Box>
               <Droppable droppableId="available">
                 {(provided, snapshot) => (
                   <Box
@@ -221,17 +334,18 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
                       display: 'flex',
                       flexDirection: 'column',
                       flex: 1,
-                      p: 1.5,
-                      borderRadius: '10px',
-                      border: '1.5px dashed',
+                      p: 2,
+                      borderRadius: '16px',
+                      border: '1px solid',
                       borderColor: snapshot.isDraggingOver
                         ? theme.palette.primary.main
-                        : theme.palette.divider,
+                        : alpha(theme.palette.divider, 0.6),
                       bgcolor: snapshot.isDraggingOver
                         ? alpha(theme.palette.primary.main, 0.04)
-                        : 'background.default',
+                        : theme.palette.background.paper,
+                      boxShadow: `inset 0 2px 20px 0 ${alpha(theme.palette.common.black, 0.02)}`,
                       overflow: 'hidden',
-                      transition: 'border-color 0.2s, background-color 0.2s'
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     <OutlinedInput
@@ -262,7 +376,13 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
                         </Typography>
                       )}
                       {filteredAvailable.map((item, index) => (
-                        <DraggableItem key={item.id} item={item} index={index} />
+                        <DraggableItem 
+                          key={item.id} 
+                          item={item} 
+                          index={index} 
+                          selected={selectedAvailable.includes(item.id)} 
+                          onToggle={handleToggleAvailable} 
+                        />
                       ))}
                       {provided.placeholder}
                     </Box>
@@ -271,11 +391,70 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
               </Droppable>
             </Box>
 
+            {/* ── Transfer Buttons ── */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 2.5, pt: 6 }}>
+              <Tooltip title="Add Selected" placement="top">
+                <span>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleMoveToSpeedDial}
+                    disabled={selectedAvailable.length === 0 || speedDialItems.length + selectedAvailable.length > 6}
+                    sx={{ 
+                      minWidth: 48, 
+                      width: 48,
+                      height: 48, 
+                      p: 0, 
+                      borderRadius: '50%', 
+                      boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.25)}`,
+                      transition: 'transform 0.2s',
+                      '&:hover': { transform: 'scale(1.05)', boxShadow: `0 8px 20px ${alpha(theme.palette.primary.main, 0.4)}` }
+                    }}
+                  >
+                    <IconChevronRight size={24} stroke={2.5} />
+                  </Button>
+                </span>
+              </Tooltip>
+              <Tooltip title="Remove Selected" placement="bottom">
+                <span>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={handleMoveToAvailable}
+                    disabled={selectedSpeedDial.length === 0}
+                    sx={{ 
+                      minWidth: 48, 
+                      width: 48,
+                      height: 48, 
+                      p: 0, 
+                      borderRadius: '50%',
+                      borderWidth: '2px',
+                      bgcolor: theme.palette.background.paper,
+                      transition: 'all 0.2s',
+                      '&:hover': { borderWidth: '2px', transform: 'scale(1.05)', bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                    }}
+                  >
+                    <IconChevronLeft size={24} stroke={2.5} />
+                  </Button>
+                </span>
+              </Tooltip>
+            </Box>
+
             {/* ── Speed Dial ── */}
             <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="overline" sx={{ mb: 1, fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}>
-                Speed Dial ({filteredSpeedDial.length})
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Checkbox 
+                  size="small" 
+                  checked={filteredSpeedDial.length > 0 && selectedSpeedDial.length === filteredSpeedDial.length}
+                  indeterminate={selectedSpeedDial.length > 0 && selectedSpeedDial.length < filteredSpeedDial.length}
+                  onChange={handleSelectAllSpeedDial}
+                  sx={{ p: 0.5, mr: 1 }}
+                />
+                <Typography variant="overline" sx={{ fontWeight: 700, color: 'primary.main', letterSpacing: 1 }}>
+                  Speed Dial ({filteredSpeedDial.length}/6)
+                  {selectedSpeedDial.length > 0 && <span style={{ textTransform: 'none', fontWeight: 600 }}> • {selectedSpeedDial.length} selected</span>}
+                </Typography>
+              </Box>
               <Droppable droppableId="speedDial">
                 {(provided, snapshot) => (
                   <Box
@@ -285,17 +464,18 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
                       display: 'flex',
                       flexDirection: 'column',
                       flex: 1,
-                      p: 1.5,
-                      borderRadius: '10px',
-                      border: '2px dashed',
+                      p: 2,
+                      borderRadius: '16px',
+                      border: '2px solid',
                       borderColor: snapshot.isDraggingOver
                         ? theme.palette.primary.main
-                        : alpha(theme.palette.primary.main, 0.35),
+                        : alpha(theme.palette.primary.main, 0.2),
                       bgcolor: snapshot.isDraggingOver
                         ? alpha(theme.palette.primary.main, 0.04)
-                        : alpha(theme.palette.primary.main, 0.02),
+                        : alpha(theme.palette.primary.main, 0.015),
+                      boxShadow: `inset 0 2px 20px 0 ${alpha(theme.palette.primary.main, 0.03)}`,
                       overflow: 'hidden',
-                      transition: 'border-color 0.2s, background-color 0.2s'
+                      transition: 'all 0.3s ease'
                     }}
                   >
                     <OutlinedInput
@@ -326,7 +506,13 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
                         </Typography>
                       )}
                       {filteredSpeedDial.map((item, index) => (
-                        <DraggableItem key={item.id} item={item} index={index} />
+                        <DraggableItem 
+                          key={item.id} 
+                          item={item} 
+                          index={index}
+                          selected={selectedSpeedDial.includes(item.id)}
+                          onToggle={handleToggleSpeedDial} 
+                        />
                       ))}
                       {provided.placeholder}
                     </Box>
@@ -338,15 +524,31 @@ export default function SpeedDialConfigModal({ open, onClose, moduleGroup, curre
         </DragDropContext>
       </DialogContent>
 
-      <DialogActions sx={{ px: 3, py: 2, gap: 1 }}>
-        <Button onClick={onClose} variant="outlined" color="inherit" sx={{ borderRadius: '8px' }}>
+      <DialogActions sx={{ px: 4, py: 2.5, gap: 1.5, bgcolor: alpha(theme.palette.background.default, 0.4) }}>
+        <Button 
+          onClick={onClose} 
+          variant="outlined" 
+          color="inherit" 
+          sx={{ borderRadius: '10px', px: 3, fontWeight: 600 }}
+        >
           Cancel
         </Button>
         <Button
           onClick={handleSave}
           variant="contained"
           color="primary"
-          sx={{ borderRadius: '8px', px: 3, boxShadow: 'none' }}
+          sx={{ 
+            borderRadius: '10px', 
+            px: 4,
+            fontWeight: 600,
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            boxShadow: `0 4px 14px 0 ${alpha(theme.palette.primary.main, 0.35)}`,
+            transition: 'all 0.2s',
+            '&:hover': {
+              boxShadow: `0 6px 20px 0 ${alpha(theme.palette.primary.main, 0.5)}`,
+              transform: 'translateY(-1px)'
+            }
+          }}
         >
           Save Changes
         </Button>

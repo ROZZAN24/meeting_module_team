@@ -1,3 +1,4 @@
+import TextField from 'ui-component/CustomTextField';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -20,7 +21,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
+
 import Box from '@mui/material/Box';
 
 // ==============================|| ADD PAYMENT - TABLE ||============================== //

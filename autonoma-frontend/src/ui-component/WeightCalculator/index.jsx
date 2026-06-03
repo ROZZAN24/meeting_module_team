@@ -1,18 +1,6 @@
+import TextField from 'ui-component/CustomTextField';
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  IconButton,
-  Typography,
-  Grid,
-  TextField,
-  MenuItem,
-  Box,
-  Divider,
-  Button,
-  Stack
-} from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, IconButton, Typography, Grid, MenuItem, Box, Divider, Button, Stack } from '@mui/material';
 import { IconX, IconCalculator } from '@tabler/icons-react';
 
 const WeightCalculator = ({ open, handleClose }) => {
