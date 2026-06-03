@@ -270,58 +270,49 @@ export default function NavCollapse({ menu, level, parentId }) {
         </ListItemIcon>
       )}
       {(drawerOpen || (!drawerOpen && level !== 1)) && (
-        <Tooltip 
-          title={
-            <span>
-              <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
-            </span>
-          } 
-          disableHoverListener={false}
-        >
-          <ListItemText
-            primary={
+        <ListItemText
+          primary={
+            <Typography
+              ref={ref}
+              noWrap
+              variant={isSelected || anchorEl ? 'h5' : 'body1'}
+              sx={{
+                color: 'inherit',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                width: 120,
+                ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
+                '.MuiListItemButton-root:hover &': {
+                  overflow: 'visible',
+                  textOverflow: 'clip',
+                  whiteSpace: 'normal',
+                  width: 'auto',
+                  wordBreak: 'break-word'
+                }
+              }}
+            >
+              <FormattedMessage id={menu.title} />
+            </Typography>
+          }
+          secondary={
+            menu.caption && (
               <Typography
-                ref={ref}
-                noWrap
-                variant={isSelected || anchorEl ? 'h5' : 'body1'}
+                gutterBottom
+                component="span"
                 sx={{
-                  color: 'inherit',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  width: 120,
-                  ...(themeDirection === ThemeDirection.RTL && { textAlign: 'end', direction: 'rtl' }),
-                  '.MuiListItemButton-root:hover &': {
-                    overflow: 'visible',
-                    textOverflow: 'clip',
-                    whiteSpace: 'normal',
-                    width: 'auto',
-                    wordBreak: 'break-word'
-                  }
+                  display: 'block',
+                  fontSize: '0.6875rem',
+                  fontWeight: 500,
+                  color: 'text.secondary',
+                  textTransform: 'capitalize',
+                  lineHeight: 1.66
                 }}
               >
-                <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
+                <FormattedMessage id={menu.caption} />
               </Typography>
-            }
-            secondary={
-              menu.caption && (
-                <Typography
-                  gutterBottom
-                  component="span"
-                  sx={{
-                    display: 'block',
-                    fontSize: '0.6875rem',
-                    fontWeight: 500,
-                    color: 'text.secondary',
-                    textTransform: 'capitalize',
-                    lineHeight: 1.66
-                  }}
-                >
-                  <FormattedMessage id={menu.caption} />
-                </Typography>
-              )
-            }
-          />
-        </Tooltip>
+            )
+          }
+        />
       )}
 
       {openMini || open ? (
@@ -413,7 +404,7 @@ export default function NavCollapse({ menu, level, parentId }) {
             sx={{ mb: 0.25 }}
             primary={
               <Typography variant={isSelected ? 'h5' : 'body1'} sx={{ my: 'auto', color: 'inherit' }}>
-                <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
+                <FormattedMessage id={menu.title} />
               </Typography>
             }
           />
@@ -487,7 +478,25 @@ export default function NavCollapse({ menu, level, parentId }) {
     <>
       {!isHorizontal ? (
         <>
-          {verticalButton}
+          <Tooltip
+            title={
+              <span>
+                <FormattedMessage id={menu.title} /> {menu.pageCode ? `(${menu.pageCode})` : ''}
+              </span>
+            }
+            placement="right"
+            disableInteractive
+            arrow
+            slotProps={{
+              popper: {
+                sx: {
+                  zIndex: 2500
+                }
+              }
+            }}
+          >
+            {verticalButton}
+          </Tooltip>
 
           {drawerOpen && (
             <Collapse in={open} timeout="auto" unmountOnExit>

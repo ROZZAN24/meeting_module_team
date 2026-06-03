@@ -1,6 +1,6 @@
 import TextField from 'ui-component/CustomTextField';
 import React, { useState, useEffect, useRef } from 'react';
-import { Box, Grid, Typography, Button, Divider, Snackbar, Alert, CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl, InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete, InputAdornment, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItemIcon, ListItemText, ListItemButton } from '@mui/material';
+import { Box, Grid, Typography, Button, Divider, Snackbar, Alert, CircularProgress, Avatar, Tooltip, MenuItem, Select, FormControl, InputLabel, FormHelperText, Paper, Chip, Stack, Autocomplete, InputAdornment, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, List, ListItemIcon, ListItemText, ListItemButton, Tabs, Tab } from '@mui/material';
 import {
   IconBuilding, IconUpload, IconDeviceFloppy, IconRefresh,
   IconPhoto, IconLogin, IconCheck, IconAlertCircle, IconFolderOpen,
@@ -8,15 +8,22 @@ import {
   IconUser, IconCalendar,
   IconSettings2,
   IconLicense,
-  IconBrandUnity
+  IconBrandUnity,
+  IconMapPin,
+  IconExternalLink,
+  IconCurrentLocation
 } from '@tabler/icons-react';
 import { useTheme, alpha } from '@mui/material/styles';
+import { motion } from 'framer-motion';
+import { RMap, RMarker } from 'maplibre-react-components';
+import osm_bright from '../forms/map/map-data/osm_bright.json';
 import useAuth from 'hooks/useAuth';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 
 const API_BASE = (import.meta.env.VITE_API_URL || import.meta.env.VITE_APP_API_URL || window.location.origin).replace(/\/+$/, '');
 
 // ─── Static Geo Data ────────────────────────────────────────────────────────
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AUD', 'CAD', 'SGD', 'AED'];
 const COUNTRIES = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'Singapore', 'UAE'];
 
 const STATES_BY_COUNTRY = {
@@ -70,10 +77,11 @@ const emptyForm = {
   licExpRemainderDays: 0,
   restoreEnableDays: 7,
   inputCaseStyle: 'CUSTOM',
-  createdBy: '',
-  createdDate: '',
-  updatedBy: '',
-  updatedDate: ''
+  registrationNo: '', panNo: '', mobileNo: '', phoneNo: '', emailId: '', website: '', gmaplink: '',
+  decimalPlaces: 2, currencyCode: 'INR',
+  smtpHost: '', smtpPort: 587, smtpUsername: '', smtpPassword: '', smtpSslEnabled: false,
+  supportEmail: '', supportPhone: '', auditLogEnabled: false,
+  createdBy: '', createdDate: '', updatedBy: '', updatedDate: ''
 };
 
 // ─── Image Upload Card ───────────────────────────────────────────────────────
@@ -156,6 +164,7 @@ const CompanyProfile = () => {
   const perms = usePagePermissions(PAGE_CODES.AD_COMPANY_PROFILE);
 
   const [form, setForm] = useState(emptyForm);
+  const [activeTab, setActiveTab] = useState(0);
   const [originalCaseStyle, setOriginalCaseStyle] = useState('UPPER_CASE');
   const [recordId, setRecordId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -167,6 +176,10 @@ const CompanyProfile = () => {
   const [browserOpen, setBrowserOpen] = useState(false);
   const [browserData, setBrowserData] = useState({ currentPath: '', folders: [], roots: [], parentPath: null });
   const [browserLoading, setBrowserLoading] = useState(false);
+
+  // Map Picker State
+  const [mapDialogOpen, setMapDialogOpen] = useState(false);
+  const [mapMarker, setMapMarker] = useState({ latitude: 13.0827, longitude: 80.2707 });
 
   const citiesForState = CITIES_BY_STATE[form.state] || DEFAULT_CITIES;
   const statesForCountry = STATES_BY_COUNTRY[form.country] || [];
@@ -201,6 +214,8 @@ const CompanyProfile = () => {
             licExpRemainderDays: rec.licExpRemainderDays || 0,
             restoreEnableDays: rec.restoreEnableDays || 0,
             inputCaseStyle: rec.inputCaseStyle || 'UPPER_CASE',
+            decimalPlaces: rec.decimalPlaces != null ? rec.decimalPlaces : 2,
+            currencyCode: rec.currencyCode || 'INR',
             createdBy: rec.createdBy || '',
             createdDate: rec.createdDate || '',
             updatedBy: rec.updatedBy || '',
@@ -232,6 +247,47 @@ const CompanyProfile = () => {
       return updated;
     });
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
+  };
+
+  const handleMarkerDrag = (e) => {
+    const lngLat = e.target.getLngLat();
+    setMapMarker({ latitude: lngLat.lat, longitude: lngLat.lng });
+  };
+
+  const openMapDialog = () => {
+    let lat = 13.0827, lng = 80.2707;
+    if (form.gmaplink) {
+      const match = form.gmaplink.match(/q=([-+]?\d*\.?\d+),([-+]?\d*\.?\d+)/);
+      if (match) {
+        lat = parseFloat(match[1]);
+        lng = parseFloat(match[2]);
+      }
+    }
+    setMapMarker({ latitude: lat, longitude: lng });
+    setMapDialogOpen(true);
+  };
+
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setMapMarker({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+          showSnack('Location updated to current position!', 'success');
+        },
+        (error) => {
+          showSnack('Unable to retrieve your location.', 'error');
+        }
+      );
+    } else {
+      showSnack('Geolocation is not supported by this browser.', 'error');
+    }
+  };
+
+  const handleMapSave = () => {
+    handleChange({
+      target: { name: 'gmaplink', value: `https://maps.google.com/?q=${mapMarker.latitude},${mapMarker.longitude}` }
+    });
+    setMapDialogOpen(false);
   };
 
   // ── Validation ──
@@ -345,7 +401,7 @@ const CompanyProfile = () => {
   // ── Save / Update ──
   const handleSaveClick = () => {
     if (!validate()) return;
-    
+
     // Intercept if case style changed (skip dialog if changing to CUSTOM)
     if (form.inputCaseStyle !== originalCaseStyle && form.inputCaseStyle !== 'CUSTOM') {
       setCasePromptOpen(true);
@@ -363,6 +419,8 @@ const CompanyProfile = () => {
         stateCode: form.stateCode ? parseInt(form.stateCode) : null,
         licExpRemainderDays: form.licExpRemainderDays ? parseInt(form.licExpRemainderDays) : 0,
         restoreEnableDays: form.restoreEnableDays ? parseInt(form.restoreEnableDays) : 0,
+        decimalPlaces: form.decimalPlaces ? parseInt(form.decimalPlaces) : 2,
+        smtpPort: form.smtpPort ? parseInt(form.smtpPort) : 587,
         licRenewalDate: form.licRenewalDate ? new Date(form.licRenewalDate).toISOString() : null,
         licExpiryDate: form.licExpiryDate ? new Date(form.licExpiryDate).toISOString() : null,
         updatedBy: user?.id || 'SYSTEM'
@@ -429,36 +487,50 @@ const CompanyProfile = () => {
 
   // ─── Styles ───
   const sectionTitle = (title, Icon) => (
-    <Box display="flex" alignItems="center" gap={1} mb={1.5}>
+    <Box display="flex" alignItems="center" gap={1.5} mb={2.5}>
       <Box sx={{
-        p: 0.5, borderRadius: 1.5,
-        background: 'linear-gradient(135deg,#5e72e4,#825ee4)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
+        p: 0.75, borderRadius: 2,
+        background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+        border: '1px solid #bfdbfe',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: '0 2px 4px rgba(59,130,246,0.1)'
       }}>
-        <Icon size={14} color="#fff" stroke={2} />
+        <Icon size={18} color="#2563eb" stroke={2.5} />
       </Box>
-      <Typography variant="subtitle2" fontWeight={700} color="text.primary">
+      <Typography variant="subtitle1" fontWeight={800} color="#1e293b" sx={{ letterSpacing: '0.01em' }}>
         {title}
       </Typography>
     </Box>
   );
 
   const fieldProps = (name, label, extra = {}) => ({
-    name, label, value: form[name],
+    name, label, value: form[name] || '',
     onChange: handleChange,
     error: !!errors[name],
     helperText: errors[name] || '',
     size: 'small', fullWidth: true,
+    ...extra,
+    InputProps: {
+      style: { color: '#0f172a', fontWeight: 500 },
+      ...extra.InputProps
+    },
+    InputLabelProps: {
+      style: { color: '#64748b' },
+      ...extra.InputLabelProps
+    },
     sx: {
       '& .MuiOutlinedInput-root': {
-        borderRadius: 1.5,
-        bgcolor: extra.InputProps?.readOnly ? 'action.hover' : 'background.paper',
-        '&:hover fieldset': { borderColor: 'primary.main' },
-        '& input': { py: 0.75, px: 1.5, fontSize: '0.85rem' }
+        borderRadius: 2,
+        bgcolor: extra.InputProps?.readOnly ? '#f1f5f9' : '#ffffff',
+        '& fieldset': { borderColor: '#cbd5e1' },
+        '&:hover fieldset': { borderColor: '#94a3b8' },
+        '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '2px' },
+        '& input': { py: 0.75, px: 1.5, fontSize: '0.85rem' },
+        '& textarea': { fontSize: '0.85rem' }
       },
-      '& .MuiInputLabel-root': { fontSize: '0.85rem' }
-    },
-    ...extra
+      '& .MuiInputLabel-root': { fontSize: '0.85rem' },
+      ...(extra.sx || {})
+    }
   });
 
   const dropdownProps = (name, label, options, extra = {}) => ({
@@ -474,20 +546,15 @@ const CompanyProfile = () => {
       sx={{
         minWidth: 200,
         '& .MuiOutlinedInput-root': { padding: '2px !important' },
-        '& .MuiAutocomplete-input': { padding: '4px 8px !important', fontSize: '0.85rem' },
-        '& .MuiInputLabel-root': { fontSize: '0.85rem' }
+        '& .MuiAutocomplete-input': { padding: '4px 8px !important', fontSize: '0.85rem', color: '#0f172a', fontWeight: 500 },
+        '& .MuiInputLabel-root': { fontSize: '0.85rem', color: '#64748b' },
+        '& .MuiIconButton-root': { color: '#64748b' }
       }}
       disabled={disabled}
       options={options}
       value={form[name] || null}
       onChange={(event, newValue) => {
-        const syntheticEvent = {
-          target: {
-            name: name,
-            value: newValue || ''
-          }
-        };
-        handleChange(syntheticEvent);
+        handleChange({ target: { name, value: newValue || '' } });
       }}
       isOptionEqualToValue={(option, value) => option === value || value === ""}
       renderInput={(params) => (
@@ -500,8 +567,10 @@ const CompanyProfile = () => {
           sx={{
             '& .MuiOutlinedInput-root': {
               borderRadius: 2,
-              bgcolor: disabled ? 'action.hover' : 'background.paper',
-              '&:hover fieldset': { borderColor: 'primary.main' }
+              bgcolor: disabled ? '#f1f5f9' : '#ffffff',
+              '& fieldset': { borderColor: '#cbd5e1' },
+              '&:hover fieldset': { borderColor: '#94a3b8' },
+              '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '2px' }
             }
           }}
         />
@@ -622,18 +691,32 @@ const CompanyProfile = () => {
     </Dialog>
   );
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <Box sx={{ p: { xs: 1, md: 2 }, overflowX: 'hidden' }}>
+    <Box sx={{ p: { xs: 1, md: 2 }, overflowX: 'hidden', minHeight: '100vh', background: '#f8fafc' }}>
       {/* ── Page Header ── */}
       <Box sx={{
         position: 'relative',
-        background: 'linear-gradient(135deg, #0f172a, #312e81)',
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
         borderRadius: '16px',
         p: { xs: 1.5, md: 2 },
         mb: 2,
-        color: '#fff',
+        color: '#0f172a',
         overflow: 'hidden',
-        boxShadow: '0 8px 20px rgba(15, 23, 42, 0.4)',
+        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
@@ -641,12 +724,12 @@ const CompanyProfile = () => {
         {/* Decorative shapes (static) */}
         <Box sx={{
           position: 'absolute', top: -30, right: -30, width: 150, height: 150,
-          borderRadius: '50%', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.05))',
+          borderRadius: '50%', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.0))',
           backdropFilter: 'blur(10px)'
         }} />
         <Box sx={{
           position: 'absolute', bottom: -40, right: 100, width: 120, height: 120,
-          borderRadius: '50%', background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(168, 85, 247, 0))',
+          borderRadius: '50%', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0))',
           backdropFilter: 'blur(15px)'
         }} />
 
@@ -655,12 +738,11 @@ const CompanyProfile = () => {
           <Box sx={{
             p: 1.5,
             borderRadius: '12px',
-            background: 'rgba(255, 255, 255, 0.25)',
-            backdropFilter: 'blur(12px)',
-            border: '2px solid rgba(255, 255, 255, 0.4)',
-            boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+            background: '#f1f5f9',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
             display: 'flex',
-            color: '#fff'
+            color: '#2563eb'
           }}>
             <IconBuilding size={26} stroke={2} />
           </Box>
@@ -668,37 +750,31 @@ const CompanyProfile = () => {
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="h5" fontWeight={900} sx={{
               lineHeight: 1.2,
-              color: '#fff',
-              textShadow: '0 2px 8px rgba(0,0,0,0.2)',
+              color: '#0f172a',
               letterSpacing: '-0.01em',
               display: 'flex',
               alignItems: 'center',
               gap: 1
             }}>
               Company Profile
-              <Box component="span" sx={{ display: 'inline-block', fontSize: '1.5rem' }}>
-                🚀
-              </Box>
             </Typography>
 
             {form.companyName ? (
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.2 }}>
                 <Typography variant="body2" sx={{
-                  color: 'rgba(255,255,255,0.95)',
+                  color: '#475569',
                   fontWeight: 700,
                   letterSpacing: '0.01em',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 0.5,
-                  textShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                  gap: 0.5
                 }}>
-                  <Box component="span" sx={{ fontSize: '0.9rem' }}>✨</Box>
                   {form.companyName}
                 </Typography>
               </Stack>
             ) : (
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
-                Manage your company credentials and branding assets <Box component="span" sx={{ fontSize: '0.8rem' }}>🎨</Box>
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.2 }}>
+                Manage your company credentials and branding assets
               </Typography>
             )}
           </Box>
@@ -710,13 +786,11 @@ const CompanyProfile = () => {
               onClick={handleSaveClick}
               disabled={loading || databaseUpdating || !perms.write}
               sx={{
-                borderRadius: '20px', textTransform: 'none', fontWeight: 700, px: 3,
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.4)',
-                boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+                borderRadius: '8px', textTransform: 'none', fontWeight: 600, px: 3,
+                background: '#2563eb',
+                boxShadow: '0 4px 6px -1px rgba(37, 99, 235, 0.2)',
                 color: '#fff',
-                '&:hover': { background: 'linear-gradient(135deg, rgba(255,255,255,0.4), rgba(255,255,255,0.2))' }
+                '&:hover': { background: '#1d4ed8' }
               }}
             >
               {loading ? 'Saving…' : recordId ? 'Update Profile' : 'Save Profile'}
@@ -725,19 +799,18 @@ const CompanyProfile = () => {
           {recordId && (
             <Box sx={{
               px: 2, py: 0.75,
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1))',
-              backdropFilter: 'blur(12px)',
-              border: '1px solid rgba(255,255,255,0.4)',
+              borderRadius: '8px',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
             }}>
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
-                ID 🎯
+              <Typography variant="caption" sx={{ color: '#64748b', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.65rem' }}>
+                ID
               </Typography>
-              <Typography variant="subtitle2" sx={{ color: '#fff', fontWeight: 900, textShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <Typography variant="subtitle2" sx={{ color: '#0f172a', fontWeight: 900 }}>
                 #{recordId}
               </Typography>
             </Box>
@@ -746,122 +819,242 @@ const CompanyProfile = () => {
       </Box>
 
       {/* ── Main Profile Content ── */}
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ width: '100%', flexWrap: 'nowrap' }}>
-        {/* Left Column - Branding & Identity */}
-        <Box sx={{ width: { xs: '100%', md: '20%' }, flexShrink: 0 }}>
-          <Paper elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3, p: 2, height: '100%' }}>
-            {sectionTitle('Branding & Identity', IconPhoto)}
-            <Stack spacing={2}>
-              <Box>
-                <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
-                  Company Logo
-                </Typography>
-                <ImageUploadCard
-                  label="Company Logo"
-                  icon={IconPhoto}
-                  field="logoFileName"
-                  preview={form.logoFileName}
-                  onUpload={handleImageUpload}
-                  uploading={uploading.logo}
-                />
-              </Box>
+      <Box sx={{ width: '100%', flexGrow: 1 }} component={motion.div} variants={containerVariants} initial="hidden" animate="show">
+        <Stack spacing={3}>
 
-              <Box>
-                <Typography variant="body2" fontWeight={600} color="text.secondary" mb={1}>
-                  Login Background
-                </Typography>
-                <ImageUploadCard
-                  label="Login Background"
-                  icon={IconLogin}
-                  field="logInBgFileName"
-                  preview={form.logInBgFileName}
-                  onUpload={handleImageUpload}
-                  uploading={uploading.bg}
-                />
-              </Box>
+          {/* Company Details Row (Always Visible at Top) */}
+          <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+            <Grid container spacing={2} columns={24}>
+              <Grid item xs={24} md={8}><TextField {...fieldProps('companyName', 'Company Name*')} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('shortName', 'Short Name')} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('registrationNo', 'Registration No')} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('panNo', 'PAN No')} /></Grid>
+              <Grid item xs={24} md={4}><TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} /></Grid>
 
-
-            </Stack>
+            </Grid>
           </Paper>
-        </Box>
 
-        {/* Right Column - Details, Audit & Config */}
-        <Box sx={{ width: { xs: '100%', md: '80%' }, flexGrow: 1, minWidth: 0 }}>
-          <Grid container spacing={3}>
-            {/* Left Column: Company Details */}
-            <Grid item xs={12} sx={{ flexBasis: { xs: '100%', md: '50%' }, maxWidth: { xs: '100%', md: '50%' } }}>
-              <Paper elevation={0} sx={{ border: '1px solid', borderColor: alpha(theme.palette.divider, 0.6), borderRadius: 4, p: { xs: 2, md: 3 }, boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`, height: '100%' }}>
-                {sectionTitle('Company Details', IconBuilding)}
-                <Stack spacing={2.5}>
-                  <TextField {...fieldProps('companyName', 'Company Name*')} />
-                  <TextField {...fieldProps('shortName', 'Short Name')} />
-                  <TextField {...fieldProps('gstIn', 'GST IN')} inputProps={{ maxLength: 15 }} />
-                  <TextField {...fieldProps('address', 'Address')} multiline rows={4} fullWidth inputProps={{ maxLength: 500 }} />
-                  <DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth />
-                  <DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} fullWidth />
-                  <DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} fullWidth />
-                  <TextField {...fieldProps('stateCode', 'State Code')} inputProps={{ maxLength: 2 }} />
-                  <TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 6 }} />
-                </Stack>
-              </Paper>
-            </Grid>
+          {/* Main Layout (Tabs + Tab Content) */}
+          <Box sx={{ flexGrow: 1, display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
 
-            {/* Center Column: License & Configuration */}
-            <Grid item xs={12} sx={{ flexBasis: { xs: '100%', md: '25%' }, maxWidth: { xs: '100%', md: '25%' } }}>
-              <Paper elevation={0} sx={{ border: '1px solid', borderColor: alpha(theme.palette.divider, 0.6), borderRadius: 4, p: { xs: 2, md: 3 }, boxShadow: `0 4px 20px ${alpha(theme.palette.common.black, 0.03)}`, height: '100%' }}>
-                {sectionTitle('License & Configuration', IconLicense)}
-                <Stack spacing={2.5}>
-                  <TextField {...fieldProps('dbSourceName', 'DB Source Name')} inputProps={{ maxLength: 10 }} disabled={!isSuperUser} />
-                  <TextField
-                    {...fieldProps('directoryPath', 'Document Path')}
-                    disabled={!isSuperUser}
-                    helperText="Root folder where all uploaded files are stored"
-                    InputProps={{
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton color="primary" onClick={handleOpenBrowser} disabled={!isSuperUser} title="Browse Server Folders">
-                            <IconFolderOpen size={20} />
-                          </IconButton>
-                        </InputAdornment>
-                      )
-                    }}
-                  />
-                  <TextField {...fieldProps('licRenewalDate', 'Renewal Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} />
-                  <TextField {...fieldProps('licExpiryDate', 'Expiry Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} />
-                  <TextField {...fieldProps('licExpRemainderDays', 'Exp Remainder Days')} type="number" disabled={!isSuperUser} />
+            {/* Left Side: Vertical Tabs */}
+            <Paper elevation={0} sx={{
+              minWidth: { xs: '100%', md: 260 },
+              border: '1px solid #e2e8f0',
+              borderRadius: 4,
+              bgcolor: '#ffffff',
+              overflow: 'hidden',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+              height: 'fit-content'
+            }}>
+              <Tabs
+                orientation="vertical"
+                variant="scrollable"
+                value={activeTab}
+                onChange={(e, val) => setActiveTab(val)}
+                sx={{
+                  borderRight: 1, borderColor: 'divider',
+                  '& .MuiTab-root': {
+                    alignItems: 'flex-start',
+                    textAlign: 'left',
+                    py: 2.5, px: 3,
+                    fontWeight: 600,
+                    color: '#64748b',
+                    textTransform: 'none',
+                    fontSize: '0.95rem',
+                    borderBottom: '1px solid #f8fafc',
+                    minHeight: 64
+                  },
+                  '& .Mui-selected': {
+                    color: '#2563eb !important',
+                    bgcolor: '#eff6ff',
+                    fontWeight: 700
+                  }
+                }}
+              >
+                <Tab icon={<IconBuilding size={20} />} iconPosition="start" label="Contact & Web" />
+                <Tab icon={<IconPhoto size={20} />} iconPosition="start" label="Branding & Identity" />
+                <Tab icon={<IconSettings2 size={20} />} iconPosition="start" label="App Config" />
+                <Tab icon={<IconSettings2 size={20} />} iconPosition="start" label="SMTP Settings" />
+                <Tab icon={<IconLicense size={20} />} iconPosition="start" label="License Info" />
+                <Tab icon={<IconBrandUnity size={20} />} iconPosition="start" label="System Audit" />
+              </Tabs>
+            </Paper>
 
 
-                  <Box>
-                    {sectionTitle('Preferences', IconSettings2)}
-                    <Stack spacing={2.5}>
-                      <DropdownField
-                        name="inputCaseStyle"
-                        label="Default Input Case Style"
-                        options={['UPPER_CASE', 'PROPER_CASE', 'LOWER_CASE', 'CUSTOM']}
-                        fullWidth
-                      />
-                      <TextField {...fieldProps('restoreEnableDays', 'Restore Enable Days')} type="number" disabled={!isSuperUser} helperText="Grace period" />
-                    </Stack>
-                  </Box>
-                </Stack>
-              </Paper>
-            </Grid>
+            {/* Right Side: Tab Content */}
+            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Box component={motion.div} variants={containerVariants} initial="hidden" animate="show">
 
-            {/* Right Column: System Audit */}
-            <Grid item xs={12} sx={{ flexBasis: { xs: '100%', md: '20%' }, maxWidth: { xs: '100%', md: '20%' } }}>
-              <Paper elevation={0} sx={{ border: '1px dashed', borderColor: alpha(theme.palette.divider, 0.8), borderRadius: 4, p: { xs: 2, md: 3 }, bgcolor: alpha(theme.palette.primary.main, 0.02), height: '100%', boxShadow: `inset 0 4px 20px ${alpha(theme.palette.primary.main, 0.02)}` }}>
-                {sectionTitle('System Audit', IconBrandUnity)}
-                <Stack spacing={2.5}>
-                  <TextField label="Created By" value={form.createdBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser size={16} /></InputAdornment> }} />
-                  <TextField label="Created Date" value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar size={16} /></InputAdornment> }} />
-                  <TextField label="Updated By" value={form.updatedBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser size={16} /></InputAdornment> }} />
-                  <TextField label="Updated Date" value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar size={16} /></InputAdornment> }} />
-                </Stack>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Box>
-      </Stack>
+                {/* Tab 0: Branding & Identity */}
+                {activeTab === 1 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('Branding & Identity', IconPhoto)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={6}>
+                        <ImageUploadCard label="Company Logo" icon={IconPhoto} field="logoFileName" preview={form.logoFileName} onUpload={handleImageUpload} uploading={uploading.logo} />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <ImageUploadCard label="Login Background" icon={IconLogin} field="logInBgFileName" preview={form.logInBgFileName} onUpload={handleImageUpload} uploading={uploading.bg} />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 1: Contact & Web */}
+                {activeTab === 0 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('Contact & Web', IconBuilding)}
+                    <Grid container spacing={4}>
+
+                      {/* Left Column: Address Details */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Address Details</Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12}><TextField {...fieldProps('address', 'Address')} multiline rows={3} fullWidth inputProps={{ maxLength: 500 }} /></Grid>
+                          <Grid item xs={12}><DropdownField name="country" label="Country *" options={COUNTRIES} fullWidth /></Grid>
+                          <Grid item xs={12} sm={6}><DropdownField name="state" label="State *" options={statesForCountry} disabled={!form.country} fullWidth /></Grid>
+                          <Grid item xs={12} sm={6}><DropdownField name="city" label="City *" options={citiesForState} disabled={!form.state} fullWidth /></Grid>
+                          <Grid item xs={12} sm={6}><TextField {...fieldProps('pincode', 'Pincode')} inputProps={{ maxLength: 6 }} /></Grid>
+                        </Grid>
+                      </Grid>
+
+                      {/* Right Column: Other Details */}
+                      <Grid item xs={12} md={6}>
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#475569', fontWeight: 700 }}>Contact Details</Typography>
+                        <Grid container spacing={3} sx={{ height: '100%' }}>
+                          <Grid item xs={12} sm={5}>
+                            <Stack spacing={2.5}>
+                              <TextField {...fieldProps('mobileNo', 'Mobile No')} />
+                              <TextField {...fieldProps('phoneNo', 'Phone No')} />
+                              <TextField {...fieldProps('emailId', 'Email ID')} />
+                              <TextField {...fieldProps('website', 'Website')} />
+                              <TextField {...fieldProps('supportPhone', 'Support Phone')} />
+                              <TextField {...fieldProps('supportEmail', 'Support Email')} />
+                            </Stack>
+                          </Grid>
+                          <Grid item xs={12} sm={7}>
+                            <TextField
+                              name="gmaplink"
+                              value={form.gmaplink}
+                              onChange={handleChange}
+                              placeholder="Google Maps Link"
+                              multiline
+                              rows={14}
+                              fullWidth
+                              sx={{
+
+                                '& textarea': {
+                                  textAlign: 'center',
+                                  fontSize: '1.25rem',
+                                  fontWeight: 500,
+                                  color: '#64748b',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  marginTop: 'auto',
+                                  marginBottom: 'auto'
+                                }
+                              }}
+                              InputProps={{
+                                endAdornment: (
+                                  <InputAdornment position="end" sx={{ height: '100%', maxHeight: 'none', alignItems: 'center', ml: 1 }}>
+                                    {form.gmaplink && (
+                                      <Tooltip title="View Map">
+                                        <IconButton sx={{ color: '#0ea5e9', mr: 1 }} onClick={() => window.open(form.gmaplink, '_blank')}>
+                                          <IconExternalLink size={28} />
+                                        </IconButton>
+                                      </Tooltip>
+                                    )}
+                                    <Tooltip title="Pick Location">
+                                      <IconButton sx={{ color: '#2563eb', bgcolor: '#eff6ff', borderRadius: 2, p: 1.5 }} onClick={openMapDialog}>
+                                        <IconMapPin size={36} />
+                                      </IconButton>
+                                    </Tooltip>
+                                  </InputAdornment>
+                                )
+                              }}
+                            />
+                          </Grid>
+                        </Grid>
+                      </Grid>
+
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 2: SMTP Settings */}
+                {activeTab === 3 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('SMTP Settings', IconSettings2)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('smtpHost', 'SMTP Host')} /></Grid>
+                      <Grid item xs={12} md={2}><TextField {...fieldProps('smtpPort', 'SMTP Port')} type="number" /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('smtpUsername', 'SMTP Username')} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('smtpPassword', 'SMTP Password')} type="password" /></Grid>
+                      <Grid item xs={12} md={1} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <input type="checkbox" id="smtpSslEnabled" checked={form.smtpSslEnabled} onChange={(e) => handleChange({ target: { name: 'smtpSslEnabled', value: e.target.checked } })} />
+                          <label htmlFor="smtpSslEnabled" style={{ fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a' }}>SSL</label>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 3: License Info */}
+                {activeTab === 4 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('License Info', IconLicense)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('dbSourceName', 'DB Source Name')} inputProps={{ maxLength: 10 }} disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('licRenewalDate', 'Renewal Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('licExpiryDate', 'Expiry Date')} type="date" InputLabelProps={{ shrink: true }} disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('licExpRemainderDays', 'Exp Remainder Days')} type="number" disabled={!isSuperUser} /></Grid>
+                      <Grid item xs={12} md={3}><TextField {...fieldProps('restoreEnableDays', 'Restore Enable Days')} type="number" disabled={!isSuperUser} helperText="Grace period" /></Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField {...fieldProps('directoryPath', 'Document Path')} disabled={!isSuperUser} InputProps={{ endAdornment: (<InputAdornment position="end"><IconButton sx={{ color: '#2563eb' }} onClick={handleOpenBrowser} disabled={!isSuperUser}><IconFolderOpen size={20} /></IconButton></InputAdornment>) }} />
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 4: App Config */}
+                {activeTab === 2 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #e2e8f0', borderRadius: 4, p: 3, background: '#ffffff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025)' }}>
+                    {sectionTitle('App Config', IconSettings2)}
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} md={4}><DropdownField name="inputCaseStyle" label="Default Input Case Style" options={['UPPER_CASE', 'PROPER_CASE', 'LOWER_CASE', 'CUSTOM']} fullWidth /></Grid>
+                      <Grid item xs={12} md={4}><TextField {...fieldProps('decimalPlaces', 'Decimal Places')} type="number" inputProps={{ min: 0, max: 10 }} /></Grid>
+                      <Grid item xs={12} md={4}><DropdownField name="currencyCode" label="Currency Code" options={CURRENCIES} fullWidth /></Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+                {/* Tab 5: System Audit */}
+                {activeTab === 5 && (
+                  <Paper elevation={0} component={motion.div} variants={itemVariants} sx={{ border: '1px solid #cbd5e1', borderRadius: 4, p: 3, background: '#f8fafc', boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.02)' }}>
+                    {sectionTitle('System Audit', IconBrandUnity)}
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={2} sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <input type="checkbox" id="auditLogEnabled" checked={form.auditLogEnabled} onChange={(e) => handleChange({ target: { name: 'auditLogEnabled', value: e.target.checked } })} />
+                          <label htmlFor="auditLogEnabled" style={{ fontSize: '0.85rem', cursor: 'pointer', fontWeight: 600, color: '#0f172a' }}>Enable Audit Logs</label>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Created By" value={form.createdBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Created Date" value={form.createdDate ? new Date(form.createdDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Updated By" value={form.updatedBy} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconUser color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                      <Grid item xs={12} md={2.5}><TextField label="Updated Date" value={form.updatedDate ? new Date(form.updatedDate).toLocaleString() : ''} fullWidth size="small" InputProps={{ readOnly: true, startAdornment: <InputAdornment position="start"><IconCalendar color="#64748b" size={16} /></InputAdornment> }} /></Grid>
+                    </Grid>
+                  </Paper>
+                )}
+
+              </Box>
+            </Box>
+          </Box>
+        </Stack>
+      </Box>
 
       {/* Database Case Style Update Confirmation Dialog */}
       <Dialog open={casePromptOpen} onClose={() => !databaseUpdating && setCasePromptOpen(false)} maxWidth="sm" fullWidth>
@@ -884,16 +1077,16 @@ const CompanyProfile = () => {
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setCasePromptOpen(false)} disabled={databaseUpdating || loading}>Cancel</Button>
-          <Button 
-            variant="outlined" 
+          <Button
+            variant="outlined"
             onClick={() => { setCasePromptOpen(false); executeSave(false); }}
             disabled={databaseUpdating || loading}
           >
             Future Data Only
           </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
+          <Button
+            variant="contained"
+            color="error"
             onClick={() => { setCasePromptOpen(false); executeSave(true); }}
             disabled={databaseUpdating || loading}
             startIcon={databaseUpdating || loading ? <CircularProgress size={20} color="inherit" /> : null}
@@ -904,6 +1097,36 @@ const CompanyProfile = () => {
       </Dialog>
 
       <FolderBrowserDialog />
+
+      {/* Map Picker Dialog */}
+      <Dialog open={mapDialogOpen} onClose={() => setMapDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>Pick Location from Map</DialogTitle>
+        <DialogContent dividers sx={{ p: 0, height: 400 }}>
+          <RMap initialCenter={[mapMarker.longitude, mapMarker.latitude]} initialZoom={12} mapStyle={osm_bright}>
+            <RMarker
+              longitude={mapMarker.longitude}
+              latitude={mapMarker.latitude}
+              draggable={true}
+              initialAnchor="bottom"
+              onDrag={handleMarkerDrag}
+            />
+          </RMap>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={handleGetCurrentLocation}
+            color="secondary"
+            startIcon={<IconCurrentLocation size={18} />}
+            sx={{ mr: 'auto' }}
+          >
+            Live Location
+          </Button>
+          <Button onClick={() => setMapDialogOpen(false)} color="inherit">Cancel</Button>
+          <Button variant="contained" onClick={handleMapSave} startIcon={<IconMapPin size={18} />}>
+            Use this Location
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* ── Snackbar ── */}
       <Snackbar

@@ -183,10 +183,13 @@ public class NcrOfiService {
     }
 
     @Transactional
-    public void approveNcr(Number observationDetailId) {
+    public void approveNcr(Number observationDetailId, String remarks) {
         observationDetailRepository.findById(observationDetailId.longValue()).ifPresent(detail -> {
             detail.setApprovalStatus("CLOSED");
             detail.setNcrStatus("CLOSED");
+            if (remarks != null && !remarks.trim().isEmpty()) {
+                detail.setComments(remarks);
+            }
             observationDetailRepository.save(detail);
             
             ncrOfiMasterRepository.findFirstByObservationDetailIdOrderByIdDesc(observationDetailId.intValue()).ifPresent(master -> {

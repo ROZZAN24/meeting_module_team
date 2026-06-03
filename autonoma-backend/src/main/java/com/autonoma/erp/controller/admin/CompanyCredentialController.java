@@ -186,6 +186,24 @@ public class CompanyCredentialController {
             existing.setRestoreEnableDays(details.getRestoreEnableDays());
             existing.setInputCaseStyle(details.getInputCaseStyle());
 
+            existing.setRegistrationNo(details.getRegistrationNo());
+            existing.setPanNo(details.getPanNo());
+            existing.setMobileNo(details.getMobileNo());
+            existing.setPhoneNo(details.getPhoneNo());
+            existing.setEmailId(details.getEmailId());
+            existing.setWebsite(details.getWebsite());
+            existing.setSupportEmail(details.getSupportEmail());
+            existing.setSupportPhone(details.getSupportPhone());
+            existing.setGmaplink(details.getGmaplink());
+            existing.setDecimalPlaces(details.getDecimalPlaces());
+            existing.setCurrencyCode(details.getCurrencyCode());
+            existing.setSmtpHost(details.getSmtpHost());
+            existing.setSmtpPort(details.getSmtpPort());
+            existing.setSmtpUsername(details.getSmtpUsername());
+            existing.setSmtpPassword(details.getSmtpPassword());
+            existing.setSmtpSslEnabled(details.getSmtpSslEnabled());
+            existing.setAuditLogEnabled(details.getAuditLogEnabled());
+
             if (details.getLogoFileName() != null)
                 existing.setLogoFileName(details.getLogoFileName());
             if (details.getLogInBgFileName() != null)

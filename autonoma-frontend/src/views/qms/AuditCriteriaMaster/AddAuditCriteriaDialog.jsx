@@ -517,7 +517,7 @@ const AddAuditCriteriaDialog = ({ open, handleClose, initialData, readOnly = fal
             <BOSFileUpload
               files={attachments}
               onChange={setAttachments}
-              module="QMS"
+              module="MASTER_QMS_AUDIT_AUDIT_CRITERIA"
               multiple={true}
               disabled={isViewOnly}
             />
