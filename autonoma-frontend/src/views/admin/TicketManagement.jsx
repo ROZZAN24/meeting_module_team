@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 import ReactQuillDemo from 'ui-component/third-party/ReactQuill';
+import BOSFilePreview from 'ui-component/bos/BOSFilePreview';
 
 // assets
 import CloseIcon from '@mui/icons-material/Close';
@@ -150,7 +151,7 @@ const getFileTypeDisplay = (name) => {
 const isPreviewable = (name) => {
   if (!name) return false;
   const ext = name.split('.').pop().toLowerCase();
-  return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext);
+  return ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp', 'xls', 'xlsx', 'doc', 'docx', 'csv', 'txt'].includes(ext);
 };
 
 // ==============================|| TICKET MANAGEMENT CENTER ||============================== //
@@ -798,7 +799,7 @@ export default function TicketManagement({ viewType }) {
   // Handle Escape to close details
   useEffect(() => {
     const handleEscapeShortcut = (e) => {
-      if (e.key === 'Escape' && detailsOpen) {
+      if (e.key === 'Escape' && detailsOpen && !previewModalOpen) {
         e.preventDefault();
         setDetailsOpen(false);
         setSelectedTicket(null);
@@ -806,7 +807,7 @@ export default function TicketManagement({ viewType }) {
     };
     window.addEventListener('keydown', handleEscapeShortcut, { capture: true });
     return () => window.removeEventListener('keydown', handleEscapeShortcut, { capture: true });
-  }, [detailsOpen]);
+  }, [detailsOpen, previewModalOpen]);
 
   // When a ticket is selected, load its comments/timeline
   useEffect(() => {
@@ -2988,7 +2989,7 @@ export default function TicketManagement({ viewType }) {
                                       )}
                                       <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                                         {!isVoice && (
-                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => { setPreviewFileData({ url: `/api/files/view?path=${encodeURIComponent(file.filePath)}`, name: file.fileName, type: getFileTypeDisplay(file.fileName) }); setPreviewModalOpen(true); }}>
                                             Preview
                                           </Button>
                                         )}
@@ -3023,7 +3024,7 @@ export default function TicketManagement({ viewType }) {
                                       )}
                                       <Box sx={{ display: 'flex', gap: 1, flexShrink: 0 }}>
                                         {!isVoice && (
-                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => window.open(`/api/files/view?path=${encodeURIComponent(file.filePath)}`)}>
+                                          <Button size="small" variant="outlined" sx={{ py: 0.25, px: 1, fontSize: '0.75rem', minWidth: 'auto' }} onClick={() => { setPreviewFileData({ url: `/api/files/view?path=${encodeURIComponent(file.filePath)}`, name: file.fileName, type: getFileTypeDisplay(file.fileName) }); setPreviewModalOpen(true); }}>
                                             Preview
                                           </Button>
                                         )}
@@ -3542,24 +3543,12 @@ export default function TicketManagement({ viewType }) {
 
 
         {/* INLINE ATTACHMENT PREVIEW */}
-        <Dialog open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '12px', height: '80vh', zIndex: 1400 } }}>
-          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', py: 1.5 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <VisibilityIcon sx={{ color: '#64748b' }} />
-              <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{previewFileData?.name}</Typography>
-            </Box>
-            <IconButton onClick={() => setPreviewModalOpen(false)} size="small" sx={{ color: '#64748b' }}>
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent sx={{ p: 0, bgcolor: '#e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            {previewFileData?.type === 'PDF' ? (
-              <iframe src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
-            ) : (
-              <img src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-            )}
-          </DialogContent>
-        </Dialog>
+        <BOSFilePreview 
+          open={previewModalOpen} 
+          onClose={() => setPreviewModalOpen(false)} 
+          url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''} 
+          fileName={previewFileData?.name} 
+        />
       </Box>
     );
   }
@@ -4645,24 +4634,12 @@ export default function TicketManagement({ viewType }) {
       </Dialog>
 
       {/* ── DIALOG: INLINE ATTACHMENT PREVIEW ── */}
-      <Dialog open={previewModalOpen} onClose={() => setPreviewModalOpen(false)} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '12px', height: '80vh' } }}>
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: '#f8fafc', borderBottom: '1px solid #e2e8f0', py: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <VisibilityIcon sx={{ color: '#64748b' }} />
-            <Typography variant="h6" sx={{ fontWeight: 600, color: '#334155' }}>{previewFileData?.name}</Typography>
-          </Box>
-          <IconButton onClick={() => setPreviewModalOpen(false)} size="small" sx={{ color: '#64748b' }}>
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent sx={{ p: 0, bgcolor: '#e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {previewFileData?.type === 'PDF' ? (
-            <iframe src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} style={{ width: '100%', height: '100%', border: 'none' }} title="PDF Preview" />
-          ) : (
-            <img src={`/api/files/view?path=${encodeURIComponent(previewFileData?.url)}`} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-          )}
-        </DialogContent>
-      </Dialog>
+      <BOSFilePreview 
+        open={previewModalOpen} 
+        onClose={() => setPreviewModalOpen(false)} 
+        url={previewFileData?.url ? (previewFileData.url.startsWith('/api/') ? previewFileData.url : `/api/files/view?path=${encodeURIComponent(previewFileData.url)}`) : ''} 
+        fileName={previewFileData?.name} 
+      />
 
       {/* Snackbar notification feedback */}
       <Snackbar open={snackbar.open} autoHideDuration={5000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
