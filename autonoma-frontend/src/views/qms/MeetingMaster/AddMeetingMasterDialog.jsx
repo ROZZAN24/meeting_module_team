@@ -150,7 +150,7 @@ const AddMeetingMasterDialog = ({ open, onClose, onSave, item, existingData = []
         const formData = new FormData();
         formData.append('file', selectedFile);
         try {
-          const uploadRes = await axios.post('/api/files/upload?module=meeting_master', formData, {
+          const uploadRes = await axios.post('/api/files/upload?module=MASTER_QMS_MEETING_MEETING_MASTER', formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
           });
           finalForm.attachmentUrl = uploadRes.data;
