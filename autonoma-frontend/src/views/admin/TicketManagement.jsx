@@ -14,6 +14,7 @@ import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
 import { format } from 'date-fns';
+import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import { setFilterConfig, resetFilters } from 'store/slices/search';
 import ReactQuillDemo from 'ui-component/third-party/ReactQuill';
 
@@ -160,6 +161,8 @@ export default function TicketManagement({ viewType }) {
   const { user } = useAuth();
 
   const currentViewType = viewType || (window.location.pathname.includes('ticket-by-me') ? 'raised-by-me' : 'raised-for-me');
+  const perms = usePagePermissions(currentViewType === 'raised-by-me' ? PAGE_CODES.SUPPORT_RAISED_BY_ME : PAGE_CODES.SUPPORT_RAISED_FOR_ME);
+  const hasCompanyAccess = perms.additional2;
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
@@ -174,6 +177,7 @@ export default function TicketManagement({ viewType }) {
 
   // Core Data States
   const [tickets, setTickets] = useState([]);
+  const [usersList, setUsersList] = useState([]);
   const [pagesData, setPagesData] = useState([]);
   const [employeesList, setEmployeesList] = useState([]);
   const [companiesList, setCompaniesList] = useState([]);
@@ -650,10 +654,31 @@ export default function TicketManagement({ viewType }) {
   // Snackbar Notification State
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
-  // Register Global Filter config on Mount
+  // Register Global Filter config on Mount or when access/employees change
   useEffect(() => {
+    const myName = (user?.name || '').toLowerCase();
+    const isVerticalHead = employeesList.some(e => e.verticalHead && e.verticalHead.toLowerCase() === myName);
+    
+    const taskScopeOptions = [
+      { value: 'Mine', label: 'Mine' }
+    ];
+    if (isVerticalHead) {
+      taskScopeOptions.push({ value: 'Team', label: 'Team' });
+    }
+    if (hasCompanyAccess) {
+      taskScopeOptions.push({ value: 'Company', label: 'Company' });
+    }
+
     const config = [
       { id: 'ticketId', label: 'Ticket ID', type: 'text', isStarred: true },
+      {
+        id: 'taskScope',
+        label: 'Task Scope',
+        type: 'select',
+        options: taskScopeOptions,
+        defaultValue: 'Mine',
+        isStarred: true
+      },
       {
         id: 'ticketType',
         label: 'Ticket Type',
@@ -706,11 +731,12 @@ export default function TicketManagement({ viewType }) {
       dispatch(setFilterConfig(null));
       dispatch(resetFilters());
     };
-  }, [dispatch]);
+  }, [dispatch, employeesList, hasCompanyAccess, user]);
 
   // Load ticket details on mount
   useEffect(() => {
     fetchTickets();
+    fetchUsers();
     fetchPages();
     fetchAllEmployees();
     fetchAllCompanies();
@@ -919,6 +945,15 @@ export default function TicketManagement({ viewType }) {
       showSnackbar('Failed to load support tickets', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await axios.get('/api/users/all');
+      setUsersList(res.data || []);
+    } catch (err) {
+      console.error("Failed to load users", err);
     }
   };
 
@@ -1989,47 +2024,86 @@ export default function TicketManagement({ viewType }) {
   // Base view level filtering for Raised For Me vs Raised By Me
   const baseFilteredTickets = useMemo(() => {
     return tickets.filter((t) => {
-      const myName = (user?.name || '').toLowerCase();
-      const myEmail = (user?.email || '').toLowerCase();
-      const myUsername = (user?.username || '').toLowerCase();
+      const myName = (user?.name || '').trim().toLowerCase();
+      const myEmail = (user?.email || '').trim().toLowerCase();
+      const myUsername = (user?.username || '').trim().toLowerCase();
 
+      // Map current user ID (a.USER_ID)
+      const currentUserId = (user?.username || '').trim().toLowerCase();
+      const currentUserName = (user?.name || '').trim().toLowerCase();
+      
       let myEmpName = '';
       if (user?.empId && employeesList) {
-        const emp = employeesList.find(e => e.id === user.empId || e.empCode === user.empId || e.employeeCode === user.empId);
-        if (emp && emp.employeeName) myEmpName = emp.employeeName.toLowerCase();
+        const emp = employeesList.find(e => e.id == user.empId || e.empCode == user.empId || e.employeeCode == user.empId);
+        if (emp && emp.employeeName) myEmpName = emp.employeeName.trim().toLowerCase();
       }
+
+      // Build Team User IDs & Names based on: Vertical Head -> EMP_ID -> USER_ID
+      const teamIdentifiers = [];
+      employeesList.forEach(b => {
+         const vHead = (b.verticalHead || '').trim().toLowerCase();
+         if (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName))) {
+            if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
+            if (b.officeMail) {
+               const mail = b.officeMail.trim().toLowerCase();
+               teamIdentifiers.push(mail);
+               if (mail.includes('@')) teamIdentifiers.push(mail.split('@')[0]);
+            }
+            const c = usersList.find(u => u.empId == b.id);
+            if (c && c.userId) {
+               teamIdentifiers.push(c.userId.trim().toLowerCase());
+            }
+         }
+      });
+      // Add current user to their own team view
+      teamIdentifiers.push(currentUserId);
+      teamIdentifiers.push(currentUserName);
+      if (myEmpName) teamIdentifiers.push(myEmpName);
+
+      const scope = globalFilters?.taskScope || 'Mine';
+
+      const matchTeam = (field) => {
+         if (!field) return false;
+         const f = field.toLowerCase();
+         return teamIdentifiers.includes(f) || teamIdentifiers.some(m => m && (f.includes(m) || m.includes(f)));
+      };
 
       if (currentViewType === 'raised-for-me') {
-        if (accessLevel === 'Mine') {
-          const assignedTo = (t.assignedTo || '').toLowerCase();
-          const devName = (t.developerName || '').toLowerCase();
-          const devEmail = (t.developerEmail || '').toLowerCase();
-          return assignedTo === myName || assignedTo === myUsername || assignedTo === myEmpName || devName === myName || devName === myEmpName || devEmail === myEmail;
-        } else if (accessLevel === 'My Team') {
-          const tDept = (t.department || '').toLowerCase();
-          const userDept = (formDeptName || '').toLowerCase();
-          return userDept && tDept === userDept;
-        } else if (accessLevel === 'My Company') {
-          return true;
-        }
-        return false;
-      } else {
-        const createdBy = (t.createdBy || '').toLowerCase();
-        const email = (t.email || '').toLowerCase();
-        const empName = (t.employeeName || '').toLowerCase();
-        const verifiedBy = (t.verifiedBy || t.verifierName || '').toLowerCase();
-        const matchesRaisedByMe = createdBy === myUsername || createdBy === myEmail || createdBy === myEmpName || email === myEmail || empName === myName || empName === myEmpName || verifiedBy === myUsername || verifiedBy === myEmail || verifiedBy === myName || (myEmpName && verifiedBy === myEmpName);
-        if (!matchesRaisedByMe) return false;
+        const assignedTo = (t.assignedTo || t.developerName || '').toLowerCase();
+        const createdBy = (t.createdBy || t.assignedBy || '').toLowerCase();
 
-        if (raisedToFilter) {
-          const assignedTo = (t.assignedTo || '').toLowerCase();
-          const targetRaisedTo = raisedToFilter.toLowerCase();
-          if (assignedTo !== targetRaisedTo) return false;
+        if (scope !== 'Company') {
+           if (scope === 'Team') {
+              // SQL for Request for me: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.created_by
+              if (!matchTeam(createdBy)) return false;
+           } else {
+              // Default 'Mine'
+              if (assignedTo !== currentUserId && assignedTo !== currentUserName && assignedTo !== myEmpName && !(myEmpName && assignedTo.includes(myEmpName))) return false;
+           }
         }
-        return true;
+      } else {
+        const createdBy = (t.createdBy || t.assignedBy || '').toLowerCase();
+        const assignedTo = (t.assignedTo || t.developerName || '').toLowerCase();
+        
+        if (scope !== 'Company') {
+           if (scope === 'Team') {
+              // SQL for My request: inner join TICKET_TRACEABILITY_CENTER d on c.USER_ID=d.assigned_to
+              if (!matchTeam(assignedTo)) return false;
+           } else {
+              // Default 'Mine'
+              if (createdBy !== currentUserId && createdBy !== currentUserName && createdBy !== myEmpName && !(myEmpName && createdBy.includes(myEmpName))) return false;
+           }
+        }
       }
+
+      if (raisedToFilter) {
+        const assignedTo = (t.assignedTo || '').toLowerCase();
+        const targetRaisedTo = raisedToFilter.toLowerCase();
+        if (assignedTo !== targetRaisedTo) return false;
+      }
+      return true;
     });
-  }, [tickets, currentViewType, accessLevel, user, formDeptName, raisedToFilter, employeesList]);
+  }, [tickets, currentViewType, globalFilters, user, raisedToFilter, employeesList, usersList]);
 
   // Statistics KPIs
   const stats = useMemo(() => {
@@ -2328,7 +2402,7 @@ export default function TicketManagement({ viewType }) {
   const activeDevelopersForSelectedPage = useMemo(() => {
     if (!formPage || !tickets) return [];
     const activeTickets = tickets.filter(t =>
-      t.pageId === formPage.pageId &&
+      String(t.pageId) === String(formPage.pageId) &&
       t.ticketStatus !== 'Completed' &&
       t.ticketStatus !== 'To Be Tested' &&
       t.ticketStatus !== 'Closed' &&
@@ -3563,7 +3637,9 @@ export default function TicketManagement({ viewType }) {
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700 }}>Ticket ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Title / Page Name</TableCell>
-                  <TableCell sx={{ fontWeight: 700, minWidth: 220 }}>Assigned To</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned To</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned By</TableCell>
+                  <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Verified By</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Priority</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 120 }}>Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Target Date</TableCell>
@@ -3601,18 +3677,20 @@ export default function TicketManagement({ viewType }) {
                             {getPageDisplay(t)}
                           </Typography>
                         </TableCell>
-                        <TableCell sx={{ minWidth: 220 }}>
+                        <TableCell sx={{ minWidth: 140 }}>
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.developerName || t.assignedTo || 'Unassigned'}</Typography>
-                          {t.developerEmail && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              Email: {t.developerEmail}
-                            </Typography>
-                          )}
+
                           {t.developerMobileNo && (
                             <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                               Mobile: {t.developerMobileNo}
                             </Typography>
                           )}
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.employeeName || t.createdBy}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>{t.verifiedBy || '-'}</Typography>
                         </TableCell>
                         <TableCell>
                           <Chip

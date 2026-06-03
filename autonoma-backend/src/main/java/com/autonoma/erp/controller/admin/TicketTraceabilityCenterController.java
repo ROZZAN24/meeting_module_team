@@ -87,48 +87,12 @@ public class TicketTraceabilityCenterController {
     }
 
     @GetMapping
-    @Operation(summary = "Get All Tickets", description = "Fetches tickets list based on current user roles")
+    @Operation(summary = "Get All Tickets", description = "Fetches tickets list. Scope filtering (Mine/Team/Company) is handled by the frontend.")
     public List<TicketTraceabilityCenter> getAllTickets() {
         log.info("Fetching tickets");
-        List<TicketTraceabilityCenter> allTickets = ticketRepository.findAllByOrderByCreatedAtDesc();
-        boolean isAdmin = isUserSuperAdmin();
-        String currentUserId = getCurrentUser();
-        String currentUserEmail = currentUserId;
-        String currentUserName = currentUserId;
-        
-        Optional<UserCredential> userOpt = userRepository.findByUserId(currentUserId);
-        if (userOpt.isPresent()) {
-            UserCredential user = userOpt.get();
-            if (user.getEmpId() != null) {
-                Optional<EmployeeMaster> empOpt = employeeMasterRepository.findById(user.getEmpId());
-                if (empOpt.isPresent()) {
-                    EmployeeMaster emp = empOpt.get();
-                    if (emp.getOfficeMail() != null) currentUserEmail = emp.getOfficeMail();
-                    if (emp.getEmployeeName() != null) currentUserName = emp.getEmployeeName();
-                }
-            }
-        }
-
-        List<TicketTraceabilityCenter> filtered = new ArrayList<>();
-        for (TicketTraceabilityCenter t : allTickets) {
-            if (isAdmin) {
-                filtered.add(t);
-                continue;
-            }
-
-            boolean isCreator = t.getCreatedBy() != null && (t.getCreatedBy().equalsIgnoreCase(currentUserId) || t.getCreatedBy().equalsIgnoreCase(currentUserName));
-            boolean isEmail = t.getEmail() != null && t.getEmail().equalsIgnoreCase(currentUserEmail);
-            boolean isEmpName = t.getEmployeeName() != null && t.getEmployeeName().equalsIgnoreCase(currentUserName);
-            boolean isVerifier = t.getVerifiedBy() != null && (t.getVerifiedBy().equalsIgnoreCase(currentUserId) || t.getVerifiedBy().equalsIgnoreCase(currentUserName) || t.getVerifiedBy().equalsIgnoreCase(currentUserEmail));
-            boolean isAssignee = t.getAssignedTo() != null && (t.getAssignedTo().equalsIgnoreCase(currentUserId) || t.getAssignedTo().equalsIgnoreCase(currentUserName));
-            boolean isDev = t.getDeveloperName() != null && t.getDeveloperName().equalsIgnoreCase(currentUserName);
-            boolean isDevEmail = t.getDeveloperEmail() != null && t.getDeveloperEmail().equalsIgnoreCase(currentUserEmail);
-
-            if (isCreator || isEmail || isEmpName || isVerifier || isAssignee || isDev || isDevEmail) {
-                filtered.add(t);
-            }
-        }
-        return filtered;
+        // Returning all tickets here. The frontend TicketManagement.jsx strictly filters 
+        // these based on the user's role (Mine, Team, Company) and permissions.
+        return ticketRepository.findAllByOrderByCreatedAtDesc();
     }
 
     @GetMapping("/{rowId}")

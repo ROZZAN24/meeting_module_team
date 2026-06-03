@@ -45,7 +45,9 @@ export default function usePagePermissions(pageCode) {
         delete: true,
         export: true,
         approval: true,
-        manager: true
+        manager: true,
+        additional1: true,
+        additional2: true
       };
     }
 
@@ -59,7 +61,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -78,7 +82,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -92,7 +98,9 @@ export default function usePagePermissions(pageCode) {
         delete: false,
         export: false,
         approval: false,
-        manager: false
+        manager: false,
+        additional1: false,
+        additional2: false
       };
     }
 
@@ -105,7 +113,9 @@ export default function usePagePermissions(pageCode) {
       delete: pageAuth.deleteAcs === 1,
       export: pageAuth.export === 1,
       approval: pageAuth.approval === 1,
-      manager: pageAuth.manager === 1
+      manager: pageAuth.manager === 1,
+      additional1: pageAuth.additional1 === 1,
+      additional2: pageAuth.additional2 === 1
     };
   }, [auths, pageCode, isLoading]);
 }
