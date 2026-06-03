@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Typography, Button, Stack, Tooltip, IconButton, MenuItem, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip
+  Typography, Button, Stack, Tooltip, IconButton, MenuItem, Grid, Box, Tabs, Tab, Card, CardContent, FormControlLabel, InputAdornment, Divider, Paper, Table, TableHead, TableRow, TableCell, TableBody, TableContainer, Chip, Checkbox
 } from '@mui/material';
 import axios from 'utils/axios';
 import {
@@ -30,6 +30,25 @@ import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
 
 // ==============================|| APPLICATION TRACKING SYSTEM ||============================== //
+
+const GridContainer = ({ children, columns = { xs: 1, sm: 2, md: 3 } }) => {
+  const templateColumns = typeof columns === 'object'
+    ? { xs: `repeat(${columns.xs || 1}, 1fr)`, sm: `repeat(${columns.sm || 2}, 1fr)`, md: `repeat(${columns.md || 3}, 1fr)` }
+    : `repeat(${columns}, 1fr)`;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: templateColumns, gap: 2.5, width: '100%' }}>
+      {children}
+    </Box>
+  );
+};
+
+const R = ({ children, lg }) => {
+  let gridColumn = 'span 1';
+  if (lg === 6) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 8) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 2' };
+  if (lg === 12) gridColumn = { xs: 'span 1', sm: 'span 2', md: 'span 3' };
+  return <Box sx={{ gridColumn, width: '100%' }}>{children}</Box>;
+};
 
 const getTodayDateString = () => {
   const today = new Date();
@@ -1452,255 +1471,249 @@ export default function ApplicationTrackingSystem() {
           setErrors({});
         }}
       >
-        <Grid container spacing={3}>
+        <Stack spacing={3}>
           {/* ── TOP SECTION: Main Registry Form ── */}
-          <Grid item xs={12}>
-            <Card variant="outlined" sx={{ border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
-                  <IconUser size={20} /> BASIC REGISTRATION DETAILS
-                </Typography>
-                <Grid container spacing={2.5}>
-                  {/* Row 1: Registry Details */}
-                  <Grid item xs={12} sm={6} md={3}>
+          <Card variant="outlined" sx={{ width: '100%', border: '1px solid', borderColor: 'divider', borderRadius: '16px', bgcolor: 'rgba(33, 150, 243, 0.02)', mb: 1 }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h5" color="primary" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700 }}>
+                <IconUser size={20} /> BASIC REGISTRATION DETAILS
+              </Typography>
+              <GridContainer>
+                <R>
+                  <BOSTextField
+                    required
+                    label="Enrolled NO"
+                    name="enRolledNo"
+                    value={formData.enRolledNo}
+                    onChange={handleInputChange}
+                    placeholder="ATS-2026-001"
+                    error={!!errors.enRolledNo}
+                    helperText={errors.enRolledNo}
+                    sx={errorStyle(!!errors.enRolledNo)}
+                  />
+                </R>
+                <R>
+                  <BOSDatePicker
+                    label="Applicant Date"
+                    name="applicantDate"
+                    value={formData.applicantDate}
+                    onChange={handleInputChange}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    select
+                    required
+                    label="Position Look For"
+                    name="positionLookFor"
+                    value={formData.positionLookFor}
+                    onChange={handleInputChange}
+                    error={!!errors.positionLookFor}
+                    helperText={errors.positionLookFor}
+                    sx={errorStyle(!!errors.positionLookFor)}
+                  >
+                    <MenuItem value="">-SELECT-</MenuItem>
+                    {designations.map(d => (
+                      <MenuItem key={d.id} value={d.designationName || d.id.toString()}>{d.designationName}</MenuItem>
+                    ))}
+                    <MenuItem value="Software Engineer">Software Engineer</MenuItem>
+                    <MenuItem value="HR Executive">HR Executive</MenuItem>
+                    <MenuItem value="Quality Auditor">Quality Auditor</MenuItem>
+                  </BOSTextField>
+                </R>
+                <R>
+                  <BOSTextField
+                    select
+                    required
+                    label="Department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    error={!!errors.department}
+                    helperText={errors.department}
+                    sx={errorStyle(!!errors.department)}
+                  >
+                    <MenuItem value="">-SELECT-</MenuItem>
+                    {departments.map(d => (
+                      <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </R>
+
+                <R>
+                  <BOSTextField
+                    select
+                    label="Title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleInputChange}
+                  >
+                    {TITLE_OPTIONS.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </R>
+                <R>
+                  <BOSTextField
+                    required
+                    label="First Name"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    error={!!errors.firstName}
+                    helperText={errors.firstName}
+                    sx={errorStyle(!!errors.firstName)}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    required
+                    label="Last Name"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    error={!!errors.lastName}
+                    helperText={errors.lastName}
+                    sx={errorStyle(!!errors.lastName)}
+                  />
+                </R>
+                <R>
+                  <BOSDatePicker
+                    required
+                    label="Birth Date"
+                    name="birthDate"
+                    value={formData.birthDate}
+                    onChange={handleInputChange}
+                    error={!!errors.birthDate}
+                    helperText={errors.birthDate}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    label="Age"
+                    name="age"
+                    value={formData.age}
+                    disabled
+                    InputProps={{ readOnly: true }}
+                  />
+                </R>
+
+                <R>
+                  <BOSTextField
+                    required
+                    label="Mobile No"
+                    name="mobileNo"
+                    value={formData.mobileNo}
+                    onChange={handleInputChange}
+                    placeholder="10-digit number"
+                    error={!!errors.mobileNo}
+                    helperText={errors.mobileNo}
+                    sx={errorStyle(!!errors.mobileNo)}
+                  />
+                </R>
+                <R>
+                  <BOSTextField
+                    required
+                    label="Email ID"
+                    name="emailId"
+                    value={formData.emailId}
+                    onChange={handleInputChange}
+                    placeholder="example@mail.com"
+                    error={!!errors.emailId}
+                    helperText={errors.emailId}
+                    sx={errorStyle(!!errors.emailId)}
+                  />
+                </R>
+                <R>
+                  <Stack spacing={1}>
                     <BOSTextField
                       required
-                      label="Enrolled NO"
-                      name="enRolledNo"
-                      value={formData.enRolledNo}
+                      label="Aadhar No"
+                      name="aadharNo"
+                      value={formData.aadharNo}
                       onChange={handleInputChange}
-                      placeholder="ATS-2026-001"
-                      error={!!errors.enRolledNo}
-                      helperText={errors.enRolledNo}
-                      sx={errorStyle(!!errors.enRolledNo)}
+                      placeholder="12-digit number"
+                      error={!!errors.aadharNo}
+                      helperText={errors.aadharNo}
+                      sx={errorStyle(!!errors.aadharNo)}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSDatePicker
-                      label="Applicant Date"
-                      name="applicantDate"
-                      value={formData.applicantDate}
-                      onChange={handleInputChange}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.duplicateAadhar}
+                          onChange={handleInputChange}
+                          name="duplicateAadhar"
+                          size="small"
+                        />
+                      }
+                      label="I know its duplicate Aadhaar No"
+                      sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem', fontWeight: 600 } }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </Stack>
+                </R>
+
+                <R>
+                  <BOSTextField
+                    select
+                    label="Ref Mode"
+                    name="refMode"
+                    value={formData.refMode}
+                    onChange={handleInputChange}
+                  >
+                    <MenuItem value="">-Select-</MenuItem>
+                    {REF_MODES.map(opt => (
+                      <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                    ))}
+                  </BOSTextField>
+                </R>
+
+                {formData.refMode === 'EMPLOYEE' && (
+                  <R lg={8}>
                     <BOSTextField
                       select
                       required
-                      label="Position Look For"
-                      name="positionLookFor"
-                      value={formData.positionLookFor}
+                      label="Emp Name"
+                      name="refComments"
+                      value={formData.refComments}
                       onChange={handleInputChange}
-                      error={!!errors.positionLookFor}
-                      helperText={errors.positionLookFor}
-                      sx={errorStyle(!!errors.positionLookFor)}
+                      error={!!errors.refComments}
+                      helperText={errors.refComments}
+                      sx={errorStyle(!!errors.refComments)}
                     >
-                      <MenuItem value="">-SELECT-</MenuItem>
-                      {designations.map(d => (
-                        <MenuItem key={d.id} value={d.designationName || d.id.toString()}>{d.designationName}</MenuItem>
-                      ))}
-                      <MenuItem value="Software Engineer">Software Engineer</MenuItem>
-                      <MenuItem value="HR Executive">HR Executive</MenuItem>
-                      <MenuItem value="Quality Auditor">Quality Auditor</MenuItem>
+                      <MenuItem value="">-SELECT EMPLOYEE-</MenuItem>
+                      {employees.map(emp => {
+                        const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode;
+                        const valueStr = `${emp.empCode} - ${fullName}`;
+                        return (
+                          <MenuItem key={emp.id} value={valueStr}>
+                            {valueStr}
+                          </MenuItem>
+                        );
+                      })}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      select
-                      required
-                      label="Department"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleInputChange}
-                      error={!!errors.department}
-                      helperText={errors.department}
-                      sx={errorStyle(!!errors.department)}
-                    >
-                      <MenuItem value="">-SELECT-</MenuItem>
-                      {departments.map(d => (
-                        <MenuItem key={d.id} value={d.id.toString()}>{d.departmentName}</MenuItem>
-                      ))}
-                    </BOSTextField>
-                  </Grid>
+                  </R>
+                )}
 
-                  {/* Row 2: Candidate basic info */}
-                  <Grid item xs={12} sm={6} md={3}>
+                {formData.refMode && formData.refMode !== 'EMPLOYEE' && (
+                  <R lg={8}>
                     <BOSTextField
-                      select
-                      label="Title"
-                      name="title"
-                      value={formData.title}
+                      required={formData.refMode === 'OTHERS'}
+                      label="Ref Comments"
+                      name="refComments"
+                      value={formData.refComments}
                       onChange={handleInputChange}
-                    >
-                      {TITLE_OPTIONS.map(opt => (
-                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                      ))}
-                    </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="First Name"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      error={!!errors.firstName}
-                      helperText={errors.firstName}
-                      sx={errorStyle(!!errors.firstName)}
+                      error={!!errors.refComments}
+                      helperText={errors.refComments}
+                      sx={errorStyle(!!errors.refComments)}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="Last Name"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      error={!!errors.lastName}
-                      helperText={errors.lastName}
-                      sx={errorStyle(!!errors.lastName)}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSDatePicker
-                      required
-                      label="Birth Date"
-                      name="birthDate"
-                      value={formData.birthDate}
-                      onChange={handleInputChange}
-                      error={!!errors.birthDate}
-                      helperText={errors.birthDate}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      label="Age"
-                      name="age"
-                      value={formData.age}
-                      disabled
-                      InputProps={{ readOnly: true }}
-                    />
-                  </Grid>
-
-                  {/* Row 3: Contact & ID info */}
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="Mobile No"
-                      name="mobileNo"
-                      value={formData.mobileNo}
-                      onChange={handleInputChange}
-                      placeholder="10-digit number"
-                      error={!!errors.mobileNo}
-                      helperText={errors.mobileNo}
-                      sx={errorStyle(!!errors.mobileNo)}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      required
-                      label="Email ID"
-                      name="emailId"
-                      value={formData.emailId}
-                      onChange={handleInputChange}
-                      placeholder="example@mail.com"
-                      error={!!errors.emailId}
-                      helperText={errors.emailId}
-                      sx={errorStyle(!!errors.emailId)}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
-                    <Stack spacing={1}>
-                      <BOSTextField
-                        required
-                        label="Aadhar No"
-                        name="aadharNo"
-                        value={formData.aadharNo}
-                        onChange={handleInputChange}
-                        placeholder="12-digit number"
-                        error={!!errors.aadharNo}
-                        helperText={errors.aadharNo}
-                        sx={errorStyle(!!errors.aadharNo)}
-                      />
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={formData.duplicateAadhar}
-                            onChange={handleInputChange}
-                            name="duplicateAadhar"
-                            size="small"
-                          />
-                        }
-                        label="I know its duplicate Aadhaar No"
-                        sx={{ '& .MuiFormControlLabel-label': { fontSize: '0.75rem', fontWeight: 600 } }}
-                      />
-                    </Stack>
-                  </Grid>
-
-                  {/* Row 4: Reference Details */}
-                  <Grid item xs={12} sm={6} md={3}>
-                    <BOSTextField
-                      select
-                      label="Ref Mode"
-                      name="refMode"
-                      value={formData.refMode}
-                      onChange={handleInputChange}
-                    >
-                      <MenuItem value="">-Select-</MenuItem>
-                      {REF_MODES.map(opt => (
-                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                      ))}
-                    </BOSTextField>
-                  </Grid>
-
-                  {formData.refMode === 'EMPLOYEE' && (
-                    <Grid item xs={12} sm={6} md={9}>
-                      <BOSTextField
-                        select
-                        required
-                        label="Emp Name"
-                        name="refComments"
-                        value={formData.refComments}
-                        onChange={handleInputChange}
-                        error={!!errors.refComments}
-                        helperText={errors.refComments}
-                        sx={errorStyle(!!errors.refComments)}
-                      >
-                        <MenuItem value="">-SELECT EMPLOYEE-</MenuItem>
-                        {employees.map(emp => {
-                          const fullName = emp.employeeName || `${emp.firstName || ''} ${emp.lastName || ''}`.trim() || emp.empCode;
-                          const valueStr = `${emp.empCode} - ${fullName}`;
-                          return (
-                            <MenuItem key={emp.id} value={valueStr}>
-                              {valueStr}
-                            </MenuItem>
-                          );
-                        })}
-                      </BOSTextField>
-                    </Grid>
-                  )}
-
-                  {formData.refMode && formData.refMode !== 'EMPLOYEE' && (
-                    <Grid item xs={12} sm={6} md={9}>
-                      <BOSTextField
-                        required={formData.refMode === 'OTHERS'}
-                        label="Ref Comments"
-                        name="refComments"
-                        value={formData.refComments}
-                        onChange={handleInputChange}
-                        error={!!errors.refComments}
-                        helperText={errors.refComments}
-                        sx={errorStyle(!!errors.refComments)}
-                      />
-                    </Grid>
-                  )}
-                </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
+                  </R>
+                )}
+              </GridContainer>
+            </CardContent>
+          </Card>
 
           {/* ── BOTTOM TABS FOR SUB-SECTIONS ── */}
-          <Grid item xs={12}>
+          <Box sx={{ width: '100%' }}>
             <Box sx={{ width: '100%', borderBottom: '1px solid', borderColor: 'divider', mb: 2 }}>
               <Tabs
                 value={activeTab}
@@ -1723,12 +1736,12 @@ export default function ApplicationTrackingSystem() {
             </Box>
 
             {/* TAB CONTENTS */}
-            <Box sx={{ minHeight: '300px', p: 1 }}>
+            <Box sx={{ minHeight: '300px', p: 1, width: '100%' }}>
 
               {/* 1. PERSONAL DETAILS */}
               {activeTab === 0 && (
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6} md={3}>
+                <GridContainer>
+                  <R>
                     <BOSTextField
                       label="Enrolled NO"
                       name="enRollNo"
@@ -1736,8 +1749,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Gender"
@@ -1751,8 +1764,8 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Marital Status"
@@ -1765,25 +1778,25 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSDatePicker
                       label="Birth Date"
                       name="birthDate"
                       value={formData.birthDate}
                       disabled
-                      onChange={() => { }}
+                      onChange={() => {}}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="PAN No"
                       name="panNo"
                       value={personalData.panNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Religion"
@@ -1796,84 +1809,84 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Nationality"
                       name="nationality"
                       value={personalData.nationality}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Office Phone No"
                       name="officePhoneNo"
                       value={personalData.officePhoneNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
                       value={personalData.phoneNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
                       value={personalData.mobileNo || formData.mobileNo}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Email Id"
                       name="emailId"
                       value={personalData.emailId || formData.emailId}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <Divider sx={{ my: 1 }} />
                     <Typography variant="h6" color="primary" sx={{ mb: 1, fontWeight: 600 }}>PERMANENT ADDRESS</Typography>
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 1"
                       name="permAdd1"
                       value={personalData.permAdd1}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 2"
                       name="permAdd2"
                       value={personalData.permAdd2}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="City"
                       name="city"
                       value={personalData.city}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="State"
                       name="state"
                       value={personalData.state}
                       onChange={handlePersonalChange}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <FormControlLabel
                       control={
                         <Checkbox
@@ -1885,8 +1898,8 @@ export default function ApplicationTrackingSystem() {
                       label="Personal Address as above"
                       sx={{ fontWeight: 'bold' }}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Personal Add1"
                       name="persAdd1"
@@ -1894,8 +1907,8 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                       disabled={personalData.sameAsPermanent}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Personal Add2"
                       name="persAdd2"
@@ -1903,8 +1916,8 @@ export default function ApplicationTrackingSystem() {
                       onChange={handlePersonalChange}
                       disabled={personalData.sameAsPermanent}
                     />
-                  </Grid>
-                </Grid>
+                  </R>
+                </GridContainer>
               )}
 
               {/* 2. EXPERIENCE DETAILS */}
@@ -2229,8 +2242,8 @@ export default function ApplicationTrackingSystem() {
 
               {/* 5. EVALUATION DETAILS */}
               {activeTab === 4 && (
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6}>
+                <GridContainer>
+                  <R>
                     <BOSTextField
                       label="Enrolled No"
                       name="enRolledNo"
@@ -2238,16 +2251,16 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSDatePicker
                       label="Interview Date"
                       name="interviewDate"
                       value={evaluationData.interviewDate}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, interviewDate: e.target.value }))}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       select
                       label="Interview Status"
@@ -2259,24 +2272,24 @@ export default function ApplicationTrackingSystem() {
                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                       ))}
                     </BOSTextField>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Technical Interviewed By"
                       name="technicalInterviewedBy"
                       value={evaluationData.technicalInterviewedBy}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, technicalInterviewedBy: e.target.value }))}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="HR Interviewed By"
                       name="hrInterviewedBy"
                       value={evaluationData.hrInterviewedBy}
                       onChange={(e) => setEvaluationData(prev => ({ ...prev, hrInterviewedBy: e.target.value }))}
                     />
-                  </Grid>
-                  <Grid item xs={12}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Comments"
                       name="comments"
@@ -2285,14 +2298,14 @@ export default function ApplicationTrackingSystem() {
                       multiline
                       rows={3}
                     />
-                  </Grid>
-                </Grid>
+                  </R>
+                </GridContainer>
               )}
 
               {/* 6. CONTACT DETAILS */}
               {activeTab === 5 && (
-                <Grid container spacing={2.5}>
-                  <Grid item xs={12} sm={6}>
+                <GridContainer>
+                  <R>
                     <BOSTextField
                       label="Enrolled No"
                       name="enRolledNo"
@@ -2300,8 +2313,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Phone No"
                       name="phoneNo"
@@ -2309,8 +2322,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="Mobile No"
                       name="mobileNo"
@@ -2318,8 +2331,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R>
                     <BOSTextField
                       label="City"
                       name="city"
@@ -2327,8 +2340,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 1"
                       name="address1"
@@ -2336,8 +2349,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
+                  </R>
+                  <R lg={12}>
                     <BOSTextField
                       label="Address line 2"
                       name="address2"
@@ -2345,8 +2358,8 @@ export default function ApplicationTrackingSystem() {
                       disabled
                       InputProps={{ readOnly: true }}
                     />
-                  </Grid>
-                </Grid>
+                  </R>
+                </GridContainer>
               )}
 
               {/* 7. KYC DETAILS */}
@@ -2400,16 +2413,16 @@ export default function ApplicationTrackingSystem() {
                     group: 'I. PERSONAL & FAMILY DETAILS',
                     fields: [
                       { name: 'q1_native', label: '1. Native Place' },
-                      { name: 'q2_presentAddress', label: '2. Present Address' },
-                      { name: 'q3_permanentAddress', label: '3. Permanent Address' },
+                      { name: 'q2_presentAddress', label: '2. Present Address', lg: 12 },
+                      { name: 'q3_permanentAddress', label: '3. Permanent Address', lg: 12 },
                       { name: 'q4_fatherOccupation', label: "4. Father's Occupation" },
                       { name: 'q5_motherOccupation', label: "5. Mother's Occupation" },
                       { name: 'q6_maritalStatus', label: '6. Marital Status', select: true, options: MARITAL_STATUSES },
                       { name: 'q7_spouseOccupation', label: "7. Occupation of Spouse" },
                       { name: 'q8_children', label: '8. Children' },
                       { name: 'q9_hasRelativesInCompany', label: '9. Any relative or friends working here?', select: true, options: ['NO', 'YES'] },
-                      { name: 'q10_relativesDetails', label: '10. Relative or friends details' },
-                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations' }
+                      { name: 'q10_relativesDetails', label: '10. Relative or friends details', lg: 12 },
+                      { name: 'q11_siblingsOccupations', label: '11. Siblings and their occupations', lg: 12 }
                     ]
                   },
                   {
@@ -2425,10 +2438,10 @@ export default function ApplicationTrackingSystem() {
                   {
                     group: 'III. PERSONAL GOALS & REFLECTION',
                     fields: [
-                      { name: 'q17_positivePoints', label: '17. Brief about positive points' },
-                      { name: 'q18_negativePoints', label: '18. Brief about negative points' },
-                      { name: 'q19_lifeGoals', label: "19. What's your life goals?" },
-                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas' }
+                      { name: 'q17_positivePoints', label: '17. Brief about positive points', lg: 12 },
+                      { name: 'q18_negativePoints', label: '18. Brief about negative points', lg: 12 },
+                      { name: 'q19_lifeGoals', label: "19. What's your life goals?", lg: 12 },
+                      { name: 'q20_improvementSuggestions', label: '20. Productivity suggestion ideas', lg: 12 }
                     ]
                   },
                   {
@@ -2451,9 +2464,9 @@ export default function ApplicationTrackingSystem() {
                     fields: [
                       { name: 'q31_prevLocation', label: '31. Previous/current company location' },
                       { name: 'q32_prevShift', label: '32. Previously worked shift' },
-                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job' },
+                      { name: 'q33_reasonForLeaving', label: '33. Reason for leaving previous job', lg: 12 },
                       { name: 'q34_noticePeriod', label: '34. Notice period (days)' },
-                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details' },
+                      { name: 'q35_prevDeptPosition', label: '35. Prev dept and position details', lg: 12 },
                       { name: 'q36_prevDeptCount', label: '36. Prev dept employee count' },
                       { name: 'q37_prevReportingTo', label: '37. Prev manager/reporting to' }
                     ]
@@ -2461,8 +2474,8 @@ export default function ApplicationTrackingSystem() {
                   {
                     group: 'VI. BEHAVIORAL & WORK RATINGS',
                     fields: [
-                      { name: 'q38_handleMistake', label: '38. How you handle mistakes' },
-                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences' },
+                      { name: 'q38_handleMistake', label: '38. How you handle mistakes', lg: 12 },
+                      { name: 'q39_handleOpinionDifference', label: '39. Handle team opinion differences', lg: 12 },
                       { name: 'q40_computerSelfRating', label: '40. Self rating (MS-Office, Outlook)', select: true, options: ['EXCELLENT', 'GOOD', 'AVERAGE', 'POOR'] },
                       { name: 'payslip', label: 'PAY SLIP', type: 'file' }
                     ]
@@ -2476,9 +2489,9 @@ export default function ApplicationTrackingSystem() {
                         <Typography variant="h5" color="primary" sx={{ mb: 2.5, fontWeight: 700, borderBottom: '1.5px solid', borderColor: 'primary.light', pb: 1 }}>
                           {g.group}
                         </Typography>
-                        <Grid container spacing={2.5}>
+                        <GridContainer>
                           {g.fields.map(f => (
-                            <Grid item xs={12} sm={12} md={12} key={f.name}>
+                            <R key={f.name} lg={f.lg}>
                               {f.type === 'file' ? (
                                 <Box>
                                   <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: '0.875rem', mb: 1 }}>
@@ -2511,9 +2524,9 @@ export default function ApplicationTrackingSystem() {
                                   onChange={(e) => setAssessmentData(p => ({ ...p, [f.name]: e.target.value }))}
                                 />
                               )}
-                            </Grid>
+                            </R>
                           ))}
-                        </Grid>
+                        </GridContainer>
                       </Card>
                     ))}
                   </Stack>
@@ -2578,8 +2591,8 @@ export default function ApplicationTrackingSystem() {
               )}
 
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </BOSFormDialog>
 
       {/* Delete Confirmation */}

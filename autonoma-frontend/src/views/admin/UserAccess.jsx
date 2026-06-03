@@ -224,8 +224,7 @@ const UserAccess = () => {
   };
 
   useKeyboardShortcuts({
-    'ctrl+s': (e) => {
-      e.preventDefault();
+    'ctrl+s': () => {
       if (selectedUser) handleSaveAll();
     }
   });
