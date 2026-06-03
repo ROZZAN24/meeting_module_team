@@ -460,7 +460,7 @@ public class TicketTraceabilityCenterController {
 
                         SupportTicketReopenHistory reopenHistory = SupportTicketReopenHistory.builder()
                                 .ticketRowId(existingTicket.getRowId())
-                                .reopenedBy(currentUserId)
+                                .reopenedBy(currentUserId != null ? currentUserId : "System")
                                 .reason(ticketDetails.getResolutionSummary() != null
                                         ? ticketDetails.getResolutionSummary()
                                         : "Reopened by user")

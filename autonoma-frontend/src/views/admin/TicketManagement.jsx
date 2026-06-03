@@ -230,6 +230,7 @@ export default function TicketManagement({ viewType }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [commentError, setCommentError] = useState(false);
+  const [reopenReason, setReopenReason] = useState('');
   const [panelsOpen, setPanelsOpen] = useState({ part1: true, part2: true, part3: true });
   const [filesExpanded, setFilesExpanded] = useState(false);
 
@@ -838,7 +839,27 @@ export default function TicketManagement({ viewType }) {
       setDetailDevName(selectedTicket.developerName || '');
       setDetailDevEmail(selectedTicket.developerEmail || '');
       setDetailDevMobile(selectedTicket.developerMobileNo || '');
-      setDetailResolution(selectedTicket.resolutionSummary || '');
+      
+      const savedSummary = selectedTicket.resolutionSummary || '';
+      const PREDEFINED_REASONS = ['Not Working as Expected', 'Additional Requirement Needed', 'Requirement Not Fully Completed', 'Incorrect Output', 'Missing Functionality', 'UI/Design Changes Required', 'Validation Issue Found', 'Bug Still Exists', 'Rework Required', 'Performance Improvement Needed', 'Requirement Changed', 'Clarification Required', 'Testing Failed', 'Quality Issue Identified'];
+      
+      if (selectedTicket.ticketStatus === 'Reopened') {
+        if (PREDEFINED_REASONS.includes(savedSummary)) {
+          setReopenReason(savedSummary);
+          setDetailResolution('');
+        } else if (savedSummary) {
+          setReopenReason('Others');
+          setDetailResolution(savedSummary);
+        } else {
+          setReopenReason('');
+          setDetailResolution('');
+        }
+      } else {
+        setReopenReason('');
+        setDetailResolution(savedSummary);
+      }
+
+      setCommentError(false);
       setDetailRootCause(selectedTicket.rootCause || '');
       setDetailAdditionalRequirement(selectedTicket.additionalRequirement || '');
 
@@ -1701,13 +1722,23 @@ export default function TicketManagement({ viewType }) {
   const handleUpdateTicketDetails = async () => {
     if (!selectedTicket) return;
 
+    let rawReason = detailResolution;
+    if (detailStatus === 'Reopened') {
+      rawReason = reopenReason === 'Others' ? detailResolution : reopenReason;
+    }
+
     // Comments mandatory if status is changed
-    if (detailStatus !== selectedTicket.ticketStatus && (!detailResolution || !detailResolution.trim())) {
+    if (detailStatus !== selectedTicket.ticketStatus && (!rawReason || !rawReason.trim())) {
       setCommentError(true);
       showSnackbar('Comments are mandatory for every status change', 'error');
       return;
     }
     setCommentError(false);
+
+    let finalResolution = rawReason;
+    if (detailStatus === 'Reopened' && detailStatus !== selectedTicket.ticketStatus) {
+      finalResolution = rawReason.trim();
+    }
 
     // ─── RAISED FOR ME RULES ───────────────────────────────────────────────
     if (currentViewType === 'raised-for-me') {
@@ -1770,7 +1801,7 @@ export default function TicketManagement({ viewType }) {
           developerName: detailDevName,
           developerEmail: detailDevEmail,
           developerMobileNo: detailDevMobile,
-          resolutionSummary: detailResolution,
+          resolutionSummary: finalResolution,
           takenTime: newTakenTime,
           reworkTime: newReworkTime,
           targetDate: detailTargetDate ? new Date(detailTargetDate) : null,
@@ -1813,20 +1844,29 @@ export default function TicketManagement({ viewType }) {
 
         let isStatusUpdate = false;
         // REOPEN: assigned user gets REWORK status
-        if (detailStatus === 'Reopened') {
+        if (detailStatus === 'Reopened' && detailStatus !== selectedTicket.ticketStatus) {
           payload.ticketStatus = 'Reopened';
           payload.assignedUserStatus = 'Rework';  // signal backend to set assigned user's status to REWORK
-          payload.resolutionSummary = detailResolution;
+          payload.resolutionSummary = finalResolution;
           isStatusUpdate = true;
-        } else if (detailStatus === 'Completed') {
+        } else if (detailStatus === 'Completed' && detailStatus !== selectedTicket.ticketStatus) {
           // COMPLETED: ticket final complete
           payload.ticketStatus = 'Completed';
-          payload.resolutionSummary = detailResolution;
+          payload.resolutionSummary = finalResolution;
           payload.completedAt = new Date().toISOString();
           isStatusUpdate = true;
         } else {
-          // Default: current status view only — no action needed
-          if (detailAdditionalRequirement === (selectedTicket.additionalRequirement || '') && formAttachments.length === 0 && formVoiceFiles.length === 0 && !payload.assignedHours) {
+          // Default: current status view only — update comment or attachments
+          let hasChanges = false;
+          if (detailAdditionalRequirement !== (selectedTicket.additionalRequirement || '')) hasChanges = true;
+          if (formAttachments.length > 0 || formVoiceFiles.length > 0) hasChanges = true;
+          if (payload.assignedHours) hasChanges = true;
+          if (finalResolution !== (selectedTicket.resolutionSummary || '')) {
+             payload.resolutionSummary = finalResolution;
+             hasChanges = true;
+          }
+
+          if (!hasChanges) {
             showSnackbar('No changes to apply', 'info');
             setIsSaving(false);
             return;
@@ -2665,6 +2705,7 @@ export default function TicketManagement({ viewType }) {
                             onChange={(e) => {
                               setDetailStatus(e.target.value);
                               setDetailResolution('');
+                              setReopenReason('');
                               setDetailTakenTime('');
                               setDetailTakenHours('');
                               setDetailTakenMinutes('');
@@ -2682,7 +2723,7 @@ export default function TicketManagement({ viewType }) {
                           <TextField
                             select size="small"
                             value={detailStatus}
-                            onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setDetailTakenTime(''); }}
+                            onChange={(e) => { setDetailStatus(e.target.value); setDetailResolution(''); setReopenReason(''); setDetailTakenTime(''); }}
                             sx={{ minWidth: 160, '& .MuiOutlinedInput-root': { borderRadius: '8px', bgcolor: '#fff', '& fieldset': { borderColor: '#eef2f6' }, fontSize: '0.875rem' } }}
                           >
                             <MenuItem key="current" value={selectedTicket.ticketStatus} disabled>{selectedTicket.ticketStatus.toUpperCase()}</MenuItem>
@@ -2788,32 +2829,65 @@ export default function TicketManagement({ viewType }) {
                     <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
                       <Stack spacing={2}>
                         {/* COMMENTS */}
-                        <Box sx={{ mb: 2 }}>
-                          <TextField
-                            error={commentError}
-                            helperText={commentError ? "Comments are mandatory for status changes" : ""}
-                            fullWidth multiline rows={8} size="small"
-                            label="Comments"
-                            required
-                            placeholder="Required — provide update or reason for status change..."
-                            value={detailResolution}
-                            onChange={(e) => {
-                              setDetailResolution(e.target.value);
-                              if (e.target.value.trim()) setCommentError(false);
-                            }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: '12px',
-                                bgcolor: '#f8fafc',
-                                transition: 'all 0.2s',
-                                '& fieldset': { borderColor: '#e2e8f0' },
-                                '&:hover fieldset': { borderColor: '#cbd5e1' },
-                                '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
-                                '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' }
-                              }
-                            }}
-                          />
-                        </Box>
+                        {detailStatus === 'Reopened' && (
+                          <Box sx={{ mb: 2 }}>
+                            <TextField
+                              select
+                              error={commentError && !reopenReason}
+                              helperText={commentError && !reopenReason ? "Please select a reason for reopening" : ""}
+                              fullWidth size="small"
+                              label="Reason for Reopening"
+                              required
+                              value={reopenReason}
+                              onChange={(e) => {
+                                setReopenReason(e.target.value);
+                                if (e.target.value === 'Others') setDetailResolution('');
+                                if (e.target.value) setCommentError(false);
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: '12px', bgcolor: '#f8fafc', transition: 'all 0.2s',
+                                  '& fieldset': { borderColor: '#e2e8f0' }, '&:hover fieldset': { borderColor: '#cbd5e1' },
+                                  '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
+                                  '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' }
+                                }
+                              }}
+                            >
+                              {['Not Working as Expected', 'Additional Requirement Needed', 'Requirement Not Fully Completed', 'Incorrect Output', 'Missing Functionality', 'UI/Design Changes Required', 'Validation Issue Found', 'Bug Still Exists', 'Rework Required', 'Performance Improvement Needed', 'Requirement Changed', 'Clarification Required', 'Testing Failed', 'Quality Issue Identified', 'Others'].map(r => (
+                                <MenuItem key={r} value={r}>{r}</MenuItem>
+                              ))}
+                            </TextField>
+                          </Box>
+                        )}
+
+                        {(detailStatus !== 'Reopened' || reopenReason === 'Others') && (
+                          <Box sx={{ mb: 2 }}>
+                            <TextField
+                              error={commentError}
+                              helperText={commentError ? "Comments are mandatory for status changes" : ""}
+                              fullWidth multiline rows={8} size="small"
+                              label="Comments"
+                              required
+                              placeholder="Required — provide update or reason for status change..."
+                              value={detailResolution}
+                              onChange={(e) => {
+                                setDetailResolution(e.target.value);
+                                if (e.target.value.trim()) setCommentError(false);
+                              }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: '12px',
+                                  bgcolor: '#f8fafc',
+                                  transition: 'all 0.2s',
+                                  '& fieldset': { borderColor: '#e2e8f0' },
+                                  '&:hover fieldset': { borderColor: '#cbd5e1' },
+                                  '&.Mui-focused': { bgcolor: '#fff', boxShadow: '0 0 0 2px rgba(59, 130, 246, 0.1)' },
+                                  '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' }
+                                }
+                              }}
+                            />
+                          </Box>
+                        )}
 
                         {/* FILES & ATTACHMENTS */}
                         <Box sx={{ mt: 1, p: 2, border: '1px solid #eef2f6', borderRadius: '8px' }}>
