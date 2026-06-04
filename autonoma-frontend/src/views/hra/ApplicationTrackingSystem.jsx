@@ -1384,36 +1384,36 @@ export default function ApplicationTrackingSystem() {
           newTooltip={shortcutTooltip('Register Candidate', 'Ctrl + N')}
           hasWritePermission={perms.write}
         >
-          <Button variant="outlined" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="primary" onClick={handleSendCallLetter} startIcon={<IconMail size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Call Letter
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             onClick={handleAssignInterview}
             startIcon={<IconCalendar size={18} />}
             sx={{
               borderRadius: '24px',
               textTransform: 'none',
-              color: 'orange.dark',
-              borderColor: 'orange.main',
+              bgcolor: 'orange.main',
+              color: '#fff',
+              fontWeight: 600,
               '&:hover': {
-                borderColor: 'orange.dark',
-                bgcolor: 'orange.light'
+                bgcolor: 'orange.dark'
               }
             }}
           >
             Assign Interview
           </Button>
-          <Button variant="outlined" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="success" onClick={handleIssueOffer} startIcon={<IconFileText size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Offer Letter
           </Button>
-          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', fontWeight: 600 }}>
+          <Button variant="contained" color="success" onClick={handlePushOnRoll} startIcon={<IconUserCheck size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Push To On-Roll
           </Button>
-          <Button variant="outlined" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="error" onClick={handleCancelSelection} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600 }}>
             Cancel Selection
           </Button>
-          <Button variant="outlined" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none' }}>
+          <Button variant="contained" color="secondary" onClick={handleEditSelected} disabled={selectedIds.length !== 1} startIcon={<IconEdit size={18} />} sx={{ borderRadius: '24px', textTransform: 'none', color: '#fff', fontWeight: 600, '&.Mui-disabled': { color: 'rgba(0, 0, 0, 0.26)', bgcolor: 'rgba(0, 0, 0, 0.12)' } }}>
             Edit Candidate
           </Button>
         </BOSTableToolbar>
