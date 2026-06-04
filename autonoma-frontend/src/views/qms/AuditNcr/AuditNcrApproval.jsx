@@ -146,11 +146,11 @@ export default function AuditNcrApproval() {
   useEffect(() => {
     dispatch(setFilterConfig([
       { id: 'type', label: 'Type', type: 'select', options: [{ value: 'mine', label: 'Mine' }, { value: 'team', label: 'Team' }, { value: 'company', label: 'Company' }], defaultValue: 'mine', isStarred: true },
-      { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'NC' },
-      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'CLOSED', label: 'APPROVED' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }], defaultValue: 'WAITING_APPROVAL' },
+      { id: 'observationStatus', label: 'Obr Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'NC', label: 'NC' }, { value: 'OFI', label: 'OFI' }], defaultValue: 'All' },
+      { id: 'ncrStatus', label: 'Status', type: 'select', options: [{ value: 'All', label: 'ALL' }, { value: 'WAITING_APPROVAL', label: 'PENDING FOR APPROVAL' }, { value: 'CLOSED', label: 'APPROVED' }, { value: 'UNRESOLVED', label: 'UNRESOLVED' }], defaultValue: 'WAITING_APPROVAL', isStarred: true },
       { id: 'searchBy', label: 'Search By', type: 'select', options: [{ value: 'ncrNo', label: 'NC No' }, { value: 'observationNo', label: 'Observation No' }], defaultValue: 'ncrNo' },
-      ...getCommonDateFilters('createdDate', 'updatedAt'),
-      { id: 'considerDate', label: 'Consider Date?', type: 'select', options: [{ value: 'Yes', label: 'Yes' }, { value: 'No', label: 'No' }], defaultValue: 'No', hideDatePicker: true, isStarred: true }]));
+      ...getCommonDateFilters('createdDate', 'updatedAt')
+    ]));
     return () => dispatch(setFilterConfig(null));
   }, [dispatch]);
 
@@ -160,7 +160,7 @@ export default function AuditNcrApproval() {
     try {
       const fromDate = globalFilters.createdDateStart || undefined;
       const toDate = globalFilters.createdDateEnd || undefined;
-      const considerDate = globalFilters.considerDate || 'No';
+      const considerDate = globalFilters.createdDateConsider || 'No';
 
       const [fRes, eRes, cRes] = await Promise.all([
         axios.get('/api/qms/audit/observation/ncr/findings', {
@@ -252,7 +252,22 @@ export default function AuditNcrApproval() {
         params: { remarks: formData.remarks }
       });
       dispatch(openSnackbar({ open: true, message: `NC / OFI ${status} successfully!`, severity: status === 'APPROVED' ? 'success' : 'error' }));
+      
+      // Broadcast status update for reactive reload in other views
+      try {
+        const channel = new BroadcastChannel('ncr_status_channel');
+        channel.postMessage({
+          type: 'NCR_STATUS_UPDATED',
+          id: selectedFinding.id,
+          ncrStatus: status === 'APPROVED' ? 'CLOSED' : 'REJECTED'
+        });
+        channel.close();
+      } catch (err) {
+        console.error('Broadcast failed:', err);
+      }
+
       handleCloseDialog();
+      setRows((prevRows) => prevRows.filter((r) => r.id !== selectedFinding.id));
       fetchData();
     } catch (e) {
       let errorMsg = 'Process failed';
@@ -275,10 +290,14 @@ export default function AuditNcrApproval() {
         if (status === 'CLOSED') {
             displayLabel = 'APPROVED';
         }
-        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' || status === 'UNRESOLVED' || status === 'REJECTED' ? 'INACTIVE' : 'PENDING'))} />;
+        if (status === 'OPEN') {
+            displayLabel = 'PENDING';
+        }
+        return <Chip label={displayLabel} size="small" sx={getStatusChipSx(status === 'CLOSED' ? 'ACTIVE' : (status === 'OPEN' || status === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
     const val = row[col.id];
-    if (['observationDate', 'targetDate', 'createdDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (['observationDate', 'targetDate'].includes(col.id)) return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'createdDate') return val ? format(new Date(val), 'dd/MM/yyyy HH:mm') : '-';
     return String(val || '-');
   };
 

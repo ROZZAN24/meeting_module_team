@@ -436,7 +436,10 @@ export default function AddAuditSchedule() {
           if (!val) return '';
           const valStr = String(val);
           const code = valStr.includes(' - ') ? valStr.split(' - ')[1] : valStr;
-          const match = employees.find(emp => String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code));
+          const match = employees.find(emp => 
+            String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase() ||
+            String(emp?.employeeName || '').toLowerCase() === String(code).toLowerCase()
+          );
           if (match) {
             const fName = match.firstName || '';
             const lName = match.lastName || '';
@@ -819,11 +822,18 @@ export default function AddAuditSchedule() {
   }, [masterCriteria, formData.auditType, formData.department, criteriaList]);
 
   const mappedAuditAreas = useMemo(() => {
-    if (!formData.auditType) return [];
+    const getActiveGlobalAreas = () => 
+      auditAreas.filter(a => a && a.status?.toUpperCase() === 'ACTIVE').map(a => a.description).filter(Boolean);
+
+    if (!formData.auditType || !auditTypes.length) {
+      return getActiveGlobalAreas();
+    }
     const selectedTypeObj = auditTypes.find(t => t.auditType === formData.auditType);
-    if (!selectedTypeObj || !selectedTypeObj.auditArea) return [];
+    if (!selectedTypeObj || !selectedTypeObj.auditArea) {
+      return getActiveGlobalAreas();
+    }
     return selectedTypeObj.auditArea.split(',').map(s => s.trim()).filter(Boolean);
-  }, [formData.auditType, auditTypes]);
+  }, [formData.auditType, auditTypes, auditAreas]);
 
   const totalRequiredCount = useMemo(() => {
     const selectedTypes = (formData.auditType || '').split(',').filter((t) => t);
@@ -1396,12 +1406,12 @@ export default function AddAuditSchedule() {
                   return `${name} - ${emp.empCode || emp.employeeCode || emp.id}`;
                 };
 
-                const selectedEmp = filteredEmployees.find(emp => {
+                const selectedEmp = (employees || []).find(emp => {
                   const label = getEmpLabel(emp);
                   if (label === value) return true;
                   if (value && String(value).includes(' - ')) {
                     const code = String(value).split(' - ')[1];
-                    return String(emp?.empCode || emp?.employeeCode || emp?.id || '') === String(code);
+                    return String(emp?.empCode || emp?.employeeCode || emp?.id || '').toLowerCase() === String(code).toLowerCase();
                   }
                   return false;
                 });
@@ -1417,6 +1427,15 @@ export default function AddAuditSchedule() {
                 }
 
                 const employeeOptions = filteredEmployees.map(emp => getEmpLabel(emp));
+                if (value && !employeeOptions.includes(value)) {
+                  employeeOptions.push(value);
+                }
+                if (selectedEmp) {
+                  const label = getEmpLabel(selectedEmp);
+                  if (label && !employeeOptions.includes(label)) {
+                    employeeOptions.push(label);
+                  }
+                }
 
                 return (
                   <Card key={person.role} sx={{

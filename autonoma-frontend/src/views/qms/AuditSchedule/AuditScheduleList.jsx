@@ -61,7 +61,7 @@ export default function AuditScheduleList() {
           { value: 'CLOSED', label: 'CLOSED' },
           { value: 'CANCELLED', label: 'CANCELLED' }
         ],
-        defaultValue: 'OPEN',
+        defaultValue: 'All',
         isStarred: true
       },
       { id: 'scheduleNo', label: 'Schedule No', type: 'text', placeholder: 'Filter by No...', isStarred: true },
@@ -146,7 +146,7 @@ export default function AuditScheduleList() {
     const filtered = rows.filter((row) => {
       if (!matchCommonDateFilters(row, globalFilters, 'createdDate', 'updatedDate')) return false;
 
-      const statusFilter = globalFilters.status || 'OPEN';
+      const statusFilter = globalFilters.status || 'All';
       const matchesStatus = statusFilter === 'All' || row.status === statusFilter;
       
       const scheduleNoFilter = globalFilters.scheduleNo || '';
@@ -196,9 +196,10 @@ export default function AuditScheduleList() {
     if (col.id === 'status') {
       const statusText = typeof val === 'object' ? val?.name : val;
       const displayLabel = statusText === 'WAITING_APPROVAL' ? 'PENDING FOR APPROVAL' : statusText;
-      return <Chip label={displayLabel} size="small" sx={getStatusChipSx(statusText === 'OPEN' ? 'ACTIVE' : (statusText === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
+      return <Chip label={displayLabel} size="small" sx={getStatusChipSx((statusText === 'OPEN' || statusText === 'CLOSED') ? 'ACTIVE' : (statusText === 'WAITING_APPROVAL' ? 'PENDING' : 'INACTIVE'))} />;
     }
-    if (col.id === 'auditDate' || col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'auditDate') return val ? format(new Date(val), 'dd/MM/yyyy') : '-';
+    if (col.id === 'createdDate' || col.id === 'updatedDate') return val ? format(new Date(val), 'dd/MM/yyyy HH:mm') : '-';
     if (col.id === 'auditee' || col.id === 'auditor') {
       if (val && typeof val === 'string' && val.includes(' - ')) {
         return val.split(' - ')[0].trim();

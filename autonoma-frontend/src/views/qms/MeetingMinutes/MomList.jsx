@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Typography, Stack, Button, Tooltip, IconButton, Chip } from '@mui/material';
 import { IconPlus, IconFileText, IconRefresh, IconArrowsExchange, IconFileTypePdf } from '@tabler/icons-react';
 import axios from 'utils/axios';
+import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import MainCard from 'ui-component/cards/MainCard';
 import { useDispatch, useSelector } from 'react-redux';
@@ -79,9 +80,9 @@ export default function MomList() {
         targetDate: row.targetDate || '-',
         reviewDate: row.reviewDate || '-',
         createdUser: row._createdUser || row._createdBy || '-',
-        createdDate: row._createdAt ? new Date(row._createdAt).toLocaleDateString('en-GB') : '-',
+        createdDate: row._createdAt ? format(new Date(row._createdAt), 'dd/MM/yyyy HH:mm') : '-',
         updatedUser: row._updatedUser || row._updatedBy || '-',
-        updatedDate: row._updatedAt ? new Date(row._updatedAt).toLocaleDateString('en-GB') : '-',
+        updatedDate: row._updatedAt ? format(new Date(row._updatedAt), 'dd/MM/yyyy HH:mm') : '-',
         status: row.status || 'OPEN',
         detailStatus: row.status || 'OPEN', // specifically for the status chip column
         momNo: row._momNo || '-'

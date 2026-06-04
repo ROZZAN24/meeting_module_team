@@ -32,11 +32,20 @@ public class AuditObservationController {
     @Autowired
     private com.autonoma.erp.repository.AuditScheduleRepository auditScheduleRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.admin.AppPreferenceRepository appPreferenceRepository;
+
     private void closeAuditSchedule(String scheduleNo) {
+        System.out.println("[AuditObservationController] closeAuditSchedule called with scheduleNo: " + scheduleNo);
         if (scheduleNo != null && !scheduleNo.trim().isEmpty()) {
-            auditScheduleRepository.findByScheduleNo(scheduleNo).ifPresent(schedule -> {
+            String trimmed = scheduleNo.trim();
+            auditScheduleRepository.findByScheduleNoIgnoreCase(trimmed).ifPresentOrElse(schedule -> {
+                System.out.println("[AuditObservationController] Found schedule " + schedule.getScheduleNo() + ", current status: " + schedule.getStatus() + ". Setting to CLOSED.");
                 schedule.setStatus("CLOSED");
                 auditScheduleRepository.save(schedule);
+                System.out.println("[AuditObservationController] Saved schedule status as CLOSED.");
+            }, () -> {
+                System.out.println("[AuditObservationController] WARNING: AuditSchedule not found for scheduleNo: " + trimmed);
             });
         }
     }
@@ -295,9 +304,12 @@ public class AuditObservationController {
     @GetMapping("/next-no")
     @Operation(summary = "Get Next Observation Number", description = "Generates the next available OB-XXXX sequence")
     public String getNextNo() {
+        String prefix = appPreferenceRepository.findByPrefName("OBSERVATION_PREFIX")
+                .map(com.autonoma.erp.model.admin.AppPreference::getPrefValue)
+                .orElse("OB-");
         return auditObservationRepository.findFirstByOrderByObservationNoDesc()
-                .map(latest -> incrementSequence(latest.getObservationNo(), "OB-"))
-                .orElse("OB-001");
+                .map(latest -> incrementSequence(latest.getObservationNo(), prefix))
+                .orElse(prefix + "001");
     }
 
     private String incrementSequence(String latest, String prefix) {

@@ -109,11 +109,14 @@ export default function BOSDataTable({
   const searchQuery = useSelector((state) => state.search?.query || '');
   const globalFilters = useSelector((state) => state.search?.filters || {});
 
-  const formatDate = (d) => {
+  const formatDate = (d, colId) => {
     if (!d) return '-';
     try { 
       const dateObj = new Date(d);
       if (isNaN(dateObj.getTime())) return String(d);
+      if (colId && (colId === 'createdDate' || colId === 'updatedDate' || colId === 'createdAt' || colId === 'updatedAt' || colId === 'created_at' || colId === 'updated_at')) {
+        return format(dateObj, 'dd/MM/yyyy HH:mm');
+      }
       return format(dateObj, 'dd/MM/yyyy'); 
     } catch { 
       return '-'; 
@@ -166,7 +169,7 @@ export default function BOSDataTable({
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
 
     if (isDateField && !isFalsePositive) {
-      return formatDate(val);
+      return formatDate(val, col.id);
     }
     
     // Handle Boolean values (Yes/No)
@@ -420,7 +423,7 @@ export default function BOSDataTable({
     const isFalsePositive = col.id.toLowerCase().includes('state') || col.id.toLowerCase().includes('category');
 
     if (isDateField && !isFalsePositive) {
-      return formatDate(val);
+      return formatDate(val, col.id);
     }
     
     // Handle Boolean values (Yes/No)
@@ -515,7 +518,6 @@ export default function BOSDataTable({
                   <TableRow 
                     key={rowId}
                     hover 
-                    title={showEditTooltip ? "Double Tap To Edit" : undefined}
                     sx={rowSx} 
                     onClick={() => {
                       setLocalSelectedId(rowId);
@@ -579,7 +581,7 @@ export default function BOSDataTable({
                 );
 
                 return isDoubleTapSupported ? (
-                  <Tooltip key={rowId} title="Double Tap" followCursor placement="top" arrow>
+                  <Tooltip key={rowId} title="Double Tap To Edit" followCursor placement="top" arrow>
                     {rowElement}
                   </Tooltip>
                 ) : (

@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface AuditScheduleRepository extends JpaRepository<AuditSchedule, Long> {
     java.util.Optional<AuditSchedule> findFirstByOrderByScheduleNoDesc();
     java.util.Optional<AuditSchedule> findByScheduleNo(String scheduleNo);
+    java.util.Optional<AuditSchedule> findByScheduleNoIgnoreCase(String scheduleNo);
 }

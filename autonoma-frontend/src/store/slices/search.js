@@ -33,8 +33,13 @@ const search = createSlice({
         action.payload.forEach((field) => {
           if (field) {
             if (field.type === 'dateRange') {
-              nextFilters[`${field.id}Start`] = '';
-              nextFilters[`${field.id}End`] = '';
+              const today = new Date();
+              const yyyy = today.getFullYear();
+              const mm = String(today.getMonth() + 1).padStart(2, '0');
+              const dd = String(today.getDate()).padStart(2, '0');
+              const todayStr = `${yyyy}-${mm}-${dd}`;
+              nextFilters[`${field.id}Start`] = todayStr;
+              nextFilters[`${field.id}End`] = todayStr;
             } else if (field.defaultValue !== undefined) {
               nextFilters[field.id] = field.defaultValue;
             }
@@ -50,8 +55,13 @@ const search = createSlice({
         state.config.forEach((field) => {
           if (field) {
             if (field.type === 'dateRange') {
-              nextFilters[`${field.id}Start`] = '';
-              nextFilters[`${field.id}End`] = '';
+              const today = new Date();
+              const yyyy = today.getFullYear();
+              const mm = String(today.getMonth() + 1).padStart(2, '0');
+              const dd = String(today.getDate()).padStart(2, '0');
+              const todayStr = `${yyyy}-${mm}-${dd}`;
+              nextFilters[`${field.id}Start`] = todayStr;
+              nextFilters[`${field.id}End`] = todayStr;
             } else if (field.defaultValue !== undefined) {
               nextFilters[field.id] = field.defaultValue;
             }

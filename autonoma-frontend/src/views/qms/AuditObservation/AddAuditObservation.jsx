@@ -392,9 +392,29 @@ export default function AddAuditObservation() {
     // SOP: Mandatory Attachment Rule (SOP 5.1.4) - required for Compliance/OFI if marked
     const missingAttachments = details.some(d => d.attachmentReq === 'YES' && d.observationStatus !== 'NC' && d.observationStatus !== 'NCR' && d.observationStatus !== 'NO ENTRY' && d.observationStatus !== 'NO_ENTRY' && d.observationStatus && !d.attachmentPath);
     
-    if (hasSummaryErrors || missingComments || missingAttachments) {
+    if (hasSummaryErrors) {
+      return;
+    }
+
+    if (missingComments) {
       setShowTableErrors(true);
-      dispatch(openSnackbar({ open: true, message: 'Please correct the highlighted validation errors.', severity: 'error', variant: 'alert' }));
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Please enter comments for all NC, NCR, and OFI observations.', 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
+      return;
+    }
+
+    if (missingAttachments) {
+      setShowTableErrors(true);
+      dispatch(openSnackbar({ 
+        open: true, 
+        message: 'Please upload attachments where required (marked as YES).', 
+        severity: 'error', 
+        variant: 'alert' 
+      }));
       return;
     }
 
@@ -498,9 +518,17 @@ export default function AddAuditObservation() {
                     <BOSTimePicker
                       size="small"
                       value={cleanedOutTime}
-                      disabled={!isAuditorUser}
-                      onChange={async (e) => {
+                      disabled={!perms.write}
+                      onChange={(e) => {
                         const val = e.target.value;
+                        const updatedAttendance = attendance.map(item => 
+                          item.id === row.id ? { ...item, outTime: val } : item
+                        );
+                        setAttendance(updatedAttendance);
+                      }}
+                      onAccept={async (date) => {
+                        if (!date || isNaN(date.getTime())) return;
+                        const val = format(date, 'hh:mm a');
                         try {
                           const updatedRow = { ...row, outTime: val };
                           await axios.put(`${API_PATHS.QMS.AUDIT_ATTENDANCE}/${row.id}`, updatedRow);
