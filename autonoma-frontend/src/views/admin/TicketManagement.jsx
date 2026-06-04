@@ -697,7 +697,7 @@ export default function TicketManagement({ viewType }) {
     }
 
     const config = [
-      { id: 'ticketId', label: 'Ticket ID', type: 'text', isStarred: true },
+      { id: 'ticketId', label: 'Task ID', type: 'text', isStarred: true },
       {
         id: 'taskScope',
         label: 'Task Scope',
@@ -708,7 +708,7 @@ export default function TicketManagement({ viewType }) {
       },
       {
         id: 'ticketType',
-        label: 'Ticket Type',
+        label: 'Task Type',
         type: 'select',
         options: [
           { value: 'All', label: 'All Types' },
@@ -1000,7 +1000,7 @@ export default function TicketManagement({ viewType }) {
       const res = await axios.get('/api/tickets');
       setTickets(res.data || []);
     } catch (err) {
-      showSnackbar('Failed to load support tickets', 'error');
+      showSnackbar('Failed to load support tasks', 'error');
     } finally {
       setLoading(false);
     }
@@ -1653,6 +1653,81 @@ export default function TicketManagement({ viewType }) {
     }
   };
 
+  const handlePaste = async (e, targetEditor) => {
+    if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const files = e.clipboardData.files;
+      const uploadedUrls = [];
+      const newAttachments = [];
+
+      setUploading(true);
+      try {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('module', 'SUPPORT_TEMP_ATTACHMENT');
+          const res = await axios.post('/api/files/upload', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+          });
+          
+          const url = res.data;
+          const isImage = file.type.startsWith('image') || url.match(/\.(jpeg|jpg|gif|png|webp)$/i) != null;
+          
+          uploadedUrls.push({ url, isImage });
+          newAttachments.push({
+            url: url,
+            name: file.name,
+            size: file.size,
+            type: file.type || file.name.split('.').pop(),
+            pasted: isImage
+          });
+        }
+        
+        setFormAttachments(prev => [...prev, ...newAttachments]);
+        
+        for (const item of uploadedUrls) {
+          if (item.isImage) {
+            const actualUrl = item.url.startsWith('/api/') ? item.url : `/api/files/view?path=${encodeURIComponent(item.url)}`;
+            const imgTag = `<img src="${actualUrl}" />`;
+            if (targetEditor === 'detailResolution') {
+              setDetailResolution(prev => prev ? prev + imgTag : imgTag);
+            } else if (targetEditor === 'formDesc') {
+              setFormDesc(prev => prev ? prev + imgTag : imgTag);
+            }
+          }
+        }
+        
+        showSnackbar('Attachments pasted successfully!');
+      } catch (err) {
+        showSnackbar('Failed to paste attachments', 'error');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    setFormAttachments(prev => {
+      let changed = false;
+      const newAttachments = prev.filter(att => {
+        if (att.pasted) {
+          const actualUrl = att.url.startsWith('/api/') ? att.url : `/api/files/view?path=${encodeURIComponent(att.url)}`;
+          const inDesc = formDesc && formDesc.includes(actualUrl);
+          const inRes = detailResolution && detailResolution.includes(actualUrl);
+          if (!inDesc && !inRes) {
+            changed = true;
+            return false;
+          }
+        }
+        return true;
+      });
+      return changed ? newAttachments : prev;
+    });
+  }, [formDesc, detailResolution]);
+
   // Due Date & Target Date Reason Check
   const validateAndSubmitTicket = (e) => {
     e.preventDefault();
@@ -1722,7 +1797,7 @@ export default function TicketManagement({ viewType }) {
     try {
       setIsSaving(true);
       await axios.post('/api/tickets', payload);
-      showSnackbar('Ticket raised successfully!');
+      showSnackbar('Task raised successfully!');
       setCreateOpen(false);
       setReasonOpen(false);
       setDueDateReasonText('');
@@ -1777,7 +1852,7 @@ export default function TicketManagement({ viewType }) {
         reassignComment: reassignComment
       };
       await axios.put(`/api/tickets/${reassignTicket.rowId}`, payload);
-      showSnackbar('Ticket reassigned successfully!');
+      showSnackbar('Task reassigned successfully!');
       setReassignOpen(false);
       setReassignEmployee(null);
       setReassignComment('');
@@ -1824,13 +1899,13 @@ export default function TicketManagement({ viewType }) {
 
       // Guard: CLOSED ticket
       if (selectedTicket.ticketStatus === 'Closed') {
-        showSnackbar('This ticket is permanently closed', 'error');
+        showSnackbar('This task is permanently closed', 'error');
         return;
       }
     } else if (currentViewType === 'raised-by-me') {
       // Guard: CLOSED ticket
       if (selectedTicket.ticketStatus === 'Closed') {
-        showSnackbar('This ticket is permanently closed', 'error');
+        showSnackbar('This task is permanently closed', 'error');
         return;
       }
     }
@@ -1858,10 +1933,14 @@ export default function TicketManagement({ viewType }) {
           }
         }
 
+        const isAddReq = detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed';
+        const mappedAttachments = formAttachments.map(f => typeof f === 'string' ? f : f.url);
         const commonPayload = {
-          additionalRequirement: (detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed') ? detailResolution : detailAdditionalRequirement,
-          tempAdditionalAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
-          tempAdditionalVoiceRecordings: formVoiceFiles
+          additionalRequirement: isAddReq ? detailResolution : detailAdditionalRequirement,
+          tempAdditionalAttachments: isAddReq ? mappedAttachments : [],
+          tempAdditionalVoiceRecordings: isAddReq ? formVoiceFiles : [],
+          tempAttachments: !isAddReq ? mappedAttachments : [],
+          tempVoiceRecordings: !isAddReq ? formVoiceFiles : []
         };
 
         const payload = {
@@ -1888,7 +1967,7 @@ export default function TicketManagement({ viewType }) {
         setDetailTakenTime('');
         setDetailReworkTime('');
         await fetchTicketSubresources(selectedTicket.rowId);
-        showSnackbar('Ticket updated successfully!');
+        showSnackbar('Task updated successfully!');
         fetchTickets();
         setHasSavedInDetails(true);
         setDetailsOpen(false);
@@ -1900,10 +1979,14 @@ export default function TicketManagement({ viewType }) {
 
       // ─── RAISED BY ME RULES ────────────────────────────────────────────────
       if (currentViewType === 'raised-by-me') {
+        const isAddReq = detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed';
+        const mappedAttachments = formAttachments.map(f => typeof f === 'string' ? f : f.url);
         const payload = {
-          additionalRequirement: (detailStatus === 'Reopened' && reopenReason === 'Additional Requirement Needed') ? detailResolution : detailAdditionalRequirement,
-          tempAdditionalAttachments: formAttachments.map(f => typeof f === 'string' ? f : f.url),
-          tempAdditionalVoiceRecordings: formVoiceFiles
+          additionalRequirement: isAddReq ? detailResolution : detailAdditionalRequirement,
+          tempAdditionalAttachments: isAddReq ? mappedAttachments : [],
+          tempAdditionalVoiceRecordings: isAddReq ? formVoiceFiles : [],
+          tempAttachments: !isAddReq ? mappedAttachments : [],
+          tempVoiceRecordings: !isAddReq ? formVoiceFiles : []
         };
 
         if (detailEstimatedTime && detailEstimatedTime !== selectedTicket.assignedHours) {
@@ -1953,11 +2036,11 @@ export default function TicketManagement({ viewType }) {
           await fetchTicketSubresources(selectedTicket.rowId);
 
           if (detailStatus === 'Reopened') {
-            showSnackbar('Ticket reopened — assigned user status set to REWORK');
+            showSnackbar('Task reopened — assigned user status set to REWORK');
           } else if (detailStatus === 'Completed') {
-            showSnackbar('Ticket marked as Completed!');
+            showSnackbar('Task marked as Completed!');
           } else {
-            showSnackbar('Ticket updated successfully!');
+            showSnackbar('Task updated successfully!');
           }
 
           fetchTickets();
@@ -2335,7 +2418,7 @@ export default function TicketManagement({ viewType }) {
       <Paper sx={{ p: 2, mb: 3, borderRadius: '12px', border: '1px solid #eef2f6', bgcolor: '#fff' }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 3, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
           <span style={{ display: 'inline-block', width: '8px', height: '16px', borderRadius: '4px', backgroundColor: '#673ab7' }}></span>
-          Ticket Progress Roadmap
+          Task Progress Roadmap
         </Typography>
 
         <Box sx={{ position: 'relative', pl: 1 }}>
@@ -2345,7 +2428,7 @@ export default function TicketManagement({ viewType }) {
 
             let titleText = '';
             if (event.comment === 'Ticket created') {
-              titleText = 'Ticket Created';
+              titleText = 'Task Created';
             } else if (isReassign) {
               titleText = event.comment;
             } else {
@@ -2430,7 +2513,7 @@ export default function TicketManagement({ viewType }) {
                     }
                     if (isHtml || textToDisplay.includes('<p>')) {
                       return (
-                        <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                        <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 }, '& img': { maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
                       );
                     }
                     return (
@@ -2553,7 +2636,7 @@ export default function TicketManagement({ viewType }) {
               {/* Middle Side: Stat Cards */}
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'nowrap', flexGrow: 1, ml: 2 }}>
                 {[
-                  { label: 'Ticket No', value: selectedTicket.ticketId },
+                  { label: 'Task No', value: selectedTicket.ticketId },
                   { label: 'Title', value: selectedTicket.title },
                   { label: 'Target Date', value: selectedTicket.targetDate ? format(new Date(selectedTicket.targetDate), 'dd/MM/yyyy') : '-', icon: <CalendarTodayIcon sx={{ color: '#64748b', fontSize: 20 }} /> },
                   { label: 'Assigned Hrs', value: selectedTicket.assignedHours ? (() => { const m = parseDurationToMinutes(selectedTicket.assignedHours); return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; })() : '-', icon: <TimerIcon sx={{ color: '#64748b', fontSize: 20 }} /> },
@@ -2616,7 +2699,7 @@ export default function TicketManagement({ viewType }) {
         {/* NotebookLM Style Flexible Split Layout */}
         <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 180px)' }}>
 
-          {/* Part 1: Ticket Description (30%) */}
+          {/* Part 1: Task Description (30%) */}
           <Box sx={{
             flex: panelsOpen.part1 ? 3 : '0 0 50px',
             transition: 'all 0.3s ease',
@@ -2627,10 +2710,10 @@ export default function TicketManagement({ viewType }) {
               {panelsOpen.part1 ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <DescriptionOutlinedIcon sx={{ color: '#673ab7', fontSize: 20 }} />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b' }}>Ticket Description</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b' }}>Task Description</Typography>
                 </Box>
               ) : (
-                <Typography variant="caption" sx={{ fontWeight: 800, writingMode: 'vertical-rl', transform: 'rotate(180deg)', py: 2, letterSpacing: '1px', color: '#64748b' }}>Ticket Description</Typography>
+                <Typography variant="caption" sx={{ fontWeight: 800, writingMode: 'vertical-rl', transform: 'rotate(180deg)', py: 2, letterSpacing: '1px', color: '#64748b' }}>Task Description</Typography>
               )}
               <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleTogglePanel('part1'); }} sx={{ position: panelsOpen.part1 ? 'relative' : 'absolute', top: panelsOpen.part1 ? 0 : 8 }}>
                 {panelsOpen.part1 ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
@@ -2638,7 +2721,7 @@ export default function TicketManagement({ viewType }) {
             </Box>
             <Collapse in={panelsOpen.part1} sx={{ flexGrow: 1, overflowY: 'auto' }}>
               <Box sx={{ p: 2 }}>
-                <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #eef2f6', minHeight: 60, mb: 2 }} dangerouslySetInnerHTML={{ __html: selectedTicket.description || '' }} />
+                <Box sx={{ p: 1.5, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #eef2f6', minHeight: 60, mb: 2, '& img': { maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: selectedTicket.description || '' }} />
 
                 <Grid container spacing={1.5}>
                   {[
@@ -2668,7 +2751,7 @@ export default function TicketManagement({ viewType }) {
                 {(selectedTicket.additionalRequirement && selectedTicket.additionalRequirement.replace(/<[^>]*>?/gm, '').trim() !== '') && (
                   <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #eef2f6' }}>
                     <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, display: 'block' }}>Additional Requirement</Typography>
-                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2 }} dangerouslySetInnerHTML={{ __html: selectedTicket.additionalRequirement }} />
+                    <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', minHeight: 80, mb: 2, '& img': { maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: selectedTicket.additionalRequirement }} />
                   </Box>
                 )}
               </Box>
@@ -2718,6 +2801,7 @@ export default function TicketManagement({ viewType }) {
                             {!isReopenedTicket && <MenuItem key="InProgress" value="In Progress" sx={{ fontSize: '0.875rem' }}>IN PROGRESS</MenuItem>}
                             <MenuItem key="ToBeTested" value="To Be Tested" sx={{ fontSize: '0.875rem' }}>TO BE TESTED</MenuItem>
                             {isReopenedTicket && <MenuItem key="Rework" value="Rework" sx={{ fontSize: '0.875rem' }}>REWORK</MenuItem>}
+                            <MenuItem key="YetToDeploy" value="Yet To Deploy" sx={{ fontSize: '0.875rem' }}>YET TO DEPLOY</MenuItem>
                             <MenuItem key="Reopened" value="Reopened" disabled sx={{ fontSize: '0.875rem' }}>REOPEN</MenuItem>
                           </TextField>
                         ) : (
@@ -2911,11 +2995,12 @@ export default function TicketManagement({ viewType }) {
                             <Box sx={{
                               '.ql-container': { minHeight: '120px !important', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' },
                               '.ql-toolbar': { borderTopLeftRadius: '12px', borderTopRightRadius: '12px', bgcolor: '#f8fafc' },
+                              '& .ql-editor img': { maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0', margin: '4px' },
                               border: commentError ? '1px solid #d32f2f' : '1px solid #e2e8f0',
                               borderRadius: '12px',
                               bgcolor: '#fff',
                               mb: 1
-                            }}>
+                            }} onPasteCapture={(e) => handlePaste(e, 'detailResolution')}>
                               <ReactQuillDemo 
                                 value={detailResolution} 
                                 onChange={(val) => {
@@ -3036,7 +3121,7 @@ export default function TicketManagement({ viewType }) {
                           <Stack spacing={2} sx={{ mb: 2 }}>
                             {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').length > 0 && (
                               <>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 1 }}>General Attachments</Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1e293b', mb: 1, mt: 1 }}>Task Reference Images</Typography>
                                 {ticketAttachments.filter(f => f.fileType !== 'Additional Requirement Attachment' && f.fileType !== 'Additional Requirement Voice').map((file) => {
                                   const isVoice = file.fileType === 'Voice Recording' ||
                                     /\.(mp3|wav|m4a|aac|webm|ogg)$/i.test(file.fileName);
@@ -3104,6 +3189,61 @@ export default function TicketManagement({ viewType }) {
                               </>
                             )}
                           </Stack>
+                          
+                          {(formAttachments.length > 0 || formVoiceFiles.length > 0) && (
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flexGrow: 1, maxHeight: 150, overflowY: 'auto' }}>
+                              {formAttachments.map((fileObj, idx) => {
+                                const isUrlStr = typeof fileObj === 'string';
+                                const url = isUrlStr ? fileObj : fileObj.url;
+                                const name = isUrlStr ? url.substring(url.lastIndexOf('/') + 1) : fileObj.name;
+                                const size = isUrlStr ? null : fileObj.size;
+                                const canPreview = isPreviewable(name);
+
+                                return (
+                                  <Box key={`a-${idx}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f8fafc', border: '1px solid #e2e8f0', p: 1, borderRadius: '6px', mb: 0.5 }}>
+                                    <Box sx={{ width: '40%', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                      <InsertDriveFileIcon sx={{ fontSize: 16, color: '#64748b' }} />
+                                      <Tooltip title={name} arrow>
+                                        <Typography variant="caption" sx={{ fontWeight: 600, color: '#334155', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {name}
+                                        </Typography>
+                                      </Tooltip>
+                                    </Box>
+                                    <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                      {getFileTypeDisplay(name)}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ width: '15%', color: '#64748b', fontWeight: 500 }}>
+                                      {size ? formatFileSize(size) : 'Unknown'}
+                                    </Typography>
+                                    <Box sx={{ width: '20%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                                      {canPreview ? (
+                                        <Button size="small" onClick={() => { setPreviewFileData({ url, name, type: getFileTypeDisplay(name) }); setPreviewModalOpen(true); }} sx={{ textTransform: 'none', minWidth: 0, p: '2px 6px', fontSize: '0.7rem' }}>
+                                          <VisibilityIcon sx={{ fontSize: 14, mr: 0.5 }} /> Preview
+                                        </Button>
+                                      ) : (
+                                        <Typography variant="caption" sx={{ color: '#94a3b8' }}>No Preview</Typography>
+                                      )}
+                                      <IconButton size="small" onClick={() => setFormAttachments(formAttachments.filter((_, i) => i !== idx))} sx={{ ml: 1, p: 0.25 }}>
+                                        <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                                      </IconButton>
+                                    </Box>
+                                  </Box>
+                                );
+                              })}
+                              {formVoiceFiles.map((url, idx) => (
+                                <Box key={`v-${idx}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: '#f3e8ff', px: 1, py: 0.5, borderRadius: '4px', mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ flexShrink: 0, color: 'secondary.main', fontWeight: 600 }}>
+                                    🎵 Audio Note
+                                  </Typography>
+                                  <audio src={'/api/files/download?path=' + encodeURIComponent(url)} controls style={{ height: '32px', flexGrow: 1, maxWidth: '250px' }} />
+                                  <IconButton size="small" onClick={() => setFormVoiceFiles(formVoiceFiles.filter((_, i) => i !== idx))} sx={{ p: 0.25 }}>
+                                    <CloseIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                                  </IconButton>
+                                </Box>
+                              ))}
+                            </Box>
+                          )}
+
                           <Divider sx={{ my: 2 }} />
                           <Button component="label" variant="contained" fullWidth startIcon={<CloudUploadIcon />}>
                             Upload File
@@ -3122,7 +3262,7 @@ export default function TicketManagement({ viewType }) {
 
                         {/* CLOSED NOTICE */}
                         {selectedTicket.ticketStatus === 'Closed' && (
-                          <Alert severity="info">This ticket is permanently closed and cannot be edited.</Alert>
+                          <Alert severity="info">This task is permanently closed and cannot be edited.</Alert>
                         )}
 
                       </Stack>
@@ -3135,7 +3275,7 @@ export default function TicketManagement({ viewType }) {
                   {false && (
                     <Box>
                       <Box sx={{ p: 2, mb: 3 }}>
-                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Ticket Description</Typography>
+                        <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Task Description</Typography>
                         <Box
                           sx={{
                             p: 2,
@@ -3143,7 +3283,8 @@ export default function TicketManagement({ viewType }) {
                             borderRadius: '8px',
                             border: '1px solid #eee',
                             minHeight: 120,
-                            overflowY: 'auto'
+                            overflowY: 'auto',
+                            '& img': { maxWidth: '100%', maxHeight: '150px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' }
                           }}
                           dangerouslySetInnerHTML={{ __html: selectedTicket.description }}
                         />
@@ -3208,7 +3349,7 @@ export default function TicketManagement({ viewType }) {
                                   fullWidth
                                   select
                                   size="small"
-                                  label="Ticket Workflow Status"
+                                  label="Task Workflow Status"
                                   value={detailStatus}
                                   onChange={(e) => {
                                     setDetailStatus(e.target.value);
@@ -3340,7 +3481,7 @@ export default function TicketManagement({ viewType }) {
                                   onClick={() => setIsReassigning(true)}
                                   sx={{ height: 40, width: '100%', fontWeight: 700, borderRadius: '8px' }}
                                 >
-                                  Reassign Ticket
+                                  Reassign Task
                                 </Button>
                               )}
                             </Box>
@@ -3393,6 +3534,7 @@ export default function TicketManagement({ viewType }) {
                           <Box sx={{ width: '100%' }}>
                             <Typography variant="caption" sx={{ fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.5px', mb: 1, display: 'block' }}>Comments <span style={{ color: '#dc2626' }}>*</span></Typography>
                             <Box
+                              onPasteCapture={(e) => handlePaste(e, 'detailResolution')}
                               sx={{
                                 position: 'relative',
                                 bgcolor: '#fff',
@@ -3423,7 +3565,7 @@ export default function TicketManagement({ viewType }) {
                             </Box>
                           </Box>
 
-                          {/* Row 5: Apply Changes Button & Reopen Ticket Banner */}
+                          {/* Row 5: Apply Changes Button & Reopen Task Banner */}
                           <Box sx={{ width: '100%', position: 'sticky', bottom: 16, zIndex: 10, mt: 2 }}>
                             <Button
                               variant="contained"
@@ -3446,10 +3588,10 @@ export default function TicketManagement({ viewType }) {
                             <Box sx={{ width: '100%' }}>
                               <Alert severity="success" action={
                                 <Button size="small" color="inherit" startIcon={<ReplayIcon />} onClick={() => setReopenOpen(true)}>
-                                  Reopen Ticket
+                                  Reopen Task
                                 </Button>
                               }>
-                                This ticket is completed. You can reopen it if you require further investigation.
+                                This task is completed. You can reopen it if you require further investigation.
                               </Alert>
                             </Box>
                           )}
@@ -3496,8 +3638,8 @@ export default function TicketManagement({ viewType }) {
                       let parsedEvent = null;
                       try { parsedEvent = JSON.parse(event.comment); } catch (e) { }
 
-                      if (event.comment === 'Ticket created' || (parsedEvent && parsedEvent.activityName === 'Ticket Created')) {
-                        titleText = 'Ticket Created';
+                      if (event.comment === 'Ticket created' || (parsedEvent && parsedEvent.activityName === 'Task Created')) {
+                        titleText = 'Task Created';
                       } else if (isReassign || (parsedEvent && parsedEvent.activityName === 'Ticket Reassigned')) {
                         titleText = parsedEvent ? parsedEvent.comment : event.comment;
                       } else if (parsedEvent && (parsedEvent.activityName === 'Estimated Time Updated' || parsedEvent.activityName === 'Estimated Time Set')) {
@@ -3586,7 +3728,7 @@ export default function TicketManagement({ viewType }) {
                               }
                               if (isHtml || textToDisplay.includes('<p>')) {
                                 return (
-                                  <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
+                                  <Box sx={{ typography: 'caption', display: 'block', mt: 0.5, fontStyle: 'italic', color: 'text.secondary', bgcolor: '#f8fafc', p: 1, borderRadius: '4px', borderLeft: '3px solid #673ab7', '& p': { m: 0 }, '& img': { maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', borderRadius: '4px', margin: '4px 0' } }} dangerouslySetInnerHTML={{ __html: textToDisplay }} />
                                 );
                               }
                               return (
@@ -3690,7 +3832,7 @@ export default function TicketManagement({ viewType }) {
             <Table stickyHeader size="small" sx={{ minWidth: 650, '& .MuiTableCell-root': { py: 1, px: 1.5 } }}>
               <TableHead sx={{ bgcolor: theme.palette.mode === 'dark' ? 'background.default' : 'grey.50', '& .MuiTableCell-root': { py: 1.5 } }}>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 700 }}>Ticket ID</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Task ID</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Title / Page Name</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned To</TableCell>
                   <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Assigned By</TableCell>
@@ -3708,7 +3850,7 @@ export default function TicketManagement({ viewType }) {
                 {filteredTickets.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={9} align="center" sx={{ py: 15 }}>
-                      <Typography variant="body1" color="text.secondary">No support tickets found</Typography>
+                      <Typography variant="body1" color="text.secondary">No support tasks found</Typography>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -3804,7 +3946,7 @@ export default function TicketManagement({ viewType }) {
                           </Typography>
                         </TableCell>
                         <TableCell align="center">
-                          <Tooltip title="Reassign Ticket">
+                          <Tooltip title="Reassign Task">
                             <IconButton
                               size="small"
                               color="info"
@@ -3888,7 +4030,7 @@ export default function TicketManagement({ viewType }) {
               <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#673ab7', borderRadius: 1 }} />
-                  Ticket Information & Classification
+                  Task Information & Classification
                 </Typography>
                 {/* Row 1: Title grows */}
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'flex-start' }}>
@@ -3896,7 +4038,7 @@ export default function TicketManagement({ viewType }) {
                     <TextField
                       fullWidth
                       size="small"
-                      label="Ticket Title"
+                      label="Task Title"
                       required
                       placeholder="Summarize the support request..."
                       value={formTitle}
@@ -3973,7 +4115,7 @@ export default function TicketManagement({ viewType }) {
                                             {activeTicketsForSelectedPage.map((t, idx) => (
                                               <Box key={t.ticketId} sx={{ mb: idx < activeTicketsForSelectedPage.length - 1 ? 1.5 : 0, pb: idx < activeTicketsForSelectedPage.length - 1 ? 1.5 : 0, borderBottom: idx < activeTicketsForSelectedPage.length - 1 ? '1px dashed rgba(255,255,255,0.2)' : 'none' }}>
                                                 <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace', mb: 0.5 }}>
-                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Ticket No</Box>
+                                                  <Box sx={{ width: '95px', color: 'rgba(255,255,255,0.7)' }}>Task No</Box>
                                                   <Box sx={{ flex: 1 }}>: {t.ticketId}</Box>
                                                 </Box>
                                                 <Box sx={{ display: 'flex', fontSize: '0.75rem', fontFamily: 'monospace', mb: 0.5 }}>
@@ -4305,27 +4447,10 @@ export default function TicketManagement({ viewType }) {
               <Box sx={{ bgcolor: 'white', p: 1.5, borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
                 <Typography variant="h5" sx={{ fontWeight: 700, mb: 1.5, color: '#1e293b', display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Box sx={{ width: 4, height: 16, bgcolor: '#f59e0b', borderRadius: 1 }} />
-                  Details
+                  Details <span style={{ color: '#dc2626' }}>*</span>
                 </Typography>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ position: 'relative', mt: 1, width: '100%' }}>
-                    {/* Floating Label */}
-                    <InputLabel
-                      shrink={true}
-                      sx={{
-                        position: 'absolute',
-                        top: -9,
-                        left: 10,
-                        bgcolor: 'white',
-                        px: 0.5,
-                        zIndex: 2,
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        color: 'text.secondary'
-                      }}
-                    >
-                      Detailed Description *
-                    </InputLabel>
 
                     {/* Mic Button at top right */}
                     <Box sx={{ position: 'absolute', top: 6, right: 6, zIndex: 10, display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -4361,8 +4486,9 @@ export default function TicketManagement({ viewType }) {
                       overflow: 'hidden',
                       bgcolor: '#fafafa',
                       transition: 'border-color 0.3s ease',
-                      '& .ql-editor': { minHeight: '250px' }
-                    }}>
+                      '& .ql-editor': { minHeight: '250px' },
+                      '& .ql-editor img': { maxWidth: '100%', maxHeight: '60px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #e2e8f0', margin: '4px' }
+                    }} onPasteCapture={(e) => handlePaste(e, 'formDesc')}>
                       <ReactQuillDemo
                         value={formDesc}
                         onChange={setFormDesc}
@@ -4532,7 +4658,7 @@ export default function TicketManagement({ viewType }) {
 
       {/* ── DIALOG: REOPEN REASON POPUP ── */}
       <Dialog open={reopenOpen} onClose={() => setReopenOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Reopen Ticket Confirmation</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Reopen Task Confirmation</DialogTitle>
         <Divider />
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2 }}>
@@ -4573,7 +4699,7 @@ export default function TicketManagement({ viewType }) {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setReopenOpen(false)}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleReopenTicket}>Reopen Ticket</Button>
+          <Button variant="contained" color="error" onClick={handleReopenTicket}>Reopen Task</Button>
         </DialogActions>
       </Dialog>
 
@@ -4602,7 +4728,7 @@ export default function TicketManagement({ viewType }) {
               <ManageAccountsIcon sx={{ fontSize: 28 }} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 0.5 }}>Reassign Ticket</Typography>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: '#0f172a', mb: 0.5 }}>Reassign Task</Typography>
               <Typography variant="body2" sx={{ color: '#64748b' }}>Select an employee and add comments to reassign this ticket.</Typography>
             </Box>
           </Box>
