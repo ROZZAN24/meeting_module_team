@@ -5,6 +5,8 @@ import {
 } from '@mui/material';
 import { styled, alpha } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
 import AssignmentRoundedIcon from '@mui/icons-material/AssignmentRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
@@ -117,7 +119,11 @@ const IconBox = styled(Box)(({ color, bg, size = 36 }) => ({
   background: bg,
 }));
 
-export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
+export default function ReopenDashboard({ realData, realTasks = [], isDark, activeTab }) {
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search?.filters || {});
+  
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
 
@@ -456,7 +462,29 @@ export default function ReopenDashboard({ isDark, realData, realTasks = [] }) {
       {/* ROW 1: STAT CARDS */}
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(2,1fr)', lg: 'repeat(4,1fr)' }, gap: 1.5, mb: 1.5 }}>
         {topStats.map((stat, idx) => (
-          <NeonCard key={idx} statcolor={stat.color}>
+          <NeonCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+              const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+              
+              const initialFilters = {
+                taskScope: globalFilters?.performanceScope || 'Mine',
+                ticketStatus: 'Reopened'
+              };
+              
+              navigate(routePath, { 
+                state: { 
+                  fromDashboard: true, 
+                  fromTab: activeTab,
+                  dashboardFilters: globalFilters,
+                  initialFilters 
+                } 
+              });
+            }}
+            sx={{ cursor: 'pointer' }}
+          >
             <Box className="hud-corner hud-tl" />
             <Box className="hud-corner hud-tr" />
             <Box className="hud-corner hud-bl" />

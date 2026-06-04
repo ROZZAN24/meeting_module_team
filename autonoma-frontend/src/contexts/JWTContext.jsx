@@ -180,8 +180,9 @@ export function JWTProvider({ children }) {
 
   const logout = async () => {
     try {
-      if (state.user?.id) {
-        await axios.post('/api/account/logout', { userId: state.user.id });
+      const uid = state.user?.userId || state.user?.id;
+      if (uid) {
+        await axios.post('/api/account/logout', { userId: uid });
       }
     } catch (err) {
       console.error('Logout audit failed:', err);

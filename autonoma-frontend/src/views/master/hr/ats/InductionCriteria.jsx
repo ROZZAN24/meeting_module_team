@@ -292,6 +292,30 @@ export default function InductionCriteria() {
   const handleSave = async () => {
     if (!validate(formData, VALIDATION_RULES)) return;
 
+    const selectedLevels = formData.levelCodes || [];
+    if (selectedLevels.includes('L1') && selectedLevels.length < 2) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Minimum 2 levels must be selected when Level L1 is chosen.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error'
+      }));
+      setErrors(prev => ({ ...prev, levelCodes: 'Minimum 2 levels required for L1' }));
+      return;
+    }
+    if ((selectedLevels.includes('L6') || selectedLevels.includes('L7')) && selectedLevels.length < 3) {
+      dispatch(openSnackbar({
+        open: true,
+        message: 'Minimum 3 levels must be selected when Level L6 or L7 is chosen.',
+        variant: 'alert',
+        alert: { variant: 'filled' },
+        severity: 'error'
+      }));
+      setErrors(prev => ({ ...prev, levelCodes: 'Minimum 3 levels required for L6/L7' }));
+      return;
+    }
+
     if (formData.attachmentRequired === 'YES' && (!formData.inductionAttachment || formData.inductionAttachment.length === 0)) {
       dispatch(openSnackbar({
         open: true,
@@ -596,7 +620,6 @@ export default function InductionCriteria() {
                     multiple: true,
                     renderValue: (selected) => {
                       if (!selected || selected.length === 0) return <em>-Select-</em>;
-                      if (selected.length === levelOptions.length) return 'All Levels';
                       return selected.map(code => levelOptions.find(l => l.code === code)?.label || code).join(', ');
                     }
                   }}
