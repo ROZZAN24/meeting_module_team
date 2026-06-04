@@ -24,7 +24,7 @@ import {
   Slide
 } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { setFilterConfig, resetFilters, setFilters } from 'store/slices/search';
 import { styled, alpha, keyframes } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
@@ -412,7 +412,7 @@ const VerticalSummaryCard = styled(Paper)(({ theme, basecolor }) => ({
 }));
 
 // ── Workload View ─────────────────────────────────────────────────────────────
-const WorkloadView = ({ realWorkload, isDark }) => {
+const WorkloadView = ({ realWorkload, isDark, navigate, filterRequestManagement, isCurrentUser, activeTab, globalFilters }) => {
   const [viewAllOpen, setViewAllOpen] = useState(false);
 
   const criticalCount = realWorkload.filter((w) => w.status === 'Critical').length;
@@ -521,7 +521,27 @@ const WorkloadView = ({ realWorkload, isDark }) => {
         </TableHead>
         <TableBody sx={{ bgcolor: isDark ? '#1E293B' : '#FFFFFF' }}>
           {rows.map((row, idx) => (
-            <TableRow key={idx} hover sx={{ '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } }}>
+            <TableRow 
+              key={idx} 
+              hover 
+              sx={{ 
+                cursor: filterRequestManagement === 'My Request' && !isCurrentUser(row.user) ? 'pointer' : 'default',
+                '& td': { borderBottom: idx === rows.length - 1 ? 'none' : `1px solid ${borderColor}` } 
+              }}
+              onDoubleClick={() => {
+                if (filterRequestManagement === 'My Request' && !isCurrentUser(row.user)) {
+                  navigate('/support/ticket-by-me', {
+                    state: {
+                      openNewTask: true,
+                      assignTo: row.user,
+                      fromDashboard: true,
+                      fromTab: activeTab,
+                      dashboardFilters: globalFilters
+                    }
+                  });
+                }
+              }}
+            >
               <TableCell sx={{ py: 1.5 }}>
                 <Stack direction="row" alignItems="center" gap={2}>
                   <Avatar sx={{ width: 32, height: 32, bgcolor: row.color, fontSize: '14px', fontWeight: 700, color: '#fff' }}>
@@ -1969,6 +1989,7 @@ export default function TaskDashboard() {
   const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
 
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(location.state?.fromTab || 'dashboard');
   const [loading, setLoading] = useState(true);
   const [realData, setRealData] = useState({
@@ -2388,7 +2409,15 @@ export default function TaskDashboard() {
     workloadColor = '#3B82F6';
     workloadBg = '#EFF6FF';
     workloadHex = '1f30a'; // Wave (Blue)
+    workloadHex = '1f300'; // Wave (Blue)
   }
+
+  const isCurrentUser = (name) => {
+    const currentUserName = (user?.name || '').trim().toLowerCase();
+    const currentUsername = (user?.username || '').trim().toLowerCase();
+    const n = (name || '').trim().toLowerCase();
+    return n === currentUserName || n === currentUsername;
+  };
 
   const topStats = [
     { id: 'dashboard', title: 'Overview', value: realData.total, iconHex: '1f4ca', color: '#3B82F6', bg: '#EFF6FF' },
@@ -2405,7 +2434,15 @@ export default function TaskDashboard() {
   const renderActiveDashboard = () => {
     switch (activeTab) {
       case 'workload':
-        return <WorkloadView realWorkload={realWorkload} isDark={isDark} />;
+        return <WorkloadView 
+                 realWorkload={realWorkload} 
+                 isDark={isDark} 
+                 navigate={navigate}
+                 filterRequestManagement={filterRequestManagement}
+                 isCurrentUser={isCurrentUser}
+                 activeTab={activeTab}
+                 globalFilters={globalFilters}
+               />;
       case 'dueToday':
         return <DueTodayDashboard realTasks={realTasks} isDark={isDark} activeTab={activeTab} />;
       case 'reopen':

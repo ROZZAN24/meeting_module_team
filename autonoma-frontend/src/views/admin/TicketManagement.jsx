@@ -785,6 +785,27 @@ export default function TicketManagement({ viewType }) {
     }
   }, [user, currentViewType]);
 
+  // Handle openNewTask from location state
+  useEffect(() => {
+    if (location.state?.openNewTask && employeesList.length > 0) {
+      setCreateOpen(true);
+      if (location.state?.assignTo) {
+        const emp = employeesList.find(e => e.employeeName === location.state.assignTo || e.id === location.state.assignTo);
+        if (emp) {
+          setFormDevName(emp.employeeName);
+          setFormDevEmail(emp.officeMail || '');
+          axios.get(`/api/master/hr/employees/${emp.id}/contact`)
+            .then(c => {
+              if (c.data?.mobile) setFormDevMobile(c.data.mobile);
+            }).catch(() => { });
+        } else {
+          setFormDevName(location.state.assignTo);
+        }
+      }
+      navigate(location.pathname, { replace: true, state: { ...location.state, openNewTask: false, assignTo: null } });
+    }
+  }, [location.state, employeesList, navigate, location.pathname]);
+
   // Keyboard Shortcut: Ctrl + N for New Task
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1707,7 +1728,16 @@ export default function TicketManagement({ viewType }) {
       setDueDateReasonText('');
       setPendingSavePayload(null);
       resetForm();
-      fetchTickets();
+      if (location.state?.fromDashboard) {
+        navigate('/dashboard/task-dashboard', { 
+          state: { 
+            fromTab: location.state?.fromTab,
+            dashboardFilters: location.state?.dashboardFilters 
+          } 
+        });
+      } else {
+        fetchTickets();
+      }
     } catch (err) {
       showSnackbar('Failed to create ticket: ' + (err.response?.data?.error || err.message), 'error');
     } finally {
