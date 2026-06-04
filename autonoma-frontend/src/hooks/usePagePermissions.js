@@ -51,12 +51,12 @@ export default function usePagePermissions(pageCode) {
       };
     }
 
-    // While loading, default to read-only (graceful degradation — don't block users)
+    // While loading, default to loading: true, and enabled/read: false (secure by default)
     if (isLoading || !auths) {
       return {
-        loading: isLoading,
-        enabled: true,
-        read: true,
+        loading: true,
+        enabled: false,
+        read: false,
         write: false,
         delete: false,
         export: false,

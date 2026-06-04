@@ -90,6 +90,8 @@ function MenuList() {
     // Apply permission filtering only when permissions are loaded
     if (permStatus === 'loaded') {
       currentItems = filterMenuByPermissions(currentItems, permMap);
+    } else {
+      currentItems = filterMenuByPermissions(currentItems, {});
     }
 
     setMenuItems({ items: currentItems });
