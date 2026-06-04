@@ -123,4 +123,48 @@ public class GlobalExceptionHandler {
         ex.printStackTrace();
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(org.springframework.transaction.TransactionSystemException.class)
+    public ResponseEntity<Object> handleTransactionSystem(org.springframework.transaction.TransactionSystemException ex, WebRequest request) {
+        logException(ex, request, HttpStatus.BAD_REQUEST);
+
+        Throwable cause = ex.getRootCause();
+        String message = "Transaction commit failed: ";
+        
+        if (cause instanceof jakarta.validation.ConstraintViolationException) {
+            jakarta.validation.ConstraintViolationException cve = (jakarta.validation.ConstraintViolationException) cause;
+            String violations = cve.getConstraintViolations().stream()
+                    .map(v -> v.getPropertyPath() + ": " + v.getMessage())
+                    .collect(java.util.stream.Collectors.joining(", "));
+            message += "Validation failed: " + violations;
+        } else if (cause != null) {
+            message += cause.getMessage();
+        } else {
+            message += ex.getMessage();
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", message);
+        body.put("details", ex.getMessage());
+        body.put("path", request.getDescription(false));
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(org.springframework.orm.jpa.JpaSystemException.class)
+    public ResponseEntity<Object> handleJpaSystem(org.springframework.orm.jpa.JpaSystemException ex, WebRequest request) {
+        logException(ex, request, HttpStatus.BAD_REQUEST);
+        
+        Throwable cause = ex.getRootCause();
+        String message = "JPA system error: " + (cause != null ? cause.getMessage() : ex.getMessage());
+        
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("message", message);
+        body.put("details", ex.getMessage());
+        body.put("path", request.getDescription(false));
+        
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
 }

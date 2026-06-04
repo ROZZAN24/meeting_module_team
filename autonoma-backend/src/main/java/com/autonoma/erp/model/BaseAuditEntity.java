@@ -102,7 +102,20 @@ public abstract class BaseAuditEntity {
             return;
         }
         this.updatedDate = new Date();
-        this.updatedUser = SecurityUtils.getCurrentUserDisplayName();
+        
+        if (this.updatedUser == null || this.updatedUser.trim().isEmpty()) {
+            String empName = null;
+            try {
+                empName = com.autonoma.erp.util.SecurityUtils.getCurrentUserEmployeeName();
+            } catch (Exception e) {
+            }
+            
+            if (empName != null && !empName.trim().isEmpty()) {
+                this.updatedUser = empName;
+            } else {
+                this.updatedUser = "Admin";
+            }
+        }
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnore

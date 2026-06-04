@@ -164,7 +164,7 @@ export default function CloseMomList() {
       if (!row._createdAt) val = '-';
       else {
         const dt = new Date(row._createdAt);
-        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
       }
     }
     else if (col.id === 'status') {

@@ -24,6 +24,7 @@ import {
   BOSFormSection,
   BOSPersonnelCard,
   BOSDatePicker,
+  BOSAnalogTimePicker,
   getPhotoUrl,
   btnSave,
   btnCancel,
@@ -72,6 +73,28 @@ const to12h = (time24h) => {
   const ampm = h24 >= 12 ? 'PM' : 'AM';
   const h12 = (h24 % 12 || 12).toString().padStart(2, '0');
   return `${h12}:${minutes.substring(0, 2)} ${ampm}`;
+};
+
+const addMinutesToTime12h = (time12h, minutesToAdd) => {
+  if (!time12h) return '';
+  const [time, modifier] = time12h.split(' ');
+  let [hours, minutes] = time.split(':').map(Number);
+  if (modifier === 'PM' && hours < 12) hours += 12;
+  if (modifier === 'AM' && hours === 12) hours = 0;
+  
+  let totalMinutes = hours * 60 + minutes + minutesToAdd;
+  let newHours = Math.floor(totalMinutes / 60) % 24;
+  let newMinutes = totalMinutes % 60;
+  
+  const ampm = newHours >= 12 ? 'PM' : 'AM';
+  let displayHours = newHours % 12 || 12;
+  return `${displayHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')} ${ampm}`;
+};
+
+const getMinEndTime = (startTime, intervalTime) => {
+  const baseTime = intervalTime || startTime;
+  if (!baseTime) return '';
+  return addMinutesToTime12h(baseTime, 15);
 };
 
 const INITIAL_FORM = {
@@ -666,22 +689,48 @@ export default function AddMeetingSchedule() {
               </Grid>
             )}
             <Grid item xs={12} sm={4}>
-              <BOSTextField select label="Start Time" name="startTime" value={form.startTime || ''} onChange={h} required fullWidth>
-                <MenuItem value="">-Select Start Time-</MenuItem>
-                {HALF_HOUR_TIME_OPTIONS.map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </BOSTextField>
+              <BOSAnalogTimePicker
+                required
+                label="Start Time"
+                name="startTime"
+                value={form.startTime || ''}
+                onChange={h}
+                selectedDate={form.meetingDate}
+                error={!!errors.startTime}
+                helperText={errors.startTime}
+                fullWidth
+              />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <BOSTextField select label="Interval Time" name="intervalTime" value={form.intervalTime || ''} onChange={h} disabled={!form.startTime} fullWidth>
-                <MenuItem value="">-Select Interval Time-</MenuItem>
-                {getFilteredTimeOptions().map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </BOSTextField>
+              <BOSAnalogTimePicker
+                label="Interval Time"
+                name="intervalTime"
+                value={form.intervalTime || ''}
+                onChange={h}
+                selectedDate={form.meetingDate}
+                minTime={addMinutesToTime12h(form.startTime, 15)}
+                minTimeMessage="Interval time must be at least 15 minutes after start time."
+                disabled={!form.startTime}
+                error={!!errors.intervalTime}
+                helperText={errors.intervalTime}
+                fullWidth
+              />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <BOSTextField select label="End Time" name="endTime" value={form.endTime || ''} onChange={h} required disabled={!form.startTime} fullWidth>
-                <MenuItem value="">-Select End Time-</MenuItem>
-                {getFilteredTimeOptions().map(t => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </BOSTextField>
+              <BOSAnalogTimePicker
+                required
+                label="End Time"
+                name="endTime"
+                value={form.endTime || ''}
+                onChange={h}
+                selectedDate={form.meetingDate}
+                minTime={getMinEndTime(form.startTime, form.intervalTime)}
+                minTimeMessage={form.intervalTime ? "End time must be at least 15 minutes after interval time." : "End time must be at least 15 minutes after start time."}
+                disabled={!form.startTime}
+                error={!!errors.endTime}
+                helperText={errors.endTime}
+                fullWidth
+              />
             </Grid>
           </Grid>
         </BOSFormSection>
@@ -761,10 +810,14 @@ export default function AddMeetingSchedule() {
                 }
 
                 const selectedDeptIds = (form.departments || []).map(d => String(d.id));
+                const otherField = person.field === 'chairedBy' ? 'hostBy' : 'chairedBy';
+                const otherSelectedEmp = form[otherField];
+
                 const filteredEmployees = employees.filter(emp => 
                   emp.status === 'Active' && 
                   person.filter(emp) &&
-                  selectedDeptIds.includes(String(emp.departmentId))
+                  selectedDeptIds.includes(String(emp.departmentId)) &&
+                  (!otherSelectedEmp || String(emp.id) !== String(otherSelectedEmp.id))
                 );
 
                 return (
@@ -812,7 +865,13 @@ export default function AddMeetingSchedule() {
                         getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
                         value={selectedEmp}
                         onChange={(e, val) => {
-                          setForm(p => ({ ...p, [person.field]: val }));
+                          setForm(p => {
+                            const nextForm = { ...p, [person.field]: val };
+                            if (person.field === 'hostBy' && val) {
+                              nextForm.participants = (p.participants || []).filter(item => String(item.id) !== String(val.id));
+                            }
+                            return nextForm;
+                          });
                           if (errors[person.field]) clearErrors(person.field);
                         }}
                         renderInput={(params) => (
@@ -841,6 +900,7 @@ export default function AddMeetingSchedule() {
                 e.status === 'Active' && 
                 e.isParticipants === 'YES' && 
                 form.departments.map(d => String(d.id)).includes(String(e.departmentId)) &&
+                (!form.hostBy || String(e.id) !== String(form.hostBy.id)) &&
                 !form.participants.some(p => p.id === e.id || p.empCode === e.empCode)
               )}
               getOptionLabel={(option) => `${option.employeeName} (${option.empCode})`}
@@ -933,6 +993,27 @@ export default function AddMeetingSchedule() {
         <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2, border: '1px dashed', borderColor: 'divider', textAlign: 'center' }}>
           <Typography variant="caption" color="text.secondary">All fields marked with * are mandatory for compliance.</Typography>
         </Box>
+
+        <Stack direction="row" spacing={1.5} justifyContent="flex-end" sx={{ pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Tooltip title={shortcutTooltip('Back', 'Esc')}>
+            <Button variant="outlined" color="error" startIcon={<IconArrowLeft size={18} />} onClick={() => navigate('/qms/meeting-schedule')} sx={btnCancel}>Back</Button>
+          </Tooltip>
+          <Tooltip title={shortcutTooltip('Clear Form', 'Ctrl + Backspace')}>
+            <Button variant="outlined" color="primary" startIcon={<IconEraser size={18} />} onClick={handleClear} sx={btnClear}>Clear</Button>
+          </Tooltip>
+          <Tooltip title={shortcutTooltip('Save', 'Ctrl + S')}>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              startIcon={submitting ? <CircularProgress size={18} color="inherit" /> : <IconDeviceFloppy size={18} />} 
+              onClick={handleSave} 
+              disabled={submitting}
+              sx={btnSave}
+            >
+              {submitting ? 'Saving...' : 'Save'}
+            </Button>
+          </Tooltip>
+        </Stack>
       </Stack>
     </MainCard>
   );

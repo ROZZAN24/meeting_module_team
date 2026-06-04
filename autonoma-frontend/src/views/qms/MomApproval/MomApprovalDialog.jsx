@@ -191,7 +191,7 @@ const MomApprovalDialog = ({ open, onClose, item, onAction }) => {
               {item._createdAt
                 ? new Date(item._createdAt).toLocaleDateString('en-GB') +
                   ' ' +
-                  new Date(item._createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+                  new Date(item._createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
                 : '-'}
             </Typography>
           </Box>

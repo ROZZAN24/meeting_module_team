@@ -25,11 +25,51 @@ import {
   BOSFormDialog,
   BOSTextField, BOSAutocomplete,
   BOSDatePicker,
-  BOSFormSection
+  BOSFormSection,
+  BOSAnalogTimePicker
 } from 'ui-component/bos';
 import { IconPlus, IconTrash, IconSettings, IconUsers, IconMessageDots } from '@tabler/icons-react';
 import useBOSValidation from 'hooks/useBOSValidation';
 import { useLookups } from 'hooks/useLookups';
+
+const formatTo24hString = (time) => {
+  if (!time) return '';
+  if (Array.isArray(time)) {
+    const [h, m] = time;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  if (typeof time === 'string') {
+    const parts = time.split(':');
+    if (parts.length >= 2) {
+      return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}`;
+    }
+  }
+  return time;
+};
+
+const to24h = (time12h) => {
+  if (!time12h) return '';
+  if (!time12h.toUpperCase().includes('AM') && !time12h.toUpperCase().includes('PM')) {
+    return formatTo24hString(time12h);
+  }
+  const [time, modifier] = time12h.trim().split(' ');
+  let [hours, minutes] = time.split(':');
+  let h = parseInt(hours, 10);
+  if (modifier === 'PM' && h < 12) h += 12;
+  if (modifier === 'AM' && h === 12) h = 0;
+  return `${h.toString().padStart(2, '0')}:${minutes}`;
+};
+
+const to12h = (timeVal) => {
+  if (!timeVal) return '';
+  const time24h = formatTo24hString(timeVal);
+  if (!time24h) return '';
+  const parts = time24h.split(':');
+  const h24 = parseInt(parts[0], 10);
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  const h12 = h24 % 12 || 12;
+  return `${String(h12).padStart(2, '0')}:${parts[1].substring(0, 2)} ${ampm}`;
+};
 
 const INITIAL_FORM = {
   momNo: 'AUTO',
@@ -62,13 +102,53 @@ const AddMomDialog = ({ open, onClose, onSave, item }) => {
     }
   }, [open, item, clearErrors]);
 
+  useEffect(() => {
+    if (form.schedule?.id && meetingSchedules.length > 0) {
+      const fullSch = meetingSchedules.find((s) => s.id === form.schedule.id);
+      if (fullSch) {
+        const hostEmployee = fullSch.hostBy;
+        const hostIdStr = hostEmployee ? String(hostEmployee.id) : null;
+        
+        let attendanceUpdated = false;
+        let updatedAttendanceList = [...(form.attendanceList || [])];
+        
+        if (hostEmployee && hostIdStr && !updatedAttendanceList.some(att => att.employee && String(att.employee.id) === hostIdStr)) {
+          updatedAttendanceList.push({
+            employee: hostEmployee,
+            inTime: '',
+            outTime: '',
+            attendanceStatus: 'ABSENT'
+          });
+          attendanceUpdated = true;
+        }
+
+        if (!form.schedule._isFull || attendanceUpdated) {
+          setForm((prev) => ({
+            ...prev,
+            schedule: {
+              ...prev.schedule,
+              ...fullSch,
+              _isFull: true
+            },
+            attendanceList: updatedAttendanceList
+          }));
+        }
+      }
+    }
+  }, [form.schedule, form.attendanceList, meetingSchedules]);
+
   // When schedule is selected, auto-fill header details
   const handleScheduleChange = (e, val) => {
     if (!val) return;
-    const participants = (val.participants || []).map(p => ({
+    let listToMap = [...(val.participants || [])];
+    if (val.hostBy && !listToMap.some((p) => p.employee && String(p.employee.id) === String(val.hostBy.id))) {
+      listToMap.push({ employee: val.hostBy });
+    }
+
+    const participants = listToMap.map(p => ({
       employee: p.employee,
       inTime: val.startTime || '09:00',
-      outTime: val.endTime || '10:00',
+      outTime: '',
       attendanceStatus: 'Present'
     }));
 
@@ -110,6 +190,16 @@ const AddMomDialog = ({ open, onClose, onSave, item }) => {
     ];
 
     if (validate(form, rules)) {
+      // Validation: Out Time must not be before In Time
+      const invalidOutTime = form.attendanceList.some((att) => {
+        if (att.attendanceStatus === 'Absent' || !att.inTime || !att.outTime) return false;
+        return to24h(att.outTime) < to24h(att.inTime);
+      });
+      if (invalidOutTime) {
+        dispatch(openSnackbar({ open: true, message: 'Out time cannot be before in time for any attendee', variant: 'alert', severity: 'warning' }));
+        return;
+      }
+
       // Custom validation for discussed points (SOP: 150 chars or 50 with attachment)
       for (const [idx, det] of form.details.entries()) {
         const minChars = det.attachmentRequired === 'YES' ? 50 : 150;
@@ -181,17 +271,36 @@ const AddMomDialog = ({ open, onClose, onSave, item }) => {
                   <TableRow key={idx}>
                     <TableCell>{idx + 1}</TableCell>
                     <TableCell>{att.employee?.department?.departmentName || 'N/A'}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{att.employee?.employeeName}</TableCell>
-                    <TableCell><BOSTextField type="time" size="small" value={att.inTime} onChange={(e) => {
-                      const list = [...form.attendanceList];
-                      list[idx].inTime = e.target.value;
-                      setForm({ ...form, attendanceList: list });
-                    }} /></TableCell>
-                    <TableCell><BOSTextField type="time" size="small" value={att.outTime} onChange={(e) => {
-                      const list = [...form.attendanceList];
-                      list[idx].outTime = e.target.value;
-                      setForm({ ...form, attendanceList: list });
-                    }} /></TableCell>
+                    <TableCell sx={{ fontWeight: 600, color: att.employee && form.schedule?.hostBy && String(att.employee.id) === String(form.schedule.hostBy.id) ? 'error.main' : 'text.primary' }}>
+                      {att.employee?.employeeName}
+                      {att.employee && form.schedule?.hostBy && String(att.employee.id) === String(form.schedule.hostBy.id) && ' (HOST)'}
+                    </TableCell>
+                    <TableCell>
+                      <BOSAnalogTimePicker
+                        size="small"
+                        value={to12h(att.inTime)}
+                        onChange={(e) => {
+                          const list = [...form.attendanceList];
+                          list[idx].inTime = to24h(e.target.value);
+                          setForm({ ...form, attendanceList: list });
+                        }}
+                        disableFutureValidation
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <BOSAnalogTimePicker
+                        size="small"
+                        value={to12h(att.outTime)}
+                        onChange={(e) => {
+                          const list = [...form.attendanceList];
+                          list[idx].outTime = to24h(e.target.value);
+                          setForm({ ...form, attendanceList: list });
+                        }}
+                        disableFutureValidation
+                        minTime={to12h(att.inTime)}
+                        minTimeMessage="Out time cannot be before in time."
+                      />
+                    </TableCell>
                     <TableCell>
                       <BOSTextField select size="small" value={att.attendanceStatus} onChange={(e) => {
                         const list = [...form.attendanceList];

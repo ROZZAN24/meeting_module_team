@@ -161,13 +161,13 @@ export default function MomApprovalList() {
       if (!row._createdAt) val = '-';
       else {
         const dt = new Date(row._createdAt);
-        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
       }
     } else if (col.id === 'updatedAt') {
       if (!row._updatedAt) val = '-';
       else {
         const dt = new Date(row._updatedAt);
-        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+        val = `${dt.toLocaleDateString('en-GB')} ${dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}`;
       }
     } else if (col.id === 'status') {
       const s = row.status || 'PENDING FOR APPROVAL';

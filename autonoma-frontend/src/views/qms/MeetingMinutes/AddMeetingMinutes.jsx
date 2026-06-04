@@ -22,7 +22,7 @@ import {
   Tooltip,
   Chip
 } from '@mui/material';
-import { BOSFormSection, BOSTextField, BOSFormDialog, BOSAutocomplete, btnSave, btnCancel, btnClear } from 'ui-component/bos';
+import { BOSFormSection, BOSTextField, BOSFormDialog, BOSAutocomplete, BOSAnalogTimePicker, btnSave, btnCancel, btnClear } from 'ui-component/bos';
 import {
   IconPlus,
   IconTrash,
@@ -66,6 +66,30 @@ const formatTo24hString = (time) => {
   return time;
 };
 
+const to24h = (time12h) => {
+  if (!time12h) return '';
+  if (!time12h.toUpperCase().includes('AM') && !time12h.toUpperCase().includes('PM')) {
+    return formatTo24hString(time12h);
+  }
+  const [time, modifier] = time12h.trim().split(' ');
+  let [hours, minutes] = time.split(':');
+  let h = parseInt(hours, 10);
+  if (modifier === 'PM' && h < 12) h += 12;
+  if (modifier === 'AM' && h === 12) h = 0;
+  return `${h.toString().padStart(2, '0')}:${minutes}`;
+};
+
+const to12h = (timeVal) => {
+  if (!timeVal) return '';
+  const time24h = formatTo24hString(timeVal);
+  if (!time24h) return '';
+  const parts = time24h.split(':');
+  const h24 = parseInt(parts[0], 10);
+  const ampm = h24 >= 12 ? 'PM' : 'AM';
+  const h12 = h24 % 12 || 12;
+  return `${String(h12).padStart(2, '0')}:${parts[1].substring(0, 2)} ${ampm}`;
+};
+
 const INITIAL_FORM = {
   momNo: 'AUTO-GENERATE',
   momDate: TODAY,
@@ -80,7 +104,7 @@ const INITIAL_FORM = {
       meetNo: `${DEFAULT_MOM_NO}/001`,
       amendMeetNo: '',
       discussedPoint: '',
-      type: 'RM',
+      type: '',
       materialList: '',
       processType: 'INFO',
       assignedBy: null,
@@ -126,7 +150,7 @@ export default function AddMeetingMinutes() {
       meetNo: '',
       amendMeetNo: '',
       discussedPoint: '',
-      type: 'RM',
+      type: '',
       materialList: '',
       processType: 'INFO',
       assignedBy: null,
@@ -148,7 +172,7 @@ export default function AddMeetingMinutes() {
           meetNo: '',
           amendMeetNo: '',
           discussedPoint: '',
-          type: 'RM',
+          type: '',
           materialList: '',
           processType: 'INFO',
           assignedBy: null,
@@ -169,7 +193,7 @@ export default function AddMeetingMinutes() {
           meetNo: det.meetNo || '',
           amendMeetNo: det.amendMeetNo || '',
           discussedPoint: det.discussedPoint || '',
-          type: det.type || 'RM',
+          type: det.type || '',
           materialList: det.materialList || '',
           processType: det.processType || 'INFO',
           assignedBy: det.assignedBy || null,
@@ -245,7 +269,7 @@ export default function AddMeetingMinutes() {
         meetNo: '',
         amendMeetNo: '',
         discussedPoint: '',
-        type: 'RM',
+        type: '',
         materialList: '',
         processType: 'INFO',
         assignedBy: null,
@@ -346,6 +370,41 @@ export default function AddMeetingMinutes() {
     clearErrors();
   }, [editId, fetchMom, clearErrors]);
 
+  useEffect(() => {
+    if (form.schedule?.id && meetingSchedules.length > 0) {
+      const fullSch = meetingSchedules.find((s) => s.id === form.schedule.id);
+      if (fullSch) {
+        const hostEmployee = fullSch.hostBy;
+        const hostIdStr = hostEmployee ? String(hostEmployee.id) : null;
+        
+        let attendanceUpdated = false;
+        let updatedAttendanceList = [...(form.attendanceList || [])];
+        
+        if (hostEmployee && hostIdStr && !updatedAttendanceList.some(att => att.employee && String(att.employee.id) === hostIdStr)) {
+          updatedAttendanceList.push({
+            employee: hostEmployee,
+            inTime: '',
+            outTime: '',
+            attendanceStatus: 'ABSENT'
+          });
+          attendanceUpdated = true;
+        }
+
+        if (!form.schedule._isFull || attendanceUpdated) {
+          setForm((prev) => ({
+            ...prev,
+            schedule: {
+              ...prev.schedule,
+              ...fullSch,
+              _isFull: true
+            },
+            attendanceList: updatedAttendanceList
+          }));
+        }
+      }
+    }
+  }, [form.schedule, form.attendanceList, meetingSchedules]);
+
   const handleScheduleChange = async (e, val) => {
     if (!val) return;
 
@@ -359,20 +418,25 @@ export default function AddMeetingMinutes() {
     const scheduleSeq = scheduleParts.length > 0 ? scheduleParts[scheduleParts.length - 1] : 'AUTO';
     const dynamicMomNo = `MM/${typePrefix}/${yearRange}/${scheduleSeq}`;
 
+    let listToMap = [...(val.participants || [])];
+    if (val.hostBy && !listToMap.some((p) => p.employee && String(p.employee.id) === String(val.hostBy.id))) {
+      listToMap.push({ employee: val.hostBy });
+    }
+
     try {
       // 1. Fetch actual attendance records for this schedule
       const { data: attendanceRecords } = await axios.get(`${API_PATHS.QMS.MEETING_ATTENDANCE}/schedule/${val.id}`);
 
-      // 2. Map participants to attendance status
+      // 2. Map participants and host to attendance status
       // If a record exists, use its status/times. Otherwise, they are ABSENT.
-      const participants = (val.participants || []).map((p) => {
-        const record = attendanceRecords.find((r) => r.employee?.id === p.employee?.id);
+      const participants = listToMap.map((p) => {
+        const record = attendanceRecords.find((r) => r.employee && String(r.employee.id) === String(p.employee?.id));
 
         if (record) {
           return {
             employee: p.employee,
             inTime: formatTo24hString(record.inTime) || formatTo24hString(val.startTime) || '09:00',
-            outTime: formatTo24hString(record.outTime) || formatTo24hString(val.endTime) || '10:00',
+            outTime: formatTo24hString(record.outTime) || '',
             attendanceStatus: record.status ? record.status.toUpperCase() : 'PRESENT'
           };
         } else {
@@ -402,7 +466,7 @@ export default function AddMeetingMinutes() {
       dispatch(openSnackbar({ open: true, message: 'Failed to load actual attendance records', variant: 'alert', severity: 'warning' }));
 
       // Fallback: Use participants from schedule but mark as Absent by default
-      const fallbackParticipants = (val.participants || []).map((p) => ({
+      const fallbackParticipants = listToMap.map((p) => ({
         employee: p.employee,
         inTime: '',
         outTime: '',
@@ -473,10 +537,10 @@ export default function AddMeetingMinutes() {
     ];
 
     // Validation: Host's Out Time must be filled if other participants' Out Times are entered
-    const hostAtt = form.attendanceList.find((att) => att.employee?.id === form.schedule?.hostBy?.id);
+    const hostAtt = form.attendanceList.find((att) => att.employee && form.schedule?.hostBy && String(att.employee.id) === String(form.schedule.hostBy.id));
     const hostOutTimeEmpty = !hostAtt || !hostAtt.outTime || !hostAtt.outTime.trim();
     const otherOutTimeFilled = form.attendanceList.some(
-      (att) => att.employee?.id !== form.schedule?.hostBy?.id && att.attendanceStatus !== 'ABSENT' && att.outTime && att.outTime.trim()
+      (att) => (!att.employee || !form.schedule?.hostBy || String(att.employee.id) !== String(form.schedule.hostBy.id)) && att.attendanceStatus !== 'ABSENT' && att.outTime && att.outTime.trim()
     );
 
     if (hostOutTimeEmpty && otherOutTimeFilled) {
@@ -498,6 +562,23 @@ export default function AddMeetingMinutes() {
         openSnackbar({
           open: true,
           message: 'It is mandatory to enter the out time before saving',
+          variant: 'alert',
+          severity: 'error'
+        })
+      );
+      return;
+    }
+
+    // Validation: Out Time must not be before In Time
+    const invalidOutTime = form.attendanceList.some((att) => {
+      if (att.attendanceStatus === 'ABSENT' || !att.inTime || !att.outTime) return false;
+      return att.outTime < att.inTime;
+    });
+    if (invalidOutTime) {
+      dispatch(
+        openSnackbar({
+          open: true,
+          message: 'Out time cannot be before in time for any attendee',
           variant: 'alert',
           severity: 'error'
         })
@@ -777,30 +858,30 @@ export default function AddMeetingMinutes() {
                     {
                       label: 'Meeting Start Time',
                       component: (
-                        <BOSTextField
+                        <BOSAnalogTimePicker
                           fullWidth
-                          type="time"
-                          value={form.startTime}
-                          onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                          placeholder=""
+                          value={to12h(form.startTime)}
+                          onChange={(e) => setForm({ ...form, startTime: to24h(e.target.value) })}
                           disabled={!perms.write}
-                          InputLabelProps={{ shrink: true }}
-                          sx={{ '& .MuiInputBase-input': { py: 0.8 } }}
+                          disableFutureValidation
+                          selectedDate={form.momDate}
+                          hideClockIcon
                         />
                       )
                     },
                     {
                       label: 'Meeting End Time',
                       component: (
-                        <BOSTextField
+                        <BOSAnalogTimePicker
                           fullWidth
-                          type="time"
-                          value={form.endTime}
-                          onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                          placeholder=""
+                          value={to12h(form.endTime)}
+                          onChange={(e) => setForm({ ...form, endTime: to24h(e.target.value) })}
                           disabled={!perms.write}
-                          InputLabelProps={{ shrink: true }}
-                          sx={{ '& .MuiInputBase-input': { py: 0.8 } }}
+                          disableFutureValidation
+                          selectedDate={form.momDate}
+                          minTime={to12h(form.startTime)}
+                          minTimeMessage="End time must be after start time."
+                          hideClockIcon
                         />
                       )
                     }
@@ -832,30 +913,32 @@ export default function AddMeetingMinutes() {
                 elevation={0}
                 sx={{ mt: 0, height: 380, borderRadius: 2, border: '1px solid', borderColor: 'divider', overflow: 'auto' }}
               >
-                <Table stickyHeader size="small">
+                <Table stickyHeader size="small" sx={{ minWidth: 760 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 60 }}>
+                      <TableCell align="center" sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 50 }}>
                         Si No
                       </TableCell>
-                      <TableCell sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 80 }}>
+                      <TableCell sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 120 }}>
                         Dept
                       </TableCell>
-                      <TableCell sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem' }}>
+                      <TableCell sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 150 }}>
                         Name
                       </TableCell>
                       <TableCell
-                        sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 110 }}
+                        align="center"
+                        sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 140, px: '4px' }}
                       >
                         In Time
                       </TableCell>
                       <TableCell
-                        sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 110 }}
+                        align="center"
+                        sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 140, px: '4px' }}
                       >
                         Out Time
                       </TableCell>
                       <TableCell
-                        sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 100 }}
+                        sx={{ bgcolor: 'primary.dark', fontWeight: 800, color: '#ffffff', py: 1, fontSize: '0.65rem', width: 110 }}
                       >
                         Status
                       </TableCell>
@@ -889,46 +972,59 @@ export default function AddMeetingMinutes() {
                               fontWeight: 800,
                               fontSize: '0.65rem',
                               color:
-                                att.employee?.id === form.schedule?.hostBy?.id
+                                att.employee && form.schedule?.hostBy && String(att.employee.id) === String(form.schedule.hostBy.id)
                                   ? 'error.main'
-                                  : att.attendanceStatus === 'Absent'
+                                  : att.attendanceStatus === 'ABSENT'
                                     ? 'error.light'
                                     : 'text.primary'
                             }}
                           >
                             {att.employee?.employeeName?.toUpperCase()}
-                            {att.employee?.id === form.schedule?.hostBy?.id && ' (HOST)'}
+                            {att.employee && form.schedule?.hostBy && String(att.employee.id) === String(form.schedule.hostBy.id) && ' (HOST)'}
                           </TableCell>
-                          <TableCell>
+                          <TableCell sx={{ px: '4px' }}>
                             <BOSTextField
-                              type={att.attendanceStatus === 'ABSENT' ? 'text' : 'time'}
+                              type="text"
                               size="small"
-                              value={att.attendanceStatus === 'ABSENT' ? '' : att.inTime}
+                              value={att.attendanceStatus === 'ABSENT' ? '' : to12h(att.inTime)}
                               disabled
                               placeholder=""
-                              InputLabelProps={{ shrink: true }}
-                              sx={{ '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' }, bgcolor: 'grey.50' }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  height: '38px !important',
+                                  borderRadius: '12px !important',
+                                  backgroundColor: 'grey.50 !important',
+                                },
+                                '& .MuiInputBase-input': {
+                                  fontSize: '0.72rem !important',
+                                  fontWeight: '600 !important',
+                                  textAlign: 'center !important',
+                                  paddingLeft: '4px !important',
+                                  paddingRight: '4px !important',
+                                }
+                              }}
                             />
                           </TableCell>
-                          <TableCell>
-                            <BOSTextField
-                              type={att.attendanceStatus === 'ABSENT' ? 'text' : 'time'}
-                              size="small"
-                              value={att.attendanceStatus === 'ABSENT' ? '' : att.outTime}
+                          <TableCell sx={{ px: '4px' }}>
+                            <BOSAnalogTimePicker
+                              value={att.attendanceStatus === 'ABSENT' ? '' : to12h(att.outTime)}
                               onChange={(e) => {
                                 const list = [...form.attendanceList];
-                                list[idx].outTime = e.target.value;
+                                list[idx].outTime = to24h(e.target.value);
                                 setForm({ ...form, attendanceList: list });
                               }}
-                              disabled={!canEditOutTime || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'}
+                              disabled={!canEditOutTime || att.attendanceStatus === 'ABSENT'}
+                              disableFutureValidation
+                              minTime={to12h(att.inTime)}
+                              minTimeMessage="Out time cannot be before in time."
                               placeholder=""
-                              InputLabelProps={{ shrink: true }}
                               sx={{
-                                '& .MuiInputBase-input': { p: 0.5, fontSize: '0.7rem' },
-                                bgcolor:
-                                  !canEditOutTime || att.attendanceStatus === 'Absent' || att.attendanceStatus === 'ABSENT'
-                                    ? 'grey.50'
-                                    : 'inherit'
+                                '& .MuiInputBase-input': {
+                                  fontSize: '0.72rem !important',
+                                  textAlign: 'center !important',
+                                  paddingLeft: '4px !important',
+                                  paddingRight: '4px !important',
+                                }
                               }}
                             />
                           </TableCell>
@@ -1302,7 +1398,7 @@ export default function AddMeetingMinutes() {
               meetNo: '',
               amendMeetNo: '',
               discussedPoint: '',
-              type: 'RM',
+              type: '',
               materialList: '',
               processType: 'INFO',
               assignedBy: null,
@@ -1459,7 +1555,7 @@ export default function AddMeetingMinutes() {
                 select
                 fullWidth
                 label="Type"
-                value={detailDialog.form.type}
+                value={detailDialog.form.type || ''}
                 onChange={(e) =>
                   setDetailDialog((prev) => ({
                     ...prev,
@@ -1467,6 +1563,7 @@ export default function AddMeetingMinutes() {
                   }))
                 }
               >
+                <MenuItem value="" sx={{ display: 'none' }}></MenuItem>
                 <MenuItem value="RM">RM</MenuItem>
                 <MenuItem value="PRODUCT">PRODUCT</MenuItem>
               </BOSTextField>

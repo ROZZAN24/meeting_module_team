@@ -83,7 +83,7 @@ public class QmsMomMasterService {
             if (mom.getAttendanceList() != null) {
                 mom.getAttendanceList().forEach(att -> att.setMom(mom));
             }
-            QmsMomMaster saved = repository.save(mom);
+            QmsMomMaster saved = repository.saveAndFlush(mom);
             syncToMeetingUserAttendance(saved);
             return saved;
         } else {
@@ -126,7 +126,7 @@ public class QmsMomMasterService {
                 }
             }
             
-            QmsMomMaster saved = repository.save(existing);
+            QmsMomMaster saved = repository.saveAndFlush(existing);
             syncToMeetingUserAttendance(saved);
             return saved;
         }
@@ -165,7 +165,7 @@ public class QmsMomMasterService {
                 }
             }
         }
-        QmsMomMaster saved = repository.save(mom);
+        QmsMomMaster saved = repository.saveAndFlush(mom);
         syncToMeetingUserAttendance(saved);
     }
 
@@ -173,7 +173,8 @@ public class QmsMomMasterService {
         if (mom == null || mom.getSchedule() == null || mom.getAttendanceList() == null) return;
         
         Long scheduleId = mom.getSchedule().getId();
-        for (QmsMomAttendance momAtt : mom.getAttendanceList()) {
+        List<QmsMomAttendance> attendanceCopy = new java.util.ArrayList<>(mom.getAttendanceList());
+        for (QmsMomAttendance momAtt : attendanceCopy) {
             if (momAtt.getEmployee() != null) {
                 Long empId = momAtt.getEmployee().getId();
                 java.util.Optional<QmsMeetingUserAttendance> userAttOpt = 
