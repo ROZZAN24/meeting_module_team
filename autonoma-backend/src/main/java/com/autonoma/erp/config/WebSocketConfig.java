@@ -63,6 +63,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // Allowed origins configured for React frontend
-        registry.addEndpoint("/ws/signaling").setAllowedOrigins("http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173").withSockJS();
+        registry.addEndpoint("/ws/signaling").setAllowedOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://127.0.0.1:5173").withSockJS();
     }
 }

@@ -57,6 +57,11 @@ public class TenantContextFilter implements Filter {
                 }
             }
 
+            String currentUserId = com.autonoma.erp.util.SecurityUtils.getCurrentUserId();
+            if (currentUserId != null) {
+                com.autonoma.erp.util.SecurityUtils.resolveAndCacheEmployeeName(currentUserId);
+            }
+
             try {
                 chain.doFilter(request, response);
             } catch (Exception e) {

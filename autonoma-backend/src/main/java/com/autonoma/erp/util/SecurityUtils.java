@@ -45,17 +45,19 @@ public class SecurityUtils {
     private static final java.util.concurrent.ConcurrentHashMap<String, String> employeeNameCache = 
             new java.util.concurrent.ConcurrentHashMap<>();
 
+    public static void clearCachedEmployeeName(String principalId) {
+        if (principalId != null) {
+            employeeNameCache.remove(principalId);
+        }
+    }
+
     public static void resolveAndCacheEmployeeName(String principalId) {
         if (principalId == null || principalId.isEmpty()) {
             return;
         }
 
-        // Only return if we have a fully resolved name in the cache that is NOT equal to the fallback principalId itself
         if (employeeNameCache.containsKey(principalId)) {
-            String cached = employeeNameCache.get(principalId);
-            if (cached != null && !cached.equalsIgnoreCase(principalId)) {
-                return;
-            }
+            return;
         }
 
         try {
@@ -122,7 +124,7 @@ public class SecurityUtils {
             return null;
         }
         String cached = employeeNameCache.get(principalId);
-        if (cached == null || cached.equalsIgnoreCase(principalId)) {
+        if (cached == null) {
             resolveAndCacheEmployeeName(principalId);
             cached = employeeNameCache.get(principalId);
         }

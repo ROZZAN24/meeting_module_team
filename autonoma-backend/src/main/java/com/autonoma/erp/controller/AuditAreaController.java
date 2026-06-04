@@ -94,17 +94,26 @@ public class AuditAreaController {
 
         // 1. Check if referenced in Audit Type
         List<com.autonoma.erp.model.AuditType> matchingTypes = auditTypeRepository.findAll().stream()
-            .filter(t -> t.getAuditArea() != null && t.getAuditArea().toLowerCase().contains(searchName))
+            .filter(t -> t.getAuditArea() != null &&
+                java.util.Arrays.stream(t.getAuditArea().split(","))
+                    .map(String::trim)
+                    .anyMatch(a -> a.equalsIgnoreCase(searchName)))
             .toList();
 
         // 2. Check if referenced in Audit Schedule
         boolean inSchedule = auditScheduleRepository.findAll().stream()
             .filter(s -> !s.isDeleted())
             .anyMatch(s -> {
-                if (s.getAuditArea() != null && s.getAuditArea().toLowerCase().contains(searchName)) {
+                if (s.getAuditArea() != null &&
+                    java.util.Arrays.stream(s.getAuditArea().split(","))
+                        .map(String::trim)
+                        .anyMatch(a -> a.equalsIgnoreCase(searchName))) {
                     return true;
                 }
-                if (s.getAuditeeDetails() != null && s.getAuditeeDetails().toLowerCase().contains(searchName)) {
+                if (s.getAuditeeDetails() != null &&
+                    java.util.Arrays.stream(s.getAuditeeDetails().split(","))
+                        .map(String::trim)
+                        .anyMatch(a -> a.equalsIgnoreCase(searchName))) {
                     return true;
                 }
                 return false;
@@ -115,7 +124,11 @@ public class AuditAreaController {
         if (!matchingTypes.isEmpty()) {
             List<String> typeNames = matchingTypes.stream().map(t -> t.getAuditType().toLowerCase()).toList();
             inCriteria = auditCriteriaRepository.findAll().stream()
-                .anyMatch(c -> c.getAuditType() != null && typeNames.contains(c.getAuditType().toLowerCase()));
+                .anyMatch(c -> c.getAuditType() != null &&
+                    java.util.Arrays.stream(c.getAuditType().split(","))
+                        .map(String::trim)
+                        .map(String::toLowerCase)
+                        .anyMatch(typeNames::contains));
         }
 
         if (!matchingTypes.isEmpty() || inSchedule || inCriteria) {

@@ -162,6 +162,9 @@ export default function AuditAreaMaster() {
     if (col.id === 'createdUser') {
       return row.createdUser || row.createdBy || '-';
     }
+    if (col.id === 'createdDate') {
+      return row.createdDate ? format(new Date(row.createdDate), 'dd/MM/yyyy HH:mm') : '-';
+    }
     if (col.id === 'updatedUser') {
       return row.updatedUser || row.updatedBy || '-';
     }

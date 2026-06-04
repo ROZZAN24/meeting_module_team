@@ -21,6 +21,9 @@ public class AuditScheduleService {
     @Autowired
     private com.autonoma.erp.repository.AuditAttendanceRepository auditAttendanceRepository;
 
+    @Autowired
+    private com.autonoma.erp.repository.admin.AppPreferenceRepository appPreferenceRepository;
+
     public List<AuditSchedule> getAllAuditSchedules() {
         List<AuditSchedule> list = repository.findAll().stream().filter(a -> !a.isDeleted()).toList();
         for (AuditSchedule schedule : list) {
@@ -232,9 +235,12 @@ public class AuditScheduleService {
     }
 
     public String getNextScheduleNo() {
+        String prefix = appPreferenceRepository.findByPrefName("SCHEDULE_PREFIX")
+                .map(com.autonoma.erp.model.admin.AppPreference::getPrefValue)
+                .orElse("SCH-");
         return repository.findFirstByOrderByScheduleNoDesc()
-                .map(latest -> incrementSequence(latest.getScheduleNo(), "SCH-"))
-                .orElse("SCH-0001");
+                .map(latest -> incrementSequence(latest.getScheduleNo(), prefix))
+                .orElse(prefix + "0001");
     }
 
     private String incrementSequence(String latest, String prefix) {
