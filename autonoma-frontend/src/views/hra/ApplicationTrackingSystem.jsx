@@ -28,6 +28,7 @@ import useBOSValidation from 'hooks/useBOSValidation';
 import { setFilterConfig } from 'store/slices/search';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
 import useKeyboardShortcuts, { shortcutTooltip } from 'hooks/useKeyboardShortcuts';
+import useAuth from 'hooks/useAuth';
 
 // ==============================|| APPLICATION TRACKING SYSTEM ||============================== //
 
@@ -235,9 +236,25 @@ const VALIDATION_RULES = [
   { field: 'birthDate', label: 'Birth Date', required: true }
 ];
 
+const getSeventhWorkingDay = () => {
+  const date = new Date();
+  let count = 0;
+  while (count < 7) {
+    date.setDate(date.getDate() + 1);
+    if (date.getDay() !== 0) { // Skip Sundays
+      count++;
+    }
+  }
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export default function ApplicationTrackingSystem() {
   const dispatch = useDispatch();
   const perms = usePagePermissions(PAGE_CODES.HRA_ATS);
+  const { user } = useAuth();
 
   // Lookups mapping
   const { departments = [], designations = [], employees = [] } = useLookups(['DEPARTMENTS', 'DESIGNATIONS', 'EMPLOYEES']);
@@ -260,8 +277,9 @@ export default function ApplicationTrackingSystem() {
   const [callLetterData, setCallLetterData] = useState({
     interviewDate: '',
     interviewTime: '',
+    from: '',
     to: '',
-    cc: 'admin@nutech.com'
+    cc: ''
   });
   const [callLetterErrors, setCallLetterErrors] = useState({});
 
@@ -638,11 +656,15 @@ export default function ApplicationTrackingSystem() {
     }
     const target = rows.find(r => r.id === selectedIds[0]);
     if (target) {
+      const dept = departments.find(d => d.id.toString() === target.department || d.departmentName === target.department);
+      const deptMail = dept ? dept.departmentMailId : '';
+
       setCallLetterData({
-        interviewDate: '',
+        interviewDate: getSeventhWorkingDay(),
         interviewTime: '',
+        from: user?.email || '',
         to: target.emailId || '',
-        cc: 'admin@nutech.com'
+        cc: deptMail || ''
       });
       setCallLetterErrors({});
       setCallLetterDialogOpen(true);
@@ -656,10 +678,11 @@ export default function ApplicationTrackingSystem() {
   const handleClearCallLetterFields = () => {
     setCallLetterData(prev => ({
       ...prev,
-      interviewDate: '',
+      interviewDate: getSeventhWorkingDay(),
       interviewTime: '',
+      from: user?.email || '',
       to: '',
-      cc: 'admin@nutech.com'
+      cc: ''
     }));
     setCallLetterErrors({});
   };
@@ -688,6 +711,12 @@ export default function ApplicationTrackingSystem() {
           errs.interviewTime = 'Interview time must be in the future.';
         }
       }
+    }
+
+    if (!callLetterData.from) {
+      errs.from = 'From email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(callLetterData.from)) {
+      errs.from = 'Invalid email address.';
     }
 
     if (!callLetterData.to) {
@@ -2671,6 +2700,18 @@ export default function ApplicationTrackingSystem() {
               error={!!callLetterErrors.interviewTime}
               helperText={callLetterErrors.interviewTime}
               fullWidth
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <BOSTextField
+              required
+              label="From:"
+              name="from"
+              value={callLetterData.from}
+              InputProps={{ readOnly: true }}
+              sx={{ bgcolor: 'grey.50' }}
+              error={!!callLetterErrors.from}
+              helperText={callLetterErrors.from}
             />
           </Grid>
           <Grid item xs={12}>
