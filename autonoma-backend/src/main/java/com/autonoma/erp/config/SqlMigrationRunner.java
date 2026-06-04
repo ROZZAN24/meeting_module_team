@@ -123,6 +123,7 @@ public class SqlMigrationRunner implements CommandLineRunner {
         "20260604_V81.0__Create_Qms_Audit_Area.sql",
         "20260604_V82.0__Add_Is_Active_To_QMS_Meeting_User_Attendance.sql",
         "20260604_V83.0__Create_HR_Induction_Reassignment_Log.sql",
+        "20260604_V84.0__Add_Is_Active_To_QMS_Checklist.sql",
         // New v_next consolidation scripts
         "V001__Master_Module.sql",
         "V002__User_Module.sql",
