@@ -17,6 +17,8 @@ import {
   Link,
   IconButton
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { styled, alpha } from '@mui/system';
 import ReactApexChart from 'react-apexcharts';
 
@@ -167,9 +169,12 @@ function getTestStatus(rawStatus) {
   return null;
 }
 
-export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
+export default function ToBeTestedDashboard({ isDark, realTasks = [], activeTab }) {
   const textColor = isDark ? '#F8FAFC' : '#1E293B';
   const textMuted = isDark ? '#94A3B8' : '#64748B';
+
+  const navigate = useNavigate();
+  const globalFilters = useSelector((state) => state.search.filters);
 
   const [activeView, setActiveView] = useState('main');
   const [trendPeriod, setTrendPeriod] = useState('weekly');
@@ -816,7 +821,38 @@ export default function ToBeTestedDashboard({ isDark, realTasks = [] }) {
         sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2,1fr)', md: 'repeat(3,1fr)', lg: 'repeat(5,1fr)' }, gap: 1.5, mb: 1.5 }}
       >
         {topStats.map((stat, idx) => (
-          <LabCard key={idx} statcolor={stat.color}>
+          <LabCard 
+            key={idx} 
+            statcolor={stat.color}
+            onClick={() => {
+              let statusFilter = '';
+              if (stat.title === 'Total To Be Tested' || stat.title === 'Waiting for Tester' || stat.title === 'In Testing') {
+                statusFilter = 'To Be Tested'; // Currently TicketManagement only supports exact 'To Be Tested' status.
+              } else if (stat.title === 'Test Completed') {
+                statusFilter = 'To Be Tested'; // Or we route to To Be Tested and let the user see it
+              }
+
+              if (statusFilter && stat.title !== 'Assigned Testers') {
+                const initialFilters = {
+                  ticketStatus: statusFilter,
+                  taskScope: globalFilters?.performanceScope || 'Mine'
+                };
+                
+                const filterRequestManagement = globalFilters?.requestManagement || 'Request For Me';
+                const routePath = filterRequestManagement === 'My Request' ? '/support/ticket-by-me' : '/support/raised-for-me';
+
+                navigate(routePath, { 
+                  state: { 
+                    fromDashboard: true, 
+                    fromTab: activeTab,
+                    dashboardFilters: globalFilters,
+                    initialFilters 
+                  } 
+                });
+              }
+            }}
+            sx={{ cursor: stat.title !== 'Assigned Testers' ? 'pointer' : 'default' }}
+          >
             <Box className="rotating-border" />
             <Box className="shimmer" />
             <Box className="hud-corner hud-tl" />

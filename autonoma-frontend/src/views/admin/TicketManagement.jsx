@@ -13,9 +13,10 @@ import Chart from 'react-apexcharts';
 import MainCard from 'ui-component/cards/MainCard';
 import axios from 'utils/axios';
 import useAuth from 'hooks/useAuth';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { format } from 'date-fns';
 import usePagePermissions, { PAGE_CODES } from 'hooks/usePagePermissions';
-import { setFilterConfig, resetFilters } from 'store/slices/search';
+import { setFilterConfig, resetFilters, setFilters } from 'store/slices/search';
 import ReactQuillDemo from 'ui-component/third-party/ReactQuill';
 import BOSFilePreview from 'ui-component/bos/BOSFilePreview';
 
@@ -160,6 +161,9 @@ export default function TicketManagement({ viewType }) {
   const theme = useTheme();
   const dispatch = useDispatch();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const initialFiltersRef = useRef(location.state?.initialFilters);
 
   const currentViewType = viewType || (window.location.pathname.includes('ticket-by-me') ? 'raised-by-me' : 'raised-for-me');
   const perms = usePagePermissions(currentViewType === 'raised-by-me' ? PAGE_CODES.SUPPORT_RAISED_BY_ME : PAGE_CODES.SUPPORT_RAISED_FOR_ME);
@@ -175,6 +179,28 @@ export default function TicketManagement({ viewType }) {
   // Read Global Filters from Redux state
   const globalQuery = useSelector((state) => state.search.query);
   const globalFilters = useSelector((state) => state.search.filters);
+
+  // Esc key listener for returning to Dashboard
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && location.state?.fromDashboard) {
+        if (e.defaultPrevented) return;
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+        
+        const hasOpenDialog = document.querySelector('.MuiDialog-root');
+        if (!hasOpenDialog) {
+          navigate('/dashboard/task-dashboard', { 
+            state: { 
+              fromTab: location.state?.fromTab,
+              dashboardFilters: location.state?.dashboardFilters
+            } 
+          });
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [location, navigate]);
 
   // Core Data States
   const [tickets, setTickets] = useState([]);
@@ -728,6 +754,16 @@ export default function TicketManagement({ viewType }) {
       { id: 'endDate', label: 'To Date', type: 'date', isStarred: false }
     ];
     dispatch(setFilterConfig(config));
+    
+    if (initialFiltersRef.current) {
+      dispatch(setFilters(initialFiltersRef.current));
+      
+      // Once employeesList is loaded, we can clear the ref so we don't overwrite user changes on any future config updates
+      if (employeesList.length > 0) {
+        initialFiltersRef.current = null;
+      }
+    }
+
     return () => {
       dispatch(setFilterConfig(null));
       dispatch(resetFilters());
@@ -2047,7 +2083,7 @@ export default function TicketManagement({ viewType }) {
       const teamIdentifiers = [];
       employeesList.forEach(b => {
          const vHead = (b.verticalHead || '').trim().toLowerCase();
-         if (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName))) {
+         if (vHead && (vHead === currentUserId || vHead === currentUserName || (myEmpName && vHead === myEmpName) || (myEmpName && vHead.includes(myEmpName)))) {
             if (b.employeeName) teamIdentifiers.push(b.employeeName.trim().toLowerCase());
             if (b.officeMail) {
                const mail = b.officeMail.trim().toLowerCase();
@@ -2060,17 +2096,13 @@ export default function TicketManagement({ viewType }) {
             }
          }
       });
-      // Add current user to their own team view
-      teamIdentifiers.push(currentUserId);
-      teamIdentifiers.push(currentUserName);
-      if (myEmpName) teamIdentifiers.push(myEmpName);
-
       const scope = globalFilters?.taskScope || 'Mine';
 
       const matchTeam = (field) => {
          if (!field) return false;
          const f = field.toLowerCase();
-         return teamIdentifiers.includes(f) || teamIdentifiers.some(m => m && (f.includes(m) || m.includes(f)));
+         if (f === currentUserId || f === currentUserName || (myEmpName && f === myEmpName)) return true;
+         return teamIdentifiers.includes(f);
       };
 
       if (currentViewType === 'raised-for-me') {
